@@ -29,6 +29,7 @@ import { SOLVE_TOOL_POINTS } from "@/server/billing/config";
 export interface AgentToolContext {
   request: Request;
   userId: string;
+  gatewayBilling?: boolean;
 }
 
 const ROTATION_PROFILES: RotationProfile[] = ["abc_12_6_6", "abc_12_12_12", "main_backup_12_12", "fiammetta_8_8_4_4", "abyssal_7_5_7_5"];
@@ -42,7 +43,7 @@ function logToolCall(userId: string, name: string, input: unknown, startedAt: nu
     tool: name,
     failed,
     durationMs: Math.max(0, Math.round(performance.now() - startedAt)),
-    inputPreview: JSON.stringify(input)?.slice(0, 300),
+    inputKeys: input && typeof input === "object" ? Object.keys(input) : [],
   }));
 }
 
@@ -441,7 +442,7 @@ export function buildAgentTools(ctx: AgentToolContext) {
         // 求解器是首个计费工具：参数已经通过 schema 与布局/干员来源校验后再扣费，
         // 避免用户因为格式错误消耗积分；后续 token 计量会在 agent stream 收尾时补写。
         const runId = randomUUID();
-        const billing = await chargeAgentTool({
+        const billing = ctx.gatewayBilling ? null : await chargeAgentTool({
           userId: ctx.userId,
           toolName: "solve_schedule",
           points: SOLVE_TOOL_POINTS,
@@ -494,7 +495,7 @@ export function buildAgentTools(ctx: AgentToolContext) {
           tradeOrders,
           boxSource,
           operatorCount: operbox.length,
-          billing: { pointsCharged: billing.charged, usageId: billing.usageId, remainingPoints: billing.wallet.totalPoints },
+          billing: billing ? { pointsCharged: billing.charged, usageId: billing.usageId, remainingPoints: billing.wallet.totalPoints } : { pendingSettlement: true },
           workbenchSession,
           plan: projected,
         };
