@@ -120,12 +120,19 @@ export function WebsiteAccountPanel({
   const [otpStatus, setOtpStatus] = useState<OtpStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [transientNotice, setTransientNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [busyAction, setBusyAction] = useState<AccountAction | null>(null);
   const [deleteLocalData, setDeleteLocalData] = useState(true);
   const [resendSeconds, setResendSeconds] = useState(0);
   const otpRef = useRef<OtpInputHandle>(null);
   const fieldId = useId();
+
+  useEffect(() => {
+    if (!transientNotice) return;
+    const timer = window.setTimeout(() => setTransientNotice(null), 3_500);
+    return () => window.clearTimeout(timer);
+  }, [transientNotice]);
 
   useEffect(() => {
     if (resendSeconds <= 0) return;
@@ -208,6 +215,10 @@ export function WebsiteAccountPanel({
           email: email.trim(),
           redirectTo: `${location.origin}/account/reset-password`,
         });
+        if (result.error?.code === "USER_NOT_FOUND") {
+          setTransientNotice(intl("components_auth_WebsiteAccountPanel.userNotRegistered"));
+          return;
+        }
         if (result.error) throw new Error(result.error.message);
         setStep("complete");
         setMessage(intl("components_auth_WebsiteAccountPanel.ifThisEmailIsRegisteredAResetMessageWill"));
@@ -427,6 +438,12 @@ export function WebsiteAccountPanel({
   ];
 
   return (
+    <div className="relative">
+      {transientNotice ? (
+        <Alert className="absolute inset-x-5 top-5 z-20 border-amber-500/50 bg-amber-50 text-amber-950 shadow-lg dark:bg-amber-950 dark:text-amber-50 sm:left-auto sm:right-8 sm:w-80" role="status">
+          <AlertDescription>{transientNotice}</AlertDescription>
+        </Alert>
+      ) : null}
     <Card className="surface-shadow w-full min-w-0 max-w-full overflow-hidden rounded-none ring-0" data-website-account-panel data-auth-wizard>
       <div className="grid min-w-0 lg:grid-cols-[minmax(16rem,0.75fr)_minmax(0,1.25fr)]">
         <div className="min-w-0 border-b border-border/70 px-5 py-6 lg:border-b-0 lg:border-r lg:px-8 lg:py-9">
@@ -634,5 +651,6 @@ export function WebsiteAccountPanel({
         </CardContent>
       </div>
     </Card>
+    </div>
   );
 }
