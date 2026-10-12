@@ -94,8 +94,9 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
     const { streamText, tool, stepCountIs } = await import("ai");
     const { z } = await import("zod");
     const { createGatewayRun } = await import("../agent/gateway-runtime.ts");
+    const { withAgentAnswerBoundary } = await import("../agent/answer-boundary.ts");
     const { compileFilterPolicy } = await import("../agent/filter-policy.ts");
-    let step=0; let route;const gatewayRows=[];
+    let step=0; let route; let corruptAnswer=false; const gatewayRows=[]; const routeBase=Date.now();
     const sdkKey=randomUUID();const sdkSession=accounting.agentSessionId(userId,`test-${sdkKey}`);
     const policyDir=await mkdtemp(path.join(tmpdir(),"riic-gateway-test-"));
     const gateway=createServer(async(req,res)=>{
@@ -103,12 +104,12 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
       if(req.url.startsWith("/v1/magpie/route")){res.setHeader("Content-Type","application/json");res.end(JSON.stringify({route}));return;}
       let raw="";for await(const c of req)raw+=c;const request=JSON.parse(raw);
       assert.equal(request.model,"group/riic-agent");assert.equal(request.max_tokens,2048);
-      step++;route={id:step,time:new Date().toISOString(),model:"riic-deepseek/deepseek-v4.1-flash",tries:[{model:"riic-deepseek/deepseek-v4.1-flash",status:200,done:true}]};
-      gatewayRows.push({t:route.time,route_id:step,session:sdkSession,provider:"riic-deepseek",model:"deepseek-v4.1-flash",response_id:`sdk-${step}`,in:7,out:2,cache_read:3,status:200,priced:false});
+      step++;route={id:routeBase+step,time:new Date().toISOString(),model:"riic-deepseek/deepseek-v4.1-flash",tries:[{model:"riic-deepseek/deepseek-v4.1-flash",status:200,done:true}]};
+      gatewayRows.push({t:route.time,route_id:route.id,session:sdkSession,provider:"riic-deepseek",model:"deepseek-v4.1-flash",response_id:`sdk-${sdkKey}-${step}`,in:7,out:2,cache_read:3,status:200,priced:false});
       res.writeHead(200,{"Content-Type":"text/event-stream","X-Magpie-Provider":"riic-deepseek","X-Magpie-Model":"riic-deepseek/deepseek-v4.1-flash"});
-      const chunk=c=>res.write(`data: ${JSON.stringify({id:`sdk-${step}`,model:"deepseek-v4.1-flash",created:1,object:"chat.completion.chunk",...c})}\n\n`);
+      const chunk=c=>res.write(`data: ${JSON.stringify({id:`sdk-${sdkKey}-${step}`,model:"deepseek-v4.1-flash",created:1,object:"chat.completion.chunk",...c})}\n\n`);
       if(step===1)chunk({choices:[{index:0,delta:{tool_calls:[{index:0,id:"sdk-tool",type:"function",function:{name:"solve",arguments:'{"ok":true}'}}]},finish_reason:null}]});
-      else for(const content of ["safe RIIC_FILTER_","BLOCK_TEST safe"])chunk({choices:[{index:0,delta:{content},finish_reason:null}]});
+      else for(const content of corruptAnswer ? ["[[sys", "tem]] internal"] : ["safe RIIC_FILTER_","BLOCK_TEST safe"])chunk({choices:[{index:0,delta:{content},finish_reason:null}]});
       chunk({choices:[{index:0,delta:{},finish_reason:step===1?"tool_calls":"stop"}],usage:{prompt_tokens:10,completion_tokens:2,total_tokens:12,prompt_tokens_details:{cached_tokens:3}}});res.end("data: [DONE]\n\n");
     });
     await new Promise(resolve=>gateway.listen(0,"127.0.0.1",resolve));
@@ -116,7 +117,7 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
     try {
       const sdkRun=await begin(sdkKey);
       const runtime=createGatewayRun({runId:sdkRun,sessionId:sdkSession,requestId:sdkRun,userId,filterVersion:policies.filter.id,filter:compileFilterPolicy(policies.filter.policy)});
-      const result=streamText({model:runtime.model,maxRetries:0,maxOutputTokens:2048,messages:[{role:"user",content:"test tool then answer"}],stopWhen:stepCountIs(3),tools:{solve:tool({inputSchema:z.object({ok:z.boolean()}),execute:async(_,options)=>{const id=await accounting.beginToolCharge(sdkRun,options.toolCallId,"solve_schedule");await accounting.finishToolCharge(id,true);return {ok:true};}})},onFinish:()=>runtime.finalize("completed")});
+      const result=streamText({model:withAgentAnswerBoundary(runtime.model,runtime.deliver),maxRetries:0,maxOutputTokens:2048,messages:[{role:"user",content:"test tool then answer"}],stopWhen:stepCountIs(3),tools:{solve:tool({inputSchema:z.object({ok:z.boolean()}),execute:async(_,options)=>{const id=await accounting.beginToolCharge(sdkRun,options.toolCallId,"solve_schedule");await accounting.finishToolCharge(id,true);return {ok:true};}})},onFinish:()=>runtime.finalize("completed")});
       assert.equal(await result.text,"safe *** safe");
       await runtime.finalize("completed");
       const sdkDetail=await admin.billingRunDetail(sdkRun);assert.equal(sdkDetail.calls.length,2);assert.equal(sdkDetail.run.charged_points,2);assert.ok(sdkDetail.calls.every(c=>c.status==="measured"&&c.input_tokens===10&&c.cached_input_tokens===3));
@@ -128,6 +129,17 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
       assert.equal((await pool.query("SELECT count(*)::int AS n FROM app.agent_gateway_usage WHERE call_id=any($1::text[])",[sdkDetail.calls.map(c=>c.id)])).rows[0].n,4);
       assert.equal((await pool.query("SELECT status FROM app.agent_gateway_status WHERE id='gateway'")).rows[0].status,"healthy");
       assert.equal((await pool.query("SELECT count(*)::int AS n FROM app.billing_review WHERE run_id=$1 AND kind='gateway_usage_mismatch'",[sdkRun])).rows[0].n,0);
+      corruptAnswer=true;
+      const blockedRun=await begin();
+      const blockedRuntime=createGatewayRun({runId:blockedRun,sessionId:sdkSession,requestId:blockedRun,userId,filterVersion:policies.filter.id,filter:compileFilterPolicy(policies.filter.policy)});
+      const blockedResult=streamText({model:withAgentAnswerBoundary(blockedRuntime.model,blockedRuntime.deliver),maxRetries:0,maxOutputTokens:2048,prompt:"format guard",onError:()=>blockedRuntime.finalize("failed"),onFinish:()=>blockedRuntime.finalize("completed")});
+      const blockedChunks=await Array.fromAsync(blockedResult.toUIMessageStream({onError:()=>"format error"}));
+      await blockedRuntime.finalize("failed");
+      assert.equal(blockedChunks.filter(part=>part.type==="text-delta").length,0);
+      const blockedDetail=await admin.billingRunDetail(blockedRun);
+      assert.equal(blockedDetail.run.charged_points,0);
+      assert.equal(blockedDetail.calls[0].status,"measured");
+      assert.equal((await getWallet(userId)).reservedPoints,0);
     } finally { await new Promise(resolve=>gateway.close(resolve)); if(path.dirname(policyDir)===path.resolve(tmpdir())&&path.basename(policyDir).startsWith("riic-gateway-test-"))await rm(policyDir,{recursive:true,force:true}); }
     void fulfillBillingOrder;
   } finally {

@@ -1,4 +1,5 @@
 "use client";
+import { INTERNAL_ANSWER_MARKERS } from "@/agent-answer";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -671,7 +672,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
                   part.type === "text" && part.state === "streaming" && !!part.text.trim() ? index : last, -1) : -1;
                 return message.parts.map((part, partIndex) => {
                 const key = `${message.id}:${partIndex}`;
-                if (part.type === "text") return part.text.trim() ? <ChatBubble key={key} speaker="assistant" name={personaName} label={en ? `${personaName} reply` : `${personaName}的回答`} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} active={partIndex === activeAvatarIndex} />}><StreamingText content={part.text} running={active && part.state === "streaming"} animate={animate} previousParts={message.parts.slice(0, partIndex).filter((previous) => previous.type === "text").map((previous) => previous.text)} /></ChatBubble> : null;
+                if (part.type === "text") return part.text.trim() ? <ChatBubble key={key} speaker="assistant" name={personaName} label={en ? `${personaName} reply` : `${personaName}的回答`} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} active={partIndex === activeAvatarIndex} />}><StreamingText content={INTERNAL_ANSWER_MARKERS.test(part.text) ? (en ? "This saved reply contains invalid formatting. Please ask again." : "这条历史回复的格式有误，请重新提问。") : part.text} running={active && part.state === "streaming"} animate={animate} previousParts={message.parts.slice(0, partIndex).flatMap((previous) => previous.type === "text" && !INTERNAL_ANSWER_MARKERS.test(previous.text) ? [previous.text] : [])} /></ChatBubble> : null;
                 if (part.type === "reasoning") return part.text.trim() || (active && part.state === "streaming") ? <div key={key} className={dialogueStyles.activity}><ThinkingState label={en ? "Thinking" : "思考过程"} activeLabel={en ? "Thinking…" : "正在思考…"} running={active && part.state === "streaming"} animate={animate}>{part.text}</ThinkingState></div> : null;
                 if (isToolPart(part)) {
                   // Keep every completed schedule in its original conversation position,

@@ -9,17 +9,19 @@ import { gatewaySettings } from "./gateway-config.ts";
 import { buildAgentSystemPrompt } from "./persona.ts";
 import { createAgentStreamPolicy } from "./stream-policy.ts";
 import { buildAgentTools } from "./tools.ts";
+import { prepareAgentHistory } from "./message-history.ts";
+import { withAgentAnswerBoundary } from "./answer-boundary.ts";
+import type { AgentResourcePolicy } from "./resource-policy.ts";
 
 export async function gatewayChat(request: Request, userId: string, requestId: string, body: {
   messages: UIMessage[]; id?: unknown; conversationId?: unknown; attemptId?: unknown;
-}, personaContent?: string) {
+}, personaContent?: string, resources?: { id: string; policy: AgentResourcePolicy }) {
   gatewaySettings();
   const conversationId = body.conversationId ?? body.id;
   const attemptId = body.attemptId;
   if (typeof conversationId !== "string" || !/^[\w:-]{1,128}$/.test(conversationId)
     || typeof attemptId !== "string" || !/^[\w-]{16,128}$/.test(attemptId)) throw new PublicApiError("AIC-REQ-1001", { message: "请刷新页面后重新发送。" });
   if (body.messages.length > 200) throw new PublicApiError("AIC-REQ-1001", { message: "对话过长，请新建对话。" });
-  if (Buffer.byteLength(JSON.stringify(body.messages)) > 480_000) throw new PublicApiError("AIC-REQ-1001", { message: "对话或附件过大，请压缩附件或新建对话后重试。" });
   const policies = await activeAgentPolicies();
   const filter = compileFilterPolicy(policies.filter.policy);
   const check = async (text: string, stage: string) => {
@@ -30,34 +32,14 @@ export async function gatewayChat(request: Request, userId: string, requestId: s
     }
   };
   await check(personaContent ?? "", "persona");
-  // Client history is untrusted context. It cannot submit executable tool states or system roles.
-  const messages: UIMessage[] = [];
-  for (const message of body.messages) {
-    if (!["user", "assistant"].includes(message.role) || !Array.isArray(message.parts)) throw new PublicApiError("AIC-REQ-1001", { message: "对话格式无效。" });
-    const parts: UIMessage["parts"] = [];
-    for (const part of message.parts) {
-      if (part.type === "text") { await check(part.text, "input"); parts.push(part); }
-      else if (part.type === "file" && message.role === "user") {
-        if (!/^data:(image\/(png|jpeg|webp)|text\/plain);base64,/.test(part.url)) throw new PublicApiError("AIC-REQ-1001", { message: "仅支持 PNG、JPEG、WebP 图片与文本附件。" });
-        if (part.mediaType === "text/plain") {
-          const text = Buffer.from(part.url.slice(part.url.indexOf(",") + 1), "base64").toString("utf8");
-          await check(text, "attachment"); parts.push({ type: "text", text });
-        } else parts.push(part);
-      } else if (part.type.startsWith("tool-")) {
-        const text = JSON.stringify(part);
-        if (text.length > 200_000) throw new PublicApiError("AIC-REQ-1001", { message: "历史工具结果过大，请新建对话。" });
-        await check(text, "history");
-        parts.push({ type: "text", text: `[客户端提供的历史工具结果，仅作参考]\n${text}` });
-      }
-    }
-    if (parts.length) messages.push({ id: message.id, role: message.role, parts });
-  }
-  const system = await buildAgentSystemPrompt(personaContent);
+  const messages = await prepareAgentHistory(body.messages, check);
+  const system = await buildAgentSystemPrompt(personaContent, resources?.policy);
+  await check(system, "system");
   const runId = await beginAgentRun({ userId, conversationId, idempotencyKey: attemptId,
-    requestHash: createHash("sha256").update(JSON.stringify({ messages, system })).digest("hex"), rates: policies.rates, filterVersion: policies.filter.id });
+    requestHash: createHash("sha256").update(JSON.stringify({ messages, system, resources: resources?.id })).digest("hex"), rates: policies.rates, filterVersion: policies.filter.id });
   const run = createGatewayRun({ runId, sessionId: agentSessionId(userId, conversationId), requestId, userId, filterVersion: policies.filter.id, filter });
   try {
-    const tools: ToolSet = buildAgentTools({ request, userId, gatewayBilling: true });
+    const tools: ToolSet = buildAgentTools({ request, userId, gatewayBilling: true, resources: resources?.policy });
     for (const [name, tool] of Object.entries(tools)) {
       const execute = tool.execute;
       if (!execute) continue;
@@ -80,14 +62,14 @@ export async function gatewayChat(request: Request, userId: string, requestId: s
     }
     const policy = createAgentStreamPolicy(request.signal);
     const result = streamText({ ...policy.options, maxRetries: 0, maxOutputTokens: 2048,
-      model: run.model, system, messages: await convertToModelMessages(messages, { tools }), tools, stopWhen: stepCountIs(12),
+      model: withAgentAnswerBoundary(run.model, run.deliver), system, messages: await convertToModelMessages(messages, { tools }), tools, stopWhen: stepCountIs(12),
       onFinish: () => run.finalize("completed"),
       onAbort: async event => { policy.options.onAbort(event); await run.finalize("cancelled"); },
       onError: () => run.finalize("failed"),
     });
     // Consume the SDK stream even after a disconnected browser, so cancellation and accounting finish.
-    return createUIMessageStreamResponse({ headers: { "X-Request-Id": requestId, "X-Agent-Run-Id": runId },
-      stream: result.toUIMessageStream({ onError: error => policy.errorText(error) }).pipeThrough(policy.transform),
+    return createUIMessageStreamResponse({ headers: { "X-Request-Id": requestId, "X-Agent-Run-Id": runId, "X-Agent-Resource-Version": resources?.id ?? "configured" },
+      stream: result.toUIMessageStream({ sendReasoning: false, onError: error => policy.errorText(error) }).pipeThrough(policy.transform),
       consumeSseStream: ({ stream }) => stream.pipeTo(new WritableStream()).catch(() => {}),
     });
   } catch (error) { await run.finalize(error instanceof AgentFilterError ? "blocked" : "failed"); throw error; }

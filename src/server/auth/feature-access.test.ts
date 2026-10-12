@@ -52,6 +52,7 @@ test("database roles guard all Agent/billing APIs before reads, writes or model 
   await t.mock.module(new URL("../agent/config.ts", import.meta.url), { namedExports: { agentLlmSettings: () => ({ configured: false }), agentModelChoices: () => [] } });
   await t.mock.module(new URL("../agent/llm.ts", import.meta.url), { namedExports: { getAgentModel: effect } });
   await t.mock.module(new URL("../agent/persona.ts", import.meta.url), { namedExports: { buildAgentSystemPrompt: effect } });
+  await t.mock.module(new URL("../agent/resources.ts", import.meta.url), { namedExports: { activeAgentResources: effect } });
   await t.mock.module(new URL("../agent/tools.ts", import.meta.url), { namedExports: { buildAgentTools: effect } });
   const { getFeatureAccess, requireFeatureSession } = await import("./feature-access.ts");
   const billing = await import("../../app/api/billing/route.ts");
