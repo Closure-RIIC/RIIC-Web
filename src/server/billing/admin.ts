@@ -5,6 +5,7 @@ import { getDatabasePool } from "../db/index.ts";
 import { compileFilterPolicy, parseFilterPolicy } from "../agent/filter-policy.ts";
 import { activeAgentPolicies, billingTransaction } from "./agent-accounting.ts";
 import { parseRatePolicy } from "./rate-policy.ts";
+import { parseResourcePolicy } from "../agent/resource-policy.ts";
 
 export class BillingAdminError extends Error {}
 function field(value: unknown, name: string, max = 200) {
@@ -130,14 +131,14 @@ export async function adjustBilling(actor: string, input: unknown) {
 export async function getAgentPolicies() {
   await activeAgentPolicies();
   const pool = getDatabasePool();
-  const [versions, gateway] = await Promise.all([pool.query("SELECT * FROM app.agent_policy_version ORDER BY created_at DESC LIMIT 100"), pool.query("SELECT * FROM app.agent_gateway_status ORDER BY id")]);
+  const [versions, gateway] = await Promise.all([pool.query("SELECT * FROM app.agent_policy_version WHERE kind IN ('rates','filter') ORDER BY created_at DESC LIMIT 100"), pool.query("SELECT * FROM app.agent_gateway_status ORDER BY id")]);
   return { versions: versions.rows, gateway: gateway.rows };
 }
 export async function changeAgentPolicy(actor: string, input: unknown) {
   const body = input as Record<string, unknown>;
   const reason = field(body?.reason, "变更原因", 500); const action = field(body.action, "操作");
   const kind = field(body.kind, "配置类型");
-  if (!["rates", "filter"].includes(kind) || !["draft", "publish", "rollback"].includes(action)) throw new BillingAdminError("配置操作无效。");
+  if (!["rates", "filter", "resources"].includes(kind) || !["draft", "publish", "rollback"].includes(action)) throw new BillingAdminError("配置操作无效。");
   return billingTransaction(async client => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext('riic-agent-policy'))");
     const active = (await client.query("SELECT * FROM app.agent_policy_version WHERE kind=$1 AND status='active'", [kind])).rows[0];
@@ -152,13 +153,16 @@ export async function changeAgentPolicy(actor: string, input: unknown) {
         const old = (await client.query("SELECT payload FROM app.agent_policy_version WHERE id=$1 AND kind=$2", [body.id, kind])).rows[0];
         if (!old) throw new BillingAdminError("回滚版本不存在。"); payload = old.payload;
       }
-      try { payload = kind === "rates" ? parseRatePolicy(payload) : parseFilterPolicy(payload); }
+      try { payload = kind === "rates" ? parseRatePolicy(payload) : kind === "resources" ? parseResourcePolicy(payload) : parseFilterPolicy(payload); }
       catch { throw new BillingAdminError("配置格式无效，请检查费率、词条或规则上限。"); }
       const version = (await client.query("SELECT coalesce(max(version),0)+1 AS version FROM app.agent_policy_version WHERE kind=$1", [kind])).rows[0].version;
       id = `${kind}:${version}`;
       await client.query("INSERT INTO app.agent_policy_version (id,kind,version,payload,author_id) VALUES ($1,$2,$3,$4,$5)", [id,kind,version,JSON.stringify(payload),actor]);
     }
     if (action !== "draft") {
+      if (kind === "resources") {
+        try { parseResourcePolicy(payload); } catch { throw new BillingAdminError("资源版本校验失败，未发布。"); }
+      }
       await client.query("UPDATE app.agent_policy_version SET status='retired' WHERE kind=$1 AND status='active'", [kind]);
       await client.query("UPDATE app.agent_policy_version SET status='active',published_at=now() WHERE id=$1", [id]);
     }

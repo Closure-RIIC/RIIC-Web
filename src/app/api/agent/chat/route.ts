@@ -16,6 +16,9 @@ import { agentGatewayEnabled, gatewaySettings } from "@/server/agent/gateway-run
 import { gatewayChat } from "@/server/agent/gateway-chat";
 import { AgentAccountingError } from "@/server/billing/agent-accounting";
 import { AgentFilterError } from "@/server/agent/filter-policy";
+import { AgentHistoryError, prepareAgentHistory } from "@/server/agent/message-history";
+import { withAgentAnswerBoundary } from "@/server/agent/answer-boundary";
+import { activeAgentResources } from "@/server/agent/resources";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -110,7 +113,7 @@ export async function GET(request: Request) {
         automatic,
         provider: settings.configured ? settings.provider : null,
         model: settings.configured ? settings.model : null,
-        personas: await listBuiltinAgentPersonas(),
+        personas: await listBuiltinAgentPersonas((await activeAgentResources())?.policy),
         models: automatic ? [] : agentModelChoices(),
       },
       requestId
@@ -146,11 +149,12 @@ export async function POST(request: Request) {
       return new Response(response.body, { status: 400, headers: response.headers });
     }
     let personaContent: string | undefined;
-    try { personaContent = await resolveAgentPersonaContent(body.persona); }
+    const resources = await activeAgentResources();
+    try { personaContent = await resolveAgentPersonaContent(body.persona, resources?.policy); }
     catch (error) {
       return failureResponse(new PublicApiError("AIC-REQ-1001", { message: "所选人格卡暂不可用，请重新选择。", cause: error }), requestId, "/api/agent/chat", startedAt);
     }
-    const fileParts = body.messages.flatMap((message) => message.parts.filter((part) => part.type === "file")).map((part) => part as unknown as { url?: unknown; mediaType?: unknown; filename?: unknown });
+    const fileParts = body.messages.flatMap((message) => Array.isArray(message?.parts) ? message.parts.filter((part) => part?.type === "file") : []).map((part) => part as unknown as { url?: unknown; mediaType?: unknown; filename?: unknown });
     if (fileParts.length > 4) {
       const response = failureResponse(new Error("一次最多发送 4 个附件。"), requestId, "/api/agent/chat", startedAt);
       return new Response(response.body, { status: 413, headers: response.headers });
@@ -161,8 +165,9 @@ export async function POST(request: Request) {
         return new Response(response.body, { status: 413, headers: response.headers });
       }
     }
-    if (agentGatewayEnabled()) return await gatewayChat(request, session.user.id, requestId, { ...body, messages: body.messages }, personaContent);
-    const tools = buildAgentTools({ request, userId: session.user.id });
+    if (agentGatewayEnabled()) return await gatewayChat(request, session.user.id, requestId, { ...body, messages: body.messages }, personaContent, resources ?? undefined);
+    const messages = await prepareAgentHistory(body.messages, async () => {});
+    const tools = buildAgentTools({ request, userId: session.user.id, resources: resources?.policy });
     // 临时监控：记录本次请求的完整输入（含历史消息与附件元数据）
     await monitorLog({
       event: "agent_request",
@@ -175,9 +180,9 @@ export async function POST(request: Request) {
     const streamPolicy = createAgentStreamPolicy(request.signal);
     const result = streamText({
       ...streamPolicy.options,
-      model: getAgentModel(settings),
-      system: await buildAgentSystemPrompt(personaContent),
-      messages: await convertToModelMessages(body.messages, { tools }),
+      model: withAgentAnswerBoundary(getAgentModel(settings)),
+      system: await buildAgentSystemPrompt(personaContent, resources?.policy),
+      messages: await convertToModelMessages(messages, { tools }),
       tools,
       stopWhen: stepCountIs(12),
       onFinish: async (event) => {
@@ -246,6 +251,7 @@ export async function POST(request: Request) {
       },
     });
     const stream = result.toUIMessageStream({
+      sendReasoning: false,
       onError: (error) => {
         const message = streamPolicy.errorText(error);
         console.error(JSON.stringify({
@@ -267,7 +273,7 @@ export async function POST(request: Request) {
       },
     });
     return createUIMessageStreamResponse({
-      headers: { "X-Request-Id": requestId },
+      headers: { "X-Request-Id": requestId, "X-Agent-Resource-Version": resources?.id ?? "configured" },
       stream: stream.pipeThrough(streamPolicy.transform),
     });
   } catch (error) {
@@ -278,7 +284,7 @@ export async function POST(request: Request) {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : null,
     });
-    return failureResponse(error instanceof AgentFilterError || error instanceof AgentAccountingError
+    return failureResponse(error instanceof AgentFilterError || error instanceof AgentAccountingError || error instanceof AgentHistoryError
       ? new PublicApiError("AIC-REQ-1001", { message: error.message }) : error, requestId, "/api/agent/chat", startedAt);
   }
 }

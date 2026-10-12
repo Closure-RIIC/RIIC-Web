@@ -70,7 +70,6 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
                 if (!buffer) throw new Error("Unexpected text stream sequence");
                 const delta = buffer.push(value.delta);
                 if (delta) {
-                  if (!delivered && value.type === "text-delta") { await markRunDelivered(input.runId); delivered = true; }
                   controller.enqueue({ ...value, delta });
                 }
                 if (delta) return;
@@ -80,7 +79,6 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
                 const prefix = value.type.split("-")[0]; const key = `${prefix}:${value.id}`;
                 const delta = buffers.get(key)?.push("", true) ?? "";
                 if (delta) {
-                  if (!delivered && prefix === "text") { await markRunDelivered(input.runId); delivered = true; }
                   controller.enqueue({ type: prefix === "text" ? "text-delta" : "reasoning-delta", id: value.id, delta });
                 }
                 buffers.delete(key);
@@ -123,5 +121,7 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
       }
     },
   } });
-  return { model, finalize };
+  return { model, finalize, async deliver() {
+    if (!delivered) { await markRunDelivered(input.runId); delivered = true; }
+  } };
 }

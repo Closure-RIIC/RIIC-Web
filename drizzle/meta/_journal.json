@@ -169,6 +169,13 @@
       "when": 1791784856941,
       "tag": "0023_agent_reservation_constraints",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791831620407,
+      "tag": "0024_agent_resources",
+      "breakpoints": true
     }
   ]
 }

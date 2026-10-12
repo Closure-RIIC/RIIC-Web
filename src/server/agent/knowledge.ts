@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 import { agentKnowledgeDir } from "./config.ts";
+import { resourceKnowledgeFile, type AgentResourcePolicy } from "./resource-policy.ts";
 
 export interface KbCatalogEntry {
   path: string;
@@ -43,7 +44,8 @@ const CATALOG_CACHE_TTL_MS = 60_000;
 
 // 知识库文件读取失败时不把系统级错误（含绝对路径的 ENOENT 等）透传给模型，
 // 统一替换为不含内部路径的友好提示。
-async function readKbFile(relativePath: string, what: string): Promise<string> {
+async function readKbFile(relativePath: string, what: string, resources?: AgentResourcePolicy): Promise<string> {
+  if (resources) return resourceKnowledgeFile(resources, relativePath);
   try {
     return await readFile(path.join(agentKnowledgeDir(), relativePath), "utf-8");
   } catch {
@@ -51,14 +53,14 @@ async function readKbFile(relativePath: string, what: string): Promise<string> {
   }
 }
 
-async function loadCatalog(): Promise<KbCatalogEntry[]> {
-  if (!agentKnowledgeDir()) {
+async function loadCatalog(resources?: AgentResourcePolicy): Promise<KbCatalogEntry[]> {
+  if (!resources && !agentKnowledgeDir()) {
     throw new Error("知识库目录未配置：请在环境变量 AGENT_KB_DIR 中指向本地克隆的 RIIC-knowledge 仓库（外部仓库，不随本仓库分发）。");
   }
-  if (catalogCache && catalogCache.root === agentKnowledgeDir() && Date.now() - catalogCache.loadedAt < CATALOG_CACHE_TTL_MS) {
+  if (!resources && catalogCache && catalogCache.root === agentKnowledgeDir() && Date.now() - catalogCache.loadedAt < CATALOG_CACHE_TTL_MS) {
     return catalogCache.entries;
   }
-  const text = await readKbFile("index/标题清单.md", "知识库索引");
+  const text = await readKbFile("index/标题清单.md", "知识库索引", resources);
   const entries: KbCatalogEntry[] = [];
   for (const line of text.split(/\r?\n/)) {
     const match = line.match(/^-\s+`([^`]+)`(?:（[^）]*）)?(.*)$/);
@@ -67,13 +69,13 @@ async function loadCatalog(): Promise<KbCatalogEntry[]> {
     const label = rest.trim().replace(/\s+/g, " ");
     entries.push({ path: docPath, label: label || docPath });
   }
-  catalogCache = { entries, loadedAt: Date.now(), root: agentKnowledgeDir() };
+  if (!resources) catalogCache = { entries, loadedAt: Date.now(), root: agentKnowledgeDir() };
   return entries;
 }
 
-export async function searchKnowledgeBase(query: string): Promise<KbRouteResult> {
-  const entries = await loadCatalog();
-  const dictionary = JSON.parse(await readKbFile("index/消歧字典.json", "消歧字典")) as { normalized_keys?: Record<string, string>; substring_warnings?: Array<{ short: string; long: string; resolution: string }>; [key: string]: unknown };
+export async function searchKnowledgeBase(query: string, resources?: AgentResourcePolicy): Promise<KbRouteResult> {
+  const entries = await loadCatalog(resources);
+  const dictionary = JSON.parse(await readKbFile("index/消歧字典.json", "消歧字典", resources)) as { normalized_keys?: Record<string, string>; substring_warnings?: Array<{ short: string; long: string; resolution: string }>; [key: string]: unknown };
   const compact = normalizeForMatch(query).replace(/[·・]/g, "");
   const canonical = Object.entries(dictionary.normalized_keys ?? {}).find(([key]) => normalizeForMatch(key) === compact)?.[1];
   const expanded = typeof canonical === "string" ? `${query} ${canonical}` : query;
@@ -124,8 +126,8 @@ export interface KbReadResult {
   nextOffset: number | null;
 }
 
-export async function readKnowledgeDoc(relativePath: string, offset = 0): Promise<KbReadResult> {
-  if (!agentKnowledgeDir()) throw new Error("知识服务暂不可用。");
+export async function readKnowledgeDoc(relativePath: string, offset = 0, resources?: AgentResourcePolicy): Promise<KbReadResult> {
+  if (!resources && !agentKnowledgeDir()) throw new Error("知识服务暂不可用。");
   if (!relativePath.startsWith("docs/") || relativePath.includes("\\") || relativePath.split("/").includes("..")) throw new Error("仅可读取知识正文。");
   if (!Number.isInteger(offset) || offset < 0) throw new Error("无效正文偏移。");
   const root = path.resolve(agentKnowledgeDir());
@@ -139,7 +141,7 @@ export async function readKnowledgeDoc(relativePath: string, offset = 0): Promis
   }
   let text: string;
   try {
-    text = await readFile(target, "utf-8");
+    text = resources ? resourceKnowledgeFile(resources, relativePath) : await readFile(target, "utf-8");
   } catch {
     throw new Error(`读取失败：${relativePath} 不存在或无法读取。可用 kb_route 重新定位。`);
   }
