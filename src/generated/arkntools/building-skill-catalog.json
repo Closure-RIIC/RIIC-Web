@@ -3976,14 +3976,18 @@
     "id": "recycle_spd&cost_000",
     "name": "拾荒者",
     "descriptionRich": "进驻回收站时，材料转化效率<@cc.vup>+20%</>",
-    "tags": [],
+    "tags": [
+      "转化效率"
+    ],
     "icon": "/images/building-skills/bskill_recycle_spd&cost1.png"
   },
   "recycle_spd&cost_010": {
     "id": "recycle_spd&cost_010",
     "name": "捡海人",
     "descriptionRich": "进驻回收站时，材料转化效率<@cc.vup>+30%</>",
-    "tags": [],
+    "tags": [
+      "转化效率"
+    ],
     "icon": "/images/building-skills/bskill_recycle_spd&cost2.png"
   },
   "trade_cost_000": {
