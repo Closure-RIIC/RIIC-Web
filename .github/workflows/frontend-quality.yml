@@ -486,6 +486,9 @@ jobs:
       - name: Production profile enabled boundary
         run: npm run test:e2e:production-profile
 
+      - name: Agent billing and moderation boundaries
+        run: npm run test:agent-billing:e2e
+
   webkit_e2e:
     name: Scheduled WebKit compatibility
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_webkit)

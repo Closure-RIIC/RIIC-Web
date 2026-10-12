@@ -1,7 +1,7 @@
 import { convertToModelMessages, createUIMessageStreamResponse, stepCountIs, streamText, type UIMessage } from "ai";
 import { appendFile } from "node:fs/promises";
 
-import { assertSameOrigin, createRequestId, failureResponse, PublicApiError, successResponse } from "@/server/api-contract";
+import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, successResponse } from "@/server/api-contract";
 import { requireFeatureSession } from "@/server/auth/feature-access";
 import { createAgentUsage, finalizeAgentUsage, getWallet } from "@/server/billing/service";
 import { SOLVE_TOOL_POINTS } from "@/server/billing/config";
@@ -12,6 +12,10 @@ import { buildAgentSystemPrompt } from "@/server/agent/persona";
 import { listBuiltinAgentPersonas, resolveAgentPersonaContent } from "@/server/agent/persona-catalog";
 import { buildAgentTools } from "@/server/agent/tools";
 import { calculateAgentTokenCost } from "@/server/billing/pricing";
+import { agentGatewayEnabled, gatewaySettings } from "@/server/agent/gateway-runtime";
+import { gatewayChat } from "@/server/agent/gateway-chat";
+import { AgentAccountingError } from "@/server/billing/agent-accounting";
+import { AgentFilterError } from "@/server/agent/filter-policy";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -98,13 +102,16 @@ export async function GET(request: Request) {
   try {
     await requireAgentAccess(request);
     const settings = agentLlmSettings();
+    const automatic = agentGatewayEnabled();
+    if (automatic) gatewaySettings();
     return successResponse(
       {
-        enabled: settings.configured,
+        enabled: automatic || settings.configured,
+        automatic,
         provider: settings.configured ? settings.provider : null,
         model: settings.configured ? settings.model : null,
         personas: await listBuiltinAgentPersonas(),
-        models: agentModelChoices(),
+        models: automatic ? [] : agentModelChoices(),
       },
       requestId
     );
@@ -119,12 +126,13 @@ export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
     const { session } = await requireAgentAccess(request);
-    const body = (await request.json()) as { model?: unknown; messages?: UIMessage[]; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
+    if (agentGatewayEnabled()) enforceRateLimit("agent-chat", session.user.id, 20, 60_000);
+    const body = (await readJsonBody(request, 16 * 1024 * 1024)) as { model?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; messages?: UIMessage[]; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
     if (body.model !== undefined && body.model !== "deepseek" && body.model !== "glm") {
       throw new PublicApiError("AIC-REQ-1001", { message: "请选择可用的模型。" });
     }
     const settings = agentLlmSettings(body.model);
-    if (!settings.configured) {
+    if (!settings.configured && !agentGatewayEnabled()) {
       const response = failureResponse(
         new Error(`AGENT_LLM_API_KEY 未配置（provider=${settings.provider}），请在本机 .env.local 填入后重启开发服务。`),
         requestId,
@@ -153,6 +161,7 @@ export async function POST(request: Request) {
         return new Response(response.body, { status: 413, headers: response.headers });
       }
     }
+    if (agentGatewayEnabled()) return await gatewayChat(request, session.user.id, requestId, { ...body, messages: body.messages }, personaContent);
     const tools = buildAgentTools({ request, userId: session.user.id });
     // 临时监控：记录本次请求的完整输入（含历史消息与附件元数据）
     await monitorLog({
@@ -269,6 +278,7 @@ export async function POST(request: Request) {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : null,
     });
-    return failureResponse(error, requestId, "/api/agent/chat", startedAt);
+    return failureResponse(error instanceof AgentFilterError || error instanceof AgentAccountingError
+      ? new PublicApiError("AIC-REQ-1001", { message: error.message }) : error, requestId, "/api/agent/chat", startedAt);
   }
 }

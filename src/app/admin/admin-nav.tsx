@@ -14,10 +14,11 @@ export const ADMIN_NAVIGATION = [
   { path: "/changelog", title: "changelog", description: "changelogHint", icon: BookOpen, adminOnly: true, group: "management" },
   { path: "/users", title: "users", description: "usersHint", icon: UsersRound, adminOnly: true, group: "management" },
   { path: "/billing", title: "billing", description: "billingHint", icon: Gift, adminOnly: true, group: "management" },
+  { path: "/agent", title: "agent", description: "agentHint", icon: ShieldCheck, adminOnly: true, group: "management" },
 ] as const;
 
 export function adminNavigation(isAdmin: boolean, basePath: string) {
-  return ADMIN_NAVIGATION.filter(item => (isAdmin || !item.adminOnly) && (basePath === "/admin" || item.path !== "/billing"));
+  return ADMIN_NAVIGATION.filter(item => (isAdmin || !item.adminOnly) && (basePath === "/admin" || !["/billing", "/agent"].includes(item.path)));
 }
 
 export function AdminNav({ isAdmin, name, basePath = "/admin" }: { isAdmin: boolean; name: string; basePath?: string }) {

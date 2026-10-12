@@ -16,7 +16,7 @@ type Product = { id: string; name: string; amountFen: number; points: number; ba
 type BillingData = {
   canSimulatePayment?: boolean;
   products: Product[];
-  wallet: { paidPoints: number; monthlyPoints: number; monthlyExpiresAt: string | null; totalPoints: number };
+  wallet: { paidPoints: number; monthlyPoints: number; monthlyExpiresAt: string | null; totalPoints: number; reservedPoints?: number };
   ledger: Array<{ id: string; kind: string; pointsDelta: number; createdAt: string; metadata?: Record<string, unknown> | null }>;
   orders: Array<{ id: string; productId: string; status: string; amountFen: number; points: number; paymentUrl: string | null; createdAt: string; paidAt: string | null }>;
   usage: Array<{ id: string; toolName: string; status: string; points: number; toolFeePoints?: number; tokenPoints?: number | null; inputTokens: number | null; outputTokens: number | null; cachedInputTokens: number | null; upstreamCostRmb: number | null; chargedCostRmb: number | null; createdAt: string }>;
@@ -206,6 +206,7 @@ export function BillingPrototype() {
         <div className={styles.available}>
           <h2 className={styles.caption}>可用积分</h2>
           <p className={`${styles.balance} font-number`}>{data.wallet.totalPoints.toLocaleString()}<small>积分</small></p>
+          {!!data.wallet.reservedPoints && <p className="mt-2 text-xs text-muted-foreground">{locale === "en" ? `${data.wallet.reservedPoints} points reserved for active requests` : `另有 ${data.wallet.reservedPoints} 积分用于进行中的请求，结算后释放剩余预留`}</p>}
           <p className={`${styles.caption} mt-3`}>仅用于助理对话 · 基建计算器求解免费</p>
         </div>
         <dl className={styles.walletDetails}>
