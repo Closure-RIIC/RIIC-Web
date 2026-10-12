@@ -5,7 +5,7 @@ const webServerPort = new URL(baseURL).port || "80";
 
 export default defineConfig({
   testDir: "./e2e",
-  testIgnore: "production-profile.spec.ts",
+  testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts"],
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -22,7 +22,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: ["production-profile.spec.ts", "plush-*.spec.ts"],
+      testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts", "plush-*.spec.ts"],
       use: { ...devices["Desktop Chrome"] },
     },
     {

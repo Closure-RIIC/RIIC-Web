@@ -40,7 +40,7 @@ test("database roles guard all Agent/billing APIs before reads, writes or model 
   await t.mock.module(new URL("./index.ts", import.meta.url), { namedExports: { websiteSession: async () => session } });
   await t.mock.module(new URL("../db/index.ts", import.meta.url), { namedExports: { getDatabase: () => ({
     select: () => ({ from: () => ({ where: () => ({ limit: async () => record ? [record] : [] }) }) }),
-  }) } });
+  }), getDatabasePool: () => { effects++; throw new Error("Denied requests must not open the accounting pool"); } } });
   await t.mock.module(new URL("../db/schema.ts", import.meta.url), { namedExports: { user: { id: "id", role: "role", banned: "banned" } } });
   await t.mock.module(new URL("../billing/service.ts", import.meta.url), { namedExports: {
     BillingError: class extends Error {}, createBillingOrder: effect, getWallet: effect,

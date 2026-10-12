@@ -155,6 +155,20 @@
       "when": 1791606703987,
       "tag": "0021_gacha_archive",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791782582088,
+      "tag": "0022_agent_gateway_billing",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791784856941,
+      "tag": "0023_agent_reservation_constraints",
+      "breakpoints": true
     }
   ]
 }

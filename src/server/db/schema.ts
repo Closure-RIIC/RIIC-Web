@@ -5,6 +5,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgSchema,
   pgTable,
   text,
@@ -490,10 +491,109 @@ export const billingWallet = appSchema.table("billing_wallet", {
   userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
   paidPoints: integer("paid_points").notNull().default(0),
   monthlyPoints: integer("monthly_points").notNull().default(0),
+  heldPaidPoints: integer("held_paid_points").notNull().default(0),
+  heldMonthlyPoints: integer("held_monthly_points").notNull().default(0),
   monthlyExpiresAt: timestamp("monthly_expires_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, table => [check("billing_wallet_reservations_valid", sql`${table.heldPaidPoints} >= 0 and ${table.heldMonthlyPoints} >= 0 and ${table.paidPoints} >= ${table.heldPaidPoints} and ${table.monthlyPoints} >= ${table.heldMonthlyPoints}`)]);
+
+/** Versioned application policy; gateway settings are a derived, private copy. */
+export const agentPolicyVersion = appSchema.table("agent_policy_version", {
+  id: text("id").primaryKey(),
+  kind: text("kind").notNull(),
+  version: integer("version").notNull(),
+  status: text("status").notNull().default("draft"),
+  payload: jsonb("payload").notNull(),
+  authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+}, table => [uniqueIndex("agent_policy_version_kind_version").on(table.kind, table.version),
+  uniqueIndex("agent_policy_one_active").on(table.kind).where(sql`${table.status} = 'active'`),
+  check("agent_policy_kind", sql`${table.kind} in ('rates','filter')`),
+  check("agent_policy_status", sql`${table.status} in ('draft','active','retired')`)]);
+
+export const agentRun = appSchema.table("agent_run", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+  conversationId: text("conversation_id").notNull(),
+  idempotencyKey: text("idempotency_key").notNull(),
+  requestHash: text("request_hash").notNull(),
+  state: text("state").notNull().default("running"),
+  settlement: text("settlement").notNull().default("reserved"),
+  policy: jsonb("policy").notNull(),
+  rateVersion: text("rate_version").notNull(),
+  filterVersion: text("filter_version").notNull(),
+  heldPaid: integer("held_paid").notNull().default(0),
+  heldMonthly: integer("held_monthly").notNull().default(0),
+  monthlyExpiresAt: timestamp("monthly_expires_at", { withTimezone: true }),
+  chargedPoints: integer("charged_points").notNull().default(0),
+  toolPoints: integer("tool_points").notNull().default(0),
+  delivered: boolean("delivered").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  heartbeatAt: timestamp("heartbeat_at", { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+}, table => [uniqueIndex("agent_run_owner_idempotency").on(table.userId, table.idempotencyKey),
+  index("agent_run_owner_created").on(table.userId, table.createdAt), index("agent_run_settlement_heartbeat").on(table.settlement, table.heartbeatAt),
+  check("agent_run_nonnegative", sql`${table.heldPaid} >= 0 and ${table.heldMonthly} >= 0 and ${table.chargedPoints} >= 0 and ${table.toolPoints} >= 0`)]);
+
+export const agentModelCall = appSchema.table("agent_model_call", {
+  id: text("id").primaryKey(),
+  runId: text("run_id").notNull().references(() => agentRun.id),
+  step: integer("step").notNull(),
+  provider: text("provider"), model: text("model"), gatewayRequestId: text("gateway_request_id"),
+  status: text("status").notNull().default("started"),
+  inputTokens: integer("input_tokens"), outputTokens: integer("output_tokens"), cachedInputTokens: integer("cached_input_tokens"),
+  upstreamRmb: numeric("upstream_rmb", { precision: 24, scale: 12 }),
+  chargedRmb: numeric("charged_rmb", { precision: 24, scale: 12 }),
+  budgetPoints: integer("budget_points").notNull(),
+  rateVersion: text("rate_version").notNull(),
+  details: jsonb("details"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+}, table => [uniqueIndex("agent_model_call_run_step").on(table.runId, table.step), index("agent_model_call_created").on(table.createdAt),
+  index("agent_model_call_model_created").on(table.model, table.createdAt), index("agent_model_call_gateway_request").on(table.gatewayRequestId)]);
+
+export const agentToolCharge = appSchema.table("agent_tool_charge", {
+  id: text("id").primaryKey(), runId: text("run_id").notNull().references(() => agentRun.id),
+  toolCallId: text("tool_call_id").notNull(), name: text("name").notNull(), status: text("status").notNull(),
+  points: integer("points").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [uniqueIndex("agent_tool_charge_run_call").on(table.runId, table.toolCallId)]);
+
+export const billingReview = appSchema.table("billing_review", {
+  id: text("id").primaryKey(), runId: text("run_id").references(() => agentRun.id),
+  kind: text("kind").notNull(), status: text("status").notNull().default("open"),
+  evidence: jsonb("evidence").notNull(), resolution: text("resolution"),
+  actorId: text("actor_id").references(() => user.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+}, table => [index("billing_review_status_created").on(table.status, table.createdAt)]);
+
+export const agentFilterEvent = appSchema.table("agent_filter_event", {
+  id: text("id").primaryKey(), requestId: text("request_id").notNull(),
+  userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+  version: text("version").notNull(), stage: text("stage").notNull(), ruleIds: jsonb("rule_ids").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [index("agent_filter_event_created").on(table.createdAt)]);
+
+export const billingAdminAudit = appSchema.table("billing_admin_audit", {
+  id: text("id").primaryKey(), actorId: text("actor_id").references(() => user.id, { onDelete: "set null" }),
+  action: text("action").notNull(), target: text("target").notNull(), reason: text("reason").notNull(),
+  idempotencyKey: text("idempotency_key").notNull(), details: jsonb("details").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [uniqueIndex("billing_admin_audit_idempotency").on(table.idempotencyKey), index("billing_admin_audit_created").on(table.createdAt)]);
+
+export const agentGatewayStatus = appSchema.table("agent_gateway_status", {
+  id: text("id").primaryKey(), filterVersion: text("filter_version"), status: text("status").notNull(),
+  details: jsonb("details").notNull(), updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+export const agentGatewayUsage = appSchema.table("agent_gateway_usage", {
+  id: text("id").primaryKey(), sessionId: text("session_id"), provider: text("provider"), model: text("model"),
+  callId: text("call_id").references(() => agentModelCall.id),
+  details: jsonb("details").notNull(), createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [index("agent_gateway_usage_call").on(table.callId), index("agent_gateway_usage_created").on(table.createdAt)]);
 
 export const billingOrder = appSchema.table("billing_order", {
   id: text("id").primaryKey(),

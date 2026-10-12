@@ -300,6 +300,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     if (agentStatus === "payment_required") setCreditRevision(value => value + 1);
   }), [agentStatus]);
   const [modelChoices, setModelChoices] = useState<AgentModelChoice[]>([]);
+  const [automaticRouting, setAutomaticRouting] = useState(false);
   const [selectedModel, setSelectedModel] = useState<AgentModelChoice["id"]>();
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState<FileUIPart[]>([]);
@@ -382,11 +383,12 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
         }
         const payload = (await response.json()) as {
           success?: boolean;
-          data?: { enabled?: boolean; personas?: { id?: unknown }[]; provider?: AgentModelChoice["id"]; models?: AgentModelChoice[] };
+          data?: { enabled?: boolean; automatic?: boolean; personas?: { id?: unknown }[]; provider?: AgentModelChoice["id"]; models?: AgentModelChoice[] };
         };
         if (!cancelled) {
           const choices = payload.data?.models ?? [];
           setModelChoices(choices);
+          setAutomaticRouting(payload.data?.automatic === true);
           const previous = (runtimeConversation.requestOptions?.body as { model?: unknown } | undefined)?.model;
           setSelectedModel(choices.find((choice) => choice.id === previous)?.id
             ?? choices.find((choice) => choice.id === "deepseek")?.id
@@ -458,6 +460,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     followMessages.current = true;
     runtime.setRequestOptions(runtimeConversation, { body: {
       model: selectedModel,
+      conversationId, attemptId: crypto.randomUUID(),
       ...(activePersona ? { persona: activePersona.kind === "builtin" ? { id: activePersona.id, kind: "builtin" } : { id: activePersona.id, name: activePersona.name, content: activePersona.content } } : {}),
     } });
     await runtime.run(runtimeConversation, () => sendMessage(
@@ -472,7 +475,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     if (!question) return;
     clearError();
     followMessages.current = true;
-    runtime.setRequestOptions(runtimeConversation, { body: { ...runtimeConversation.requestOptions?.body, model: selectedModel } });
+    runtime.setRequestOptions(runtimeConversation, { body: { ...runtimeConversation.requestOptions?.body, model: selectedModel, conversationId, attemptId: crypto.randomUUID() } });
     await runtime.run(runtimeConversation, () => regenerate({ messageId: question.id, ...runtimeConversation.requestOptions }));
   };
 
@@ -572,6 +575,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
           <p className="mt-2 hidden text-xs text-muted-foreground md:block">{en ? "Your account, base and training — in one conversation." : "从了解账号到安排基建，把想做的事交给可露希尔。"}</p>
         </div>
         <div className={dialogueStyles.headerActions}>
+        {automaticRouting && <span className="text-xs text-muted-foreground">{en ? "Auto" : "自动调度"}</span>}
         {modelChoices.length > 0 ? <Combobox items={modelChoices} filteredItems={modelChoices}
           value={currentModel ?? null}
           itemToStringValue={(choice) => `${modeLabel(choice.id)} ${choice.label}`} isItemEqualToValue={(choice, value) => choice.id === value.id}

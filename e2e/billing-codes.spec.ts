@@ -33,7 +33,8 @@ test("admin issues and revokes a batch while redemption updates wallet and prese
     const recipient = await login(recipientContext, "user");
     const reviewer = await login(reviewerContext, "reviewer");
     await page.goto("/admin/billing");
-    await expect(page.getByRole("heading", { name: "积分兑换码", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "计费管理", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "兑换码", exact: true }).click();
     await page.getByLabel("批次名称", { exact: true }).fill("E2E campaign");
     await page.getByLabel("兑换码数量（1–100）", { exact: true }).fill("2");
     await page.getByLabel("每个码的积分", { exact: true }).fill("30");
@@ -85,7 +86,7 @@ test("admin issues and revokes a batch while redemption updates wallet and prese
       expect((await context.request.patch("/api/admin/billing/cdk", { headers: account.headers, data: { batchId: randomUUID(), reason: "forbidden" } })).status()).toBe(403);
     }
     await page.setViewportSize({ width: 375, height: 812 });
-    await expect(page.getByRole("heading", { name: "积分兑换码", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "计费管理", exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   } finally {
     await recipientContext.close();

@@ -47,3 +47,12 @@ await build({
   outfile: "dist/quality-worker.cjs",
   logLevel: "info",
 });
+
+await build({
+  entryPoints: ["scripts/agent-worker.mts"], bundle: true, platform: "node", format: "cjs",
+  outfile: "dist/agent-worker.cjs", logLevel: "info",
+  plugins: [{ name: "server-only-worker", setup(builder) {
+    builder.onResolve({ filter: /^server-only$/ }, () => ({ path: "server-only", namespace: "empty" }));
+    builder.onLoad({ filter: /.*/, namespace: "empty" }, () => ({ contents: "", loader: "js" }));
+  } }],
+});
