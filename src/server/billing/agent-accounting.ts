@@ -25,7 +25,7 @@ export async function activeAgentPolicies() {
       await client.query(`INSERT INTO app.agent_policy_version (id,kind,version,status,payload,published_at)
         SELECT $1,$2,1,'active',$3,now() WHERE NOT EXISTS (SELECT 1 FROM app.agent_policy_version WHERE kind=$2)`, [`${kind}:1`, kind, JSON.stringify(payload)]);
     }
-    const { rows } = await client.query<{ id: string; kind: string; payload: unknown }>("SELECT id,kind,payload FROM app.agent_policy_version WHERE status='active'");
+    const { rows } = await client.query<{ id: string; kind: string; payload: unknown }>("SELECT id,kind,payload FROM app.agent_policy_version WHERE status='active' AND kind IN ('rates','filter')");
     const rates = rows.find(row => row.kind === "rates"); const filter = rows.find(row => row.kind === "filter");
     if (!rates || !filter) throw new Error("Agent policy unavailable");
     return { rates: { id: rates.id, policy: parseRatePolicy(rates.payload) }, filter: { id: filter.id, policy: parseFilterPolicy(filter.payload) } };

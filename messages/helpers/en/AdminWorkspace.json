@@ -35,7 +35,7 @@
   "billing": "Billing",
   "billingHint": "Manage usage, costs, wallets, orders, rates and reconciliation.",
   "agent": "Agent management",
-  "agentHint": "Review gateway status, basic filter policies and filter events.",
+  "agentHint": "Manage personas, prompts, knowledge and skills, and review gateway and filter events.",
   "cdkCreate": "Create credit codes",
   "cdkGrantHint": "Grant promotional credits without debiting your wallet. Each code can be redeemed once for permanent credits.",
   "cdkCount": "Number of codes (1–100)",

@@ -22,7 +22,7 @@ test("admin billing, filter policies, role boundaries and automatic Agent select
     await page.goto("/admin/billing");await expect(page.getByRole("heading",{name:"计费管理",exact:true})).toBeVisible();
     await expect(page.getByText("已知模型成本 ¥",{exact:true})).toBeVisible();
     await page.getByRole("button",{name:"用户钱包",exact:true}).click();
-    await page.getByRole("button",{name:"调账",exact:true}).click();
+    await page.getByRole("row").filter({hasText:admin}).getByRole("button",{name:"调账",exact:true}).click();
     await page.getByLabel("积分数",{exact:true}).fill("3");await page.getByLabel("操作原因",{exact:true}).fill("E2E adjustment");
     await page.getByRole("button",{name:"确认调账",exact:true}).click();await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect.poll(async()=>Number((await pool.query("SELECT paid_points FROM app.billing_wallet WHERE user_id=$1",[admin])).rows[0].paid_points)).toBe(23);

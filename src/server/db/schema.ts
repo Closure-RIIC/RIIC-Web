@@ -510,7 +510,7 @@ export const agentPolicyVersion = appSchema.table("agent_policy_version", {
   publishedAt: timestamp("published_at", { withTimezone: true }),
 }, table => [uniqueIndex("agent_policy_version_kind_version").on(table.kind, table.version),
   uniqueIndex("agent_policy_one_active").on(table.kind).where(sql`${table.status} = 'active'`),
-  check("agent_policy_kind", sql`${table.kind} in ('rates','filter')`),
+  check("agent_policy_kind", sql`${table.kind} in ('rates','filter','resources')`),
   check("agent_policy_status", sql`${table.status} in ('draft','active','retired')`)]);
 
 export const agentRun = appSchema.table("agent_run", {

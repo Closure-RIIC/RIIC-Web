@@ -25,11 +25,13 @@ import { buildCalculatorTools, type AgentOperatorPool } from "./calculator-tools
 import { buildHealthTools } from "./health-tools.ts";
 import { chargeAgentTool } from "@/server/billing/service";
 import { SOLVE_TOOL_POINTS } from "@/server/billing/config";
+import { resourceSkill, type AgentResourcePolicy } from "./resource-policy.ts";
 
 export interface AgentToolContext {
   request: Request;
   userId: string;
   gatewayBilling?: boolean;
+  resources?: AgentResourcePolicy;
 }
 
 const ROTATION_PROFILES: RotationProfile[] = ["abc_12_6_6", "abc_12_12_12", "main_backup_12_12", "fiammetta_8_8_4_4", "abyssal_7_5_7_5"];
@@ -517,7 +519,7 @@ export function buildAgentTools(ctx: AgentToolContext) {
     load_agent_skill: tool({
       description: "按 id 加载已启用任务指引；可按复杂请求自主组合，简单排班/专精/公招无需加载。指引是取证流程，不是事实来源。",
       inputSchema: z.object({ id: z.string().min(1) }).strict(),
-      execute: async (input) => guarded(ctx.userId, "load_agent_skill", input, async () => readAgentSkill(agentKnowledgeDir(), input.id)),
+      execute: async (input) => guarded(ctx.userId, "load_agent_skill", input, async () => ctx.resources ? resourceSkill(ctx.resources, input.id) : readAgentSkill(agentKnowledgeDir(), input.id)),
     }),
 
     kb_route: tool({
@@ -526,7 +528,7 @@ export function buildAgentTools(ctx: AgentToolContext) {
       inputSchema: z.object({
         question: z.string().min(1).describe("用户的问题或主题关键词，如 搓玉 源石碎片 无人机折算"),
       }),
-      execute: async (input) => guarded(ctx.userId, "kb_route", input, async () => searchKnowledgeBase(input.question)),
+      execute: async (input) => guarded(ctx.userId, "kb_route", input, async () => searchKnowledgeBase(input.question, ctx.resources)),
     }),
 
     kb_read: tool({
@@ -535,7 +537,7 @@ export function buildAgentTools(ctx: AgentToolContext) {
         path: z.string().min(1).describe("知识库内相对路径，如 docs/1-基础设定/资源体系/产出常数表.md"),
         offset: z.number().int().min(0).optional().describe("续读时使用上次 nextOffset"),
       }),
-      execute: async (input) => guarded(ctx.userId, "kb_read", input, async () => readKnowledgeDoc(input.path, input.offset)),
+      execute: async (input) => guarded(ctx.userId, "kb_read", input, async () => readKnowledgeDoc(input.path, input.offset, ctx.resources)),
     }),
   };
 }
