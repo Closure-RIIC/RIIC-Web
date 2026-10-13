@@ -26,7 +26,12 @@ const createdFeedback = [];
 await db.insert(schema.user).values({ id, name: "Quality test reviewer", email: `${id}@example.invalid`, emailVerified: true, role: "reviewer" });
 await db.insert(schema.qualityBundle).values(versions.map((id) => ({ id, label: "TEST ONLY", executableSha256: "0".repeat(64) })));
 const input = { operbox: [{ id: "test", name: "测试", own: true, elite: 2, level: 90, rarity: 6, potential: 6 }], layout: { template: "243", drone_cap: 235, scenario: {}, rooms: [{ id: "control", kind: "control_center", level: 5 }, { id: "power", kind: "power_plant", level: 3 }] }, rotation: "abc_12_6_6", fiammetta_enable: false };
-const draft = (number = 0) => service.createDraft({ ...input, layout: { ...input.layout, drone_cap: number } }, id, [{ name: `generated-${number}` }]);
+// Keep 500 distinct inputs within the real drone and operator-level bounds.
+const draft = (number = 0) => service.createDraft({
+  ...input,
+  layout: { ...input.layout, drone_cap: number % 251 },
+  operbox: input.operbox.map((operator) => ({ ...operator, level: 90 - Math.floor(number / 251) })),
+}, id, [{ name: `generated-${number}` }]);
 async function mockExecute(batchId, caseId, attemptId, bundles) {
   assert.deepEqual(bundles, versions);
   await writeArtifact(["batches", batchId, caseId, attemptId, "result.json"], { synthetic: true, bundles });

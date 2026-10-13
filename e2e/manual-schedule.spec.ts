@@ -50,7 +50,7 @@ test("calculator shows the two-slot recycling station with training visuals", as
   const training = board.locator('[data-room-group="training"]');
   await expect(recycling).toBeVisible();
   await expect(recycling.locator('.infra-operator-slot')).toHaveCount(2);
-  await expect(recycling).toContainText("待配置");
+  await expect(recycling).toContainText("默认由 MAA 自动填充");
   const visual = (element: Element) => ({
     accent: getComputedStyle(element).getPropertyValue('--room-accent'),
     background: getComputedStyle(element.querySelector('.infra-room-emblem')!).backgroundImage,
