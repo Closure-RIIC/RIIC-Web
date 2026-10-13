@@ -16,6 +16,7 @@ export interface UserSettings {
   showFeedback: boolean;
   showImages: boolean;
   allowReplacementOperatorSort: boolean;
+  recyclingRoomLevel: 1 | 2 | 3;
 }
 
 export const DEFAULT_USER_SETTINGS: UserSettings = {
@@ -33,6 +34,7 @@ export const DEFAULT_USER_SETTINGS: UserSettings = {
   showFeedback: true,
   showImages: true,
   allowReplacementOperatorSort: false,
+  recyclingRoomLevel: 3,
 };
 
 type StorageLike = Pick<Storage, "getItem" | "setItem">;
@@ -54,6 +56,9 @@ export function loadUserSettings(storage: StorageLike): UserSettings {
       shiftViewControl: value.shiftViewControl === "select" ? "select" : DEFAULT_USER_SETTINGS.shiftViewControl,
       imageExportScope: value.imageExportScope === "all" ? "all" : DEFAULT_USER_SETTINGS.imageExportScope,
       skillPagination: value.skillPagination === "manual" ? "manual" : DEFAULT_USER_SETTINGS.skillPagination,
+      recyclingRoomLevel: value.recyclingRoomLevel === 1 || value.recyclingRoomLevel === 2 || value.recyclingRoomLevel === 3
+        ? value.recyclingRoomLevel
+        : DEFAULT_USER_SETTINGS.recyclingRoomLevel,
     };
   } catch {
     return { ...DEFAULT_USER_SETTINGS };

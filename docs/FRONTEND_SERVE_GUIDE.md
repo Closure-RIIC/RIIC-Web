@@ -33,23 +33,23 @@ The frontend uses `plan.compute` when `protocol_version` matches and `supported_
   "result": {
     "pong": true,
     "protocol_version": 1,
-    "plan_schema_version": 5,
-    "supported_plan_schema_versions": [1, 2, 3, 4, 5],
+    "plan_schema_version": 4,
+    "supported_plan_schema_versions": [1, 2, 3, 4],
     "plan_contract_sha256": "<diagnostic-schema-fingerprint>",
     "solver_executable_sha256": "<running-executable-fingerprint>"
   }
 }
 ```
 
-`plan_contract_sha256` and `solver_executable_sha256` are diagnostic identities, not capability switches. In particular, LF and CRLF copies of the same schema may have different byte hashes without changing compatibility. Missing or different schema hashes therefore do not select the legacy route. A genuinely missing or mismatched `protocol_version`, or a supported-schema list that omits v5, selects the legacy `plan` method. That Worker still needs to understand the new recycling blueprint; legacy routing alone does not guarantee facility compatibility. `plan_schema_version` reports the Worker's current schema but does not override an explicit v5 entry in the supported list.
+`plan_contract_sha256` and `solver_executable_sha256` are diagnostic identities, not capability switches. In particular, LF and CRLF copies of the same schema may have different byte hashes without changing compatibility. Missing or different schema hashes therefore do not select the legacy route. A genuinely missing or mismatched `protocol_version`, or a supported-schema list that omits v3, keeps using the legacy `plan` method for runtime compatibility. `plan_schema_version` reports the Worker's current schema but does not override an explicit v3 entry in the supported list.
 
-Capability negotiation is by membership: a Worker advertising `supported_plan_schema_versions: [1, 2, 3, 4, 5]` still receives the website's v5 request. The website continues to send `fiammetta_enable`; it does not send the v4 `assert_invariants` option used by internal Check workflows.
+Capability negotiation is by membership: a Worker advertising `supported_plan_schema_versions: [1, 2, 3, 4]` still receives the website's v3 request. The website continues to send `fiammetta_enable`; it does not send the v4 `assert_invariants` option used by internal Check workflows.
 
-Deployment health is intentionally stricter than runtime routing when `INFRA_CLI_EXPECTED_SHA256` is configured. In that mode the server pins CLI selection to the packaged platform binary in `bin/`, requires the current protocol plus v5 support, and requires the Worker fingerprint to match that artifact. A version or executable mismatch makes `plannerReady` false so the release runner rolls back; `INFRA_CLI_PATH` and a persisted active CLI cannot silently replace the verified artifact. Local or unmanaged environments may omit the expected hash, retain normal CLI candidate selection, and keep a legacy Worker available. The contract hash is recorded but never compared against a frontend constant.
+Deployment health is intentionally stricter than runtime routing when `INFRA_CLI_EXPECTED_SHA256` is configured. In that mode the server pins CLI selection to the packaged platform binary in `bin/`, requires the current protocol plus v3 support, and requires the Worker fingerprint to match that artifact. A version or executable mismatch makes `plannerReady` false so the release runner rolls back; `INFRA_CLI_PATH` and a persisted active CLI cannot silently replace the verified artifact. Local or unmanaged environments may omit the expected hash, retain normal CLI candidate selection, and keep a legacy Worker available. The contract hash is recorded but never compared against a frontend constant.
 
 Solver contract smoke tests require the private solver binary and are maintained outside this public repository. Public unit and E2E suites use fixtures and mock API responses; they do not download, execute, or depend on a solver artifact.
 
-## `plan.compute` v5
+## `plan.compute` v1
 
 The request contains the complete layout and operbox inline:
 
@@ -58,10 +58,10 @@ The request contains the complete layout and operbox inline:
   "id": 2,
   "method": "plan.compute",
   "params": {
-    "schema_version": 5,
+    "schema_version": 3,
     "layout": {
       "template": "243",
-      "drone_cap": 250,
+      "drone_cap": 235,
       "scenario": {},
       "rooms": []
     },
@@ -90,7 +90,7 @@ Successful responses contain all outputs inline:
   "ok": true,
   "elapsed_ms": 123,
   "result": {
-    "schema_version": 5,
+    "schema_version": 3,
     "profile": {},
     "rotation": {
       "profile": "abc_12_6_6",
@@ -110,9 +110,9 @@ Successful responses contain all outputs inline:
 }
 ```
 
-The frontend validates `schema_version`, `profile`, `rotation.shifts`, and `maa` before marking the run successful. `training_room` is optional for compatibility with older Workers. When present, it must use schema version 1, contain exactly one entry per `maa.plans` shift, and provide both `trainee` and `trainer` as trimmed names or `null`. A name may not exceed 80 characters, occupy both training positions, or also appear in another explicit MAA room in the same shift; the matching `training` A/B fields represent the same training assignment. It then persists the inline profile and MAA values into the run directory so debug bundle paths always refer to real files.
+The frontend validates `schema_version`, `profile`, `rotation.shifts`, and `maa` before marking the run successful. `training_room` is optional for compatibility with older Workers. When present, it must use schema version 1, contain exactly one entry per `maa.plans` shift, and provide both `trainee` and `trainer` as trimmed names or `null`. A name may not exceed 80 characters, occupy both training positions, or also appear in an explicit MAA room in the same shift. It then persists the inline profile and MAA values into the run directory so debug bundle paths always refer to real files.
 
-Newer Workers may include `rotation.shifts[].assignment` and `rotation.shifts[].notes` in an otherwise valid v5 response. They are accepted as private transport details but are not part of the normalized public rotation DTO; schedule presentation and MAA export continue to use the normalized rotation and `maa` payload.
+Newer Workers may include `rotation.shifts[].assignment` and `rotation.shifts[].notes` in an otherwise valid v3 response. They are accepted as private transport details but are not part of the normalized public rotation DTO; schedule presentation and MAA export continue to use the normalized rotation and `maa` payload.
 
 Error responses use the normal serve envelope:
 
@@ -142,7 +142,7 @@ All paths are selected by the frontend. After a successful response, the fronten
 
 The CLI response is an internal transport object. It must never be returned directly from a Next.js route handler.
 
-`src/server/infra.ts` may retain CLI paths, commands, stdout, stderr, serve requests/responses, the ping observation and run-directory metadata for local diagnostics. Feedback looks up that exact private run by diagnostic ID and copies its solver observation into private `meta.json`; old or missing runs use `solver: null`. `src/server/public-plan.ts` is the required boundary before `/api/plan`: it constructs a new allowlisted DTO containing profile, MAA, rotation, duration, an opaque diagnostic ID and, when supplied by the current Worker, optional `trainingRoom` and `trainingAdvice` values parsed through their own strict public contracts. Training-room operators also appear in `maa.plans[*].rooms.training`, with A as the assistant and B as the trainee; downloads preserve both position fields. Rotation is rebuilt through `src/rotation-result.ts`; only the selected profile, daily summary, normalized shifts, team state, weighted efficiency and normalized room efficiency are public. Raw `efficiencies`, assignments, solver identities and future unknown Worker or training fields are not forwarded in production.
+`src/server/infra.ts` may retain CLI paths, commands, stdout, stderr, serve requests/responses, the ping observation and run-directory metadata for local diagnostics. Feedback looks up that exact private run by diagnostic ID and copies its solver observation into private `meta.json`; old or missing runs use `solver: null`. `src/server/public-plan.ts` is the required boundary before `/api/plan`: it constructs a new allowlisted DTO containing profile, MAA, rotation, duration, an opaque diagnostic ID and, when supplied by the current Worker, optional `trainingRoom` and `trainingAdvice` values parsed through their own strict public contracts. Training-room operators remain outside `maa.plans[*].rooms`, so MAA downloads never contain a training room or its occupants. Rotation is rebuilt through `src/rotation-result.ts`; only the selected profile, daily summary, normalized shifts, team state, weighted efficiency and normalized room efficiency are public. Raw `efficiencies`, assignments, solver identities and future unknown Worker or training fields are not forwarded in production.
 
 The persisted `run-envelope.json`, `stdout.txt`, `stderr.txt`, `result.json` and `debug-bundle.json` are private diagnostic artifacts. Feedback links to the durable envelope while expansion is pending. Ordinary product API responses, plan history and browser persistence must not contain these logs. Log wording is not a stable protocol: frontend code must not infer Worker capability, progress or solver stage from log text.
 
@@ -184,11 +184,3 @@ Admission failures use both the standard `Retry-After` response header and `erro
 - `AIC-PLAN-3008`: the 2,000-task candidate ring is full.
 
 Network failures back off from 2 to 32 seconds, then pause with a manual “query progress” action; healthy long waits continue using the status-aware intervals above. Retry buttons remain disabled for the server-provided countdown.
-
-## 设施协议更新（2026-10-13）
-
-网站发送 `plan.compute` schema 5，Worker 必须在 ping 中声明支持 5。布局新增 `recycling_station`，默认 3 级、最大 3 级、耗电 0；无人机上限为 250。旧保存布局中的默认 235 会迁移为 250，并补充回收站，已设置的较低上限保留。
-
-MAA 输出保留 `training` / `recycle`，训练室 A=协助位、B=训练位，回收站 A/B=解锁顺序。空训练室 skip，未配置回收站 autofill。MAA 上游仍将 A/B 字段标记为草案；当前 MAA 自定义排班尚未实现 A/B 执行支持。
-
-手动排班 WASM 评估器同步支持回收站、250 无人机上限以及仅有协助干员的训练室。回收站等级进入既有设施等级总和，至简技能仍按原有 64 机器人上限计算。菲亚梅塔单独恢复事件只启用目标所在设施，其余设施保持 skip，并关闭 autofill 和无人机。

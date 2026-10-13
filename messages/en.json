@@ -6,8 +6,8 @@
   "RecyclingRoom": {
     "unknown": "Unknown",
     "title": "Recycling Station",
-    "manualOnly": "Manually assign A / B positions",
-    "unconfigured": "MAA autofill by default",
+    "manualOnly": "Manual only · Excluded from output and export",
+    "unconfigured": "Not configured · 2 slots",
     "noUpstreamData": "Skland data unavailable",
     "unknownSlots": "2 operator slots, occupancy unknown"
   },

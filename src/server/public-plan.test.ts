@@ -54,8 +54,7 @@ function internalResult(): PlanApiResponse {
             candidates: ["但书", "巫恋"],
             use_operator_groups: true,
           }],
-          training: [{ operatorsA: ["德克萨斯"], operatorsB: ["能天使"] }],
-          recycle: [{ operatorsA: [], operatorsB: [], autofill: true }],
+          training: [{ operators: ["不应进入 MAA"] }],
         },
       }],
       scheduleType: { planTimes: 2, trading: 2, manufacture: 4, power: 3, dormitory: 4 },
@@ -220,12 +219,7 @@ test("production public plan data recursively excludes internal fields", () => {
     assert.equal(publicData.maa.plans[0].rooms.trading?.[0].sort, true);
     assert.deepEqual(publicData.maa.plans[0].rooms.trading?.[0].candidates, ["但书", "巫恋"]);
     assert.equal(publicData.maa.plans[0].rooms.trading?.[0].use_operator_groups, true);
-    assert.deepEqual(publicData.maa.plans[0].rooms.training, [
-      { operatorsA: ["德克萨斯"], operatorsB: ["能天使"] },
-    ]);
-    assert.deepEqual(publicData.maa.plans[0].rooms.recycle, [
-      { operatorsA: [], operatorsB: [], autofill: true },
-    ]);
+    assert.equal("training" in publicData.maa.plans[0].rooms, false);
     assert.deepEqual(publicData.trainingRoom, {
       schema_version: 1,
       shifts: [{ trainee: "能天使", trainer: "德克萨斯" }],

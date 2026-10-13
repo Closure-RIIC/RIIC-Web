@@ -104,14 +104,14 @@ export function powerStationsFromRotation(layout: BaseBlueprint, shift: Rotation
   return corePowerStationsFromRotation(layout, shift, plan);
 }
 
-function operatorName(operator: NonNullable<MaaRoom["operators"]>[number]): string {
+function operatorName(operator: MaaRoom["operators"][number]): string {
   return typeof operator === "string" ? operator : operator?.name ?? "";
 }
 
 const TAILORING_OPERATORS = new Set(["折光", "明椒", "卡夫卡", "柏喙"]);
 
 export function tradeTargetPriority(level: number, operators: MaaRoom["operators"]): number {
-  const names = (operators ?? []).map(operatorName).filter(Boolean);
+  const names = operators.map(operatorName).filter(Boolean);
   const has = (name: string) => names.includes(name);
   if (level === 1 && has("但书")) return 600;
   if (level === 2 && has("但书")) return 500;

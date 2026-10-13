@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { RECYCLING_ROOM, RECYCLING_ROOM_ID, withRecyclingRoom } from "./recycling-room.ts";
+import { RECYCLING_ROOM, RECYCLING_ROOM_ID, recyclingRoom, withRecyclingRoom } from "./recycling-room.ts";
 import { assignManualOperator, clearManualRoom, createManualScheduleDraft, findManualOperatorConflict, loadManualScheduleDraft, manualRoomCapacity, manualScheduleToMaa, persistManualScheduleDraft, reconcileManualScheduleDraft } from "./manual-schedule.ts";
 import type { BaseBlueprint } from "./types.ts";
 
@@ -9,7 +9,7 @@ const layout: BaseBlueprint = { template: "test", drone_cap: 200, scenario: {}, 
   { id: "training_room", kind: "training_room", level: 3 },
 ] };
 
-test("recycling assignments retain two positions through storage and MAA export", () => {
+test("recycling assignments retain two slots through storage without changing solver layouts or MAA output", () => {
   const original = JSON.stringify(layout);
   let draft = reconcileManualScheduleDraft(createManualScheduleDraft(), layout);
   const exportBefore = manualScheduleToMaa(draft, layout, false);
@@ -24,11 +24,7 @@ test("recycling assignments retain two positions through storage and MAA export"
   assert.ok(loaded);
   const restored = reconcileManualScheduleDraft(loaded, layout);
   assert.deepEqual(restored.shifts[0]!.rooms[RECYCLING_ROOM_ID]!.operators, [null, "阿米娅"]);
-  assert.equal(exportBefore.plans[0]!.rooms.recycle?.[0]?.autofill, true);
-  const exported = manualScheduleToMaa(restored, layout, false).plans[0]!.rooms.recycle?.[0];
-  assert.deepEqual(exported?.operatorsA, []);
-  assert.deepEqual(exported?.operatorsB, ["阿米娅"]);
-  assert.equal(exported?.autofill, false);
+  assert.deepEqual(manualScheduleToMaa(restored, layout, false), exportBefore);
   assert.equal(JSON.stringify(layout), original);
 });
 
@@ -52,6 +48,13 @@ test("the display helper keeps empty states and existing recycling assignments i
   const rows = withRecyclingRoom([row]);
   assert.equal(rows.length, 2);
   assert.equal(rows[1]!.level, 3);
-  assert.equal(rows[1]!.autofill, true);
   assert.equal(withRecyclingRoom(rows), rows);
+});
+
+test("the recycling room level stays within its level one through three range", () => {
+  assert.equal(recyclingRoom(0).level, 1);
+  assert.equal(recyclingRoom(2).level, 2);
+  assert.equal(recyclingRoom(4).level, 3);
+  const row = { key: "control", roomId: "control", group: "control" as const, groupLabel: "控制中枢", title: "控制中枢", index: 0, operators: [], operatorSlots: [], autofill: false, rule: "", suspicious: false };
+  assert.equal(withRecyclingRoom([row], 2)[1]?.level, 2);
 });

@@ -1,5 +1,4 @@
 import { validateLayoutJson } from "../layout-validation.ts";
-import { normalizeFacilityDefaults } from "../facility-defaults.ts";
 import { assertOperbox } from "../operbox.ts";
 import { normalizePersistedPlanData } from "../persistence.ts";
 import { effectiveFiammettaSetting } from "../plan-presentation.ts";
@@ -83,7 +82,7 @@ function sanitizeLayout(value: unknown): BaseBlueprint {
     if (room.kind === "dormitory" && raw.dorm_beds !== undefined) room.dorm_beds = Number(raw.dorm_beds);
     return room;
   });
-  return normalizeFacilityDefaults({ template: rawLayout.template, drone_cap: Number(rawLayout.drone_cap), scenario, rooms });
+  return { template: rawLayout.template, drone_cap: Number(rawLayout.drone_cap), scenario, rooms };
 }
 
 export function validateWorkspaceState(value: unknown): CloudWorkspaceState {

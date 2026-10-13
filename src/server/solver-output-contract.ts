@@ -25,12 +25,8 @@ export function assertCompleteSolverOutput(payload: {
     if(!record(plan) || typeof plan.name!=="string" || !plan.name.trim() || !record(plan.rooms) || Object.keys(plan.rooms).length===0) {
       throw new Error("Solver returned an incomplete MAA plan.");
     }
-    for(const [kind, rooms] of Object.entries(plan.rooms)) {
-      const positioned = kind === "training" || kind === "recycle";
-      if(!Array.isArray(rooms) || !rooms.every(room=>record(room) && (positioned
-        ? Array.isArray(room.operatorsA) && Array.isArray(room.operatorsB)
-          && [...room.operatorsA, ...room.operatorsB].every(name=>typeof name === "string")
-        : Array.isArray(room.operators)))) {
+    for(const rooms of Object.values(plan.rooms)) {
+      if(!Array.isArray(rooms) || !rooms.every(room=>record(room) && Array.isArray(room.operators))) {
         throw new Error("Solver returned invalid MAA rooms.");
       }
     }

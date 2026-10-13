@@ -36,7 +36,6 @@ import { WORKBENCH_PAGE_PATHS, workbenchHref, workbenchPageFromPathname, type Ap
 import { useWebsiteSession } from "@/website-session";
 import { useFeatureAccess } from "@/components/workbench/FeatureAccessProvider";
 import { usePlanTask } from "@/hooks/use-plan-task";
-import { normalizeFacilityDefaults } from "./facility-defaults";
 import type { SklandTrainingSyncOptions } from "@/hooks/use-skland-training-sync";
 import type { TrainingSyncSnapshot } from "@/components/workbench/SklandTrainingSyncBridge";
 import { LanguageSwitch } from "@/i18n/client";
@@ -196,7 +195,7 @@ function parseLayoutJson(value: unknown): BaseBlueprint | null {
     return { ...room, level } as BlueprintRoom;
   });
   if (rooms.some((room) => room === null) || !rooms.some((room) => room?.kind === "control_center")) return null;
-  return normalizeFacilityDefaults({ ...layout, drone_cap: Number(layout.drone_cap ?? 250), scenario: layout.scenario, rooms: rooms as BlueprintRoom[] } as BaseBlueprint);
+  return { ...layout, drone_cap: Number(layout.drone_cap ?? 0), scenario: layout.scenario, rooms: rooms as BlueprintRoom[] } as BaseBlueprint;
 }
 
 function layoutValidationError(layout: BaseBlueprint, en = false): string | null {
@@ -243,11 +242,11 @@ function restoreEditableProducts(baseLayout: BaseBlueprint, cachedLayout: BaseBl
 }
 
 function mergeSklandLayout(current: BaseBlueprint, suggestion: BaseBlueprint): BaseBlueprint {
-  return normalizeFacilityDefaults({
+  return {
     ...suggestion,
     drone_cap: current.drone_cap,
     scenario: structuredClone(current.scenario),
-  });
+  };
 }
 
 function WorkbenchAppContent({ children }: { children: ReactNode }) {
@@ -537,7 +536,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     if (!CLIENT_SKLAND_ENABLED) return false;
     const suggestion = sklandScheduleSnapshot?.infrastructure.layoutSuggestion;
     if (!suggestion) return false;
-    const compact = (value: BaseBlueprint) => normalizeFacilityDefaults(value).rooms.map((room) => [room.id, room.kind, room.level, room.product]);
+    const compact = (value: BaseBlueprint) => value.rooms.map((room) => [room.id, room.kind, room.level, room.product]);
     return JSON.stringify(compact(layout)) === JSON.stringify(compact(suggestion));
   }, [layout, sklandScheduleSnapshot?.infrastructure.layoutSuggestion]);
   const activeSklandAccount = useMemo(
@@ -1332,7 +1331,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       const next = structuredClone(current);
       const rooms = next.maa.plans[activeShift]?.rooms[group];
       const room = rooms?.[row.index];
-      if (!room?.operators || firstSlotIndex === secondSlotIndex) return current;
+      if (!room || firstSlotIndex === secondSlotIndex) return current;
       if (!room.operators[firstSlotIndex] || !room.operators[secondSlotIndex]) return current;
       [room.operators[firstSlotIndex], room.operators[secondSlotIndex]] = [
         room.operators[secondSlotIndex],
@@ -2306,6 +2305,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       onScheduleModeChange: setManualScheduleMode,
       onImportedLayoutChange: handleManualImportedLayout,
       showMower: userSettings.showMower,
+      recyclingRoomLevel: userSettings.recyclingRoomLevel,
       onFiammettaEnabledChange: setManualFiammettaEnabled,
       onOpenSetup: handleManualSetup,
       onFactoryRecipeChange: handleFactoryRecipeChange,
@@ -2507,7 +2507,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/help" data-help-link>{intl("App.help")}</Link>
         <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/terms">{intl("App.terms")}</Link>
         <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/privacy">{intl("App.privacy")}</Link>
-        <a className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/about" data-about-link>{intl("App.about")}</a>
+        <span className="inline-flex items-center gap-x-4">
+          <a className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/about" data-about-link>{intl("App.about")}</a>
+          <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/wishes" data-wishes-link>{intl("App.wishes")}</Link>
+        </span>
         </div>
         <div className="flex w-full min-w-0 flex-col items-start gap-x-3 gap-y-1 md:ml-auto md:w-auto md:flex-row md:flex-wrap md:items-center md:justify-end">
           <FilingLinks />
@@ -2600,6 +2603,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         onFactoryRecipeChange={handleFactoryRecipeChange}
         onTradeOrderChange={handleTradeOrderChange}
         onRoomLevelChange={handleRoomLevelChange}
+        recyclingRoomLevel={userSettings.recyclingRoomLevel}
+        onRecyclingRoomLevelChange={(level) => handleUserSettingsChange({ ...userSettings, recyclingRoomLevel: Math.max(1, Math.min(3, Math.trunc(level))) as 1 | 2 | 3 })}
         powerBudget={powerBudget}
         onFinish={closeSetup}
         onSkip={closeSetup}

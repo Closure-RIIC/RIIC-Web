@@ -14,7 +14,6 @@ import {
   Settings2,
   SquarePen,
   Bot,
-  Sparkles,
   UserRound,
   UserRoundPlus,
   type LucideIcon,
@@ -165,15 +164,6 @@ export function AppSidebar({ page, onPageChange, showMower = false }: AppSidebar
       </SidebarHighlight.Provider>
       <SidebarFooter className={styles.footer}>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              render={<Link href="/wishes" aria-label={locale === "en" ? "Wishes" : "许愿"} data-wishes-link />}
-              tooltip={locale === "en" ? "Wishes" : "许愿"}
-            >
-              <Sparkles className="size-5" />
-              <span className={styles.copy}>{locale === "en" ? "Wishes" : "许愿"}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               render={<Link href="/changelog" aria-label={locale === "en" ? "Changelog" : "更新日志"} data-changelog-link />}

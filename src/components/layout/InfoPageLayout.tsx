@@ -15,6 +15,7 @@ export function InfoPageLayout({ title, href, contentId, children, floatingContr
   floatingControls?: ReactNode;
 }) {
   const t = useTranslations("InfoPageLayout");
+  const navigation = useTranslations("App");
   return (
     <main className="flex min-h-dvh flex-col bg-background text-foreground">
       <a href={`#${contentId}`} className="sr-only z-50 bg-background px-4 py-3 font-medium focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:ring-2 focus:ring-ring">
@@ -44,7 +45,10 @@ export function InfoPageLayout({ title, href, contentId, children, floatingContr
         <Link className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/changelog">{t("changelog")}</Link>
         <Link className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/terms">{t("terms")}</Link>
         <Link className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/privacy">{t("privacy")}</Link>
-        <Link className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/about">{t("about")}</Link>
+        <span className="inline-flex items-center gap-x-4">
+          <Link className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/about">{t("about")}</Link>
+          <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/wishes" data-wishes-link>{navigation("wishes")}</Link>
+        </span>
         <div className="ml-auto min-w-0 max-sm:ml-0 max-sm:w-full"><FilingLinks /></div>
       </footer>
       {floatingControls}
