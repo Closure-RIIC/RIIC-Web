@@ -537,7 +537,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     if (!CLIENT_SKLAND_ENABLED) return false;
     const suggestion = sklandScheduleSnapshot?.infrastructure.layoutSuggestion;
     if (!suggestion) return false;
-    const compact = (value: BaseBlueprint) => value.rooms.map((room) => [room.id, room.kind, room.level, room.product]);
+    const compact = (value: BaseBlueprint) => normalizeFacilityDefaults(value).rooms.map((room) => [room.id, room.kind, room.level, room.product]);
     return JSON.stringify(compact(layout)) === JSON.stringify(compact(suggestion));
   }, [layout, sklandScheduleSnapshot?.infrastructure.layoutSuggestion]);
   const activeSklandAccount = useMemo(
