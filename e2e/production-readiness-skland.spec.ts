@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { gachaAccountOptions } from "../src/gacha-accounts";
 import type { GachaHistory } from "../src/gacha-history";
 import { TERMS_VERSION, PRIVACY_VERSION } from "../src/legal-policy";
-import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, waitForOwnAnimations, planData, sampleData, authenticatedSklandSnapshot, productionHeavySklandSnapshot, primarySklandAccount, mockApis, openSklandOverview, seedPreferences, seedV4Session } from "./production-readiness.fixture";
+import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, waitForContentReady, waitForOwnAnimations, planData, sampleData, authenticatedSklandSnapshot, productionHeavySklandSnapshot, primarySklandAccount, mockApis, openSklandOverview, seedPreferences, seedV4Session } from "./production-readiness.fixture";
 
 async function mockGachaSession(page: Page, roles: Array<{ uid: string; nickname: string }> = [], authorized = true) {
   const activeRoles = (roles.length ? roles : [{ uid: "10001", nickname: "扫码测试" }]).map((role) => ({ ...role, channelName: "官服", isDefault: true }));
@@ -64,6 +64,7 @@ test.beforeEach(async ({ page }) => {
 
 test("Skland tab URLs support direct entry, refresh and browser history", async ({ page }) => {
   test.slow();
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await mockApis(page, { sklandConfigured: true, sklandSnapshot: authenticatedSklandSnapshot });
   await seedPreferences(page);
   await mockGachaSession(page);
@@ -76,6 +77,7 @@ test("Skland tab URLs support direct entry, refresh and browser history", async 
   for (const [index, path] of paths.entries()) {
     const response = await page.goto(path);
     expect(response?.status()).toBe(200);
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     await expect(tabs).toHaveCount(3);
     await expect(tabs.nth(index)).toHaveAttribute("href", path);
     await expect(tabs.nth(index)).toHaveAttribute("aria-selected", "true");
@@ -83,6 +85,7 @@ test("Skland tab URLs support direct entry, refresh and browser history", async 
     await expect(page.locator("[data-skland-page] [data-slot=tabs-list][data-yeye-scroll]")).toHaveCount(0);
     await expect(page.locator("[data-skland-view-header] .os-scrollbar-horizontal")).toHaveCount(0);
     await page.reload();
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     await expect(tabs.nth(index)).toHaveAttribute("aria-selected", "true");
   }
   await page.setViewportSize({ width: 390, height: 844 });
@@ -99,7 +102,9 @@ test("Skland tab URLs support direct entry, refresh and browser history", async 
   await expect(page).toHaveURL(/\/skland$/);
   await expect(tabs.nth(0)).toHaveAttribute("aria-selected", "true");
   await page.goForward();
+  await expect(page).toHaveURL(/\/skland\/inventory$/);
   await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
+  await waitForContentReady(tabs.nth(0));
   await tabs.nth(0).click();
   await expect(page).toHaveURL(/\/skland$/);
   await tabs.nth(0).focus();

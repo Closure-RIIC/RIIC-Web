@@ -184,29 +184,54 @@ export async function armTransientStyleCapture(page: Page, selector: string, lab
   await page.evaluate(({ selector, label }) => {
     const attribute = `data-motion-style-${label}`;
     const root = document.documentElement;
-    const startedAt = performance.now();
+    let startedAt: number | undefined;
+    let framePending = false;
     root.removeAttribute(attribute);
 
+    const observer = new MutationObserver(() => inspect());
     const inspect = () => {
-      for (const element of document.querySelectorAll(selector)) {
+      if (root.hasAttribute(attribute)) return;
+      const elements = document.querySelectorAll(selector);
+      if (!elements.length) return;
+      startedAt ??= performance.now();
+      for (const element of elements) {
         const style = getComputedStyle(element);
         const opacity = Number(style.opacity);
         const transform = style.transform;
         const moved = !["none", "matrix(1, 0, 0, 1, 0, 0)", "matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)"].includes(transform);
         if (moved || opacity < 0.999) {
           root.setAttribute(attribute, JSON.stringify({ opacity, transform }));
+          observer.disconnect();
           return;
         }
       }
-      if (performance.now() - startedAt < 5_000) requestAnimationFrame(inspect);
+      if (performance.now() - startedAt < 5_000 && !framePending) {
+        framePending = true;
+        requestAnimationFrame(() => { framePending = false; inspect(); });
+      } else if (performance.now() - startedAt >= 5_000) {
+        observer.disconnect();
+      }
     };
 
+    // Cold route compilation may outlast the capture window before the target
+    // mounts. Observe its arrival, then sample the original five-second window.
+    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-activity-phase"] });
     inspect();
   }, { selector, label });
 }
 
 export async function expectCapturedStyleMotion(page: Page, label: string) {
   await expect.poll(() => page.locator("html").getAttribute(`data-motion-style-${label}`)).not.toBeNull();
+}
+
+export async function waitForContentReady(element: Locator) {
+  await expect.poll(() => element.evaluate(node => {
+    for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+      if (parent.inert || parent.getAttribute("aria-hidden") === "true") return false;
+      if (parent.getAnimations().some(animation => animation.playState === "running")) return false;
+    }
+    return true;
+  })).toBe(true);
 }
 
 export async function waitForOwnAnimations(element: Locator) {

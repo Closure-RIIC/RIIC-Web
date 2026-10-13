@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, expectButtonGeometryStable, armEndingTransitionCapture, expectCapturedExitDuration, armMotionCapture, armMotionCollectionCapture, expectCapturedMotion, expectCapturedMotionDelays, armTransientStyleCapture, expectCapturedStyleMotion, waitForOwnAnimations, planData, twoShiftPlanData, scheduleVisualPlanData, productChangePlanData, motionPlanData, authenticatedSklandSnapshot, mockApis, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
+import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, expectButtonGeometryStable, armEndingTransitionCapture, expectCapturedExitDuration, armMotionCapture, armMotionCollectionCapture, expectCapturedMotion, expectCapturedMotionDelays, armTransientStyleCapture, expectCapturedStyleMotion, waitForContentReady, waitForOwnAnimations, planData, twoShiftPlanData, scheduleVisualPlanData, productChangePlanData, motionPlanData, authenticatedSklandSnapshot, mockApis, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
 import type { PublicPlanData } from "../src/types";
 
 test.beforeEach(async ({ page }) => {
@@ -726,6 +726,7 @@ test("plan completion reveals status, metrics, and schedule once without resetti
   expect(await board.evaluate((element) => element.getAnimations().filter((animation) => animation.playState === "running").length)).toBe(0);
   const compactView = board.locator('[data-schedule-view="compact"]');
   await expect(compactView).toBeVisible();
+  await waitForContentReady(compactView);
   await expect(compactView).toHaveAttribute("data-schedule-view-transition", "skeleton");
   expect(await compactView.evaluate((element) => element.getAnimations().length)).toBe(0);
   const compactTrainingRoom = compactView.locator('[data-room-group="training"]');

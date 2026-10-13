@@ -50,6 +50,9 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       RIIC_E2E: "1",
+      // Match the browser transport so real sign-in cookies work in all engines.
+      BETTER_AUTH_URL: baseURL,
+      APP_DEPLOYMENT_ENV: "development",
       ACCOUNT_CLOUD_SYNC_ENABLED: "1",
       // Existing interaction fixtures exercise the future public rollout.
       // The production-profile suite separately tests the admin boundary.

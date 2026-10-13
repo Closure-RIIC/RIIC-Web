@@ -2,9 +2,8 @@ import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 import { Pool } from "pg";
-import { attachLoopbackSession } from "./loopback-session";
 
-test("reviewer sees only overview and issues, and direct admin routes remain protected", async ({ page, context, request, baseURL, browserName }) => {
+test("reviewer sees only overview and issues, and direct admin routes remain protected", async ({ page, context, request, baseURL }) => {
   test.skip(!process.env.AUTH_INTEGRATION_DATABASE_URL, "Requires an isolated authentication test database.");
   test.setTimeout(180_000);
   const pool = new Pool({ connectionString: process.env.AUTH_INTEGRATION_DATABASE_URL, max: 1 });
@@ -14,7 +13,7 @@ test("reviewer sees only overview and issues, and direct admin routes remain pro
     await pool.query('INSERT INTO "user" (id,name,email,email_verified,role) VALUES ($1,$2,$3,true,$4)', [id, "Reviewer browser test", `${id}@example.test`, "reviewer"]);
     await pool.query("INSERT INTO account (id,account_id,provider_id,user_id,password) VALUES ($1,$2,'credential',$2,$3)", [randomUUID(), id, await hashPassword(password)]);
     const login = await request.post("/api/auth/sign-in/email", {
-      headers: { origin: process.env.BETTER_AUTH_URL ?? baseURL! },
+      headers: { origin: baseURL! },
       data: { email: `${id}@example.test`, password },
     });
     expect(login.status(), await login.text()).toBe(200);
@@ -30,11 +29,8 @@ test("reviewer sees only overview and issues, and direct admin routes remain pro
         secure: header.value.toLowerCase().includes("; secure"), sameSite: "Lax",
       }]);
     }
-    // APIRequestContext does not send Secure cookies over CI's HTTP loopback URL,
-    // while Chromium treats loopback as trustworthy. Use the same real session
-    // explicitly for API assertions so they test authorization, not missing login.
+    // Reuse the real signed session for direct authorization assertions.
     expect(sessionCookies).toHaveLength(1);
-    await attachLoopbackSession(context, baseURL!, browserName, sessionCookies);
     const apiHeaders = { cookie: sessionCookies.join("; ") };
     await page.goto("/admin");
     const nav = page.locator("nav").filter({ has: page.locator('a[href="/admin/issues"]') });
