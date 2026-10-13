@@ -13,6 +13,7 @@ import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeadin
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { WebsiteSessionSettings } from "@/components/auth/WebsiteSessionSettings";
 import { DEFAULT_USER_SETTINGS, type UserSettings } from "@/user-settings";
 
 const SETTINGS_SWITCH_CLASS = "data-checked:bg-white data-unchecked:bg-white/20 dark:data-unchecked:bg-white/20 [&_[data-slot=switch-thumb]]:bg-white [&_[data-slot=switch-thumb][data-checked]]:bg-[#272a2b]";
@@ -278,7 +279,7 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
             <div className="flex items-center justify-between gap-6 border-t border-white/12 pt-4">
               <Label htmlFor="highlight-no-layout-skill" className="grid min-w-0 gap-1">
                 <span>{en ? "Highlight operators without layout skills" : "高亮当前布局无功能干员"}</span>
-                <span className="font-normal text-sm text-white/64">{en ? "Highlight operators with no usable infrastructure skill in the current layout. Off by default." : "高亮当前基建布局内没有可用基建技能的干员，默认关闭。"}</span>
+                <span className="font-normal text-sm text-white/64">{en ? "Highlight operators with no unlocked infrastructure skill matching a facility in the current layout. Off by default." : "高亮当前基建布局内没有已解锁且适配设施类型的基建技能的干员，默认关闭。"}</span>
               </Label>
               <Switch className={SETTINGS_SWITCH_CLASS} id="highlight-no-layout-skill" checked={settings.highlightNoLayoutSkill} onCheckedChange={(checked) => onSettingsChange({ ...settings, highlightNoLayoutSkill: checked })} aria-label={en ? "Highlight operators without layout skills" : "高亮当前布局无功能干员"} />
             </div>
@@ -323,6 +324,7 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
           </section>
         </InfraTechnicalCard>
       </div>
+      <WebsiteSessionSettings />
       <InfraTechnicalCard group="processing">
         <section aria-labelledby="settings-local-data-title">
           <InfraTechnicalHeading icon={<Trash2 className="size-4" aria-hidden="true" />} titleId="settings-local-data-title">
