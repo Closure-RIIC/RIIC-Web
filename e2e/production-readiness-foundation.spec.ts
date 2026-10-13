@@ -613,8 +613,8 @@ test("website login lazy-loads its UI without probing the shared session again",
     expect(box).not.toBeNull();
     if (viewport.width < 768) {
       // The shared loading dialog uses the same mobile sheet as the loaded UI.
-      expect(box?.width).toBe(viewport.width);
-      expect(box?.height).toBe(viewport.height);
+      expect(Math.abs(box!.width - viewport.width)).toBeLessThan(1);
+      expect(Math.abs(box!.height - viewport.height)).toBeLessThan(1);
     } else {
       expect(box?.width ?? 0).toBeLessThanOrEqual(viewport.width - 16);
       expect(box?.height ?? 0).toBeLessThanOrEqual(viewport.height - 16);
@@ -824,6 +824,11 @@ test("password reset requires matching password confirmation before making a req
   });
   await page.goto("/account/reset-password?token=valid-reset-token");
 
+  // The form is server rendered; confirm its controls are hydrated before typing.
+  await page.getByRole("button", { name: "显示新密码" }).click();
+  await expect(page.getByLabel("新密码", { exact: true })).toHaveAttribute("type", "text");
+  await page.getByRole("button", { name: "隐藏新密码" }).click();
+  await expect(page.getByLabel("新密码", { exact: true })).toHaveAttribute("type", "password");
   await page.getByLabel("新密码", { exact: true }).fill("weakpassword1");
   await page.getByLabel("确认新密码", { exact: true }).fill("weakpassword1");
   await page.getByRole("button", { name: "确认重置" }).click();

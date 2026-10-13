@@ -44,6 +44,7 @@ test("calculator shows the two-slot recycling station with training visuals", as
     localStorage.setItem(key, JSON.stringify({ ...session, result }));
   }, planData);
   await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   const board = page.locator('[data-compact-schedule-view]');
   const recycling = board.locator('[data-room-group="recycling"]');

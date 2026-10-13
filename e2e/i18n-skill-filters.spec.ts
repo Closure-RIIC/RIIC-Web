@@ -97,6 +97,12 @@ for (const locale of ["zh", "en"] as const) {
       expect(await response!.text()).toContain(`lang="${locale === "zh" ? "zh-CN" : "en"}"`);
       await expect(page).toHaveTitle(new RegExp(titles[index]));
       await expect(page.getByRole("heading").first(), route).toBeVisible();
+      if (route === "/changelog") {
+        // Its heading is server rendered. Let the translated client feed settle
+        // before navigating away while hydration is still starting its fetch.
+        await expect(page.locator("[data-changelog-page] [data-skeleton-swap]")).toHaveAttribute("aria-busy", "false");
+        await expect(page.locator("[data-changelog-page]").getByText(locale === "en" ? "No published updates yet." : "暂时没有已发布的更新。", { exact: true })).toBeVisible();
+      }
     }
     for (const source of ["skland", "maa"] as const) {
       await page.goto(`/help/import-operators?step=4&source=${source}`);

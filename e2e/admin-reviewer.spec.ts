@@ -2,8 +2,9 @@ import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 import { Pool } from "pg";
+import { attachLoopbackSession } from "./loopback-session";
 
-test("reviewer sees only overview and issues, and direct admin routes remain protected", async ({ page, context, request, baseURL }) => {
+test("reviewer sees only overview and issues, and direct admin routes remain protected", async ({ page, context, request, baseURL, browserName }) => {
   test.skip(!process.env.AUTH_INTEGRATION_DATABASE_URL, "Requires an isolated authentication test database.");
   test.setTimeout(180_000);
   const pool = new Pool({ connectionString: process.env.AUTH_INTEGRATION_DATABASE_URL, max: 1 });
@@ -33,6 +34,7 @@ test("reviewer sees only overview and issues, and direct admin routes remain pro
     // while Chromium treats loopback as trustworthy. Use the same real session
     // explicitly for API assertions so they test authorization, not missing login.
     expect(sessionCookies).toHaveLength(1);
+    await attachLoopbackSession(context, baseURL!, browserName, sessionCookies);
     const apiHeaders = { cookie: sessionCookies.join("; ") };
     await page.goto("/admin");
     const nav = page.locator("nav").filter({ has: page.locator('a[href="/admin/issues"]') });

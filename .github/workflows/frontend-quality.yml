@@ -490,10 +490,14 @@ jobs:
         run: npm run test:agent-billing:e2e
 
   webkit_e2e:
-    name: Scheduled WebKit compatibility
+    name: Scheduled WebKit compatibility (${{ matrix.shard }})
     if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_webkit)
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1/4, 2/4, 3/4, 4/4]
     container:
       image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:c091b21d9fae78c76e85cd4356431e9b018402f172a214fc7d7a5e9a7e29d8ac
       options: --user 1001
@@ -532,7 +536,7 @@ jobs:
         run: npm run db:migrate
 
       - name: WebKit end-to-end tests
-        run: npm run test:e2e:webkit
+        run: npm run test:e2e:webkit -- --shard=${{ matrix.shard }}
 
   quality:
     name: quality

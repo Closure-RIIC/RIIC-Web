@@ -2,8 +2,9 @@ import { randomUUID } from "node:crypto";
 import { test, expect, type BrowserContext } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 import { Pool } from "pg";
+import { attachLoopbackSession } from "./loopback-session";
 
-test("admin issues and revokes a batch while redemption updates wallet and preserves single use", async ({ page, context, browser, baseURL }) => {
+test("admin issues and revokes a batch while redemption updates wallet and preserves single use", async ({ page, context, browser, baseURL, browserName }) => {
   const databaseUrl = process.env.AUTH_INTEGRATION_DATABASE_URL;
   test.skip(!databaseUrl, "Requires an isolated authentication test database.");
   if (!new URL(databaseUrl!).pathname.endsWith("_test")) throw new Error("Only an isolated *_test database is allowed.");
@@ -26,6 +27,7 @@ test("admin issues and revokes a batch while redemption updates wallet and prese
       const index = pair.indexOf("=");
       await target.addCookies([{ name: pair.slice(0, index), value: pair.slice(index + 1), domain: new URL(baseURL!).hostname, path: "/", httpOnly: true, secure: pair.startsWith("__Secure-"), sameSite: "Lax" }]);
     }
+    await attachLoopbackSession(target, baseURL!, browserName, cookies);
     return { id, headers: { cookie: cookies.join("; "), origin: baseURL! } };
   }
   try {
