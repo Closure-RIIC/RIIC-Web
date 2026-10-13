@@ -4,7 +4,7 @@ import { useTranslations, useLocale } from "next-intl";
 import type { CSSProperties } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion";
-import { ArrowLeftRight, Check, ChevronDown, FileWarning, Trash2 } from "lucide-react";
+import { ArrowLeftRight, Check, FileWarning, Trash2 } from "lucide-react";
 import { Select } from "@base-ui/react/select";
 import { DroneIcon } from "@/components/DroneIcon";
 import { RecyclingRoomNotice } from "@/components/RecyclingRoomNotice";
@@ -41,6 +41,7 @@ import type { BaseBlueprint, MaaPlan, RoomProduct } from "@/types";
 import type { ShiftDirection } from "@/motion";
 import { localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
+import { PRODUCT_ICON_URLS } from "@/product-assets";
 
 export interface CompactScheduleViewProps {
   simulation?: { moods: Readonly<Record<string, number>>; selected: string; onSelect: (name: string) => void };
@@ -79,6 +80,7 @@ const COMPACT_AUXILIARY_GROUPS = new Set(["meeting", "training", "hire", "proces
 function CompactProductSelect({
   value,
   label,
+  iconUrl,
   options,
   accent,
   ariaLabel,
@@ -87,7 +89,8 @@ function CompactProductSelect({
 }: {
   value: string;
   label: string;
-  options: ReadonlyArray<{ value: string; label: string }>;
+  iconUrl?: string;
+  options: ReadonlyArray<{ value: string; label: string; iconUrl?: string }>;
   accent: string;
   ariaLabel: string;
   marginRight: string;
@@ -99,17 +102,20 @@ function CompactProductSelect({
         aria-label={ariaLabel}
         data-compact-product-select
         style={{ marginRight }}
-        className={`ml-auto inline-flex h-7 w-[90px] shrink-0 items-center justify-between gap-1 rounded border bg-[#3C3C3C]/55 px-2 text-xs font-medium text-white outline-none hover:bg-[#4B4B4B] focus-visible:border-[#FFD800] sm:w-[118px] ${accent}`}
+        title={label}
+        className={`ml-auto inline-flex size-7 shrink-0 items-center justify-center rounded border bg-[#3C3C3C]/55 p-0.5 text-xs font-medium text-white outline-none hover:bg-[#4B4B4B] focus-visible:border-[#FFD800] ${accent}`}
       >
-        <Select.Value>{label}</Select.Value>
-        <Select.Icon><ChevronDown className="size-3.5 opacity-70" /></Select.Icon>
+        <Select.Value>
+          {iconUrl ? <img src={iconUrl} alt="" className="size-6 object-contain" aria-hidden="true" /> : <span className="text-[10px]">{label}</span>}
+        </Select.Value>
       </Select.Trigger>
       <Select.Portal>
         <Select.Positioner side="bottom" align="end" sideOffset={4} className="z-50">
           <Select.Popup className="min-w-32 rounded-md border border-white/15 bg-[#262626] p-1 text-xs text-white shadow-xl outline-none">
             <Select.List>
               {options.map((option) => (
-                <Select.Item key={option.value} value={option.value} label={option.label} className="relative flex h-7 cursor-default items-center rounded px-2 pr-7 outline-none data-[highlighted]:bg-white/12">
+                <Select.Item key={option.value} value={option.value} label={option.label} className="relative flex h-8 cursor-default items-center gap-2 rounded px-2 pr-7 outline-none data-[highlighted]:bg-white/12">
+                  {option.iconUrl ? <img src={option.iconUrl} alt="" className="size-6 object-contain" aria-hidden="true" /> : null}
                   <Select.ItemText>{option.label}</Select.ItemText>
                   <Select.ItemIndicator className="absolute right-2"><Check className="size-3.5" /></Select.ItemIndicator>
                 </Select.Item>
@@ -246,11 +252,13 @@ function CompactRoomCard({
           const order = product && "trade" in product ? product.trade.order : tradeOrderFor(layoutRoom!);
           const accent = compactTradeAccent(order);
           const label = order === "gold" ? intl("components_CompactScheduleView.lmdOrder") : order === "originium" ? intl("components_CompactScheduleView.originiumOrder") : order;
+          const iconUrl = order === "originium" ? PRODUCT_ICON_URLS.orundum : PRODUCT_ICON_URLS.lmdOrders;
           return compactProductControls && onTradeOrderChange ? (
             <CompactProductSelect
               value={order}
               label={label}
-              options={[{ value: "gold", label: en ? "LMD Order" : intl("components_CompactScheduleView.lmdOrder") }, { value: "originium", label: en ? "Originium Order" : intl("components_CompactScheduleView.originiumOrder") }]}
+              iconUrl={iconUrl}
+              options={[{ value: "gold", label: en ? "LMD Order" : intl("components_CompactScheduleView.lmdOrder"), iconUrl: PRODUCT_ICON_URLS.lmdOrders }, { value: "originium", label: en ? "Originium Order" : intl("components_CompactScheduleView.originiumOrder"), iconUrl: PRODUCT_ICON_URLS.orundum }]}
               accent={accent}
               ariaLabel={`${localizedRoomTitle(row.title, row.group, locale, gameCatalog)}${intl("components.label")}${intl("components.orders")}`}
               marginRight={onDroneTargetChange ? "5.5rem" : onClearRoom ? "2.75rem" : "2.25rem"}
@@ -266,11 +274,13 @@ function CompactRoomCard({
           const recipe = product && "factory" in product ? product.factory.recipe : factoryRecipeFor(layoutRoom!);
           const accent = compactFactoryAccent(recipe);
           const label = recipe === "all" ? intl("components_CompactScheduleView.auto") : recipe === "gold" ? intl("components_CompactScheduleView.pureGold") : recipe === "battle_record" ? intl("components_CompactScheduleView.battleRecord") : recipe === "originium" ? intl("components_CompactScheduleView.originiumShard") : recipe;
+          const iconUrl = recipe === "gold" ? PRODUCT_ICON_URLS.gold : recipe === "battle_record" ? PRODUCT_ICON_URLS.experience : recipe === "originium" ? PRODUCT_ICON_URLS.shards : undefined;
           return compactProductControls && onFactoryRecipeChange ? (
             <CompactProductSelect
               value={recipe}
               label={label}
-              options={[{ value: "gold", label: en ? "Pure Gold" : intl("components_CompactScheduleView.pureGold") }, { value: "battle_record", label: en ? "Battle Records" : intl("components_CompactScheduleView.battleRecord") }, { value: "originium", label: en ? "Originium Shards" : intl("components_CompactScheduleView.originiumShard") }]}
+              iconUrl={iconUrl}
+              options={[{ value: "gold", label: en ? "Pure Gold" : intl("components_CompactScheduleView.pureGold"), iconUrl: PRODUCT_ICON_URLS.gold }, { value: "battle_record", label: en ? "Battle Records" : intl("components_CompactScheduleView.battleRecord"), iconUrl: PRODUCT_ICON_URLS.experience }, { value: "originium", label: en ? "Originium Shards" : intl("components_CompactScheduleView.originiumShard"), iconUrl: PRODUCT_ICON_URLS.shards }]}
               accent={accent}
               ariaLabel={`${localizedRoomTitle(row.title, row.group, locale, gameCatalog)}${intl("components.label")}${intl("components.recipe")}`}
               marginRight={onDroneTargetChange ? "5.5rem" : onClearRoom ? "2.75rem" : "2.25rem"}
