@@ -479,7 +479,11 @@ async function verifyConversationScrolling(page: Page, width: number) {
   await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThan(80);
   // Late composer layout must keep restored history at the latest message.
   const composerPanel = page.locator("[data-agent-composer]");
-  await composerPanel.evaluate((el) => { el.style.paddingBottom = "211px"; });
+  await composerPanel.evaluate((el) => {
+    el.style.paddingBottom = "211px";
+    // A resize-induced scroll can arrive before ResizeObserver in WebKit.
+    document.querySelector('[aria-label="对话记录"]')!.dispatchEvent(new Event("scroll", { bubbles: true }));
+  });
   await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThan(80);
   await conversation.hover();
   // Keyboard scrolling also works in mobile WebKit, which has no mouse wheel.

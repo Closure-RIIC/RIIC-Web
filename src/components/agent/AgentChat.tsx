@@ -318,6 +318,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   const touchY = useRef<number | null>(null);
   const conversationRef = useRef<HTMLDivElement>(null);
   const followMessages = useRef(true);
+  const conversationGeometry = useRef<{ height: number; contentHeight: number } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const personaInputRef = useRef<HTMLInputElement>(null);
   const personaAvatarInputRef = useRef<HTMLInputElement>(null);
@@ -416,7 +417,10 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   useLayoutEffect(() => {
     const container = conversationRef.current;
     if (!container) return;
-    const follow = () => { if (followMessages.current) container.scrollTop = container.scrollHeight; };
+    const follow = () => {
+      if (followMessages.current) container.scrollTop = container.scrollHeight;
+      conversationGeometry.current = { height: container.clientHeight, contentHeight: container.scrollHeight };
+    };
     follow();
     // Restored history can settle before the composer, fonts and scrollbar do.
     // Follow layout changes while the reader is still at the latest message.
@@ -639,7 +643,20 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
         </> : null}
       >
         <AgentConversationScrollArea className={`${dialogueStyles.conversation} min-h-0 flex-1 bg-transparent`} viewportClassName="flex min-w-0 flex-col gap-6 overscroll-contain py-3 md:gap-10 md:py-8" viewportProps={{ ref: conversationRef,
-          onScroll: (event) => { const el = event.currentTarget; followMessages.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80; if (el.scrollTop <= 0) setHeaderHidden(false); },
+          onScroll: (event) => {
+            const el = event.currentTarget;
+            const height = el.clientHeight;
+            const contentHeight = el.scrollHeight;
+            const previous = conversationGeometry.current;
+            const atBottom = contentHeight - el.scrollTop - height < 80;
+            // WebKit can emit a layout-induced scroll before ResizeObserver.
+            // Keep following that resize, while ordinary reading scrolls opt out.
+            if (atBottom || (previous?.height === height && previous.contentHeight === contentHeight)) {
+              followMessages.current = atBottom;
+            }
+            conversationGeometry.current = { height, contentHeight };
+            if (el.scrollTop <= 0) setHeaderHidden(false);
+          },
           onWheel: (event) => readingGesture(event.deltaY),
           onTouchStart: (event) => { touchY.current = event.touches[0]?.clientY ?? null; },
           onTouchMove: (event) => { const y = event.touches[0]?.clientY; if (y !== undefined && touchY.current !== null && Math.abs(touchY.current - y) > 12) { readingGesture(touchY.current - y); touchY.current = y; } },
