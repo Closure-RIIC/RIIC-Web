@@ -1,4 +1,3 @@
-import { factoryRecipeFor, tradeOrderFor } from "./blueprint.ts";
 import { evaluateNativeSchedule, type NativeEvalRequestV1, type NativeEvalResponseV1 } from "./lib/infra-eval/client.ts";
 import { manualRoomCapacity, type ManualScheduleDraft } from "./manual-schedule.ts";
 import { normalizeOperboxEntries } from "./operbox-normalization.ts";
@@ -24,12 +23,16 @@ export function buildNativeEvalRequest(input: {
 }): NativeEvalRequestV1 {
   const shifts = input.draft.shifts.map((shift, shiftIndex) => {
     const trainingRoom = input.layout.rooms.find((room) => room.kind === "training_room");
-    const rooms = input.layout.rooms.map((room) => ({
+    const rooms = input.layout.rooms.map((room) => {
+      const assignment = input.draft.shifts[shiftIndex]?.rooms[room.id];
+      return {
       room_id: room.id,
+      ...(assignment?.product ? { product: structuredClone(assignment.product) } : {}),
       operators: namesForRoom(input.draft, shiftIndex, room.id, manualRoomCapacity(room))
         .slice(0, room.kind === "training_room" ? 1 : undefined)
         .map((name) => ({ name })),
-    }));
+      };
+    });
     const trainer = trainingRoom
       ? namesForRoom(input.draft, shiftIndex, trainingRoom.id, manualRoomCapacity(trainingRoom))[1]
       : undefined;
@@ -87,7 +90,11 @@ function roomEvaluation(input: {
     if (room.settlement_status !== "evaluated") return [];
     const layoutRoom = input.layout.rooms.find((candidate) => candidate.id === room.room_id);
     if (!layoutRoom) return [];
-    const factoryRecipe = layoutRoom.kind === "factory" ? factoryRecipeFor(layoutRoom) : undefined;
+    const assignment = input.draft.shifts[input.shiftIndex]?.rooms[room.room_id];
+    const product = assignment?.product ?? layoutRoom.product;
+    const factoryRecipe = layoutRoom.kind === "factory" && product && "factory" in product
+      ? product.factory.recipe
+      : undefined;
     const factoryOutputKind = factoryRecipe === "gold"
       ? "pure_gold"
       : factoryRecipe === "battle_record"
@@ -96,7 +103,7 @@ function roomEvaluation(input: {
           ? "originium_shards"
           : undefined;
     const outputKind = layoutRoom.kind === "trade_post"
-      ? (tradeOrderFor(layoutRoom) === "originium" ? "originium_shards" : "lmd")
+      ? (product && "trade" in product && product.trade.order === "originium" ? "originium_shards" : "lmd")
       : factoryOutputKind ?? (layoutRoom.kind === "power_plant" ? "power" : undefined);
     return [{
       roomId: room.room_id,

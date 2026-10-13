@@ -23,6 +23,7 @@ import {
   moveManualShiftBoundaryByHour,
   snapManualShiftDurationsToHours,
   setManualDroneTarget,
+  setManualRoomProduct,
   swapManualOperators,
 } from "./manual-schedule.ts";
 import type { BaseBlueprint, OperBoxEntry } from "./types.ts";
@@ -259,6 +260,30 @@ test("MAA export writes Orundum for originium trading orders and Originium Shard
   const maa = manualScheduleToMaa(createManualScheduleDraft([12]), originiumLayout, false);
   assert.equal(maa.plans[0]?.rooms.trading?.[0]?.product, "Orundum");
   assert.equal(maa.plans[0]?.rooms.manufacture?.[0]?.product, "Originium Shard");
+});
+
+test("manual production products are isolated per shift and flow to MAA export", () => {
+  let draft = reconcileManualScheduleDraft(createManualScheduleDraft([12, 12]), layout, box);
+  draft = setManualRoomProduct(draft, layout, 0, "manu_1", { factory: { recipe: "gold" } });
+  draft = setManualRoomProduct(draft, layout, 1, "manu_1", { factory: { recipe: "originium" } });
+  draft = setManualRoomProduct(draft, layout, 1, "trade_1", { trade: { order: "originium" } });
+
+  assert.deepEqual(draft.shifts.map((shift) => shift.rooms.manu_1?.product), [
+    { factory: { recipe: "gold" } },
+    { factory: { recipe: "originium" } },
+  ]);
+  assert.deepEqual(draft.shifts.map((shift) => shift.rooms.trade_1?.product), [
+    { trade: { order: "gold" } },
+    { trade: { order: "originium" } },
+  ]);
+
+  const maa = manualScheduleToMaa(draft, layout, false);
+  assert.deepEqual(maa.plans.map((plan) => plan.rooms.manufacture?.[0]?.product), ["Pure Gold", "Originium Shard"]);
+  assert.deepEqual(maa.plans.map((plan) => plan.rooms.trading?.[0]?.product), ["LMD", "Orundum"]);
+
+  const cleared = clearManualShift(draft, layout, 1);
+  assert.deepEqual(cleared.shifts[1]?.rooms.manu_1?.product, { factory: { recipe: "originium" } });
+  assert.deepEqual(cleared.shifts[0]?.rooms.manu_1?.product, { factory: { recipe: "gold" } });
 });
 
 test("calculator results become an editable manual draft with room order, shifts, Fiammetta and training room preserved", () => {

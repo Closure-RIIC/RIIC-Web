@@ -100,6 +100,7 @@ import {
   MaaPlan,
   PresetDef,
   RotationJson,
+  RoomProduct,
 } from "./types";
 
 const OperatorSkillTooltip = lazy(() => import("@/components/OperatorSkillTooltip").then((module) => ({
@@ -791,11 +792,13 @@ function RoomEfficiencyDetails({
 export function RoomProductControls({
   row,
   layoutRoom,
+  product,
   onFactoryRecipeChange,
   onTradeOrderChange,
 }: {
   row: RoomRow;
   layoutRoom: BaseBlueprint["rooms"][number] | undefined;
+  product?: RoomProduct;
   onFactoryRecipeChange: (roomId: string, recipe: FactoryRecipe) => void;
   onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
 }) {
@@ -809,8 +812,8 @@ export function RoomProductControls({
 
   const isTrade = layoutRoom?.kind === "trade_post";
   const isFactory = layoutRoom?.kind === "factory";
-  const activeOrder = isTrade ? tradeOrderFor(layoutRoom) : null;
-  const activeRecipe = isFactory ? factoryRecipeFor(layoutRoom) : null;
+  const activeOrder = isTrade ? (product && "trade" in product ? product.trade.order : tradeOrderFor(layoutRoom!)) : null;
+  const activeRecipe = isFactory ? (product && "factory" in product ? product.factory.recipe : factoryRecipeFor(layoutRoom!)) : null;
   const activeProduct = activeOrder ?? activeRecipe;
 
   if (activeProduct) {
@@ -1272,6 +1275,8 @@ export function ScheduleBoard({
   onManualSkillEfficiencyChange,
   highlightNoLayoutSkill = false,
   noLayoutSkillOperators,
+  roomProducts,
+  compactProductControls = false,
 }: {
   simulation?: { moods: Readonly<Record<string, number>>; selected: string; onSelect: (name: string) => void };
   rows: RoomRow[];
@@ -1311,6 +1316,8 @@ export function ScheduleBoard({
   onManualSkillEfficiencyChange?: (row: RoomRow, value: number | null) => void;
   highlightNoLayoutSkill?: boolean;
   noLayoutSkillOperators?: ReadonlySet<string>;
+  roomProducts?: ReadonlyMap<string, RoomProduct>;
+  compactProductControls?: boolean;
 }) {
   const intl = useTranslations();
   const locale = useLocale();
@@ -1581,6 +1588,7 @@ export function ScheduleBoard({
                         {!simulation && <RoomProductControls
                           row={row}
                           layoutRoom={layoutRoom}
+                          product={roomProducts?.get(row.roomId)}
                           onFactoryRecipeChange={onFactoryRecipeChange}
                           onTradeOrderChange={onTradeOrderChange}
                         />}
@@ -1720,7 +1728,7 @@ export function ScheduleBoard({
 
   ), [simulation, highlightNoLayoutSkill, noLayoutSkillOperators, rowGroups, en, layout, collapsedGroups, hiddenGroups, intl, locale, gameCatalog,
     onSortToggle, sortRoomId, renderListRoomActions, shiftDirection, onFactoryRecipeChange,
-    onTradeOrderChange, eliteByOperator, levelByOperator, onSlotClick, sortSelection,
+    onTradeOrderChange, eliteByOperator, levelByOperator, onSlotClick, sortSelection, roomProducts,
     onSortSlotClick, onIssue, feedbackDisabled, normalizedQuery, onClearRoom, onManualSkillEfficiencyChange]);
 
   const compactContent = useMemo(() => (
@@ -1735,6 +1743,10 @@ export function ScheduleBoard({
               levelByOperator={levelByOperator}
               activeShift={activeShift}
               activePlan={activePlan}
+              roomProducts={roomProducts}
+              compactProductControls={compactProductControls}
+              onFactoryRecipeChange={simulation ? undefined : onFactoryRecipeChange}
+              onTradeOrderChange={simulation ? undefined : onTradeOrderChange}
               shiftDirection={shiftDirection}
               onIssue={onIssue}
               feedbackDisabled={feedbackDisabled}
@@ -1762,7 +1774,7 @@ export function ScheduleBoard({
   ), [simulation, highlightNoLayoutSkill, noLayoutSkillOperators, CompactScheduleView, visibleRows, layout, eliteByOperator, levelByOperator,
     activeShift, activePlan, shiftDirection, onIssue, feedbackDisabled, hideImages,
     onSlotClick, sortRoomId, sortSelection, onSortToggle, onSortSlotClick, onClearRoom,
-    onDormAutofillChange, droneTargetRoomId, onDroneTargetChange, onManualSkillEfficiencyChange, compactScheduleLoadFailed, intl]);
+    onDormAutofillChange, droneTargetRoomId, onDroneTargetChange, onManualSkillEfficiencyChange, onFactoryRecipeChange, onTradeOrderChange, roomProducts, compactProductControls, compactScheduleLoadFailed, intl]);
 
   if (rows.length === 0) {
     return (
