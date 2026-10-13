@@ -278,7 +278,7 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
             <div className="flex items-center justify-between gap-6 border-t border-white/12 pt-4">
               <Label htmlFor="highlight-no-layout-skill" className="grid min-w-0 gap-1">
                 <span>{en ? "Highlight operators without layout skills" : "高亮当前布局无功能干员"}</span>
-                <span className="font-normal text-sm text-white/64">{en ? "Highlight operators with no usable infrastructure skill in the current layout. Off by default." : "高亮当前基建布局内没有可用基建技能的干员，默认关闭。"}</span>
+                <span className="font-normal text-sm text-white/64">{en ? "Highlight operators with no unlocked infrastructure skill matching a facility in the current layout. Off by default." : "高亮当前基建布局内没有已解锁且适配设施类型的基建技能的干员，默认关闭。"}</span>
               </Label>
               <Switch className={SETTINGS_SWITCH_CLASS} id="highlight-no-layout-skill" checked={settings.highlightNoLayoutSkill} onCheckedChange={(checked) => onSettingsChange({ ...settings, highlightNoLayoutSkill: checked })} aria-label={en ? "Highlight operators without layout skills" : "高亮当前布局无功能干员"} />
             </div>
