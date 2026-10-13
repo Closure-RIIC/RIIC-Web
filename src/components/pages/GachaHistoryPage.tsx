@@ -413,7 +413,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
     {history && <>
       <div className={styles.statistics} data-gacha-statistics>
       <section aria-label="已保存寻访统计" data-gacha-summary className="overflow-hidden border border-[#313131]/18 bg-[#F3F1EA] text-[#313131] shadow-[0_12px_30px_rgba(35,38,39,0.10)]">
-        <div className="grid grid-cols-6 sm:grid-cols-5">
+        <div className="grid grid-cols-6">
           {[
             { id: "orundum", label: "总消耗合成玉", value: (history.records.length * 600).toLocaleString("zh-CN") },
             { id: "career-score", label: "生涯评分", value: <GachaRating average={analysis.career.sixAverage} scope="career" /> },
@@ -421,9 +421,13 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
             { id: "six-stars", label: "六星干员", value: sixStars.toLocaleString("zh-CN") },
             { id: "lower-stars", label: "五星 / 四星 / 三星", value: `${fiveStars} / ${fourStars} / ${threeStars}` },
           ].map((metric) => <div key={metric.id} data-gacha-summary-metric={metric.id} className={`${styles.summaryMetric} relative col-span-2 min-w-0 border-r border-[#313131]/10 last:border-r-0 sm:col-span-1 max-sm:[&:nth-child(-n+2)]:col-span-3 max-sm:[&:nth-child(2)]:border-r-0 max-sm:[&:nth-child(n+3)]:border-t`}>
-            <SummaryMetric label={metric.label} value={metric.value} unit={metric.id === "orundum" ? "折算" : metric.id === "lower-stars" ? <Switch size="sm" checked={showFiveStars} onCheckedChange={setShowFiveStars} aria-label="显示五星寻访记录" title="在卡池卡片中显示五星寻访记录" className="ml-1 data-checked:bg-[#313131] data-unchecked:bg-[#313131]/20" /> : undefined} reserveIconSpace={metric.id === "orundum"} />
+            <SummaryMetric label={metric.label} value={metric.value} unit={metric.id === "orundum" ? "折算" : undefined} reserveIconSpace={metric.id === "orundum"} />
             {metric.id === "orundum" && <Image src={PRODUCT_ICON_URLS.orundum} alt="合成玉" width={24} height={24} unoptimized className="pointer-events-none absolute right-1.5 top-1.5 size-6 object-contain opacity-75" />}
           </div>)}
+          <label className={`${styles.summaryMetric} col-span-2 flex min-w-0 cursor-pointer flex-col items-start justify-center gap-2 sm:col-span-1 max-sm:border-t max-sm:border-[#313131]/10`}>
+            <span className="text-[10px] font-medium tracking-[0.06em] text-[#313131]/58">是否展示五星</span>
+            <Switch size="sm" checked={showFiveStars} onCheckedChange={setShowFiveStars} className="data-checked:bg-[#313131] data-unchecked:bg-[#313131]/20" />
+          </label>
         </div>
       </section>
       <GachaAnalysisOverview analysis={analysis} />

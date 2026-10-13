@@ -624,7 +624,7 @@ test("gacha groups each six-star result with its draw bar and only intervening f
   await expect(content.locator('[data-gacha-summary-metric="orundum"] strong > span').first()).toHaveText("64,200");
   await expect(intervals).toHaveCount(3);
   await expect(lower.getByRole("listitem")).toHaveCount(1);
-  const showFiveStars = content.getByRole("switch", { name: "显示五星寻访记录" });
+  const showFiveStars = content.getByRole("switch", { name: "是否展示五星" });
   await expect(showFiveStars).toBeChecked();
   const connector = sequence.locator("[data-gacha-multi-six]");
   const expandedHeight = (await connector.boundingBox())!.height;
