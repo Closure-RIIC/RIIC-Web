@@ -18,7 +18,7 @@ test("admin issues and revokes a batch while redemption updates wallet and prese
     await pool.query('insert into public."user" (id,name,email,email_verified,role) values ($1,$2,$3,true,$4)', [id, "Code test", `${id}@example.test`, role]);
     users.push(id);
     await pool.query("insert into account (id,account_id,provider_id,user_id,password) values ($1,$2,'credential',$2,$3)", [randomUUID(), id, await hashPassword(password)]);
-    const response = await target.request.post(`${baseURL}/api/auth/sign-in/email`, { headers: { origin: process.env.BETTER_AUTH_URL ?? baseURL! }, data: { email: `${id}@example.test`, password } });
+    const response = await target.request.post(`${baseURL}/api/auth/sign-in/email`, { headers: { origin: baseURL! }, data: { email: `${id}@example.test`, password } });
     expect(response.status(), (await response.text()).slice(0, 500)).toBe(200);
     const cookies = response.headersArray().filter(header => header.name.toLowerCase() === "set-cookie").map(header => header.value.split(";", 1)[0]).filter(pair => pair.split("=", 1)[0].endsWith("session_token"));
     expect(cookies).toHaveLength(1);

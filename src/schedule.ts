@@ -2,7 +2,7 @@ import type { BuildingSkillPresentation } from "./operatorPortraits";
 import { maaRoomAutofill } from "./schedule-autofill.ts";
 import type { BaseBlueprint, BlueprintRoom, MaaOperatorSlot, MaaPlan, MaaRoom, MaaRooms, RoomEfficiency, RoomKind, RotationShift, TrainingRoomShift } from "./types.ts";
 
-export type RoomGroup = keyof MaaRooms | "training" | "recycling";
+export type RoomGroup = Exclude<keyof MaaRooms, "recycle"> | "recycling";
 
 export interface RoomRow {
   key: string;
@@ -67,6 +67,7 @@ const GROUP_ORDER: RoomGroup[] = [
   "processing",
   "meeting",
   "training",
+  "recycling",
 ];
 
 const ROOM_PREFIX: Partial<Record<RoomGroup, string>> = {
@@ -79,6 +80,7 @@ const ROOM_PREFIX: Partial<Record<RoomGroup, string>> = {
   hire: "office",
   processing: "workshop",
   training: "training_room",
+  recycling: "recycling_station",
 };
 
 const BLUEPRINT_GROUP: Partial<Record<RoomKind, RoomGroup>> = {
@@ -91,6 +93,7 @@ const BLUEPRINT_GROUP: Partial<Record<RoomKind, RoomGroup>> = {
   meeting_room: "meeting",
   workshop: "processing",
   training_room: "training",
+  recycling_station: "recycling",
 };
 
 const PRODUCT_LABELS: Record<string, string> = {
@@ -208,19 +211,20 @@ function ruleFor(group: RoomGroup, operators: string[]): string {
 
   if (group === "control") return "中枢全局注入";
   if (group === "power") return "发电效率";
-  if (group === "training") return "不参与 MAA 导出";
+  if (group === "training") return "未使用时跳过换班";
+  if (group === "recycling") return "未配置干员时由 MAA 自动填充";
   return "辅助设施";
 }
 
 function titleFor(group: RoomGroup, index: number): string {
   const label = GROUP_LABELS[group];
-  if (["control", "meeting", "processing", "hire", "training"].includes(group)) return label;
+  if (["control", "meeting", "processing", "hire", "training", "recycling"].includes(group)) return label;
   return `${label} ${index + 1}`;
 }
 
 function roomIdFor(group: RoomGroup, index: number): string {
   const prefix = ROOM_PREFIX[group] ?? group;
-  if (["control", "meeting", "workshop", "office", "training_room"].includes(prefix)) return prefix;
+  if (["control", "meeting", "workshop", "office", "training_room", "recycling_station"].includes(prefix)) return prefix;
   return `${prefix}_${index + 1}`;
 }
 
@@ -357,11 +361,14 @@ export function planToRows(
   const layoutRoomMap = roomMapFor(layout);
   const roomsByGroup = plan.rooms && typeof plan.rooms === "object" ? plan.rooms : {};
   for (const group of GROUP_ORDER) {
-    if (group === "recycling") continue;
     if (group === "training") {
       const layoutRoom = layout?.rooms.find((room) => room.kind === "training_room");
       if (!layoutRoom) continue;
-      const positionSlots = trainingPositionSlots(trainingShift);
+      const trainingRoom = roomsByGroup.training?.[0];
+      const positionSlots = trainingPositionSlots(trainingShift ?? {
+        trainee: trainingRoom?.skip ? null : trainingRoom?.operatorsB?.[0] ?? null,
+        trainer: trainingRoom?.skip ? null : trainingRoom?.operatorsA?.[0] ?? null,
+      });
       const operatorSlots = positionSlots.flatMap((positionSlot) => positionSlot.slot ? [positionSlot.slot] : []);
       rows.push({
         key: "training-training_room",
@@ -380,11 +387,15 @@ export function planToRows(
       });
       continue;
     }
-    const rooms = Array.isArray(roomsByGroup[group]) ? roomsByGroup[group] : [];
+    const sourceRooms = roomsByGroup[group === "recycling" ? "recycle" : group];
+    const rooms = Array.isArray(sourceRooms) ? sourceRooms : [];
     rooms.forEach((room, index) => {
-      const operators = roomOperators(room);
-      const sourceOperatorSlots = roomOperatorSlots(room);
-      const roomId = roomIdFor(group, index);
+      const displayRoom = group === "recycling" && (room.operatorsA !== undefined || room.operatorsB !== undefined)
+        ? { ...room, operators: room.skip ? [] : [room.operatorsA?.[0] ?? null, room.operatorsB?.[0] ?? null] }
+        : room;
+      const operators = roomOperators(displayRoom);
+      const sourceOperatorSlots = roomOperatorSlots(displayRoom);
+      const roomId = layout?.rooms.filter((candidate) => BLUEPRINT_GROUP[candidate.kind] === group)[index]?.id ?? roomIdFor(group, index);
       const layoutRoom = layoutRoomMap.get(roomId);
       const sourceEfficiency = efficiencyMap.get(roomId);
       const missingLancetPowerEfficiency = group === "power"
@@ -411,6 +422,7 @@ export function planToRows(
         product: productLabel(room.product, group),
         operators,
         operatorSlots,
+        ...(group === "recycling" ? { slotAssignments: (displayRoom.operators ?? []).map((value) => operatorSlot(value) ?? undefined) } : {}),
         autofill: maaRoomAutofill(room.autofill, {
           group,
           skip: room.skip,
@@ -421,7 +433,7 @@ export function planToRows(
         efficiency,
         efficiencyLabel: efficiencyLabel(group, efficiency),
         rule: ruleFor(group, plainRoomOperators(room)),
-        suspicious: operators.length === 0 && group !== "dormitory",
+        suspicious: operators.length === 0 && group !== "dormitory" && group !== "recycling",
       });
     });
   }

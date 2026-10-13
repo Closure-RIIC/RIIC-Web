@@ -111,6 +111,7 @@ test("calculator room sorting is reflected in MAA export and stays within the ac
 });
 
 test("standalone Mower editor uses the shared schedule components", async ({ page }) => {
+  await mockApis(page);
   await page.setViewportSize({ width: 1000, height: 900 });
   await page.goto("/mower");
   await expect(page.locator("[data-mower-schedule-page]")).toBeVisible();

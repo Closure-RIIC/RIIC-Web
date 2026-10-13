@@ -105,6 +105,9 @@ test("cancelled exit animations still release the modal and its backdrop", async
     const observer = new MutationObserver(() => {
       if (!element.hasAttribute("data-ending-style")) return;
       observer.disconnect();
+      // WebKit may finish the CSS exit before the next frame. Install a real
+      // pending animation so every engine exercises cancellation during exit.
+      element.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 1_000 });
       requestAnimationFrame(() => requestAnimationFrame(() => {
         const animations = element.getAnimations();
         document.documentElement.dataset.cancelledDialogAnimations = String(animations.length);

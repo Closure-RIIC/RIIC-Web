@@ -20,6 +20,7 @@ import {
 import { factoryRecipeFromMaaProduct, normalizeProductForLevel } from "./factory-recipes.ts";
 import { droneTargetShiftIndex } from "./drone-plan-mapping.ts";
 import { manualEditableRooms, type EditableRoom } from "./recycling-room.ts";
+import { normalizeFacilityDefaults } from "./facility-defaults.ts";
 
 export {
   DEFAULT_MANUAL_SHIFT_DURATIONS,
@@ -80,6 +81,8 @@ const MAA_GROUP_BY_ROOM_KIND: Partial<Record<RoomKind, keyof MaaRooms>> = {
   office: "hire",
   meeting_room: "meeting",
   workshop: "processing",
+  training_room: "training",
+  recycling_station: "recycle",
 };
 
 const MINUTES_PER_DAY = 24 * 60;
@@ -98,6 +101,8 @@ const IMPORTED_LAYOUT_GROUPS: ReadonlyArray<{
   { group: "meeting", kind: "meeting_room", idPrefix: "meeting", level: 3 },
   { group: "hire", kind: "office", idPrefix: "office", level: 3 },
   { group: "processing", kind: "workshop", idPrefix: "workshop", level: 3 },
+  { group: "training", kind: "training_room", idPrefix: "training_room", level: 3 },
+  { group: "recycle", kind: "recycling_station", idPrefix: "recycling_station", level: 3 },
 ];
 
 function importedRoomProduct(
@@ -258,7 +263,7 @@ function finitePositive(value: unknown, fallback: number): number {
 }
 
 export function manualRoomCapacity(room: EditableRoom): number {
-  if (room.kind === "recycling") return 2;
+  if (room.kind === "recycling_station") return 2;
   if (room.kind === "control_center") return Math.max(1, Math.min(5, room.level));
   if (room.kind === "trade_post" || room.kind === "factory") return Math.max(1, Math.min(3, room.level));
   if (room.kind === "meeting_room" || room.kind === "training_room") return 2;
@@ -370,6 +375,11 @@ export function parseMaaScheduleText(text: string): MaaJson {
         if ("operators" in room && !Array.isArray(room.operators)) {
           throw new Error(`第 ${index + 1} 个班次的 ${roomKind}[${roomIndex}].operators 必须是数组。`);
         }
+        for (const field of ["operatorsA", "operatorsB"] as const) {
+          if (room[field] !== undefined && (!Array.isArray(room[field]) || room[field].some((name: unknown) => typeof name !== "string"))) {
+            throw new Error(`第 ${index + 1} 个班次的 ${roomKind}[${roomIndex}].${field} 必须是干员名称数组。`);
+          }
+        }
       });
     }
   });
@@ -461,7 +471,8 @@ export function layoutFromMaaSchedule(maa: MaaJson, current: BaseBlueprint): Bas
       const room: BlueprintRoom = previous
         ? structuredClone(previous)
         : {
-            id: definition.kind === "control_center" ? "control" : `${definition.idPrefix}_${index + 1}`,
+            id: ["control_center", "office", "meeting_room", "workshop", "training_room", "recycling_station"].includes(definition.kind)
+              ? definition.idPrefix : `${definition.idPrefix}_${index + 1}`,
             kind: definition.kind,
             level: definition.level,
             ...(definition.kind === "dormitory" ? { dorm_beds: 5 } : {}),
@@ -479,15 +490,14 @@ export function layoutFromMaaSchedule(maa: MaaJson, current: BaseBlueprint): Bas
         : room);
     }
   }
-  rooms.push(...current.rooms.filter((room) => room.kind === "training_room").map((room) => structuredClone(room)));
   const trading = rooms.filter((room) => room.kind === "trade_post").length;
   const manufacture = rooms.filter((room) => room.kind === "factory").length;
   const power = rooms.filter((room) => room.kind === "power_plant").length;
-  return {
+  return normalizeFacilityDefaults({
     ...structuredClone(current),
     template: trading > 0 && manufacture > 0 && power > 0 ? `${trading}${manufacture}${power}` : "imported",
     rooms,
-  };
+  });
 }
 
 export function createManualScheduleDraftFromCalculator(input: {
@@ -535,24 +545,29 @@ export function createManualScheduleDraftFromCalculator(input: {
     if (!shift) return;
     const groups = new Map((plan.groups ?? []).map((group) => [group.name, group.operators]));
     const groupIndexes: Partial<Record<keyof MaaRooms, number>> = {};
-    for (const room of input.layout.rooms) {
+    for (const room of manualEditableRooms(input.layout)) {
       const group = MAA_GROUP_BY_ROOM_KIND[room.kind];
       if (!group) continue;
       const roomIndex = groupIndexes[group] ?? 0;
       groupIndexes[group] = roomIndex + 1;
       const sourceRoom = plan.rooms?.[group]?.[roomIndex];
       if (!sourceRoom) continue;
-      const sourceOperators = sourceRoom.use_operator_groups
-        ? sourceRoom.operators
+      const legacyOperators = sourceRoom.operators ?? [];
+      const sourceOperators = sourceRoom.skip ? [] : room.kind === "training_room" && (sourceRoom.operatorsA !== undefined || sourceRoom.operatorsB !== undefined)
+        ? [sourceRoom.operatorsB?.[0] ?? null, sourceRoom.operatorsA?.[0] ?? null]
+        : room.kind === "recycling_station" && (sourceRoom.operatorsA !== undefined || sourceRoom.operatorsB !== undefined)
+          ? [sourceRoom.operatorsA?.[0] ?? null, sourceRoom.operatorsB?.[0] ?? null]
+        : sourceRoom.use_operator_groups
+        ? legacyOperators
             .map((operator) => typeof operator === "string" ? operator : operator?.name)
             .flatMap((groupName) => groupName ? [groups.get(groupName)] : [])
             .find((operators) => operators && (!owned || operators.every((name) => owned.has(name))))
-          ?? sourceRoom.operators
+          ?? legacyOperators
             .map((operator) => typeof operator === "string" ? operator : operator?.name)
             .flatMap((groupName) => groupName ? [groups.get(groupName)] : [])
             .find(Boolean)
           ?? []
-        : sourceRoom.operators;
+        : legacyOperators;
       const importedProduct = typeof sourceRoom.product === "string"
         ? (room.kind === "factory"
           ? (() => {
@@ -998,6 +1013,20 @@ function maaProduct(room: BlueprintRoom, productOverride?: BlueprintRoom["produc
 }
 
 function maaRoom(room: BlueprintRoom, assignment: ManualRoomAssignment | undefined): MaaRoom {
+  if (room.kind === "training_room" || room.kind === "recycling_station") {
+    const names = assignment?.operators ?? [];
+    const first = names[0] ? [names[0]] : [];
+    const second = names[1] ? [names[1]] : [];
+    const occupied = first.length + second.length > 0;
+    return {
+      operators: [],
+      operatorsA: room.kind === "training_room" ? second : first,
+      operatorsB: room.kind === "training_room" ? first : second,
+      skip: room.kind === "training_room" && !occupied,
+      autofill: room.kind === "recycling_station" && !occupied,
+      sort: true,
+    };
+  }
   const operators = (assignment?.operators ?? []).slice(0, manualRoomCapacity(room)).filter(
     (operator): operator is string => typeof operator === "string" && operator.length > 0,
   );
@@ -1036,7 +1065,7 @@ export function manualScheduleToMaa(
         ? layout.rooms.filter((room) => MAA_GROUP_BY_ROOM_KIND[room.kind] === droneGroup).findIndex((room) => room.id === droneRoom?.id) + 1
         : 0;
       const rooms: MaaRooms = {};
-      for (const room of layout.rooms) {
+      for (const room of manualEditableRooms(layout)) {
         const group = MAA_GROUP_BY_ROOM_KIND[room.kind];
         if (!group) continue;
         const groupRooms = rooms[group] ?? [];

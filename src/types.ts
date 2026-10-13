@@ -17,7 +17,8 @@ export type RoomKind =
   | "office"
   | "meeting_room"
   | "workshop"
-  | "training_room";
+  | "training_room"
+  | "recycling_station";
 
 export interface BlueprintRoom {
   id: string;
@@ -74,7 +75,9 @@ export interface MaaOperatorGroup {
 }
 
 export interface MaaRoom {
-  operators: (string | MaaOperatorSlot | null)[];
+  operators?: (string | MaaOperatorSlot | null)[];
+  operatorsA?: string[];
+  operatorsB?: string[];
   product?: string;
   skip?: boolean;
   sort?: boolean;
@@ -92,6 +95,8 @@ export interface MaaRooms {
   meeting?: MaaRoom[];
   hire?: MaaRoom[];
   processing?: MaaRoom[];
+  training?: MaaRoom[];
+  recycle?: MaaRoom[];
 }
 
 export interface MaaPlan {
@@ -963,7 +968,7 @@ export interface FeedbackApiResponse {
 }
 
 export interface PlanComputeParams {
-  schema_version: 3;
+  schema_version: 5;
   layout: BaseBlueprint;
   operbox: OperBoxEntry[];
   labels?: {

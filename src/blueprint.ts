@@ -5,6 +5,7 @@ import layout333 from "./layouts/333.json";
 import layout342 from "./layouts/342.json";
 import { BaseBlueprint, BlueprintRoom, PresetDef, RoomKind, TradeProduct } from "./types";
 import { factoryRecipeFromMaaProduct, normalizeProductForLevel, type FactoryRecipe } from "./factory-recipes";
+import { normalizeFacilityDefaults } from "./facility-defaults";
 
 export { factoryRecipeFromMaaProduct };
 export type { FactoryRecipe } from "./factory-recipes";
@@ -30,7 +31,7 @@ export const TRADE_ORDER_OPTIONS: { value: TradeOrder; label: string }[] = [
 ];
 
 export function buildBlueprint(preset: PresetDef): BaseBlueprint {
-  return structuredClone(preset.layout);
+  return normalizeFacilityDefaults(structuredClone(preset.layout));
 }
 
 export function roomSummary(layout: BaseBlueprint): string {
@@ -141,6 +142,7 @@ export function roomKindLabel(kind: RoomKind): string {
     meeting_room: "会客室",
     workshop: "加工站",
     training_room: "训练室",
+    recycling_station: "回收站",
   };
   return labels[kind];
 }
@@ -156,6 +158,7 @@ const POWER_CONSUMPTION: Partial<Record<RoomKind, Record<number, number>>> = {
   workshop:      { 1: 10, 2: 10, 3: 10 },
   office:         { 1: 10, 2: 30, 3: 60 },
   training_room:  { 1: 10, 2: 30, 3: 60 },
+  recycling_station: { 1: 0, 2: 0, 3: 0 },
   dormitory:      { 1: 10, 2: 20, 3: 30, 4: 45, 5: 65 },
 };
 

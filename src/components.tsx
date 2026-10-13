@@ -397,6 +397,7 @@ function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"]): s
   if (kind === "workshop") return "processing";
   if (kind === "training_room") return "training";
   if (kind === "office") return "hire";
+  if (kind === "recycling_station") return "recycling";
   return "default";
 }
 
@@ -455,7 +456,8 @@ export function LayoutEditor({
               const product = productLabel(room);
               const levelMax = maxRoomLevel(room.kind);
               const visualGroup = roomVisualGroupForKind(room.kind);
-              const originalName = group.rooms.length > 1 ? `${roomKindLabel(room.kind)} ${roomIndex + 1}` : roomKindLabel(room.kind);
+              const sameKind = group.rooms.filter((candidate) => candidate.kind === room.kind);
+              const originalName = sameKind.length > 1 ? `${roomKindLabel(room.kind)} ${sameKind.findIndex((candidate) => candidate.id === room.id) + 1}` : roomKindLabel(room.kind);
               const displayName = localizedRoomTitle(originalName, visualGroup, locale, gameCatalog);
 
               return (

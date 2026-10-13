@@ -34,12 +34,12 @@ function positive(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 
-function operatorName(operator: MaaRoom["operators"][number]): string {
+function operatorName(operator: NonNullable<MaaRoom["operators"]>[number]): string {
   return typeof operator === "string" ? operator : operator?.name ?? "";
 }
 
 export function droneTradeTarget(level: number, operators: MaaRoom["operators"]): DroneTradeTarget {
-  const names = operators.map(operatorName).filter(Boolean);
+  const names = (operators ?? []).map(operatorName).filter(Boolean);
   const normalizedLevel = level === 1 || level === 2 ? level : 3;
   if (names.includes("但书")) return { kind: "dantshu", level: normalizedLevel };
   if (names.includes("龙舌兰")) return { kind: "tequila" };
