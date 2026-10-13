@@ -6,8 +6,8 @@
   "RecyclingRoom": {
     "unknown": "未知",
     "title": "回收站",
-    "manualOnly": "手动指定 A / B 干员位",
-    "unconfigured": "默认由 MAA 自动填充",
+    "manualOnly": "仅手动配置 · 不计产量、不导出",
+    "unconfigured": "待配置 · 2 个干员位",
     "noUpstreamData": "森空岛暂未提供数据",
     "unknownSlots": "2 个干员位，入驻情况未知"
   },

@@ -116,7 +116,7 @@ test("saved plans retain only the calculation context needed to render the origi
   assert.equal(validateSavedPlanCalculationContext({ ...context, rotationProfile: "invalid" }), null);
 });
 
-test("workspace payload preserves training-room shifts and MAA position fields", () => {
+test("workspace payload preserves optional training-room shifts without adding them to MAA rooms", () => {
   const workspace = validateWorkspacePutRequest({
     state: state("maa"),
     operbox: [{ id: "char_1", name: "测试干员", elite: 2, level: 80, own: true, potential: 1, rarity: 6 }],
@@ -124,10 +124,7 @@ test("workspace payload preserves training-room shifts and MAA position fields",
       profile: {},
       maa: {
         title: "test",
-        plans: [{ name: "第一班", rooms: {
-          training: [{ operatorsA: ["德克萨斯"], operatorsB: ["能天使"] }],
-          recycle: [{ operatorsA: [], operatorsB: [], autofill: true }],
-        } }],
+        plans: [{ name: "第一班", rooms: { training: [{ operators: ["不应导出"] }] } }],
       },
       rotation: { profile: "abc_12_6_6", shifts: [{ index: 0, duration_hours: 24 }] },
       trainingRoom: { schema_version: 1, shifts: [{ trainee: "能天使", trainer: "德克萨斯" }] },
@@ -141,12 +138,7 @@ test("workspace payload preserves training-room shifts and MAA position fields",
     schema_version: 1,
     shifts: [{ trainee: "能天使", trainer: "德克萨斯" }],
   });
-  assert.deepEqual(workspace.result?.maa.plans[0]?.rooms.training, [
-    { operatorsA: ["德克萨斯"], operatorsB: ["能天使"] },
-  ]);
-  assert.deepEqual(workspace.result?.maa.plans[0]?.rooms.recycle, [
-    { operatorsA: [], operatorsB: [], autofill: true },
-  ]);
+  assert.equal("training" in (workspace.result?.maa.plans[0]?.rooms ?? {}), false);
 });
 
 test("saved plan context compares the effective Fiammetta setting", () => {

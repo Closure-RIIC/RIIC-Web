@@ -11,12 +11,11 @@ import type {
 } from "../types";
 import { parseTrainingAdviceReport } from "../training-advice-contract.ts";
 import { parseTrainingRoomSchedule } from "../training-room-contract.ts";
-import { normalizeFacilityDefaults } from "../facility-defaults.ts";
 
 export type ProtocolRecord = Record<string, unknown>;
 
 export const PLAN_PROTOCOL_VERSION = 1;
-export const PLAN_SCHEMA_VERSION = 5;
+export const PLAN_SCHEMA_VERSION = 3;
 
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const GIT_COMMIT_PATTERN = /^[0-9a-f]{40}$/;
@@ -53,7 +52,7 @@ export function createPlanComputeParams(input: {
 }): PlanComputeParams {
   return {
     schema_version: PLAN_SCHEMA_VERSION,
-    layout: normalizeFacilityDefaults(input.layout),
+    layout: input.layout,
     operbox: input.operbox,
     labels: {
       layout: input.layout.template,

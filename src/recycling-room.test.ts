@@ -9,7 +9,7 @@ const layout: BaseBlueprint = { template: "test", drone_cap: 200, scenario: {}, 
   { id: "training_room", kind: "training_room", level: 3 },
 ] };
 
-test("recycling assignments retain two positions through storage and MAA export", () => {
+test("recycling assignments retain two slots through storage without changing solver layouts or MAA output", () => {
   const original = JSON.stringify(layout);
   let draft = reconcileManualScheduleDraft(createManualScheduleDraft(), layout);
   const exportBefore = manualScheduleToMaa(draft, layout, false);
@@ -24,11 +24,7 @@ test("recycling assignments retain two positions through storage and MAA export"
   assert.ok(loaded);
   const restored = reconcileManualScheduleDraft(loaded, layout);
   assert.deepEqual(restored.shifts[0]!.rooms[RECYCLING_ROOM_ID]!.operators, [null, "阿米娅"]);
-  assert.equal(exportBefore.plans[0]!.rooms.recycle?.[0]?.autofill, true);
-  const exported = manualScheduleToMaa(restored, layout, false).plans[0]!.rooms.recycle?.[0];
-  assert.deepEqual(exported?.operatorsA, []);
-  assert.deepEqual(exported?.operatorsB, ["阿米娅"]);
-  assert.equal(exported?.autofill, false);
+  assert.deepEqual(manualScheduleToMaa(restored, layout, false), exportBefore);
   assert.equal(JSON.stringify(layout), original);
 });
 
@@ -51,7 +47,6 @@ test("the display helper keeps empty states and existing recycling assignments i
   const row = { key: "control", roomId: "control", group: "control" as const, groupLabel: "控制中枢", title: "控制中枢", index: 0, operators: [], operatorSlots: [], autofill: false, rule: "", suspicious: false };
   const rows = withRecyclingRoom([row]);
   assert.equal(rows.length, 2);
-  assert.equal(rows[1]!.level, 3);
-  assert.equal(rows[1]!.autofill, true);
+  assert.equal(rows[1]!.level, undefined);
   assert.equal(withRecyclingRoom(rows), rows);
 });

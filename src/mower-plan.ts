@@ -181,7 +181,7 @@ export function mowerPlanToMaa(value: unknown): MaaJson | null {
 }
 
 function mowerFacility(name: string, room: MaaRoom): MowerFacility {
-  const plans = (room.operators ?? []).flatMap((operator) => {
+  const plans = room.operators.flatMap((operator) => {
     const agent = (typeof operator === "string" ? operator : operator?.name ?? "").trim();
     return agent ? [{ agent, group: "", replacement: [] }] : [];
   });

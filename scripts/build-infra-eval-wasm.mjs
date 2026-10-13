@@ -27,12 +27,12 @@ run("wasm-bindgen", [rawWasm, "--target", "web", "--out-dir", temporary, "--no-t
 
 const wasm = readFileSync(join(temporary, "infra_eval_wasm_bg.wasm"));
 const hash = createHash("sha256").update(wasm).digest("hex").slice(0, 12);
-const wasmName = `infra-eval.v3-0c35f30-facilities.${hash}.wasm`;
+const wasmName = `infra-eval.v3-0c35f30.${hash}.wasm`;
 mkdirSync(generated, { recursive: true });
 for (const name of readdirSync(generated)) {
   if (name.startsWith("infra-eval.") && name.endsWith(".wasm")) rmSync(join(generated, name));
 }
 cpSync(join(temporary, "infra_eval_wasm.js"), join(generated, "infra_eval_wasm.js"));
 writeFileSync(join(generated, wasmName), wasm);
-writeFileSync(join(webRoot, "src", "lib", "infra-eval", "manifest.ts"), `export const INFRA_EVAL_MANIFEST = {\n  api: "riic-infra-eval/v1",\n  ruleset: "v3-0c35f30-facilities",\n  wasmUrl: "/wasm/${wasmName}",\n} as const;\n`);
+writeFileSync(join(webRoot, "src", "lib", "infra-eval", "manifest.ts"), `export const INFRA_EVAL_MANIFEST = {\n  api: "riic-infra-eval/v1",\n  ruleset: "v3-0c35f30",\n  wasmUrl: "/wasm/${wasmName}",\n} as const;\n`);
 console.log(`Installed ${wasmName}`);
