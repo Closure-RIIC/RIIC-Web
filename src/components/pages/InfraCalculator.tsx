@@ -387,6 +387,12 @@ export function InfraCalculator(props: InfraCalculatorProps) {
     }
     return map;
   }, [operbox]);
+  const skillProgressByOperator = useMemo(() => new Map(
+    (operbox ?? []).filter((entry) => entry.own).map((entry) => [entry.name, {
+      elite: entry.elite,
+      level: entry.level,
+    }]),
+  ), [operbox]);
   const [shortcutGuideOpen, setShortcutGuideOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [planActionsOpen, setPlanActionsOpen] = useState(false);
@@ -405,7 +411,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
     }).catch(() => { /* Leave highlighting unavailable until the next toggle. */ });
     return () => { active = false; };
   }, [highlightNoLayoutSkill]);
-  const noLayoutSkillOperators = useMemo(() => operatorsWithoutLayoutSkills(highlightCatalog, layout.rooms), [highlightCatalog, layout.rooms]);
+  const noLayoutSkillOperators = useMemo(() => operatorsWithoutLayoutSkills(highlightCatalog, layout.rooms, skillProgressByOperator), [highlightCatalog, layout.rooms, skillProgressByOperator]);
   const imageExportInFlight = useRef(false);
 
   function toggleSortMode(row: RoomRow) {
