@@ -1179,9 +1179,18 @@ test("Skland QR expires locally without polling after its deadline", async ({ pa
   await expect(page.getByRole("img", { name: "森空岛登录二维码" })).toBeVisible();
 });
 
-test("credential import explains the risk, gates consent, recovers from errors, and clears secrets on success", async ({ page, context }) => {
+test("credential import explains the risk, gates consent, recovers from errors, and clears secrets on success", async ({ page, context, browserName }) => {
   await mockApis(page, { sklandConfigured: true });
-  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  if (browserName === "chromium") await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  // WebKit cannot grant Chromium's clipboard permissions. Capture the same
+  // Clipboard API writes so the exact copied command is still asserted.
+  else await page.addInitScript(() => {
+    let copied = "";
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+      writeText: async (text: string) => { copied = text; },
+      readText: async () => copied,
+    } });
+  });
   const submittedCredential = "cred-private-fixture,token-private-fixture";
   const requestBodies: unknown[] = [];
   let attempts = 0;

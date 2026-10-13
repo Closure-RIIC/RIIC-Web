@@ -825,7 +825,7 @@ test("reduced motion keeps feedback timing while removing movement, clipping, an
 });
 
 test("live activity survives navigation and calculator search occupies the released toolbar space", async ({ page }) => {
-  await mockApis(page);
+  await mockApis(page, { dismissSolverWarning: false });
   let releasePlan!: () => void;
   const planGate = new Promise<void>((resolve) => {
     releasePlan = resolve;
@@ -852,6 +852,10 @@ test("live activity survives navigation and calculator search occupies the relea
   await expect(activity).toHaveAttribute("data-activity-phase", "running");
   releasePlan();
   await expect(activity).toHaveAttribute("data-activity-phase", "success");
+  const notice = page.getByRole("dialog", { name: "排班已生成", exact: true });
+  await expect(notice).toBeVisible();
+  await notice.getByRole("button", { name: "关闭", exact: true }).click();
+  await expect(notice).toHaveCount(0);
   await expect(activity).toHaveCount(0, { timeout: 5_000 });
 
   await expect(page.getByRole("textbox", { name: "搜索干员名称" })).toBeVisible();

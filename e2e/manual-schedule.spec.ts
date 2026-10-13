@@ -274,6 +274,8 @@ test("manual MAA downloads normalize dorm autofill without changing the editor s
 test("manual scheduling configures independent shifts, moves conflicts and enables dorm autofill", async ({ page }) => {
   // This full editor workflow also refreshes the simulation after each edit.
   test.setTimeout(180_000);
+  // This long editor flow verifies data and export; motion has dedicated tests.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   let planRequests = 0;
   await page.route("**/api/plan", (route) => {
     planRequests += 1;
