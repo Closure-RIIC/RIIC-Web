@@ -186,7 +186,8 @@ test("Mobile history shows loading only on the running conversation while anothe
   expect(indicator.x).toBeGreaterThanOrEqual(title.x + title.width);
   await old.click();
   await expect(page.getByText("已完成", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await expect(page.getByRole("dialog", { name: "Sidebar" })).toHaveCount(0);
+  await page.getByRole("main").getByRole("button", { name: "Toggle Sidebar" }).click();
   await expect(running.locator("[data-agent-history-loading]")).toBeVisible();
   await emit(page, [{ type: "start", messageId: "background-history" }, { type: "text-start", id: "new" }, { type: "text-delta", id: "new", delta: "另一段对话完成" }, { type: "text-end", id: "new" }, { type: "finish", finishReason: "stop" }], true);
   await expect(running.locator("[data-agent-history-loading]")).toHaveCount(0);

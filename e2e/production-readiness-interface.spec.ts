@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import arkntoolsSource from "../src/generated/arkntools/source.json" with { type: "json" };
 import { twoShiftPlanData } from "./production-readiness.fixture";
 import { requestId, diagnosticId, waitForOwnAnimations, gotoStable, expectVisibleNumbersUseNumberFont, profile, planData, scheduleVisualPlanData, sampleData, authenticatedSklandSnapshot, mockApis, openSklandOverview, seedPreferences, seedV4Session } from "./production-readiness.fixture";
@@ -661,7 +661,7 @@ test("setup exposes and persists only worker-supported rotation profiles", async
   expect(persisted.operbox).toHaveLength(fullOperatorCount);
 });
 
-test("layout level steppers respect bounds and expose the power-safe 342 defaults", async ({ page }) => {
+async function open342Facilities(page: Page) {
   await mockApis(page);
   await seedV4Session(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -674,6 +674,11 @@ test("layout level steppers respect bounds and expose the power-safe 342 default
   await dialog.getByRole("button", { name: /^342/ }).click();
   await expect(dialog.getByRole("button", { name: "检查设施", exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "检查设施", exact: true }).click();
+  return dialog;
+}
+
+test("layout level steppers respect bounds and keep recycling power at zero", async ({ page }) => {
+  const dialog = await open342Facilities(page);
 
   const tradeGroup = dialog.locator('[data-facility-group="trade"]');
   const factoryGroup = dialog.locator('[data-facility-group="factory"]');
@@ -683,6 +688,21 @@ test("layout level steppers respect bounds and expose the power-safe 342 default
   await expect(functionGroup.locator('[data-slot="accordion-trigger"]')).toHaveAttribute("aria-expanded", "false");
 
   await functionGroup.locator('[data-slot="accordion-trigger"]').click();
+  for (const name of ["控制中枢", "会客室", "加工站", "办公室", "训练室", "回收站"]) {
+    await expect(functionGroup.getByText(name, { exact: true })).toBeVisible();
+  }
+  const recyclingLevel = dialog.locator('output[aria-label="recycling_station 等级"]');
+  await expect(recyclingLevel).toHaveText("3");
+  await expect(dialog.getByRole("button", { name: "recycling_station 等级加一" })).toBeDisabled();
+  const initialPowerStatus = await dialog.locator('[data-setup-footer] [role="status"]').innerText();
+  for (let count = 0; count < 2; count++) await dialog.getByRole("button", { name: "recycling_station 等级减一" }).click();
+  await expect(recyclingLevel).toHaveText("1");
+  await expect(dialog.getByRole("button", { name: "recycling_station 等级减一" })).toBeDisabled();
+  expect(await dialog.locator('[data-setup-footer] [role="status"]').innerText()).toBe(initialPowerStatus);
+  for (let count = 0; count < 2; count++) await dialog.getByRole("button", { name: "recycling_station 等级加一" }).click();
+  await expect(recyclingLevel).toHaveText("3");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic-web-user-settings") ?? "{}").recyclingRoomLevel)).toBe(3);
+  expect(await dialog.locator('[data-setup-footer] [role="status"]').innerText()).toBe(initialPowerStatus);
   const controlLevel = dialog.locator('output[aria-label="control 等级"]');
   await expect(controlLevel).toHaveText("5");
   await expect(dialog.getByRole("button", { name: "control 等级加一" })).toBeDisabled();
@@ -694,7 +714,13 @@ test("layout level steppers respect bounds and expose the power-safe 342 default
   for (let count = 0; count < 4; count++) await dialog.getByRole("button", { name: "control 等级加一" }).click();
   await expect(controlLevel).toHaveText("5");
   await expect(dialog.getByRole("button", { name: "control 等级加一" })).toBeDisabled();
+});
 
+test("layout facilities expose power-safe 342 defaults and responsive controls", async ({ page }) => {
+  const dialog = await open342Facilities(page);
+  const tradeGroup = dialog.locator('[data-facility-group="trade"]');
+  const factoryGroup = dialog.locator('[data-facility-group="factory"]');
+  await dialog.locator('[data-facility-group="function"] [data-slot="accordion-trigger"]').click();
   await dialog.locator('[data-facility-group="power"] [data-slot="accordion-trigger"]').click();
   await dialog.locator('[data-facility-group="dormitory"] [data-slot="accordion-trigger"]').click();
   if (await tradeGroup.locator('[data-slot="accordion-trigger"]').getAttribute("aria-expanded") !== "true") {
@@ -706,17 +732,6 @@ test("layout level steppers respect bounds and expose the power-safe 342 default
   const activeTradeOrder = dialog.getByRole("group", { name: "贸易站 1 订单" }).getByRole("button", { name: "龙门商法" });
   await expect(activeTradeOrder).toHaveAttribute("aria-pressed", "true");
   await expect(dialog.locator('[data-slot="setup-room-row"]')).toHaveCount(19);
-  const recycling = dialog.locator('[data-slot="setup-room-row"][data-room-group="recycling"]');
-  await expect(recycling).toHaveCount(1);
-  await expect(recycling.locator("output")).toHaveText("3");
-  await expect(recycling.getByRole("button", { name: "recycling_station 等级加一" })).toBeDisabled();
-  await recycling.getByRole("button", { name: "recycling_station 等级减一" }).click();
-  await recycling.getByRole("button", { name: "recycling_station 等级减一" }).click();
-  await expect(recycling.locator("output")).toHaveText("1");
-  await expect(recycling.getByRole("button", { name: "recycling_station 等级减一" })).toBeDisabled();
-  await recycling.getByRole("button", { name: "recycling_station 等级加一" }).click();
-  await expect(recycling.locator("output")).toHaveText("2");
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic-web-user-settings") ?? "{}").recyclingRoomLevel)).toBe(2);
   await expect(dialog.locator('[data-slot="setup-room-row"][data-room-group="trading"]')).toHaveCount(3);
   await expect(dialog.locator('[data-slot="setup-room-row"][data-room-group="manufacture"]')).toHaveCount(4);
   await expect(dialog.locator('[data-slot="setup-room-row"][data-room-group="power"]')).toHaveCount(2);

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, expectButtonGeometryStable, armEndingTransitionCapture, expectCapturedExitDuration, armMotionCapture, armMotionCollectionCapture, expectCapturedMotion, expectCapturedMotionDelays, armTransientStyleCapture, expectCapturedStyleMotion, waitForOwnAnimations, planData, twoShiftPlanData, scheduleVisualPlanData, productChangePlanData, motionPlanData, authenticatedSklandSnapshot, mockApis, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
+import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, expectButtonGeometryStable, armEndingTransitionCapture, expectCapturedExitDuration, armMotionCapture, armMotionCollectionCapture, expectCapturedMotion, expectCapturedMotionDelays, armTransientStyleCapture, expectCapturedStyleMotion, waitForContentReady, waitForOwnAnimations, planData, twoShiftPlanData, scheduleVisualPlanData, productChangePlanData, motionPlanData, authenticatedSklandSnapshot, mockApis, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
 import type { PublicPlanData } from "../src/types";
 
 test.beforeEach(async ({ page }) => {
@@ -155,6 +155,11 @@ test("buffered plans show a quiet candidate-ring state and can be dismissed with
   await page.getByRole("button", { name: "生成排班" }).click();
   const activity = page.locator('[data-slot="live-activity"]');
   await expect(activity).toHaveAttribute("data-activity-phase", "queued");
+  // The preview retracts automatically. Reopen it through keyboard focus before
+  // checking and dismissing its controls, including on slower WebKit runners.
+  await expect(activity).toHaveAttribute("data-activity-view", "compact");
+  await activity.focus();
+  await expect(activity).toHaveAttribute("data-activity-view", "expanded");
   await expect(activity).toContainText("当前进入候选环，名额释放后随机抽取。");
   await expect(activity.locator('[data-slot="status-mark-rail"] [data-live-activity-icon]')).toHaveAttribute("data-status", "pending");
   await expect(activity.locator("[data-live-activity-icon]")).toHaveCount(2);
@@ -721,6 +726,7 @@ test("plan completion reveals status, metrics, and schedule once without resetti
   expect(await board.evaluate((element) => element.getAnimations().filter((animation) => animation.playState === "running").length)).toBe(0);
   const compactView = board.locator('[data-schedule-view="compact"]');
   await expect(compactView).toBeVisible();
+  await waitForContentReady(compactView);
   await expect(compactView).toHaveAttribute("data-schedule-view-transition", "skeleton");
   expect(await compactView.evaluate((element) => element.getAnimations().length)).toBe(0);
   const compactTrainingRoom = compactView.locator('[data-room-group="training"]');
@@ -825,7 +831,7 @@ test("reduced motion keeps feedback timing while removing movement, clipping, an
 });
 
 test("live activity survives navigation and calculator search occupies the released toolbar space", async ({ page }) => {
-  await mockApis(page);
+  await mockApis(page, { dismissSolverWarning: false });
   let releasePlan!: () => void;
   const planGate = new Promise<void>((resolve) => {
     releasePlan = resolve;
@@ -852,6 +858,10 @@ test("live activity survives navigation and calculator search occupies the relea
   await expect(activity).toHaveAttribute("data-activity-phase", "running");
   releasePlan();
   await expect(activity).toHaveAttribute("data-activity-phase", "success");
+  const notice = page.getByRole("dialog", { name: "排班已生成", exact: true });
+  await expect(notice).toBeVisible();
+  await notice.getByRole("button", { name: "关闭", exact: true }).click();
+  await expect(notice).toHaveCount(0);
   await expect(activity).toHaveCount(0, { timeout: 5_000 });
 
   await expect(page.getByRole("textbox", { name: "搜索干员名称" })).toBeVisible();
@@ -1430,15 +1440,15 @@ test("the initial onboarding is full-screen while other primary pages keep one c
   }
 });
 
-test("Skland and account centers share header geometry and account actions use technical cards", async ({ page }) => {
-  await mockApis(page, { sklandConfigured: true, sklandSnapshot: authenticatedSklandSnapshot });
-  await seedPreferences(page);
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 768, height: 900 },
+  { width: 1440, height: 900 },
+]) {
+  test(`Skland and account centers share header geometry and technical cards at ${viewport.width}px`, async ({ page }) => {
+    await mockApis(page, { sklandConfigured: true, sklandSnapshot: authenticatedSklandSnapshot });
+    await seedPreferences(page);
 
-  for (const viewport of [
-    { width: 390, height: 844 },
-    { width: 768, height: 900 },
-    { width: 1440, height: 900 },
-  ]) {
     await page.setViewportSize(viewport);
     await page.goto("/");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
@@ -1494,5 +1504,5 @@ test("Skland and account centers share header geometry and account actions use t
       await expect(accountRoot.getByRole("button", { name: label })).toHaveCSS("height", dialogButtonHeight);
       await expect(accountRoot.getByRole("button", { name: label })).toHaveCSS("border-radius", "22px");
     }
-  }
-});
+  });
+}

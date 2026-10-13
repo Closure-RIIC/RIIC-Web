@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+import type { ManualScheduleDraft } from "../src/manual-schedule";
 import layout243 from "../src/layouts/243.json" with { type: "json" };
 import { mockAnonymousWebsiteSession, mockApis, now, planData } from "./production-readiness.fixture";
 
@@ -44,13 +45,14 @@ test("calculator shows the two-slot recycling station with training visuals", as
     localStorage.setItem(key, JSON.stringify({ ...session, result }));
   }, planData);
   await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   const board = page.locator('[data-compact-schedule-view]');
   const recycling = board.locator('[data-room-group="recycling"]');
   const training = board.locator('[data-room-group="training"]');
   await expect(recycling).toBeVisible();
   await expect(recycling.locator('.infra-operator-slot')).toHaveCount(2);
-  await expect(recycling).toContainText("待配置");
+  await expect(recycling).toContainText("默认由 MAA 自动填充");
   const visual = (element: Element) => ({
     accent: getComputedStyle(element).getPropertyValue('--room-accent'),
     background: getComputedStyle(element.querySelector('.infra-room-emblem')!).backgroundImage,
@@ -270,20 +272,44 @@ test("manual MAA downloads normalize dorm autofill without changing the editor s
   await expect(autofill).toHaveAttribute("aria-pressed", "false");
 });
 
-test("manual scheduling configures independent shifts, moves conflicts and enables dorm autofill", async ({ page }) => {
-  // This full editor workflow also refreshes the simulation after each edit.
-  test.setTimeout(180_000);
+async function openManualWorkflow(page: Page, tradeOperators?: Array<string | null>) {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   let planRequests = 0;
   await page.route("**/api/plan", (route) => {
     planRequests += 1;
     return route.abort();
   });
+  if (tradeOperators) {
+    // Later scenarios start from the persisted state verified by the setup and
+    // assignment scenarios, without repeating every unrelated editor action.
+    const draft: ManualScheduleDraft = {
+      version: 3,
+      scheduleMode: "period",
+      externalOperatorNames: [],
+      startTime: "09:00",
+      activeShift: 0,
+      fiammettaEnabled: true,
+      shifts: [11, 13].map((durationHours) => ({
+        durationHours,
+        fiammettaTarget: null,
+        droneTargetRoomId: "manu_1",
+        rooms: { trade_1: { operators: tradeOperators } },
+      })),
+    };
+    draft.shifts[1]!.rooms = {};
+    await page.addInitScript((value) => localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify(value)), draft);
+  }
 
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/manual");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(page.locator("[data-manual-schedule-page]")).toBeVisible();
   await expect(page.locator('[data-primary-navigation-page="manual"]')).toHaveAttribute("aria-current", "page");
+  return () => planRequests;
+}
+
+test("manual scheduling configures independent shifts and responsive drone controls", async ({ page }) => {
+  const planRequests = await openManualWorkflow(page);
 
   await page.getByRole("button", { name: "EN", exact: true }).click();
   await expect(page.getByRole("button", { name: "Configure Box & layout" }).first()).toBeVisible();
@@ -380,6 +406,20 @@ test("manual scheduling configures independent shifts, moves conflicts and enabl
   await page.setViewportSize({ width: 1440, height: 1000 });
   await expect(page.locator('[data-manual-editor-board] [data-schedule-view="compact"]')).toBeVisible();
   await expect(trade.getByRole("button", { name: "空置" }).first()).toContainText("可编辑");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!))).toMatchObject({
+    scheduleMode: "period", startTime: "09:00", fiammettaEnabled: true,
+    shifts: [{ durationHours: 11, droneTargetRoomId: "manu_1" }, { durationHours: 13 }],
+  });
+  expect(planRequests()).toBe(0);
+});
+
+test("manual scheduling filters morale targets and moves conflicting operators", async ({ page }) => {
+  const planRequests = await openManualWorkflow(page, []);
+  const manualShiftActions = page.locator("[data-manual-editor-board] [data-schedule-toolbar]");
+  const moraleTarget = manualShiftActions.getByRole("button", { name: "选择换心情目标" });
+  const trade = page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"]');
+  const factory = page.locator('[data-manual-editor-board] [data-room-title="制造站 1"]');
+  const factoryDrones = factory.getByRole("button", { name: "制造站 1 无人机加速" });
   await trade.getByRole("button", { name: "空置" }).first().click();
   let operatorPicker = page.getByRole("dialog");
   await expect(operatorPicker.getByRole("tab", { name: "贸易站", exact: true })).toHaveAttribute("aria-selected", "true");
@@ -466,6 +506,19 @@ test("manual scheduling configures independent shifts, moves conflicts and enabl
   await factory.getByRole("button", { name: "一键清空制造站 1" }).click();
   await expect(factory.locator('[data-operator-identity="阿米娅"]')).toHaveCount(0);
   await expect(factoryDrones).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).shifts[0])).toMatchObject({
+    fiammettaTarget: null, droneTargetRoomId: "manu_1",
+    rooms: { trade_1: { operators: ["锡兰", null, null] }, manu_1: { operators: [null, null, null] } },
+  });
+  expect(planRequests()).toBe(0);
+});
+
+test("manual scheduling clears autofill and shifts and exports independent periods", async ({ page }) => {
+  const planRequests = await openManualWorkflow(page, ["锡兰", null, null]);
+  const moraleTarget = page.locator("[data-manual-editor-board] [data-schedule-toolbar]").getByRole("button", { name: "选择换心情目标" });
+  const trade = page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"]');
+  const factory = page.locator('[data-manual-editor-board] [data-room-title="制造站 1"]');
+  const factoryDrones = factory.getByRole("button", { name: "制造站 1 无人机加速" });
 
   const dorm = page.locator('[data-manual-editor-board] [data-room-title="宿舍 1"]');
   await expect(dorm.locator('[data-operator-identity="autofill"]')).toHaveCount(5);
@@ -501,7 +554,7 @@ test("manual scheduling configures independent shifts, moves conflicts and enabl
   await expect(factory.locator('[data-operator-identity="阿米娅"]')).toHaveCount(0);
   await page.getByRole("tab", { name: /班次 1.*09:00至19:59.*11小时/ }).click();
   await expect(trade.locator('[data-operator-identity="锡兰"]')).toBeVisible();
-  expect(planRequests).toBe(0);
+  expect(planRequests()).toBe(0);
 
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "导出到 MAA" }).click();
