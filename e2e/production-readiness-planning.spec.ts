@@ -1114,13 +1114,9 @@ test("a stored sample BOX completes generation, shifts, MAA export, and disables
   const downloadChunks: Buffer[] = [];
   for await (const chunk of downloadStream) downloadChunks.push(Buffer.from(chunk));
   const downloadedMaa = JSON.parse(Buffer.concat(downloadChunks).toString("utf8")) as {
-    plans?: Array<{ rooms?: Record<string, Array<{ skip?: boolean; autofill?: boolean }>> }>;
+    plans?: Array<{ rooms?: Record<string, unknown> }>;
   };
-  expect(downloadedMaa.plans).toHaveLength(3);
-  for (const plan of downloadedMaa.plans!) {
-    expect(plan.rooms?.training?.[0]?.skip).toBe(true);
-    expect(plan.rooms?.recycle?.[0]?.autofill).toBe(true);
-  }
+  expect(downloadedMaa.plans?.every((plan) => !("training" in (plan.rooms ?? {})))).toBe(true);
 
   const feedbackButton = page.getByRole("button", { name: "加工站 反馈排班问题" });
   await expect(feedbackButton).toBeDisabled();

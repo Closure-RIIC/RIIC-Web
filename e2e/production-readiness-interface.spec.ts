@@ -701,6 +701,7 @@ test("layout level steppers respect bounds and keep recycling power at zero", as
   expect(await dialog.locator('[data-setup-footer] [role="status"]').innerText()).toBe(initialPowerStatus);
   for (let count = 0; count < 2; count++) await dialog.getByRole("button", { name: "recycling_station 等级加一" }).click();
   await expect(recyclingLevel).toHaveText("3");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic-web-user-settings") ?? "{}").recyclingRoomLevel)).toBe(3);
   expect(await dialog.locator('[data-setup-footer] [role="status"]').innerText()).toBe(initialPowerStatus);
   const controlLevel = dialog.locator('output[aria-label="control 等级"]');
   await expect(controlLevel).toHaveText("5");

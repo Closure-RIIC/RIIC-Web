@@ -29,8 +29,8 @@ const input = { operbox: [{ id: "test", name: "测试", own: true, elite: 2, lev
 // Keep 500 distinct inputs within the real drone and operator-level bounds.
 const draft = (number = 0) => service.createDraft({
   ...input,
-  layout: { ...input.layout, drone_cap: number % 251 },
-  operbox: input.operbox.map((operator) => ({ ...operator, level: 90 - Math.floor(number / 251) })),
+  layout: { ...input.layout, drone_cap: number % 236 },
+  operbox: input.operbox.map((operator) => ({ ...operator, level: 90 - Math.floor(number / 236) })),
 }, id, [{ name: `generated-${number}` }]);
 async function mockExecute(batchId, caseId, attemptId, bundles) {
   assert.deepEqual(bundles, versions);
