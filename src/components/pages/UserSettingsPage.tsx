@@ -13,6 +13,7 @@ import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeadin
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { WebsiteSessionSettings } from "@/components/auth/WebsiteSessionSettings";
 import { DEFAULT_USER_SETTINGS, type UserSettings } from "@/user-settings";
 
 const SETTINGS_SWITCH_CLASS = "data-checked:bg-white data-unchecked:bg-white/20 dark:data-unchecked:bg-white/20 [&_[data-slot=switch-thumb]]:bg-white [&_[data-slot=switch-thumb][data-checked]]:bg-[#272a2b]";
@@ -323,6 +324,7 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
           </section>
         </InfraTechnicalCard>
       </div>
+      <WebsiteSessionSettings />
       <InfraTechnicalCard group="processing">
         <section aria-labelledby="settings-local-data-title">
           <InfraTechnicalHeading icon={<Trash2 className="size-4" aria-hidden="true" />} titleId="settings-local-data-title">
