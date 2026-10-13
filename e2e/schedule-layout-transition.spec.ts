@@ -5,6 +5,7 @@ declare global {
   interface Window {
     roomTransitionSamples: Array<{ changingBounds: boolean; imageFit: string; rootAnimated: boolean; duration: number | string }>;
     pauseRoomTransition: boolean;
+    roomTransitionAnimations: Animation[];
   }
 }
 
@@ -15,12 +16,14 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.roomTransitionSamples = [];
     window.pauseRoomTransition = false;
+    window.roomTransitionAnimations = [];
     const start = document.startViewTransition.bind(document);
     document.startViewTransition = (update) => {
       const transition = start(update);
       void transition.ready.then(() => {
         const animations = document.getAnimations().filter(animation =>
           (animation.effect as KeyframeEffect)?.pseudoElement?.includes("view-transition"));
+        window.roomTransitionAnimations.push(...animations);
         const groups = animations.filter(animation => (animation.effect as KeyframeEffect).pseudoElement?.includes("view-transition-group"));
         const room = document.querySelector<HTMLElement>('[data-schedule-room="trade_1"]');
         window.roomTransitionSamples.push({
@@ -71,6 +74,7 @@ test("returning cards contract before newly visible rooms enter", async ({ page 
   const midway = await page.evaluate(() => {
     for (const animation of document.getAnimations()) {
       if ((animation.effect as KeyframeEffect)?.pseudoElement?.includes("view-transition")) {
+        window.roomTransitionAnimations.push(animation);
         animation.pause();
         animation.currentTime = 90;
       }
@@ -84,13 +88,22 @@ test("returning cards contract before newly visible rooms enter", async ({ page 
   expect(midway.width).toBeLessThan(initialWidth - (initialWidth - midway.targetWidth) * 0.8);
   expect(midway.enteringOpacity).toBe(0);
   // Reverse while the contraction override is active as well as the snapshots.
-  await page.evaluate(() => { window.pauseRoomTransition = false; });
+  await page.evaluate(() => {
+    window.pauseRoomTransition = false;
+    // Resume the animations paused for inspection before exercising a real
+    // user reversal. WebKit keeps paused native animations alive after skip.
+    for (const animation of window.roomTransitionAnimations) {
+      if (animation.playState === "paused") animation.play();
+    }
+  });
   await page.getByRole("tab", { name: "列表式布局", exact: true }).click();
   await expect(page.locator("html")).not.toHaveClass(/schedule-layout-transition|schedule-layout-return/);
   await expect(page.locator('[data-schedule-view="list"]')).toBeVisible();
   expect(await page.locator('[data-schedule-room][style*="view-transition-"]').count()).toBe(0);
-  expect(await page.evaluate(() => document.getAnimations().filter(animation =>
-    (animation.effect as KeyframeEffect)?.pseudoElement?.includes("view-transition")).length)).toBe(0);
+  // WebKit can crash enumerating removed view-transition pseudo-elements.
+  // Check the captured native and width-override animations have all stopped.
+  expect(await page.evaluate(() => window.roomTransitionAnimations.filter(animation =>
+    animation.playState !== "finished" && animation.playState !== "idle").length)).toBe(0);
 });
 
 test("a second click can reverse an in-flight room transition", async ({ page }) => {

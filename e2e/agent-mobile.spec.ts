@@ -36,6 +36,10 @@ for (const size of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { 
     const models = await setup(page);
     await expect(page.locator('[data-app-topbar]')).toHaveCount(0);
     await expect(page.locator('[data-agent-credit-balance]')).toHaveAccessibleName('剩余积分 1,234');
+    // Measure the final layout after the composer's entry translation settles.
+    await page.locator('[data-agent-composer]').evaluate(async element => {
+      await Promise.all(element.getAnimations().map(animation => animation.finished.catch(() => undefined)));
+    });
     const bounds = await page.evaluate(() => {
       const box = (selector: string) => { const r = document.querySelector(selector)!.getBoundingClientRect(); return { top: r.top, bottom: r.bottom, height: r.height }; };
       return { header: box('[data-agent-header]'), composer: box('[data-agent-composer]'), conversation: box('[aria-label="对话记录"]'), pageWidth: document.documentElement.scrollWidth };

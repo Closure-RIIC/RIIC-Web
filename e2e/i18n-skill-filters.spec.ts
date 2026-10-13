@@ -92,11 +92,15 @@ for (const locale of ["zh", "en"] as const) {
       : ["关于我们", "使用帮助", "导入干员", "核对干员数据", "隐私政策", "服务条款", "账号", "更新日志"];
     const routes = ["/about", "/help", "/help/import-operators", "/help/owned-operators", "/privacy", "/terms", "/account", "/changelog"];
     for (const [index, route] of routes.entries()) {
+      const announcement = route === "/account"
+        ? page.waitForResponse(response => new URL(response.url()).pathname === "/api/releases" && new URL(response.url()).searchParams.get("mode") === "announcement")
+        : null;
       const response = await page.goto(route);
       expect(response?.ok(), route).toBe(true);
       expect(await response!.text()).toContain(`lang="${locale === "zh" ? "zh-CN" : "en"}"`);
       await expect(page).toHaveTitle(new RegExp(titles[index]));
       await expect(page.getByRole("heading").first(), route).toBeVisible();
+      if (announcement) await (await announcement).finished();
       if (route === "/changelog") {
         // Its heading is server rendered. Let the translated client feed settle
         // before navigating away while hydration is still starting its fetch.
