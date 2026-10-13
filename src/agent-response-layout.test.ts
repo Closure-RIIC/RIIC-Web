@@ -1,7 +1,32 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { UIMessage } from "ai";
-import { buildAgentDisplayTurns, hasActiveAgentContent } from "./agent-response-layout.ts";
+import { buildAgentDisplayTurns, hasActiveAgentContent, snapshotAgentReplyPersona } from "./agent-response-layout.ts";
+import { BUILTIN_AGENT_PERSONAS } from "./agent-personas.ts";
+import { emptyAgentHistory, parseAgentHistory, restoreAgentMessages, updateAgentConversation } from "./agent-history.ts";
+
+test("persona switches preserve old replies through history restoration and retries", () => {
+  const original = { ...user, metadata: { replyPersona: snapshotAgentReplyPersona(null) } };
+  const next = { ...user, id: "new-question", metadata: { replyPersona: snapshotAgentReplyPersona(BUILTIN_AGENT_PERSONAS[0]) } };
+  const messages = [original, assistant([{ type: "text", text: "旧回答" }]), next, { ...assistant([{ type: "text", text: "新回答" }]), id: "new-answer" }];
+  const saved = parseAgentHistory(updateAgentConversation(emptyAgentHistory(), "chat", messages));
+  const replies = buildAgentDisplayTurns(restoreAgentMessages(saved.conversations[0].messages), false).filter(turn => turn.kind === "response");
+  assert.deepEqual(replies.map(turn => turn.persona), [{ name: undefined, avatarUrl: undefined, mascot: undefined }, { name: "银灰", avatarUrl: undefined, mascot: "silverash" }]);
+  const retry = buildAgentDisplayTurns([next], true).find(turn => turn.kind === "response");
+  assert.equal(retry?.persona.mascot, "silverash");
+  const legacy = buildAgentDisplayTurns([user, assistant([{ type: "text", text: "旧版回答" }])], false).find(turn => turn.kind === "response");
+  assert.deepEqual(legacy?.persona, {});
+});
+
+test("uploaded avatar snapshots survive replacing or clearing the local card", () => {
+  const card = { id: "upload", kind: "upload" as const, name: "自定义", description: "", content: "prompt", avatarUrl: "/images/old.png" };
+  const snapshot = snapshotAgentReplyPersona(card);
+  card.avatarUrl = "/images/new.png";
+  assert.deepEqual(snapshot, { name: "自定义", avatarUrl: "/images/old.png" });
+  const question = { ...user, metadata: { replyPersona: snapshot } };
+  const reply = buildAgentDisplayTurns([question], true).find(turn => turn.kind === "response");
+  assert.equal(reply?.persona.avatarUrl, "/images/old.png");
+});
 
 const user: UIMessage = { id: "question", role: "user", parts: [{ type: "text", text: "你好" }] };
 const assistant = (parts: UIMessage["parts"] = []): UIMessage => ({ id: "answer", role: "assistant", parts });

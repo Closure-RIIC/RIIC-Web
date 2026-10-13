@@ -12,6 +12,33 @@ async function personaControl(page: Page, name: string) {
 
 const savedUpload = { version: 1, id: "upload-existing", name: "原有人格", content: "原来的自定义人格内容", description: "保留上传内容" };
 
+test("switching personas preserves reply avatars in old and restored conversations", async ({ page }) => {
+  test.setTimeout(120_000);
+  await prepare(page);
+  await page.goto("/agent");
+  const oldReply = page.locator('[data-speaker="assistant"]').first();
+  const composer = page.locator("[data-agent-composer] textarea");
+  await composer.fill("旧对话问题");
+  await composer.press("Enter");
+  await expect(oldReply.locator("[data-agent-speaker-name]")).toHaveText("可露希尔");
+  await (await personaControl(page, "人格卡：可露希尔")).click();
+  await page.getByRole("button", { name: "使用银灰", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(oldReply.locator('[data-fur-avatar="closure"]')).toHaveCount(1);
+  await page.getByRole("button", { name: "新对话", exact: true }).click();
+  await composer.fill("新对话问题");
+  await composer.press("Enter");
+  await expect(oldReply.locator("[data-agent-speaker-name]")).toHaveText("银灰");
+  await expect(oldReply.locator('[data-fur-avatar="silverash"]')).toHaveCount(1);
+  await page.reload();
+  await expect(oldReply.locator("[data-agent-speaker-name]")).toHaveText("银灰");
+  await page.locator("[data-agent-history]").getByRole("link", { name: "旧对话问题", exact: true }).click();
+  await expect(oldReply.locator("[data-agent-speaker-name]")).toHaveText("可露希尔");
+  await expect(oldReply.locator('[data-fur-avatar="closure"]')).toHaveCount(1);
+  await page.reload();
+  await expect(oldReply.locator("[data-agent-speaker-name]")).toHaveText("可露希尔");
+});
+
 async function prepare(page: Page, available = true) {
   // Preserve the authored rendering budget for the existing pixel assertions.
   await page.addInitScript(() => localStorage.setItem("riic.plush.performance.v1", "quality"));

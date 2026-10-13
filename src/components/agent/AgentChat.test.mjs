@@ -38,6 +38,7 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
           export const readPersonaAvatar=()=>undefined;
           export const buildAgentDisplayTurns=()=>[];
           export const hasActiveAgentContent=()=>false;
+          export const snapshotAgentReplyPersona=()=>({});
           export const agentChatErrorMessage=()=>"";
           export const Combobox=({children})=>children ?? null;
           export const ComboboxContent=({children})=>children ?? null;

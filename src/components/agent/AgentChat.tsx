@@ -28,7 +28,7 @@ import { subscribeBillingUpdates } from "@/lib/billing-events";
 import { PersonaAvatar, readPersonaAvatar } from "./PersonaAvatar";
 import { parsePersonaAvatar } from "@/agent-persona-avatar";
 import { AGENT_PERSONA_SELECTION_KEY, builtinAgentPersona, resolveAgentPersonaSelection, type AgentPersona, type BuiltinAgentPersona, type UploadedAgentPersona } from "@/agent-personas";
-import { buildAgentDisplayTurns, hasActiveAgentContent } from "@/agent-response-layout";
+import { buildAgentDisplayTurns, hasActiveAgentContent, snapshotAgentReplyPersona } from "@/agent-response-layout";
 import { agentChatErrorMessage } from "@/agent-chat-errors";
 import { useAgentRuntime } from "./AgentRuntimeProvider";
 import { useAgentHistory } from "@/hooks/use-agent-history";
@@ -332,8 +332,6 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   });
   const busy = status === "submitted" || status === "streaming";
   const personaName = activePersona?.name ?? (en ? "Closure" : "可露希尔");
-  const personaAvatar = activePersona?.kind === "upload" ? activePersona.avatarUrl : undefined;
-  const personaMascot = activePersona?.kind === "builtin" ? activePersona.avatar : undefined;
   const personaTheme = activePersona?.kind === "builtin" ? BUILTIN_PERSONA_THEMES[activePersona.theme] : !activePersona ? personaStyles.closure : "";
   const personaUnavailable = activePersona?.kind === "builtin" && !builtinPersonas.some(persona => persona.id === activePersona.id);
   const displayTurns = useMemo(() => buildAgentDisplayTurns(messages, busy), [messages, busy]);
@@ -474,7 +472,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
       ...(activePersona ? { persona: activePersona.kind === "builtin" ? { id: activePersona.id, kind: "builtin" } : { id: activePersona.id, name: activePersona.name, content: activePersona.content } } : {}),
     } });
     await runtime.run(runtimeConversation, () => sendMessage(
-      { text: trimmed, files },
+      { text: trimmed, files, metadata: { replyPersona: snapshotAgentReplyPersona(activePersona) } },
       runtimeConversation.requestOptions,
     ));
   };
@@ -689,6 +687,9 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
             </ChatBubble>;
             }
             const waiting = turn.pending && (status === "submitted" || !hasActiveAgentContent(turn.messages.at(-1)));
+            const personaName = turn.persona.name ?? (en ? "Closure" : "可露希尔");
+            const personaAvatar = turn.persona.avatarUrl;
+            const personaMascot = turn.persona.mascot;
             return <div key={turn.key} className={dialogueStyles.assistantTurn} data-agent-assistant-turn data-response-key={turn.key} data-pending={turn.pending}>
               {turn.messages.flatMap((message) => {
                 const active = turn.pending && status !== "submitted" && message.id === messages.at(-1)?.id;
