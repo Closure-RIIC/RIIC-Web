@@ -36,6 +36,7 @@ import { WORKBENCH_PAGE_PATHS, workbenchHref, workbenchPageFromPathname, type Ap
 import { useWebsiteSession } from "@/website-session";
 import { useFeatureAccess } from "@/components/workbench/FeatureAccessProvider";
 import { usePlanTask } from "@/hooks/use-plan-task";
+import { normalizeFacilityDefaults } from "./facility-defaults";
 import type { SklandTrainingSyncOptions } from "@/hooks/use-skland-training-sync";
 import type { TrainingSyncSnapshot } from "@/components/workbench/SklandTrainingSyncBridge";
 import { LanguageSwitch } from "@/i18n/client";
@@ -195,7 +196,7 @@ function parseLayoutJson(value: unknown): BaseBlueprint | null {
     return { ...room, level } as BlueprintRoom;
   });
   if (rooms.some((room) => room === null) || !rooms.some((room) => room?.kind === "control_center")) return null;
-  return { ...layout, drone_cap: Number(layout.drone_cap ?? 0), scenario: layout.scenario, rooms: rooms as BlueprintRoom[] } as BaseBlueprint;
+  return normalizeFacilityDefaults({ ...layout, drone_cap: Number(layout.drone_cap ?? 250), scenario: layout.scenario, rooms: rooms as BlueprintRoom[] } as BaseBlueprint);
 }
 
 function layoutValidationError(layout: BaseBlueprint, en = false): string | null {
@@ -242,11 +243,11 @@ function restoreEditableProducts(baseLayout: BaseBlueprint, cachedLayout: BaseBl
 }
 
 function mergeSklandLayout(current: BaseBlueprint, suggestion: BaseBlueprint): BaseBlueprint {
-  return {
+  return normalizeFacilityDefaults({
     ...suggestion,
     drone_cap: current.drone_cap,
     scenario: structuredClone(current.scenario),
-  };
+  });
 }
 
 function WorkbenchAppContent({ children }: { children: ReactNode }) {
@@ -1331,7 +1332,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       const next = structuredClone(current);
       const rooms = next.maa.plans[activeShift]?.rooms[group];
       const room = rooms?.[row.index];
-      if (!room || firstSlotIndex === secondSlotIndex) return current;
+      if (!room?.operators || firstSlotIndex === secondSlotIndex) return current;
       if (!room.operators[firstSlotIndex] || !room.operators[secondSlotIndex]) return current;
       [room.operators[firstSlotIndex], room.operators[secondSlotIndex]] = [
         room.operators[secondSlotIndex],

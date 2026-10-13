@@ -26,12 +26,13 @@ export function buildNativeEvalRequest(input: {
     const trainingRoom = input.layout.rooms.find((room) => room.kind === "training_room");
     const rooms = input.layout.rooms.map((room) => ({
       room_id: room.id,
-      operators: namesForRoom(input.draft, shiftIndex, room.id, manualRoomCapacity(room))
-        .slice(0, room.kind === "training_room" ? 1 : undefined)
+      operators: (room.kind === "training_room"
+        ? (shift.rooms[room.id]?.operators ?? []).slice(0, 1).filter((name): name is string => Boolean(name?.trim()))
+        : namesForRoom(input.draft, shiftIndex, room.id, manualRoomCapacity(room)))
         .map((name) => ({ name })),
     }));
     const trainer = trainingRoom
-      ? namesForRoom(input.draft, shiftIndex, trainingRoom.id, manualRoomCapacity(trainingRoom))[1]
+      ? shift.rooms[trainingRoom.id]?.operators[1]
       : undefined;
     return {
       duration_hours: Math.round(shift.durationHours),

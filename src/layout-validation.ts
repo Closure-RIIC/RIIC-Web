@@ -1,6 +1,6 @@
 import type { RoomKind } from "./types";
 
-const MAX_DRONE_CAP = 0xffff_ffff;
+const MAX_DRONE_CAP = 250;
 const ROOM_MAX_LEVEL: Record<RoomKind, number> = {
   control_center: 5,
   trade_post: 3,
@@ -11,6 +11,7 @@ const ROOM_MAX_LEVEL: Record<RoomKind, number> = {
   meeting_room: 3,
   workshop: 3,
   training_room: 3,
+  recycling_station: 3,
 };
 const ROOM_KINDS = new Set<RoomKind>(Object.keys(ROOM_MAX_LEVEL) as RoomKind[]);
 
@@ -68,6 +69,9 @@ export function validateLayoutJson(value: unknown): string[] {
     }
   });
   if (controls !== 1) errors.push(`布局必须且只能包含一个控制中枢（当前 ${controls} 个）。`);
+  for (const kind of ["office", "meeting_room", "workshop", "training_room", "recycling_station"]) {
+    if (value.rooms.filter((room) => object(room) && room.kind === kind).length > 1) errors.push(`${kind} 只能包含一个。`);
+  }
   if (powerPlants === 0) errors.push("布局至少需要一个发电站。");
   return errors;
 }

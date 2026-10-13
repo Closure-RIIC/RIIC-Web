@@ -1,6 +1,6 @@
 {
   "template": "252",
-  "drone_cap": 235,
+  "drone_cap": 250,
   "scenario": {
     "sui_facility_count": 2,
     "dorm_occupant_count": 20,
@@ -26,6 +26,7 @@
     { "id": "dorm_4", "kind": "dormitory", "level": 1, "dorm_beds": 5 },
     { "id": "workshop", "kind": "workshop", "level": 3 },
     { "id": "office", "kind": "office", "level": 3 },
-    { "id": "training_room", "kind": "training_room", "level": 3 }
+    { "id": "training_room", "kind": "training_room", "level": 3 },
+    { "id": "recycling_station", "kind": "recycling_station", "level": 3 }
   ]
 }

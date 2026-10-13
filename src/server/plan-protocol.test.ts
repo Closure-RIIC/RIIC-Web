@@ -74,7 +74,7 @@ test("uses plan.compute for matching versions regardless of schema byte hash", (
         pong: true,
         protocol_version: 1,
         plan_schema_version: 1,
-        supported_plan_schema_versions: [1, 2, 3],
+        supported_plan_schema_versions: [1, 2, 3, 4, 5],
         plan_contract_sha256: planContractSha256,
       },
     });
@@ -85,13 +85,13 @@ test("uses plan.compute for matching versions regardless of schema byte hash", (
   }
 });
 
-test("keeps a v4-capable Worker on the website v3 request without Check-only options", () => {
+test("uses a v5-capable Worker for the website facility request", () => {
   const capability = inspectPlanComputeCapability({
     ok: true,
     result: {
       protocol_version: 1,
-      plan_schema_version: 4,
-      supported_plan_schema_versions: [1, 2, 3, 4],
+      plan_schema_version: 5,
+      supported_plan_schema_versions: [1, 2, 3, 4, 5],
     },
   });
   const params = createPlanComputeParams({
@@ -103,7 +103,9 @@ test("keeps a v4-capable Worker on the website v3 request without Check-only opt
   });
 
   assert.equal(capability.supported, true);
-  assert.equal(params.schema_version, 3);
+  assert.equal(params.schema_version, 5);
+  assert.equal(params.layout.drone_cap, 250);
+  assert.equal(params.layout.rooms[0]?.kind, "recycling_station");
   assert.equal(params.options?.fiammetta_enable, false);
   assert.equal("assert_invariants" in (params.options ?? {}), false);
 });
@@ -145,7 +147,7 @@ test("normalizes Worker fingerprints and keeps them diagnostic-only", () => {
     result: {
       protocol_version: 1,
       plan_schema_version: 1,
-      supported_plan_schema_versions: [1, 2, 3],
+      supported_plan_schema_versions: [1, 2, 3, 4, 5],
       plan_contract_sha256: "not-a-hash",
       solver_executable_sha256: executableHash,
     },
@@ -161,7 +163,7 @@ test("normalizes Worker fingerprints and keeps them diagnostic-only", () => {
       result: {
         protocol_version: 1,
         plan_schema_version: 1,
-        supported_plan_schema_versions: [1, 2, 3],
+        supported_plan_schema_versions: [1, 2, 3, 4, 5],
         solver_executable_sha256: invalidFingerprint,
       },
     });
@@ -177,7 +179,7 @@ test("deployment readiness requires current versions and the configured artifact
     result: {
       protocol_version: 1,
       plan_schema_version: 1,
-      supported_plan_schema_versions: [1, 2, 3],
+      supported_plan_schema_versions: [1, 2, 3, 4, 5],
       solver_executable_sha256: executableHash,
     },
   });
@@ -198,7 +200,7 @@ test("feedback metadata reuses the matching private run observation and tolerate
     result: {
       protocol_version: 1,
       plan_schema_version: 1,
-      supported_plan_schema_versions: [1, 2, 3],
+      supported_plan_schema_versions: [1, 2, 3, 4, 5],
       plan_contract_sha256: "d".repeat(64),
       solver_executable_sha256: "e".repeat(64),
     },
@@ -220,7 +222,7 @@ test("validates the complete plan.compute success payload", () => {
   const payload = parsePlanComputePayload({
     ok: true,
     result: {
-      schema_version: 3,
+      schema_version: 5,
       profile: { schema_version: 4 },
       rotation: {
         profile: "abc_12_6_6",
@@ -260,7 +262,7 @@ function planComputeWithTrainingRoom(trainingRoom: unknown, plans = [
   return {
     ok: true,
     result: {
-      schema_version: 3,
+      schema_version: 5,
       profile: { schema_version: 4 },
       rotation: { profile: "abc_12_6_6", daily: {}, shifts: plans.map((_, index) => ({ index })) },
       maa: { title: "排班", plans },
@@ -365,14 +367,14 @@ test("rejects malformed training-room shift counts, names, duplicates, and MAA c
 
 test("rejects malformed successful plan.compute payloads", () => {
   assert.throws(
-    () => parsePlanComputePayload({ ok: true, result: { schema_version: 3, profile: {}, rotation: { shifts: [] } } }),
+    () => parsePlanComputePayload({ ok: true, result: { schema_version: 5, profile: {}, rotation: { shifts: [] } } }),
     /maa/
   );
   assert.throws(
     () => parsePlanComputePayload({
       ok: true,
       result: {
-        schema_version: 3,
+        schema_version: 5,
         profile: {},
         rotation: { shifts: [] },
         maa: {},
@@ -385,7 +387,7 @@ test("rejects malformed successful plan.compute payloads", () => {
     () => parsePlanComputePayload({
       ok: true,
       result: {
-        schema_version: 3,
+        schema_version: 5,
         profile: {},
         rotation: { shifts: [] },
         maa: {},

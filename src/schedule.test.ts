@@ -32,7 +32,7 @@ test("adds two named empty training positions for plans without optional trainin
   const row = trainingRow();
   assert.equal(row.roomId, "training_room");
   assert.equal(row.level, 3);
-  assert.equal(row.rule, "不参与 MAA 导出");
+  assert.equal(row.rule, "未使用时跳过换班");
   assert.deepEqual(row.positionSlots, [
     { position: "trainee", positionLabel: "训练位" },
     { position: "trainer", positionLabel: "协助位" },
