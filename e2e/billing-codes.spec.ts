@@ -2,9 +2,8 @@ import { randomUUID } from "node:crypto";
 import { test, expect, type BrowserContext } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 import { Pool } from "pg";
-import { attachLoopbackSession } from "./loopback-session";
 
-test("admin issues and revokes a batch while redemption updates wallet and preserves single use", async ({ page, context, browser, baseURL, browserName }) => {
+test("admin issues and revokes a batch while redemption updates wallet and preserves single use", async ({ page, context, browser, baseURL }) => {
   const databaseUrl = process.env.AUTH_INTEGRATION_DATABASE_URL;
   test.skip(!databaseUrl, "Requires an isolated authentication test database.");
   if (!new URL(databaseUrl!).pathname.endsWith("_test")) throw new Error("Only an isolated *_test database is allowed.");
@@ -19,7 +18,7 @@ test("admin issues and revokes a batch while redemption updates wallet and prese
     await pool.query('insert into public."user" (id,name,email,email_verified,role) values ($1,$2,$3,true,$4)', [id, "Code test", `${id}@example.test`, role]);
     users.push(id);
     await pool.query("insert into account (id,account_id,provider_id,user_id,password) values ($1,$2,'credential',$2,$3)", [randomUUID(), id, await hashPassword(password)]);
-    const response = await target.request.post(`${baseURL}/api/auth/sign-in/email`, { headers: { origin: process.env.BETTER_AUTH_URL ?? baseURL! }, data: { email: `${id}@example.test`, password } });
+    const response = await target.request.post(`${baseURL}/api/auth/sign-in/email`, { headers: { origin: baseURL! }, data: { email: `${id}@example.test`, password } });
     expect(response.status(), (await response.text()).slice(0, 500)).toBe(200);
     const cookies = response.headersArray().filter(header => header.name.toLowerCase() === "set-cookie").map(header => header.value.split(";", 1)[0]).filter(pair => pair.split("=", 1)[0].endsWith("session_token"));
     expect(cookies).toHaveLength(1);
@@ -27,7 +26,6 @@ test("admin issues and revokes a batch while redemption updates wallet and prese
       const index = pair.indexOf("=");
       await target.addCookies([{ name: pair.slice(0, index), value: pair.slice(index + 1), domain: new URL(baseURL!).hostname, path: "/", httpOnly: true, secure: pair.startsWith("__Secure-"), sameSite: "Lax" }]);
     }
-    await attachLoopbackSession(target, baseURL!, browserName, cookies);
     return { id, headers: { cookie: cookies.join("; "), origin: baseURL! } };
   }
   try {
