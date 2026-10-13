@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, gt } from "drizzle-orm";
 import {
   assertEmptyBody,
   assertSameOrigin,
@@ -6,6 +6,7 @@ import {
   enforceRateLimit,
   failureResponse,
   requestClientIp,
+  PublicApiError,
   successResponse,
 } from "@/server/api-contract";
 import { requireWebsiteSession } from "@/server/auth/authorization";
@@ -28,9 +29,9 @@ export async function POST(request: Request) {
     const [updated] = await getDatabase()
       .update(session)
       .set({ expiresAt, updatedAt: new Date() })
-      .where(and(eq(session.id, current.session.id), eq(session.userId, current.user.id)))
+      .where(and(eq(session.id, current.session.id), eq(session.userId, current.user.id), gt(session.expiresAt, new Date())))
       .returning({ expiresAt: session.expiresAt });
-    if (!updated) throw new Error("Current session no longer exists.");
+    if (!updated) throw new PublicApiError("AIC-AUTH-2008");
 
     const response = successResponse({ expiresAt: updated.expiresAt.toISOString() }, requestId);
     const cookie = extendedSessionCookie(request);

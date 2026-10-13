@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { requireWebsiteReviewer } from "@/server/auth/authorization";
-import { assertSameOrigin, createRequestId, failureResponse, readJsonBody, successResponse } from "@/server/api-contract";
+import { assertSameOrigin, createRequestId, failureResponse, PublicApiError, readJsonBody, successResponse } from "@/server/api-contract";
 import { listWishes, updateWish, type WishStatus } from "@/server/wishes";
 
 export const runtime = "nodejs";
@@ -18,7 +18,7 @@ export async function PATCH(request: Request) {
     assertSameOrigin(request);
     await requireWebsiteReviewer(request);
     const body = await readJsonBody(request, 8 * 1024) as { id?: unknown; status?: unknown; adminNote?: unknown };
-    if (typeof body.id !== "string" || !["pending", "approved", "rejected", "hidden"].includes(String(body.status))) throw new Error("Invalid wish review");
-    return successResponse({ wish: await updateWish(body.id, { status: body.status as WishStatus, adminNote: typeof body.adminNote === "string" ? body.adminNote : undefined }) }, createRequestId());
+    if (!body || typeof body.id !== "string" || !body.id || body.id.length > 128 || !["pending", "approved", "rejected", "hidden"].includes(String(body.status))) throw new PublicApiError("AIC-REQ-1001");
+    return successResponse({ wish: await updateWish(body.id, { status: body.status as WishStatus, adminNote: typeof body.adminNote === "string" ? body.adminNote.slice(0, 2000) : undefined }) }, createRequestId());
   } catch (error) { return failureResponse(error, createRequestId(), "/api/admin/wishes", startedAt); }
 }
