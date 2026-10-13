@@ -5,6 +5,7 @@ export function extendedSessionExpiry(now = new Date()): Date {
 }
 
 function authSessionCookieName(request: Request): string {
+  if (cookieValue(request, "__Secure-better-auth.session_token")) return "__Secure-better-auth.session_token";
   return new URL(request.url).protocol === "https:"
     ? "__Secure-better-auth.session_token"
     : "better-auth.session_token";
@@ -22,5 +23,5 @@ export function extendedSessionCookie(request: Request): string | null {
   const name = authSessionCookieName(request);
   const value = cookieValue(request, name);
   if (!value) return null;
-  return `${name}=${value}; Path=/; Max-Age=${WEBSITE_SESSION_DURATION_SECONDS}; HttpOnly; SameSite=Lax${new URL(request.url).protocol === "https:" ? "; Secure" : ""}`;
+  return `${name}=${value}; Path=/; Max-Age=${WEBSITE_SESSION_DURATION_SECONDS}; HttpOnly; SameSite=Lax${name.startsWith("__Secure-") ? "; Secure" : ""}`;
 }
