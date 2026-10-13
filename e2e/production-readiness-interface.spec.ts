@@ -705,7 +705,18 @@ test("layout level steppers respect bounds and expose the power-safe 342 default
   }
   const activeTradeOrder = dialog.getByRole("group", { name: "贸易站 1 订单" }).getByRole("button", { name: "龙门商法" });
   await expect(activeTradeOrder).toHaveAttribute("aria-pressed", "true");
-  await expect(dialog.locator('[data-slot="setup-room-row"]')).toHaveCount(18);
+  await expect(dialog.locator('[data-slot="setup-room-row"]')).toHaveCount(19);
+  const recycling = dialog.locator('[data-slot="setup-room-row"][data-room-group="recycling"]');
+  await expect(recycling).toHaveCount(1);
+  await expect(recycling.locator("output")).toHaveText("3");
+  await expect(recycling.getByRole("button", { name: "recycling_station 等级加一" })).toBeDisabled();
+  await recycling.getByRole("button", { name: "recycling_station 等级减一" }).click();
+  await recycling.getByRole("button", { name: "recycling_station 等级减一" }).click();
+  await expect(recycling.locator("output")).toHaveText("1");
+  await expect(recycling.getByRole("button", { name: "recycling_station 等级减一" })).toBeDisabled();
+  await recycling.getByRole("button", { name: "recycling_station 等级加一" }).click();
+  await expect(recycling.locator("output")).toHaveText("2");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic-web-user-settings") ?? "{}").recyclingRoomLevel)).toBe(2);
   await expect(dialog.locator('[data-slot="setup-room-row"][data-room-group="trading"]')).toHaveCount(3);
   await expect(dialog.locator('[data-slot="setup-room-row"][data-room-group="manufacture"]')).toHaveCount(4);
   await expect(dialog.locator('[data-slot="setup-room-row"][data-room-group="power"]')).toHaveCount(2);
