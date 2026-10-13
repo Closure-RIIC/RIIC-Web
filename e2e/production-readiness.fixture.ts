@@ -62,12 +62,27 @@ export async function armEndingTransitionCapture(element: Locator, label: string
     const attribute = `data-motion-exit-${captureLabel}`;
     const root = document.documentElement;
     root.removeAttribute(attribute);
+    const observedDurations = new Set<number | string>();
+    const record = (durations: Array<number | string>) => {
+      for (const duration of durations) observedDurations.add(duration);
+      if (observedDurations.size) root.setAttribute(attribute, JSON.stringify([...observedDurations]));
+    };
+    // A busy runner can deliver the next frame after the exit has finished.
+    // Record native completion events as well as active animation timings.
+    const onEnd = (event: Event) => {
+      if (event.target !== node || !node.hasAttribute("data-ending-style")) return;
+      record([Math.round((event as AnimationEvent | TransitionEvent).elapsedTime * 1_000)]);
+    };
+    node.addEventListener("animationend", onEnd);
+    node.addEventListener("transitionend", onEnd);
 
     const capture = () => {
       if (!node.hasAttribute("data-ending-style")) return false;
       requestAnimationFrame(() => {
-        const durations = node.getAnimations().map((animation) => animation.effect?.getTiming().duration ?? 0);
-        root.setAttribute(attribute, JSON.stringify(durations));
+        record(node.getAnimations().map((animation) => {
+          const duration = animation.effect?.getTiming().duration ?? 0;
+          return typeof duration === "object" ? String(duration) : duration;
+        }));
       });
       return true;
     };
