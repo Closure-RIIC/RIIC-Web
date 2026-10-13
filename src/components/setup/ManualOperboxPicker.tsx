@@ -143,18 +143,23 @@ const ManualOperatorCard = memo(function ManualOperatorCard({
           <span className="font-number text-xs text-muted-foreground">
             {operator.rarity}★ · {localize_components_setup_ManualOperboxPicker.text(en, "upToE", { maxElite: maxElite })}
           </span>
-          {scheduledShifts?.map((shift) => (
-            <span
-              key={shift}
-              className={cn(
-                "inline-flex h-4 items-center border px-1 text-[10px] font-semibold leading-none",
-                SHIFT_BADGE_CLASS[(shift - 1) % SHIFT_BADGE_CLASS.length],
-              )}
-              title={shiftLabel(shift, en)}
-            >
-              {shiftLabel(shift, en, true)}
+          {scheduledShifts?.length ? (
+            <span className="grid w-fit grid-cols-2 gap-0.5">
+              {scheduledShifts.map((shift, index) => (
+                <span
+                  key={shift}
+                  className={cn(
+                    "inline-flex h-4 items-center justify-center border px-1 text-[10px] font-semibold leading-none",
+                    index >= 2 && "col-span-2 justify-self-center",
+                    SHIFT_BADGE_CLASS[(shift - 1) % SHIFT_BADGE_CLASS.length],
+                  )}
+                  title={shiftLabel(shift, en)}
+                >
+                  {shiftLabel(shift, en, true)}
+                </span>
+              ))}
             </span>
-          ))}
+          ) : null}
       </OperatorIdentity>
     </button>
   );
