@@ -1122,12 +1122,12 @@ export function OperatorSlot({
             exit={{
               opacity: 0,
               x: exitX,
-              pointerEvents: "none",
               transition: {
                 duration: MOTION_DURATION.fast,
                 ease: MOTION_EASE_OUT,
               },
             }}
+            style={{ pointerEvents: "none" }}
             transition={{
               duration: shouldReduceMotion ? MOTION_DURATION.feedback : MOTION_DURATION.state,
               delay: shouldReduceMotion ? 0 : transitionDelay,
