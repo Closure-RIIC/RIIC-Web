@@ -194,10 +194,12 @@ jobs:
 
           timeout --kill-after=10s 90s ssh "${ssh_options[@]}" \
             "${DEPLOY_SSH_USER}@${DEPLOY_HOST}" \
-            bash -s -- "$DEPLOY_SERVICE" "$DEPLOY_RUN_USER" <<'REMOTE'
+            bash -s -- "$DEPLOY_SERVICE" "$DEPLOY_RUN_USER" "$DEPLOY_INTERNAL_PORT" <<'REMOTE'
           set -euo pipefail
           service="$1"
           run_user="$2"
+          internal_port="$3"
+          [[ "$internal_port" =~ ^[0-9]{2,5}$ ]]
           [[ "$service" =~ ^arknights-infra(-[A-Za-z0-9_.@-]+)?$ ]]
           [[ "$run_user" =~ ^[A-Za-z0-9_-]+$ ]]
 
@@ -237,6 +239,18 @@ jobs:
           echo '=== recent kernel OOM evidence ==='
           journalctl -k --no-pager -o short-iso --since '90 minutes ago' \
             | grep -Ei 'out of memory|oom-kill|killed process' || true
+
+          echo '=== internal health response (including non-2xx) ==='
+          curl --silent --show-error --max-time 15 --write-out '\nhttp_status=%{http_code}\n' \
+            "http://127.0.0.1:$internal_port/api/health" || true
+
+          echo '=== scoped startup errors using existing sudo permissions ==='
+          for unit in "$service.service" "$service-worker.service"; do
+            sudo -n journalctl --no-pager -o cat --since '2026-10-13 14:32:00 UTC' \
+              --until '2026-10-13 14:35:00 UTC' -n 200 -u "$unit" \
+              | grep -Ei 'error|failed|cannot|not found|missing|ready|listening|exit|worker|heartbeat' \
+              | sed -E 's#postgres(ql)?://[^[:space:]]+#[REDACTED_DATABASE_URL]#g' || true
+          done
           REMOTE
 
       - name: Remove SSH credentials from the runner
