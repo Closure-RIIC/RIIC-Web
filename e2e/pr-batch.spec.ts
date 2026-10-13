@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 import { Pool } from "pg";
-import { mockApis } from "./production-readiness.fixture";
+import { mockAnonymousWebsiteSession, mockApis } from "./production-readiness.fixture";
 
 test("wish wall reports unauthenticated submissions and keeps the form", async ({ page }) => {
   await mockApis(page);
@@ -21,10 +21,14 @@ test("wish wall reports unauthenticated submissions and keeps the form", async (
 
 test("settings exposes session management to signed out users", async ({ page }) => {
   await mockApis(page);
+  await mockAnonymousWebsiteSession(page);
   await page.goto("/settings");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(page.getByRole("heading", { name: "登录有效期", exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "前往登录", exact: true })).toBeVisible();
+  const signIn = page.locator('a[href="/account"]').filter({ hasText: "前往登录" });
+  await expect(signIn).toBeVisible();
+  await signIn.click();
+  await expect(page).toHaveURL(/\/account$/);
 });
 
 test("session renewal and wish submission enforce real authentication", async ({ request, baseURL }) => {
