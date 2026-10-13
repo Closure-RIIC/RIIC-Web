@@ -39,9 +39,14 @@ export function LegalDocument({
         <Link className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/privacy">
           {intl("components_legal_LegalDocument.privacyPolicy")}
         </Link>
-        <Link className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/about">
-          {intl("components_legal_LegalDocument.about")}
-        </Link>
+        <span className="inline-flex items-center gap-x-4">
+          <Link className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/about">
+            {intl("components_legal_LegalDocument.about")}
+          </Link>
+          <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/wishes" data-wishes-link>
+            {intl("App.wishes")}
+          </Link>
+        </span>
       </footer>
     </main>
   );
