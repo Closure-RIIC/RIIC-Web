@@ -481,8 +481,10 @@ async function verifyConversationScrolling(page: Page, width: number) {
   const composerPanel = page.locator("[data-agent-composer]");
   await composerPanel.evaluate((el) => {
     el.style.paddingBottom = "211px";
-    // A resize-induced scroll can arrive before ResizeObserver in WebKit.
-    document.querySelector('[aria-label="对话记录"]')!.dispatchEvent(new Event("scroll", { bubbles: true }));
+    // WebKit can deliver multiple layout scrolls before ResizeObserver.
+    const conversation = document.querySelector('[aria-label="对话记录"]')!;
+    conversation.dispatchEvent(new Event("scroll", { bubbles: true }));
+    conversation.dispatchEvent(new Event("scroll", { bubbles: true }));
   });
   await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThan(80);
   await conversation.hover();
