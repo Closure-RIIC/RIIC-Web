@@ -1443,15 +1443,15 @@ test("the initial onboarding is full-screen while other primary pages keep one c
   }
 });
 
-test("Skland and account centers share header geometry and account actions use technical cards", async ({ page }) => {
-  await mockApis(page, { sklandConfigured: true, sklandSnapshot: authenticatedSklandSnapshot });
-  await seedPreferences(page);
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 768, height: 900 },
+  { width: 1440, height: 900 },
+]) {
+  test(`Skland and account centers share header geometry and technical cards at ${viewport.width}px`, async ({ page }) => {
+    await mockApis(page, { sklandConfigured: true, sklandSnapshot: authenticatedSklandSnapshot });
+    await seedPreferences(page);
 
-  for (const viewport of [
-    { width: 390, height: 844 },
-    { width: 768, height: 900 },
-    { width: 1440, height: 900 },
-  ]) {
     await page.setViewportSize(viewport);
     await page.goto("/");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
@@ -1507,5 +1507,5 @@ test("Skland and account centers share header geometry and account actions use t
       await expect(accountRoot.getByRole("button", { name: label })).toHaveCSS("height", dialogButtonHeight);
       await expect(accountRoot.getByRole("button", { name: label })).toHaveCSS("border-radius", "22px");
     }
-  }
-});
+  });
+}

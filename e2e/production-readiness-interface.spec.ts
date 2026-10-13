@@ -1,4 +1,4 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import arkntoolsSource from "../src/generated/arkntools/source.json" with { type: "json" };
 import { twoShiftPlanData } from "./production-readiness.fixture";
 import { requestId, diagnosticId, waitForOwnAnimations, gotoStable, expectVisibleNumbersUseNumberFont, profile, planData, scheduleVisualPlanData, sampleData, authenticatedSklandSnapshot, mockApis, openSklandOverview, seedPreferences, seedV4Session } from "./production-readiness.fixture";
@@ -661,7 +661,7 @@ test("setup exposes and persists only worker-supported rotation profiles", async
   expect(persisted.operbox).toHaveLength(fullOperatorCount);
 });
 
-test("layout level steppers respect bounds and expose the power-safe 342 defaults", async ({ page }) => {
+async function open342Facilities(page: Page) {
   await mockApis(page);
   await seedV4Session(page);
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -674,6 +674,11 @@ test("layout level steppers respect bounds and expose the power-safe 342 default
   await dialog.getByRole("button", { name: /^342/ }).click();
   await expect(dialog.getByRole("button", { name: "检查设施", exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "检查设施", exact: true }).click();
+  return dialog;
+}
+
+test("layout level steppers respect bounds and keep recycling power at zero", async ({ page }) => {
+  const dialog = await open342Facilities(page);
 
   const tradeGroup = dialog.locator('[data-facility-group="trade"]');
   const factoryGroup = dialog.locator('[data-facility-group="factory"]');
@@ -708,7 +713,13 @@ test("layout level steppers respect bounds and expose the power-safe 342 default
   for (let count = 0; count < 4; count++) await dialog.getByRole("button", { name: "control 等级加一" }).click();
   await expect(controlLevel).toHaveText("5");
   await expect(dialog.getByRole("button", { name: "control 等级加一" })).toBeDisabled();
+});
 
+test("layout facilities expose power-safe 342 defaults and responsive controls", async ({ page }) => {
+  const dialog = await open342Facilities(page);
+  const tradeGroup = dialog.locator('[data-facility-group="trade"]');
+  const factoryGroup = dialog.locator('[data-facility-group="factory"]');
+  await dialog.locator('[data-facility-group="function"] [data-slot="accordion-trigger"]').click();
   await dialog.locator('[data-facility-group="power"] [data-slot="accordion-trigger"]').click();
   await dialog.locator('[data-facility-group="dormitory"] [data-slot="accordion-trigger"]').click();
   if (await tradeGroup.locator('[data-slot="accordion-trigger"]').getAttribute("aria-expanded") !== "true") {
