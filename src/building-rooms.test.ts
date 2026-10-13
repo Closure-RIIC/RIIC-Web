@@ -55,7 +55,7 @@ test("derives the building-room prefix from the skill id's first underscore segm
   assert.equal(buildingRoomPrefixForSkillId("no-underscore"), null);
 });
 
-test("maps the nine room prefixes to their Chinese labels", () => {
+test("maps the ten room prefixes to their Chinese labels", () => {
   const expected: Readonly<Record<BuildingRoomPrefix, string>> = {
     control: "控制中枢",
     power: "发电站",
@@ -66,11 +66,19 @@ test("maps the nine room prefixes to their Chinese labels", () => {
     meet: "会客室",
     train: "训练室",
     workshop: "加工站",
+    recycle: "回收站",
   };
   assert.deepEqual({ ...BUILDING_ROOM_LABELS }, expected);
-  assert.equal(BUILDING_ROOM_PREFIXES.length, 9);
-  assert.equal(new Set(BUILDING_ROOM_PREFIXES).size, 9);
+  assert.equal(BUILDING_ROOM_PREFIXES.length, 10);
+  assert.equal(new Set(BUILDING_ROOM_PREFIXES).size, 10);
   assert.deepEqual([...BUILDING_ROOM_PREFIXES].sort(), [...Object.keys(expected)].sort());
+});
+
+test("recycling room and conversion tag match the real recycling skills", () => {
+  assert.equal(buildingRoomPrefixForSkillId("recycle_spd&cost_000"), "recycle");
+  const operators = filterOperators(OPERATOR_CATALOG, "recycle", "转化效率", "", realSkillLookup);
+  assert.ok(operators.some(operator => operator.name === "旅骨"));
+  assert.ok(operators.every(operator => operator.buildingSkills.some(skill => skill.id.startsWith("recycle_"))));
 });
 
 test("filters operators by a single room prefix", () => {
