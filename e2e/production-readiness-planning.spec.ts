@@ -155,6 +155,11 @@ test("buffered plans show a quiet candidate-ring state and can be dismissed with
   await page.getByRole("button", { name: "生成排班" }).click();
   const activity = page.locator('[data-slot="live-activity"]');
   await expect(activity).toHaveAttribute("data-activity-phase", "queued");
+  // The preview retracts automatically. Reopen it through keyboard focus before
+  // checking and dismissing its controls, including on slower WebKit runners.
+  await expect(activity).toHaveAttribute("data-activity-view", "compact");
+  await activity.focus();
+  await expect(activity).toHaveAttribute("data-activity-view", "expanded");
   await expect(activity).toContainText("当前进入候选环，名额释放后随机抽取。");
   await expect(activity.locator('[data-slot="status-mark-rail"] [data-live-activity-icon]')).toHaveAttribute("data-status", "pending");
   await expect(activity.locator("[data-live-activity-icon]")).toHaveCount(2);
