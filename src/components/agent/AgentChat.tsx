@@ -2,7 +2,7 @@
 import { INTERNAL_ANSWER_MARKERS } from "@/agent-answer";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { Chat, useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, convertFileListToFileUIParts, type FileUIPart, type UIMessage } from "ai";
@@ -413,17 +413,22 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     };
   }, [runtimeConversation, creditRevision]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const container = conversationRef.current;
-    if (container && followMessages.current) container.scrollTop = container.scrollHeight;
+    if (!container) return;
+    const follow = () => { if (followMessages.current) container.scrollTop = container.scrollHeight; };
+    follow();
+    // Restored history can settle before the composer, fonts and scrollbar do.
+    // Follow layout changes while the reader is still at the latest message.
+    const observer = new ResizeObserver(follow);
+    observer.observe(container);
+    for (const child of container.children) observer.observe(child);
+    container.addEventListener("yeye-scrollbar-ready", follow);
+    return () => {
+      observer.disconnect();
+      container.removeEventListener("yeye-scrollbar-ready", follow);
+    };
   }, [messages, agentStatus, status]);
-
-  useEffect(() => {
-    const container = conversationRef.current;
-    const follow = () => { if (container && followMessages.current) container.scrollTop = container.scrollHeight; };
-    container?.addEventListener("yeye-scrollbar-ready", follow);
-    return () => container?.removeEventListener("yeye-scrollbar-ready", follow);
-  }, []);
 
   // 求解完成时通知同浏览器内已打开的工作台标签页（幂等，每个工具结果只广播一次）。
   // Restoring history must not re-announce old solver results to other pages.
