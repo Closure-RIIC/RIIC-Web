@@ -478,7 +478,10 @@ async function verifyConversationScrolling(page: Page, width: number) {
   await expect(page.locator("[data-agent-streaming-text]")).toContainText("第 45 段");
   await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThan(80);
   await conversation.hover();
-  await page.mouse.wheel(0, -700);
+  // Mobile WebKit has no mouse wheel; keyboard scrolling exercises the same viewport.
+  await conversation.focus();
+  await conversation.press("PageUp");
+  await conversation.press("PageUp");
   await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeGreaterThan(300);
   await expect(input).toBeVisible();
   // The relocated track still drives the original viewport and supports dragging.

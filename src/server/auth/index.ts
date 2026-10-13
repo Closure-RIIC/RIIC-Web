@@ -9,6 +9,7 @@ import { websiteAccountNameDatabaseHooks } from "./account-name-hooks";
 import { sendAuthEmail } from "./email";
 import { configuredAdminIds, localAuthTrustedOrigins, requireAuthBaseUrl, requireAuthSecret } from "./config";
 import { passwordStrengthHook } from "./password-strength-hook";
+import { WEBSITE_SESSION_DURATION_SECONDS } from "./session-lifetime";
 
 function createAuth() {
   const baseURL = requireAuthBaseUrl();
@@ -33,6 +34,9 @@ function createAuth() {
       sendOnSignUp: true,
       autoSignInAfterVerification: false,
       expiresIn: 10 * 60,
+    },
+    session: {
+      expiresIn: WEBSITE_SESSION_DURATION_SECONDS,
     },
     rateLimit: { enabled: true, storage: "database" },
     user: {

@@ -3,6 +3,7 @@
   "enterTheEmailAddressYouWantToVerify": "Enter the email address you want to verify.",
   "verificationCodeSentCompleteVerificationWithin10Minutes": "Verification code sent. Complete verification within 10 minutes.",
   "ifThisEmailIsRegisteredAResetMessageWill": "If this email is registered, a reset message will arrive shortly.",
+  "userNotRegistered": "This user is not registered.",
   "emailVerifiedYouCanNowSignIn": "Email verified. You can now sign in.",
   "restoringWebsiteAccount": "Restoring website account",
   "emailVerified": "Email verified",

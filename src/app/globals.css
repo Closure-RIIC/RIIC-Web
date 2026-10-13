@@ -2,6 +2,493 @@
 @import "tw-animate-css";
 @import "../styles/vendor/shadcn-tailwind.css";
 
+@font-face { font-family: "Wish Long Cang"; src: url("/fonts/wishes/LongCang-Regular.ttf") format("truetype"); font-display: swap; }
+@font-face { font-family: "Wish QingKe"; src: url("/fonts/wishes/ZCOOLQingKeHuangYou-Regular.ttf") format("truetype"); font-display: swap; }
+.wish-display-font { font-family: "Wish QingKe", "Microsoft YaHei", "PingFang SC", sans-serif; }
+.wish-label-font { font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif; }
+.wish-wall-title {
+  color: #fff8dc;
+  font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+  font-weight: 900;
+  line-height: 0.95;
+  text-shadow:
+    4px 4px 0 #172c30,
+    -1px -1px 0 #172c30,
+    1px -1px 0 #172c30,
+    -1px 1px 0 #172c30;
+}
+
+@keyframes wish-title-arrive {
+  0% { opacity: 0; transform: translateY(28px) scale(0.96); filter: blur(5px); }
+  72% { opacity: 1; transform: translateY(-4px) scale(1.01); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes wish-subtitle-arrive {
+  0%, 38% { opacity: 0; transform: translateY(16px) scaleX(0.9); }
+  100% { opacity: 1; transform: translateY(0) scaleX(1); }
+}
+
+.wishes2-wave-scene {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.wishes2-wave {
+  position: absolute;
+  top: -40%;
+  left: -18%;
+  width: 140%;
+  height: 180%;
+  border-radius: 50% 0 0 50%;
+  transform: translate3d(100%, 0, 0);
+  animation: wishes2-wave-push 1100ms cubic-bezier(.42,0,.22,1) both;
+}
+
+.wishes2-wave-back {
+  background: #78c7cf;
+}
+
+.wishes2-wave-front {
+  background: #205d6b;
+  animation-delay: 70ms;
+}
+
+@keyframes wishes2-wave-push {
+  from { transform: translate3d(100%, 0, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wishes2-wave {
+    animation-duration: 1ms;
+    animation-delay: 0ms;
+  }
+}
+
+.wish-banner-main {
+  transform-origin: 50% 65%;
+  animation: wish-title-arrive 1000ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.wish-banner-sub {
+  transform-origin: center;
+  animation: wish-subtitle-arrive 1150ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.wishes3-page {
+  isolation: isolate;
+}
+
+.wishes3-back-button {
+  min-width: 44px;
+  min-height: 44px;
+  filter: drop-shadow(0 7px 10px rgba(4, 15, 18, .45));
+}
+
+.wishes3-nav-link {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.wishes3-hero {
+  animation: wishes3-rise 550ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.wishes3-status-stamp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(112, 214, 255, .58);
+  padding: 10px 12px;
+  color: #d4f7ff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .18em;
+  background: rgba(16, 40, 45, .6);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .05), 0 10px 24px rgba(4, 16, 18, .18);
+}
+
+.wishes3-progress-panel {
+  border: 1px solid rgba(112, 214, 255, .38);
+  padding: 18px;
+  background: rgba(11, 38, 43, .78);
+  box-shadow: 0 18px 34px rgba(3, 14, 17, .24), inset 0 1px 0 rgba(255, 255, 255, .08);
+  animation: wishes3-rise 600ms 80ms cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.wishes3-progress-track {
+  position: relative;
+  height: 10px;
+  overflow: visible;
+  border: 1px solid rgba(255, 255, 255, .26);
+  background: rgba(0, 0, 0, .28);
+}
+
+.wishes3-progress-fill {
+  height: 100%;
+  min-width: 0;
+  background: #70d6ff;
+  box-shadow: 0 0 16px rgba(112, 214, 255, .7);
+  transition: width 320ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.wishes3-progress-tick {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 18px;
+  border: 1px solid #fff4b6;
+  background: #ffe079;
+  transform: translate(-50%, -50%);
+  transition: left 320ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.wishes3-task-card {
+  position: relative;
+  display: flex;
+  min-height: 82px;
+  align-items: center;
+  gap: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .18);
+  padding: 14px 12px;
+  background: rgba(14, 42, 47, .78);
+  outline: none;
+  box-shadow: 0 10px 20px rgba(2, 12, 14, .16), inset 0 1px 0 rgba(255, 255, 255, .06);
+  animation: wishes3-task-in 460ms cubic-bezier(.2, .8, .2, 1) both;
+  transition: border-color 200ms ease, background-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+
+.wishes3-feature-card {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(112, 214, 255, .58);
+  padding: 16px 14px;
+  background: rgba(13, 49, 56, .86);
+  box-shadow: 0 14px 28px rgba(2, 12, 14, .22), inset 0 1px 0 rgba(255, 255, 255, .08);
+  animation: wishes3-task-in 460ms cubic-bezier(.2, .8, .2, 1) both;
+  transition: border-color 200ms ease, background-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+
+.wishes3-feature-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: #70d6ff;
+  box-shadow: 0 0 18px rgba(112, 214, 255, .72);
+  content: "";
+}
+
+.wishes3-feature-card:hover {
+  border-color: #70d6ff;
+  background: rgba(19, 66, 74, .94);
+  box-shadow: 0 18px 32px rgba(2, 12, 14, .28), 0 0 28px rgba(112, 214, 255, .1);
+  transform: translateY(-2px);
+}
+
+.wishes3-feature-number {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 224, 121, .58);
+  color: #ffe079;
+  font-family: var(--font-technical), sans-serif;
+  font-size: 13px;
+}
+
+.wishes3-feature-status {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(112, 214, 255, .55);
+  padding: 0 8px;
+  color: #d4f7ff;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.wishes3-capability {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(255, 255, 255, .14);
+  padding: 0 10px;
+  color: rgba(255, 255, 255, .82);
+  font-size: 12px;
+  background: rgba(5, 24, 29, .36);
+}
+
+.wishes3-task-card::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: rgba(255, 224, 121, .7);
+  content: "";
+  transition: background-color 200ms ease, box-shadow 200ms ease;
+}
+
+.wishes3-task-card::after {
+  position: absolute;
+  top: 0;
+  right: 18%;
+  width: 20%;
+  height: 1px;
+  background: #70d6ff;
+  content: "";
+  opacity: 0;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.wishes3-task-card:hover {
+  border-color: rgba(112, 214, 255, .65);
+  background: rgba(21, 61, 68, .9);
+  box-shadow: 0 14px 26px rgba(2, 12, 14, .24), 0 0 24px rgba(112, 214, 255, .08);
+  transform: translateY(-2px);
+}
+
+.wishes3-task-card:hover::after,
+.wishes3-task-card:focus-within::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+.wishes3-task-card:focus-within {
+  border-color: #70d6ff;
+  box-shadow: 0 0 0 2px rgba(112, 214, 255, .28), 0 14px 26px rgba(2, 12, 14, .24);
+}
+
+.wishes3-task-card.is-done {
+  border-color: rgba(255, 224, 121, .45);
+  background: rgba(23, 71, 80, .78);
+}
+
+.wishes3-task-card.is-done::before {
+  background: #70d6ff;
+  box-shadow: 0 0 16px rgba(112, 214, 255, .8);
+}
+
+.wishes3-task-card.is-done .wishes3-task-check {
+  border-color: #70d6ff;
+  background: #70d6ff;
+  color: #133942;
+}
+
+.wishes3-task-card.is-done .wishes3-task-check svg {
+  transform: scale(1);
+}
+
+.wishes3-task-check {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .5);
+  color: transparent;
+  background: rgba(5, 20, 24, .32);
+  transition: border-color 200ms ease, background-color 200ms ease, color 200ms ease, transform 200ms ease;
+}
+
+.wishes3-task-check svg {
+  transform: scale(0);
+  transition: transform 180ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.wishes3-task-tag,
+.wishes3-task-index {
+  border: 1px solid rgba(255, 224, 121, .42);
+  color: #ffe079;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.wishes3-task-tag {
+  padding: 4px 6px;
+}
+
+.wishes3-task-index {
+  display: inline-flex;
+  min-width: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  align-self: stretch;
+  border-width: 0 0 0 1px;
+  border-color: rgba(112, 214, 255, .28);
+  padding-left: 10px;
+  font-family: var(--font-technical), sans-serif;
+  font-size: 12px;
+}
+
+@keyframes wishes3-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes wishes3-task-in {
+  from { opacity: 0; transform: translateY(10px) scale(.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wishes3-hero,
+  .wishes3-progress-panel,
+  .wishes3-task-card {
+    animation: none;
+  }
+
+  .wishes3-progress-fill,
+  .wishes3-progress-tick,
+  .wishes3-feature-card,
+  .wishes3-task-card,
+  .wishes3-task-check,
+  .wishes3-task-check svg {
+    transition: none;
+  }
+}
+
+.wish-cg-layer {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+.wish-cg-stage {
+  isolation: isolate;
+}
+
+.wish-cg-bg {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wish-cg-tower {
+  right: 0;
+  bottom: 0;
+  width: 59.44%;
+  height: 100%;
+  object-fit: contain;
+  object-position: right bottom;
+  animation: wish-cg-tower-drift 7s ease-in-out infinite;
+}
+
+.wish-cg-things {
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 92.4%;
+  object-fit: fill;
+  animation: wish-cg-things-drift 5.5s ease-in-out infinite;
+}
+
+.wish-cg-smoke {
+  left: 0;
+  bottom: 8%;
+  width: 100%;
+  height: 53.34%;
+  object-fit: fill;
+  opacity: .63;
+  animation: wish-cg-smoke-drift 8s ease-in-out infinite;
+}
+
+.wish-cg-wind {
+  left: 0;
+  top: 2%;
+  width: 100%;
+  height: 60%;
+  object-fit: fill;
+  opacity: .48;
+  animation: wish-cg-wind-drift 9s ease-in-out infinite;
+}
+
+.wish-cg-ray {
+  left: 28%;
+  top: 10%;
+  width: 44%;
+  height: 70%;
+  object-fit: contain;
+  mix-blend-mode: screen;
+  opacity: .18;
+  animation: wish-cg-ray-pulse 4s ease-in-out infinite;
+}
+
+.wish-cg-paper {
+  width: 15%;
+  opacity: .18;
+  filter: blur(2px);
+  animation: wish-cg-paper-float 6s ease-in-out infinite;
+}
+
+.wish-cg-paper-one {
+  left: 11%;
+  top: 19%;
+}
+
+.wish-cg-paper-two {
+  right: 12%;
+  top: 31%;
+  animation-delay: -2.4s;
+}
+
+.wish-music-note.is-playing {
+  animation: wish-music-note-spin 1.6s linear infinite;
+}
+
+@keyframes wish-music-note-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes wish-cg-tower-drift {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50% { transform: translate3d(-7px, 4px, 0) rotate(.35deg); }
+}
+
+@keyframes wish-cg-things-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-10px, -4px, 0); }
+}
+
+@keyframes wish-cg-smoke-drift {
+  0%, 100% { transform: translate3d(-2%, 0, 0) scale(1); }
+  50% { transform: translate3d(3%, -3%, 0) scale(1.04); }
+}
+
+@keyframes wish-cg-wind-drift {
+  0%, 100% { transform: translate3d(-2%, 0, 0) scale(1); }
+  50% { transform: translate3d(4%, 2%, 0) scale(1.06); }
+}
+
+@keyframes wish-cg-ray-pulse {
+  0%, 100% { opacity: .08; transform: scale(.96); }
+  50% { opacity: .24; transform: scale(1.04); }
+}
+
+@keyframes wish-cg-paper-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50% { transform: translate3d(18px, -22px, 0) rotate(8deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wish-banner-main,
+  .wish-banner-sub,
+  .wish-cg-layer,
+  .wish-music-note { animation: none; }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

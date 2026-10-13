@@ -1,5 +1,13 @@
 # Third-party asset sources
 
+## Wish-page fonts
+
+The wish page uses Long Cang and ZCOOL QingKe HuangYou from the `zhe-pian-da-di-font-pack` repository. Both are distributed under SIL Open Font License 1.1; license texts are included under `public/fonts/wishes/`.
+
+## Wish-page background music
+
+`public/audio/wish-wall-bgm.mp3` is an audio-only extraction of the user-provided Bilibili video [BV1NQuX6DEVx](https://www.bilibili.com/video/BV1NQuX6DEVx/), used as optional background music on the wish page. The original video and audio rights remain with the uploader and other respective rights holders; this project does not claim ownership.
+
 ## arkntools data and building-skill assets
 
 Operator metadata, building-skill icons, and the generated presentation catalogs under the following paths come from the public [`arkntools/arknights-toolbox-data`](https://github.com/arkntools/arknights-toolbox-data) repository:

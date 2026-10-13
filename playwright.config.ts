@@ -50,6 +50,8 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       RIIC_E2E: "1",
+      // Use the actual browser origin for signed session cookies and CSRF checks.
+      BETTER_AUTH_URL: baseURL,
       ACCOUNT_CLOUD_SYNC_ENABLED: "1",
       // Existing interaction fixtures exercise the future public rollout.
       // The production-profile suite separately tests the admin boundary.
