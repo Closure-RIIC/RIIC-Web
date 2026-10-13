@@ -2305,6 +2305,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       onScheduleModeChange: setManualScheduleMode,
       onImportedLayoutChange: handleManualImportedLayout,
       showMower: userSettings.showMower,
+      recyclingRoomLevel: userSettings.recyclingRoomLevel,
       onFiammettaEnabledChange: setManualFiammettaEnabled,
       onOpenSetup: handleManualSetup,
       onFactoryRecipeChange: handleFactoryRecipeChange,
@@ -2599,6 +2600,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         onFactoryRecipeChange={handleFactoryRecipeChange}
         onTradeOrderChange={handleTradeOrderChange}
         onRoomLevelChange={handleRoomLevelChange}
+        recyclingRoomLevel={userSettings.recyclingRoomLevel}
+        onRecyclingRoomLevelChange={(level) => handleUserSettingsChange({ ...userSettings, recyclingRoomLevel: Math.max(1, Math.min(3, Math.trunc(level))) as 1 | 2 | 3 })}
         powerBudget={powerBudget}
         onFinish={closeSetup}
         onSkip={closeSetup}

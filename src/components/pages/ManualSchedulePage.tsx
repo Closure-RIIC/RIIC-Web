@@ -124,6 +124,7 @@ export interface ManualSchedulePageProps {
   shiftViewControl?: "tabs" | "select";
   showImages?: boolean;
   showMower?: boolean;
+  recyclingRoomLevel?: number;
 }
 
 type PickerTarget =
@@ -245,6 +246,7 @@ export function ManualSchedulePage({
   shiftViewControl = "tabs",
   showImages = true,
   showMower = false,
+  recyclingRoomLevel = 3,
 }: ManualSchedulePageProps) {
   const intl = useTranslations();
   const skillFilters = useTranslations("SkillFilters");
@@ -362,9 +364,9 @@ export function ManualSchedulePage({
   } : undefined, [trainingAssignment?.operators, trainingRoom]);
   const activeEvaluationShift = result?.rotation.shifts[activeShift];
   const rows = useMemo(
-    () => addOperatorPresentations(withRecyclingRoom(planToRows(activePlan, activeEvaluationShift, layout, activeTrainingRoomShift)).map((row) => {
+    () => addOperatorPresentations(withRecyclingRoom(planToRows(activePlan, activeEvaluationShift, layout, activeTrainingRoomShift), recyclingRoomLevel).map((row) => {
       const assignment = draft.shifts[activeShift]?.rooms[row.roomId];
-      const room = manualEditableRooms(layout).find((candidate) => candidate.id === row.roomId);
+      const room = manualEditableRooms(layout, recyclingRoomLevel).find((candidate) => candidate.id === row.roomId);
       const capacity = room ? manualRoomCapacity(room) : 0;
       const visibleSlots = row.group === "control" ? 5 : row.group === "trading" || row.group === "manufacture" ? 3 : capacity;
       return {
@@ -389,7 +391,7 @@ export function ManualSchedulePage({
           : {}),
       };
     })),
-    [activeEvaluationShift, activePlan, activeShift, activeTrainingRoomShift, draft.shifts, layout],
+    [activeEvaluationShift, activePlan, activeShift, activeTrainingRoomShift, draft.shifts, layout, recyclingRoomLevel],
   );
   const selectedRoom = picker?.kind === "slot" ? rows.find((row) => row.roomId === picker.roomId) : undefined;
   const selectedAssignment = picker?.kind === "slot" ? draft.shifts[activeShift]?.rooms[picker.roomId] : undefined;
