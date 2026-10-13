@@ -28,7 +28,7 @@ import type { ShiftDirection } from "@/motion";
 import { onboardingStepStatuses, shouldShowAnonymousSampleTrial } from "@/onboarding";
 import type { RoomRow } from "@/schedule";
 import type { OperatorAssetRecord } from "@/operatorPortraits";
-import { operatorsWithoutLayoutSkills } from "@/layout-skill-highlight";
+import { operatorsWithoutRoomSkills } from "@/layout-skill-highlight";
 import type {
   BaseBlueprint,
   FeedbackData,
@@ -411,7 +411,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
     }).catch(() => { /* Leave highlighting unavailable until the next toggle. */ });
     return () => { active = false; };
   }, [highlightNoLayoutSkill]);
-  const noLayoutSkillOperators = useMemo(() => operatorsWithoutLayoutSkills(highlightCatalog, layout.rooms, skillProgressByOperator), [highlightCatalog, layout.rooms, skillProgressByOperator]);
+  const noRoomSkillOperators = useMemo(() => operatorsWithoutRoomSkills(highlightCatalog, layout.rooms, skillProgressByOperator), [highlightCatalog, layout.rooms, skillProgressByOperator]);
   const imageExportInFlight = useRef(false);
 
   function toggleSortMode(row: RoomRow) {
@@ -748,7 +748,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
               viewModeControl={scheduleViewControl}
               hideImages={!showImages}
               highlightNoLayoutSkill={highlightNoLayoutSkill}
-              noLayoutSkillOperators={noLayoutSkillOperators}
+              noRoomSkillOperators={noRoomSkillOperators}
               droneTargetRoomId={droneTargetRoomId}
               onDroneTargetChange={manualDroneSelection ? onDroneTargetChange : undefined}
             /> : (
