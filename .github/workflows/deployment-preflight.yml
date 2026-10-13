@@ -245,6 +245,9 @@ jobs:
             "http://127.0.0.1:$internal_port/api/health" || true
 
           echo '=== scoped startup errors using existing sudo permissions ==='
+          sudo -n -l || true
+          grep -nE 'diagnos|journalctl|health_body|health_response|restart|contract_version' \
+            /usr/local/sbin/arknights-infra-deploy || true
           for unit in "$service.service" "$service-worker.service"; do
             sudo -n journalctl --no-pager -o cat --since '2026-10-13 14:32:00 UTC' \
               --until '2026-10-13 14:35:00 UTC' -n 200 -u "$unit" \
