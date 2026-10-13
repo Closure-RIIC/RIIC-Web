@@ -649,9 +649,12 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
             const contentHeight = el.scrollHeight;
             const previous = conversationGeometry.current;
             const atBottom = contentHeight - el.scrollTop - height < 80;
-            // WebKit can emit a layout-induced scroll before ResizeObserver.
-            // Keep following that resize, while ordinary reading scrolls opt out.
-            if (atBottom || (previous?.height === height && previous.contentHeight === contentHeight)) {
+            const geometryChanged = previous?.height !== height || previous.contentHeight !== contentHeight;
+            // Several layout scrolls can arrive before ResizeObserver. Restore
+            // the bottom immediately so the next event cannot cancel following.
+            if (geometryChanged && followMessages.current) {
+              el.scrollTop = contentHeight;
+            } else if (atBottom || !geometryChanged) {
               followMessages.current = atBottom;
             }
             conversationGeometry.current = { height, contentHeight };
