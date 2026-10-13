@@ -49,6 +49,7 @@ jobs:
             /assets/locales/cn/building.json
             /assets/locales/cn/term.json
             /assets/img/building_skill
+            /assets/img/avatar
             /assets/img/item/2003.png
             /assets/img/item/4001.png
             /LICENSE
@@ -68,7 +69,19 @@ jobs:
             /item/DIAMOND_SHD.png
             /item/MTL_DIAMOND_SHD.png
             /item/MTL_GOLD3.png
-            /gamedata/excel/character_table.json
+            /item/AP_BASE.png
+
+      - name: Checkout game character data
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          repository: Kengxxiao/ArknightsGameData
+          path: .tmp/arknights-game-data
+          fetch-depth: 1
+          filter: blob:none
+          persist-credentials: false
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /zh_CN/gamedata/excel/character_table.json
 
       - name: Use Node.js 22
         uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -84,6 +97,7 @@ jobs:
         run: |
           git show HEAD:src/generated/arkntools/operator-catalog.json > "$RUNNER_TEMP/operators-before.json" || printf '[]\n' > "$RUNNER_TEMP/operators-before.json"
           git show HEAD:src/generated/arkntools/building-skill-catalog.json > "$RUNNER_TEMP/skills-before.json" || printf '{}\n' > "$RUNNER_TEMP/skills-before.json"
+          git show HEAD:src/generated/gacha-up.json > "$RUNNER_TEMP/gacha-up-before.json" || printf '{}\n' > "$RUNNER_TEMP/gacha-up-before.json"
 
       - name: Read upstream commit
         id: upstream
@@ -91,6 +105,7 @@ jobs:
         run: |
           echo "sha=$(git -C .tmp/arkntools-data rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "avatars_sha=$(git -C .tmp/arknights-game-resource rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "game_sha=$(git -C .tmp/arknights-game-data rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Generate and validate assets
         shell: bash
@@ -101,7 +116,8 @@ jobs:
             arguments+=(--allow-removals)
           fi
           npm run assets:sync:arkntools -- "${arguments[@]}"
-          npm run assets:mastery -- .tmp/arknights-game-resource/gamedata/excel/character_table.json
+          npm run assets:mastery -- .tmp/arknights-game-data/zh_CN/gamedata/excel/character_table.json --game-source-sha="${{ steps.upstream.outputs.game_sha }}"
+          npm run assets:gacha-up
 
       - name: Run pre-PR quality gates
         run: |
@@ -112,11 +128,11 @@ jobs:
         id: changes
         shell: bash
         run: |
-          if [[ -n "$(git status --porcelain -- public/images/operator-portraits public/images/building-skills public/images/products src/generated/arkntools src/generated/mastery-data.json)" ]]; then
+          if [[ -n "$(git status --porcelain -- public/images/operator-portraits public/images/building-skills public/images/products src/generated/arkntools src/generated/mastery-data.json src/generated/gacha-up.json fixtures/operbox_full_e2.json)" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No arkntools asset changes for ${{ steps.upstream.outputs.sha }}." >> "$GITHUB_STEP_SUMMARY"
+            echo "No operator asset or gacha UP changes for ${{ steps.upstream.outputs.sha }}." >> "$GITHUB_STEP_SUMMARY"
           fi
 
       - name: Build reviewed publication artifact
@@ -129,9 +145,10 @@ jobs:
           node scripts/arkntools-pr-summary.mjs \
             --before-operators "$RUNNER_TEMP/operators-before.json" \
             --before-skills "$RUNNER_TEMP/skills-before.json" \
+            --before-gacha-up "$RUNNER_TEMP/gacha-up-before.json" \
             > "$publication/pull-request-body.md"
-          git add -- public/images/operator-portraits public/images/building-skills public/images/products src/generated/arkntools src/generated/mastery-data.json
-          if git ls-files -s -- public/images/operator-portraits public/images/building-skills public/images/products src/generated/arkntools src/generated/mastery-data.json \
+          git add -- public/images/operator-portraits public/images/building-skills public/images/products src/generated/arkntools src/generated/mastery-data.json src/generated/gacha-up.json fixtures/operbox_full_e2.json
+          if git ls-files -s -- public/images/operator-portraits public/images/building-skills public/images/products src/generated/arkntools src/generated/mastery-data.json src/generated/gacha-up.json fixtures/operbox_full_e2.json \
             | awk '$1 != "100644" { found = 1 } END { exit found ? 0 : 1 }'; then
             echo "Managed asset paths must contain only regular non-executable files." >&2
             exit 1
@@ -208,13 +225,13 @@ jobs:
           changed_count=0
           while IFS= read -r -d '' changed_path; do
             case "$changed_path" in
-              public/images/operator-portraits/*|public/images/building-skills/*|public/images/products/*|src/generated/arkntools/*|src/generated/mastery-data.json) ;;
+              public/images/operator-portraits/*|public/images/building-skills/*|public/images/products/*|src/generated/arkntools/*|src/generated/mastery-data.json|src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
               *) echo "Publication artifact changed a forbidden path: $changed_path" >&2; exit 1 ;;
             esac
             changed_count=$((changed_count + 1))
           done < <(git diff --cached --name-only -z)
           (( changed_count > 0 ))
-          if git ls-files -s -- public/images/operator-portraits public/images/building-skills public/images/products src/generated/arkntools src/generated/mastery-data.json \
+          if git ls-files -s -- public/images/operator-portraits public/images/building-skills public/images/products src/generated/arkntools src/generated/mastery-data.json src/generated/gacha-up.json fixtures/operbox_full_e2.json \
             | awk '$1 != "100644" { found = 1 } END { exit found ? 0 : 1 }'; then
             echo "Managed asset paths must contain only regular non-executable files." >&2
             exit 1
@@ -282,7 +299,7 @@ jobs:
           changed_count=0
           while IFS= read -r changed_path; do
             case "$changed_path" in
-              public/images/operator-portraits/*|public/images/building-skills/*|public/images/products/*|src/generated/arkntools/*|src/generated/mastery-data.json) ;;
+              public/images/operator-portraits/*|public/images/building-skills/*|public/images/products/*|src/generated/arkntools/*|src/generated/mastery-data.json|src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
               *) echo "Resource pull request changed a forbidden path: $changed_path" >&2; exit 1 ;;
             esac
             changed_count=$((changed_count + 1))
@@ -292,6 +309,8 @@ jobs:
           pull_request_base_sha="$(jq -r '.base.sha' <<< "$pr_json")"
           remote_base_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$BASE_BRANCH" --jq '.object.sha')"
           test "$pull_request_base_sha" = "$remote_base_sha"
+
+          echo "base_sha=$remote_base_sha" >> "$GITHUB_OUTPUT"
 
           merge_json="$(gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/merge" \
             -f merge_method=squash \
@@ -316,13 +335,14 @@ jobs:
             --ref "$BASE_BRANCH" \
             -f run_webkit=false \
             -f deploy=true \
-            -f expected_sha="$MERGED_SHA"
+            -f expected_sha="$MERGED_SHA" \
+            -f operator_data_base_sha="${{ steps.merge.outputs.base_sha }}"
           {
             echo "## arkntools 资源已自动合并"
             echo
             echo "- PR: #${{ steps.pull-request.outputs.number }}"
             echo "- main: \`$MERGED_SHA\`"
-            echo "- 已触发完整 main 质量门禁和 production 部署；生产环境审批规则保持生效。"
+            echo "- 已触发 main 干员数据质量门禁和 production 部署；跳过浏览器 E2E，保留资源、静态、单元、数据库、构建和健康检查。"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Report publication failure
@@ -369,7 +389,9 @@ jobs:
             public/images/building-skills \
             public/images/products \
             src/generated/arkntools \
-            src/generated/mastery-data.json
+            src/generated/mastery-data.json \
+            src/generated/gacha-up.json \
+            fixtures/operbox_full_e2.json
 
           if git diff --cached --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
@@ -380,13 +402,13 @@ jobs:
           changed_count=0
           while IFS= read -r -d '' changed_path; do
             case "$changed_path" in
-              public/images/operator-portraits/*|public/images/building-skills/*|public/images/products/*|src/generated/arkntools/*|src/generated/mastery-data.json) ;;
+              public/images/operator-portraits/*|public/images/building-skills/*|public/images/products/*|src/generated/arkntools/*|src/generated/mastery-data.json|src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
               *) echo "Resource pull request changed a forbidden path: $changed_path" >&2; exit 1 ;;
             esac
             changed_count=$((changed_count + 1))
           done < <(git diff --cached --name-only -z)
           (( changed_count > 0 ))
-          if git ls-files -s -- public/images/operator-portraits public/images/building-skills public/images/products src/generated/arkntools src/generated/mastery-data.json \
+          if git ls-files -s -- public/images/operator-portraits public/images/building-skills public/images/products src/generated/arkntools src/generated/mastery-data.json src/generated/gacha-up.json fixtures/operbox_full_e2.json \
             | awk '$1 != "100644" { found = 1 } END { exit found ? 0 : 1 }'; then
             echo "Managed asset paths must contain only regular non-executable files." >&2
             exit 1
@@ -439,7 +461,7 @@ jobs:
           changed_count=0
           while IFS= read -r changed_path; do
             case "$changed_path" in
-              public/images/operator-portraits/*|public/images/building-skills/*|public/images/products/*|src/generated/arkntools/*|src/generated/mastery-data.json) ;;
+              public/images/operator-portraits/*|public/images/building-skills/*|public/images/products/*|src/generated/arkntools/*|src/generated/mastery-data.json|src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
               *) echo "Resource pull request changed a forbidden path: $changed_path" >&2; exit 1 ;;
             esac
             changed_count=$((changed_count + 1))
@@ -449,6 +471,7 @@ jobs:
           pull_request_base_sha="$(jq -r '.base.sha' <<< "$pr_json")"
           remote_base_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/$BASE_BRANCH" --jq '.object.sha')"
           test "$pull_request_base_sha" = "$remote_base_sha"
+          echo "base_sha=$remote_base_sha" >> "$GITHUB_OUTPUT"
           merge_json="$(gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/merge" \
             -f merge_method=squash \
             -f sha="$EXPECTED_HEAD_SHA" \
@@ -472,7 +495,8 @@ jobs:
             --ref "$BASE_BRANCH" \
             -f run_webkit=false \
             -f deploy=true \
-            -f expected_sha="$MERGED_SHA"
+            -f expected_sha="$MERGED_SHA" \
+            -f operator_data_base_sha="${{ steps.merge.outputs.base_sha }}"
           echo "develop parity PR #${{ steps.pull-request.outputs.number }} merged at \`$MERGED_SHA\`." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Report develop parity failure

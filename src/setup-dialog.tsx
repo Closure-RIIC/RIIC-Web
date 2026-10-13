@@ -19,7 +19,6 @@ import { SetupStepper } from "@/components/setup/SetupStepper";
 import { RotationSettings } from "@/components/RotationSettings";
 import { FiammettaSettings } from "@/components/FiammettaSettings";
 import { WizardSteps } from "@/components/interior/wizard-steps";
-import { hasSetupConfigurationChanged } from "@/setup-configuration";
 import { useWebsiteSession } from "@/website-session";
 
 import {
@@ -253,7 +252,7 @@ export function SetupDialog({
     setOpeningConfigurationKey(configurationKey);
   }, [configurationKey, hasBox, open]);
 
-  const configurationChanged = open && hasSetupConfigurationChanged(openingConfigurationKey, configurationKey);
+  const configurationChanged = open && openingConfigurationKey !== configurationKey;
 
   useEffect(() => {
     if (open && !hasBox) setShowImportOptions(true);

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { acceptAccountDataConsent, getAccountDataConsent, getCloudWorkspace, putCloudWorkspace } from "@/api";
 import { CloudSyncSession, type CloudSyncStatus, type CloudUpload } from "@/cloud-sync-session";
-import type { CloudSyncStatus as SyncPhase } from "@/cloud-sync";
+import { cloudSyncPreferenceKey, type CloudSyncStatus as SyncPhase } from "@/cloud-sync";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -51,11 +51,20 @@ export function CloudDataSync(props: {
     });
     session.current = active;
     active.start();
-    return () => { active.dispose(); if (session.current === active) session.current = null; };
+    const onStorage = (event: StorageEvent) => {
+      if (event.storageArea === window.localStorage && event.key === cloudSyncPreferenceKey(userId)) active.refresh();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      active.dispose();
+      if (session.current === active) session.current = null;
+    };
   }, [userId]);
 
   useEffect(() => { session.current?.update(); }, [workspace]);
   useEffect(() => { session.current?.refresh(); }, [refreshKey]);
+  useEffect(() => { if (status.sync === "local-only") setResolution(null); }, [status.sync]);
 
   const errorMessages = {
     consent: intl("components_cloud_CloudDataSync.syncError_consent"),
@@ -72,11 +81,14 @@ export function CloudDataSync(props: {
     {error && !status.consentOpen ? <Alert data-cloud-sync-error role="status" className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] left-4 right-4 z-40 mx-auto w-auto max-w-2xl bg-background shadow-lg">
       <AlertDescription className="break-words">
         <p>{error}{status.errorCode ? <> <span className="font-number">({status.errorCode})</span></> : null}</p>
+        <div className="mt-3 flex flex-wrap gap-2">
+        <Button variant="outline" size="sm" onClick={() => session.current?.decline()}>{intl("components_cloud_CloudDataSync.useLocalOnly")}</Button>
         {status.error === "paused" || status.error === "consent" ? <Button variant="outline" size="sm" onClick={() => session.current?.retry()}>{intl("components_cloud_CloudDataSync.resumeSync")}</Button> : null}
-        {status.error === "conflict" ? <div className="mt-3 flex flex-wrap gap-2">
+        {status.error === "conflict" ? <>
           <Button variant="outline" disabled={status.saving} onClick={() => setResolution("remote")}>{intl("components_cloud_CloudDataSync.useRemote")}</Button>
           <Button variant="outline" disabled={status.saving} onClick={() => setResolution("local")}>{intl("components_cloud_CloudDataSync.useLocal")}</Button>
-        </div> : null}
+        </> : null}
+        </div>
       </AlertDescription>
     </Alert> : null}
     <Dialog open={resolution !== null} onOpenChange={(open) => { if (!open && !status.saving) setResolution(null); }}>

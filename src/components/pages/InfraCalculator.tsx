@@ -23,7 +23,6 @@ import { ScheduleRunButton } from "@/components/ScheduleRunButton";
 import { SkeletonSuspense } from "@/components/ui/skeleton-swap";
 
 import type { FactoryRecipe, TradeOrder } from "@/blueprint";
-import { loadClientFeature } from "@/client-lazy-loader";
 import { cn } from "@/lib/utils";
 import type { ShiftDirection } from "@/motion";
 import { onboardingStepStatuses, shouldShowAnonymousSampleTrial } from "@/onboarding";
@@ -39,9 +38,9 @@ import type {
   ShiftComparison,
 } from "@/types";
 
-const PlanResultSummary = lazy(() => loadClientFeature("planResultSummary").then((module) => ({ default: module.PlanResultSummary })));
+const PlanResultSummary = lazy(() => import("@/components/PlanResultSummary").then((module) => ({ default: module.PlanResultSummary })));
 const PlanSupportSummary = lazy(() => import("@/components/PlanSupportSummary").then((module) => ({ default: module.PlanSupportSummary })));
-const ShortcutGuideDialog = lazy(() => loadClientFeature("sharedComponents").then((module) => ({ default: module.ShortcutGuideDialog })));
+const ShortcutGuideDialog = lazy(() => import("@/components").then((module) => ({ default: module.ShortcutGuideDialog })));
 const UpgradeSimulationDialog = lazy(() => import("@/components/UpgradeSimulationDialog").then((module) => ({ default: module.UpgradeSimulationDialog })));
 const DroneTargetPicker = lazy(() => import("@/components/DroneTargetPicker").then(module => ({ default: module.DroneTargetPicker })));
 const ScheduleImageExportAction = lazy(() => import("@/components/ScheduleImageExportAction").then(module => ({ default: module.ScheduleImageExportAction })));
@@ -463,7 +462,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
       setFiammettaPortrait(null);
       return;
     }
-    void loadClientFeature("operatorPortraits").then(({ operatorPortraitFor }) => {
+    void import("@/operatorPortraits").then(({ operatorPortraitFor }) => {
       if (!cancelled) setFiammettaPortrait(operatorPortraitFor(fiammettaTarget) ?? null);
     });
     return () => { cancelled = true; };

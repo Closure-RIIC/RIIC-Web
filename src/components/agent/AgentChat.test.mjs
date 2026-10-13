@@ -16,6 +16,7 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
     await build({ entryPoints: [path.join(root, "src/components/agent/AgentChat.tsx")], outfile, bundle: true,
       platform: "node", format: "esm", packages: "external", jsx: "automatic", plugins: [{ name: "card-only", setup(builder) {
         builder.onResolve({ filter: /^react$/, namespace: "stub" }, (args) => ({ path: args.path, external: true }));
+        builder.onResolve({ filter: /^@\/agent-answer$/ }, () => ({ path: path.join(root, "src/agent-answer.ts") }));
         builder.onResolve({ filter: /^(@ai-sdk\/react|ai$|next\/link$|@\/|\.\/)/ }, (args) => ({ path: args.path, namespace: "stub" }));
         builder.onLoad({ filter: /.*/, namespace: "stub" }, () => ({ contents: `
           import { createElement } from "react";
@@ -27,6 +28,7 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
           export const useAgentRuntime=()=>({});
           export const useAgentHistory=()=>({});
           export const useAgentViewport=()=>{};
+          export const subscribeBillingUpdates=()=>()=>{};
           export const useIsMobile=()=>false;
           export const AGENT_PERSONA_SELECTION_KEY="test-persona";
           export const builtinAgentPersona=()=>undefined;

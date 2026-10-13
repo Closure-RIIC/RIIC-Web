@@ -18,7 +18,10 @@ const reply = [
   { type: "finish", finishReason: "stop" },
 ].map((part) => `data: ${JSON.stringify(part)}\n\n`).join("") + "data: [DONE]\n\n";
 
-async function mockWorkbench(page: Page) {
+async function mockWorkbench(page: Page, performanceMode: "quality" | "static" = "quality") {
+  // Keep existing material/animation assertions on their authored budget;
+  // performance-specific coverage opts into its own initial mode explicitly.
+  await page.addInitScript(mode => localStorage.setItem("riic.plush.performance.v1", mode), performanceMode);
   await mockApis(page);
   await page.route("**/api/account/data-consent", route => route.fulfill({ json: { success: true, data: { current: false, cloudSyncEnabled: false } } }));
   await page.route("**/api/auth/get-session", (route) => route.fulfill({ json: {
@@ -39,7 +42,7 @@ test("Persona portraits keep Closure fixed and persist uploaded persona avatars"
   await input.press("Enter");
   const assistantAvatar = page.locator('[data-speaker="assistant"] [data-agent-avatar]');
   await expect(assistantAvatar.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
-  await expect(assistantAvatar.locator("img")).toHaveCount(0);
+  await expect(assistantAvatar.locator("img:visible")).toHaveCount(0);
   await page.getByRole("button", { name: /人格卡：/ }).click();
   const avatarInput = page.getByLabel("上传人格卡头像", { exact: true });
   const preview = page.locator("[data-persona-avatar-settings]");
@@ -67,7 +70,7 @@ test("Persona portraits keep Closure fixed and persist uploaded persona avatars"
   await expect(preview.locator("[data-remote-avatar-state]")).toHaveText("测");
   await page.getByRole("button", { name: /可露希尔.*使用网站服务端/ }).click();
   await expect(assistantAvatar.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
-  await expect(assistantAvatar.locator("img")).toHaveCount(0);
+  await expect(assistantAvatar.locator("img:visible")).toHaveCount(0);
   await expect(avatarInput).toHaveCount(1);
   await expect(page.locator('[data-persona-card="default"]')).toHaveAttribute("data-selected", "true");
   await expect(page.locator('[data-persona-card^="upload-"]')).toContainText("测试人格");
@@ -142,6 +145,7 @@ for (const width of [1440, 375]) {
 for (const unavailable of ["2d", "webgl2"]) {
 test(`Closure keeps its two-color fallback when ${unavailable} is unavailable`, async ({ page }) => {
   await mockWorkbench(page);
+  await page.route("**/images/plush/*.webp", route => route.abort());
   await page.addInitScript((unavailable) => {
     const original = HTMLCanvasElement.prototype.getContext;
     HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, ...args: Parameters<typeof original>) {
@@ -157,11 +161,68 @@ test(`Closure keeps its two-color fallback when ${unavailable} is unavailable`, 
   await input.fill("你好");
   await input.press("Enter");
   const mascot = page.locator('[data-speaker="assistant"] [data-closure-fur-avatar]');
+  await expect(mascot).toHaveAttribute("data-fur-performance", "static");
   await expect(mascot.locator("[data-fur-fallback]")).toBeVisible();
   await expect(mascot).toHaveAttribute("data-fur-ready", "false");
   await expect(input).toBeEnabled();
 });
 }
+
+test("Agent starts without WebGL in static mode and follows gallery performance changes", async ({ page, context }) => {
+  test.setTimeout(90_000);
+  await mockWorkbench(page, "static");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.addInitScript(() => {
+    const original = HTMLCanvasElement.prototype.getContext;
+    Object.assign(window, { staticWebglContexts: 0 });
+    HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement, ...args: Parameters<typeof original>) {
+      // Fur uses WebGL2. The account FluidOrb independently uses WebGL1 and
+      // is outside this portrait preference's scope.
+      if (args[0] === "webgl2") {
+        (window as typeof window & { staticWebglContexts: number }).staticWebglContexts++;
+      }
+      return original.apply(this, args);
+    } as typeof original;
+  });
+  await page.route("**/api/agent/chat", route => route.request().method() === "GET"
+    ? route.fulfill({ json: ready })
+    : route.fulfill({ contentType: "text/event-stream", headers: { "x-vercel-ai-ui-message-stream": "v1" }, body: reply }));
+  await page.goto("/agent");
+  const input = page.getByRole("textbox", { name: "发给可露希尔的消息" });
+  await input.fill("检查静态头像");
+  await input.press("Enter");
+  const avatar = page.locator('[data-speaker="assistant"] [data-closure-fur-avatar]');
+  await expect(avatar).toHaveAttribute("data-fur-performance", "static");
+  await expect(avatar.locator("img")).toBeVisible();
+  await expect.poll(() => avatar.locator("img").evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  await expect(avatar.locator("canvas")).toHaveCount(0);
+  expect(await page.evaluate(() => (window as typeof window & { staticWebglContexts: number }).staticWebglContexts)).toBe(0);
+
+  // Change the public selector in a second tab to exercise the real cross-tab
+  // storage subscription, rather than dispatching a private store event.
+  const gallery = await context.newPage();
+  await gallery.setViewportSize({ width: 256, height: 384 });
+  await gallery.emulateMedia({ reducedMotion: "reduce" });
+  await gallery.route("**/api/telemetry", route => route.fulfill({ json: { success: true } }));
+  await gallery.goto("/plush");
+  const mode = gallery.getByLabel("画质与耗电", { exact: true });
+  await expect(mode).toHaveValue("static");
+  await mode.selectOption("saver");
+  await page.bringToFront();
+  await expect(avatar).toHaveAttribute("data-fur-performance", "saver");
+  await expect(avatar).toHaveAttribute("data-fur-ready", "true", { timeout: 30_000 });
+  await expect(avatar).toHaveAttribute("data-fur-shells", "12");
+  await expect(avatar.locator("canvas")).toHaveCount(1);
+  await expect(avatar.locator("img:visible")).toHaveCount(0);
+  await gallery.bringToFront();
+  await mode.selectOption("static");
+  await page.bringToFront();
+  await expect(avatar).toHaveAttribute("data-fur-performance", "static");
+  await expect(avatar.locator("canvas")).toHaveCount(0);
+  await expect(avatar.locator("img")).toBeVisible();
+  await expect(input).toBeEnabled();
+  await gallery.close();
+});
 
 for (const width of [1440, 375]) {
   test(`Agent uses its sidebar group and real chat state at ${width}px`, async ({ page }) => {

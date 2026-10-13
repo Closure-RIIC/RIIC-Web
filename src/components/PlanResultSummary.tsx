@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { AnimatedNumber, AnimatedText } from "@/components/AnimatedText";
 import { ShiftComparisonDetails } from "@/components/ShiftComparisonCard";
 import { Button } from "@/components/ui/button";
+import { SummaryMetric } from "@/components/ui/summary-metric";
 import { Drawer } from "@/components/ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type DailyProductionUnavailableReason } from "@/daily-production";
@@ -220,12 +221,12 @@ export function PlanResultSummary({
                   transition={{ duration: shouldReduceMotion ? MOTION_DURATION.feedback : 0.36, delay: shouldReduceMotion ? 0 : 0.15 + index * 0.065, ease: MOTION_EASE_OUT }}
                 >
                   <span className="block min-w-0" data-daily-product={productGroup.primary.id}>
-                    <span className="font-number block truncate pr-6 text-[10px] font-medium tracking-[0.06em] text-[#313131]/58">{productLabel(productGroup.primary, en)}</span>
-                    <strong className="font-technical mt-1 flex min-w-0 items-baseline gap-1 leading-none tabular-nums">
-                      <span className="truncate text-[clamp(1rem,1.5vw,1.35rem)] font-semibold"><AnimatedNumber value={dailyNumber(productGroup.primary.amount.value)} drift={{ x: 0, y: shouldReduceMotion ? 0 : 8 }} /></span>
-                      {productGroup.primary.amount.value === null ? null : <span className="shrink-0 text-[9px] font-medium text-[#313131]/45">{productUnit(productGroup.primary.unit, en)}</span>}
-                    </strong>
-                    {productGroup.primary.amount.value === null && productGroup.primary.amount.unavailableReason ? <span className="mt-1 block truncate text-[10px] font-semibold text-amber-800">{unavailableReason(productGroup.primary.amount.unavailableReason, en)}</span> : null}
+                    <SummaryMetric
+                      label={productLabel(productGroup.primary, en)}
+                      value={<AnimatedNumber value={dailyNumber(productGroup.primary.amount.value)} drift={{ x: 0, y: shouldReduceMotion ? 0 : 8 }} />}
+                      unit={productGroup.primary.amount.value === null ? undefined : productUnit(productGroup.primary.unit, en)}
+                      note={productGroup.primary.amount.value === null && productGroup.primary.amount.unavailableReason ? <span className="mt-1 block truncate text-[10px] font-semibold text-amber-800">{unavailableReason(productGroup.primary.amount.unavailableReason, en)}</span> : null}
+                    />
                   </span>
                   {productGroup.supporting ? (
                     <span className="mt-2 flex min-w-0 items-center gap-1.5 bg-[#313131]/[0.045] px-1.5 py-1" data-daily-product={productGroup.supporting.id} data-product-role="supporting">

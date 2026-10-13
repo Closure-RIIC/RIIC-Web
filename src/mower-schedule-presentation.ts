@@ -6,7 +6,7 @@ import type { BaseBlueprint, RoomKind, RoomProduct } from "./types.ts";
 const fixedGroups: Record<string, RoomGroup> = {
   central: "control", meeting: "meeting", factory: "processing", contact: "hire", train: "training",
 };
-const kinds: Record<RoomGroup, RoomKind> = {
+const kinds: Record<Exclude<RoomGroup, "recycling">, RoomKind> = {
   control: "control_center", trading: "trade_post", manufacture: "factory", power: "power_plant",
   dormitory: "dormitory", meeting: "meeting_room", hire: "office", processing: "workshop", training: "training_room",
 };
@@ -32,6 +32,7 @@ export function mowerSchedulePresentation(plan: Record<string, MowerFacility | n
     let product: RoomProduct | undefined;
     if (group === "trading") product = { trade: { order: facility?.product === "orundum" ? "originium" : "gold" } };
     if (group === "manufacture") product = { factory: { recipe: facility?.product === "exp3" ? "battle_record" : facility?.product === "orirock" ? "originium" : "gold" } };
+    if (group === "recycling") continue;
     layout.rooms.push({ id: key, kind: kinds[group], level: group === "dormitory" ? 5 : 3, product });
     rows.push({
       key, roomId: key, group, groupLabel: name, index,

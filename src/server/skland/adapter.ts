@@ -12,6 +12,7 @@ import {
 import type { SklandInventoryData, SklandQrStatusResponse, SklandScheduleSnapshot, SklandStatusSnapshot } from "@/types";
 import type { SklandPolicyConsentRequest } from "@/legal-policy";
 import { DeviceIdCache } from "./device-id-cache";
+import { recentSklandOAuth } from "./recent-oauth";
 import {
   SKLAND_TEENAGER_PATH,
   mowerSklandSignedHeaders,
@@ -216,6 +217,7 @@ async function completeOAuthLogin(
     version: 3,
     cred: auth.cred,
     token: auth.token,
+    accountOAuthToken: oauthToken,
     dId,
     userId: auth.userId,
     selectedUid,
@@ -429,6 +431,7 @@ export async function pollScan(scanId: string, websiteUserId: string, signal?: A
     assertUpstreamCapacity();
     const completed = await completeOAuthLogin(pending.client, oauthToken, pending.policyConsent);
     throwIfAborted(signal);
+    recentSklandOAuth.remember(websiteUserId, completed.session.cred, oauthToken);
     pending.completed = completed;
     return completedScanResult(completed);
   } catch (error) {

@@ -12,7 +12,6 @@ import type {
   TrainingAdviceState,
   TrainingAdviceTarget,
   TrainingCombination,
-  TrainingRecommendation,
 } from "@/types";
 
 export function trainingProductLabel(product?: TrainingAdviceProduct, en = false): string {
@@ -70,16 +69,4 @@ export function trainingAcquisitionLabel(kind: TrainingAdviceAcquisitionKind, en
 
 export function trainingConditionStatusLabel(status: TrainingAdviceConditionEvaluation["status"], en = false): string {
   return (messageRecord(en, "components_training_advice_presentation_labels9"))[status];
-}
-
-export function sortTrainingCombinations(
-  combinations: readonly TrainingCombination[],
-): TrainingCombination[] {
-  return [...combinations];
-}
-
-export function sortTrainingRecommendations(
-  recommendations: readonly TrainingRecommendation[],
-): TrainingRecommendation[] {
-  return [...recommendations];
 }

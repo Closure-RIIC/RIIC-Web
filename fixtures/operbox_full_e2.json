@@ -351,6 +351,15 @@
     "rarity": 3
   },
   {
+    "id": "char_4231_clemnt",
+    "name": "克莱门莎",
+    "elite": 2,
+    "level": 90,
+    "own": true,
+    "potential": 6,
+    "rarity": 6
+  },
+  {
     "id": "char_4186_tmoris",
     "name": "八幡海铃",
     "elite": 2,
@@ -1215,6 +1224,15 @@
     "rarity": 5
   },
   {
+    "id": "char_393_toledo",
+    "name": "德·托莱多",
+    "elite": 2,
+    "level": 80,
+    "own": true,
+    "potential": 6,
+    "rarity": 5
+  },
+  {
     "id": "char_102_texas",
     "name": "德克萨斯",
     "elite": 2,
@@ -1456,6 +1474,15 @@
     "own": true,
     "potential": 6,
     "rarity": 6
+  },
+  {
+    "id": "char_4232_hbound",
+    "name": "旅骨",
+    "elite": 2,
+    "level": 80,
+    "own": true,
+    "potential": 6,
+    "rarity": 5
   },
   {
     "id": "char_197_poca",

@@ -13,6 +13,8 @@ async function personaControl(page: Page, name: string) {
 const savedUpload = { version: 1, id: "upload-existing", name: "原有人格", content: "原来的自定义人格内容", description: "保留上传内容" };
 
 async function prepare(page: Page, available = true) {
+  // Preserve the authored rendering budget for the existing pixel assertions.
+  await page.addInitScript(() => localStorage.setItem("riic.plush.performance.v1", "quality"));
   await mockApis(page);
   await page.route("**/api/account/data-consent", route => route.fulfill({ json: { success: true, data: { current: false, cloudSyncEnabled: false } } }));
   await page.route("**/api/billing", route => route.fulfill({ json: { data: { wallet: { totalPoints: 100 } } } }));
@@ -37,6 +39,62 @@ async function prepare(page: Page, available = true) {
 }
 
 for (const mobile of [false, true]) {
+test(`SilverAsh portrait keeps its scale and center when hovered (${mobile ? "mobile" : "desktop"})`, async ({ page }) => {
+  test.setTimeout(90_000);
+  await prepare(page);
+  await page.setViewportSize(mobile ? { width: 375, height: 812 } : { width: 1280, height: 900 });
+  await page.goto("/agent");
+  await (await personaControl(page, "人格卡：可露希尔")).click();
+  const avatar = page.locator('[data-persona-card="silverash"] [data-fur-avatar="silverash"]');
+  await avatar.scrollIntoViewIfNeeded();
+  await expect(avatar).toHaveAttribute("data-fur-ready", "true", { timeout: 30_000 });
+  await page.mouse.move(0, 0);
+  await expect(avatar).toHaveAttribute("data-fur-motion", "idle");
+  const silhouette = () => avatar.locator("canvas").evaluate((canvas: HTMLCanvasElement) => {
+    const { data } = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height);
+    let left = canvas.width, right = 0, top = canvas.height, bottom = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] < 100) continue;
+      const x = i / 4 % canvas.width, y = Math.floor(i / 4 / canvas.width);
+      left = Math.min(left, x); right = Math.max(right, x);
+      top = Math.min(top, y); bottom = Math.max(bottom, y);
+    }
+    return { width: (right - left) / canvas.width, height: (bottom - top) / canvas.height, center: (right + left) / 2 / canvas.width };
+  });
+  const before = await silhouette();
+  expect(before.width).toBeGreaterThan(0.6);
+  expect(before.height).toBeGreaterThan(0.4);
+  const bounds = (await avatar.boundingBox())!;
+  const samples = [];
+  for (const [x, y] of [[0.9, 0.5], [0.1, 0.5], [0.5, 0.1], [0.5, 0.9]]) {
+    const frames = Number(await avatar.getAttribute("data-fur-frames"));
+    await avatar.hover({ position: { x: bounds.width * x, y: bounds.height * y } });
+    await expect.poll(async () => Number(await avatar.getAttribute("data-fur-frames"))).toBeGreaterThan(frames);
+    await expect(avatar).toHaveAttribute("data-fur-motion", "idle");
+    const after = await silhouette();
+    samples.push({ x, y, ...after });
+    expect(Math.abs(after.width - before.width)).toBeLessThan(0.04);
+    expect(Math.abs(after.height - before.height)).toBeLessThan(0.04);
+    expect(Math.abs(after.center - before.center)).toBeLessThan(0.025);
+  }
+  let completedFps: number | undefined;
+  // Opt-in same-device benchmark; driver input round trips are not a portable
+  // FPS gate. The four silhouette regressions above always run on every engine.
+  if (process.env.PLUSH_BENCHMARK === "1") {
+    const startFrames = Number(await avatar.getAttribute("data-fur-frames"));
+    const started = Date.now();
+    for (let step = 0; step < 60; step++) {
+      await page.mouse.move(bounds.x + bounds.width * (0.5 + Math.sin(step * 0.3) * 0.4), bounds.y + bounds.height * 0.5);
+      await page.waitForTimeout(50);
+    }
+    completedFps = (Number(await avatar.getAttribute("data-fur-frames")) - startFrames) * 1000 / (Date.now() - started);
+  }
+  const metrics = await avatar.evaluate(root => ({ ...((root as HTMLElement).dataset) }));
+  await test.info().attach("portrait-render-metrics", { body: JSON.stringify({ before, samples, ...metrics, completedFps }, null, 2), contentType: "application/json" });
+});
+}
+
+for (const mobile of [false, true]) {
   test(`SilverAsh selection, private prompt request and persistence (${mobile ? "mobile" : "desktop"})`, async ({ page }) => {
     // This flow reloads three times and opens four real WebGL persona pickers.
     // Include cold shader compilation on software GPUs, while retaining every assertion.
@@ -51,7 +109,7 @@ for (const mobile of [false, true]) {
     const card = page.locator('[data-persona-card="silverash"]');
     await expect(card).toHaveCSS("--dialogue-accent", "#84bfff");
     await expect(card.locator("[data-silverash-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
-    await expect(card.locator("img")).toHaveCount(0);
+    await expect(card.locator("img:visible")).toHaveCount(0);
     await card.getByRole("button", { name: "使用银灰" }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
     await expect(page.locator("[data-agent-chat]")).toHaveCSS("--dialogue-accent", "#84bfff");
@@ -281,7 +339,8 @@ for (const mobile of [false, true]) {
     const card = page.locator('[data-persona-card="saileach"]');
     await card.scrollIntoViewIfNeeded();
     await expect(card).toHaveCSS("--dialogue-accent", "#ffd800");
-    await expect(card.locator('[data-fur-avatar="saileach"]')).toHaveAttribute("data-fur-ready", "true");
+    // First frame includes cold shaders and the shared queue of 40-shell portraits.
+    await expect(card.locator('[data-fur-avatar="saileach"]')).toHaveAttribute("data-fur-ready", "true", { timeout: 30_000 });
     await card.getByRole("button", { name: "使用琴柳" }).click();
     await expect(card).toHaveAttribute("data-selected", "true");
     await expect(card).toHaveCSS("outline-width", "2px");
@@ -347,7 +406,8 @@ for (const mobile of [false, true]) {
     const card = page.locator('[data-persona-card="mountain"]');
     await card.scrollIntoViewIfNeeded();
     await expect(card).toHaveCSS("--dialogue-accent", "#84bfff");
-    await expect(card.locator('[data-fur-avatar="mountain"]')).toHaveAttribute("data-fur-ready", "true");
+    // First frame includes cold shaders and the shared queue of 40-shell portraits.
+    await expect(card.locator('[data-fur-avatar="mountain"]')).toHaveAttribute("data-fur-ready", "true", { timeout: 30_000 });
     await card.getByRole("button", { name: "使用山", exact: true }).click();
     await expect(card).toHaveAttribute("data-selected", "true");
     await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
@@ -389,6 +449,7 @@ for (const mobile of [false, true]) {
 
 test("Mountain keeps a usable SVG fallback without WebGL", async ({ page }) => {
   await prepare(page);
+  await page.route("**/images/plush/*.webp", route => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem("riic.agent.persona.selection.v1", "mountain");
     const original = HTMLCanvasElement.prototype.getContext;
@@ -401,6 +462,7 @@ test("Mountain keeps a usable SVG fallback without WebGL", async ({ page }) => {
   await (await personaControl(page, "人格卡：山")).click();
   const avatar = page.locator('[data-persona-card="mountain"] [data-fur-avatar="mountain"]');
   await avatar.scrollIntoViewIfNeeded();
+  await expect(avatar).toHaveAttribute("data-fur-performance", "static");
   await expect(avatar).toHaveAttribute("data-fur-ready", "false");
   await expect(avatar.locator("[data-mountain-fallback]")).toBeVisible();
   await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
@@ -422,6 +484,7 @@ test("Mountain missing private card blocks sending and allows another persona", 
 
 test("Saileach has a usable SVG fallback without WebGL", async ({ page }) => {
   await prepare(page);
+  await page.route("**/images/plush/*.webp", route => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem("riic.agent.persona.selection.v1", "saileach");
     const original = HTMLCanvasElement.prototype.getContext;
@@ -434,6 +497,7 @@ test("Saileach has a usable SVG fallback without WebGL", async ({ page }) => {
   await (await personaControl(page, "人格卡：琴柳")).click();
   const avatar = page.locator('[data-persona-card="saileach"] [data-fur-avatar="saileach"]');
   await avatar.scrollIntoViewIfNeeded();
+  await expect(avatar).toHaveAttribute("data-fur-performance", "static");
   await expect(avatar).toHaveAttribute("data-fur-ready", "false");
   await expect(avatar.locator("[data-saileach-fallback]")).toBeVisible();
   await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
@@ -442,6 +506,7 @@ test("Saileach has a usable SVG fallback without WebGL", async ({ page }) => {
 
 test("Exusiai retains a halo and usable chat without WebGL", async ({ page }) => {
   await prepare(page);
+  await page.route("**/images/plush/*.webp", route => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem("riic.agent.persona.selection.v1", "exusiai");
     const original = HTMLCanvasElement.prototype.getContext;
@@ -454,6 +519,7 @@ test("Exusiai retains a halo and usable chat without WebGL", async ({ page }) =>
   await (await personaControl(page, "人格卡：能天使")).click();
   const avatar = page.locator('[data-persona-card="exusiai"] [data-fur-avatar="exusiai"]');
   await avatar.scrollIntoViewIfNeeded();
+  await expect(avatar).toHaveAttribute("data-fur-performance", "static");
   await expect(avatar).toHaveAttribute("data-fur-ready", "false");
   await expect(avatar.locator("[data-fur-fallback]")).toBeVisible();
   await expect(avatar.locator('[data-plush-halo]')).toBeVisible();
@@ -465,6 +531,7 @@ test("Exusiai retains a halo and usable chat without WebGL", async ({ page }) =>
 
 test("SilverAsh keeps its gray and white silhouette when WebGL is unavailable", async ({ page }) => {
   await prepare(page);
+  await page.route("**/images/plush/*.webp", route => route.abort());
   await page.addInitScript(() => {
     localStorage.setItem("riic.agent.persona.selection.v1", "silverash");
     const original = HTMLCanvasElement.prototype.getContext;
@@ -476,6 +543,7 @@ test("SilverAsh keeps its gray and white silhouette when WebGL is unavailable", 
   await page.goto("/agent");
   await (await personaControl(page, "人格卡：银灰")).click();
   const silverash = page.locator('[data-persona-card="silverash"] [data-silverash-fur-avatar]');
+  await expect(silverash).toHaveAttribute("data-fur-performance", "static");
   await expect(silverash.locator("[data-fur-fallback]")).toBeVisible();
   await expect(silverash).toHaveAttribute("data-fur-ready", "false");
   await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();

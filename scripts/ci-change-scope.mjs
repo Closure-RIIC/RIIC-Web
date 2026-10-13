@@ -19,6 +19,25 @@ const CI_ONLY_SCRIPTS = new Set([
   "scripts/ci-change-scope.test.mjs",
 ]);
 
+const OPERATOR_DATA_FILES = new Set([
+  "src/generated/arkntools/operator-catalog.json",
+  "src/generated/arkntools/operator-pinyin.json",
+  "src/generated/arkntools/operator-rarities.json",
+  "src/generated/arkntools/building-skill-catalog.json",
+  "src/generated/arkntools/term-catalog.json",
+  "src/generated/arkntools/source.json",
+  "src/generated/mastery-data.json",
+  "src/generated/gacha-up.json",
+  "fixtures/operbox_full_e2.json",
+]);
+
+function isOperatorData(filePath) {
+  return OPERATOR_DATA_FILES.has(filePath)
+    || /^public\/images\/operator-portraits\/[A-Za-z0-9_&]+\.webp$/.test(filePath)
+    || /^public\/images\/building-skills\/[A-Za-z0-9_&]+\.png$/.test(filePath)
+    || /^public\/images\/products\/[A-Za-z0-9_&]+\.webp$/.test(filePath);
+}
+
 function normalizePath(filePath) {
   return filePath.replaceAll("\\", "/").replace(/^\.\//, "");
 }
@@ -88,6 +107,18 @@ export function classifyChanges(rawPaths, { forceFull = false } = {}) {
       runCore: false,
       runBrowser: false,
       deployRequired: false,
+    };
+  }
+
+  if (paths.some(isOperatorData) && paths.every((filePath) => isOperatorData(filePath) || isDocumentationOrMetadata(filePath))) {
+    return {
+      scope: "operator-data",
+      reason: "managed-operator-data-only",
+      changedFiles: paths,
+      documentationOnly: false,
+      runCore: true,
+      runBrowser: false,
+      deployRequired: true,
     };
   }
 
@@ -163,6 +194,9 @@ async function main() {
     ? (await readFile(inputPath)).toString("utf8").split("\0")
     : [];
   const result = classifyChanges(paths, { forceFull });
+  if (args.includes("--require-operator-data") && result.scope !== "operator-data") {
+    throw new Error("Operator-data release includes non-data changes or an empty diff; use the full release workflow.");
+  }
 
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   if (outputPath) {

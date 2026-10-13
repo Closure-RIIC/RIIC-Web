@@ -15,6 +15,7 @@ import { pollSklandQr, startSklandQr, toDisplayError } from "@/api";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { QrCodeFrame } from "@/components/ui/qr-code-frame";
 import { cn } from "@/lib/utils";
 import { buildSklandAppOpenUrl } from "@/skland-auth-url";
 import { nextSklandQrPollDelay, remainingSklandQrPollDelay } from "@/skland-qr-polling";
@@ -396,11 +397,7 @@ export function SklandLoginPanel({
                 </div>
 
                 <div className="order-1 grid place-items-center gap-3 md:order-2">
-                  <div
-                    className="grid size-52 place-items-center rounded-xl bg-white p-3 text-black ring-1 ring-black/10 dark:bg-white dark:text-black sm:size-56 md:size-52"
-                    style={{ colorScheme: "only light", forcedColorAdjust: "none" }}
-                    data-skland-qr-visual
-                  >
+                  <QrCodeFrame data-skland-qr-visual>
                     {scanState === "scanned" ? (
                       <LoaderCircle
                         className={cn("size-9 animate-spin motion-reduce:animate-none", sklandQrStatusIconClassName)}
@@ -432,7 +429,7 @@ export function SklandLoginPanel({
                         data-skland-login-status-icon="idle"
                       />
                     )}
-                  </div>
+                  </QrCodeFrame>
                   <p className="text-center text-sm leading-6 text-muted-foreground" role="status" aria-live="polite">{pageStatusText}</p>
                 </div>
               </div>

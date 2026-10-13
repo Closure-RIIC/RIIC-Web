@@ -1,0 +1,921 @@
+{
+  "titles": {
+    "ATTAIN_57_0_4": {
+      "src": "/images/gacha-titles/ATTAIN_57_0_4.png",
+      "sha": "587d11bb31eeebe7231094189a0c6c3b168f85cf",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/attain_57_0_4/title.png",
+      "width": 469,
+      "height": 174,
+      "accent": "#a30b0b"
+    },
+    "ATTAIN_68_0_4": {
+      "src": "/images/gacha-titles/ATTAIN_68_0_4.png",
+      "sha": "b4c36327dd60093e13e5df9064e7ec8d44688899",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/attain_68_0_4/title.png",
+      "width": 475,
+      "height": 214,
+      "accent": "#b01010"
+    },
+    "BOOT_0_1_1": {
+      "src": "/images/gacha-titles/BOOT_0_1_1.png",
+      "sha": "c8968d4fd8df389bc30b913d90b7185eccb93042",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/boot_0_1_1/title.png",
+      "width": 367,
+      "height": 150,
+      "accent": "#00d6b5"
+    },
+    "BOOT_0_1_2": {
+      "src": "/images/gacha-titles/BOOT_0_1_2.png",
+      "sha": "c8968d4fd8df389bc30b913d90b7185eccb93042",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/boot_0_1_2/title.png",
+      "width": 367,
+      "height": 150,
+      "accent": "#00d6b5"
+    },
+    "BOOT_0_1_3": {
+      "src": "/images/gacha-titles/BOOT_0_1_3.png",
+      "sha": "c8968d4fd8df389bc30b913d90b7185eccb93042",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/boot_0_1_3/title.png",
+      "width": 367,
+      "height": 150,
+      "accent": "#00d6b5"
+    },
+    "CLASSIC_ATTAIN_57_0_2": {
+      "src": "/images/gacha-titles/CLASSIC_ATTAIN_57_0_2.png",
+      "sha": "19ff7fc73e27a5f2fcda97e6b5d494de6cfa601f",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/classic_attain_57_0_2/title.png",
+      "width": 405,
+      "height": 200,
+      "accent": "#0097d6"
+    },
+    "CLASSIC_ATTAIN_68_0_2": {
+      "src": "/images/gacha-titles/CLASSIC_ATTAIN_68_0_2.png",
+      "sha": "a3fdfd642209a577dc00b88009a842f341d01ef1",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/classic_attain_68_0_2/title.png",
+      "width": 405,
+      "height": 200,
+      "accent": "#0097d6"
+    },
+    "LIMITED_47_0_1": {
+      "src": "/images/gacha-titles/LIMITED_47_0_1.png",
+      "sha": "14790ca61a8c0a234ed068e0e4f6d6d5219b079f",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/limited_47_0_1/logo.png",
+      "width": 308,
+      "height": 500,
+      "accent": "#70702b"
+    },
+    "LIMITED_50_0_1": {
+      "src": "/images/gacha-titles/LIMITED_50_0_1.png",
+      "sha": "bfb622298f5e2d036e9e32e1b41fd81b1aab3810",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/limited_50_0_1/logo.png",
+      "width": 316,
+      "height": 232,
+      "accent": "#7e130c"
+    },
+    "LIMITED_53_0_1": {
+      "src": "/images/gacha-titles/LIMITED_53_0_1.png",
+      "sha": "08318b4c2578c1fdd1c4e7c246233af2b42f4bbe",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/limited_53_0_1/logo.png",
+      "width": 440,
+      "height": 414,
+      "accent": "#794e21"
+    },
+    "LIMITED_56_0_1": {
+      "src": "/images/gacha-titles/LIMITED_56_0_1.png",
+      "sha": "739016c12a1f45e2c4f79e8af408c603f448a1f5",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/limited_56_0_1/title.png",
+      "width": 562,
+      "height": 420,
+      "accent": "#8d151b"
+    },
+    "LIMITED_58_0_1": {
+      "src": "/images/gacha-titles/LIMITED_58_0_1.png",
+      "sha": "c72ff5753ff354a4a68781b9a0534b41443298f5",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/limited_58_0_1/title.png",
+      "width": 326,
+      "height": 452,
+      "accent": "#9f1d3d"
+    },
+    "LIMITED_67_0_1": {
+      "src": "/images/gacha-titles/LIMITED_67_0_1.png",
+      "sha": "90222b49238167ee27b977b2f4ea27bf9e91ed60",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/limited_67_0_1/title.png",
+      "width": 434,
+      "height": 343,
+      "accent": "#3256b7"
+    },
+    "LIMITED_76_0_1": {
+      "src": "/images/gacha-titles/LIMITED_76_0_1.png",
+      "sha": "b03970513cf28092e4475f5af84663d6952d7e0b",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/limited_76_0_1/title.png",
+      "width": 198,
+      "height": 75,
+      "composition": {
+        "width": 420,
+        "height": 310,
+        "layers": [
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_bg_shadow.png",
+            "sha": "b7264aca71355c814b80ffc81bb319535c9ec49a",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_bg_shadow.png",
+            "width": 350,
+            "height": 299,
+            "x": 40,
+            "y": 5
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_bg.png",
+            "sha": "1abdc048c5cf00cfda47960a4a2433326e0966db",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_bg.png",
+            "width": 309,
+            "height": 228,
+            "x": 64,
+            "y": 49
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_bg_water.png",
+            "sha": "5fb8503fc4b0a88597e4c23049381eff3d59e392",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_bg_water.png",
+            "width": 165,
+            "height": 64,
+            "x": 130,
+            "y": 211
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_shadow.png",
+            "sha": "b1a1643a46435623bae0c15d4cf4f8f00e04ad77",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_shadow.png",
+            "width": 393,
+            "height": 142,
+            "x": 5,
+            "y": 79
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_doc_line_text.png",
+            "sha": "f81fbdc3756d38edea48d1a6e4849081d641d88d",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_doc_line_text.png",
+            "width": 124,
+            "height": 86,
+            "x": 141,
+            "y": 24
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_01.png",
+            "sha": "c1589b1d5e46af6b3335ef214620466e08407af3",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_01.png",
+            "width": 81,
+            "height": 52,
+            "x": 25,
+            "y": 112
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_02.png",
+            "sha": "424a6279586beaea01333a8fb78be908e0544b2a",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_02.png",
+            "width": 22,
+            "height": 27,
+            "x": 83,
+            "y": 126
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_03.png",
+            "sha": "0410c21ae73152c38b18340c6d0a019b1316ba0e",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_03.png",
+            "width": 37,
+            "height": 38,
+            "x": 98,
+            "y": 117
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_04.png",
+            "sha": "d9b9444b0e27ac1b6d2135e5d456cbf5bf43fa2d",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_04.png",
+            "width": 17,
+            "height": 57,
+            "x": 126,
+            "y": 96
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_05.png",
+            "sha": "0082a52735cdab687e68c240a1232fee50cb04d5",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_05.png",
+            "width": 13,
+            "height": 12,
+            "x": 144,
+            "y": 110
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_06.png",
+            "sha": "994b65c7a83c493c82be031653a839b8d2b01eaa",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_06.png",
+            "width": 35,
+            "height": 38,
+            "x": 139,
+            "y": 113
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_07.png",
+            "sha": "70cc368b64a9c3f022a445a19860b2b8e55bf3f4",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_07.png",
+            "width": 45,
+            "height": 46,
+            "x": 175,
+            "y": 101
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_08.png",
+            "sha": "f092245900f214666b6ef509b164ed5a7572e316",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_08.png",
+            "width": 24,
+            "height": 28,
+            "x": 206,
+            "y": 116
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_09.png",
+            "sha": "280f496c5db1bf7f9435323f5b50b08d6de99c44",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_09.png",
+            "width": 39,
+            "height": 50,
+            "x": 224,
+            "y": 93
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_10.png",
+            "sha": "cb21dfb16e804a8ab5db29e2b9232c4504519146",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_10.png",
+            "width": 10,
+            "height": 10,
+            "x": 245,
+            "y": 130
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_11.png",
+            "sha": "e962c8a3d8894b590705150deef5ff9fba2df6cf",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_11.png",
+            "width": 60,
+            "height": 37,
+            "x": 155,
+            "y": 147
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_12.png",
+            "sha": "cf16fee69ce1436faa105478b29644ad368f6ff3",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_12.png",
+            "width": 29,
+            "height": 34,
+            "x": 208,
+            "y": 147
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_13.png",
+            "sha": "1735538a0df169abb86ec8bd1e26562ba992f316",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_13.png",
+            "width": 38,
+            "height": 58,
+            "x": 233,
+            "y": 125
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_14.png",
+            "sha": "14611b1b47d7df09921533ebc91915d4630b6bf0",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_14.png",
+            "width": 13,
+            "height": 13,
+            "x": 259,
+            "y": 143
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_15.png",
+            "sha": "52fbf7268a890324d2ece85374d8b0f1cc2d3c22",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_15.png",
+            "width": 30,
+            "height": 29,
+            "x": 252,
+            "y": 153
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_16.png",
+            "sha": "1ae81e7d7d184324291ca871790eea1987763c88",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_16.png",
+            "width": 52,
+            "height": 51,
+            "x": 278,
+            "y": 132
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_17.png",
+            "sha": "8216add67e14dce95cf875de3873a29bace7006c",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_17.png",
+            "width": 29,
+            "height": 27,
+            "x": 309,
+            "y": 160
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_en_18.png",
+            "sha": "599e1bdeb73bcc28c3653c47ae47e9aee40fb696",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_en_18.png",
+            "width": 54,
+            "height": 37,
+            "x": 326,
+            "y": 160
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title.png",
+            "sha": "b03970513cf28092e4475f5af84663d6952d7e0b",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title.png",
+            "width": 198,
+            "height": 75,
+            "x": 111,
+            "y": 183
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_windmill.png",
+            "sha": "7908ded2b87816482850bcd3b326c3a1514a2e5e",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_windmill.png",
+            "width": 31,
+            "height": 87,
+            "x": 124,
+            "y": 175
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/orange_star.png",
+            "sha": "b970a0b98d2fe090a7bae832ec51a0291e085890",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/orange_star.png",
+            "width": 16,
+            "height": 15,
+            "x": 263,
+            "y": 39
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/orange_star.png",
+            "sha": "b970a0b98d2fe090a7bae832ec51a0291e085890",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/orange_star.png",
+            "width": 16,
+            "height": 15,
+            "x": 86,
+            "y": 223
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/green_star.png",
+            "sha": "f2c0300e2cb9aaa0e2cc64fd1a0d10f1dac080a9",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/green_star.png",
+            "width": 28,
+            "height": 33,
+            "x": 57,
+            "y": 193
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/gray_star.png",
+            "sha": "a5adf10e96fa714dda9e51d24cf729f78fededf7",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/gray_star.png",
+            "width": 34,
+            "height": 32,
+            "x": 316,
+            "y": 217
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/white_star.png",
+            "sha": "fb458c0130ec0fcf44d89508b36eafb4170aae0c",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/white_star.png",
+            "width": 44,
+            "height": 42,
+            "x": 324,
+            "y": 83
+          },
+          {
+            "src": "/images/gacha-titles/LIMITED_76_0_1/title_wind_01.png",
+            "sha": "bfc6f46172a5b93573de9baea6d19a05f1dcf748",
+            "repository": "ArknightsAssets/ArknightsAssets2",
+            "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+            "path": "assets/dyn/ui/gacha/limited_76_0_1/title_wind_01.png",
+            "width": 240,
+            "height": 100,
+            "x": 83,
+            "y": 208
+          }
+        ]
+      },
+      "accent": "#f67156"
+    },
+    "LINKAGE_48_0_1": {
+      "src": "/images/gacha-titles/LINKAGE_48_0_1.png",
+      "sha": "788e9df3bb68d18d040a1b779b236fc3d5cad495",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/linkage_48_0_1/title.png",
+      "width": 352,
+      "height": 214,
+      "accent": "#983815"
+    },
+    "LINKAGE_48_0_3": {
+      "src": "/images/gacha-titles/LINKAGE_48_0_3.png",
+      "sha": "743e0843a9185d59dc7cc8afe23a67e0cf734482",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/linkage_48_0_3/title.png",
+      "width": 491,
+      "height": 215,
+      "accent": "#ffcb05"
+    },
+    "LINKAGE_54_0_1": {
+      "src": "/images/gacha-titles/LINKAGE_54_0_1.png",
+      "sha": "d121b2c248c8e144e4929ec4e995de0d10ae96aa",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/linkage_54_0_1/title.png",
+      "width": 335,
+      "height": 275,
+      "accent": "#b3944c"
+    },
+    "LINKAGE_65_0_1": {
+      "src": "/images/gacha-titles/LINKAGE_65_0_1.png",
+      "sha": "29b9bab55ffbf3d74d55970359cfb704494c2806",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/linkage_65_0_1/title.png",
+      "width": 722,
+      "height": 290,
+      "accent": "#8f0433"
+    },
+    "LINKAGE_74_0_1": {
+      "src": "/images/gacha-titles/LINKAGE_74_0_1.png",
+      "sha": "810780034aed24aea7f0e0021ee17857cd2d6d1d",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/linkage_74_0_1/title.png",
+      "width": 302,
+      "height": 251,
+      "accent": "#50647a"
+    },
+    "LINKAGE_74_0_3": {
+      "src": "/images/gacha-titles/LINKAGE_74_0_3.png",
+      "sha": "ae079acd7d35976bd8694b57eb760c78c78f288b",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/linkage_74_0_3/title.png",
+      "width": 331,
+      "height": 308,
+      "accent": "#7f2a25"
+    },
+    "LINKAGE_77_0_1": {
+      "src": "/images/gacha-titles/LINKAGE_77_0_1.png",
+      "sha": "257a624600d86ef534543a2a6e94ff4a5d5d44f8",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/linkage_77_0_1/title.png",
+      "width": 310,
+      "height": 301,
+      "accent": "#050bd8"
+    },
+    "NORM_47_0_3": {
+      "src": "/images/gacha-titles/NORM_47_0_3.png",
+      "sha": "648df2fffb358c8031355327490cc1e3db4ee81a",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/norm_47_0_3/title.png",
+      "width": 360,
+      "height": 257,
+      "accent": "#6a4e33"
+    },
+    "NORM_48_0_5": {
+      "src": "/images/gacha-titles/NORM_48_0_5.png",
+      "sha": "24602f4d987c8e07ba21cd52757e03d55a4722bf",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/norm_48_0_5/title.png",
+      "width": 325,
+      "height": 235,
+      "accent": "#8a4a1c"
+    },
+    "NORM_49_0_2": {
+      "src": "/images/gacha-titles/NORM_49_0_2.png",
+      "sha": "99963c3e140909ef650d6d55081a1ed1e99b32cf",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/norm_49_0_2/title.png",
+      "width": 386,
+      "height": 280,
+      "accent": "#5e2e2f"
+    },
+    "NORM_50_0_3": {
+      "src": "/images/gacha-titles/NORM_50_0_3.png",
+      "sha": "e2504a2a878beff308fd8c816d23f78798ef688f",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/norm_50_0_3/title.png",
+      "width": 382,
+      "height": 250,
+      "accent": "#6c553b"
+    },
+    "NORM_52_0_2": {
+      "src": "/images/gacha-titles/NORM_52_0_2.png",
+      "sha": "03950856283c93785fee4873aa5de8958b420182",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/norm_52_0_2/title.png",
+      "width": 364,
+      "height": 274,
+      "accent": "#952a3c"
+    },
+    "NORM_56_0_3": {
+      "src": "/images/gacha-titles/NORM_56_0_3.png",
+      "sha": "857248a67977b3ffe5effe0bfdf3c3f92d18bd00",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/norm_56_0_3/title.png",
+      "width": 364,
+      "height": 274,
+      "accent": "#962b3d"
+    },
+    "NORM_58_0_3": {
+      "src": "/images/gacha-titles/NORM_58_0_3.png",
+      "sha": "f673da6a2103625d48d45456e0fdd9f5e82d8da1",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/norm_58_0_3/title.png",
+      "width": 364,
+      "height": 273,
+      "accent": "#c8b907"
+    },
+    "NORM_64_0_3": {
+      "src": "/images/gacha-titles/NORM_64_0_3.png",
+      "sha": "e25cb48e52fd7f31fed6c290f3c5edaaa807c029",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/norm_64_0_3/title.png",
+      "width": 364,
+      "height": 273,
+      "accent": "#c01b0a"
+    },
+    "NORM_66_0_2": {
+      "src": "/images/gacha-titles/NORM_66_0_2.png",
+      "sha": "a2292882f50d588c99b977aa411c615799ba172f",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/norm_66_0_2/title.png",
+      "width": 364,
+      "height": 273,
+      "accent": "#9e3344"
+    },
+    "NORM_71_0_3": {
+      "src": "/images/gacha-titles/NORM_71_0_3.png",
+      "sha": "db39ae30f49c2d560962f2e493a18b7fe0fb3228",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/norm_71_0_3/title.png",
+      "width": 364,
+      "height": 271,
+      "accent": "#4f3d99"
+    },
+    "NORM_74_0_5": {
+      "src": "/images/gacha-titles/NORM_74_0_5.png",
+      "sha": "8e1a1cd8fdd041ba1765d3927fd80dc34ccd7a91",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/norm_74_0_5/title.png",
+      "width": 364,
+      "height": 271,
+      "accent": "#cd6d6d"
+    },
+    "NORM_76_0_3": {
+      "src": "/images/gacha-titles/NORM_76_0_3.png",
+      "sha": "bea2d7f7fa258095f13694d30284c310636d6f21",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/norm_76_0_3/title.png",
+      "width": 325,
+      "height": 235,
+      "accent": "#89211b"
+    },
+    "SINGLE_45_0_7": {
+      "src": "/images/gacha-titles/SINGLE_45_0_7.png",
+      "sha": "7f3056af978afb4ff0055e701dfa48c7ef1473a3",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/single_45_0_7/title.png",
+      "width": 368,
+      "height": 223,
+      "accent": "#4e372f"
+    },
+    "SINGLE_49_0_1": {
+      "src": "/images/gacha-titles/SINGLE_49_0_1.png",
+      "sha": "f745756151fe24cf7e53eeb108a2b847d9de0bca",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/single_49_0_1/title.png",
+      "width": 368,
+      "height": 296,
+      "accent": "#43317a"
+    },
+    "SINGLE_51_0_1": {
+      "src": "/images/gacha-titles/SINGLE_51_0_1.png",
+      "sha": "d3395f79ce99bbb0a3df525759493bdd6f07b08b",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/single_51_0_1/title.png",
+      "width": 464,
+      "height": 414,
+      "accent": "#0c255e"
+    },
+    "SINGLE_51_0_4": {
+      "src": "/images/gacha-titles/SINGLE_51_0_4.png",
+      "sha": "7920180678db08ebcac146c08bc07c7757e1ada6",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/single_51_0_4/title.png",
+      "width": 387,
+      "height": 239,
+      "accent": "#444c5c"
+    },
+    "SINGLE_52_0_1": {
+      "src": "/images/gacha-titles/SINGLE_52_0_1.png",
+      "sha": "d2d5446b5579895705db865c326082d192047db4",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/single_52_0_1/title.png",
+      "width": 378,
+      "height": 307,
+      "accent": "#963452"
+    },
+    "SINGLE_54_0_3": {
+      "src": "/images/gacha-titles/SINGLE_54_0_3.png",
+      "sha": "1ce8ebf9ffec93b9b63192484e53a58d8270dd7c",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/single_54_0_3/title.png",
+      "width": 454,
+      "height": 218,
+      "accent": "#caa604"
+    },
+    "SINGLE_55_0_1": {
+      "src": "/images/gacha-titles/SINGLE_55_0_1.png",
+      "sha": "5faf27e67f30d4e5edddbb282df7cbb15db29da7",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/single_55_0_1/logo.png",
+      "width": 632,
+      "height": 539,
+      "accent": "#9b7348"
+    },
+    "SINGLE_57_0_3": {
+      "src": "/images/gacha-titles/SINGLE_57_0_3.png",
+      "sha": "f79eff1389b22d8f658b6673abce0f1a4c8d470a",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/single_57_0_3/logo.png",
+      "width": 547,
+      "height": 278,
+      "accent": "#85582a"
+    },
+    "SINGLE_58_0_5": {
+      "src": "/images/gacha-titles/SINGLE_58_0_5.png",
+      "sha": "72ec8c6661fe8e117cea64c60b90d10efbd8c690",
+      "repository": "ArknightsAssets/ArknightsAssets",
+      "revision": "c0be4e4428f79c7e87c6889067a6906361ae979b",
+      "path": "assets/torappu/dynamicassets/ui/gacha/single_58_0_5/logo.png",
+      "width": 507,
+      "height": 302,
+      "accent": "#50100f"
+    },
+    "SINGLE_60_0_1": {
+      "src": "/images/gacha-titles/SINGLE_60_0_1.png",
+      "sha": "7b5a6e560e0baf3c097f426a71c61d28d7b128fd",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_60_0_1/title.png",
+      "width": 525,
+      "height": 224,
+      "accent": null
+    },
+    "SINGLE_60_0_3": {
+      "src": "/images/gacha-titles/SINGLE_60_0_3.png",
+      "sha": "992927bd88d91c96d901a22744bd061a18ec80c5",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_60_0_3/title.png",
+      "width": 368,
+      "height": 296,
+      "accent": "#3f2e76"
+    },
+    "SINGLE_62_0_1": {
+      "src": "/images/gacha-titles/SINGLE_62_0_1.png",
+      "sha": "d4bd501707f3b26ff45327cec8329ce1117c9451",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_62_0_1/logo.png",
+      "width": 535,
+      "height": 429,
+      "accent": "#ae1c5b"
+    },
+    "SINGLE_62_0_3": {
+      "src": "/images/gacha-titles/SINGLE_62_0_3.png",
+      "sha": "579f1c8a5e9e5b8579d4c24a3110d277b8c55b53",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_62_0_3/title.png",
+      "width": 464,
+      "height": 414,
+      "accent": "#0d235c"
+    },
+    "SINGLE_63_0_1": {
+      "src": "/images/gacha-titles/SINGLE_63_0_1.png",
+      "sha": "c0beaa76ba8326e7a0a245f706d822ca46216071",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_63_0_1/logo.png",
+      "width": 217,
+      "height": 337,
+      "accent": "#7c1431"
+    },
+    "SINGLE_65_0_3": {
+      "src": "/images/gacha-titles/SINGLE_65_0_3.png",
+      "sha": "f01136b6072797c6ab7e45ec33924347c61ea3c3",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_65_0_3/logo.png",
+      "width": 632,
+      "height": 539,
+      "accent": "#987146"
+    },
+    "SINGLE_66_0_1": {
+      "src": "/images/gacha-titles/SINGLE_66_0_1.png",
+      "sha": "9ce4998dc63f81c515a9808b6a62a89bfdfc8341",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_66_0_1/logo.png",
+      "width": 479,
+      "height": 245,
+      "accent": "#1b667e"
+    },
+    "SINGLE_68_0_1": {
+      "src": "/images/gacha-titles/SINGLE_68_0_1.png",
+      "sha": "d55c57ccf53c9f946e229b2fae6d5e827e3da832",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_68_0_1/logo.png",
+      "width": 426,
+      "height": 371,
+      "accent": "#bdbb58"
+    },
+    "SINGLE_69_0_1": {
+      "src": "/images/gacha-titles/SINGLE_69_0_1.png",
+      "sha": "3703eec59ce46972cb451bd3e82031f2c035e155",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_69_0_1/logo.png",
+      "width": 528,
+      "height": 373,
+      "accent": "#744619"
+    },
+    "SINGLE_71_0_1": {
+      "src": "/images/gacha-titles/SINGLE_71_0_1.png",
+      "sha": "d6c6a27c0e4a328a8ef9224d512f7135bf436708",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_71_0_1/title.png",
+      "width": 593,
+      "height": 422,
+      "accent": "#ac1836"
+    },
+    "SINGLE_71_0_5": {
+      "src": "/images/gacha-titles/SINGLE_71_0_5.png",
+      "sha": "024ce35fc85fa17bcf4524d544bc04731a757c78",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_71_0_5/logo.png",
+      "width": 608,
+      "height": 225,
+      "accent": "#3f3757"
+    },
+    "SINGLE_72_0_1": {
+      "src": "/images/gacha-titles/SINGLE_72_0_1.png",
+      "sha": "a7eab2721348618250def716ce8c6ab1c2796cdf",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_72_0_1/title.png",
+      "width": 477,
+      "height": 428,
+      "accent": "#c02624"
+    },
+    "SINGLE_75_0_1": {
+      "src": "/images/gacha-titles/SINGLE_75_0_1.png",
+      "sha": "c00ffeff7649a05d965ded316fa10b2430e1e37b",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_75_0_1/title.png",
+      "width": 424,
+      "height": 288,
+      "accent": "#227c7d"
+    },
+    "SINGLE_75_0_3": {
+      "src": "/images/gacha-titles/SINGLE_75_0_3.png",
+      "sha": "99086f340672a9769f4af6c0a1e9aac647c4b5f8",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_75_0_3/logo.png",
+      "width": 535,
+      "height": 429,
+      "accent": "#ad1c5b"
+    },
+    "SINGLE_78_0_1": {
+      "src": "/images/gacha-titles/SINGLE_78_0_1.png",
+      "sha": "ef57e41eecbae063a6d355acfba4980afe99d72c",
+      "repository": "ArknightsAssets/ArknightsAssets2",
+      "revision": "44b3d7b3fad6f50ca505bc41414a2fea8eaa0c48",
+      "path": "assets/dyn/ui/gacha/single_78_0_1/logo.png",
+      "width": 339,
+      "height": 370,
+      "accent": "#212d47"
+    }
+  }
+}

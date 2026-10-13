@@ -7,6 +7,8 @@
   "localOnlyModeIsActiveExistingDataIsNot": "当前保持纯本地模式，不会上传已有数据。",
   "automaticSyncStartsOnlyAfterYouAcceptTheCurrent": "确认新版政策后才会开始自动同步。",
   "reviewSyncDetails": "查看同步说明",
+  "enableSync": "启用云同步",
+  "localOnlyDescription": "可在当前浏览器关闭自动云同步和相关提醒，本地数据与已有云端备份都会保留。需要时可在这里重新启用。",
   "scheduleHistory": "排班历史",
   "calculationSettingsAreMissingThisPlanCannotBeRestored": "缺少计算配置，无法恢复",
   "maaBoxDoesNotMatchThisPlanCannotBe": "MAA Box 不一致，无法恢复",

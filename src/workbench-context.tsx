@@ -2,7 +2,7 @@
 
 import { createContext, useContext } from "react";
 
-import type { AccountStatusCenterProps } from "@/components/pages/AccountStatusCenter";
+import type { WebsiteAccountPanelProps } from "@/components/auth/WebsiteAccountPanel";
 import type { DevelopmentSklandStatusCenterProps } from "@/components/pages/DevelopmentSklandStatusCenter";
 import type { InfraCalculatorProps } from "@/components/pages/InfraCalculator";
 import type { ManualSchedulePageProps } from "@/components/pages/ManualSchedulePage";
@@ -20,7 +20,7 @@ export interface WorkbenchContextValue {
   training: TrainingAdviceProps;
   mastery: MasteryPlannerProps;
   recruitment: RecruitmentCalculatorProps;
-  account: AccountStatusCenterProps & {
+  account: Omit<WebsiteAccountPanelProps, "loadingMode"> & {
     authenticated: boolean;
     pending: boolean;
   };

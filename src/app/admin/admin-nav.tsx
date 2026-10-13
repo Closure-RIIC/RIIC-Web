@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ArrowUpRight, BookOpen, Bug, FlaskConical, Gauge, MessageSquareText, ShieldCheck, UsersRound } from "lucide-react";
+import { ArrowUpRight, BookOpen, Bug, FlaskConical, Gauge, Gift, MessageSquareText, ShieldCheck, UsersRound } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 
 export const ADMIN_NAVIGATION = [
@@ -13,13 +13,19 @@ export const ADMIN_NAVIGATION = [
   { path: "/skills", title: "skills", description: "skillsHint", icon: MessageSquareText, adminOnly: true, group: "management" },
   { path: "/changelog", title: "changelog", description: "changelogHint", icon: BookOpen, adminOnly: true, group: "management" },
   { path: "/users", title: "users", description: "usersHint", icon: UsersRound, adminOnly: true, group: "management" },
+  { path: "/billing", title: "billing", description: "billingHint", icon: Gift, adminOnly: true, group: "management" },
+  { path: "/agent", title: "agent", description: "agentHint", icon: ShieldCheck, adminOnly: true, group: "management" },
 ] as const;
+
+export function adminNavigation(isAdmin: boolean, basePath: string) {
+  return ADMIN_NAVIGATION.filter(item => (isAdmin || !item.adminOnly) && (basePath === "/admin" || !["/billing", "/agent"].includes(item.path)));
+}
 
 export function AdminNav({ isAdmin, name, basePath = "/admin" }: { isAdmin: boolean; name: string; basePath?: string }) {
   const t = useTranslations("AdminWorkspace");
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
-  const items = ADMIN_NAVIGATION.filter(item => isAdmin || !item.adminOnly);
+  const items = adminNavigation(isAdmin, basePath);
   return <Sidebar collapsible="icon" mobileWidth="18rem" className="border-r-0">
     <SidebarHeader className="h-16 justify-center px-3">
       <Link href={basePath} onClick={() => setOpenMobile(false)} className="flex items-center gap-2.5 rounded-lg p-1 outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t("workspace")}>

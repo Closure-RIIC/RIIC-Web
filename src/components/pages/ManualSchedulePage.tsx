@@ -64,6 +64,7 @@ import {
 import { BUILDING_SKILL_CATALOG, OPERATOR_CATALOG, operatorPortraitFor, operatorPresentationFor } from "@/operatorPortraits";
 import { addOperatorPresentations } from "@/schedule-presentation";
 import { planToRows, type RoomRow } from "@/schedule";
+import { manualEditableRooms, withRecyclingRoom } from "@/recycling-room";
 import type { BaseBlueprint, MaaJson, MaaOperatorSlot, MaaRoom, OperBoxEntry } from "@/types";
 
 const ScrollArea = lazy(() => import("@/components/ui/scroll-area").then((module) => ({ default: module.ScrollArea })));
@@ -76,7 +77,7 @@ const SkillRoomTagBar = lazy(() => import("@/components/skill-query/SkillRoomTag
 const SkillTagBar = lazy(() => import("@/components/skill-query/SkillTagBar").then(module => ({ default: module.SkillTagBar })));
 const MaaImportDialog = lazy(() => import("@/components/MaaImportDialog").then(module => ({ default: module.MaaImportDialog })));
 const MANUAL_PICKER_PAGE_SIZE = 24;
-const ROOM_GROUP_TO_SKILL_PREFIX: Readonly<Record<RoomRow["group"], BuildingRoomPrefix>> = {
+const ROOM_GROUP_TO_SKILL_PREFIX: Readonly<Partial<Record<RoomRow["group"], BuildingRoomPrefix>>> = {
   control: "control",
   power: "power",
   manufacture: "manu",
@@ -91,6 +92,8 @@ const OPERATOR_CATALOG_BY_ID = new Map(OPERATOR_CATALOG.map((operator) => [opera
 const OPERATOR_CATALOG_BY_NAME = new Map(OPERATOR_CATALOG.map((operator) => [operator.name, operator]));
 
 export interface ManualSchedulePageProps {
+  /** Development showcases can use the real editor without touching saved drafts. */
+  persistDraft?: boolean;
   layout: BaseBlueprint;
   operbox: OperBoxEntry[] | null;
   sourceName: string | null;
@@ -211,6 +214,7 @@ function ManualOperatorChoice({
 }
 
 export function ManualSchedulePage({
+  persistDraft = true,
   layout,
   operbox,
   sourceName,
@@ -284,7 +288,7 @@ export function ManualSchedulePage({
   const ownedOperators = useMemo(() => (
     (operbox ?? []).filter((entry) => entry.own).sort((left, right) => left.name.localeCompare(right.name, "zh-CN"))
   ), [operbox]);
-  const canPersistDraft = ownedOperators.length > 0;
+  const canPersistDraft = persistDraft && ownedOperators.length > 0;
   const ownedFingerprint = ownedOperators.map((operator) => operator.name).join("\0");
   const eliteByOperator = useMemo(() => new Map(
     ownedOperators.map((operator) => [operator.name, operator.elite]),
@@ -304,7 +308,7 @@ export function ManualSchedulePage({
         onShiftStartTimeChange(reconciled.startTime);
         onScheduleModeChange(reconciled.scheduleMode);
         onFiammettaEnabledChange(reconciled.fiammettaEnabled);
-        const cachedEvaluation = loadManualEvaluationCache(window.localStorage);
+        const cachedEvaluation = persistDraft ? loadManualEvaluationCache(window.localStorage) : null;
         if (cachedEvaluation) onRestoreEvaluation(cachedEvaluation);
       }
     } catch {
@@ -312,7 +316,7 @@ export function ManualSchedulePage({
     }
     if (initialDraft) onInitialDraftConsumed();
     setRestored(true);
-  }, [intl, initialDraft, layout, onFiammettaEnabledChange, onInitialDraftConsumed, onRestoreEvaluation, onScheduleModeChange, onShiftDurationsChange, onShiftStartTimeChange, operbox, ownedOperators, restored, restorationReady]);
+  }, [intl, initialDraft, layout, onFiammettaEnabledChange, onInitialDraftConsumed, onRestoreEvaluation, onScheduleModeChange, onShiftDurationsChange, onShiftStartTimeChange, operbox, ownedOperators, persistDraft, restored, restorationReady]);
 
   useEffect(() => {
     if (!restored) return;
@@ -358,13 +362,17 @@ export function ManualSchedulePage({
   } : undefined, [trainingAssignment?.operators, trainingRoom]);
   const activeEvaluationShift = result?.rotation.shifts[activeShift];
   const rows = useMemo(
-    () => addOperatorPresentations(planToRows(activePlan, activeEvaluationShift, layout, activeTrainingRoomShift).map((row) => {
+    () => addOperatorPresentations(withRecyclingRoom(planToRows(activePlan, activeEvaluationShift, layout, activeTrainingRoomShift)).map((row) => {
       const assignment = draft.shifts[activeShift]?.rooms[row.roomId];
-      const room = layout.rooms.find((candidate) => candidate.id === row.roomId);
+      const room = manualEditableRooms(layout).find((candidate) => candidate.id === row.roomId);
       const capacity = room ? manualRoomCapacity(room) : 0;
       const visibleSlots = row.group === "control" ? 5 : row.group === "trading" || row.group === "manufacture" ? 3 : capacity;
       return {
         ...row,
+        ...(row.group === "recycling" ? {
+          operators: (assignment?.operators ?? []).filter((name): name is string => Boolean(name)),
+          operatorSlots: (assignment?.operators ?? []).flatMap((name) => name ? [{ name, label: name }] : []),
+        } : {}),
         ...(row.positionSlots ? {} : {
           slotAssignments: Array.from(
             { length: visibleSlots },
@@ -440,7 +448,7 @@ export function ManualSchedulePage({
     if (row.unavailableSlotIndices?.includes(slotIndex)) return;
     setPickerScrolling(false);
     setPickerQuery("");
-    setPickerRoomFilter(ROOM_GROUP_TO_SKILL_PREFIX[row.group]);
+    setPickerRoomFilter(ROOM_GROUP_TO_SKILL_PREFIX[row.group] ?? null);
     setPickerSkillTag(null);
     setPickerRarity(null);
     setPickerPage(1);

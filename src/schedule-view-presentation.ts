@@ -89,7 +89,3 @@ export function compactTradeAccent(order: string) {
 export function compactFactoryAccent(recipe: string) {
   return FACTORY_ACCENT[recipe] ?? PRODUCT_FALLBACK;
 }
-
-export function isCompactScheduleGroupVisible(group: string) {
-  return Boolean(group);
-}

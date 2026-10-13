@@ -32,6 +32,7 @@ test("database roles guard all Agent/billing APIs before reads, writes or model 
   const statusFor = (code: string) => code === "AIC-AUTH-2008" ? 401 : code === "AIC-AUTH-2007" ? 404 : 403;
   await t.mock.module(new URL("../api-contract.ts", import.meta.url), { namedExports: {
     PublicApiError: ApiError, assertSameOrigin: () => {}, createRequestId: () => "test",
+    enforceRateLimit: () => {},
     readJsonBody: (request: Request) => request.json(),
     failureResponse: (error: ApiError) => Response.json({ code: error.code }, { status: statusFor(error.code) }),
     successResponse: (data: unknown) => Response.json({ data }),
@@ -39,7 +40,7 @@ test("database roles guard all Agent/billing APIs before reads, writes or model 
   await t.mock.module(new URL("./index.ts", import.meta.url), { namedExports: { websiteSession: async () => session } });
   await t.mock.module(new URL("../db/index.ts", import.meta.url), { namedExports: { getDatabase: () => ({
     select: () => ({ from: () => ({ where: () => ({ limit: async () => record ? [record] : [] }) }) }),
-  }) } });
+  }), getDatabasePool: () => { effects++; throw new Error("Denied requests must not open the accounting pool"); } } });
   await t.mock.module(new URL("../db/schema.ts", import.meta.url), { namedExports: { user: { id: "id", role: "role", banned: "banned" } } });
   await t.mock.module(new URL("../billing/service.ts", import.meta.url), { namedExports: {
     BillingError: class extends Error {}, createBillingOrder: effect, getWallet: effect,
@@ -51,6 +52,7 @@ test("database roles guard all Agent/billing APIs before reads, writes or model 
   await t.mock.module(new URL("../agent/config.ts", import.meta.url), { namedExports: { agentLlmSettings: () => ({ configured: false }), agentModelChoices: () => [] } });
   await t.mock.module(new URL("../agent/llm.ts", import.meta.url), { namedExports: { getAgentModel: effect } });
   await t.mock.module(new URL("../agent/persona.ts", import.meta.url), { namedExports: { buildAgentSystemPrompt: effect } });
+  await t.mock.module(new URL("../agent/resources.ts", import.meta.url), { namedExports: { activeAgentResources: effect } });
   await t.mock.module(new URL("../agent/tools.ts", import.meta.url), { namedExports: { buildAgentTools: effect } });
   const { getFeatureAccess, requireFeatureSession } = await import("./feature-access.ts");
   const billing = await import("../../app/api/billing/route.ts");

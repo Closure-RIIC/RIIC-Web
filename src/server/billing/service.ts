@@ -1,17 +1,19 @@
 import "server-only";
 
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
 
 import { getDatabase } from "@/server/db";
 import { agentUsage, billingCdk, billingLedger, billingOrder, billingWallet } from "@/server/db/schema";
 import { afdianCheckoutUrl, billingProduct, billingTestProductEnabled, type BillingProduct } from "./config";
+import { cdkAvailability, hashCdk, randomCdk, validCdk } from "./cdk";
 
 export type BillingWalletView = {
   paidPoints: number;
   monthlyPoints: number;
   monthlyExpiresAt: string | null;
   totalPoints: number;
+  reservedPoints: number;
 };
 
 export class BillingError extends Error {
@@ -21,14 +23,12 @@ export class BillingError extends Error {
   }
 }
 
-function hashCdk(code: string): string {
-  return createHash("sha256").update(code.trim().toUpperCase()).digest("hex");
-}
-
 type LockedWallet = {
   paidPoints: number;
   monthlyPoints: number;
   monthlyExpiresAt: Date | null;
+  heldPaidPoints?: number;
+  heldMonthlyPoints?: number;
 };
 
 type BillingTransaction = Parameters<Parameters<ReturnType<typeof getDatabase>["transaction"]>[0]>[0];
@@ -40,7 +40,8 @@ function viewWallet(wallet: LockedWallet): BillingWalletView {
     paidPoints: wallet.paidPoints,
     monthlyPoints,
     monthlyExpiresAt: monthlyActive ? wallet.monthlyExpiresAt!.toISOString() : null,
-    totalPoints: wallet.paidPoints + monthlyPoints,
+    totalPoints: Math.max(0, wallet.paidPoints - (wallet.heldPaidPoints ?? 0)) + Math.max(0, monthlyPoints - (wallet.heldMonthlyPoints ?? 0)),
+    reservedPoints: (wallet.heldPaidPoints ?? 0) + (wallet.heldMonthlyPoints ?? 0),
   };
 }
 
@@ -50,7 +51,8 @@ async function ensureWallet(tx: BillingTransaction, userId: string): Promise<voi
 
 async function lockWallet(tx: BillingTransaction, userId: string): Promise<LockedWallet> {
   const result = await tx.execute(sql`
-    SELECT "paid_points" AS "paidPoints", "monthly_points" AS "monthlyPoints", "monthly_expires_at" AS "monthlyExpiresAt"
+    SELECT "paid_points" AS "paidPoints", "monthly_points" AS "monthlyPoints", "monthly_expires_at" AS "monthlyExpiresAt",
+      "held_paid_points" AS "heldPaidPoints", "held_monthly_points" AS "heldMonthlyPoints"
     FROM "app"."billing_wallet"
     WHERE "user_id" = ${userId}
     FOR UPDATE
@@ -61,13 +63,17 @@ async function lockWallet(tx: BillingTransaction, userId: string): Promise<Locke
     paidPoints: Number(row.paidPoints ?? 0),
     monthlyPoints: Number(row.monthlyPoints ?? 0),
     monthlyExpiresAt: row.monthlyExpiresAt ? new Date(String(row.monthlyExpiresAt)) : null,
+    heldPaidPoints: Number(row.heldPaidPoints ?? 0), heldMonthlyPoints: Number(row.heldMonthlyPoints ?? 0),
   };
 }
 
 async function expireWalletIfNeeded(tx: BillingTransaction, userId: string, wallet: LockedWallet): Promise<LockedWallet> {
-  if (!wallet.monthlyExpiresAt || wallet.monthlyExpiresAt.getTime() > Date.now() || wallet.monthlyPoints <= 0) return wallet;
-  const next = { ...wallet, monthlyPoints: 0, monthlyExpiresAt: null };
-  await tx.update(billingWallet).set({ monthlyPoints: 0, monthlyExpiresAt: null, updatedAt: new Date() }).where(eq(billingWallet.userId, userId));
+  if (!wallet.monthlyExpiresAt || wallet.monthlyExpiresAt.getTime() > Date.now() || wallet.monthlyPoints <= (wallet.heldMonthlyPoints ?? 0)) return wallet;
+  const remaining = wallet.heldMonthlyPoints ?? 0;
+  const next = { ...wallet, monthlyPoints: remaining, monthlyExpiresAt: remaining ? wallet.monthlyExpiresAt : null };
+  await tx.update(billingWallet).set({ monthlyPoints: remaining, monthlyExpiresAt: next.monthlyExpiresAt, updatedAt: new Date() }).where(eq(billingWallet.userId, userId));
+  await tx.insert(billingLedger).values({ id: randomUUID(), userId, kind: "monthly_expiry", pointsDelta: remaining - wallet.monthlyPoints,
+    paidPointsAfter: wallet.paidPoints, monthlyPointsAfter: remaining, idempotencyKey: `monthly_expiry:${userId}:${wallet.monthlyExpiresAt.toISOString()}` });
   return next;
 }
 
@@ -240,8 +246,8 @@ export async function chargeAgentTool(input: { userId: string; toolName: string;
     wallet = await expireWalletIfNeeded(tx, userId, wallet);
     const [committed] = await tx.select().from(billingLedger).where(eq(billingLedger.idempotencyKey, idempotencyKey)).limit(1);
     if (committed) return { charged: Math.abs(committed.pointsDelta), wallet: viewWallet(wallet), usageId: committed.referenceId };
-    if (wallet.paidPoints + wallet.monthlyPoints < points) throw new BillingError("insufficient_points", `积分不足，本次${toolName}需要 ${points} 积分。`);
-    const monthlyUsed = Math.min(wallet.monthlyPoints, points);
+    if (viewWallet(wallet).totalPoints < points) throw new BillingError("insufficient_points", `积分不足，本次${toolName}需要 ${points} 积分。`);
+    const monthlyUsed = Math.min(Math.max(0, viewWallet(wallet).monthlyPoints - (wallet.heldMonthlyPoints ?? 0)), points);
     const next = { ...wallet, monthlyPoints: wallet.monthlyPoints - monthlyUsed, paidPoints: wallet.paidPoints - (points - monthlyUsed) };
     await tx.update(billingWallet).set({ paidPoints: next.paidPoints, monthlyPoints: next.monthlyPoints, updatedAt: new Date() }).where(eq(billingWallet.userId, userId));
     const usageId = randomUUID();
@@ -338,12 +344,12 @@ export async function finalizeAgentUsage(input: {
     // Token points are additional and are never used to refund that tool fee.
     const toolPoints = Math.max(0, usage.points);
     const tokenPoints = Math.max(0, Math.ceil(input.chargedPoints ?? 0));
-    const available = wallet.paidPoints + wallet.monthlyPoints;
+    const available = viewWallet(wallet).totalPoints;
     const settledTokenPoints = Math.min(tokenPoints, available);
     const unsettledPoints = tokenPoints - settledTokenPoints;
     let next = { ...wallet };
 
-    const monthlyUsed = Math.min(next.monthlyPoints, settledTokenPoints);
+    const monthlyUsed = Math.min(Math.max(0, viewWallet(next).monthlyPoints - (next.heldMonthlyPoints ?? 0)), settledTokenPoints);
     next = { ...next, monthlyPoints: next.monthlyPoints - monthlyUsed, paidPoints: next.paidPoints - (settledTokenPoints - monthlyUsed) };
 
     if (settledTokenPoints > 0) {
@@ -394,13 +400,13 @@ export async function finalizeAgentUsage(input: {
 
 export async function issueGiftCdk(userId: string, points: number) {
   if (points !== 50 && points !== 110) throw new BillingError("invalid_cdk", "目前只可生成 50 或 110 积分赠送码。");
-  const code = `RIIC-${randomBytes(18).toString("hex").toUpperCase()}`;
+  const code = randomCdk();
   const cdkId = randomUUID();
   const db = getDatabase();
   const wallet = await db.transaction(async (tx) => {
     await ensureWallet(tx, userId);
     const current = await expireWalletIfNeeded(tx, userId, await lockWallet(tx, userId));
-    if (current.paidPoints < points) throw new BillingError("insufficient_points", "赠送码只能使用永久积分生成，当前永久积分不足。");
+    if (current.paidPoints - (current.heldPaidPoints ?? 0) < points) throw new BillingError("insufficient_points", "赠送码只能使用可用永久积分生成，当前永久积分不足。");
     const paidPoints = current.paidPoints - points;
     await tx.update(billingWallet).set({ paidPoints, updatedAt: new Date() }).where(eq(billingWallet.userId, userId));
     await tx.insert(billingCdk).values({ id: cdkId, codeHash: hashCdk(code), issuerUserId: userId, points });
@@ -415,11 +421,21 @@ export async function issueGiftCdk(userId: string, points: number) {
 }
 
 export async function redeemGiftCdk(userId: string, code: string) {
-  if (!/^RIIC-[A-F0-9]{36}$/i.test(code.trim())) throw new BillingError("invalid_cdk", "兑换码格式无效。");
+  if (!validCdk(code)) throw new BillingError("invalid_cdk", "兑换码格式无效。");
   const db = getDatabase();
   return db.transaction(async (tx) => {
     const [cdk] = await tx.select().from(billingCdk).where(eq(billingCdk.codeHash, hashCdk(code))).for("update").limit(1);
-    if (!cdk || cdk.status !== "issued") throw new BillingError("invalid_cdk", "兑换码不存在或已核销。");
+    if (!cdk) throw new BillingError("invalid_cdk", "兑换码不存在，请检查后重试。");
+    // Use the database clock after acquiring the row lock, so delayed requests
+    // and application-host clock skew cannot redeem an expired code.
+    const clock = await tx.execute<{ now: Date }>(sql`select clock_timestamp() as now`);
+    const now = new Date(clock.rows[0].now);
+    const availability = cdkAvailability(cdk, now);
+    if (availability === "revoked") throw new BillingError("invalid_cdk", "兑换码已作废，请联系发放方。");
+    if (availability === "redeemed") throw new BillingError("invalid_cdk", "兑换码已被使用，不能重复兑换。");
+    if (availability === "expired") throw new BillingError("invalid_cdk", "兑换码已过期，请联系发放方。");
+    if (availability === "scheduled") throw new BillingError("invalid_cdk", "兑换码尚未到启用时间，请稍后再试。");
+    if (availability !== "issued") throw new BillingError("invalid_cdk", "兑换码当前不可用。");
     await ensureWallet(tx, userId);
     const current = await expireWalletIfNeeded(tx, userId, await lockWallet(tx, userId));
     const paidPoints = current.paidPoints + cdk.points;

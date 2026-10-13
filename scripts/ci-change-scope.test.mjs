@@ -81,7 +81,6 @@ test("runtime and unclassified changes always use the full gate", () => {
     "src/App.tsx",
     ".gitattributes",
     "package.json",
-    "public/images/products/gold.webp",
     "deploy/PUBLIC_DEPLOYMENT_SOURCE",
     "unknown/config.data",
   ]) {
@@ -105,6 +104,45 @@ test("mixed documentation and runtime changes cannot use a fast path", () => {
     runBrowser: true,
     deployRequired: true,
   });
+});
+
+test("managed operator updates keep core checks, build and deploy without browser E2E", () => {
+  for (const paths of [
+    ["src/generated/arkntools/operator-catalog.json", "public/images/operator-portraits/393_toledo.webp", "fixtures/operbox_full_e2.json"],
+    ["src/generated/mastery-data.json", "public/images/building-skills/bskill_recycle_spd&cost1.png", "docs/data.md"],
+    ["public/images/products/gold.webp"],
+    ["src/generated/gacha-up.json"],
+    ["src/generated/gacha-up.json", "src/generated/arkntools/operator-catalog.json"],
+    [".\\src\\generated\\arkntools\\operator-rarities.json"],
+  ]) {
+    assertScope(paths, {
+      scope: "operator-data", reason: "managed-operator-data-only", documentationOnly: false,
+      runCore: true, runBrowser: false, deployRequired: true,
+    });
+  }
+});
+
+test("data mixed with UI, logic, dependencies, generator changes or unrecognized assets retains E2E", () => {
+  for (const changed of ["src/App.tsx", "src/server/infra.ts", "package-lock.json", "scripts/arkntools-assets-lib.mjs",
+    "public/images/operator-portraits/injected.js", "src/generated/arkntools/unknown.json", "e2e/operator-search.spec.ts"] ) {
+    assert.equal(classifyChanges(["src/generated/arkntools/operator-catalog.json", changed]).runBrowser, true, changed);
+  }
+  assert.equal(classifyChanges(["src/generated/arkntools/operator-catalog.json"], { forceFull: true }).runBrowser, true);
+  assert.equal(classifyChanges(["src/generated/gacha-up.json", "scripts/sync-gacha-up.mjs"]).runBrowser, true);
+  assert.equal(classifyChanges(["src/generated/gacha-up.json", "src/gacha-history.ts"]).runBrowser, true);
+});
+
+test("manual data mode rejects non-data and empty diffs before emitting gate outputs", async (context) => {
+  const root = await mkdtemp(join(tmpdir(), "arkinfra-data-scope-"));
+  context.after(() => rm(root, { recursive: true, force: true }));
+  const input = join(root, "paths.zlist");
+  for (const paths of ["", "src/App.tsx\0", "src/generated/arkntools/operator-catalog.json\0src/server/infra.ts\0"]) {
+    await writeFile(input, paths);
+    await assert.rejects(execFileAsync(process.execPath, [classifierPath, "--input", input, "--require-operator-data"]), /non-data changes or an empty diff/);
+  }
+  await writeFile(input, "src/generated/arkntools/operator-catalog.json\0");
+  const { stdout } = await execFileAsync(process.execPath, [classifierPath, "--input", input, "--require-operator-data"]);
+  assert.equal(JSON.parse(stdout).runBrowser, false);
 });
 
 test("empty, forced, and Windows-style inputs fail closed", () => {

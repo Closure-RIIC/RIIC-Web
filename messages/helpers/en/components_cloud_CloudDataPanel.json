@@ -7,6 +7,8 @@
   "localOnlyModeIsActiveExistingDataIsNot": "Local-only mode is active. Existing data is not uploaded.",
   "automaticSyncStartsOnlyAfterYouAcceptTheCurrent": "Automatic sync starts only after you accept the current policies.",
   "reviewSyncDetails": "Review sync details",
+  "enableSync": "Enable cloud sync",
+  "localOnlyDescription": "Turn off automatic cloud sync and its notices in this browser. Local data and existing cloud backups are kept. You can enable sync again here.",
   "scheduleHistory": "Schedule history",
   "calculationSettingsAreMissingThisPlanCannotBeRestored": "Calculation settings are missing; this plan cannot be restored",
   "maaBoxDoesNotMatchThisPlanCannotBe": "MAA BOX does not match; this plan cannot be restored",

@@ -27,10 +27,10 @@ import { DotDistortionBackground } from "@/components/layout/DotDistortionBackgr
 import { AppMotionProvider } from "@/components/MotionProvider";
 import { PrimaryPageTransition } from "@/components/layout/PrimaryPageTransition";
 import { SetupDialogSkeleton } from "@/components/setup/SetupDialogSkeleton";
+import { WebsiteAccountDialogLoading } from "@/components/auth/WebsiteAccountDialogLoading";
 import { LiveActivity, usePlanActivity } from "@/components/ui/live-activity";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { trackTelemetry } from "@/lib/telemetry-dispatch";
-import { loadClientFeature } from "@/client-lazy-loader";
 import { WorkbenchContext } from "@/workbench-context";
 import { WORKBENCH_PAGE_PATHS, workbenchHref, workbenchPageFromPathname, type AppPage } from "@/workbench-routes";
 import { useWebsiteSession } from "@/website-session";
@@ -100,7 +100,6 @@ import { DEFAULT_ROTATION_PROFILE, isRotationProfile, rotationDurations } from "
 import { MOTION_DURATION } from "./motion";
 import { emptySklandBindingSummary } from "./skland-binding-state";
 import { createSklandRestoreGuard } from "./skland-restore-guard";
-import { setupConfigurationFingerprint } from "./setup-configuration";
 import {
   BaseBlueprint,
   BoxSource,
@@ -140,9 +139,9 @@ function bindingSummaryFromSession(session: Pick<SklandSessionData, "accounts" |
   };
 }
 
-const loadWebsiteAccountDialog = () => loadClientFeature("websiteAccountDialog");
-const loadSetupDialog = () => loadClientFeature("setupDialog");
-const loadComponents = () => loadClientFeature("sharedComponents");
+const loadWebsiteAccountDialog = () => import("@/components/auth/WebsiteAccountDialog");
+const loadSetupDialog = () => import("./setup-dialog");
+const loadComponents = () => import("./components");
 const SklandTrainingSyncBridge = lazy(() => import("@/components/workbench/SklandTrainingSyncBridge"));
 const ReleaseAnnouncement = lazy(() => import("@/components/changelog/ReleaseAnnouncement").then((module) => ({
   default: module.ReleaseAnnouncement,
@@ -512,7 +511,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const effectiveManualFiammettaEnabled = Boolean(
     manualFiammettaEnabled && operbox?.some((operator) => operator.own && operator.name === "菲亚梅塔")
   );
-  const setupConfigurationKey = useMemo(() => setupConfigurationFingerprint({
+  const setupConfigurationKey = useMemo(() => JSON.stringify({
     layout,
     rotationProfile,
     fiammettaEnabled,
@@ -926,6 +925,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
     const shouldLoadFullSklandSession = (
       page === "skland"
+      || page === "gacha"
       || initialBoxSource.current === "skland"
       || !initialOperbox.current
       || setupOpen
@@ -1004,9 +1004,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (
       !CLIENT_SKLAND_ENABLED
-      || page !== "skland"
+      || (page !== "skland" && page !== "gacha")
       || !activeSklandAccount
-      || sklandStatusSnapshot
+      || sklandStatusSnapshot?.player.uid === activeSklandAccount.selectedUid
       || sklandFullRestorePending.current
       || sklandSessionLoading
       || sklandError
@@ -1070,6 +1070,13 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   function applySklandSession(session: SklandSessionData, applyLayoutWhenClean = true) {
+    // Role changes and sign-out are authoritative for this restore generation.
+    // Route renders must not start another restore over the completed mutation.
+    sklandFullRestore.current = {
+      generation: sklandRestoreGuard.current.current(),
+      reloadKey: websiteAuthReloadKey,
+      result: Promise.resolve({ session }),
+    };
     setSklandAccounts(session.accounts);
     setSklandActiveAccountId(session.activeAccountId);
     setSklandBindingSummary(bindingSummaryFromSession(session));
@@ -2149,7 +2156,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     if (page !== "calculator" || !result?.maa) return;
     let cancelled = false;
     let cancelPreload: (() => void) | undefined;
-    void loadClientFeature("schedulePortraitPreload").then((module) => {
+    void import("@/schedule-portrait-preload").then((module) => {
       if (!cancelled) cancelPreload = module.scheduleNextShiftPortraitPreload(result.maa, activeShift);
     });
     return () => {
@@ -2533,30 +2540,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       </Suspense> : null}
 
       {websiteAuthDialogMounted ? <Suspense fallback={(
-        websiteAuthDialogOpen ? (
-          <div
-            className="fixed inset-0 z-50 grid place-items-center bg-black/55 p-2"
-          >
-            <div
-              className="grid min-h-72 w-full max-w-[min(880px,calc(100vw-2rem))] place-items-center bg-background px-6 py-12 text-center shadow-xl"
-              role="dialog"
-              aria-modal="true"
-              aria-label={intl("App.websiteAccountSignIn")}
-              aria-busy="true"
-              data-website-account-dialog
-              data-website-account-dialog-loading
-            >
-              <div className="grid justify-items-center gap-3" role="status" aria-live="polite" aria-busy="true" data-website-account-loading>
-                <span
-                  className="size-8 animate-spin rounded-full border-2 border-muted border-t-muted-foreground motion-reduce:animate-none"
-                  aria-hidden="true"
-                  data-website-account-loading-spinner
-                />
-                <p className="text-sm text-muted-foreground">{intl("App.loadingSignIn")}</p>
-              </div>
-            </div>
-          </div>
-        ) : null
+        <WebsiteAccountDialogLoading open={websiteAuthDialogOpen} onOpenChange={handleWebsiteAuthDialogOpenChange} />
       )}><WebsiteAccountDialog
           open={websiteAuthDialogOpen}
           onOpenChange={handleWebsiteAuthDialogOpenChange}

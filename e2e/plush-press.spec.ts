@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("riic.plush.performance.v1", "quality"));
+});
+
 for (const [name, variant, scale] of [["可露希尔", "closure", 1], ["能天使", "exusiai", 1.05], ["琴柳", "saileach", 1.16], ["山", "mountain", 1.10]] as const) {
 test(`${variant} eyes press into ovals and recover without a static backing`, async ({ page }) => {
   test.setTimeout(120_000);
@@ -19,12 +23,27 @@ test(`${variant} eyes press into ovals and recover without a static backing`, as
     await page.getByRole("toolbar").getByRole("button", { name, exact: true }).click();
     const avatar = page.locator(`[data-fur-avatar="${variant}"]`);
     await expect(avatar).toHaveAttribute("data-fur-ready", "true", { timeout: 30_000 });
+    // The first rendered frame starts the incoming animation; its initial
+    // bounding box can still be outside the viewport. Press the settled model.
+    await expect(page.locator(`[data-plush-card="${variant}"]`)).not.toHaveAttribute("data-switching", /.+/);
+    await page.bringToFront();
+    await expect(avatar).toBeInViewport();
+    await expect.poll(() => page.evaluate(() => document.visibilityState)).toBe("visible");
     const bounds = await avatar.boundingBox();
     await page.mouse.move(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
-    await expect(avatar).toHaveAttribute("data-fur-motion", "idle", { timeout: 15_000 });
+    await expect.poll(() => avatar.evaluate(element => {
+      const box = element.getBoundingClientRect();
+      return { motion: (element as HTMLElement).dataset.furMotion, visibility: document.visibilityState,
+        bounds: { x: box.x, y: box.y, width: box.width, height: box.height },
+        viewport: { width: innerWidth, height: innerHeight }, scrollY };
+    }), { timeout: 15_000 }).toMatchObject({ motion: "idle", visibility: "visible" });
     const eyePixels = () => page.locator("main canvas").evaluate((element, { character, scale }) => {
       const canvas = element as HTMLCanvasElement;
-      const image = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height);
+      const copy = document.createElement("canvas");
+      copy.width = canvas.width; copy.height = canvas.height;
+      const context = copy.getContext("2d", { willReadFrequently: true })!;
+      canvas.closest("[data-fur-avatar]")!.dispatchEvent(new CustomEvent("fur-snapshot", { detail: context }));
+      const image = context.getImageData(0, 0, canvas.width, canvas.height);
       let pixels = 0;
       for (let y = 0; y < image.height; y += 2) for (let x = 0; x < image.width; x += 2) {
         if (character !== "closure") {
@@ -43,10 +62,18 @@ test(`${variant} eyes press into ovals and recover without a static backing`, as
     }, { character: variant, scale });
     const open = await eyePixels();
     expect(open).toBeGreaterThan(30);
+    await page.bringToFront();
+    // Coordinate input does not perform Playwright's usual hit-target checks.
+    expect(await avatar.evaluate(element => {
+      const box = element.getBoundingClientRect();
+      return document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2)?.closest("[data-fur-avatar]") === element;
+    })).toBe(true);
     await page.mouse.down();
     await expect.poll(eyePixels, { timeout: 20_000 }).toBeLessThan(open * 0.75);
     await expect(avatar).toHaveAttribute("data-fur-motion", "idle", { timeout: 15_000 });
     const pressed = await eyePixels();
+    await expect(avatar).toHaveAttribute("data-fur-resolution-scale", "1.00");
+    expect(pressed).toBeLessThan(open * 0.75);
     expect(pressed).toBeGreaterThan(open * 0.3);
     await page.mouse.up();
     await expect.poll(eyePixels, { timeout: 20_000 }).toBeGreaterThan(open * 0.85);

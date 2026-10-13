@@ -4,8 +4,8 @@ import { useTranslations } from "next-intl";
 export const adminPageClass = "mx-auto grid w-full min-w-0 max-w-[1440px] content-start gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8";
 
 export function AdminPageHeader({ title, description, actions }: {
-  title: "overview" | "users" | "issues" | "quality" | "skills" | "changelog";
-  description: "overviewHint" | "usersHint" | "issuesHint" | "qualityHint" | "skillsHint" | "changelogHint";
+  title: "overview" | "users" | "issues" | "quality" | "skills" | "changelog" | "billing" | "agent";
+  description: "overviewHint" | "usersHint" | "issuesHint" | "qualityHint" | "skillsHint" | "changelogHint" | "billingHint" | "agentHint";
   actions?: ReactNode;
 }) {
   const t = useTranslations("AdminWorkspace");

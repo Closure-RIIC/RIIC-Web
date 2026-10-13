@@ -50,6 +50,11 @@ const ROOM_VISUALS: Record<string, RoomVisual> = {
     level: "#FFFFFF",
     background: "/images/building-room-emblems/emblem_training.png",
   },
+  recycling: {
+    accent: "#FFFFFF",
+    level: "#FFFFFF",
+    background: "/images/building-room-emblems/emblem_training.png",
+  },
   default: {
     accent: "#FFFFFF",
     level: "#FFFFFF",
@@ -71,6 +76,7 @@ const LIGHT_SURFACE_ROOM_ACCENTS: Record<string, string> = {
   processing: "#71717A",
   hire: "#71717A",
   training: "#71717A",
+  recycling: "#71717A",
   default: "#71717A",
 };
 

@@ -131,7 +131,7 @@ function AccountHealthContent({ identityKey }: { identityKey: string }) {
           <Metric label={en ? "Gold bars" : "赤金"} value={fmt(stock.goldUnits)} note={approx(stock.goldUnits * GOLD_BAR_VALUE)} />
           <Metric label={en ? "Available pulls" : "可用常规抽数"} value={fmt(stock.directPulls)}
             note={stock.directPulls === 0
-              ? <Link href="/skland" className="underline decoration-dotted underline-offset-2 hover:text-foreground">{en ? "Fill in via Skland status · Backpack" : "到森空岛状态·背包补充填写"}</Link>
+              ? <Link href="/skland/inventory" className="underline decoration-dotted underline-offset-2 hover:text-foreground">{en ? "Fill in via Skland status · Backpack" : "到森空岛状态·背包补充填写"}</Link>
               : stock.yellowCertificatePulls > 0 ? (en ? `Includes ${fmt(stock.yellowCertificatePulls)} from yellow certificates` : `含黄票兑换 ${fmt(stock.yellowCertificatePulls)} 抽`) : undefined} />
           <Metric label={en ? "LMD / EXP in stock" : "库存钱书比"} value={ratio(stock.lmdToExperience)} emphasis={stock.lmdToExperience != null} />
           <Metric label={en ? "LMD / EXP gap (modules in)" : "钱书缺口（含模组比）"} value={gap

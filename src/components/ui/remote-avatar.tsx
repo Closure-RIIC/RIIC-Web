@@ -13,6 +13,7 @@ export function RemoteAvatar({
   imageClassName,
   emptyFallback,
   loadingFallback,
+  loading,
 }: {
   src?: string | null;
   alt: string;
@@ -21,6 +22,7 @@ export function RemoteAvatar({
   imageClassName?: string;
   emptyFallback: ReactNode;
   loadingFallback?: ReactNode;
+  loading?: "eager" | "lazy";
 }) {
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
@@ -40,7 +42,8 @@ export function RemoteAvatar({
           width={pixelSize}
           height={pixelSize}
           decoding="async"
-          fetchPriority="high"
+          loading={loading}
+          fetchPriority={loading === "lazy" ? "auto" : "high"}
           referrerPolicy="no-referrer"
           onLoad={() => setLoadedSrc(src)}
           onError={() => setFailedSrc(src)}

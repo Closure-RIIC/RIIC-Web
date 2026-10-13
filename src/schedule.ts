@@ -2,7 +2,7 @@ import type { BuildingSkillPresentation } from "./operatorPortraits";
 import { maaRoomAutofill } from "./schedule-autofill.ts";
 import type { BaseBlueprint, BlueprintRoom, MaaOperatorSlot, MaaPlan, MaaRoom, MaaRooms, RoomEfficiency, RoomKind, RotationShift, TrainingRoomShift } from "./types.ts";
 
-export type RoomGroup = keyof MaaRooms | "training";
+export type RoomGroup = keyof MaaRooms | "training" | "recycling";
 
 export interface RoomRow {
   key: string;
@@ -54,6 +54,7 @@ const GROUP_LABELS: Record<RoomGroup, string> = {
   hire: "办公室",
   processing: "加工站",
   training: "训练室",
+  recycling: "回收站",
 };
 
 const GROUP_ORDER: RoomGroup[] = [
@@ -356,6 +357,7 @@ export function planToRows(
   const layoutRoomMap = roomMapFor(layout);
   const roomsByGroup = plan.rooms && typeof plan.rooms === "object" ? plan.rooms : {};
   for (const group of GROUP_ORDER) {
+    if (group === "recycling") continue;
     if (group === "training") {
       const layoutRoom = layout?.rooms.find((room) => room.kind === "training_room");
       if (!layoutRoom) continue;

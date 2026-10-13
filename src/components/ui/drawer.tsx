@@ -10,10 +10,12 @@ import { useTranslations } from "next-intl";
 import { animate, motion, type PanInfo, useDragControls, useMotionValue, useReducedMotion, useTransform } from "motion/react";
 import { XIcon } from "lucide-react";
 import { createPortal } from "react-dom";
-import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { dialogAccentForPathname } from "@/workbench-accent";
 
 const DRAWER_SPRING = { type: "spring", stiffness: 150, damping: 27, mass: 1 } as const;
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
@@ -39,6 +41,7 @@ export function Drawer({
   onCloseComplete?: () => void;
 }) {
   const intl = useTranslations();
+  const pathname = usePathname();
   const titleId = useId();
   const hintId = useId();
   const [host, setHost] = useState<HTMLElement | null>(null);
@@ -200,7 +203,7 @@ export function Drawer({
   if (!host || !mounted) return null;
   return createPortal(
     <div ref={shellRef} className="fixed inset-0 z-50 overflow-hidden" data-slot="drawer-root" data-state={open ? "open" : "closing"}>
-      <motion.div aria-hidden="true" className="absolute inset-0 bg-[#171918]/28 supports-backdrop-filter:backdrop-blur-[2px]" style={{ opacity: veil }} onClick={close} data-slot="drawer-overlay" />
+      <motion.div aria-hidden="true" className="absolute inset-0 bg-[#171918]/28" style={{ opacity: veil }} onClick={close} data-slot="drawer-overlay" />
       <motion.div
         ref={panelRef}
         role="dialog"
@@ -208,7 +211,7 @@ export function Drawer({
         aria-labelledby={titleId}
         aria-describedby={hintId}
         tabIndex={-1}
-        style={{ x, width, maxWidth: "calc(100% - 20px)", touchAction: "pan-y" }}
+        style={{ x, width, maxWidth: "calc(100% - 20px)", touchAction: "pan-y", ...({ "--dialog-accent": dialogAccentForPathname(pathname) } as CSSProperties) }}
         drag="x"
         dragControls={controls}
         dragListener={false}
@@ -218,11 +221,11 @@ export function Drawer({
         onDragStart={() => setDragging(true)}
         onDragEnd={handleDragEnd}
         onKeyDown={handleKeyDown}
-        className={cn("absolute inset-y-0 right-0 flex flex-col border-l border-[#313131]/18 bg-[#F5F3EC] text-[#313131] shadow-[-24px_0_56px_-28px_rgba(24,26,26,0.48)] outline-none", dragging && "select-none", className)}
+        className={cn("dialog-surface isolate absolute inset-y-0 right-0 flex flex-col border-l border-border text-foreground outline-none", dragging && "select-none", className)}
         data-slot="drawer-content"
       >
         <header
-          className={cn("flex min-h-[68px] select-none items-start gap-3 border-b border-[#313131]/12 bg-[#ECE9DF] px-5 py-4", dragging ? "cursor-grabbing" : "cursor-grab")}
+          className={cn("flex min-h-[68px] select-none items-start gap-3 border-b border-border px-5 py-4", dragging ? "cursor-grabbing" : "cursor-grab")}
           onPointerDown={(event) => {
             if (!open) return;
             dragStartClientXRef.current = event.clientX;
@@ -242,8 +245,8 @@ export function Drawer({
           }}
           data-slot="drawer-handle"
         >
-          <span className="mt-0.5 h-8 w-1 shrink-0 bg-primary" aria-hidden="true" />
-          <div className="min-w-0 flex-1"><h2 id={titleId} className="truncate font-heading text-base font-semibold">{title}</h2>{description ? <p className="mt-0.5 truncate text-xs text-[#313131]/58">{description}</p> : null}</div>
+          <span className="mt-0.5 h-8 w-1 shrink-0 bg-[var(--dialog-accent)]" aria-hidden="true" />
+          <div className="min-w-0 flex-1"><h2 id={titleId} className="truncate font-heading text-base font-semibold">{title}</h2>{description ? <p className="mt-0.5 truncate text-xs text-muted-foreground">{description}</p> : null}</div>
           <Button type="button" variant="ghost" size="icon" className="-mr-2 size-10" aria-label={intl("components_ui_drawer.closeDetails")} onPointerDown={(event) => event.stopPropagation()} onClick={close}><XIcon /><span className="sr-only">{intl("components_ui_drawer.closeDetails")}</span></Button>
         </header>
         <div data-yeye-scroll="auto" className="min-h-0 flex-1 overflow-y-auto overscroll-contain" data-slot="drawer-body">{children}</div>

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import * as presentation from "./schedule-view-presentation.ts";
+import { planToRows } from "./schedule.ts";
 import {
   COMPACT_CARD_CLASS,
   COMPACT_HEADER_CLASS,
@@ -60,10 +61,15 @@ test("widens the compact two-column stack and includes processing", () => {
     presentation.COMPACT_COLUMN_CLASS,
     "flex min-w-0 flex-col gap-3",
   );
-  assert.equal(typeof presentation.isCompactScheduleGroupVisible, "function");
-  assert.equal(presentation.isCompactScheduleGroupVisible("processing"), true);
-  assert.equal(presentation.isCompactScheduleGroupVisible("power"), true);
-  assert.equal(presentation.isCompactScheduleGroupVisible("dormitory"), true);
+  const rows = planToRows({
+    name: "compact rooms",
+    rooms: {
+      processing: [{ operators: [] }],
+      power: [{ operators: [] }],
+      dormitory: [{ operators: [] }],
+    },
+  });
+  assert.deepEqual(rows.map((row) => row.group).sort(), ["dormitory", "power", "processing"]);
 });
 
 test("stretches compact columns and lets dormitories share remaining height", () => {

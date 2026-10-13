@@ -1,9 +1,14 @@
 "use client";
 
-import { AccountStatusCenter } from "@/components/pages/AccountStatusCenter";
+import { WebsiteAccountPanel } from "@/components/auth/WebsiteAccountPanel";
+import { StatusCenterPage } from "@/components/pages/StatusCenterShell";
 import { useWorkbench } from "@/workbench-context";
 
 export function AccountRoute() {
   const { account } = useWorkbench();
-  return <AccountStatusCenter {...account} />;
+  return (
+    <StatusCenterPage data-account-management>
+      <WebsiteAccountPanel {...account} />
+    </StatusCenterPage>
+  );
 }

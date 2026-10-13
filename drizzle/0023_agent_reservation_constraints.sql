@@ -1,0 +1,3 @@
+CREATE INDEX "agent_gateway_usage_created" ON "app"."agent_gateway_usage" USING btree ("created_at");--> statement-breakpoint
+CREATE INDEX "agent_model_call_gateway_request" ON "app"."agent_model_call" USING btree ("gateway_request_id");--> statement-breakpoint
+ALTER TABLE "app"."billing_wallet" ADD CONSTRAINT "billing_wallet_reservations_valid" CHECK ("app"."billing_wallet"."held_paid_points" >= 0 and "app"."billing_wallet"."held_monthly_points" >= 0 and "app"."billing_wallet"."paid_points" >= "app"."billing_wallet"."held_paid_points" and "app"."billing_wallet"."monthly_points" >= "app"."billing_wallet"."held_monthly_points");

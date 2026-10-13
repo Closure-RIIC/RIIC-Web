@@ -804,6 +804,15 @@
     ],
     "icon": "/images/building-skills/bskill_dorm_hireToRecAll2.png"
   },
+  "dorm_hireToRecAll_002": {
+    "id": "dorm_hireToRecAll_002",
+    "name": "忠实拥趸",
+    "descriptionRich": "进驻宿舍时，该宿舍内所有干员心情每小时恢复<@cc.vup>+0.1</>，同时每个招募位（不包含初始招募位）额外<@cc.vup>+0.05</>恢复效果（叠加后的最终值同种效果取最高）",
+    "tags": [
+      "群体恢复"
+    ],
+    "icon": "/images/building-skills/bskill_dorm_hireToRecAll2.png"
+  },
   "dorm_hireToRecAll_021": {
     "id": "dorm_hireToRecAll_021",
     "name": "无瑕心·β",
@@ -1671,7 +1680,7 @@
   "hire_spd_bd_n1_n1_200": {
     "id": "hire_spd_bd_n1_n1_200",
     "name": "救援队·灾后普查",
-    "descriptionRich": "进驻人力办公室时，每个招募位（不包含初始招募位）<@cc.vup>+10</>点<$cc.bd_b1><@cc.rem>人间烟火</></>",
+    "descriptionRich": "进驻人力办公室时，每个招募位（不包含初始招募位）<@cc.vup>+10</>点<<$cc.bd_b1><@cc.rem>人间烟火</></>",
     "tags": [
       "特殊加成"
     ],
@@ -1749,6 +1758,15 @@
     ],
     "icon": "/images/building-skills/bskill_hire_spd&cost4.png"
   },
+  "hire_spd_cost_113": {
+    "id": "hire_spd_cost_113",
+    "name": "拉拢听众",
+    "descriptionRich": "进驻人力办公室时，人脉资源的联络速度<@cc.vup>+20%</>，心情每小时消耗<@cc.vup>-0.25</>",
+    "tags": [
+      "联络速度"
+    ],
+    "icon": "/images/building-skills/bskill_hire_spd&cost4.png"
+  },
   "hire_spd_cost_120": {
     "id": "hire_spd_cost_120",
     "name": "威权谕使",
@@ -1761,6 +1779,15 @@
   "hire_spd_cost_121": {
     "id": "hire_spd_cost_121",
     "name": "踏坊寻味·β",
+    "descriptionRich": "进驻人力办公室时，人脉资源的联络速度<@cc.vup>+30%</>，心情每小时消耗<@cc.vup>-0.25</>",
+    "tags": [
+      "联络速度"
+    ],
+    "icon": "/images/building-skills/bskill_hire_spd&cost6.png"
+  },
+  "hire_spd_cost_122": {
+    "id": "hire_spd_cost_122",
+    "name": "聚众宣讲",
     "descriptionRich": "进驻人力办公室时，人脉资源的联络速度<@cc.vup>+30%</>，心情每小时消耗<@cc.vup>-0.25</>",
     "tags": [
       "联络速度"
@@ -3360,6 +3387,24 @@
     ],
     "icon": "/images/building-skills/bskill_meet_spd&cost.png"
   },
+  "meet_spd&cost_110": {
+    "id": "meet_spd&cost_110",
+    "name": "谈判技巧",
+    "descriptionRich": "进驻会客室时，线索搜集速度提升<@cc.vup>20%</>，心情每小时消耗<@cc.vdown>+1</>",
+    "tags": [
+      "无特别加成"
+    ],
+    "icon": "/images/building-skills/bskill_meet_spd&cost_clms.png"
+  },
+  "meet_spd&cost_char_000": {
+    "id": "meet_spd&cost_char_000",
+    "name": "合作原则",
+    "descriptionRich": "与其他干员进驻会客室一起工作时，线索搜集速度提升<@cc.vup>15%</>，心情每小时消耗<@cc.vdown>+1</>",
+    "tags": [
+      "无特别加成"
+    ],
+    "icon": "/images/building-skills/bskill_meet_spd&cost_char.png"
+  },
   "meet_spd&cost_condChar_000": {
     "id": "meet_spd&cost_condChar_000",
     "name": "双面间谍",
@@ -3888,7 +3933,7 @@
   "power_rec_spd_P2_999": {
     "id": "power_rec_spd_P2_999",
     "name": "机械工学",
-    "descriptionRich": "进驻发电站时，无人机每小时充能速度<@cc.vup>+15%</>，如果<@cc.kw>结城理</>进驻在制造站，则无人机充能速度额外<@cc.vup>+5%</>",
+    "descriptionRich": "进驻发电站时，无人机充能速度<@cc.vup>+15%</>，如果<@cc.kw>结城理</>进驻在制造站，则无人机充能速度额外<@cc.vup>+5%</>",
     "tags": [],
     "icon": "/images/building-skills/bskill_pow_spd_p3r.png"
   },
@@ -3926,6 +3971,24 @@
     "descriptionRich": "进驻发电站时，每间宿舍每级为充能速度额外<@cc.vup>+0.5%</>",
     "tags": [],
     "icon": "/images/building-skills/bskill_power_rec_spd&dorm&lv.png"
+  },
+  "recycle_spd&cost_000": {
+    "id": "recycle_spd&cost_000",
+    "name": "拾荒者",
+    "descriptionRich": "进驻回收站时，材料转化效率<@cc.vup>+20%</>",
+    "tags": [
+      "转化效率"
+    ],
+    "icon": "/images/building-skills/bskill_recycle_spd&cost1.png"
+  },
+  "recycle_spd&cost_010": {
+    "id": "recycle_spd&cost_010",
+    "name": "捡海人",
+    "descriptionRich": "进驻回收站时，材料转化效率<@cc.vup>+30%</>",
+    "tags": [
+      "转化效率"
+    ],
+    "icon": "/images/building-skills/bskill_recycle_spd&cost2.png"
   },
   "trade_cost_000": {
     "id": "trade_cost_000",
@@ -6030,6 +6093,13 @@
       "精英材料"
     ],
     "icon": "/images/building-skills/bskill_ws_Crystalline.png"
+  },
+  "workshop_formula_device_080": {
+    "id": "workshop_formula_device_080",
+    "name": "指尖的光",
+    "descriptionRich": "进驻加工站加工<@cc.kw>手性屈光体</>或<@cc.kw>重相位对映体</>时，副产物的产出概率提升<@cc.vup>90%</>",
+    "tags": [],
+    "icon": "/images/building-skills/bskill_ws_Refractor.png"
   },
   "workshop_formula_device_111": {
     "id": "workshop_formula_device_111",

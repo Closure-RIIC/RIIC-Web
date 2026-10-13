@@ -2,8 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  sortTrainingCombinations,
-  sortTrainingRecommendations,
   trainingAcquisitionLabel,
   trainingCombinationStateLabel,
   trainingConditionStatusLabel,
@@ -16,6 +14,7 @@ import {
   trainingScaleLabel,
 } from "./presentation.ts";
 import type { TrainingCombination, TrainingRecommendation } from "@/types";
+import { parseTrainingAdviceReport } from "../../training-advice-contract.ts";
 import { legacyTrainingTarget, trainingAdviceSkillSummary } from "./skill-selection.ts";
 import { recommendationCurrentState, recommendationMessage } from "./recommendation-presentation.ts";
 import type { OperBoxEntry, UserProfileAction } from "../../types.ts";
@@ -121,8 +120,16 @@ test("preserves the server-defined combination and recommendation order", () => 
     },
   ];
 
-  assert.deepEqual(sortTrainingCombinations(combinations).map((item) => item.id), ["complete-first", "missing-second"]);
-  assert.deepEqual(sortTrainingRecommendations(recommendations).map((item) => item.operator), ["服务端第一名", "服务端第二名"]);
+  const report = parseTrainingAdviceReport({
+    schema_version: 2,
+    context: {},
+    newbie_section_status: "complete",
+    incomplete_newbie: [],
+    combinations,
+    recommendations,
+  });
+  assert.deepEqual(report.combinations.map((item) => item.id), ["complete-first", "missing-second"]);
+  assert.deepEqual(report.recommendations.map((item) => item.operator), ["服务端第一名", "服务端第二名"]);
 });
 
 test("marks the infrastructure skill unlocked by the recommended training target", () => {

@@ -26,15 +26,19 @@ test("all quality presets stay within the renderer limits", () => {
 test("Agent keeps the saved appearance without inheriting gallery rendering cost", () => {
   const saved = { ...FUR_PRESETS.fine, length: 1.7, density: 2.3, yaw: 21, brightness: 1.4, eyeRoughness: 0.6, fps: 60 };
   const original = { ...saved };
-  const agent = agentFurSettings(saved), gallery = galleryFurSettings(agent);
+  const agent = agentFurSettings(saved), portrait = agentFurSettings(saved, "portrait"), gallery = galleryFurSettings(agent);
   for (const key of Object.keys(saved) as (keyof typeof saved)[]) {
     if (["shells", "resolution", "fps"].includes(key)) continue;
     assert.equal(agent[key], saved[key]);
+    assert.equal(portrait[key], saved[key]);
     assert.equal(gallery[key], saved[key]);
   }
-  assert.equal(agent.shells, 20);
-  assert.equal(agent.resolution, 0.8);
-  assert.equal(agent.fps, 24);
+  assert.equal(agent.shells, 28);
+  assert.equal(agent.resolution, 1.1);
+  assert.equal(agent.fps, 60);
+  assert.equal(portrait.shells, 40);
+  assert.equal(portrait.resolution, 1.5);
+  assert.equal(portrait.fps, 60);
   assert.equal(gallery.shells, 64);
   assert.equal(gallery.resolution, 1.2);
   assert.deepEqual(saved, original);

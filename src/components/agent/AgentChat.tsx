@@ -1,4 +1,5 @@
 "use client";
+import { INTERNAL_ANSWER_MARKERS } from "@/agent-answer";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -23,6 +24,7 @@ import dialogueStyles from "./beautiful/Dialogue.module.css";
 import billingStyles from "@/components/billing/BillingPrototype.module.css";
 import personaStyles from "./PersonaPreview.module.css";
 import { AgentCreditBalance } from "./AgentCreditBalance";
+import { subscribeBillingUpdates } from "@/lib/billing-events";
 import { PersonaAvatar, readPersonaAvatar } from "./PersonaAvatar";
 import { parsePersonaAvatar } from "@/agent-persona-avatar";
 import { AGENT_PERSONA_SELECTION_KEY, builtinAgentPersona, resolveAgentPersonaSelection, type AgentPersona, type BuiltinAgentPersona, type UploadedAgentPersona } from "@/agent-personas";
@@ -294,7 +296,12 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   const intl = useTranslations();
   const { store: historyStore, error: historyError } = useAgentHistory();
   const [agentStatus, setAgentStatus] = useState<AgentStatus>("loading");
+  const [creditRevision, setCreditRevision] = useState(0);
+  useEffect(() => subscribeBillingUpdates(() => {
+    if (agentStatus === "payment_required") setCreditRevision(value => value + 1);
+  }), [agentStatus]);
   const [modelChoices, setModelChoices] = useState<AgentModelChoice[]>([]);
+  const [automaticRouting, setAutomaticRouting] = useState(false);
   const [selectedModel, setSelectedModel] = useState<AgentModelChoice["id"]>();
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState<FileUIPart[]>([]);
@@ -377,11 +384,12 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
         }
         const payload = (await response.json()) as {
           success?: boolean;
-          data?: { enabled?: boolean; personas?: { id?: unknown }[]; provider?: AgentModelChoice["id"]; models?: AgentModelChoice[] };
+          data?: { enabled?: boolean; automatic?: boolean; personas?: { id?: unknown }[]; provider?: AgentModelChoice["id"]; models?: AgentModelChoice[] };
         };
         if (!cancelled) {
           const choices = payload.data?.models ?? [];
           setModelChoices(choices);
+          setAutomaticRouting(payload.data?.automatic === true);
           const previous = (runtimeConversation.requestOptions?.body as { model?: unknown } | undefined)?.model;
           setSelectedModel(choices.find((choice) => choice.id === previous)?.id
             ?? choices.find((choice) => choice.id === "deepseek")?.id
@@ -403,7 +411,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     return () => {
       cancelled = true;
     };
-  }, [runtimeConversation]);
+  }, [runtimeConversation, creditRevision]);
 
   useEffect(() => {
     const container = conversationRef.current;
@@ -453,6 +461,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     followMessages.current = true;
     runtime.setRequestOptions(runtimeConversation, { body: {
       model: selectedModel,
+      conversationId, attemptId: crypto.randomUUID(),
       ...(activePersona ? { persona: activePersona.kind === "builtin" ? { id: activePersona.id, kind: "builtin" } : { id: activePersona.id, name: activePersona.name, content: activePersona.content } } : {}),
     } });
     await runtime.run(runtimeConversation, () => sendMessage(
@@ -467,7 +476,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     if (!question) return;
     clearError();
     followMessages.current = true;
-    runtime.setRequestOptions(runtimeConversation, { body: { ...runtimeConversation.requestOptions?.body, model: selectedModel } });
+    runtime.setRequestOptions(runtimeConversation, { body: { ...runtimeConversation.requestOptions?.body, model: selectedModel, conversationId, attemptId: crypto.randomUUID() } });
     await runtime.run(runtimeConversation, () => regenerate({ messageId: question.id, ...runtimeConversation.requestOptions }));
   };
 
@@ -567,6 +576,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
           <p className="mt-2 hidden text-xs text-muted-foreground md:block">{en ? "Your account, base and training — in one conversation." : "从了解账号到安排基建，把想做的事交给可露希尔。"}</p>
         </div>
         <div className={dialogueStyles.headerActions}>
+        {automaticRouting && <span className="text-xs text-muted-foreground">{en ? "Auto" : "自动调度"}</span>}
         {modelChoices.length > 0 ? <Combobox items={modelChoices} filteredItems={modelChoices}
           value={currentModel ?? null}
           itemToStringValue={(choice) => `${modeLabel(choice.id)} ${choice.label}`} isItemEqualToValue={(choice, value) => choice.id === value.id}
@@ -662,7 +672,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
                   part.type === "text" && part.state === "streaming" && !!part.text.trim() ? index : last, -1) : -1;
                 return message.parts.map((part, partIndex) => {
                 const key = `${message.id}:${partIndex}`;
-                if (part.type === "text") return part.text.trim() ? <ChatBubble key={key} speaker="assistant" name={personaName} label={en ? `${personaName} reply` : `${personaName}的回答`} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} active={partIndex === activeAvatarIndex} />}><StreamingText content={part.text} running={active && part.state === "streaming"} animate={animate} previousParts={message.parts.slice(0, partIndex).filter((previous) => previous.type === "text").map((previous) => previous.text)} /></ChatBubble> : null;
+                if (part.type === "text") return part.text.trim() ? <ChatBubble key={key} speaker="assistant" name={personaName} label={en ? `${personaName} reply` : `${personaName}的回答`} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} active={partIndex === activeAvatarIndex} />}><StreamingText content={INTERNAL_ANSWER_MARKERS.test(part.text) ? (en ? "This saved reply contains invalid formatting. Please ask again." : "这条历史回复的格式有误，请重新提问。") : part.text} running={active && part.state === "streaming"} animate={animate} previousParts={message.parts.slice(0, partIndex).flatMap((previous) => previous.type === "text" && !INTERNAL_ANSWER_MARKERS.test(previous.text) ? [previous.text] : [])} /></ChatBubble> : null;
                 if (part.type === "reasoning") return part.text.trim() || (active && part.state === "streaming") ? <div key={key} className={dialogueStyles.activity}><ThinkingState label={en ? "Thinking" : "思考过程"} activeLabel={en ? "Thinking…" : "正在思考…"} running={active && part.state === "streaming"} animate={animate}>{part.text}</ThinkingState></div> : null;
                 if (isToolPart(part)) {
                   // Keep every completed schedule in its original conversation position,

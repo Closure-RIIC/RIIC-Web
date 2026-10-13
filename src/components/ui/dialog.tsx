@@ -2,15 +2,51 @@
 
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
-import { motion, useReducedMotion, type HTMLMotionProps } from "motion/react"
+import { useRender } from "@base-ui/react/use-render"
+import { usePathname } from "next/navigation"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion"
+import { dialogAccentForPathname } from "@/workbench-accent"
 import { XIcon } from "lucide-react"
 
-function Dialog({ ...props }: DialogPrimitive.Root.Props) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+const DialogExitActions = React.createContext<React.RefObject<DialogPrimitive.Root.Actions | null> | null>(null)
+
+function Dialog({ actionsRef, ...props }: DialogPrimitive.Root.Props) {
+  const exitActions = React.useRef<DialogPrimitive.Root.Actions | null>(null)
+  return (
+    <DialogExitActions value={actionsRef ? null : exitActions}>
+      <DialogPrimitive.Root data-slot="dialog" actionsRef={actionsRef ?? exitActions} {...props} />
+    </DialogExitActions>
+  )
+}
+
+function DialogPopupElement({ open, ref, ...props }: React.ComponentPropsWithRef<"div"> & { open: boolean }) {
+  const popupRef = React.useRef<HTMLDivElement | null>(null)
+  const exitActions = React.useContext(DialogExitActions)
+  React.useEffect(() => {
+    const popup = popupRef.current
+    // Explicit actionsRef callers own their external animation lifecycle.
+    if (open || !popup || !exitActions) return
+    let active = true
+    let frame = 0
+    function finishExit() {
+      if (!active || !popup?.isConnected || !popup.hasAttribute("data-closed")) return
+      const animations = popup.getAnimations().filter((animation) => animation.pending || animation.playState === "running")
+      if (animations.length) {
+        // Base UI 1.6 may not complete a close if every awaited animation was
+        // cancelled. Wait for replacements too, without a fixed unmount timer.
+        void Promise.allSettled(animations.map((animation) => animation.finished)).then(() => {
+          if (active) frame = requestAnimationFrame(finishExit)
+        })
+      } else {
+        exitActions?.current?.unmount()
+      }
+    }
+    frame = requestAnimationFrame(finishExit)
+    return () => { active = false; cancelAnimationFrame(frame) }
+  }, [open, exitActions])
+  return useRender({ defaultTagName: "div", ref: ref ? [ref, popupRef] : popupRef, props })
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
@@ -36,22 +72,11 @@ function DialogOverlay({
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       data-dialog-layer={layer}
-      render={(renderProps, state) => (
-        <motion.div
-          {...(renderProps as unknown as HTMLMotionProps<"div">)}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: state.open ? 1 : 0 }}
-          transition={{
-            duration: state.open ? 0.2 : MOTION_DURATION.fast,
-            ease: MOTION_EASE_OUT,
-          }}
-        />
-      )}
       className={cn(
-        "fixed inset-0 isolate z-50",
+        "dialog-overlay fixed inset-0 isolate z-50",
         layer === "nested"
-          ? "bg-black/[0.08] supports-backdrop-filter:max-sm:backdrop-blur-[2px] supports-backdrop-filter:sm:backdrop-blur-[3px]"
-          : "bg-black/20 supports-backdrop-filter:max-sm:backdrop-blur-[4px] supports-backdrop-filter:sm:backdrop-blur-[8px]",
+          ? "bg-black/[0.08]"
+          : "bg-black/20",
         className
       )}
       {...props}
@@ -65,41 +90,31 @@ function DialogContent({
   showCloseButton = true,
   layer = "base",
   fromSkeleton = false,
+  style,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
   layer?: "base" | "nested"
   fromSkeleton?: boolean
 }) {
-  const reduced = useReducedMotion()
-  const soften = fromSkeleton && !reduced
+  const pathname = usePathname()
+  const accentStyle = { "--dialog-accent": dialogAccentForPathname(pathname) }
   return (
     <DialogPortal>
       <DialogOverlay layer={layer} />
       <DialogPrimitive.Popup
+        render={(popupProps, state) => <DialogPopupElement {...popupProps} open={state.open} />}
         data-yeye-scroll="auto"
         data-slot="dialog-content"
         data-dialog-layer={layer}
-        render={(renderProps, state) => (
-          <motion.div
-            {...(renderProps as unknown as HTMLMotionProps<"div">)}
-            initial={{ opacity: 0, scale: soften ? 0.99 : 0.97, ...(soften ? { filter: "blur(4px)" } : {}) }}
-            animate={{
-              opacity: state.open ? 1 : 0,
-              scale: state.open ? 1 : 0.97,
-              ...(soften ? { filter: state.open ? "blur(0px)" : "blur(3px)", transitionEnd: { filter: "none" } } : {}),
-            }}
-            transition={{
-              duration: state.open ? 0.3 : MOTION_DURATION.fast,
-              ease: MOTION_EASE_OUT,
-            }}
-            style={{ ...(renderProps.style ?? {}), transformOrigin: "center" }}
-          />
-        )}
+        data-from-skeleton={fromSkeleton || undefined}
+        style={typeof style === "function"
+          ? (state) => ({ ...accentStyle, ...style(state) })
+          : { ...accentStyle, ...style }}
         className={cn(
           // OverlayScrollbars applies unlayered position: relative to scroll hosts.
           // A popup must keep its viewport positioning after enhancement.
-          "dialog-acrylic !fixed top-1/2 left-1/2 z-50 isolate grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-0 overflow-hidden rounded-[24px] p-0 text-sm text-popover-foreground outline-none sm:max-w-[min(480px,calc(100vw-2rem))] sm:rounded-[32px]",
+          "dialog-surface dialog-popup !fixed top-1/2 left-1/2 z-50 isolate grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-0 overflow-hidden rounded-[24px] p-0 text-sm text-popover-foreground outline-none sm:max-w-[min(480px,calc(100vw-2rem))] sm:rounded-[32px]",
           className
         )}
         {...props}
@@ -184,7 +199,7 @@ function DialogTitle({ className, children, ...props }: DialogPrimitive.Title.Pr
       )}
       {...props}
     >
-      <span className="h-6 w-1 shrink-0 bg-primary" aria-hidden="true" />
+      <span className="h-6 w-1 shrink-0 bg-[var(--dialog-accent,var(--primary))]" aria-hidden="true" />
       <span className="min-w-0">{children}</span>
     </DialogPrimitive.Title>
   )

@@ -20,8 +20,13 @@ import {
   operatorProfessionPresentation,
 } from "./operatorPortraits.ts";
 
-const PORTRAIT_VERSION = `${sourceManifest.version}-${sourceManifest.portraitsSource.commit.slice(0, 12)}`;
-const portraitPath = (shortId: string) => `/images/operator-portraits/${shortId}.webp?v=${PORTRAIT_VERSION}`;
+const portraitManifest: { version: number; portraitsFallback?: { commit: string; operators: string[] } } = sourceManifest;
+const fallbackPortraits = portraitManifest.portraitsFallback;
+const portraitPath = (shortId: string) => {
+  const commit = fallbackPortraits?.operators.includes(`char_${shortId}`)
+    ? fallbackPortraits.commit : sourceManifest.portraitsSource.commit;
+  return `/images/operator-portraits/${shortId}.webp?v=${sourceManifest.version}-${commit.slice(0, 12)}`;
+};
 
 test("building skill icons use the source revision and resolve to existing public assets", () => {
   const version = `${sourceManifest.version}-${sourceManifest.source.commit.slice(0, 12)}`;
@@ -179,5 +184,17 @@ test("generated catalog has unique ids, names, and matching stable portrait path
   for (const operator of OPERATOR_CATALOG) {
     assert.match(operator.id, /^char_[A-Za-z0-9_&]+$/);
     assert.equal(operator.portrait, portraitPath(operator.id.slice(5)));
+  }
+});
+
+test("fallback portraits are tied to the toolbox revision and real catalog entries", () => {
+  if (!fallbackPortraits) return;
+  assert.equal(fallbackPortraits.commit, sourceManifest.source.commit);
+  assert.equal(new Set(fallbackPortraits.operators).size, fallbackPortraits.operators.length);
+  for (const id of fallbackPortraits.operators) {
+    const operator = OPERATOR_CATALOG.find((entry) => entry.id === id);
+    assert.ok(operator, `Fallback portrait must belong to a catalog operator: ${id}`);
+    assert.equal(operatorPortraitFor(operator.name), portraitPath(id.slice(5)));
+    assert.ok(existsSync(`public/images/operator-portraits/${id.slice(5)}.webp`));
   }
 });

@@ -1,6 +1,19 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PLUSH_SLIDE_DURATION, plushFurInertia, plushOrbitDirection, plushOrbitPose, plushSlidePosition } from "./plush-motion.ts";
+import { PLUSH_SLIDE_DURATION, plushFurInertia, plushGazeStep, plushOrbitDirection, plushOrbitPose, plushSlidePosition } from "./plush-motion.ts";
+
+test("gaze and fur settle identically across fast and delayed GPU frames", () => {
+  for (const duration of [0.1, 0.5, 2]) {
+    const single = plushGazeStep(-0.55, 0.12, 0.34, duration);
+    let stepped = { position: -0.55, lag: 0.12 };
+    for (let i = 0; i < 120; i++) stepped = plushGazeStep(stepped.position, stepped.lag, 0.34, duration / 120);
+    assert.ok(Math.abs(single.position - stepped.position) < 1e-10);
+    assert.ok(Math.abs(single.lag - stepped.lag) < 1e-10);
+  }
+  const settled = plushGazeStep(0.55, 0.3, 0, 2);
+  assert.ok(Math.abs(settled.position) + Math.abs(settled.lag) < 0.003);
+  assert.deepEqual(plushGazeStep(0.2, 0.1, 0.2, 0), { position: 0.2, lag: 0.1 });
+});
 
 test("orbit projects depth and scale symmetrically and rests at the front", () => {
   assert.deepEqual(plushOrbitPose(0, 1440, 900), { x: 0, y: -0, scale: 1 });

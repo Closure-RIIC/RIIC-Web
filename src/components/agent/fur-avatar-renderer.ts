@@ -1,9 +1,10 @@
 import {
   AmbientLight, BufferGeometry, CatmullRomCurve3, Color, CubeUVReflectionMapping, DataTexture, DirectionalLight, ExtrudeGeometry, Float32BufferAttribute, Group, HalfFloatType, InstancedBufferAttribute,
   InstancedBufferGeometry, LinearFilter, LinearSRGBColorSpace, LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, MeshPhysicalMaterial, OrthographicCamera, RGBAFormat,
-  Scene, ShaderMaterial, Shape, SphereGeometry, TubeGeometry, Vector2, Vector3, Vector4, WebGLRenderer,
+  Scene, ShaderMaterial, Shape, SphereGeometry, SRGBColorSpace, TubeGeometry, Vector2, Vector3, Vector4, WebGLRenderer, WebGLRenderTarget,
 } from "three";
 import { mergeVertices } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import { OutputPass } from "three/examples/jsm/postprocessing/OutputPass.js";
 import { createExusiaiCoat } from "./exusiai-coat";
 import { createExusiaiEmbroidery } from "./exusiai-embroidery";
 import { createSaileachCoat } from "./saileach-coat";
@@ -11,6 +12,7 @@ import { createMountainCoat } from "./mountain-coat";
 import { DEFAULT_FUR_SETTINGS, type FurSettings } from "./fur-settings";
 import { EYE_SQUINT_HEIGHT, EYE_SQUINT_WIDTH, eyeSquintInfluence, eyeSurfaceZ, furGroom } from "./fur-detail";
 import { addEyeSquintMorph } from "./eye-squint";
+import { createFurGpuTimer } from "./fur-gpu-timer";
 
 // Shell fur: layered geometry, procedural strand cutouts, bent tips and soft
 // directional/rim lighting. The reference uses this same rendering technique.
@@ -92,6 +94,7 @@ uniform float uDensity;
 uniform float uThickness;
 uniform float uSphericalRoots;
 uniform float uCurl;
+uniform float uLite;
 uniform float uBrightness;
 uniform float uRim;
 uniform float uCoatStyle;
@@ -151,19 +154,29 @@ void main() {
           vec3 root = c + hash33(c);
           float rootCoverage = 1.0;
           if (uSphericalRoots > 0.5) {
-            float rootRadius = length(root);
-            if (abs(rootRadius - uDensity) > 0.5) continue;
+            float radiusSquared = dot(root, root);
+            if (radiusSquared < (uDensity - 0.5) * (uDensity - 0.5) || radiusSquared > (uDensity + 0.5) * (uDensity + 0.5)) continue;
+            float rootRadius = sqrt(radiusSquared);
             root *= uDensity / max(rootRadius, 0.001);
           } else {
             float depthOffset = dot(x - root, surfaceNormal);
             rootCoverage = 1.0 - smoothstep(0.45, 0.7, abs(depthOffset));
           }
+          // These candidates contribute exactly zero coverage. Reject them
+          // before evaluating strand lean, radius and distance on every shell.
+          if (rootCoverage <= 0.0) continue;
           vec3 random = hash33(c + 71.3);
           float strandHeight = mix(0.5, 1.0, random.z);
+          if (h > strandHeight) continue;
           float tip = clamp(h / strandHeight, 0.0, 1.0);
           vec3 delta = x - root;
-          vec3 lean = hash33(c + 23.7) - 0.5;
-          delta -= (lean - surfaceNormal * dot(lean, surfaceNormal)) * tip * tip * 0.65;
+          // Lite coats keep the same roots, strand heights and shell silhouette.
+          // Only the extra random per-strand lean is omitted: one less hash and
+          // tangent projection for each surviving candidate on every shell.
+          if (uLite < 0.5) {
+            vec3 lean = hash33(c + 23.7) - 0.5;
+            delta -= (lean - surfaceNormal * dot(lean, surfaceNormal)) * tip * tip * 0.65;
+          }
           float radius = 0.38 * uThickness * mix(0.8, 1.0, random.x) * (1.0 - 0.72 * tip * tip);
           float distanceToStrand = length(delta - surfaceNormal * dot(delta, surfaceNormal));
           float strand = (1.0 - smoothstep(radius - aa, radius + aa, distanceToStrand)) * step(h, strandHeight) * rootCoverage;
@@ -266,6 +279,7 @@ export type FurAvatarPose = {
   lagX: number; lagY: number;
 };
 export type FurAvatarVariant = "closure" | "silverash" | "exusiai" | "saileach" | "mountain";
+export type FurRenderQuality = "full" | "lite";
 
 let environmentPixels: Promise<Uint16Array> | undefined;
 function loadEnvironment() {
@@ -284,14 +298,33 @@ function loadEnvironment() {
   })().catch(error => { environmentPixels = undefined; throw error; });
 }
 
-function buildRenderer(environmentData: Uint16Array) {
-  const renderer = new WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true, powerPreference: "low-power" });
+function buildRenderer(environmentData: Uint16Array, canvas?: HTMLCanvasElement) {
+  const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true, preserveDrawingBuffer: true, powerPreference: canvas ? "high-performance" : "low-power" });
   let disposed = false;
+  let submitted: WebGLSync | null = null;
+  let submittedAt = 0, frameMs = 1000 / 60, fencePolled = false;
+  const gl = renderer.getContext() as WebGL2RenderingContext;
+  let gpuTimer = createFurGpuTimer(gl);
+  const debug = gl.getExtension("WEBGL_debug_renderer_info");
+  const device = debug ? String(gl.getParameter(debug.UNMASKED_RENDERER_WEBGL)) : "";
+  // A visible software-WebGL canvas can stall the browser compositor itself.
+  // Keep its expensive draw offscreen and yield until ready, as chat does.
+  const software = /SwiftShader|llvmpipe|Software|Microsoft Basic Render/i.test(device);
+  const direct = Boolean(canvas) && !software;
+  // Adaptive sampling must not resize/clear the visible drawing buffer. Render
+  // into one reusable GPU target, then present the complete image in one pass.
+  const presentationTarget = direct ? new WebGLRenderTarget(1, 1, {
+    colorSpace: SRGBColorSpace,
+    samples: Math.min(gl.getParameter(gl.SAMPLES) as number, renderer.capabilities.maxSamples),
+    minFilter: LinearFilter, magFilter: LinearFilter,
+  }) : null;
+  const outputPass = direct ? new OutputPass() : null;
+  if (outputPass) outputPass.renderToScreen = true;
+  let surfaceWidth = 0, surfaceHeight = 0;
   let pendingDraw: Promise<unknown> = Promise.resolve();
   const compiledVariants = new Set<FurAvatarVariant>();
-  // A canvas copy waits synchronously for unfinished GPU work. On software WebGL
-  // that can freeze input for seconds. Fence the submitted frame and yield the
-  // main thread until it is ready; serialize copies because all portraits share it.
+  // A software canvas copy can freeze input for seconds. Fence its submitted
+  // frame and yield until ready; hardware copies use the ordered GPU queue.
   const waitForGpu = async () => {
     const gl = renderer.getContext() as WebGL2RenderingContext;
     const fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
@@ -326,12 +359,16 @@ function buildRenderer(environmentData: Uint16Array) {
   const geometries = new Set<BufferGeometry>();
   const materials = new Set<ShaderMaterial | MeshBasicMaterial | MeshPhysicalMaterial | LineBasicMaterial>();
   const coats: ShaderMaterial[] = [];
-  const coatSettings = new Map<ShaderMaterial, { geometry: InstancedBufferGeometry; length: number; density: number }>();
+  const coatSettings = new Map<ShaderMaterial, { mesh: Mesh<InstancedBufferGeometry, ShaderMaterial>; geometry: InstancedBufferGeometry; liteGeometry: InstancedBufferGeometry; length: number; density: number }>();
   const textures: ReturnType<typeof createExusiaiCoat>[] = [];
   const sphere = new SphereGeometry(1, 48, 36);
+  // About 55% fewer sphere vertices. Accessories with authored silhouettes are
+  // untouched; small portraits cannot resolve the original head tessellation.
+  const liteSphere = new SphereGeometry(1, 32, 24);
   geometries.add(sphere);
+  geometries.add(liteSphere);
 
-  const fur = (base: BufferGeometry, length: number, density: number, coatStyle = 0, colors = ["#131d28", "#354654"], groomUp = 0) => {
+  const shellGeometry = (base: BufferGeometry) => {
     const geometry = new InstancedBufferGeometry();
     geometry.index = base.index;
     for (const [name, attribute] of Object.entries(base.attributes)) geometry.setAttribute(name, attribute);
@@ -346,6 +383,11 @@ function buildRenderer(environmentData: Uint16Array) {
     geometry.setAttribute("aShell", new InstancedBufferAttribute(Float32Array.from({ length: 64 }, (_, i) => i), 1));
     geometry.instanceCount = DEFAULT_FUR_SETTINGS.shells;
     geometries.add(geometry);
+    return geometry;
+  };
+  const fur = (base: BufferGeometry, length: number, density: number, coatStyle = 0, colors = ["#131d28", "#354654"], groomUp = 0) => {
+    const geometry = shellGeometry(base);
+    const liteGeometry = base === sphere ? shellGeometry(liteSphere) : geometry;
     const material = new ShaderMaterial({
       // All coats use closed outward-facing meshes; their interior faces never
       // contribute to the silhouette and need not shade the strand field.
@@ -355,7 +397,7 @@ function buildRenderer(environmentData: Uint16Array) {
         uEmbroideredEye: { value: new Vector4() }, uFaceColor: { value: new Color("#f1d4ac") }, uEyeSquint: { value: 0 },
         uShells: { value: DEFAULT_FUR_SETTINGS.shells }, uMess: { value: 1 },
         uGravity: { value: 1 }, uWind: { value: 1 }, uThickness: { value: 1 },
-        uCurl: { value: 1 }, uBrightness: { value: 1 }, uRim: { value: 1 },
+        uCurl: { value: 1 }, uLite: { value: 0 }, uBrightness: { value: 1 }, uRim: { value: 1 },
         uLength: { value: length }, uTime: { value: 0 }, uMotion: { value: 0 },
         uPress: { value: 0 }, uTouch: { value: new Vector2() }, uLag: { value: new Vector2() },
         uRootColor: { value: new Color(colors[0]) }, uTipColor: { value: new Color(colors[1]) },
@@ -366,9 +408,9 @@ function buildRenderer(environmentData: Uint16Array) {
       },
     });
     coats.push(material);
-    coatSettings.set(material, { geometry, length, density: density * 2.6 });
     materials.add(material);
     const mesh = new Mesh(geometry, material);
+    coatSettings.set(material, { mesh, geometry, liteGeometry, length, density: density * 2.6 });
     mesh.frustumCulled = false;
     return mesh;
   };
@@ -778,18 +820,63 @@ function buildRenderer(environmentData: Uint16Array) {
   };
   let mountain: ReturnType<typeof buildMountain> | undefined;
   let lost = false;
-  const contextLost = (event: Event) => { event.preventDefault(); lost = true; };
-  const contextRestored = () => { lost = false; };
+  const contextLost = (event: Event) => { event.preventDefault(); lost = true; gpuTimer.dispose(); };
+  const contextRestored = () => {
+    lost = false; submitted = null; compiledVariants.clear();
+    gpuTimer = createFurGpuTimer(gl);
+    renderer.domElement.dispatchEvent(new Event("fur-context-restored", { bubbles: true }));
+  };
   renderer.domElement.addEventListener("webglcontextlost", contextLost);
   renderer.domElement.addEventListener("webglcontextrestored", contextRestored);
   let size = 0, width = 0;
+  const variantRig = (variant: FurAvatarVariant) => variant === "silverash" ? (silverash ??= buildSilverash()).rig
+    : variant === "exusiai" ? (exusiai ??= buildExusiai()).rig
+    : variant === "saileach" ? (saileach ??= buildSaileach()).rig
+    : variant === "mountain" ? (mountain ??= buildMountain()).rig : rig;
   return {
-    draw(context: CanvasRenderingContext2D, pixels: number, pose: FurAvatarPose, variant: FurAvatarVariant = "closure", settings: FurSettings = DEFAULT_FUR_SETTINGS, isCurrent = () => true) {
-      const canvasWidth = context.canvas.width;
+    direct,
+    software,
+    gpuMs: () => gpuTimer.milliseconds(),
+    frameMs: () => frameMs,
+    // Backpressure without waiting: never queue more than one GPU frame. RAF
+    // continues handling input while slow/software GPUs finish the previous one.
+    ready() {
+      if (!submitted || lost) return true;
+      const state = gl.clientWaitSync(submitted, 0, 0);
+      if (state === gl.TIMEOUT_EXPIRED) { fencePolled = true; return false; }
+      // Ignore a fence first polled long after an idle frame. Continuous motion
+      // polls every RAF; an idle canvas can stay untouched for minutes.
+      const elapsed = performance.now() - submittedAt;
+      if (fencePolled || elapsed < 100) frameMs = elapsed;
+      gl.deleteSync(submitted); submitted = null;
+      return true;
+    },
+    snapshot(target: CanvasRenderingContext2D) {
+      if (disposed || lost || !size) return;
+      // Copy only on a character switch, never during normal animation.
+      target.drawImage(renderer.domElement, 0, 0);
+    },
+    async prewarm(variant: FurAvatarVariant) {
+      if (disposed || lost || compiledVariants.has(variant)) return;
+      const existed = variant === "closure" || (variant === "silverash" ? silverash : variant === "exusiai" ? exusiai : variant === "saileach" ? saileach : mountain);
+      const nextRig = variantRig(variant);
+      const visible = nextRig.visible;
+      nextRig.visible = true;
+      renderer.setRenderTarget(presentationTarget);
+      const compilation = renderer.compileAsync(nextRig, camera, scene);
+      renderer.setRenderTarget(null);
+      nextRig.visible = Boolean(existed && visible);
+      await compilation;
+      if (!disposed && !lost) compiledVariants.add(variant);
+    },
+    draw(context: CanvasRenderingContext2D | null, pixels: number, pose: FurAvatarPose, variant: FurAvatarVariant = "closure", settings: FurSettings = DEFAULT_FUR_SETTINGS, isCurrent = () => true, requestedWidth?: number, presentation?: { width: number; height: number }, quality: FurRenderQuality = "full") {
+      const output = direct ? canvas! : context!.canvas;
+      const canvasWidth = requestedWidth ?? output.width;
       const draw = async () => {
-      if (lost || disposed || !isCurrent() || context.canvas.width !== canvasWidth || context.canvas.height !== pixels) return false;
+      if (lost || disposed || !isCurrent()) return false;
       if (size !== pixels || width !== canvasWidth) {
-        renderer.setSize(canvasWidth, pixels, false);
+        if (presentationTarget) presentationTarget.setSize(canvasWidth, pixels);
+        else renderer.setSize(canvasWidth, pixels, false);
         size = pixels;
         width = canvasWidth;
         camera.left = -1.35 * canvasWidth / pixels;
@@ -862,7 +949,11 @@ function buildRenderer(environmentData: Uint16Array) {
       }
       for (const material of snow?.coats ?? angel?.coats ?? willow?.coats ?? tiger?.coats ?? closureCoats) {
         const base = coatSettings.get(material)!;
-        base.geometry.instanceCount = settings.shells;
+        // Both buffers and the shared shader are cached. Quality changes never
+        // rebuild geometry or trigger a new shader compilation during motion.
+        base.mesh.geometry = quality === "lite" || (!canvas && pixels <= 192) ? base.liteGeometry : base.geometry;
+        base.mesh.geometry.instanceCount = settings.shells;
+        material.uniforms.uLite.value = quality === "lite" ? 1 : 0;
         material.uniforms.uShells.value = settings.shells;
         material.uniforms.uLength.value = base.length * settings.length;
         material.uniforms.uDensity.value = base.density * settings.density;
@@ -881,15 +972,48 @@ function buildRenderer(environmentData: Uint16Array) {
         material.uniforms.uLag.value.set(pose.lagX * 4 + (pose.inertiaX ?? 0), pose.lagY * 4);
       }
       if (!compiledVariants.has(variant)) {
-        await renderer.compileAsync(activeRig, camera, scene);
+        renderer.setRenderTarget(presentationTarget);
+        try { await renderer.compileAsync(activeRig, camera, scene); }
+        finally { renderer.setRenderTarget(null); }
         compiledVariants.add(variant);
         if (disposed || !isCurrent()) return false;
       }
-      renderer.render(scene, camera);
-      if (!await waitForGpu() || disposed || !isCurrent()) return false;
-      if (context.canvas.width !== canvasWidth || context.canvas.height !== pixels) return false;
+      submittedAt = performance.now();
+      gpuTimer.begin();
+      try {
+      if (presentationTarget && outputPass) {
+        const nextWidth = presentation?.width ?? canvasWidth;
+        const nextHeight = presentation?.height ?? pixels;
+        if (surfaceWidth !== nextWidth || surfaceHeight !== nextHeight) {
+          renderer.setSize(nextWidth, nextHeight, false);
+          surfaceWidth = nextWidth; surfaceHeight = nextHeight;
+        }
+        renderer.setRenderTarget(presentationTarget);
+        renderer.render(scene, camera);
+        outputPass.render(renderer, presentationTarget, presentationTarget, 0, false);
+      } else renderer.render(scene, camera);
+      } finally { gpuTimer.end(); }
+      if (direct) {
+        if (submitted) gl.deleteSync(submitted);
+        submitted = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+        fencePolled = false;
+        gl.flush();
+        return true;
+      }
+      // Hardware canvas-to-canvas copies stay on the GPU and preserve command
+      // ordering. A CPU fence here stalls Chromium's offscreen submission queue.
+      // Software copies can block input, so they still need an asynchronous fence.
+      if ((software && !await waitForGpu()) || disposed || !isCurrent()) return false;
+      if (!context) return false;
+      // Keep the last presented bitmap visible while a resized frame is on the
+      // GPU. Clearing the 2D canvas earlier would flash during quality changes.
+      if (context.canvas.width !== canvasWidth) context.canvas.width = canvasWidth;
+      if (context.canvas.height !== pixels) context.canvas.height = pixels;
       context.clearRect(0, 0, canvasWidth, pixels);
       context.drawImage(renderer.domElement, 0, 0, canvasWidth, pixels);
+      // Hardware copies are asynchronous; keep completed GPU timing in the
+      // device budget so slow cards still downgrade even if submission is cheap.
+      frameMs = Math.max(performance.now() - submittedAt, gpuTimer.milliseconds() ?? 0);
       return true;
       };
       const result = pendingDraw.then(draw);
@@ -898,12 +1022,16 @@ function buildRenderer(environmentData: Uint16Array) {
     },
     dispose() {
       disposed = true;
+      gpuTimer.dispose();
+      if (submitted) gl.deleteSync(submitted);
       renderer.domElement.removeEventListener("webglcontextlost", contextLost);
       renderer.domElement.removeEventListener("webglcontextrestored", contextRestored);
       for (const geometry of geometries) geometry.dispose();
       for (const material of materials) material.dispose();
       for (const texture of textures) texture.dispose();
       environment.dispose();
+      presentationTarget?.dispose();
+      outputPass?.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
     },
@@ -922,7 +1050,15 @@ export async function acquireFurRenderer() {
   users++;
   let released = false;
   return {
+    direct: false,
+    software: resource.software,
+    gpuMs: resource.gpuMs,
+    frameMs: resource.frameMs,
+    surface: undefined as HTMLCanvasElement | undefined,
     draw: resource.draw,
+    ready: () => true,
+    snapshot: resource.snapshot,
+    prewarm: resource.prewarm,
     release() {
       if (released) return;
       released = true;
@@ -933,4 +1069,10 @@ export async function acquireFurRenderer() {
       }, 5_000);
     },
   };
+}
+
+/** Fullscreen gallery owns its visible WebGL canvas; chat keeps shared copies. */
+export async function acquireGalleryFurRenderer(canvas: HTMLCanvasElement) {
+  const resource = buildRenderer(await loadEnvironment(), canvas);
+  return { direct: resource.direct, software: resource.software, gpuMs: resource.gpuMs, frameMs: resource.frameMs, surface: resource.direct ? canvas : document.createElement("canvas"), draw: resource.draw, ready: resource.ready, snapshot: resource.snapshot, prewarm: resource.prewarm, release: resource.dispose };
 }

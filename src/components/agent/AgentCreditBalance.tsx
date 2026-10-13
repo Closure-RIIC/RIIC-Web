@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Coins } from "lucide-react";
+import { subscribeBillingUpdates } from "@/lib/billing-events";
 
 export function AgentCreditBalance({ enabled, busy, en }: { enabled: boolean; busy: boolean; en: boolean }) {
   const [points, setPoints] = useState<number | null>(null);
@@ -25,7 +26,8 @@ export function AgentCreditBalance({ enabled, busy, en }: { enabled: boolean; bu
     const focus = () => { if (document.visibilityState === "visible") void refresh(); };
     void refresh();
     window.addEventListener("focus", focus);
-    return () => { request?.abort(); window.removeEventListener("focus", focus); };
+    const unsubscribe = subscribeBillingUpdates(() => void refresh());
+    return () => { request?.abort(); window.removeEventListener("focus", focus); unsubscribe(); };
   }, [enabled, busy]);
 
   if (!enabled) return null;

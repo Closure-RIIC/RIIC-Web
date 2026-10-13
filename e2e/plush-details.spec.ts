@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("riic.plush.performance.v1", "quality"));
+});
+
 test("painted face, woven headband, badge and embroidery render at gallery quality", async ({ page }) => {
   test.setTimeout(120_000);
   // Keep all 64 shells and actual material sampling, with a bounded software-GPU
@@ -32,7 +36,10 @@ test("painted face, woven headband, badge and embroidery render at gallery quali
       await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
       const pixels = await page.locator("main canvas").evaluate((element, { points, scale }) => {
         const canvas = element as HTMLCanvasElement;
-        const ctx = canvas.getContext("2d")!;
+        const copy = document.createElement("canvas");
+        copy.width = canvas.width; copy.height = canvas.height;
+        const ctx = copy.getContext("2d", { willReadFrequently: true })!;
+        canvas.closest("[data-fur-avatar]")!.dispatchEvent(new CustomEvent("fur-snapshot", { detail: ctx }));
         return points.map(([x, y]) => Array.from(ctx.getImageData(
           Math.round(canvas.width * 0.5 + x * scale / 2.7 * canvas.height),
           Math.round((0.5 - y * scale / 2.7) * canvas.height), 1, 1,
@@ -77,7 +84,11 @@ test("silverash inset ears render while rotating", async ({ page }) => {
   await expect(page.locator('[data-fur-avatar="silverash"]')).toHaveAttribute("data-fur-ready", "true", { timeout: 30_000 });
   const sample = () => page.locator("main canvas").evaluate(element => {
     const canvas = element as HTMLCanvasElement;
-    const pixels = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+    const copy = document.createElement("canvas");
+    copy.width = canvas.width; copy.height = canvas.height;
+    const context = copy.getContext("2d", { willReadFrequently: true })!;
+    canvas.closest("[data-fur-avatar]")!.dispatchEvent(new CustomEvent("fur-snapshot", { detail: context }));
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
     let hash = 2166136261, visible = 0;
     for (let i = 0; i < pixels.length; i++) hash = Math.imul(hash ^ pixels[i], 16777619);
     for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 100) visible++;

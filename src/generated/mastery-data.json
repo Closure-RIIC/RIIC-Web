@@ -2,11 +2,11 @@
   "source": {
     "rules": {
       "repository": "https://github.com/arkntools/arknights-toolbox-data",
-      "commit": "302105b1404bd488c4700d063da9dcf3661a94f0"
+      "commit": "1b7752b9374f452bc23b153fc658d4f9019463a8"
     },
     "branches": {
-      "repository": "https://github.com/yuanyan3060/ArknightsGameResource",
-      "commit": "bb48105cf738b41648c0a9dbb58bfbc6541e0a81"
+      "repository": "https://github.com/Kengxxiao/ArknightsGameData",
+      "commit": "17759cc8cdf37388414145d16262a3a06f3ab25e"
     },
     "descriptionsHash": "45385fdea4a02975a34c3237fa52f9cab1793aabb769adbb204e0621db7cd18c"
   },
@@ -235,6 +235,7 @@
     "char_385_finlpp": "healer",
     "char_388_mint": "phalanx",
     "char_391_rosmon": "bombarder",
+    "char_393_toledo": "underminer",
     "char_394_hadiya": "mercenary",
     "char_400_weedy": "pusher",
     "char_4000_jnight": "fastshot",
@@ -389,6 +390,8 @@
     "char_4229_aphris": "blastcaster",
     "char_423_blemsh": "guardian",
     "char_4230_mcnist": "shotprotector",
+    "char_4231_clemnt": "primguard",
+    "char_4232_hbound": "alchemist",
     "char_4234_pedro": "supportiveranger",
     "char_4235_thumpy": "primprotector",
     "char_4236_tmslot": "funnel",

@@ -1,0 +1,244 @@
+.page {
+  overflow-wrap: anywhere;
+}
+
+.statistics {
+  --gacha-stat-padding: 12px;
+  --gacha-stat-gap: 8px;
+  display: grid;
+  gap: var(--gacha-stat-gap);
+  min-width: 0;
+}
+.summaryMetric {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: var(--gacha-stat-padding);
+}
+.summaryMetric > span { line-height: 14px; }
+.summaryMetric > strong { margin-top: 0; min-height: 24px; align-items: center; }
+.summaryMetric > strong > span:first-child { display: flex; align-items: center; min-width: 0; }
+
+@media (max-width: 639px) {
+  .statistics { --gacha-stat-padding: 8px; }
+}
+
+/* The workbench's 320px body minimum must not widen a narrower device preview. */
+:global(body):has(.page) {
+  min-width: 0;
+}
+
+.poolCard {
+  --foreground: var(--infra-room-text);
+  --muted-foreground: var(--infra-room-text-muted);
+  --background: var(--infra-room-surface-solid);
+  --muted: color-mix(in srgb, var(--infra-room-surface-solid) 80%, black);
+  --border: var(--infra-room-edge);
+  --gacha-bar-base: color-mix(in srgb, white 94%, var(--infra-room-surface-solid));
+  --gacha-bar-foreground: var(--infra-room-surface-solid);
+  --room-grid-color: var(--gacha-pool-accent);
+  --gacha-card-gutter: 1rem;
+}
+
+.poolRecords {
+  position: relative;
+  z-index: 1;
+  padding-inline: var(--gacha-card-gutter);
+}
+
+.poolRecords[data-multi-six] {
+  padding-right: calc(var(--gacha-card-gutter) + 28px);
+}
+
+.multiSixLink {
+  position: absolute;
+  right: var(--gacha-card-gutter);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  background:
+    repeating-linear-gradient(135deg, rgb(255 255 255 / .22) 0 5px, transparent 5px 11px),
+    linear-gradient(90deg, var(--color-amber-300), var(--color-amber-400));
+  color: var(--infra-room-surface-solid);
+  pointer-events: none;
+}
+
+.multiSixLabel {
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 2px;
+}
+
+.poolHeader {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 1rem 1.5rem;
+  padding: 1rem var(--gacha-card-gutter) 0;
+  border-bottom: 1px solid var(--infra-room-edge);
+  background: rgb(0 0 0 / .14);
+}
+
+.poolIdentity {
+  display: flex;
+  grid-column: 1;
+  grid-row: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem 1rem;
+  min-width: 0;
+  padding-bottom: 1rem;
+}
+
+.poolInfo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .375rem;
+  min-width: 0;
+}
+
+.poolTitle {
+  font-size: clamp(1.25rem, 2.1875vw, 1.75rem);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -.025em;
+}
+
+.poolPeriod {
+  flex-basis: 100%;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+}
+
+.poolStats {
+  display: flex;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: end;
+  align-items: end;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.poolStat {
+  display: flex;
+  align-items: flex-end;
+  gap: .5rem;
+}
+
+.poolStat > dt {
+  margin-bottom: .5rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.poolStatValue {
+  --gacha-stat-highlight: color-mix(in oklab, currentColor 55%, white);
+  --gacha-stat-shadow: color-mix(in oklab, currentColor 65%, black);
+  position: relative;
+  height: .75em;
+  overflow: hidden;
+  font-size: 6rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: .01em;
+  color: color-mix(in oklab, var(--gacha-pool-accent) 68%, var(--foreground));
+  color: oklch(from var(--gacha-pool-accent) clamp(.72, l, .88) c h);
+}
+
+.poolStatValue > span {
+  display: block;
+  height: 1em;
+  white-space: nowrap;
+  padding-inline: .025em;
+  opacity: 0;
+}
+
+.poolStatOutline {
+  position: absolute;
+  inset: 0;
+  transform: translateY(-16px);
+  width: 100%;
+  height: 1em;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.poolStatOutline text {
+  font: inherit;
+  letter-spacing: inherit;
+}
+
+.poolStatMobile { display: none; }
+
+.poolStatMobile text {
+  /* Bender Bold is registered as 400. WebKit's synthetic bold paints multiple
+     offset contours when this 1px SVG text is scaled up to the mobile header. */
+  font-weight: 400;
+  font-synthesis: none;
+}
+
+@media (forced-colors: active) {
+  .poolStatOutline text {
+    stroke: CanvasText;
+  }
+}
+
+@media (max-width: 639px) {
+  .page [data-skland-synced-at], .page [data-gacha-record-start] { display: none; }
+  /* Keep cloud-sync notices and their actions clear of the floating toolbar. */
+  :global(body):has(.page) :global([data-cloud-sync-error]) { right: calc(5rem + env(safe-area-inset-right, 0px)); }
+  .page [data-status-center-actions] { display: contents; }
+  .actionToolbar { position: fixed; z-index: 30; right: calc(1rem + env(safe-area-inset-right, 0px)); bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); flex-direction: column; flex-wrap: nowrap; width: auto; margin: 0; gap: .5rem; }
+  .toolbarAction { width: 48px; height: 48px; padding: 0; margin: 0; border-radius: 50% !important; box-shadow: 0 3px 12px rgb(0 0 0 / .16); }
+  .toolbarAction > svg { width: 20px; height: 20px; }
+  .toolbarAction[data-gacha-action] { border-color: var(--border); background: var(--background); }
+  .actionLabel { display: none; }
+  .poolCard { --gacha-card-gutter: .75rem; }
+  .poolHeader { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: .5rem; padding-top: .5rem; }
+  .poolIdentity { flex-direction: column; align-items: flex-start; align-self: stretch; justify-content: space-between; gap: .25rem; padding-bottom: .5rem; }
+  .poolTitle { font-size: 1.125rem; line-height: 1.25; }
+  .poolPeriod { flex-basis: auto; font-size: 10px; }
+  .poolInfo { gap: .25rem; }
+  .poolStats { grid-column: 2; grid-row: 1; align-self: stretch; contain: size; width: 100%; height: 100%; padding-bottom: .5rem; }
+  .poolStat { flex-direction: row; align-items: flex-end; gap: .375rem; min-width: 0; width: 100%; height: 100%; }
+  .poolStat > dt { flex-shrink: 0; margin-bottom: 0; font-size: .625rem; transform: translateX(var(--gacha-label-shift, 0px)); }
+  .poolStatValue { flex: 1; min-width: 0; font-size: 8rem; width: 0; height: 100%; }
+  .poolStatValue > span { display: none; }
+  .poolStatOutline { transform: none; height: 100%; }
+  .poolStatDesktop { display: none; }
+  .poolStatMobile { display: block; }
+}
+
+.drawBar {
+  --gacha-bar-fill: color-mix(in oklab, var(--gacha-accent) 40%, var(--gacha-bar-base, var(--muted)));
+  --gacha-bar-cut: 2.5rem;
+  border: 0;
+  border-radius: 0;
+  background-color: color-mix(in oklab, var(--muted) 35%, var(--background));
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--foreground) 5%, transparent) 0 5px,
+    transparent 5px 11px
+  );
+  box-shadow: none;
+}
+
+.drawFill {
+  filter: saturate(var(--gacha-saturation, 1.45));
+  clip-path: polygon(0 0, 100% 0, calc(100% - var(--gacha-bar-cut)) 100%, 0 100%);
+  background-image: repeating-linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--gacha-accent) 56%, var(--gacha-bar-base, var(--muted))) 0 5px,
+    color-mix(in oklab, var(--gacha-accent) 30%, var(--gacha-bar-base, var(--muted))) 5px 11px
+  );
+}

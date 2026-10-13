@@ -7,14 +7,9 @@ import { CircleAlert, ChevronDown, GraduationCap } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { InfraTechnicalCard, InfraTechnicalHeading } from "@/components/InfraTechnicalCard";
-import { loadClientFeature } from "@/client-lazy-loader";
 import { cn } from "@/lib/utils";
 import { MOTION_DURATION, MOTION_EASE_IN_OUT } from "@/motion";
 import { TrainingAdviceActionCard } from "@/components/training-advice/TrainingAdviceActionCard";
-import {
-  sortTrainingCombinations,
-  sortTrainingRecommendations,
-} from "@/components/training-advice/presentation";
 import { Button } from "@/components/ui/button";
 import { OwnedOperatorFilter } from "@/components/operators/OwnedOperatorFilter";
 import { OperatorRarityFilter, OperatorProfessionFilter } from "@/components/operators/OperatorPickerParts";
@@ -33,7 +28,7 @@ const TrainingCombinationCard = lazy(() => import("@/components/training-advice/
   default: module.TrainingCombinationCard,
 })));
 
-const RecommendationCard = lazy(() => loadClientFeature("recommendationCard").then((module) => ({
+const RecommendationCard = lazy(() => import("@/components/RecommendationCard").then((module) => ({
   default: module.RecommendationCard,
 })));
 
@@ -200,10 +195,10 @@ export function TrainingAdvice({
   const ownedTotal = entries.filter((entry) => entry.own).length;
   const eliteTotal = entries.filter((entry) => entry.own && entry.elite >= 2).length;
   const advice = trainingAdvice ?? null;
-  const recommendations = advice ? sortTrainingRecommendations(advice.recommendations).filter((recommendation) => matchesFilters(recommendation.operator)) : [];
+  const recommendations = (advice?.recommendations ?? []).filter((recommendation) => matchesFilters(recommendation.operator));
   const newbie = (advice?.incomplete_newbie ?? []).filter((item) => matchesFilters(item.operator));
   const hasFilters = onlyOwned || rarityFilter !== "all" || professionFilter !== "all" || blacklist.length > 0;
-  const combinations = advice ? sortTrainingCombinations(advice.combinations) : [];
+  const combinations = advice?.combinations ?? [];
   const context = advice?.context;
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const toggleSection = (id: string) =>

@@ -79,6 +79,22 @@ test("round-trips legacy, account, and account-index encrypted payloads", () => 
   assert.deepEqual(unsealSklandAccountIndex(sealSklandAccountIndex(index, secret), secret, now), index);
 });
 
+test("account OAuth survives encrypted login restoration beyond one hour without leaking to public data", () => {
+  const session = { ...sessionFor("one"), accountOAuthToken: "private-hg-account-token", expiresAt: now + SKLAND_SESSION_TTL_SECONDS * 1000 };
+  const account = createSklandStoredAccount(session, rolesFor("one"), "account_one");
+  const owner = websiteUserOwnerTag("website-one", secret);
+  const sealed = sealOwnedSklandAccount(account, owner, secret);
+  assert.equal(sealed.includes(session.accountOAuthToken), false);
+  assert.deepEqual(unsealOwnedSklandAccount(sealed, owner, secret, now + 2 * 60 * 60_000), account);
+  assert.equal(unsealOwnedSklandAccount(sealed, websiteUserOwnerTag("website-two", secret), secret, now), null);
+  assert.equal(unsealOwnedSklandAccount(sealed, owner, secret, session.expiresAt), null);
+  assert.equal(JSON.stringify(toPublicSklandAccount(account)).includes(session.accountOAuthToken), false);
+  for (const accountOAuthToken of ["", " ", 123, null]) {
+    const invalid = { ...session, accountOAuthToken } as unknown as SklandSessionPayload;
+    assert.equal(unsealSklandSession(sealSklandSession(invalid, secret), secret, now), null);
+  }
+});
+
 test("re-login replaces the same Skland account without changing its opaque id or order", () => {
   const first = upsertSklandAccount([], sessionFor("one"), rolesFor("one"));
   const secondAccount = upsertSklandAccount(first.accounts, sessionFor("two"), rolesFor("two"));

@@ -1,4 +1,16 @@
 {
+  "gacha_archive_privacy": {
+    "title": "寻访记录云端档案",
+    "body": "经你单独同意后，本站将明日方舟角色 UID、昵称和寻访记录保存到服务器数据库，并绑定当前网站账号，不设自动过期时间。读取云端历史不依赖森空岛或寻访授权仍然有效；获取新记录需要有效授权。本机历史仅在确认角色授权后，由你选择上传。你可导出或删除当前角色的记录；解除授权不会删除记录，删除记录仍保留账号绑定以防止转移，注销网站账号时会删除相应档案和绑定。临时寻访凭据不会写入寻访档案表。"
+  },
+  "RecyclingRoom": {
+    "unknown": "未知",
+    "title": "回收站",
+    "manualOnly": "仅手动配置 · 不计产量、不导出",
+    "unconfigured": "待配置 · 2 个干员位",
+    "noUpstreamData": "森空岛暂未提供数据",
+    "unknownSlots": "2 个干员位，入驻情况未知"
+  },
   "Recruitment": {
     "title": "公招计算",
     "server": "国服",
@@ -83,6 +95,7 @@
     "recruitment": "公招计算",
     "skills": "技能查询",
     "skland": "森空岛状态",
+    "gacha": "寻访记录",
     "training": "练卡建议",
     "account_reset_password": "重置密码",
     "admin_issues": "求解问题",
@@ -337,6 +350,7 @@
   },
   "components_cloud_CloudDataSync": {
     "status": {
+      "local-only": "仅使用本地 · 云同步已关闭",
       "idle": "尚未同步",
       "pending": "有待同步的修改",
       "syncing": "正在同步…",
@@ -359,6 +373,7 @@
     "syncError_session": "登录已过期，请重新登录以恢复云同步。本地数据已保留。",
     "syncError_paused": "云同步遇到错误，已暂停重试。本地数据已保留，可以稍后再试。",
     "resumeSync": "恢复云同步",
+    "useLocalOnly": "仅使用本地",
     "cloudSyncIsTemporarilyUnavailableCurrentDataRemainsStored": "云端同步暂不可用，当前数据仍保存在本地。",
     "cloudSyncFailedALocalCopyHasBeenRetained": "云端同步失败，已保留本地副本。",
     "couldNotSaveConsentTryAgainLater": "无法保存同意状态，请稍后重试。"
@@ -546,11 +561,6 @@
     "loading": "正在加载",
     "loadFailedSelectToRetry": "加载失败，点击重试",
     "allResultsShown": "已显示全部结果"
-  },
-  "components_ui_pagination": {
-    "previous": "上一页",
-    "next": "下一页",
-    "morePages": "更多页面"
   },
   "components_workbench_WorkbenchRouteSkeleton": {
     "loadingTrainingAdvice": "正在加载练卡建议",

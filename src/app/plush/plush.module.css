@@ -20,7 +20,7 @@
   height: auto;
   max-height: calc(var(--plush-size) * 1.275);
   color: var(--dialogue-accent);
-  opacity: .55;
+  opacity: 1;
   overflow: visible;
   pointer-events: none;
   user-select: none;
@@ -50,6 +50,18 @@
 .picker button[aria-pressed="true"] .icon { opacity: 1; }
 .picker button:focus-visible { outline: 1px solid #777; outline-offset: 2px; }
 
+.performance { position: fixed; z-index: 20; right: max(20px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); width: min(320px, calc(100vw - 40px)); padding: 12px 14px; border: 1px solid #0000000f; border-radius: 12px; color: #333; background: #fffffff2; color-scheme: light; font: 12px/1.6 system-ui, sans-serif; }
+.performanceControls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.performance > summary { display: none; cursor: pointer; }
+.gallery[data-debug="true"] ~ .performance > summary { display: list-item; }
+.gallery[data-debug="true"] ~ .performance:not([open]) { width: auto; }
+.gallery[data-debug="true"] ~ .performance[open] > summary { margin-bottom: 8px; }
+.performanceControls label { font-weight: 500; }
+.performanceControls select, .performanceControls button { min-height: 36px; border: 1px solid #00000026; border-radius: 6px; padding: 4px 8px; color: inherit; background: #fff; font: inherit; cursor: pointer; }
+.performanceControls button { margin-left: auto; }
+.performanceControls select:focus-visible, .performanceControls button:focus-visible { outline: 2px solid #555; outline-offset: 2px; }
+.performance p { margin: 8px 0 0; color: #666; font-size: 11px; }
+
 .lab { position: fixed; z-index: 20; bottom: max(20px, env(safe-area-inset-bottom)); left: max(20px, env(safe-area-inset-left)); width: 246px; max-height: calc(100svh - 110px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; color: #777; color-scheme: light; font: 11px/1 ui-monospace, Menlo, monospace; }
 .controls { display: grid; gap: 6px; }
 .control { display: grid; grid-template-columns: 62px minmax(0, 120px) 40px; align-items: center; gap: 12px; }
@@ -77,6 +89,8 @@
   .picker { top: max(24px, env(safe-area-inset-top)); }
   .stage { --plush-size: min(76vw, calc(100svh - 160px)); bottom: 32px; top: 72px; }
   .gallery[data-debug="true"] .stage { --plush-size: min(76vw, calc(100svh - 320px)); bottom: 200px; }
+  .performance { right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom)); width: min(320px, calc(100vw - 24px)); }
+  .gallery[data-debug="true"] ~ .performance { top: 84px; bottom: auto; }
   .shadow { top: calc(50% + var(--plush-size) * .35); width: 30vw; }
   .control input { height: 22px; }
 }

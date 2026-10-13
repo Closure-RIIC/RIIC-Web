@@ -11,6 +11,7 @@ const LIST_FUNCTIONAL_FACILITY_GROUPS = new Set<RoomGroup>([
   "meeting",
   "processing",
   "training",
+  "recycling",
 ]);
 
 const LIST_ALIGNED_OPERATOR_ORIGIN_GROUPS = new Set<RoomGroup>([
@@ -23,6 +24,7 @@ const LIST_ALIGNED_OPERATOR_ORIGIN_GROUPS = new Set<RoomGroup>([
 const LIST_FUNCTIONAL_FACILITY_ORDER: Partial<Record<RoomGroup, number>> = {
   power: 0,
   training: 1,
+  recycling: 1.5,
   meeting: 2,
   hire: 3,
   processing: 4,
@@ -79,7 +81,7 @@ export function listFunctionalOperatorPosition(
 
   return {
     columnGap: LIST_OPERATOR_COLUMN_GAP,
-    left: group === "meeting" || group === "training"
+    left: group === "meeting" || group === "training" || group === "recycling"
       ? `max(0px, min(${LIST_OPERATOR_ORIGIN_PX}px, calc(100cqw - ${LIST_MEETING_OPERATOR_WIDTH_PX}px)))`
       : `max(0px, min(${LIST_OPERATOR_ORIGIN_PX}px, calc(100cqw - ${LIST_OPERATOR_FRAME_SIZE_PX}px)))`,
   };
@@ -105,7 +107,7 @@ export function listFunctionalRoomSpanClass(
   if (group === "hire" || group === "processing") {
     return powerCount === 3 ? "xl:col-span-8" : "xl:col-span-12";
   }
-  if (group === "training" || group === "meeting") {
+  if (group === "training" || group === "meeting" || group === "recycling") {
     return "xl:col-span-12";
   }
   return undefined;

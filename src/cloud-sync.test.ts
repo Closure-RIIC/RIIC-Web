@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { cloudSyncMetadataKey, cloudWorkspaceFingerprint, readCloudSyncMetadata, writeCloudSyncMetadata } from "./cloud-sync.ts";
+import { cloudSyncMetadataKey, cloudSyncPreferenceKey, cloudWorkspaceFingerprint, readCloudSyncMetadata, writeCloudSyncMetadata } from "./cloud-sync.ts";
 import type { CloudWorkspacePutRequest } from "./types.ts";
 import type { TestContext } from "node:test";
 import { CloudSyncSession, type CloudSyncStatus, type CloudUpload } from "./cloud-sync-session.ts";
@@ -51,7 +51,7 @@ function sessionHarness(context: TestContext, overrides: Partial<ConstructorPara
   const changes: (CloudWorkspaceData | null)[] = [];
   const statuses: CloudSyncStatus[] = [];
   const remote: CloudWorkspaceData = { exists: false, revision: 0, state: null, operbox: null, result: null, revisions: [], updatedAt: null, syncedAt: null };
-  const session = new CloudSyncSession({
+  const dependencies: ConstructorParameters<typeof CloudSyncSession>[0] = {
     userId: "user-a",
     dismissedKey: "dismissed:a:v1",
     storage: { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value); } },
@@ -64,13 +64,14 @@ function sessionHarness(context: TestContext, overrides: Partial<ConstructorPara
     changed: (data) => changes.push(data),
     status: (state) => statuses.push(state),
     ...overrides,
-  });
+  };
+  const session = new CloudSyncSession(dependencies);
   context.after(() => session.dispose());
   const tick = async (ms: number) => {
     context.mock.timers.tick(ms);
     for (let i = 0; i < 30; i++) await Promise.resolve();
   };
-  return { session, uploads, changes, statuses, remote, tick, edit: (shift: number) => {
+  return { session, dependencies, values, uploads, changes, statuses, remote, tick, edit: (shift: number) => {
     workspace = { ...workspace, state: { ...workspace.state, activeShift: shift } };
     session.update();
   } };
@@ -258,4 +259,112 @@ test("full browser storage does not cause an acknowledged write to be uploaded a
   h.session.update(); await h.tick(1200);
   assert.equal(h.uploads.length, 1);
   assert.equal(h.statuses.at(-1)?.sync, "synced");
+});
+
+test("declining consent clears the warning and keeps edits, refreshes and retries local", async (context) => {
+  let reads = 0;
+  const h = sessionHarness(context, { getConsent: async () => {
+    reads++;
+    return { current: false, cloudSyncEnabled: true, termsVersion: "1", privacyVersion: "1", acceptedAt: null, revokedAt: null };
+  } });
+  h.session.start(); await h.tick(0);
+  assert.equal(h.statuses.at(-1)?.consentOpen, true);
+  h.session.decline();
+  h.edit(1); h.session.refresh(); h.session.retry(); await h.session.accept(); await h.tick(300_000);
+  assert.deepEqual(h.statuses.at(-1), { consentOpen: false, saving: false, error: null, errorCode: null, sync: "local-only" });
+  assert.equal(reads, 1);
+  assert.equal(h.uploads.length, 0);
+  assert.equal(h.dependencies.local().workspace.state.activeShift, 1);
+});
+
+test("local-only survives a new session and policy version, and is scoped to its account", async (context) => {
+  let reads = 0;
+  const h = sessionHarness(context, { getConsent: async () => { reads++; throw new Error("network unavailable"); } });
+  h.session.decline(); h.session.dispose();
+  const restored = new CloudSyncSession({ ...h.dependencies, dismissedKey: "dismissed:a:v2" });
+  context.after(() => restored.dispose());
+  restored.start(); await h.tick(300_000);
+  assert.equal(reads, 0);
+  assert.equal(h.statuses.at(-1)?.sync, "local-only");
+  const otherAccount = new CloudSyncSession({ ...h.dependencies, userId: "user-b", dismissedKey: "dismissed:b:v2" });
+  context.after(() => otherAccount.dispose());
+  otherAccount.start(); await h.tick(0);
+  assert.equal(reads, 1);
+});
+
+test("legacy local-only dismissals migrate without asking for consent or syncing", async (context) => {
+  let reads = 0;
+  const h = sessionHarness(context, { getConsent: async () => { reads++; throw new Error("must not fetch"); } });
+  h.values.set("dismissed:a:v1", "1");
+  h.session.start(); await h.tick(300_000);
+  assert.equal(reads, 0);
+  assert.equal(h.values.get(cloudSyncPreferenceKey("user-a")), "local-only");
+  assert.equal(h.statuses.at(-1)?.error, null);
+});
+
+test("explicit re-enabling checks consent and resumes only after acceptance", async (context) => {
+  let accepted = false;
+  const h = sessionHarness(context, {
+    getConsent: async () => ({ current: accepted, cloudSyncEnabled: true, termsVersion: "1", privacyVersion: "1", acceptedAt: null, revokedAt: null }),
+    acceptConsent: async () => { accepted = true; },
+  });
+  h.session.decline();
+  h.values.set(cloudSyncPreferenceKey("user-a"), "sync");
+  h.session.refresh(); await h.tick(0);
+  assert.equal(h.statuses.at(-1)?.consentOpen, true);
+  assert.equal(h.uploads.length, 0);
+  await h.session.accept(); await h.tick(0);
+  assert.equal(h.uploads.length, 1);
+  assert.equal(h.statuses.at(-1)?.sync, "synced");
+});
+
+test("switching to local-only aborts in-flight uploads and ignores late responses", async (context) => {
+  let release!: (remote: CloudWorkspaceData) => void;
+  let signal!: AbortSignal;
+  const h = sessionHarness(context, { putWorkspace: async (_input, requestSignal) => {
+    signal = requestSignal;
+    return new Promise(resolve => { release = resolve; });
+  } });
+  h.session.start(); await h.tick(0);
+  h.values.set(cloudSyncPreferenceKey("user-a"), "local-only");
+  h.session.refresh();
+  assert.equal(signal.aborted, true);
+  release(h.remote); await h.tick(300_000);
+  assert.deepEqual(h.changes, [null]);
+  assert.equal(h.values.has(cloudSyncMetadataKey("user-a")), false);
+  assert.equal(h.statuses.at(-1)?.sync, "local-only");
+});
+
+test("local-only ignores late remote restores and failed consent requests", async (context) => {
+  let release!: (remote: CloudWorkspaceData) => void;
+  let reject!: (cause: unknown) => void;
+  let applied = 0;
+  const h = sessionHarness(context, {
+    local: () => ({ workspace: request, hasLocalSession: false }),
+    getWorkspace: async () => new Promise(resolve => { release = resolve; }),
+    acceptConsent: async () => new Promise((_resolve, fail) => { reject = fail; }),
+    apply: () => { applied++; },
+  });
+  h.session.start(); await h.tick(0);
+  h.session.decline();
+  release({ ...h.remote, exists: true, revision: 3, state: { ...request.state, activeShift: 2 } }); await h.tick(0);
+  assert.equal(applied, 0);
+  h.values.set(cloudSyncPreferenceKey("user-a"), "sync");
+  h.session.refresh();
+  const accepting = h.session.accept();
+  h.session.decline();
+  reject({ code: "AIC-DATA-8003" }); await accepting; await h.tick(300_000);
+  assert.equal(h.statuses.at(-1)?.error, null);
+  assert.equal(h.statuses.at(-1)?.sync, "local-only");
+});
+
+test("local-only still stops this session when preference storage is full", async (context) => {
+  let reads = 0;
+  const h = sessionHarness(context, {
+    storage: { getItem: () => null, setItem: () => { throw new Error("QuotaExceeded"); } },
+    getConsent: async () => { reads++; throw new Error("must not fetch"); },
+  });
+  h.session.decline(); h.session.start(); h.session.refresh(); h.edit(2); await h.tick(300_000);
+  assert.equal(reads, 0);
+  assert.equal(h.statuses.at(-1)?.sync, "local-only");
 });

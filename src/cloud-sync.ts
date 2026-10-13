@@ -2,7 +2,11 @@ import type { CloudWorkspacePutRequest } from "./types.ts";
 
 export const CLOUD_SYNC_METADATA_PREFIX = "arknights-infra-cloud-sync-v1";
 
-export type CloudSyncStatus = "idle" | "pending" | "syncing" | "synced" | "error" | "conflict";
+export type CloudSyncStatus = "idle" | "local-only" | "pending" | "syncing" | "synced" | "error" | "conflict";
+
+export function cloudSyncPreferenceKey(userId: string): string {
+  return `arknights-infra-cloud-sync-preference:${userId}`;
+}
 
 export type CloudSyncMetadata = {
   revision: number;

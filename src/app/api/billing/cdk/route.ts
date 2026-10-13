@@ -1,4 +1,4 @@
-import { assertSameOrigin, createRequestId, failureResponse, readJsonBody, successResponse, PublicApiError } from "@/server/api-contract";
+import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, readJsonBody, successResponse, PublicApiError } from "@/server/api-contract";
 import { requireFeatureSession } from "@/server/auth/feature-access";
 import { BillingError, issueGiftCdk, redeemGiftCdk } from "@/server/billing/service";
 
@@ -11,6 +11,7 @@ export async function POST(request: Request) {
   try {
     assertSameOrigin(request);
     const session = await requireFeatureSession(request, "billing");
+    enforceRateLimit("billing-cdk", session.user.id, 20, 60_000);
     const body = await readJsonBody(request, 8 * 1024) as { action?: unknown; points?: unknown; code?: unknown };
     if (body.action === "issue" && typeof body.points === "number") {
       return successResponse(await issueGiftCdk(session.user.id, body.points), requestId, 201);

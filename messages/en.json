@@ -1,4 +1,16 @@
 {
+  "gacha_archive_privacy": {
+    "title": "Cloud headhunting archives",
+    "body": "With your separate consent, we store your Arknights role UID, nickname and headhunting records in the server database, bound to your website account without automatic expiry. Reading saved history does not require an active Skland or headhunting authorization; retrieving new records does. Browser history is uploaded only when you choose to do so after role authorization. You can export or delete a role's records. Disconnecting authorization does not delete records; deleting records retains the ownership binding to prevent transfers. Deleting your website account removes its archives and bindings. Temporary headhunting credentials are not stored in the archive tables."
+  },
+  "RecyclingRoom": {
+    "unknown": "Unknown",
+    "title": "Recycling Station",
+    "manualOnly": "Manual only · Excluded from output and export",
+    "unconfigured": "Not configured · 2 slots",
+    "noUpstreamData": "Skland data unavailable",
+    "unknownSlots": "2 operator slots, occupancy unknown"
+  },
   "Recruitment": {
     "title": "Recruitment",
     "server": "CN server",
@@ -83,6 +95,7 @@
     "recruitment": "Recruitment",
     "skills": "Skill Reference",
     "skland": "Skland Status",
+    "gacha": "Headhunting history",
     "training": "Training Advice",
     "account_reset_password": "Reset Password",
     "admin_issues": "Solver Issues",
@@ -337,6 +350,7 @@
   },
   "components_cloud_CloudDataSync": {
     "status": {
+      "local-only": "Local only · Cloud sync is off",
       "idle": "Not synced yet",
       "pending": "Changes waiting to sync",
       "syncing": "Syncing…",
@@ -359,6 +373,7 @@
     "syncError_session": "Your login has expired. Sign in again to resume cloud sync. Your local data is retained.",
     "syncError_paused": "Cloud sync is paused after an error. Your local data is retained; you can try again later.",
     "resumeSync": "Resume cloud sync",
+    "useLocalOnly": "Use local only",
     "cloudSyncIsTemporarilyUnavailableCurrentDataRemainsStored": "Cloud sync is temporarily unavailable. Current data remains stored locally.",
     "cloudSyncFailedALocalCopyHasBeenRetained": "Cloud sync failed. A local copy has been retained.",
     "couldNotSaveConsentTryAgainLater": "Could not save consent. Try again later."
@@ -546,11 +561,6 @@
     "loading": "Loading",
     "loadFailedSelectToRetry": "Load failed. Select to retry",
     "allResultsShown": "All results shown"
-  },
-  "components_ui_pagination": {
-    "previous": "Previous",
-    "next": "Next",
-    "morePages": "More pages"
   },
   "components_workbench_WorkbenchRouteSkeleton": {
     "loadingTrainingAdvice": "Loading training advice",

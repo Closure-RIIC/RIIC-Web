@@ -1,20 +1,22 @@
 "use client";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 
-import { useCallback, useEffect, useMemo, useState, type ComponentProps } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useLocale } from "next-intl";
 import Link from "next/link";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
+import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { Input } from "@/components/ui/input";
 import dialogueStyles from "@/components/agent/beautiful/Dialogue.module.css";
 import styles from "./BillingPrototype.module.css";
+import { notifyBillingUpdated, subscribeBillingUpdates } from "@/lib/billing-events";
 
 type Product = { id: string; name: string; amountFen: number; points: number; badge?: string; description: string; kind: string; checkoutConfigured: boolean };
 type BillingData = {
   canSimulatePayment?: boolean;
   products: Product[];
-  wallet: { paidPoints: number; monthlyPoints: number; monthlyExpiresAt: string | null; totalPoints: number };
+  wallet: { paidPoints: number; monthlyPoints: number; monthlyExpiresAt: string | null; totalPoints: number; reservedPoints?: number };
   ledger: Array<{ id: string; kind: string; pointsDelta: number; createdAt: string; metadata?: Record<string, unknown> | null }>;
   orders: Array<{ id: string; productId: string; status: string; amountFen: number; points: number; paymentUrl: string | null; createdAt: string; paidAt: string | null }>;
   usage: Array<{ id: string; toolName: string; status: string; points: number; toolFeePoints?: number; tokenPoints?: number | null; inputTokens: number | null; outputTokens: number | null; cachedInputTokens: number | null; upstreamCostRmb: number | null; chargedCostRmb: number | null; createdAt: string }>;
@@ -74,6 +76,8 @@ export function BillingPrototype() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [cdkCode, setCdkCode] = useState("");
+  const redeemBusy = useRef(false);
+  const codeInput = useRef<HTMLInputElement>(null);
 
   const reload = useCallback(async () => {
     try {
@@ -85,6 +89,21 @@ export function BillingPrototype() {
   }, []);
 
   useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => subscribeBillingUpdates(() => void reload()), [reload]);
+  useEffect(() => {
+    const readLink = () => {
+      const value = new URLSearchParams(window.location.hash.slice(1)).get("redeem");
+      if (!value || !/^[a-z0-9][a-z0-9_-]{7,63}$/i.test(value.trim())) return;
+      setCdkCode(value.trim().toUpperCase());
+      // Fragments stay out of server logs; remove the code from browser history
+      // after prefilling. Redemption always requires an explicit submit.
+      window.history.replaceState(window.history.state, "", `${window.location.pathname}${window.location.search}#billing-redeem`);
+      codeInput.current?.focus();
+    };
+    readLink();
+    window.addEventListener("hashchange", readLink);
+    return () => window.removeEventListener("hashchange", readLink);
+  }, []);
 
   // The API is ordered newest first; show the latest order so an older duplicate
   // pending order cannot hide a newer paid callback.
@@ -143,21 +162,27 @@ export function BillingPrototype() {
   };
 
   const cdkAction = async () => {
+    if (redeemBusy.current) return;
+    redeemBusy.current = true;
     setBusy("cdk-redeem");
+    setError(null);
     setNotice(null);
     try {
       const response = await fetch("/api/billing/cdk", {
         method: "POST", credentials: "same-origin", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ action: "redeem", code: cdkCode }),
+        body: JSON.stringify({ action: "redeem", code: cdkCode.trim().toUpperCase() }),
       });
-      const payload = await response.json() as { data?: { code?: string; points?: number }; error?: { message?: string } };
+      const payload = await response.json() as { data?: { points: number; wallet: BillingData["wallet"] }; error?: { message?: string } };
       if (!response.ok || !payload.data) throw new Error(payload.error?.message ?? "兑换码操作失败。");
       setCdkCode("");
-      setNotice(`兑换成功，已到账 ${payload.data.points ?? 0} 积分。`);
-      await reload();
+      const result = payload.data;
+      setData(current => current ? { ...current, wallet: result.wallet } : current);
+      setNotice(locale === "en" ? `Redeemed ${result.points} permanent credits.` : `兑换成功，已到账 ${result.points} 永久积分。`);
+      notifyBillingUpdated();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "兑换码操作失败。");
     } finally {
+      redeemBusy.current = false;
       setBusy(null);
     }
   };
@@ -171,7 +196,7 @@ export function BillingPrototype() {
     <section className={containerClass} data-billing-prototype>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>{heading}<p className="mt-2 text-sm text-muted-foreground">付费计划仅用于助理对话功能，基建计算器的求解功能保持免费。</p><p className="mt-1 text-xs text-muted-foreground">助理对话按 Token 实际用量计费，助理内调用求解工具每次 1 积分 · 金额统一为人民币</p></div>
-        <Link className={buttonVariants({ variant: "outline", className: styles.pill })} href="/agent">返回助理<ArrowUpRight className="size-3.5" /></Link>
+        <SetupActionButton nativeButton={false} variant="outline" className="!min-w-0 max-w-full max-md:!h-auto max-md:min-h-11 max-md:whitespace-normal max-md:!px-3 max-md:py-2" render={<Link href="/agent" />}>返回助理<ArrowUpRight className="size-3.5" /></SetupActionButton>
       </header>
 
       {notice ? <div role="status" className="rounded-xl bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-300">{notice}</div> : null}
@@ -181,6 +206,7 @@ export function BillingPrototype() {
         <div className={styles.available}>
           <h2 className={styles.caption}>可用积分</h2>
           <p className={`${styles.balance} font-number`}>{data.wallet.totalPoints.toLocaleString()}<small>积分</small></p>
+          {!!data.wallet.reservedPoints && <p className="mt-2 text-xs text-muted-foreground">{locale === "en" ? `${data.wallet.reservedPoints} points reserved for active requests` : `另有 ${data.wallet.reservedPoints} 积分用于进行中的请求，结算后释放剩余预留`}</p>}
           <p className={`${styles.caption} mt-3`}>仅用于助理对话 · 基建计算器求解免费</p>
         </div>
         <dl className={styles.walletDetails}>
@@ -211,10 +237,10 @@ export function BillingPrototype() {
         ))}
       </div>
 
-      <BillingCard className={styles.redemption} aria-labelledby="billing-redeem-heading">
-        <div><h2 id="billing-redeem-heading" className="text-sm font-semibold">核销兑换码</h2><p className={`${styles.caption} mt-1`}>赠送码兑换后计入永久积分。爱发电购买无需兑换码。</p></div>
+      <BillingCard id="billing-redeem" className={styles.redemption} aria-labelledby="billing-redeem-heading">
+        <div><h2 id="billing-redeem-heading" className="text-sm font-semibold">{locale === "en" ? "Redeem a code" : "核销兑换码"}</h2><p className={`${styles.caption} mt-1`}>{locale === "en" ? "Each code can be redeemed once within its validity period, for permanent credits." : "每码限兑一次，请在有效期内兑换，到账后为永久积分。"}</p></div>
         <form className={styles.redemptionForm} onSubmit={(event) => { event.preventDefault(); if (busy === null && cdkCode.trim()) void cdkAction(); }}>
-          <Input aria-label="积分兑换码" placeholder="RIIC-..." value={cdkCode} onChange={(event) => setCdkCode(event.target.value)} />
+          <Input ref={codeInput} aria-label={locale === "en" ? "Credit code" : "积分兑换码"} placeholder="RIIC-..." maxLength={64} autoComplete="off" autoCapitalize="characters" spellCheck={false} value={cdkCode} onChange={(event) => setCdkCode(event.target.value)} />
           <Button type="submit" className={`${styles.pill} ${styles.primary}`} disabled={busy !== null || !cdkCode.trim()}>{busy === "cdk-redeem" ? "兑换中…" : "核销并入账"}</Button>
         </form>
       </BillingCard>

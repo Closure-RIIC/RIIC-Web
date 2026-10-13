@@ -1,4 +1,4 @@
-import { cloudWorkspaceFingerprint, readCloudSyncMetadata, writeCloudSyncMetadata, type CloudSyncMetadata, type CloudSyncStatus as SyncPhase } from "./cloud-sync.ts";
+import { cloudSyncPreferenceKey, cloudWorkspaceFingerprint, readCloudSyncMetadata, writeCloudSyncMetadata, type CloudSyncMetadata, type CloudSyncStatus as SyncPhase } from "./cloud-sync.ts";
 import type { AccountDataConsentData, CloudWorkspaceData, CloudWorkspacePutRequest } from "./types.ts";
 
 export type CloudUpload = Exclude<CloudWorkspacePutRequest, { restoreRevisionId: string }>;
@@ -27,7 +27,9 @@ type Dependencies = {
 /** One account-scoped, serialized sync loop. Local edits never abort an active upload. */
 export class CloudSyncSession {
   private readonly dependencies: Dependencies;
-  private readonly controller = new AbortController();
+  private controller = new AbortController();
+  private disposed = false;
+  private localOnly = false;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private busy = false;
   private paused = false;
@@ -53,6 +55,7 @@ export class CloudSyncSession {
 
   start() {
     this.dependencies.changed(null);
+    if (this.prefersLocalOnly()) { this.decline(); return; }
     this.publish();
     this.schedule(0);
   }
@@ -64,25 +67,50 @@ export class CloudSyncSession {
   }
 
   refresh() {
+    if (this.disposed) return;
+    if (this.prefersLocalOnly()) { this.decline(); return; }
+    if (this.localOnly || this.state.error === "consent") {
+      this.localOnly = false;
+      this.paused = false;
+      this.state = { consentOpen: false, saving: false, error: null, errorCode: null, sync: "idle" };
+      this.publish();
+    }
     this.refreshRequested = true;
     this.schedule(0);
   }
 
   dispose() {
+    this.disposed = true;
     clearTimeout(this.timer);
     this.controller.abort();
   }
 
   decline() {
-    this.dependencies.storage.setItem(this.dependencies.dismissedKey, "1");
+    if (this.disposed) return;
+    // A local-only choice survives policy updates and does not revoke/delete cloud data.
+    try { this.dependencies.storage.setItem(cloudSyncPreferenceKey(this.dependencies.userId), "local-only"); } catch { /* Still stop this session when browser storage is unavailable. */ }
+    this.localOnly = true;
     this.paused = true;
-    this.state.consentOpen = false;
     clearTimeout(this.timer);
+    this.controller.abort();
+    this.controller = new AbortController();
+    this.busy = false;
+    this.consentKnown = false;
+    this.initialized = false;
+    this.blockedFingerprint = null;
+    this.state = { consentOpen: false, saving: false, error: null, errorCode: null, sync: "local-only" };
     this.publish();
   }
 
+  private prefersLocalOnly() {
+    try {
+      const preference = this.dependencies.storage.getItem(cloudSyncPreferenceKey(this.dependencies.userId));
+      return preference !== "sync" && (this.localOnly || preference === "local-only" || this.dependencies.storage.getItem(this.dependencies.dismissedKey) === "1");
+    } catch { return this.localOnly; }
+  }
+
   retry() {
-    if (this.busy || this.state.error === "session" || this.state.error === "conflict") return;
+    if (this.disposed || this.localOnly || this.busy || this.state.error === "session" || this.state.error === "conflict") return;
     if (this.state.error === "consent") {
       this.state.consentOpen = true;
       this.publish();
@@ -94,14 +122,16 @@ export class CloudSyncSession {
   }
 
   async accept() {
-    if (this.busy || this.state.error === "policy" || this.controller.signal.aborted || Date.now() < this.retryAt) return;
+    if (this.localOnly || this.busy || this.state.error === "policy" || this.controller.signal.aborted || Date.now() < this.retryAt) return;
     clearTimeout(this.timer);
     this.busy = true;
     this.state.saving = true;
     this.publish();
+    const signal = this.controller.signal;
     try {
-      await this.dependencies.acceptConsent(this.controller.signal);
-      if (this.controller.signal.aborted) return;
+      await this.dependencies.acceptConsent(signal);
+      if (signal.aborted) return;
+      try { this.dependencies.storage.setItem(cloudSyncPreferenceKey(this.dependencies.userId), "sync"); } catch { /* Consent remains valid for this session. */ }
       this.consentKnown = true;
       this.initialized = false;
       this.forceUpload = true;
@@ -110,22 +140,25 @@ export class CloudSyncSession {
       this.failures = 0;
       this.state = { consentOpen: false, saving: false, error: null, errorCode: null, sync: "idle" };
     } catch (cause) {
-      if (!this.controller.signal.aborted) this.failed(cause, null, true);
+      if (!signal.aborted) this.failed(cause, null, true);
     } finally {
-      this.busy = false;
-      this.state.saving = false;
-      this.publish();
-      this.schedule(0);
+      if (!signal.aborted) {
+        this.busy = false;
+        this.state.saving = false;
+        this.publish();
+        this.schedule(0);
+      }
     }
   }
 
   private publish() {
-    this.state.sync = this.state.error === "conflict" ? "conflict"
+    this.state.sync = this.localOnly ? "local-only"
+      : this.state.error === "conflict" ? "conflict"
       : this.state.error ? "error"
       : this.busy ? "syncing"
       : !this.initialized ? "idle"
       : cloudWorkspaceFingerprint(this.dependencies.local().workspace) === this.fingerprint ? "synced" : "pending";
-    if (!this.controller.signal.aborted) this.dependencies.status({ ...this.state });
+    if (!this.disposed && !this.controller.signal.aborted) this.dependencies.status({ ...this.state });
   }
 
   async resolveConflict(choice: "local" | "remote") {
@@ -141,6 +174,7 @@ export class CloudSyncSession {
       if (choice === "local") {
         const workspace = this.dependencies.local().workspace;
         const uploaded = await this.dependencies.putWorkspace({ ...workspace, baseRevision: remote.revision }, signal);
+        if (signal.aborted) return;
         this.store(uploaded, cloudWorkspaceFingerprint(workspace));
       } else {
         if (!remote.exists || !remote.state) throw { code: "AIC-DATA-8005" };
@@ -159,15 +193,17 @@ export class CloudSyncSession {
     } catch (cause) {
       if (!signal.aborted) this.failed(cause, null);
     } finally {
-      this.busy = false;
-      this.state.saving = false;
-      this.publish();
-      this.schedule(1200);
+      if (!signal.aborted) {
+        this.busy = false;
+        this.state.saving = false;
+        this.publish();
+        this.schedule(1200);
+      }
     }
   }
 
   private schedule(debounceMs: number) {
-    if (this.controller.signal.aborted || this.busy || this.paused || this.state.consentOpen) return;
+    if (this.disposed || this.localOnly || this.controller.signal.aborted || this.busy || this.paused || this.state.consentOpen) return;
     const current = cloudWorkspaceFingerprint(this.dependencies.local().workspace);
     if (current === this.blockedFingerprint || (this.initialized && !this.refreshRequested && current === this.fingerprint)) return;
     clearTimeout(this.timer);
@@ -259,6 +295,7 @@ export class CloudSyncSession {
         } else if (localChanged) {
           if (remote.revision !== (metadata?.revision ?? 0)) throw { code: "AIC-DATA-8005" };
           const uploaded = await this.dependencies.putWorkspace({ ...workspace, baseRevision: metadata?.revision ?? 0 }, signal);
+          if (signal.aborted) return;
           this.store(uploaded, localFingerprint);
         } else if (remote.exists && (!metadata || remote.revision > metadata.revision)) {
           if (signal.aborted) return;
@@ -275,6 +312,7 @@ export class CloudSyncSession {
         attemptedFingerprint = cloudWorkspaceFingerprint(workspace);
         if (attemptedFingerprint === this.fingerprint) return;
         const remote = await this.dependencies.putWorkspace({ ...workspace, baseRevision: this.metadata?.revision ?? 0 }, signal);
+        if (signal.aborted) return;
         this.store(remote, attemptedFingerprint);
       }
       if (signal.aborted) return;
@@ -286,9 +324,11 @@ export class CloudSyncSession {
     } catch (cause) {
       if (!signal.aborted) this.failed(cause, attemptedFingerprint);
     } finally {
-      this.busy = false;
-      this.publish();
-      this.schedule(1200);
+      if (!signal.aborted) {
+        this.busy = false;
+        this.publish();
+        this.schedule(1200);
+      }
     }
   }
 }

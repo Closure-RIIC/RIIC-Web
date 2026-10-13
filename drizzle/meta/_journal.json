@@ -141,6 +141,41 @@
       "when": 1790342400000,
       "tag": "0019_agent_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791469108976,
+      "tag": "0020_billing_cdk_controls",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791606703987,
+      "tag": "0021_gacha_archive",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791782582088,
+      "tag": "0022_agent_gateway_billing",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791784856941,
+      "tag": "0023_agent_reservation_constraints",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791831620407,
+      "tag": "0024_agent_resources",
+      "breakpoints": true
     }
   ]
 }

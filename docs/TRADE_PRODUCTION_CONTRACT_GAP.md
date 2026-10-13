@@ -48,29 +48,17 @@ WASM 是手动排班的房间效率结算器，不是当前手动日产量的权
 | WASM 字段 | 前端字段 | 含义 |
 | --- | --- | --- |
 | `display_base_basis_points` | `baseEfficiency` → `base_efficiency` | 展示基础项。贸易/制造包含固有 100% 与岗位基础；发电站为 0。 |
-| `display_skill_basis_points` | `skillEfficiency`；贸易站另写 `trade_skill_pct`，制造/发电写 `equivalent_efficiency` | 倍率前的纸面技能项；发电站为单站效率增量。`trade_skill_pct` 使用百分数值，等于 `skillEfficiency × 100`。 |
+| `display_skill_basis_points` | `skillEfficiency` → `equivalent_efficiency` | WASM 技能项；发电站为单站效率增量。 |
 | `display_global_basis_points` | `globalEfficiency` → `global_efficiency` | 跨设施/全局项。 |
 | `display_total_basis_points` | `totalEfficiency` → `total_efficiency` | 订单倍率前的房间总效率。 |
 | `order_multiplier_basis_points` | `orderMultiplier` → `order_multiplier` | 贸易订单/特殊组合倍率；非贸易房间为 1。 |
 | `display_final_basis_points` | `finalEfficiency` → `final_efficiency` | 订单倍率后的最终房间效率。 |
-| `trade_equivalent_basis_points` | `tradeEquivalentEfficiency` → 贸易站 `equivalent_efficiency` 与 `trade_equivalent_efficiency` | 折入订单机制后的贸易等效技能项，不是自然产量直接输入；不要再次乘订单倍率。 |
+| `trade_equivalent_basis_points` | `tradeEquivalentEfficiency` → `trade_equivalent_efficiency` | 贸易展示/等效指标，不是自然产量直接输入。 |
 | `gold_equivalent_basis_points` | `goldEquivalentEfficiency` → `gold_equivalent_efficiency` | 前端计算等效赤金价值使用的指标，不是赤金枚数。 |
 
 WASM response 可以携带逐房/聚合的 per-day output 信息，但 RIIC-Web 当前手动产量流程不消费这些字段；手动路径使用上述映射后的房间效率，再由前端完成产量计算。
 
-对于手动“根据效率计算”，前端仍调用 WASM 完整评估，但只提取 `display_global_basis_points` 作为跨设施项。用户填写的纸面技能效率除以 `100` 得到技能项；基础项由前端按房间与入驻人数计算，贸易订单倍率由 `manual-trade-special-rules.ts` 按房间等级、订单及入驻干员练度识别。组合公式为：
-
-```text
-total_efficiency = base_efficiency + 纸面技能项 + global_efficiency
-final_efficiency = total_efficiency × order_multiplier
-贸易等效技能项 = final_efficiency − base_efficiency − global_efficiency
-```
-
-贸易等效技能项写入 `equivalent_efficiency` 与 `trade_equivalent_efficiency`，纸面技能项另以百分数值保存在 `trade_skill_pct`。制造站订单倍率为 `1`，纸面技能项与等效技能项相同。
-
-### 手动页面状态
-
-手填值保存在 `ManualSchedulePage` 的 `draft.shifts[i].rooms[roomId].manualSkillEfficiencyPct`，单位为百分数值；草稿变化时自动保存到本地存储。计算结果保存在 `App` 的 `manualPlanResult`：`roomsByShift` 保留逐房中间字段，`rotation.shifts[i].scores.room_lines` 保存最终逐房效率，`rotation.daily` 保存自然产量和无人机产量。
+对于手动“根据效率计算”，WASM 只提供 `display_global_basis_points`。用户填写的纸面技能效率仍是技能项，前端以基础项、纸面技能项和 WASM 跨设施项构成房间效率。
 
 ## 前端产量职责
 
@@ -84,7 +72,7 @@ final_efficiency = total_efficiency × order_multiplier
 - `total_efficiency`、`order_multiplier`、`final_efficiency`；
 - 前端维护的基础日产量与合成玉链瓶颈规则。
 
-`total_efficiency` 为有效有限数时，使用 `total_efficiency × order_multiplier`；订单倍率缺失或无效时按 `1` 处理。仅当 `total_efficiency` 缺失或无效时才回退 `final_efficiency`。前端不从房间展示字段反推干员技能或重复应用贸易订单机制。
+优先使用 `total_efficiency × order_multiplier`；旧数据缺少这两个字段时才回退 `final_efficiency`。前端不从房间展示字段反推干员技能或重复应用贸易订单机制。
 
 `estimateDailyProduction()` 只负责自然产量和合成玉链明细；它不结算用户选定的无人机目标。
 

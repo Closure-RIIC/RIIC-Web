@@ -106,6 +106,7 @@
     --infra-room-shadow-soft: oklch(0.12 0.012 220 / 0.12);
     --infra-room-text: oklch(0.97 0.006 220);
     --infra-room-text-muted: oklch(0.82 0.01 220);
+    --surface-fluted-texture: repeating-linear-gradient(90deg, transparent 0, rgb(255 255 255 / .48) 1px, rgb(255 255 255 / .08) 4px, rgb(88 69 12 / .09) 8px, transparent 12px);
     --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --motion-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
     --motion-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
@@ -315,77 +316,82 @@ html.schedule-layout-return::view-transition-new(.schedule-room-entering) {
   box-shadow: var(--shadow-border);
 }
 
-.dialog-acrylic {
-  background-color: color-mix(in oklch, var(--popover) 88%, transparent);
-  -webkit-backdrop-filter: blur(36px) saturate(1.06);
-  backdrop-filter: blur(36px) saturate(1.06);
+.dialog-surface {
+  /* Same opaque base and corner texture as the billing price cards. */
+  background-color: var(--muted);
   box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.72),
-    inset 0 -1px 0 rgb(15 23 42 / 0.06),
-    inset 0 0 0 1px rgb(255 255 255 / 0.38),
-    0 30px 76px rgb(12 19 24 / 0.28),
-    0 12px 30px rgb(12 19 24 / 0.15),
-    0 0 44px rgb(12 19 24 / 0.12);
+    0 18px 48px rgb(12 19 24 / 0.16),
+    0 2px 6px rgb(12 19 24 / 0.08);
 }
 
-.dialog-acrylic::before {
+.dialog-surface::before {
   content: "";
   pointer-events: none;
   position: absolute;
-  z-index: 0;
-  inset: 0;
-  border-radius: inherit;
-  background-image:
-    linear-gradient(
-      180deg,
-      rgb(255 255 255 / 0.34) 0%,
-      rgb(255 255 255 / 0.24) 18%,
-      rgb(248 250 252 / 0.17) 38%,
-      rgb(226 232 240 / 0.11) 60%,
-      rgb(148 163 184 / 0.065) 82%,
-      rgb(15 23 42 / 0.045) 100%
-    ),
-    repeating-linear-gradient(
-      90deg,
-      rgb(255 255 255 / 0.42) 0,
-      rgb(255 255 255 / 0.13) 1px,
-      transparent 6px,
-      rgb(15 23 42 / 0.065) 9px,
-      rgb(15 23 42 / 0.022) 13px,
-      rgb(255 255 255 / 0.18) 17px,
-      transparent 22px
-    ),
-    repeating-linear-gradient(
-      90deg,
-      transparent 0 40px,
-      rgb(15 23 42 / 0.04) 46px,
-      rgb(255 255 255 / 0.145) 51px,
-      transparent 60px
-    );
-  box-shadow:
-    inset 0 0 54px rgb(255 255 255 / 0.16),
-    inset 0 -18px 36px rgb(15 23 42 / 0.025);
-  opacity: 0.3;
+  z-index: -1;
+  right: 0;
+  bottom: 0;
+  width: min(42%, 280px);
+  height: min(100%, 108px);
+  border-bottom-right-radius: inherit;
+  background:
+    var(--surface-fluted-texture),
+    radial-gradient(ellipse at 100% 110%, color-mix(in srgb, var(--dialog-accent, #FFD800) 48%, transparent), color-mix(in srgb, var(--dialog-accent, #FFD800) 12%, transparent) 48%, transparent 75%);
+  mask-image: radial-gradient(ellipse at 100% 100%, black 8%, rgb(0 0 0 / .7) 36%, transparent 74%);
 }
 
-.dialog-acrylic[data-setup-dialog] {
-  /* Keep the large sheet visually continuous: lower opacity lets the page's
-     card gutters read as horizontal seams through the glass. */
-  background-color: color-mix(in oklch, var(--popover) 92%, transparent);
+.dialog-popup {
+  transform-origin: center;
+  /* Unlike transitions, keyframes restart if a scrollbar enhancement moves
+     this node. Base UI can then finish the exit instead of awaiting a cancelled
+     transition with no replacement and leaving an invisible modal mounted. */
+  animation: dialog-enter 200ms var(--motion-ease-out) both;
 }
 
-.dialog-acrylic[data-website-account-dialog] [data-website-account-panel] {
+@keyframes dialog-enter {
+  from { opacity: 0; transform: scale(var(--dialog-enter-scale, 0.97)); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes dialog-exit {
+  from { opacity: 1; transform: scale(1); }
+  to { opacity: 0; transform: scale(0.97); }
+}
+
+.dialog-popup[data-from-skeleton] {
+  --dialog-enter-scale: 0.99;
+}
+
+.dialog-popup[data-ending-style] {
+  animation: dialog-exit 150ms var(--motion-ease-out) both;
+}
+
+.dialog-overlay {
+  opacity: 1;
+  transition: opacity 150ms var(--motion-ease-out);
+}
+
+.dialog-overlay[data-starting-style],
+.dialog-overlay[data-ending-style] {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog-popup,
+  .dialog-popup[data-ending-style] {
+    transform: none !important;
+    animation-duration: 100ms;
+    animation-timing-function: linear;
+  }
+
+  .dialog-overlay {
+    transition-duration: 100ms;
+  }
+}
+
+.dialog-surface[data-website-account-dialog] [data-website-account-panel] {
   background-color: transparent;
   box-shadow: none;
-}
-
-.dialog-acrylic[data-dialog-layer="nested"] {
-  box-shadow:
-    inset 0 1px 0 rgb(255 255 255 / 0.64),
-    inset 0 -1px 0 rgb(15 23 42 / 0.045),
-    inset 0 0 0 1px rgb(255 255 255 / 0.32),
-    0 18px 44px rgb(12 19 24 / 0.16),
-    0 6px 16px rgb(12 19 24 / 0.08);
 }
 
 .setup-dialog-footer {
@@ -422,29 +428,6 @@ html.schedule-layout-return::view-transition-new(.schedule-room-entering) {
 [data-setup-dialog] .infra-preset-surface[aria-pressed="true"],
 [data-setup-dialog] .infra-preset-surface[data-state="on"] {
   box-shadow: none;
-}
-
-@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  .dialog-acrylic {
-    background-color: var(--popover);
-  }
-}
-
-@media (max-width: 767px) {
-  .dialog-acrylic {
-    -webkit-backdrop-filter: blur(28px) saturate(1.06);
-    backdrop-filter: blur(28px) saturate(1.06);
-  }
-
-  .dialog-acrylic::before {
-    opacity: 0.24;
-  }
-
-  .dialog-acrylic[data-website-account-dialog] {
-    background-color: var(--background);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
 }
 
 .interactive-surface-shadow {
@@ -600,6 +583,49 @@ html[data-agent-keyboard] [data-agent-composer] {
 .compact-auxiliary-grid > [data-room-group="processing"] {
   grid-column: 2;
   grid-row: 2;
+}
+
+/* Three two-slot facilities share one edge with two one-slot facilities. */
+.compact-auxiliary-grid:has(> [data-room-group="recycling"]) {
+  grid-template-rows: repeat(6, minmax(0, 1fr));
+}
+.compact-auxiliary-grid:has(> [data-room-group="recycling"]) > [data-room-group="meeting"] { grid-row: 1 / 3; }
+.compact-auxiliary-grid:has(> [data-room-group="recycling"]) > [data-room-group="training"] { grid-row: 3 / 5; }
+.compact-auxiliary-grid > [data-room-group="recycling"] { grid-column: 1; grid-row: 5 / 7; }
+.compact-auxiliary-grid:has(> [data-room-group="recycling"]) > [data-room-group="hire"] { grid-row: 1 / 4; }
+.compact-auxiliary-grid:has(> [data-room-group="recycling"]) > [data-room-group="processing"] { grid-row: 4 / 7; }
+
+@container (max-width: 539px) {
+  .compact-auxiliary-grid:has(> [data-room-group="recycling"]) {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+  .compact-auxiliary-grid [data-compact-room-heading] {
+    height: auto;
+    min-height: 1.75rem;
+    flex-wrap: wrap;
+  }
+  .compact-auxiliary-grid [data-compact-room-heading] > .font-number {
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    flex-shrink: 1;
+  }
+  .compact-auxiliary-grid h4 {
+    white-space: normal;
+    height: auto;
+    min-height: 1.75rem;
+  }
+}
+
+@container (max-width: 359px) {
+  .compact-auxiliary-grid:has(> [data-room-group="recycling"]) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+  }
+  .compact-auxiliary-grid:has(> [data-room-group="recycling"]) > [data-room-group] {
+    grid-column: auto;
+    grid-row: auto;
+  }
 }
 
 @container (max-width: 539px) {

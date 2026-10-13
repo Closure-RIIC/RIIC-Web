@@ -1,0 +1,79 @@
+.analysis { min-width: 0; display: grid; gap: var(--gacha-stat-gap, 8px); }
+.rating {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  padding: 2px 0;
+  text-align: left;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  line-height: 1;
+  white-space: nowrap;
+}
+.ratingLaurel { display: block; width: 11px; height: 20px; flex: none; }
+.ratingLaurel[data-mirrored] { transform: scaleX(-1); }
+.rating[data-tone="lucky"] { color: var(--color-emerald-700); }
+.rating[data-tone="normal"] { color: var(--color-amber-800); }
+.rating[data-tone="unlucky"] { color: var(--color-red-700); }
+.overview {
+  --foreground: var(--infra-room-text);
+  --muted-foreground: var(--infra-room-text-muted);
+  display: grid;
+  gap: var(--gacha-stat-gap, 8px);
+  padding: var(--gacha-stat-padding, 12px);
+  min-width: 0;
+  overflow: hidden;
+}
+.overview > * { position: relative; z-index: 1; }
+.categories { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.categories:has(> :nth-child(4)) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.category { display: flex; flex-direction: column; gap: 8px; min-width: 0; padding: 8px; border: 1px solid var(--infra-room-edge); background: rgb(255 255 255 / .045); text-align: center; }
+.categoryHeading { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.category h4 { font-size: 14px; line-height: 1.25; font-weight: 600; }
+.drawCount { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 4px; margin: 0; }
+.drawCount strong { font-size: clamp(1.5rem, 3vw, 2rem); line-height: 1; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; min-width: 0; }
+.drawCount > span { font-size: 11px; color: var(--muted-foreground); }
+.categoryMetrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-content: start; flex: 1; gap: 8px; padding-top: 8px; border-top: 1px solid var(--infra-room-edge); }
+.categoryMetrics > div { display: grid; align-content: start; gap: 2px; min-width: 0; }
+.categoryMetrics dd { font-family: var(--font-number), sans-serif; font-size: clamp(.875rem, 1.5vw, 1.125rem); line-height: 1.25; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.categoryMetrics dt { font-size: 11px; line-height: 1.25; color: var(--muted-foreground); }
+.slash { font-weight: 400; opacity: .6; }
+.offCount { color: var(--color-red-400); }
+.categoryNote { min-height: 1.25em; margin: 0; font-size: 10px; line-height: 1.25; color: var(--muted-foreground); }
+.achievements { display: flex; flex-wrap: wrap; gap: 4px; }
+.achievements > span { padding: 2px 6px; border: 1px solid color-mix(in srgb, currentColor 25%, transparent); background: color-mix(in srgb, currentColor 10%, transparent); font-size: 10px; }
+.achievements > [data-tone="green"] { color: var(--color-emerald-300); }
+.achievements > [data-tone="red"] { color: var(--color-red-400); }
+.pityPanel { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; border: 1px solid var(--border); padding: var(--gacha-stat-padding, 12px); background: var(--muted); }
+.pityItem { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto auto; align-content: start; gap: 4px; min-width: 0; text-align: left; }
+.pityItem h4 { grid-column: 1; grid-row: 1; font-size: 11px; line-height: 14px; color: var(--muted-foreground); }
+.pityItem > p { margin: 0; font-size: 10px; line-height: 14px; color: var(--muted-foreground); }
+.pityProbability { grid-column: 2; grid-row: 1; text-align: right; white-space: nowrap; }
+.pityNote { grid-column: 1 / -1; grid-row: 3; }
+.pityItem b { color: var(--foreground); font-weight: 500; }
+.pityBar { grid-column: 1 / -1; grid-row: 2; position: relative; isolation: isolate; overflow: hidden; height: 18px; text-align: center; background: color-mix(in srgb, var(--foreground) 7%, transparent); }
+.pityFill { position: absolute; inset: 0 auto 0 0; z-index: -1; background: color-mix(in srgb, var(--primary) 40%, transparent); }
+.pityValue { display: block; font-size: 11px; font-weight: 600; line-height: 18px; font-variant-numeric: tabular-nums; }
+.rules { font-size: 11px; line-height: 1.7; color: var(--muted-foreground); }
+.rules summary { width: fit-content; cursor: pointer; }
+.rules p { margin-top: 8px; }
+.rules strong { font-weight: 500; color: var(--foreground); }
+@media (max-width: 639px) {
+  .category { padding: 8px 4px; gap: 8px; }
+  .categoryHeading { display: grid; justify-content: stretch; gap: 4px; }
+  .category h4 { font-size: 12px; }
+  .drawCount > span { font-size: 10px; }
+  .categoryMetrics { padding-top: 8px; gap: 4px; }
+  .categoryMetrics dt { font-size: 10px; }
+  .categoryNote { min-height: 2.5em; }
+  .categories:has(> :nth-child(4)) .categoryMetrics { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .pityProbabilityLabel { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .pityItem h4, .pityItem > p { font-size: 10px; }
+}
+@media (max-width: 359px) {
+  .categoryMetrics { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}

@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion";
 import { ArrowLeftRight, FileWarning, Trash2 } from "lucide-react";
 import { DroneIcon } from "@/components/DroneIcon";
+import { RecyclingRoomNotice } from "@/components/RecyclingRoomNotice";
 
 import {
   factoryRecipeFor,
@@ -32,7 +33,6 @@ import {
   COMPACT_ROOM_TITLE_CLASS,
   compactFactoryAccent,
   compactTradeAccent,
-  isCompactScheduleGroupVisible,
   roomGridTone,
 } from "@/schedule-view-presentation";
 import type { RoomRow } from "@/schedule";
@@ -69,11 +69,11 @@ export interface CompactScheduleViewProps {
 /** 布局宽度百分比，自己改数值 */
 const GRID_LEFT_PCT = 55;   // 左大列宽度%
 const GRID_RIGHT_PCT = 45;  // 右大列宽度%
-const COMPACT_AUXILIARY_GROUPS = new Set(["meeting", "training", "hire", "processing"]);
+const COMPACT_AUXILIARY_GROUPS = new Set(["meeting", "training", "hire", "processing", "recycling"]);
 
 function roomSlotCountFor(group: string) {
   if (group === "trading" || group === "manufacture") return 3;
-  if (group === "meeting" || group === "training") return 2;
+  if (group === "meeting" || group === "training" || group === "recycling") return 2;
   if (group === "power" || group === "hire" || group === "processing") return 1;
   return 5;
 }
@@ -148,7 +148,7 @@ function CompactRoomCard({
   } as CSSProperties;
 
   const header = (
-    <div className={COMPACT_HEADER_CLASS}>
+    <div className={COMPACT_HEADER_CLASS} data-compact-room-heading>
       <span className="infra-room-accent h-5 w-1 shrink-0 bg-[var(--room-accent)]" aria-hidden="true" />
       <span className={`${COMPACT_ROOM_TITLE_CLASS} font-number`}>{localizedRoomTitle(row.title, row.group, locale, gameCatalog)}</span>
       <LevelDiamonds
@@ -291,6 +291,7 @@ function CompactRoomCard({
   const details = (
     <div className="relative z-10 min-w-0">
       {header}
+      {row.group === "recycling" ? <RecyclingRoomNotice editable={Boolean(onSlotClick)} /> : null}
       {efficiencyContent ? <div className={isPower && efficiency ? "mt-1" : "mt-2"}>{efficiencyContent}</div> : null}
       {paperSkillInput}
     </div>
@@ -455,7 +456,7 @@ export function CompactScheduleView(props: CompactScheduleViewProps) {
 
   const byGroup = new Map<string, RoomRow[]>();
   for (const row of rows) {
-    if (!isCompactScheduleGroupVisible(row.group)) continue;
+    if (!row.group) continue;
     const list = byGroup.get(row.group) ?? [];
     list.push(row);
     byGroup.set(row.group, list);
@@ -515,6 +516,7 @@ export function CompactScheduleView(props: CompactScheduleViewProps) {
   const ctrl = getGroup("control")[0];
   const meeting = getGroup("meeting")[0];
   const training = getGroup("training")[0];
+  const recycling = getGroup("recycling")[0];
   const office = getGroup("hire")[0];
   const processing = getGroup("processing")[0];
 
@@ -527,7 +529,7 @@ export function CompactScheduleView(props: CompactScheduleViewProps) {
         <div>{ctrl && makeCard(ctrl)}</div>
 
         {[0, 2, 4].map((start) => (
-          <div key={start} className="flex justify-between gap-3">
+          <div key={start} className="flex flex-1 justify-between gap-3">
             {workstations[start] && makeCard(workstations[start], 50)}
             {workstations[start + 1] && makeCard(workstations[start + 1], 50)}
           </div>
@@ -561,6 +563,7 @@ export function CompactScheduleView(props: CompactScheduleViewProps) {
           <div className="compact-auxiliary-grid">
             {meeting && makeCard(meeting)}
             {training && makeCard(training)}
+            {recycling && makeCard(recycling)}
             {office && makeCard(office)}
             {processing && makeCard(processing)}
           </div>

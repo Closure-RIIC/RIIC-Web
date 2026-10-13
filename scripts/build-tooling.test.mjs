@@ -318,7 +318,7 @@ test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedul
   assert.doesNotMatch(workflow, /^\s*pull_request\s*:/m);
   assert.match(workflow, /cancel-in-progress: false/);
   assert.equal(readinessSpecs.length, 4);
-  assert.equal(readinessTestCount, 104);
+  assert.equal(readinessTestCount, 117);
   assert.equal(e2eFiles.includes("production-readiness.spec.ts"), false);
   assert.match(playwrightConfig, /fullyParallel: true/);
   assert.match(playwrightConfig, /workers: process\.env\.CI \? 2 : undefined/);
@@ -337,6 +337,9 @@ test("CI change scope keeps one required quality gate and fails closed", async (
   assert.doesNotMatch(workflow, /PR_BASE_SHA|PR_HEAD_SHA/);
   assert.match(workflow, /git diff --name-only -z "\$PUSH_BEFORE_SHA\.\.\$HEAD_SHA"/);
   assert.match(workflow, /"\$\{classifier\[@\]\}" --force-full/);
+  assert.match(workflow, /git merge-base --is-ancestor "\$OPERATOR_DATA_BASE_SHA" "\$HEAD_SHA"/);
+  assert.match(workflow, /git diff --name-only -z "\$OPERATOR_DATA_BASE_SHA\.\.\$HEAD_SHA"/);
+  assert.match(workflow, /"\$\{classifier\[@\]\}" --require-operator-data/);
   assert.match(workflow, /static_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /database_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /release_artifact:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
@@ -588,16 +591,32 @@ test("asset synchronization isolates untrusted generation from repository write 
   assert.doesNotMatch(publish, /npm (?:ci|run)|node scripts\//);
 });
 
-test("mastery generated data follows every managed-resource publication and parity gate", async () => {
+test("mastery, gacha UP data and the full fixture follow every managed-resource publication and parity gate", async () => {
   const workflow = await readRepoFile(".github/workflows/sync-arkntools-assets.yml");
-  assert.match(workflow, /npm run assets:mastery -- \.tmp\/arknights-game-resource\/gamedata\/excel\/character_table\.json/);
+  assert.match(workflow, /npm run assets:mastery -- \.tmp\/arknights-game-data\/zh_CN\/gamedata\/excel\/character_table\.json --game-source-sha=/);
+  assert.match(workflow, /game_sha=\$\(git -C \.tmp\/arknights-game-data rev-parse HEAD\)/);
+  assert.match(workflow, /\/assets\/img\/avatar/);
+  assert.match(workflow, /\/item\/AP_BASE\.png/);
+  assert.equal((workflow.match(/echo "base_sha=\$remote_base_sha" >> "\$GITHUB_OUTPUT"/g) ?? []).length, 2);
+  assert.equal((workflow.match(/-f operator_data_base_sha="\$\{\{ steps\.merge\.outputs\.base_sha \}\}"/g) ?? []).length, 2);
   const guards = workflow.match(/public\/images\/operator-portraits\/\*\|[^\n]+;;/g) ?? [];
   assert.equal(guards.length, 4);
-  for (const guard of guards) assert.match(guard, /\|src\/generated\/mastery-data\.json\) ;;/);
+  for (const guard of guards) assert.match(guard, /\|src\/generated\/mastery-data\.json\|src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
   const regularFileChecks = workflow.match(/git ls-files -s --[^\n]+/g) ?? [];
   assert.equal(regularFileChecks.length, 3);
-  for (const check of regularFileChecks) assert.ok(check.includes("src/generated/mastery-data.json"));
+  for (const check of regularFileChecks) {
+    assert.ok(check.includes("src/generated/mastery-data.json"));
+    assert.ok(check.includes("src/generated/gacha-up.json"));
+    assert.ok(check.includes("fixtures/operbox_full_e2.json"));
+  }
   assert.match(workflow, /git restore --source[^\n]+[\s\S]*?src\/generated\/arkntools \\\n\s+src\/generated\/mastery-data\.json/);
+  const generateStep = workflow.slice(workflow.indexOf("      - name: Generate and validate assets"), workflow.indexOf("      - name: Run pre-PR quality gates"));
+  assert.ok(generateStep.indexOf("npm run assets:gacha-up") > generateStep.indexOf("npm run assets:sync:arkntools"));
+  assert.match(workflow, /git status --porcelain --[^\n]*src\/generated\/gacha-up\.json/);
+  assert.match(workflow, /git add --[^\n]*src\/generated\/gacha-up\.json/);
+  assert.match(workflow, /src\/generated\/gacha-up\.json \\\n\s+fixtures\/operbox_full_e2\.json/);
+  assert.match(workflow, /git show HEAD:src\/generated\/gacha-up\.json/);
+  assert.match(workflow, /--before-gacha-up "\$RUNNER_TEMP\/gacha-up-before\.json"/);
 });
 
 test("CI browser jobs use the matching pinned Playwright image without runtime apt installs", async () => {
@@ -683,7 +702,6 @@ test("the Skland entry is request-rendered so releases cannot retain stale login
 test("the critical calculator board stays initial while the compact view loads on demand", async () => {
   const calculator = await readRepoFile("src/components/pages/InfraCalculator.tsx");
   const calculatorRoute = await readRepoFile("src/components/workbench/CalculatorRoute.tsx");
-  const lazyLoader = await readRepoFile("src/client-lazy-loader.ts");
   const app = await readRepoFile("src/App.tsx");
 
   assert.match(calculator, /import \{ ScheduleBoard, ShiftTabs \} from "@\/components"/);
@@ -696,8 +714,7 @@ test("the critical calculator board stays initial while the compact view loads o
   assert.match(components, /useState<ScheduleViewMode \| null>\(null\)/);
   assert.match(components, /useState<boolean \| null>\(null\)/);
   assert.match(components, /window\.matchMedia\("\(min-width: 1024px\)"\)/);
-  assert.match(components, /viewMode !== "compact"[\s\S]{0,300}loadClientFeature\("compactScheduleView"\)/);
-  assert.match(lazyLoader, /case "compactScheduleView":[\s\S]{0,100}import\("@\/components\/CompactScheduleView"\)/);
+  assert.match(components, /viewMode !== "compact"[\s\S]{0,300}import\("@\/components\/CompactScheduleView"\)/);
   assert.doesNotMatch(components, /import \{ CompactScheduleView \} from "@\/components\/CompactScheduleView"/);
   assert.doesNotMatch(calculator, /onViewModeChange|showBetaSidebar|showBetaPanels/);
   assert.match(app, /const hasRenderedCalculator = useRef\(false\)/);
@@ -718,6 +735,7 @@ test("heavy account, operator, and scrollbar modules stay behind runtime boundar
   assert.doesNotMatch(app, /import \{\s*createManualScheduleDraftFromCalculator/);
   assert.doesNotMatch(schedule, /operatorPresentationFor/);
   assert.doesNotMatch(components, /from "@\/operatorPortraits"/);
+  assert.match(app, /const loadWebsiteAccountDialog = \(\) => import\("@\/components\/auth\/WebsiteAccountDialog"\)/);
   assert.match(scrollbar, /import\("overlayscrollbars"\)/);
 });
 

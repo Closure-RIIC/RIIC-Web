@@ -12,7 +12,7 @@ import {
   revokeAccountDataConsent,
   updateAccountSavedPlan,
 } from "@/api";
-import { cloudSyncMetadataKey } from "@/cloud-sync";
+import { cloudSyncMetadataKey, cloudSyncPreferenceKey } from "@/cloud-sync";
 import type { CloudSyncStatus } from "@/cloud-sync";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -56,12 +56,14 @@ export function CloudDataPanel({
   const [deleteAnnouncement, setDeleteAnnouncement] = useState("");
   const busyRef = useRef<string | null>(null);
   const panelId = useId();
+  const localOnly = syncStatus === "local-only";
 
   const reload = useCallback(async () => {
+    if (localOnly) { setPlans([]); setError(null); return; }
     const next = await getAccountDataConsent();
     setConsent(next);
     setPlans(next.current ? (await getAccountSavedPlans()).plans : []);
-  }, []);
+  }, [localOnly]);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,6 +98,7 @@ export function CloudDataPanel({
   }
 
   function reopenConsent() {
+    window.localStorage.setItem(cloudSyncPreferenceKey(userId), "sync");
     window.localStorage.removeItem(`cloud-consent-dismissed:${userId}:${TERMS_VERSION}:${PRIVACY_VERSION}`);
     onCloudDataChanged?.();
   }
@@ -110,7 +113,7 @@ export function CloudDataPanel({
           {intl("components_cloud_CloudDataPanel.accountCloudWorkspace")}
         </InfraTechnicalHeading>
         <p role="status" className="mt-4 max-w-3xl text-sm leading-6 text-white/64">
-          {consent?.current
+          {consent?.current && !localOnly
             ? syncStatus === "synced" && workspace?.exists
               ? (intl("components_cloud_CloudDataPanel.syncedLastSync", { value1: (en) ? (formatDate(workspace?.syncedAt ?? null, true)) : "", value2: (en) ? "" : (formatDate(workspace?.syncedAt ?? null, false)) }))
               : intl(`components_cloud_CloudDataSync.status.${syncStatus}`)
@@ -118,11 +121,18 @@ export function CloudDataPanel({
         </p>
         <p className="sr-only" role="status" aria-live="polite" aria-atomic="true" data-cloud-delete-status>{deleteAnnouncement}</p>
         <div className="mt-5 grid gap-5">
-          {error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
-          {!consent?.current ? (
+          {error && !localOnly ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
+          <section className="flex flex-col items-start gap-4 border-t border-white/14 pt-5 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-6 text-white/64">{intl("components_cloud_CloudDataPanel.localOnlyDescription")}</p>
+            {!localOnly ? <Button type="button" size="dialog" className={CLOUD_PRIMARY_BUTTON_CLASS} disabled={busy !== null} onClick={() => void run("local-only", async () => {
+              window.localStorage.setItem(cloudSyncPreferenceKey(userId), "local-only");
+              onCloudDataChanged?.();
+            })}>{intl("components_cloud_CloudDataSync.useLocalOnly")}</Button> : null}
+          </section>
+          {localOnly || !consent?.current ? (
             <div className="flex flex-col items-start gap-4 border-t border-white/14 pt-5 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm leading-6 text-white/64">{intl("components_cloud_CloudDataPanel.automaticSyncStartsOnlyAfterYouAcceptTheCurrent")}</p>
-              <Button type="button" size="dialog" className={CLOUD_PRIMARY_BUTTON_CLASS} onClick={reopenConsent}>{intl("components_cloud_CloudDataPanel.reviewSyncDetails")}</Button>
+              <Button type="button" size="dialog" className={CLOUD_PRIMARY_BUTTON_CLASS} disabled={busy !== null} onClick={() => void run("enable", async () => reopenConsent())}>{intl("components_cloud_CloudDataPanel.enableSync")}</Button>
             </div>
           ) : (
             <>
@@ -234,6 +244,7 @@ export function CloudDataPanel({
                 await revokeAccountDataConsent();
                 window.localStorage.removeItem(cloudSyncMetadataKey(userId));
                 window.localStorage.setItem(`cloud-consent-dismissed:${userId}:${TERMS_VERSION}:${PRIVACY_VERSION}`, "1");
+                window.localStorage.setItem(cloudSyncPreferenceKey(userId), "local-only");
                 setConsent((current) => current ? { ...current, current: false, revokedAt: new Date().toISOString() } : current);
                 setPlans([]);
                 onCloudDataChanged?.();

@@ -37,6 +37,56 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test("calculator shows the two-slot recycling station with training visuals", async ({ page }) => {
+  await page.addInitScript((result) => {
+    const key = "arknights-infra-calc-session-v5";
+    const session = JSON.parse(localStorage.getItem(key)!);
+    localStorage.setItem(key, JSON.stringify({ ...session, result }));
+  }, planData);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  const board = page.locator('[data-compact-schedule-view]');
+  const recycling = board.locator('[data-room-group="recycling"]');
+  const training = board.locator('[data-room-group="training"]');
+  await expect(recycling).toBeVisible();
+  await expect(recycling.locator('.infra-operator-slot')).toHaveCount(2);
+  await expect(recycling).toContainText("待配置");
+  const visual = (element: Element) => ({
+    accent: getComputedStyle(element).getPropertyValue('--room-accent'),
+    background: getComputedStyle(element.querySelector('.infra-room-emblem')!).backgroundImage,
+  });
+  expect(await recycling.evaluate(visual)).toEqual(await training.evaluate(visual));
+  const [recyclingBox, trainingBox] = await Promise.all([recycling.boundingBox(), training.boundingBox()]);
+  expect(recyclingBox!.width).toBeCloseTo(trainingBox!.width, 0);
+  expect(recyclingBox!.x).toBeCloseTo(trainingBox!.x, 0);
+  expect(recyclingBox!.y).toBeGreaterThan(trainingBox!.y + trainingBox!.height);
+});
+
+test("manual recycling assignments preserve the second slot across reload and mobile layout", async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/manual");
+  const compact = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycling"]');
+  await expect(compact).toBeVisible();
+  await compact.getByRole('button', { name: '空置', exact: true }).nth(1).click();
+  const picker = page.getByRole('dialog');
+  await picker.getByLabel('搜索可选干员或基建技能').fill('阿米娅');
+  await picker.getByRole('button', { name: /阿米娅/ }).click();
+  await expect(compact.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('arknights-infra-manual-schedule-v1')!).shifts[0].rooms.recycling_station.operators)).toEqual([null, '阿米娅']);
+  await page.reload();
+  await expect(compact.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
+  expect(await compact.locator('[data-operator-identity]').evaluateAll(nodes => nodes.map(node => node.getAttribute('data-operator-identity')))).toEqual(['empty', '阿米娅']);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const mobile = page.locator('[data-manual-editor-board] [data-schedule-view="list"] [data-room-group="recycling"]');
+  await expect(mobile).toBeVisible();
+  await expect(mobile.locator('.infra-operator-slot')).toHaveCount(2);
+  await expect(mobile.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await mobile.getByRole('button', { name: '一键清空回收站' }).click();
+  await expect(mobile.getByRole('button', { name: '空置', exact: true })).toHaveCount(2);
+});
+
 test("sidebar resumes an existing manual draft without invoking the solver", async ({ page }) => {
   let planRequests = 0;
   await page.route("**/api/plan", (route) => {

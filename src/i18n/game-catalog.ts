@@ -15,6 +15,7 @@ export const ENGLISH_CATALOG = {
     hire: "Office",
     processing: "Workshop",
     training: "Training Room",
+    recycling: "Recycling Station",
   } as Record<string, string>,
   operatorNames: {
     ...(operatorEnglishNamesJson as Record<string, string>),

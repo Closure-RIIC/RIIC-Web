@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { ADMIN_NAVIGATION, AdminNav } from "./admin-nav";
+import { adminNavigation, AdminNav } from "./admin-nav";
 
 export function AdminShell({ children, isAdmin, name, basePath = "/admin" }: {
   children: ReactNode; isAdmin: boolean; name: string; basePath?: string;
@@ -20,7 +20,7 @@ export function AdminShell({ children, isAdmin, name, basePath = "/admin" }: {
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const navigation = useMemo(() => ADMIN_NAVIGATION.filter(item => isAdmin || !item.adminOnly), [isAdmin]);
+  const navigation = useMemo(() => adminNavigation(isAdmin, basePath), [isAdmin, basePath]);
   const current = navigation.find(item => pathname === basePath + item.path) ?? navigation[0];
   const matches = navigation.filter(item => `${t(item.title)} ${t(item.description)}`.toLocaleLowerCase().includes(query.toLocaleLowerCase().trim()));
   useEffect(() => {

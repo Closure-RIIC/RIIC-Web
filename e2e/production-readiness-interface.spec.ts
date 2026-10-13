@@ -468,7 +468,7 @@ test("setup exposes and persists only worker-supported rotation profiles", async
   await page.goto("/");
   await page.getByRole("button", { name: "配置Box与布局" }).first().click();
   const dialog = page.getByRole("dialog");
-  await expect(dialog).toHaveClass(/dialog-acrylic/);
+  await expect(dialog).toHaveClass(/dialog-surface/);
   await expect(dialog.locator("[data-setup-top]")).toBeVisible();
   await expect(dialog.getByText("导入干员数据，再确认换班方式与基建设施。修改会立即应用，但不会自动生成排班。")).toHaveCount(0);
   await expect(dialog.locator("[data-setup-footer]")).toBeVisible();
@@ -476,11 +476,14 @@ test("setup exposes and persists only worker-supported rotation profiles", async
   await expect(dialog).toHaveCSS("border-radius", "32px");
   const dialogMaterial = await dialog.evaluate((element) => ({
     shadow: getComputedStyle(element).boxShadow,
+    backdrop: getComputedStyle(element).backdropFilter,
     texture: getComputedStyle(element, "::before").backgroundImage,
   }));
   expect(dialogMaterial.texture).toContain("repeating-linear-gradient");
-  expect(dialogMaterial.texture).toContain("60px");
-  expect(dialogMaterial.shadow).toContain("0px 0px 44px");
+  expect(dialogMaterial.texture).toContain("radial-gradient");
+  expect(dialogMaterial.texture).toContain("12px");
+  expect(dialogMaterial.shadow).toContain("0px 18px 48px");
+  expect(dialogMaterial.backdrop).toBe("none");
   await expect(dialog).toHaveCSS("width", "960px");
   const setupPrimaryAction = dialog.getByRole("button", { name: "继续", exact: true });
   await expect(setupPrimaryAction).toHaveCSS("width", "196px");
@@ -730,6 +733,7 @@ test("layout level steppers respect bounds and expose the power-safe 342 default
   expect(mediumOverflow.scrollWidth).toBeLessThanOrEqual(mediumOverflow.clientWidth);
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await waitForOwnAnimations(dialog);
   const footerBox = await dialog.locator("[data-setup-footer]").boundingBox();
   expect(footerBox?.height ?? Infinity).toBeLessThanOrEqual(68);
   expect((footerBox?.y ?? Infinity) + (footerBox?.height ?? Infinity)).toBeLessThanOrEqual(844);

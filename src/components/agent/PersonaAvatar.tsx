@@ -2,15 +2,12 @@
 
 import { RemoteAvatar } from "@/components/ui/remote-avatar";
 import { operatorPortraitFor } from "@/operatorPortraits";
-import { ClosureFurAvatar, SilverashFurAvatar, ExusiaiFurAvatar, SaileachFurAvatar, MountainFurAvatar } from "./ClosureFurAvatar";
+import { FurAvatar } from "./ClosureFurAvatar";
 
 export function PersonaAvatar({ name, src, size = 38, active = false, blank = false, mascot }: { name: string; src?: string; size?: number; active?: boolean; blank?: boolean; mascot?: "silverash" | "exusiai" | "saileach" | "mountain" }) {
   if (blank) return <span className="block size-full rounded-full bg-card" data-persona-avatar-blank />;
-  if (!src && mascot === "silverash") return <SilverashFurAvatar active={active} />;
-  if (!src && mascot === "exusiai") return <ExusiaiFurAvatar active={active} />;
-  if (!src && mascot === "saileach") return <SaileachFurAvatar active={active} />;
-  if (!src && mascot === "mountain") return <MountainFurAvatar active={active} />;
-  if (!src && (name === "可露希尔" || name === "Closure")) return <ClosureFurAvatar active={active} />;
+  const variant = mascot ?? (name === "可露希尔" || name === "Closure" ? "closure" : undefined);
+  if (!src && variant) return <FurAvatar active={active} variant={variant} surface={size >= 64 ? "portrait" : "chat"} />;
   return <RemoteAvatar
     src={src ?? operatorPortraitFor(name)}
     alt=""

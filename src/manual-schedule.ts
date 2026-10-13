@@ -19,6 +19,7 @@ import {
 } from "./manual-schedule-config.ts";
 import { factoryRecipeFromMaaProduct, normalizeProductForLevel } from "./factory-recipes.ts";
 import { droneTargetShiftIndex } from "./drone-plan-mapping.ts";
+import { manualEditableRooms, type EditableRoom } from "./recycling-room.ts";
 
 export {
   DEFAULT_MANUAL_SHIFT_DURATIONS,
@@ -254,7 +255,8 @@ function finitePositive(value: unknown, fallback: number): number {
   return Number.isFinite(number) && number > 0 ? Math.round(number * 100) / 100 : fallback;
 }
 
-export function manualRoomCapacity(room: BlueprintRoom): number {
+export function manualRoomCapacity(room: EditableRoom): number {
+  if (room.kind === "recycling") return 2;
   if (room.kind === "control_center") return Math.max(1, Math.min(5, room.level));
   if (room.kind === "trade_post" || room.kind === "factory") return Math.max(1, Math.min(3, room.level));
   if (room.kind === "meeting_room" || room.kind === "training_room") return 2;
@@ -682,7 +684,7 @@ export function reconcileManualScheduleDraft(
         droneTargetRoomId: layout.rooms.some((room) => (
           room.id === shift.droneTargetRoomId && (room.kind === "trade_post" || room.kind === "factory")
         )) ? shift.droneTargetRoomId : null,
-        rooms: Object.fromEntries(layout.rooms.map((room) => {
+        rooms: Object.fromEntries(manualEditableRooms(layout).map((room) => {
           const assignment = shift.rooms[room.id];
           const operators = Array.from(
             { length: manualRoomCapacity(room) },
@@ -750,7 +752,7 @@ export function assignManualOperator(input: {
   moveExisting?: boolean;
 }): { draft: ManualScheduleDraft; conflict: ManualOperatorConflict | null } {
   const { layout, shiftIndex, roomId, slotIndex, operator } = input;
-  const room = layout.rooms.find((candidate) => candidate.id === roomId);
+  const room = manualEditableRooms(layout).find((candidate) => candidate.id === roomId);
   const shift = input.draft.shifts[shiftIndex];
   if (!room || !shift || slotIndex < 0 || slotIndex >= manualRoomCapacity(room)) {
     return { draft: input.draft, conflict: null };
@@ -796,7 +798,7 @@ export function swapManualOperators(
   firstSlotIndex: number,
   secondSlotIndex: number,
 ): ManualScheduleDraft {
-  const room = layout.rooms.find((candidate) => candidate.id === roomId);
+  const room = manualEditableRooms(layout).find((candidate) => candidate.id === roomId);
   const assignment = draft.shifts[shiftIndex]?.rooms[roomId];
   if (!room || !assignment || firstSlotIndex === secondSlotIndex) return draft;
   if (
@@ -874,7 +876,7 @@ export function clearManualRoom(
   shiftIndex: number,
   roomId: string,
 ): ManualScheduleDraft {
-  const room = layout.rooms.find((candidate) => candidate.id === roomId);
+  const room = manualEditableRooms(layout).find((candidate) => candidate.id === roomId);
   if (!room || !draft.shifts[shiftIndex]) return draft;
   const next = structuredClone(draft);
   next.shifts[shiftIndex]!.rooms[roomId] = {

@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
 
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("riic.plush.performance.v1", "quality"));
+});
+
 test("orbital plush switching springs into place, queues clicks, and reuses WebGL", async ({ page }) => {
   test.setTimeout(180_000);
   await page.setViewportSize({ width: 400, height: 420 });

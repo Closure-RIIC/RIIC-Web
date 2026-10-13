@@ -1,6 +1,5 @@
 import { pageMetadata } from "@/i18n/metadata";
 import { notFound } from "next/navigation";
-
 import { SklandRoute } from "workbench-skland-route";
 
 export const dynamic = "force-dynamic";

@@ -611,8 +611,14 @@ test("website login lazy-loads its UI without probing the shared session again",
     await expect(loadingDialog).toBeVisible();
     const box = await loadingDialog.boundingBox();
     expect(box).not.toBeNull();
-    expect(box?.width ?? 0).toBeLessThanOrEqual(viewport.width - 16);
-    expect(box?.height ?? 0).toBeLessThanOrEqual(viewport.height - 16);
+    if (viewport.width < 768) {
+      // The shared loading dialog uses the same mobile sheet as the loaded UI.
+      expect(box?.width).toBe(viewport.width);
+      expect(box?.height).toBe(viewport.height);
+    } else {
+      expect(box?.width ?? 0).toBeLessThanOrEqual(viewport.width - 16);
+      expect(box?.height ?? 0).toBeLessThanOrEqual(viewport.height - 16);
+    }
   }
 
   releaseChunks?.();

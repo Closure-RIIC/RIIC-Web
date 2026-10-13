@@ -730,9 +730,10 @@ test("plan completion reveals status, metrics, and schedule once without resetti
   const auxiliaryGrid = compactView.locator(".compact-auxiliary-grid");
   await expect.poll(() => auxiliaryGrid.evaluate((element) => ({
     columns: getComputedStyle(element).gridTemplateColumns.split(" ").length,
-    rows: new Set(Array.from(element.children).map((child) => child.getBoundingClientRect().y)).size,
+    leftRows: new Set(Array.from(element.querySelectorAll(':scope > [data-room-group="meeting"], :scope > [data-room-group="training"], :scope > [data-room-group="recycling"]')).map((child) => child.getBoundingClientRect().y)).size,
+    rightRows: new Set(Array.from(element.querySelectorAll(':scope > [data-room-group="hire"], :scope > [data-room-group="processing"]')).map((child) => child.getBoundingClientRect().y)).size,
     fits: element.scrollWidth <= element.clientWidth + 1,
-  }))).toEqual({ columns: 2, rows: 2, fits: true });
+  }))).toEqual({ columns: 2, leftRows: 3, rightRows: 2, fits: true });
   for (const group of ["hire", "processing"]) {
     const avatar = auxiliaryGrid.locator(`[data-room-group="${group}"] .infra-operator-slot`).first();
     await expect.poll(() => avatar.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThanOrEqual(64);
@@ -953,14 +954,14 @@ test("dialog and mobile sheet motion preserve direction, exit timing, and focus"
   await expect(setupDialog).toHaveCount(0);
   await expect(setupTrigger).toBeFocused();
 
-  await armMotionCapture(page, '[role="dialog"]', "setup-enter", 300);
+  await armMotionCapture(page, '[role="dialog"]', "setup-enter", 200);
   await setupTrigger.click();
-  await expectCapturedMotion(page, "setup-enter", 300);
+  await expectCapturedMotion(page, "setup-enter", 200);
   await expect(setupDialog).toHaveCSS("transform-origin", /.+/);
   await page.setViewportSize({ width: 768, height: 900 });
   await armEndingTransitionCapture(setupDialog, "setup");
   await setupDialog.getByRole("button", { name: "Close" }).click();
-  await expectCapturedExitDuration(page, "setup", 180);
+  await expectCapturedExitDuration(page, "setup", 150);
   await expect(setupDialog).toHaveCount(0);
   await expect(setupTrigger).toBeFocused();
 
@@ -974,12 +975,12 @@ test("dialog and mobile sheet motion preserve direction, exit timing, and focus"
   await expect(feedbackDialog).toHaveCount(0);
   await expect(issueTrigger).toBeFocused();
 
-  await armMotionCapture(page, '[role="dialog"]', "feedback-enter", 300);
+  await armMotionCapture(page, '[role="dialog"]', "feedback-enter", 200);
   await issueTrigger.click();
-  await expectCapturedMotion(page, "feedback-enter", 300);
+  await expectCapturedMotion(page, "feedback-enter", 200);
   await armEndingTransitionCapture(feedbackDialog, "feedback");
   await feedbackDialog.getByRole("button", { name: "取消" }).click();
-  await expectCapturedExitDuration(page, "feedback", 180);
+  await expectCapturedExitDuration(page, "feedback", 150);
   await expect(feedbackDialog).toHaveCount(0);
   await expect(issueTrigger).toBeFocused();
 

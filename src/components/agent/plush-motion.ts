@@ -1,5 +1,16 @@
 export const PLUSH_SLIDE_DURATION = 1750;
 
+/** Integrate gaze and its fur trail together, independent of GPU frame latency. */
+export function plushGazeStep(position: number, lag: number, target: number, seconds: number) {
+  const elapsed = Math.max(0, seconds);
+  const decay = Math.exp(-14 * elapsed);
+  const distance = target - position;
+  return {
+    position: target - distance * decay,
+    lag: (lag + 14 * distance * elapsed) * decay,
+  };
+}
+
 /** Shared trajectory for compositor translation and the fur's inertial response. */
 export function plushSlidePosition(milliseconds: number, width: number) {
   const amplitude = Math.min(140, width * 0.24);

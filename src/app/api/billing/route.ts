@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       listUsage(session.user.id),
     ]);
     const canSimulatePayment = isAdmin && (process.env.NODE_ENV !== "production" || process.env.BILLING_PROTOTYPE_MODE === "1");
-    return successResponse({ products: listBillingProducts(), wallet, ledger, orders, usage, canSimulatePayment }, requestId);
+    return successResponse({ products: listBillingProducts(), wallet, ledger, orders, usage, canSimulatePayment, canManageCodes: isAdmin }, requestId);
   } catch (error) {
     return failureResponse(normalizeBillingError(error), requestId, "/api/billing", startedAt, "AIC-SYS-5000", request);
   }

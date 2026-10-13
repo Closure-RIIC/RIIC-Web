@@ -18,14 +18,30 @@ export const ARKNTOOLS_REPOSITORY = "https://github.com/arkntools/arknights-tool
 export const ARKNIGHTS_GAME_RESOURCE_REPOSITORY = "https://github.com/yuanyan3060/ArknightsGameResource";
 export const GENERATED_VERSION = 2;
 
+// Alternate Amiya forms share the base operator's infrastructure identity.
+const EXCLUDED_OPERATOR_IDS = new Set(["1001_amiya2", "1037_amiya3"]);
+const withoutAlternateAmiya = (entries) => Object.fromEntries(
+  Object.entries(entries).filter(([id]) => !EXCLUDED_OPERATOR_IDS.has(id)),
+);
+
+export function generateFullOperatorFixture(operators) {
+  return [...operators].sort((a, b) => a.name < b.name ? -1 : a.name > b.name ? 1 : 0).map(({ id, name, rarity }) => ({
+    id, name, elite: rarity >= 4 ? 2 : rarity === 3 ? 1 : 0,
+    level: rarity === 6 ? 90 : rarity === 5 ? 80 : rarity === 4 ? 70 : rarity === 3 ? 55 : 30,
+    own: true, potential: 6, rarity,
+  }));
+}
+
 const MANAGED_PATHS = [
   "public/images/operator-portraits",
   "public/images/building-skills",
   "public/images/products",
   "src/generated/arkntools",
+  "fixtures/operbox_full_e2.json",
 ];
 
-// 干员头像来自 ArknightsGameResource 仓库的 avatar 目录，文件名形如 char_<shortId>.png；
+// 优先使用 ArknightsGameResource 的 avatar/char_<shortId>.png；
+// 尚未收录的头像使用同次固定版本的 arkntools assets/img/avatar，并单独记录来源。
 // 按上游原尺寸使用：透明内容在画布内居中后有损转成 WebP（透明背景保留，q85 + 智能色度抽样避免边缘色晕）。
 const PORTRAITS_DIRECTORY = "avatar";
 const WEBP_PORTRAIT_OPTIONS = { quality: 85, effort: 6, smartSubsample: true };
@@ -282,7 +298,7 @@ async function loadSource(sourceRoot, sourceSha, portraitsRoot, portraitsSha) {
   const normalizedSourceSha = normalizeCommit(sourceSha);
   const normalizedPortraitsSha = normalizeCommit(portraitsSha);
   const portraitVersion = portraitAssetVersion(normalizedPortraitsSha);
-  const [characterData, buildingData, characterLocale, buildingLocale, termLocale] = await Promise.all([
+  const [rawCharacterData, buildingData, rawCharacterLocale, buildingLocale, termLocale] = await Promise.all([
     readJson(path.join(resolvedSource, SOURCE_PATHS.characterData), "干员数据"),
     readJson(path.join(resolvedSource, SOURCE_PATHS.buildingData), "基建数据"),
     readJson(path.join(resolvedSource, SOURCE_PATHS.characterLocale), "干员中文本地化"),
@@ -290,8 +306,8 @@ async function loadSource(sourceRoot, sourceSha, portraitsRoot, portraitsSha) {
     readJson(path.join(resolvedSource, SOURCE_PATHS.termLocale), "基建词条本地化"),
   ]);
 
-  assert(isObject(characterData), "干员数据根节点必须是对象。");
-  assert(isObject(characterLocale), "干员本地化根节点必须是对象。");
+  assert(isObject(rawCharacterData), "干员数据根节点必须是对象。");
+  assert(isObject(rawCharacterLocale), "干员本地化根节点必须是对象。");
   assert(
     isObject(buildingData)
       && isObject(buildingData.char)
@@ -301,6 +317,9 @@ async function loadSource(sourceRoot, sourceSha, portraitsRoot, portraitsSha) {
   );
   assert(isObject(buildingLocale?.buff?.name) && isObject(buildingLocale?.buff?.description), "基建本地化结构不完整。");
   assert(isObject(termLocale), "基建词条本地化结构不完整。");
+  const characterData = withoutAlternateAmiya(rawCharacterData);
+  const characterLocale = withoutAlternateAmiya(rawCharacterLocale);
+  buildingData.char = withoutAlternateAmiya(buildingData.char);
   sameKeys(characterData, characterLocale, "干员数据", "干员本地化");
   sameKeys(characterData, buildingData.char, "干员数据", "基建技能映射");
 
@@ -407,13 +426,24 @@ async function loadSource(sourceRoot, sourceSha, portraitsRoot, portraitsSha) {
     assert(buildingData.buff.data[skillId], `缺少被干员引用的基建技能 ${skillId}。`);
   }
 
-  const portraitFiles = operators.map((operator) => {
+  const fallbackPortraitIds = [];
+  const portraitFiles = [];
+  for (const operator of operators) {
     const shortId = operator.id.slice("char_".length);
-    return {
+    let source = path.join(resolvedPortraits, PORTRAITS_DIRECTORY, `char_${shortId}.png`);
+    try {
+      await lstat(source);
+    } catch (error) {
+      if (error.code !== "ENOENT") throw error;
+      source = path.join(resolvedSource, "assets/img/avatar", `${shortId}.png`);
+      fallbackPortraitIds.push(operator.id);
+      operator.portrait = relativeAssetPath("operator-portraits", shortId, "webp", portraitAssetVersion(normalizedSourceSha));
+    }
+    portraitFiles.push({
       name: `${shortId}.webp`,
-      source: path.join(resolvedPortraits, PORTRAITS_DIRECTORY, `char_${shortId}.png`),
-    };
-  });
+      source,
+    });
+  }
   const iconFiles = [...referencedIcons].sort((left, right) => left.localeCompare(right, "en")).map((icon) => ({
     name: `${icon}.png`,
     source: path.join(resolvedSource, SOURCE_PATHS.buildingSkills, `${icon}.png`),
@@ -441,6 +471,12 @@ async function loadSource(sourceRoot, sourceSha, portraitsRoot, portraitsSha) {
       repository: ARKNIGHTS_GAME_RESOURCE_REPOSITORY,
       commit: normalizedPortraitsSha,
     },
+    ...(fallbackPortraitIds.length ? { portraitsFallback: {
+      repository: ARKNTOOLS_REPOSITORY,
+      commit: normalizedSourceSha,
+      directory: "assets/img/avatar",
+      operators: fallbackPortraitIds,
+    } } : {}),
     products: productFiles.map((file) => ({
       id: file.id,
       output: relativeAssetPath("products", file.id, "webp"),
@@ -470,6 +506,7 @@ async function writeStage(stageRoot, generated) {
   const productTarget = path.join(stageRoot, MANAGED_PATHS[2]);
   const dataTarget = path.join(stageRoot, MANAGED_PATHS[3]);
   await Promise.all([mkdir(portraitTarget, { recursive: true }), mkdir(iconTarget, { recursive: true }), mkdir(productTarget, { recursive: true }), mkdir(dataTarget, { recursive: true })]);
+  await mkdir(path.join(stageRoot, "fixtures"), { recursive: true });
 
   await Promise.all([
     mapLimit(generated.portraitFiles, 16, ({ source, name }) =>
@@ -490,6 +527,7 @@ async function writeStage(stageRoot, generated) {
     writeFile(path.join(dataTarget, "building-skill-catalog.json"), json(generated.skills), "utf8"),
     writeFile(path.join(dataTarget, "term-catalog.json"), json(generated.terms), "utf8"),
     writeFile(path.join(dataTarget, "source.json"), json(generated.manifest), "utf8"),
+    writeFile(path.join(stageRoot, MANAGED_PATHS[4]), json(generateFullOperatorFixture(generated.operators)), "utf8"),
   ]);
 }
 
@@ -534,6 +572,14 @@ export async function checkGeneratedAssets(root) {
     path: asset.path,
   }))), "已生成产物来源清单与受管清单不一致。");
   const portraitVersion = portraitAssetVersion(manifest.portraitsSource.commit);
+  const fallback = manifest.portraitsFallback;
+  if (fallback !== undefined) {
+    assert(isObject(fallback) && fallback.repository === ARKNTOOLS_REPOSITORY
+      && fallback.commit === manifest.source.commit && fallback.directory === "assets/img/avatar"
+      && Array.isArray(fallback.operators) && fallback.operators.length > 0
+      && new Set(fallback.operators).size === fallback.operators.length, "已生成备用头像来源清单无效。");
+  }
+  const fallbackIds = new Set(fallback?.operators ?? []);
 
   const ids = new Set();
   const names = new Set();
@@ -548,7 +594,9 @@ export async function checkGeneratedAssets(root) {
     ids.add(operator.id);
     names.add(operator.name);
     const shortId = operator.id.slice(5);
-    assert(operator.portrait === relativeAssetPath("operator-portraits", shortId, "webp", portraitVersion), `干员 ${operator.id} 的头像路径无效。`);
+    assert(!EXCLUDED_OPERATOR_IDS.has(shortId), `干员目录不应包含阿米娅替代形态：${operator.id}`);
+    const version = fallbackIds.has(operator.id) ? portraitAssetVersion(fallback.commit) : portraitVersion;
+    assert(operator.portrait === relativeAssetPath("operator-portraits", shortId, "webp", version), `干员 ${operator.id} 的头像路径无效。`);
     assert(Number.isInteger(operator.order), `干员 ${operator.id} 的原始顺序无效。`);
     portraitNames.push(`${shortId}.webp`);
     assert(Array.isArray(operator.buildingSkills), `干员 ${operator.id} 的基建技能无效。`);
@@ -560,6 +608,10 @@ export async function checkGeneratedAssets(root) {
       assert(!("room" in skill) && !("roomLabel" in skill) && !("tags" in skill), `干员 ${operator.id} 的基建技能不应残留房间或标签字段。`);
     });
   }
+
+  assert([...fallbackIds].every((id) => ids.has(id)), "备用头像来源包含未知干员。");
+  const fullFixture = await readJson(path.join(resolvedRoot, MANAGED_PATHS[4]), "全干员测试样例");
+  assert(JSON.stringify(fullFixture) === JSON.stringify(generateFullOperatorFixture(operators)), "全干员测试样例需要随资源同步更新。");
 
   for (const [skillId, skill] of Object.entries(skills)) {
     assert(isObject(skill) && skill.id === skillId, `已生成基建技能 ${skillId} 无效。`);
@@ -627,6 +679,10 @@ async function existingManagedFiles(root) {
   for (const relative of MANAGED_PATHS) {
     const target = path.join(root, relative);
     try {
+      if ((await lstat(target)).isFile()) {
+        files.add(relative);
+        continue;
+      }
       const entries = await readdir(target, { recursive: true, withFileTypes: true });
       for (const entry of entries) {
         if (entry.isFile()) files.add(path.join(relative, entry.parentPath ? path.relative(target, entry.parentPath) : "", entry.name).replaceAll("\\", "/"));

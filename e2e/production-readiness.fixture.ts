@@ -23,7 +23,7 @@ export const layout243 = {
 };
 
 export async function expectUnifiedDialogTypography(dialog: Locator, radius: "24px" | "32px" = "32px") {
-  await expect(dialog).toHaveClass(/dialog-acrylic/);
+  await expect(dialog).toHaveClass(/dialog-surface/);
   await expect(dialog).toHaveCSS("border-radius", radius);
   await expect(dialog.locator('[data-slot="dialog-title"]')).toHaveCSS("font-size", "18px");
   await expect(dialog.locator('[data-slot="dialog-title"]')).toHaveCSS("font-weight", "600");

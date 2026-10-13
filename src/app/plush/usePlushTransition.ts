@@ -57,7 +57,10 @@ export function usePlushTransition(ids: readonly string[]) {
       copy.width = source.width;
       copy.height = source.height;
       copy.className = source.className;
-      copy.getContext("2d")?.drawImage(source, 0, 0);
+      const context = copy.getContext("2d");
+      if (ready.getAttribute("data-fur-renderer") === "webgl") {
+        ready.dispatchEvent(new CustomEvent("fur-snapshot", { detail: context }));
+      } else context?.drawImage(source, 0, 0);
       container.append(copy);
       snapshot.append(container);
       gallery.append(snapshot);

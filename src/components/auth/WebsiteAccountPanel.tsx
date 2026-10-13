@@ -40,6 +40,7 @@ import { SkeletonRouteFallback } from "@/components/ui/skeleton-swap";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { Card, CardContent } from "@/components/ui/card";
 import { FluidOrb } from "@/components/ui/fluid-orb";
 import { Input } from "@/components/ui/input";
@@ -59,7 +60,7 @@ type AccountAction = "signout" | "sessions" | "delete";
 const AUTH_INPUT_CLASS = "border-[#d5d7da] bg-white shadow-none dark:border-[#d5d7da] dark:bg-white dark:text-[#242424] dark:placeholder:text-[#737373]";
 const AUTH_PASSWORD_TOGGLE_CLASS = "text-[#737373] hover:text-[#242424] dark:text-[#737373] dark:hover:text-[#242424]";
 
-interface WebsiteAccountPanelProps {
+export interface WebsiteAccountPanelProps {
   onSessionChanged?: (authenticated: boolean) => void | Promise<void>;
   loadingMode?: "page" | "dialog";
   cloudWorkspace?: CloudWorkspaceData | null;
@@ -319,16 +320,16 @@ export function WebsiteAccountPanel({
             </div>
           )}
           actions={(
-            <Button
+            <SetupActionButton
               type="button"
               variant="outline"
-              className="h-11 w-full sm:w-auto"
+              className="!min-w-0 max-w-full max-md:!h-auto max-md:min-h-11 max-md:whitespace-normal max-md:!px-3 max-md:py-2"
               disabled={busyAction !== null}
               onClick={() => void runAccountAction("signout")}
               data-account-logout
             >
               <LogOut />{busyAction === "signout" ? (intl("components_auth_WebsiteAccountPanel.signingOut")) : (intl("components_auth_WebsiteAccountPanel.signOutOnThisDevice"))}
-            </Button>
+            </SetupActionButton>
           )}
         />
 

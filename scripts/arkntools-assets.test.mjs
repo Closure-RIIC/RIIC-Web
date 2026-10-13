@@ -13,6 +13,7 @@ import {
   GENERATED_VERSION,
   checkGeneratedAssets,
   generateAssets,
+  generateFullOperatorFixture,
   operatorSupplementalTags,
   parseUnlock,
   stripGameMarkup,
@@ -31,6 +32,67 @@ test("full operator fixture covers the generated operator catalog", async () => 
   const fixtureIds = new Set(fullFixture.map((operator) => operator.id));
   assert.equal(fullFixture.length, catalog.length);
   assert.deepEqual(catalog.filter((operator) => !fixtureIds.has(operator.id)).map((operator) => operator.id), []);
+});
+
+test("full operator fixture uses attainable maximum levels for every rarity", () => {
+  const fixture = generateFullOperatorFixture([1, 2, 3, 4, 5, 6].map((rarity) => ({ id: String(rarity), name: String(rarity), rarity })));
+  assert.deepEqual(fixture.map(({ elite, level }) => [elite, level]), [[0, 30], [0, 30], [1, 55], [2, 70], [2, 80], [2, 90]]);
+  assert.ok(fixture.every(({ own, potential }) => own && potential === 6));
+});
+
+test("skips only alternate Amiya forms with or without building records, retaining base Amiya", async (t) => {
+  const root = await makeTemp(t);
+  const source = path.join(root, "source");
+  await createSource(source, ["002_amiya"]);
+  const characterPath = path.join(source, "assets/data/character.json");
+  const localePath = path.join(source, "assets/locales/cn/character.json");
+  const buildingPath = path.join(source, "assets/data/building.json");
+  const characters = JSON.parse(await readFile(characterPath, "utf8"));
+  const locale = JSON.parse(await readFile(localePath, "utf8"));
+  const building = JSON.parse(await readFile(buildingPath, "utf8"));
+  for (const id of ["1001_amiya2", "1037_amiya3"]) {
+    characters[id] = characters["002_amiya"];
+    locale[id] = locale["002_amiya"];
+  }
+  await writeFile(characterPath, JSON.stringify(characters));
+  await writeFile(localePath, JSON.stringify(locale));
+  const options = { sourceRoot: source, sourceSha: SOURCE_SHA, portraitsRoot: path.join(source, "portraits"), portraitsSha: PORTRAITS_SHA, outputRoot: path.join(root, "output") };
+  for (const includeBuildingRecords of [false, true]) {
+    if (includeBuildingRecords) {
+      for (const id of ["1001_amiya2", "1037_amiya3"]) building.char[id] = building.char["002_amiya"];
+      await writeFile(buildingPath, JSON.stringify(building));
+    }
+    await generateAssets(options);
+    const catalog = JSON.parse(await readFile(path.join(options.outputRoot, "src/generated/arkntools/operator-catalog.json"), "utf8"));
+    assert.deepEqual(catalog.map(({ id }) => id), ["char_002_amiya"]);
+  }
+  characters["999_unexpected"] = characters["002_amiya"];
+  locale["999_unexpected"] = "Unexpected missing building record";
+  await writeFile(characterPath, JSON.stringify(characters));
+  await writeFile(localePath, JSON.stringify(locale));
+  await assert.rejects(generateAssets(options), /干员集合不一致/);
+});
+
+test("missing primary portraits use pinned toolbox assets, while corrupt primary files still fail", async (t) => {
+  const root = await makeTemp(t);
+  const source = path.join(root, "source");
+  await createSource(source);
+  const primary = path.join(source, "portraits/avatar/char_001_alpha.png");
+  await unlink(primary);
+  await mkdir(path.join(source, "assets/img/avatar"), { recursive: true });
+  await png(path.join(source, "assets/img/avatar/001_alpha.png"), 180, 180, { r: 30, g: 50, b: 70, alpha: 1 });
+  const options = { sourceRoot: source, sourceSha: SOURCE_SHA, portraitsRoot: path.join(source, "portraits"), portraitsSha: PORTRAITS_SHA, outputRoot: path.join(root, "output") };
+  const { manifest } = await generateAssets(options);
+  assert.deepEqual(manifest.portraitsFallback, { repository: ARKNTOOLS_REPOSITORY, commit: SOURCE_SHA, directory: "assets/img/avatar", operators: ["char_001_alpha"] });
+  const catalog = JSON.parse(await readFile(path.join(options.outputRoot, "src/generated/arkntools/operator-catalog.json"), "utf8"));
+  assert.ok(catalog[0].portrait.endsWith(SOURCE_SHA.slice(0, 12)));
+  assert.ok(catalog[1].portrait.endsWith(PORTRAITS_SHA.slice(0, 12)));
+  const manifestPath = path.join(options.outputRoot, "src/generated/arkntools/source.json");
+  manifest.portraitsFallback.operators.push("char_999_unknown");
+  await writeFile(manifestPath, JSON.stringify(manifest));
+  await assert.rejects(checkGeneratedAssets(options.outputRoot), /备用头像来源包含未知干员/);
+  await writeFile(primary, "corrupt PNG");
+  await assert.rejects(generateAssets(options), /PNG|image format/);
 });
 
 async function makeTemp(t) {

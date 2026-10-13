@@ -2,6 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { mockApis } from "./production-readiness.fixture";
 
 async function prepare(page: Page) {
+  // These existing motion regressions exercise continuous high-quality avatars.
+  await page.addInitScript(() => localStorage.setItem("riic.plush.performance.v1", "quality"));
   await mockApis(page);
   await page.route("**/api/account/data-consent", route => route.fulfill({ json: { success: true, data: { current: false, cloudSyncEnabled: false } } }));
   await page.route("**/api/billing", route => route.fulfill({ json: { data: { wallet: { totalPoints: 100 } } } }));
@@ -56,6 +58,9 @@ test("revoking feature access removes navigation and stops the active conversati
 
 for (const variant of ["closure", "silverash"]) {
 test(`${variant} animates only the latest reply avatar and settles when stopped`, async ({ page }) => {
+  // Software WebGL must present two separate reply avatars and their final
+  // settled frames. Retain normal per-assertion limits within this flow budget.
+  test.setTimeout(60_000);
   await prepare(page);
   if (variant === "silverash") {
     await page.route("**/api/agent/chat", route => route.fulfill({ json: { success: true, data: { enabled: true, personas: [{ id: "silverash" }] } } }));
@@ -98,6 +103,16 @@ test(`${variant} animates only the latest reply avatar and settles when stopped`
   const stopped = await avatars.last().locator("canvas").evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL());
   await input.fill("停止后可以继续输入");
   expect(await avatars.last().locator("canvas").evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(stopped);
+  // Claiming and releasing one portrait must not queue unchanged historical
+  // portraits ahead of the user's pointer response on the shared renderer.
+  await expect(avatars.first()).toHaveAttribute("data-fur-motion", "idle");
+  const historicalFrames = await avatars.first().getAttribute("data-fur-frames");
+  await avatars.last().hover({ position: { x: 2, y: 2 } });
+  await expect.poll(async () => Math.abs(Number(await avatars.last().getAttribute("data-fur-yaw")))).toBeGreaterThan(0.03);
+  expect(await avatars.first().getAttribute("data-fur-frames")).toBe(historicalFrames);
+  await input.hover();
+  await expect(avatars.last()).toHaveAttribute("data-fur-motion", "idle");
+  expect(await avatars.first().getAttribute("data-fur-frames")).toBe(historicalFrames);
 });
 }
 
@@ -215,6 +230,9 @@ test("A timeout in the background clears loading and retries the same question, 
 
 for (const scenario of [{ width: 1440, reducedMotion: "no-preference" }, { width: 375, reducedMotion: "reduce" }] as const) {
   test(`Operator portraits follow completed text and survive history (${scenario.width}px)`, async ({ page }) => {
+    // Two page loads plus streamed tool steps and persistence assertions share
+    // this budget. Keep each assertion's normal timeout on software-GPU CI.
+    test.setTimeout(60_000);
     await page.setViewportSize({ width: scenario.width, height: 900 });
     await page.emulateMedia({ reducedMotion: scenario.reducedMotion });
     await prepare(page);
@@ -441,6 +459,9 @@ for (const scenario of [{ width: 1440, reducedMotion: "no-preference" }, { width
 
 for (const reducedMotion of ["no-preference", "reduce"] as const) {
   test(`Agent animates actual loading, reasoning, tools and streaming text (${reducedMotion})`, async ({ page }) => {
+    // Includes a real IndexedDB checkpoint and a reload with fresh WebGL state.
+    // Keep individual assertions bounded while allowing the full software-GPU flow.
+    test.setTimeout(60_000);
     await page.emulateMedia({ reducedMotion });
     await page.setViewportSize({ width: 1440, height: 900 });
     await prepare(page);

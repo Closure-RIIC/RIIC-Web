@@ -18,6 +18,11 @@ on:
         required: false
         default: ""
         type: string
+      operator_data_base_sha:
+        description: Optional pre-update commit; only a verified managed-data diff may skip browser E2E
+        required: false
+        default: ""
+        type: string
   push:
     branches: [main, develop]
   schedule:
@@ -90,6 +95,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           PUSH_BEFORE_SHA: ${{ github.event.before }}
           HEAD_SHA: ${{ github.sha }}
+          OPERATOR_DATA_BASE_SHA: ${{ inputs.operator_data_base_sha }}
         run: |
           set -euo pipefail
           changed_files="$RUNNER_TEMP/changed-files.zlist"
@@ -101,7 +107,13 @@ jobs:
             --summary "$GITHUB_STEP_SUMMARY"
           )
 
-          if [[ "$EVENT_NAME" == "push" ]] \
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && -n "$OPERATOR_DATA_BASE_SHA" ]]; then
+            [[ "$OPERATOR_DATA_BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
+            git cat-file -e "${OPERATOR_DATA_BASE_SHA}^{commit}"
+            git merge-base --is-ancestor "$OPERATOR_DATA_BASE_SHA" "$HEAD_SHA"
+            git diff --name-only -z "$OPERATOR_DATA_BASE_SHA..$HEAD_SHA" > "$changed_files"
+            "${classifier[@]}" --require-operator-data
+          elif [[ "$EVENT_NAME" == "push" ]] \
             && [[ "$PUSH_BEFORE_SHA" =~ ^[0-9a-f]{40}$ ]] \
             && [[ "$PUSH_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]] \
             && [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] \
@@ -468,8 +480,14 @@ jobs:
       - name: WebKit Skland QR smoke test
         run: npm run test:e2e:webkit:skland-qr
 
+      - name: WebKit gacha number outline regression
+        run: npx playwright test e2e/production-readiness-skland.spec.ts --project=webkit --grep "zero glyph"
+
       - name: Production profile enabled boundary
         run: npm run test:e2e:production-profile
+
+      - name: Agent billing and moderation boundaries
+        run: npm run test:agent-billing:e2e
 
   webkit_e2e:
     name: Scheduled WebKit compatibility

@@ -5,8 +5,8 @@
 ## 数据维护
 
 - `scripts/mastery-rule-definitions.mjs` 按技能 ID 明确维护效果；同前缀技能按解锁的最高 index 替代，不同组效果叠加。
-- `src/generated/mastery-data.json` 包含规则、干员分支和来源版本。分支取自 `src/generated/arkntools/source.json` 中 portraitsSource 指定提交的 `gamedata/excel/character_table.json`，不得使用未固定版本的数据。
-- 将该源文件下载到本地后，运行 `npm run assets:mastery -- <character_table.json路径>`。源文件只用于生成，不能打包进客户端。
+- `src/generated/mastery-data.json` 包含规则、干员分支和来源版本。每日同步使用 `Kengxxiao/ArknightsGameData` 固定提交的 `zh_CN/gamedata/excel/character_table.json`，并将仓库与提交写入该文件的 `source.branches`；头像来源独立记录，不得用头像版本冒充职业分支来源。
+- 将该源文件下载到本地后，运行 `npm run assets:mastery -- <character_table.json路径> --game-source-sha=<40位提交SHA>`。源文件只用于生成，不能打包进客户端。兼容旧头像仓库来源的手动生成可省略该参数，但必须使用 `src/generated/arkntools/source.json` 中 `portraitsSource` 指定提交的数据；缺少新干员分支时生成会报错。
 - `npm run assets:check` 校验训练技能全覆盖及描述摘要。数据同步工作流会更新分支目录；训练描述变化会阻断自动更新，必须审阅规则后加 `--review-rules` 重新生成。武道列为暂不支持，心情消耗列为计算假设。
 
 ## 计算边界

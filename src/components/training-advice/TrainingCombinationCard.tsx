@@ -3,7 +3,6 @@ import { useTranslations, useLocale } from "next-intl";
 
 import { lazy, Suspense } from "react";
 
-import { loadClientFeature } from "@/client-lazy-loader";
 import { InfraTechnicalCard } from "@/components/InfraTechnicalCard";
 import {
   operatorBuildingSkillList,
@@ -28,7 +27,7 @@ import {
   trainingScaleLabel,
 } from "./presentation";
 
-const OperatorSkillTooltip = lazy(() => loadClientFeature("operatorSkillTooltip").then((module) => ({
+const OperatorSkillTooltip = lazy(() => import("@/components/OperatorSkillTooltip").then((module) => ({
   default: module.OperatorSkillTooltip,
 })));
 

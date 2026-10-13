@@ -6,6 +6,7 @@ import { ArrowLeft, Eye, RotateCcw, SlidersHorizontal, Trash2 } from "lucide-rea
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { InfraTechnicalCard, InfraTechnicalHeading } from "@/components/InfraTechnicalCard";
 import { StatusCenterPage } from "@/components/pages/StatusCenterShell";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
@@ -71,9 +72,9 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
           <WorkbenchPageHeading page="settings">{en ? "Settings" : "设置"}</WorkbenchPageHeading>
           <p className="mt-1 text-xs leading-5 text-muted-foreground md:mt-2 md:text-sm">{en ? "Personalize scheduling and display. Changes are saved in this browser." : "调整排班与显示方式，修改自动保存在当前浏览器。"}</p>
         </div>
-        <Button nativeButton={false} variant="outline" className="h-11 w-full sm:w-auto" render={<Link href="/" />}>
+        <SetupActionButton nativeButton={false} variant="outline" className="!min-w-0 max-w-full max-md:!h-auto max-md:min-h-11 max-md:whitespace-normal max-md:!px-3 max-md:py-2" render={<Link href="/" />}>
           <ArrowLeft />{en ? "Back to calculator" : "返回基建计算器"}
-        </Button>
+        </SetupActionButton>
       </header>
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]" data-settings-cards>
         <InfraTechnicalCard group="control">

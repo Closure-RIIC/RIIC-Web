@@ -21,6 +21,8 @@ export interface SklandSessionPayload {
   version: 3;
   cred: string;
   token: string;
+  /** HG account OAuth, retained only inside the encrypted, owner-bound login cookie. */
+  accountOAuthToken?: string;
   dId: string;
   userId: string;
   selectedUid: string;
@@ -92,6 +94,7 @@ function parsedSessionPayload(value: unknown, now: number): SklandSessionPayload
     decoded.version !== 3 ||
     typeof decoded.cred !== "string" ||
     typeof decoded.token !== "string" ||
+    (decoded.accountOAuthToken !== undefined && (typeof decoded.accountOAuthToken !== "string" || !decoded.accountOAuthToken.trim())) ||
     typeof decoded.dId !== "string" ||
     typeof decoded.userId !== "string" ||
     typeof decoded.selectedUid !== "string" ||

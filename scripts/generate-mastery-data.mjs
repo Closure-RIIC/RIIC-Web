@@ -16,6 +16,15 @@ for (const id of Object.keys(masteryRules)) if (!skills[id]) throw new Error(`Un
 const previous = await read(output).catch((error) => { if (error.code === "ENOENT" && !check) return null; throw error; });
 const gamePath = process.argv.slice(2).find((arg) => !arg.startsWith("--")) ?? ".tmp/mastery-character-table.json";
 const game = check ? null : await read(gamePath);
+const gameSourceSha = process.argv.find((arg) => arg.startsWith("--game-source-sha="))?.split("=")[1];
+const gameRepository = "https://github.com/Kengxxiao/ArknightsGameData";
+const branchSource = check ? previous.source.branches : gameSourceSha === undefined ? source.portraitsSource : {
+  repository: gameRepository, commit: gameSourceSha,
+};
+if (!/^[0-9a-f]{40}$/.test(branchSource?.commit)
+  || ![gameRepository, source.portraitsSource.repository].includes(branchSource?.repository)) {
+  throw new Error("Invalid pinned character table source.");
+}
 const branches = {};
 for (const operator of catalog) {
   const branch = check ? previous.branches[operator.id] : game[operator.id]?.subProfessionId;
@@ -28,7 +37,7 @@ if (!check && previous && previous.source.descriptionsHash !== descriptionsHash 
   throw new Error("Training descriptions changed. Review mastery-rule-definitions.mjs, then regenerate with --review-rules.");
 }
 const data = {
-  source: { rules: source.source, branches: source.portraitsSource, descriptionsHash },
+  source: { rules: source.source, branches: branchSource, descriptionsHash },
   branches, environments, rules: Object.fromEntries(trainingIds.map((id) => [id, masteryRules[id]])),
 };
 const serialized = JSON.stringify(data, null, 2) + "\n";

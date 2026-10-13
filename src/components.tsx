@@ -33,7 +33,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { cn } from "@/lib/utils";
-import { loadClientFeature } from "@/client-lazy-loader";
 import { localizedBuildingSkill, localizedOperatorName, localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 import {
@@ -73,6 +72,8 @@ import {
 } from "./rotation-presentation";
 import { DEFAULT_ROTATION_PROFILE } from "./rotation-settings";
 import { RoomRow } from "./schedule";
+import { withRecyclingRoom } from "./recycling-room";
+import { RecyclingRoomNotice } from "./components/RecyclingRoomNotice";
 import {
   COMPACT_OPERATOR_SIZE_CLASS,
   LevelDiamondVariant,
@@ -101,7 +102,7 @@ import {
   RotationJson,
 } from "./types";
 
-const OperatorSkillTooltip = lazy(() => loadClientFeature("operatorSkillTooltip").then((module) => ({
+const OperatorSkillTooltip = lazy(() => import("@/components/OperatorSkillTooltip").then((module) => ({
   default: module.OperatorSkillTooltip,
 })));
 
@@ -161,7 +162,7 @@ function CompactScheduleLoading({ rows }: { rows: RoomRow[] }) {
         <div className="flex min-w-0 flex-col gap-3" style={{ flexBasis: "45%" }}>
           <div className="compact-auxiliary-container min-w-0">
             <div className="compact-auxiliary-grid">
-              {["meeting", "training", "hire", "processing"].flatMap((group) => (
+              {["meeting", "training", "recycling", "hire", "processing"].flatMap((group) => (
                 (grouped.get(group) ?? []).map((room) => skeleton(room, "h-28"))
               ))}
             </div>
@@ -653,7 +654,7 @@ export function PlanTelemetry(props: Parameters<typeof import("./components/Plan
 }
 
 const ROOM_SLOT_COUNT = 5;
-const AUXILIARY_ROOM_GROUPS = new Set(["dormitory", "hire", "meeting", "processing", "training"]);
+const AUXILIARY_ROOM_GROUPS = new Set(["dormitory", "hire", "meeting", "processing", "training", "recycling"]);
 
 export function scheduleIssueTriggerId(row: RoomRow) {
   return `schedule-issue-${row.key}`;
@@ -662,7 +663,7 @@ export function scheduleIssueTriggerId(row: RoomRow) {
 
 function roomSlotCountFor(group: string) {
   if (group === "trading" || group === "manufacture") return 3;
-  if (group === "training" || group === "meeting") return 2;
+  if (group === "training" || group === "meeting" || group === "recycling") return 2;
   return ROOM_SLOT_COUNT;
 }
 
@@ -913,6 +914,7 @@ function OperatorSlotShell({
       )}
       data-position={positionLabel || undefined}
       title={title}
+      aria-label={!unavailable && onActivate ? ariaLabel : undefined}
       role={!unavailable && onActivate ? "button" : undefined}
       tabIndex={!unavailable && onActivate ? 0 : undefined}
       onClick={unavailable ? undefined : onActivate}
@@ -1019,6 +1021,7 @@ export function OperatorSlot({
   portraitSize = 180,
   positionLabel,
   showSkillTooltip = false,
+  emptyLabel,
   skillTooltipFocusable = false,
   tooltipDisabled = false,
   skillTooltipHighlightIds = [],
@@ -1048,6 +1051,8 @@ export function OperatorSlot({
   positionLabel?: string;
   /** 悬停卡片时展示干员全部基建技能 tooltip，并关闭卡片自身的原生 title hover。 */
   showSkillTooltip?: boolean;
+  /** Unknown occupancy must not be presented as a confirmed empty slot. */
+  emptyLabel?: string;
   /** 让头像进入键盘焦点顺序；仅用于需要主动查看技能的界面，避免排班图产生过多 Tab 停靠点。 */
   skillTooltipFocusable?: boolean;
   /** 滚动等临时交互期间关闭技能提示，避免 tooltip 跟随已移动的头像。 */
@@ -1075,7 +1080,7 @@ export function OperatorSlot({
   const enterX = shouldReduceMotion ? 0 : shiftDirection * 6;
   const exitX = shouldReduceMotion ? 0 : shiftDirection * -4;
   const unavailableLabel = intl("components.slotLocked");
-  const occupantLabel = unavailable ? unavailableLabel : displayName ?? (autofill ? (intl("components.autoFill")) : (intl("components.empty")));
+  const occupantLabel = unavailable ? unavailableLabel : displayName ?? (autofill ? (intl("components.autoFill")) : (emptyLabel ?? intl("components.empty")));
   const occupantAriaLabel = displayPositionLabel
     ? `${displayPositionLabel}${intl("components.label2")}${occupantLabel}`
     : occupantLabel;
@@ -1215,10 +1220,10 @@ export function OperatorSlot({
           />
         </Suspense>
       ) : undefined}
-      label={slot ? <AnimatedText value={displayName ?? slot.name} trend={shiftDirection} /> : autofill ? (intl("components.autoFill")) : (intl("components.slot"))}
+      label={slot ? <AnimatedText value={displayName ?? slot.name} trend={shiftDirection} /> : autofill ? (intl("components.autoFill")) : (emptyLabel ?? intl("components.slot"))}
       labelClassName={slot
         ? (searchMatched ? "bg-[#FFD501] px-1 text-[#202020]" : selectionMode ? "text-popover-foreground" : "text-white")
-        : autofill
+        : autofill || emptyLabel
           ? "text-white/55"
           : "text-transparent select-none"}
       positionLabel={displayPositionLabel}
@@ -1232,7 +1237,7 @@ export function OperatorSlot({
 
 export function ScheduleBoard({
   simulation,
-  rows,
+  rows: sourceRows,
   layout,
   planRevision,
   eliteByOperator,
@@ -1312,6 +1317,7 @@ export function ScheduleBoard({
   const gameCatalog = useGameCatalog();
   const en = locale === "en";
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+  const rows = useMemo(() => layout.template === "Mower" ? sourceRows : withRecyclingRoom(sourceRows), [layout.template, sourceRows]);
   const [hiddenGroups, setHiddenGroups] = useState<Record<string, boolean>>({});
   const [viewMode, setViewMode] = useState<ScheduleViewMode | null>(null);
   const [supportsCompactLayout, setSupportsCompactLayout] = useState<boolean | null>(null);
@@ -1376,7 +1382,7 @@ export function ScheduleBoard({
     if ((viewMode !== "compact" && !(supportsCompactLayout && prepareInactiveView)) || CompactScheduleView || compactScheduleLoadFailed) return;
 
     let cancelled = false;
-    void loadClientFeature("compactScheduleView").then(
+    void import("@/components/CompactScheduleView").then(
       (module) => {
         if (!cancelled) setCompactScheduleView(() => module.CompactScheduleView);
       },
@@ -1393,7 +1399,7 @@ export function ScheduleBoard({
     let compactComponent = CompactScheduleView;
     if (nextViewMode === "compact" && !compactComponent) {
       try {
-        compactComponent = (await loadClientFeature("compactScheduleView")).CompactScheduleView;
+        compactComponent = (await import("@/components/CompactScheduleView")).CompactScheduleView;
       } catch {
         setCompactScheduleLoadFailed(true);
       }
@@ -1428,7 +1434,7 @@ export function ScheduleBoard({
           {rowGroups.map((group) => {
         const visual = roomVisualFor(group.rows[0]?.group ?? "default");
         const firstGroup = group.rows[0]?.group ?? "";
-        const displayGroupLabel = en ? ({ control: "Control Center", trading: "Trading Posts", manufacture: "Factories", power: "Power Plants", dormitory: "Dormitories", meeting: "Reception Room", hire: "Office", processing: "Workshop", training: "Training Room" }[firstGroup] ?? (group.label === "功能设施" ? "Functional Facilities" : group.label)) : group.label;
+        const displayGroupLabel = en ? ({ control: "Control Center", trading: "Trading Posts", manufacture: "Factories", power: "Power Plants", dormitory: "Dormitories", meeting: "Reception Room", hire: "Office", processing: "Workshop", training: "Training Room", recycling: "Recycling Station" }[firstGroup] ?? (group.label === "功能设施" ? "Functional Facilities" : group.label)) : group.label;
         const groupStyle = {
           "--room-accent": visual.accent,
         } as CSSProperties;
@@ -1494,7 +1500,7 @@ export function ScheduleBoard({
                 const functionalOperatorPosition = listFunctionalOperatorPosition(row.group);
                 const functionalOperatorPlacementClass = listFunctionalOperatorPlacementClass(row.group);
                 const slotCount = compactInlineRoom
-                  ? (row.group === "meeting" || row.group === "training" ? 2 : 1)
+                  ? (row.group === "meeting" || row.group === "training" || row.group === "recycling" ? 2 : 1)
                   : roomSlotCountFor(row.group);
                 const slots: Array<{
                   slot: RoomRow["operatorSlots"][number] | undefined;
@@ -1571,6 +1577,7 @@ export function ScheduleBoard({
                             </div>
                           ) : null}
                         </div>
+                        {row.group === "recycling" ? <RecyclingRoomNotice editable={Boolean(onSlotClick)} /> : null}
                         {!simulation && <RoomProductControls
                           row={row}
                           layoutRoom={layoutRoom}
