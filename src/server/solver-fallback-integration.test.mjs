@@ -27,7 +27,7 @@ test("runPlan keeps both attempts, validates fallback output, and leaves input r
   const {InfraCliServeClient}=await import("./serve-client.ts");
   let primaryFails=true;let fallbackFails=false;let malformedFallback=false;let incompleteMaa=false;let oldProfile=false;
   const calls=[];
-  const valid=()=>({schema_version:3,
+  const valid=()=>({schema_version:5,
     profile:{schema_version:4,domains:[{label:"test"}],summary:{owned:1},rotation:{},baseline_rotation:{},actions:[],flags:[],narration_hints:[]},
     rotation:{profile:"abc_12_6_6",daily:{},shifts:[{},{},{}]},
     maa:{title:"fixture",description:"fixture",planTimes:3,plans:[1,2,3].map(index=>({name:`Shift ${index}`,rooms:{control:[{operators:["Amiya"]}]}}))},
@@ -37,7 +37,7 @@ test("runPlan keeps both attempts, validates fallback output, and leaves input r
     const request={id:calls.length+1,method,params};
     let response;
     if(method==="ping") response={ok:true,result:{pong:true,protocol_version:1,plan_schema_version:1,
-      supported_plan_schema_versions:[1,2,3],solver_executable_sha256:engine==="fallback" ? executableHash : "b".repeat(64)}};
+      supported_plan_schema_versions:[1,2,3,4,5],solver_executable_sha256:engine==="fallback" ? executableHash : "b".repeat(64)}};
     else {
       calls.push({engine,params:JSON.parse(JSON.stringify(params))});
       const fails=engine==="primary" ? primaryFails : fallbackFails;

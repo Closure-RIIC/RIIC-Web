@@ -139,7 +139,8 @@ test("v5 persistence stores source, expiry metadata, and strips debug fields", (
   assert.deepEqual(saved.result?.trainingRoom, result.trainingRoom);
   assert.equal(saved.layoutSource, "local");
   assert.deepEqual(saved.localLayoutBackup, layout);
-  assert.deepEqual(loadPersistedSession(storage, now)?.localLayoutBackup, layout);
+  assert.equal(loadPersistedSession(storage, now)?.localLayoutBackup?.drone_cap, 250);
+  assert.equal(loadPersistedSession(storage, now)?.localLayoutBackup?.rooms.at(-1)?.kind, "recycling_station");
   assert.equal((JSON.parse(storage.getItem(SESSION_KEY_V5) ?? "{}").result as Record<string, unknown>).debug, undefined);
 });
 
@@ -356,7 +357,7 @@ test("persistence preserves MAA protocol candidates only inside rooms", () => {
         candidates: ["但书", "巫恋"],
         use_operator_groups: true,
       }],
-      training: [{ operators: ["不应导出的训练室干员"] }],
+      training: [{ operatorsA: ["德克萨斯"], operatorsB: ["能天使"] }],
     },
   } as PublicPlanData["maa"]["plans"][number]];
   protocolResult.trainingRoom = {
@@ -382,7 +383,7 @@ test("persistence preserves MAA protocol candidates only inside rooms", () => {
   assert.deepEqual(restored?.result?.maa.plans[0].rooms.trading?.[0].candidates, ["但书", "巫恋"]);
   assert.equal(restored?.result?.maa.plans[0].description_post, "换班后说明");
   assert.equal(restored?.result?.maa.plans[0].drones?.rule, "all");
-  assert.equal("training" in saved.result!.maa.plans[0]!.rooms, false);
+  assert.deepEqual(saved.result!.maa.plans[0]!.rooms.training?.[0]?.operatorsA, ["德克萨斯"]);
   assert.deepEqual(restored?.result?.trainingRoom, protocolResult.trainingRoom);
 });
 

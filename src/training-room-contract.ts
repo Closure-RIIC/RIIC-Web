@@ -35,11 +35,12 @@ function maaPlanOperatorNames(plan: MaaJson["plans"][number]): Set<string> {
   const names = new Set<string>();
   if (!isRecord(plan.rooms)) return names;
 
-  for (const rooms of Object.values(plan.rooms)) {
+  for (const [group, rooms] of Object.entries(plan.rooms)) {
+    if (group === "training") continue;
     if (!Array.isArray(rooms)) continue;
     for (const room of rooms as MaaRoom[]) {
-      if (!Array.isArray(room?.operators)) continue;
-      for (const value of room.operators) {
+      if (room.skip) continue;
+      for (const value of [...(room?.operators ?? []), ...(room?.operatorsA ?? []), ...(room?.operatorsB ?? [])]) {
         const name = maaOperatorName(value);
         if (name) names.add(name);
       }
@@ -81,8 +82,18 @@ export function parseTrainingRoomSchedule(value: unknown, maa: MaaJson): Trainin
 
   return {
     schema_version: TRAINING_ROOM_SCHEMA_VERSION,
-    shifts: value.shifts.map((shift, index) => (
-      parseShift(shift, index, maaPlanOperatorNames(maa.plans[index]!))
-    )),
+    shifts: value.shifts.map((shift, index) => {
+      const plan = maa.plans[index]!;
+      const parsed = parseShift(shift, index, maaPlanOperatorNames(plan));
+      const training = plan.rooms.training?.[0];
+      if (training && (training.operatorsA !== undefined || training.operatorsB !== undefined)) {
+        const trainee = training.skip ? null : training.operatorsB?.[0]?.trim() || null;
+        const trainer = training.skip ? null : training.operatorsA?.[0]?.trim() || null;
+        if (trainee !== parsed.trainee || trainer !== parsed.trainer) {
+          throw new Error(`training_room.shifts[${index}] 与 MAA training A/B 干员位不一致。`);
+        }
+      }
+      return parsed;
+    }),
   };
 }
