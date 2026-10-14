@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { readdir, readFile } from "node:fs/promises";
-import { stdout, env } from "node:process";
+import { stdout } from "node:process";
 import { URL } from "node:url";
 import { gzipSync } from "node:zlib";
+import { loadRouteBundleStats } from "./build-manifest.mjs";
 import { renderBuildDocument } from "./render-build-document.mjs";
 
 // The calculator keeps its always-visible board in the initial graph. Secondary workbench
 // views have independent route chunks and may carry their own datasets without joining `/`.
-// next-intl + ICU formatting adds ~78 KB raw / 22 KB gzip to the verified
+// use-intl + ICU formatting adds ~78 KB raw / 22 KB gzip to the verified
 // Skland-enabled build after namespace splitting. Allow 90 KB / 26 KB for this
 // intentional shared runtime; keep route independence and lazy-chunk checks.
 const MAX_SKLAND_DISABLED_ROUTE_INITIAL_JS_BYTES = 1_257_000;
@@ -15,7 +16,7 @@ const MAX_SKLAND_DISABLED_ROUTE_INITIAL_JS_BYTES = 1_257_000;
 // are part of the initial graph; the full editor and schedule conversion logic stay in
 // on-demand chunks. Keep roughly 8 KB of raw headroom over the verified enabled build.
 const MAX_SKLAND_ENABLED_ROUTE_INITIAL_JS_BYTES = 1_293_000;
-// The changelog entry, next-intl runtime, task progress UI, and training tooltips add
+// The changelog entry, use-intl runtime, task progress UI, and training tooltips add
 // intentional code to workbench routes. Release content and the admin editor remain lazy.
 // The manual editor owns a larger independent page chunk, so track it separately while
 // keeping each ceiling narrow enough to flag unrelated bundle growth.
@@ -28,12 +29,11 @@ const MAX_SKLAND_DISABLED_DOCUMENT_INITIAL_GZIP_JS_BYTES = 442_000;
 const MAX_SKLAND_ENABLED_DOCUMENT_INITIAL_GZIP_JS_BYTES = 448_000;
 const MAX_DOCUMENT_INITIAL_JS_FILES = 18;
 const WORKBENCH_ROUTES = ["/", "/manual", "/training", "/mastery", "/recruitment", "/skills", "/skland", "/account"];
-const buildRootUrl = new URL(`../${env.RIIC_NEXT_DIST_DIR || ".next"}/`, import.meta.url);
-const statsUrl = new URL("diagnostics/route-bundle-stats.json", buildRootUrl);
-const documentUrl = new URL("server/app/index.html", buildRootUrl);
+const buildRootUrl = new URL("../.output/public/", import.meta.url);
 const COMPACT_SCHEDULE_MARKER = "data-compact-schedule-view";
-const staticChunksUrl = new URL("static/chunks/", buildRootUrl);
-const stats = JSON.parse(await readFile(statsUrl, "utf8"));
+const staticChunksUrl = new URL("assets/", buildRootUrl);
+const stats = await loadRouteBundleStats();
+const buildMetadata = JSON.parse(await readFile(new URL("../.output/riic-build.json", import.meta.url), "utf8"));
 
 assert.ok(Array.isArray(stats), "route bundle stats must be an array; run npm run build first");
 const rootRoute = stats.find((entry) => entry?.route === "/");
@@ -46,7 +46,7 @@ assert.ok(
 const rootChunks = new Set(rootRoute.firstLoadChunkPaths);
 const sklandRoute = stats.find((entry) => entry?.route === "/skland");
 assert.ok(sklandRoute, "route bundle stats do not contain the /skland route");
-const sklandEnabled = sklandRoute.firstLoadChunkPaths.some((chunkPath) => !rootChunks.has(chunkPath));
+const sklandEnabled = buildMetadata.sklandEnabled;
 const maxRootRouteInitialJsBytes = sklandEnabled
   ? MAX_SKLAND_ENABLED_ROUTE_INITIAL_JS_BYTES
   : MAX_SKLAND_DISABLED_ROUTE_INITIAL_JS_BYTES;
@@ -68,7 +68,7 @@ for (const route of WORKBENCH_ROUTES.slice(1)) {
     `${route} initial uncompressed JavaScript is ${routeStats.firstLoadUncompressedJsBytes} bytes, exceeding the ${maxSecondaryRouteInitialJsBytes} byte budget`,
   );
   const hasIndependentPageChunk = routeStats.firstLoadChunkPaths.some((chunkPath) => !rootChunks.has(chunkPath));
-  if (route === "/skland" && !hasIndependentPageChunk) {
+  if (route === "/skland" && !sklandEnabled) {
     assert.ok(
       routeStats.firstLoadUncompressedJsBytes <= rootRoute.firstLoadUncompressedJsBytes,
       "the feature-disabled /skland route must not add client JavaScript",
@@ -78,13 +78,10 @@ for (const route of WORKBENCH_ROUTES.slice(1)) {
   }
 }
 
-const document = await readFile(documentUrl, "utf8").catch((error) => {
-  if (error.code !== "ENOENT") throw error;
-  return renderBuildDocument();
-});
+const document = await renderBuildDocument();
 const initialScriptPaths = [...document.matchAll(/(?:src|href)="([^"]+\.js(?:\?[^"]*)?)"/g)]
   .map((match) => new URL(match[1], "https://bundle-budget.invalid").pathname)
-  .filter((pathname) => pathname.startsWith("/_next/static/chunks/"));
+  .filter((pathname) => pathname.startsWith("/assets/"));
 const uniqueInitialScriptPaths = [...new Set(initialScriptPaths)];
 
 assert.ok(uniqueInitialScriptPaths.length > 0, "/ document does not reference any initial JavaScript chunks");
@@ -94,7 +91,7 @@ assert.ok(
 );
 
 const initialScriptBodies = await Promise.all(uniqueInitialScriptPaths.map(async (pathname) => {
-  const relativePath = pathname.slice("/_next/".length);
+  const relativePath = pathname.slice(1);
   return readFile(new URL(relativePath, buildRootUrl));
 }));
 for (const marker of ["data-release-dialog", "data-release-notes", "data-admin-changelog"]) {

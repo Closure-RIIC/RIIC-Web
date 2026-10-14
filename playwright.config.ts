@@ -6,7 +6,7 @@ const webServerPort = new URL(baseURL).port || "80";
 export default defineConfig({
   testDir: "./e2e",
   // These suites require their dedicated authenticated server configuration.
-  testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts", "agent-resources.spec.ts"],
+  testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts", "agent-resources.spec.ts", "tanstack-*.spec.ts"],
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -23,7 +23,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts", "agent-resources.spec.ts", "plush-*.spec.ts"],
+      testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts", "agent-resources.spec.ts", "tanstack-*.spec.ts", "plush-*.spec.ts"],
       use: { ...devices["Desktop Chrome"] },
     },
     {
@@ -44,7 +44,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npx next dev -H 127.0.0.1 -p ${webServerPort}`,
+    command: `npx vite --host 127.0.0.1 --port ${webServerPort}`,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

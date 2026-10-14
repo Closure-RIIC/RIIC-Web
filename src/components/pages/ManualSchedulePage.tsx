@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { ArrowLeft, Download, Ellipsis, Search, Settings2, Sparkles, Trash2, Upload, X } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";

@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Check } from "lucide-react";

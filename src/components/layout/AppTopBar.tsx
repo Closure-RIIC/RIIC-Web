@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { Button } from "@/components/ui/button";
 import { RemoteAvatar } from "@/components/ui/remote-avatar";

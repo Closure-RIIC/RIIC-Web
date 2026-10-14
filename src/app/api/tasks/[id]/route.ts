@@ -14,8 +14,6 @@ import {
   planSelectionPoolSize,
 } from "@/server/plan-task";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 async function authorizeTask(taskId: string, request: Request) {
   const task = await getPlanTask(taskId);

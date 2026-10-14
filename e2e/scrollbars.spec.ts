@@ -106,7 +106,7 @@ test("nested dialog and dropdown keep keyboard navigation, background locking an
 
 test("a failed scrollbar chunk leaves native scrolling available", async ({ page }) => {
   let blocked = 0;
-  await page.route("**/_next/static/chunks/*overlayscrollbars*.js", route => {
+  await page.route("**/assets/*overlayscrollbars*.js", route => {
     blocked++;
     return route.abort();
   });

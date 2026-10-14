@@ -2,8 +2,6 @@ import { createRequestId, failureResponse, healthHttpStatus, successResponse } f
 import { probePublicHealth } from "@/server/public-health";
 import { createReadinessCache } from "@/server/readiness-cache";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 const readReadiness = createReadinessCache(probePublicHealth, () =>
   `${process.env.APP_RELEASE_SHA ?? ""}:${process.env.APP_BUILD_ID ?? ""}`,

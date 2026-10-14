@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 import { createHash, randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { getDatabasePool } from "../db/index.ts";

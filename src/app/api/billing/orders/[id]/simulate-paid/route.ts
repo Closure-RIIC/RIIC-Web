@@ -3,8 +3,6 @@ import { requireFeatureSession } from "@/server/auth/feature-access";
 import { requireWebsiteAdmin } from "@/server/auth/authorization";
 import { BillingError, fulfillBillingOrder, getOrder } from "@/server/billing/service";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const requestId = createRequestId();

@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 
 export type AgentLlmProviderId = "deepseek" | "glm";
 

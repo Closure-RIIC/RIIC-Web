@@ -569,7 +569,7 @@ test("website login lazy-loads its UI without probing the shared session again",
     releaseChunks = resolve;
   });
   let deferredChunkRequests = 0;
-  await page.route("**/_next/static/chunks/*.js", async (route) => {
+  await page.route("**/assets/*.js", async (route) => {
     const response = await route.fetch();
     const body = await response.body();
     if (/function WebsiteAccountDialog\s*\(/.test(body.toString("utf8"))) {
@@ -622,7 +622,7 @@ test("website login lazy-loads its UI without probing the shared session again",
   }
 
   releaseChunks?.();
-  await page.unroute("**/_next/static/chunks/*.js");
+  await page.unroute("**/assets/*.js");
   await expect(loadingDialog).toHaveCount(0);
   const accountDialog = page.getByRole("dialog", { name: "登录网站账号" });
   await expect(accountDialog.locator("[data-website-account-panel]")).toBeVisible();

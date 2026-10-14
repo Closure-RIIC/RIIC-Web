@@ -1633,3 +1633,15 @@ body > .os-theme-yeye {
 
 [data-hide-images] img { visibility: hidden; }
 [data-hide-images] [data-operator-portrait-alert] { display: none; }
+
+@font-face {
+  font-family: "Bender";
+  src: url("./fonts/Bender-Bold.otf") format("opentype");
+  font-weight: 400;
+  font-display: swap;
+  unicode-range: U+0025, U+002B, U+002C-003A, U+2212;
+}
+:root {
+  --font-technical-source: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-number-source: "Bender", sans-serif;
+}

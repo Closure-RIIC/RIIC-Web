@@ -1,14 +1,11 @@
-import { headers } from "next/headers";
 import { requireWebsiteAdmin } from "@/server/auth/authorization";
 import { assertSameOrigin, createRequestId, failureResponse, readJsonBody, successResponse } from "@/server/api-contract";
 import { getDonationSetting, saveDonationSetting } from "@/server/site-settings";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const startedAt = performance.now();
-  try { await requireWebsiteAdmin(await headers()); return successResponse({ donation: await getDonationSetting() }, createRequestId()); }
+  try { await requireWebsiteAdmin(request); return successResponse({ donation: await getDonationSetting() }, createRequestId()); }
   catch (error) { return failureResponse(error, createRequestId(), "/api/admin/wishes/settings", startedAt); }
 }
 

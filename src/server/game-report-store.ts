@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 
 import { randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";

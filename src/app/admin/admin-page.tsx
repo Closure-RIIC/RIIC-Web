@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 
 export const adminPageClass = "mx-auto grid w-full min-w-0 max-w-[1440px] content-start gap-6 px-4 py-6 sm:px-6 lg:px-8 lg:py-8";
 

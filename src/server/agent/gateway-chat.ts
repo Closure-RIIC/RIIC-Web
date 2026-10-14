@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 import { createHash } from "node:crypto";
 import { convertToModelMessages, createUIMessageStreamResponse, stepCountIs, streamText, type ToolSet, type UIMessage } from "ai";
 import { PublicApiError } from "../api-contract.ts";

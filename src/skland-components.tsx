@@ -1,6 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { lazy, Suspense } from "react";
+import { ClientOnly } from "@tanstack/react-router";
 import { useCallback, useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent } from "react";
 import {
   ExternalLink,
@@ -26,19 +27,15 @@ import {
 import type { SklandSessionData } from "@/types";
 
 // The encoder is only needed after the user requests a login QR code.
-const QRCodeSVG = dynamic(() => import("qrcode.react").then((module) => module.QRCodeSVG), { ssr: false });
-
-const SklandCredentialPanel = dynamic(
-  () => import("@/skland-credential-panel").then((module) => module.SklandCredentialPanel),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-muted-foreground" role="status">
-        <LoaderCircle className="animate-spin motion-reduce:animate-none" />正在加载凭证导入…
-      </div>
-    ),
-  },
-);
+const LazyQrCode = lazy(() => import("qrcode.react").then((module) => ({ default: module.QRCodeSVG })));
+function QRCodeSVG(props: React.ComponentProps<typeof LazyQrCode>) {
+  return <ClientOnly><Suspense fallback={null}><LazyQrCode {...props} /></Suspense></ClientOnly>;
+}
+const LazyCredentialPanel = lazy(() => import("@/skland-credential-panel").then((module) => ({ default: module.SklandCredentialPanel })));
+function SklandCredentialPanel(props: React.ComponentProps<typeof LazyCredentialPanel>) {
+  const fallback = <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-muted-foreground" role="status"><LoaderCircle className="animate-spin motion-reduce:animate-none" />正在加载凭证导入…</div>;
+  return <ClientOnly fallback={fallback}><Suspense fallback={fallback}><LazyCredentialPanel {...props} /></Suspense></ClientOnly>;
+}
 
 type ScanState = "idle" | "loading" | "waiting" | "scanned" | "expired";
 type AuthMethod = "qr" | "credential";

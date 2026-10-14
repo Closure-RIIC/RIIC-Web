@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { createAnthropic } from "@ai-sdk/anthropic";

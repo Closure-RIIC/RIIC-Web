@@ -1,7 +1,7 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
@@ -211,7 +211,7 @@ export function ImportGuidePager({ pages }: ImportGuidePagerProps) {
         {pageIndex === pages.length - 1 ? (
           <Link
             className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground outline-none hover:bg-primary/80 focus-visible:ring-3 focus-visible:ring-ring/50"
-            href="/"
+            to="/"
           >
             {intl("components_help_ImportGuidePager.finishAndReturn")}
             <ArrowRight className="size-4" aria-hidden="true" />

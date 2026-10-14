@@ -3,8 +3,6 @@ import {
   handleGetSklandAccounts,
 } from "@/server/skland/accounts-api";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   return handleGetSklandAccounts(request, "/api/skland/accounts");

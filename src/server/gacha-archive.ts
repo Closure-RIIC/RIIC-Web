@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 import { and, eq, sql } from "drizzle-orm";
 import { getDatabase } from "./db/index.ts";
 import { gachaArchive, gachaDraw } from "./db/schema.ts";

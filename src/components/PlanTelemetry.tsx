@@ -1,4 +1,4 @@
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { motion, useReducedMotion } from "motion/react";
 import { AnimatedNumber, AnimatedText } from "./AnimatedText";
 import { localize as rotationText } from "../i18n/helpers/RotationLabels.ts";

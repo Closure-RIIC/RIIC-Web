@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import { useLocale, useTranslations } from "next-intl";
-import { usePathname, useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "use-intl";
+import { usePathname, useRouter } from "@/navigation";
 import { FlaskConical, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminShell } from "../admin/admin-shell";

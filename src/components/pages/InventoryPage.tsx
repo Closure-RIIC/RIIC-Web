@@ -3,8 +3,7 @@ import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeadin
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Calculator, PackageOpen, RefreshCw, Search } from "lucide-react";
-import Link from "next/link";
-import Image from "next/image";
+import { Link } from "@tanstack/react-router";
 
 import { useWorkbench } from "@/workbench-context";
 import { trainingCost } from "@/inventory-estimates";
@@ -16,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import itemCatalog from "@/generated/item-catalog.json";
-import { useLocale } from "next-intl";
+import { useLocale } from "use-intl";
 import type { DisplayError, SklandInventoryData } from "@/types";
 
 const catalog: Record<string, { name?: string; icon?: string }> = {
@@ -166,7 +165,7 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => setEstimateOpen(true)} disabled={loading}><Calculator className="size-4" />资源估算</Button>
             <Button variant="outline" onClick={() => void load()} disabled={loading} aria-label="刷新库存"><RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />刷新</Button>
-            <Button nativeButton={false} variant="outline" size="icon" render={<Link href="/" />} aria-label="返回基建终端"><ArrowLeft /></Button>
+            <Button nativeButton={false} variant="outline" size="icon" render={<Link to="/" />} aria-label="返回基建终端"><ArrowLeft /></Button>
           </div>
         </header>
 
@@ -190,7 +189,7 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
                   const catalogItem = catalog[item.id];
                   return <div key={item.id} className="flex min-h-[74px] items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted/40">
                     <div className="grid size-10 shrink-0 place-items-center rounded-full bg-muted/30">
-                      {catalogItem?.icon ? <Image src={catalogItem.icon} alt="" width={44} height={44} className="size-10 object-contain" /> : <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />}
+                      {catalogItem?.icon ? <img src={catalogItem.icon} alt="" width={44} height={44} className="size-10 object-contain" /> : <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />}
                     </div>
                     <div className="min-w-0 flex-1 text-sm">
                       <span className="block break-words">{catalogItem?.name ?? "未知物品"}</span>
@@ -214,7 +213,7 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
                     const catalogItem = catalog[item.id];
                     return <div key={item.id} className="flex min-h-[74px] items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted/40">
                       <div className="grid size-10 shrink-0 place-items-center rounded-full bg-muted/30">
-                        {catalogItem?.icon ? <Image src={catalogItem.icon} alt="" width={44} height={44} className="size-10 object-contain" /> : <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />}
+                        {catalogItem?.icon ? <img src={catalogItem.icon} alt="" width={44} height={44} className="size-10 object-contain" /> : <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />}
                       </div>
                       <div className="min-w-0 flex-1 text-sm">
                         <span className="block break-words">{catalogItem?.name ?? "未知物品"}</span>
@@ -293,7 +292,7 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
                   const catalogItem = catalog[item.id];
                   return <div key={item.id} className="flex min-h-[74px] items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-muted/40">
                     <div className="grid size-10 shrink-0 place-items-center rounded-full bg-muted/30">
-                      {catalogItem?.icon ? <Image src={catalogItem.icon} alt="" width={44} height={44} className="size-10 object-contain" /> : <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />}
+                      {catalogItem?.icon ? <img src={catalogItem.icon} alt="" width={44} height={44} className="size-10 object-contain" /> : <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />}
                     </div>
                     <div className="min-w-0 flex-1 text-sm leading-5"><span className="block break-words">{catalogItem?.name ?? "未知物品"}</span>
                       {MANUAL_RESOURCE_IDS.includes(item.id) ? <Input inputMode="numeric" value={manualCounts[item.id] ?? ""} onChange={(event) => setManualCount(item.id, event.target.value)} placeholder={String(apiCountById.get(item.id) ?? 0)} aria-label={`填写${catalogItem?.name ?? "资源"}数量`} className="mt-1 h-9 w-full min-w-0 px-2 font-number text-xs" /> : <span className="mt-1 block text-xs text-muted-foreground">拥有：{fmt(item.count)}</span>}

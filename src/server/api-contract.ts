@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { makeDiagnostic, persistDiagnostic } from "./request-diagnostics.ts";
 
-import { NextResponse } from "next/server.js";
 
 import {
   areRequestRateLimitsEnabled,
@@ -11,9 +10,7 @@ import { validateLayoutJson } from "../layout-validation.ts";
 import { assertOperbox } from "../operbox.ts";
 import { isRotationProfile } from "../rotation-settings.ts";
 import type {
-  ApiFailure,
   ApiFieldError,
-  ApiSuccess,
   AppErrorCode,
   FeedbackRequest,
 } from "../types";
@@ -111,8 +108,8 @@ export function healthHttpStatus(plannerReady: boolean): 200 | 503 {
   return plannerReady ? 200 : 503;
 }
 
-export function successResponse<T>(data: T, requestId: string, status = 200): NextResponse<ApiSuccess<T>> {
-  return NextResponse.json(
+export function successResponse<T>(data: T, requestId: string, status = 200): Response {
+  return Response.json(
     { success: true, data, requestId },
     { status, headers: { "X-Request-Id": requestId } }
   );
@@ -130,7 +127,7 @@ export function failureResponse(
   startedAt: number,
   fallback: AppErrorCode = "AIC-SYS-5000",
   request?: Request,
-): NextResponse<ApiFailure> {
+): Response {
   const known = normalizePublicError(error, fallback);
   const headers: Record<string, string> = { "X-Request-Id": requestId };
   if (known.retryAfter) headers["Retry-After"] = String(known.retryAfter);
@@ -148,7 +145,7 @@ export function failureResponse(
   }));
   persistDiagnostic(diagnostic);
 
-  return NextResponse.json(
+  return Response.json(
     {
       success: false,
       error: {

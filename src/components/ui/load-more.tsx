@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 
 /*
  * Interaction adapted from interior.dev by Dominic Doemann.

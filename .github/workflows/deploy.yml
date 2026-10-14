@@ -45,7 +45,7 @@ jobs:
       DEPLOY_RATE_LIMIT_ENABLED: ${{ vars.DEPLOY_RATE_LIMIT_ENABLED || '1' }}
       DEPLOY_APPROVED_SOLVER_SHA256: ${{ github.ref_name == 'develop' && vars.DEPLOY_APPROVED_SOLVER_SHA256 || '' }}
       DEPLOY_EXPECTED_REPOSITORY: KnightCodeSquareMatrix/RIIC-Web
-      DEPLOY_RELEASE_HELPER_CONTRACT: "6"
+      DEPLOY_RELEASE_HELPER_CONTRACT: "7"
 
     steps:
       - name: Checkout verified commit
@@ -161,7 +161,7 @@ jobs:
           const [metadataPath, expectedSha, expectedTree] = process.argv.slice(2);
           const metadata = JSON.parse(await readFile(metadataPath, "utf8"));
           assert.equal(metadata.formatVersion, 1);
-          assert.equal(metadata.kind, "riic-web-standalone");
+          assert.equal(metadata.kind, "riic-web-tanstack-start");
           assert.equal(metadata.releaseSha, expectedSha);
           assert.equal(metadata.releaseTreeSha, expectedTree);
           NODE

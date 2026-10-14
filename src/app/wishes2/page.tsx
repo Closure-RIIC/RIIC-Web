@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link } from "@tanstack/react-router";
+import { useRouter } from "@/navigation";
 import { useState } from "react";
 
-export const dynamic = "force-static";
 
 export default function Wishes2Page() {
   const router = useRouter();
@@ -37,7 +36,7 @@ export default function Wishes2Page() {
         className="absolute left-0 top-5 z-10 size-[90px]"
       >
         <Link
-          href="/"
+          to="/"
           aria-label="返回主界面"
           title="返回主界面"
           className="block size-[90px] transition-[filter] duration-150 hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
@@ -103,7 +102,7 @@ export default function Wishes2Page() {
         className="absolute bottom-6 left-8 z-10 flex flex-col items-start gap-5"
       >
         <Link
-          href="/wishes"
+          to="/wishes"
           aria-label="进入许愿墙"
           onClick={(event) => {
             event.preventDefault();

@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { useDeferredValue, useState } from "react";
 import { Check } from "lucide-react";

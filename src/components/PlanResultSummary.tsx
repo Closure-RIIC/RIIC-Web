@@ -1,11 +1,10 @@
 "use client";
 import { localize as localize_components_PlanResultSummary } from "../i18n/helpers/components_PlanResultSummary.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { ChevronRight } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import Image from "next/image";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 
 import { AnimatedNumber, AnimatedText } from "@/components/AnimatedText";
 import { ShiftComparisonDetails } from "@/components/ShiftComparisonCard";
@@ -144,9 +143,10 @@ export function PlanResultSummary({
   const [detailSection, setDetailSection] = useState<DetailSection>("efficiency");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const performanceFeedbackPendingRef = useRef(false);
+  const reportRendered = useEffectEvent((revision: string) => onEntranceConsumed?.(revision));
   useEffect(() => {
-    if (animateOnMount && planRevision) onEntranceConsumed?.(planRevision);
-  }, [animateOnMount, onEntranceConsumed, planRevision]);
+    if (planRevision) reportRendered(planRevision);
+  }, [planRevision]);
   if (!profile && !rotation && !productionPresentation) return null;
 
   const calculatorPresentation: ProductionSummaryPresentation = rotation
@@ -230,7 +230,7 @@ export function PlanResultSummary({
                   </span>
                   {productGroup.supporting ? (
                     <span className="mt-2 flex min-w-0 items-center gap-1.5 bg-[#313131]/[0.045] px-1.5 py-1" data-daily-product={productGroup.supporting.id} data-product-role="supporting">
-                      <Image src={productGroup.supporting.icon} alt="" width={16} height={16} unoptimized loading="eager" className="size-4 shrink-0 object-contain" aria-hidden="true" />
+                      <img src={productGroup.supporting.icon} alt="" width={16} height={16} loading="eager" className="size-4 shrink-0 object-contain" aria-hidden="true" />
                       <span className="min-w-0 flex-1 truncate text-[9px] font-medium text-[#313131]/55">{productLabel(productGroup.supporting, en)}</span>
                       <strong className="font-number flex shrink-0 items-baseline gap-0.5 text-[11px] leading-none tabular-nums">
                         <AnimatedNumber value={dailyNumber(productGroup.supporting.amount.value)} drift={{ x: 0, y: shouldReduceMotion ? 0 : 5 }} />
@@ -239,7 +239,7 @@ export function PlanResultSummary({
                     </span>
                   ) : null}
                 </motion.span>
-                <Image src={productGroup.primary.icon} alt="" width={32} height={32} unoptimized loading="eager" className="pointer-events-none absolute right-1.5 top-1.5 size-8 object-contain opacity-75 transition-transform duration-200 group-hover:scale-105" aria-hidden="true" />
+                <img src={productGroup.primary.icon} alt="" width={32} height={32} loading="eager" className="pointer-events-none absolute right-1.5 top-1.5 size-8 object-contain opacity-75 transition-transform duration-200 group-hover:scale-105" aria-hidden="true" />
                 <motion.span className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-[#313131]/18" aria-hidden="true" initial={animateOnMount ? { scaleX: 0 } : false} animate={{ scaleX: 1 }} transition={{ duration: shouldReduceMotion ? 0 : 0.42, delay: shouldReduceMotion ? 0 : 0.2 + index * 0.065, ease: MOTION_EASE_OUT }} />
               </motion.button>
             ))}
@@ -325,7 +325,7 @@ function ProductionDetailItem({ product, supporting = false, en }: { product: Pr
       data-product-role={supporting ? "supporting" : "primary"}
     >
       <div className="flex min-w-0 items-center gap-3">
-        <Image src={product.icon} alt="" width={32} height={32} unoptimized loading="eager" className="size-8 shrink-0 object-contain" aria-hidden="true" />
+        <img src={product.icon} alt="" width={32} height={32} loading="eager" className="size-8 shrink-0 object-contain" aria-hidden="true" />
         <div className="min-w-0">
           <span className="flex min-w-0 items-center gap-2">
             <span className="truncate text-[11px] font-semibold text-muted-foreground">{productLabel(product, en)}</span>

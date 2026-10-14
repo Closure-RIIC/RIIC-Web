@@ -2,14 +2,14 @@
 import { localize as localize_ImportGuide } from "../../../i18n/helpers/ImportGuide.ts";
 import type { AppLocale } from "@/i18n/config";
 
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 
 import { ImportGuidePager, type ImportGuidePage } from "@/components/help/ImportGuidePager";
 import { ImportMethodChoice } from "@/components/help/ImportMethodChoice";
 import { ScreenshotPlaceholder } from "@/components/help/ScreenshotPlaceholder";
-import { useLocale } from "next-intl";
+import { useLocale } from "use-intl";
 
 function ResultHint({ children }: { children: ReactNode }) {
   const locale = useLocale();
@@ -27,7 +27,7 @@ export default function ImportOperatorsHelpPage() {
   return (
     <article className="flex w-full flex-col gap-5 pt-5">
       <header>
-        <Link className="inline-flex min-h-10 items-center gap-2 text-xs text-muted-foreground underline-offset-4 outline-none hover:underline hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring" href="/help">
+        <Link className="inline-flex min-h-10 items-center gap-2 text-xs text-muted-foreground underline-offset-4 outline-none hover:underline hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring" to="/help">
           <ArrowLeft className="size-3.5" aria-hidden="true" />{localize_ImportGuide.text(locale, "part16")}
         </Link>
         <div className="mt-2 flex min-w-0 items-center gap-2.5">

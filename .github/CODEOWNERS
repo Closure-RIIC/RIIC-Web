@@ -4,7 +4,7 @@
 /deploy/ @KnightCodeSquareMatrix
 /package.json @KnightCodeSquareMatrix
 /package-lock.json @KnightCodeSquareMatrix
-/next.config.ts @KnightCodeSquareMatrix
+/vite.config.ts @KnightCodeSquareMatrix
 /scripts/check-public-repository.mjs @KnightCodeSquareMatrix
 /scripts/ci-change-scope.mjs @KnightCodeSquareMatrix
 /scripts/verify-public-compression.mjs @KnightCodeSquareMatrix
