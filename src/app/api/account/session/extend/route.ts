@@ -14,8 +14,6 @@ import { extendedSessionCookie, extendedSessionExpiry } from "@/server/auth/sess
 import { getDatabase } from "@/server/db";
 import { session } from "@/server/db/schema";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const requestId = createRequestId();

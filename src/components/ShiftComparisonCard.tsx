@@ -1,6 +1,6 @@
 "use client";
 import { localize as localize_components_ShiftComparisonCard } from "../i18n/helpers/components_ShiftComparisonCard.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
 import type { CSSProperties, ReactNode } from "react";

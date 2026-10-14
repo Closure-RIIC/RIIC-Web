@@ -1,14 +1,11 @@
-import { pageMetadata } from "@/i18n/metadata";
 import { adminPageClass, AdminPageHeader } from "./admin-page";
-import { getHealth } from "@/server/infra";
+
 import { AdminSolverMetrics } from "./users/solver-metrics-client";
 import { SolverVersion } from "./solver-version";
 import { DiagnosticsPanel } from "./diagnostics-panel";
 
-export const dynamic = "force-dynamic";
 
-export default async function AdminPage() {
-  const health = await getHealth();
+export default function AdminPage({ plannerReady, solverFingerprint }: { plannerReady: boolean; solverFingerprint: import("@/types").SolverPingFingerprint | null }) {
 
   return (
     <main id="admin-content" className={adminPageClass}>
@@ -16,12 +13,10 @@ export default async function AdminPage() {
       <AdminSolverMetrics />
 
       <SolverVersion
-        plannerReady={Boolean(health.ok && health.cliReady)}
-        solverFingerprint={health.serve?.fingerprint ?? null}
+        plannerReady={plannerReady}
+        solverFingerprint={solverFingerprint}
       />
       <DiagnosticsPanel />
     </main>
   );
 }
-
-export function generateMetadata() { return pageMetadata("admin"); }

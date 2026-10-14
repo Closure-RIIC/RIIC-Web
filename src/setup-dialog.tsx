@@ -1,6 +1,6 @@
 "use client";
 import { localize as localize_setup_dialog } from "./i18n/helpers/setup_dialog.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Check, Database, ExternalLink, FileJson, ListChecks, Play, ScanLine, Trash2, Upload } from "lucide-react";

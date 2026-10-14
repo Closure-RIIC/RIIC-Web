@@ -2,8 +2,6 @@ import { createRequestId, failureResponse, successResponse } from "@/server/api-
 import { requireFeatureSession } from "@/server/auth/feature-access";
 import { getAgentPlanArtifact } from "@/server/agent/plan-artifact";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const requestId = createRequestId();

@@ -21,7 +21,7 @@ import {
   operatorBuildingSkillList,
   type BuildingSkillPresentation,
 } from "@/operatorPortraits";
-import { useLocale } from "next-intl";
+import { useLocale } from "use-intl";
 import { localizedBuildingSkill } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 import { cn } from "@/lib/utils";

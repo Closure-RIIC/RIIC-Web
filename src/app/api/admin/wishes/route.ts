@@ -1,14 +1,11 @@
-import { headers } from "next/headers";
 import { requireWebsiteReviewer } from "@/server/auth/authorization";
 import { assertSameOrigin, createRequestId, failureResponse, PublicApiError, readJsonBody, successResponse } from "@/server/api-contract";
 import { listWishes, updateWish, type WishStatus } from "@/server/wishes";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
   const startedAt = performance.now();
-  try { await requireWebsiteReviewer(await headers()); return successResponse({ items: await listWishes() }, createRequestId()); }
+  try { await requireWebsiteReviewer(request); return successResponse({ items: await listWishes() }, createRequestId()); }
   catch (error) { return failureResponse(error, createRequestId(), "/api/admin/wishes", startedAt); }
 }
 

@@ -1,10 +1,10 @@
+import { setResponseCookie } from "@/server/response-cookies";
 import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "@/server/api-contract";
 import { requireWebsiteSession } from "@/server/auth/authorization";
 import { authorizeGachaFromSkland, gachaCookieName, gachaSession, publicGachaError, publicGachaRoles } from "@/server/gacha-history";
 import { activeSklandAccount, assertSklandFeatureEnabled, readSklandAccountStore } from "@/server/skland/http";
 import { isCurrentPolicyConsent } from "@/legal-policy";
 
-export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const requestId = createRequestId();
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       ? { roles: publicGachaRoles(existing), selectedUid, sessionId: null }
       : await authorizeGachaFromSkland(website.user.id, { ...account.session, selectedUid });
     const response = successResponse({ roles: result.roles, selectedUid: result.selectedUid }, requestId);
-    if (result.sessionId) response.cookies.set(gachaCookieName(), result.sessionId, {
+    if (result.sessionId) setResponseCookie(response, gachaCookieName(), result.sessionId, {
       httpOnly: true, sameSite: "lax", secure: new URL(request.url).protocol === "https:", path: "/api/gacha", maxAge: 60 * 60,
     });
     response.headers.set("Cache-Control", "private, no-store");

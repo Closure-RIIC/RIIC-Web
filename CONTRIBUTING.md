@@ -48,7 +48,7 @@ npm run build
 
 修改网站界面文案或语言选择逻辑时，应同步维护 `messages/zh.ts`、`messages/en.ts` 及对应命名空间，并单独运行 `npm run check:i18n`；游戏内干员名、基建技能名和描述继续由独立游戏文本目录维护，具体边界见 [`messages/README.md`](./messages/README.md)。
 
-需要避开另一个本地 Next.js 实例的 `.next` 目录时，可将 `RIIC_NEXT_DIST_DIR` 设为独立目录后运行 `npm run build`。`postbuild`、`check:build-traces`、`check:production-client` 和 `check:bundle-budget` 会读取同一变量；发布暂存与生产启动仍使用默认 `.next` 目录。
+构建输出为 .output，开发与构建使用 Vite / TanStack Start。需要隔离另一份本地构建时，请使用独立工作树和独立 node_modules；不要共用或删除正在运行实例的产物。Node.js 最低版本为 22.12。
 
 修改页面交互或浏览器行为时，再运行：
 

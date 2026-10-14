@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 import { appDeploymentEnvironment } from "../deployment.ts";
 import { parseReleaseDraft, parseReleaseMutation, RELEASE_LIMITS, ReleaseValidationError } from "../releases/validation.ts";
 import { requireWebsiteAdmin } from "./auth/authorization";

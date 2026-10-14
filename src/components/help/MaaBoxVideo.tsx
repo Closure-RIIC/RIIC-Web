@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { Play } from "lucide-react";
 import { useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale } from "use-intl";
 import { tutorialVideoUrl } from "@/tutorial-videos";
 
 export function MaaBoxVideo() {
@@ -38,12 +37,11 @@ export function MaaBoxVideo() {
           aria-label={en ? `Play video: ${title}` : `播放视频：${title}`}
           onClick={() => setStarted(true)}
         >
-          <Image
+          <img
             src="/images/help/maa-box-cover.webp"
             alt={en ? "MAA — export your Operator Box" : "明日方舟 MAA 一键获取 BOX，干员识别与 BOX 整理"}
             width={1672}
             height={941}
-            unoptimized
             className="h-full w-full object-contain"
           />
           <span className="absolute bottom-3 left-3 inline-flex min-h-11 items-center gap-2 rounded-[4px] bg-black/85 px-4 text-sm font-medium text-white transition-colors group-hover:bg-[#007BAA] sm:bottom-4 sm:left-4">

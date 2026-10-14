@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 import { BUILDING_ROOM_PREFIXES, type BuildingRoomPrefix } from "@/building-rooms";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 

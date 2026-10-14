@@ -4,8 +4,6 @@ import { createWish, listPublicWishes } from "@/server/wishes";
 import { getDonationSetting } from "@/server/site-settings";
 import { parseWishInput } from "@/wish-validation";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET() {
   const requestId = createRequestId();

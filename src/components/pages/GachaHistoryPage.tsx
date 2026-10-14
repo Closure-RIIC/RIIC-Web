@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { RefreshCw, ScanLine, Trash2, Unlink } from "lucide-react";
-import Image from "next/image";
 import { QRCodeSVG } from "qrcode.react";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { QrCodeFrame } from "@/components/ui/qr-code-frame";
@@ -422,7 +421,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
             { id: "lower-stars", label: "五星 / 四星 / 三星", value: `${fiveStars} / ${fourStars} / ${threeStars}` },
           ].map((metric) => <div key={metric.id} data-gacha-summary-metric={metric.id} className={`${styles.summaryMetric} relative col-span-2 min-w-0 border-r border-[#313131]/10 last:border-r-0 sm:col-span-1 max-sm:[&:nth-child(-n+2)]:col-span-3 max-sm:[&:nth-child(2)]:border-r-0 max-sm:[&:nth-child(n+3)]:border-t`}>
             <SummaryMetric label={metric.label} value={metric.value} unit={metric.id === "orundum" ? "折算" : metric.id === "lower-stars" ? <Switch size="sm" checked={showFiveStars} onCheckedChange={setShowFiveStars} aria-label="显示五星寻访记录" title="在卡池卡片中显示五星寻访记录" className="ml-1 data-checked:bg-[#313131] data-unchecked:bg-[#313131]/20" /> : undefined} reserveIconSpace={metric.id === "orundum"} />
-            {metric.id === "orundum" && <Image src={PRODUCT_ICON_URLS.orundum} alt="合成玉" width={24} height={24} unoptimized className="pointer-events-none absolute right-1.5 top-1.5 size-6 object-contain opacity-75" />}
+            {metric.id === "orundum" && <img src={PRODUCT_ICON_URLS.orundum} alt="合成玉" width={24} height={24} className="pointer-events-none absolute right-1.5 top-1.5 size-6 object-contain opacity-75" />}
           </div>)}
         </div>
       </section>

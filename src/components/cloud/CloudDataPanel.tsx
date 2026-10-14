@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { Cloud } from "lucide-react";
 import { useCallback, useEffect, useId, useRef, useState } from "react";

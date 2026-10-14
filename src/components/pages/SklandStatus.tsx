@@ -1,8 +1,8 @@
 "use client";
 import { localize as localize_components_pages_SklandStatus } from "../../i18n/helpers/components_pages_SklandStatus.ts";
-import { useTranslations, useLocale } from "next-intl";
-import { usePathname } from "next/navigation";
-import Link from "next/link";
+import { useTranslations, useLocale } from "use-intl";
+import { usePathname } from "@/navigation";
+import { Link } from "@tanstack/react-router";
 import { sklandTabHref, sklandTabFromPathname } from "@/workbench-routes";
 import { messageRecord } from "@/i18n/translate";
 
@@ -1614,9 +1614,9 @@ export function SklandStatus({
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3" data-skland-view-header>
           <div className="min-w-0 max-w-full pb-1">
             <TabsList data-yeye-scroll={undefined} className="max-w-full flex-wrap" data-skland-view-tabs>
-              <TabsTrigger value="overview" nativeButton={false} render={<Link href={sklandTabHref("overview")} scroll={false} />}>{intl("components_pages_SklandStatus.overview")}</TabsTrigger>
-              <TabsTrigger value="inventory" nativeButton={false} render={<Link href={sklandTabHref("inventory")} scroll={false} />}>{en ? "Backpack" : "背包"}</TabsTrigger>
-              <TabsTrigger value="infrastructure" nativeButton={false} render={<Link href={sklandTabHref("infrastructure")} scroll={false} />}>{intl("components_pages_SklandStatus.infrastructure")}</TabsTrigger>
+              <TabsTrigger value="overview" nativeButton={false} render={<Link to={sklandTabHref("overview")} resetScroll={false} />}>{intl("components_pages_SklandStatus.overview")}</TabsTrigger>
+              <TabsTrigger value="inventory" nativeButton={false} render={<Link to={sklandTabHref("inventory")} resetScroll={false} />}>{en ? "Backpack" : "背包"}</TabsTrigger>
+              <TabsTrigger value="infrastructure" nativeButton={false} render={<Link to={sklandTabHref("infrastructure")} resetScroll={false} />}>{intl("components_pages_SklandStatus.infrastructure")}</TabsTrigger>
             </TabsList>
           </div>
           <LayoutSyncControl

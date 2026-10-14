@@ -5,7 +5,7 @@ import test from "node:test";
 register("../../../scripts/ts-path-loader.mjs", import.meta.url);
 const serverOnlyHook = registerHooks({
   resolve(specifier, context, nextResolve) {
-    if (specifier === "server-only") {
+    if (specifier === "@tanstack/react-start/server-only") {
       return { shortCircuit: true, url: "data:text/javascript,export{}" };
     }
     return nextResolve(specifier, context);

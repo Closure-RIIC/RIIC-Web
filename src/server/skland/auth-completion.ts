@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 
 import type { SklandSessionData } from "../../types";
 import { PublicApiError } from "../api-contract";

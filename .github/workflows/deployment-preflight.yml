@@ -41,7 +41,7 @@ jobs:
       PREFLIGHT_MODE: ${{ inputs.mode }}
       DEPLOY_APPROVED_SOLVER_SHA256: ${{ inputs.environment == 'development' && vars.DEPLOY_APPROVED_SOLVER_SHA256 || '' }}
       DEPLOY_EXPECTED_REPOSITORY: KnightCodeSquareMatrix/RIIC-Web
-      DEPLOY_RELEASE_HELPER_CONTRACT: "6"
+      DEPLOY_RELEASE_HELPER_CONTRACT: "7"
 
     steps:
       - name: Validate preflight configuration

@@ -18,7 +18,7 @@ import {
   UserRoundPlus,
   type LucideIcon,
 } from "lucide-react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { createContext, lazy, Suspense, useContext, useId, useState, type ReactNode } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import styles from "./AppSidebar.module.css";
@@ -39,7 +39,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { workbenchHref, type AppPage } from "@/workbench-routes";
-import { useLocale } from "next-intl";
+import { useLocale } from "use-intl";
 
 const CLIENT_SKLAND_ENABLED = process.env.APP_CLIENT_SKLAND_ENABLED === "1";
 const AgentHistoryNavigation = lazy(() => import("@/components/agent/AgentHistoryNavigation").then((module) => ({ default: module.AgentHistoryNavigation })));
@@ -77,7 +77,7 @@ function AppNavigationItem({
       <SidebarMenuButton
         render={(
           <Link
-            href={href}
+            to={href}
             role="button"
             aria-label={label}
             aria-current={page === target ? "page" : undefined}
@@ -166,7 +166,7 @@ export function AppSidebar({ page, onPageChange, showMower = false }: AppSidebar
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              render={<Link href="/changelog" aria-label={locale === "en" ? "Changelog" : "更新日志"} data-changelog-link />}
+              render={<Link to="/changelog" aria-label={locale === "en" ? "Changelog" : "更新日志"} data-changelog-link />}
               tooltip={locale === "en" ? "Changelog" : "更新日志"}
             >
               <BookOpen className="size-5" />
@@ -175,7 +175,7 @@ export function AppSidebar({ page, onPageChange, showMower = false }: AppSidebar
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
-              render={<Link href="/help" aria-label={labels.help} data-help-link />}
+              render={<Link to="/help" aria-label={labels.help} data-help-link />}
               tooltip={labels.help}
             >
               <CircleHelp className="size-5" />

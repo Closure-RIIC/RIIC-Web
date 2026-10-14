@@ -2,8 +2,8 @@
 
 import "@/legacy-browser-polyfills";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { NextIntlClientProvider, useLocale, useMessages, useTranslations } from "next-intl";
+import { useRouter } from "@/navigation";
+import { IntlProvider, useLocale, useMessages, useTranslations } from "use-intl";
 import { isAppLocale, LEGACY_LOCALE_STORAGE, LOCALE_COOKIE, type AppLocale } from "./config";
 import { DEFAULT_USER_SETTINGS, loadUserSettings, USER_SETTINGS_CHANGED_EVENT, type UserSettings } from "@/user-settings";
 
@@ -29,7 +29,7 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
       }
     } catch { /* Storage can be disabled; the server locale remains usable. */ }
   }, [locale, router]);
-  return <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Shanghai">{children}</NextIntlClientProvider>;
+  return <IntlProvider locale={locale} messages={messages} timeZone="Asia/Shanghai">{children}</IntlProvider>;
 }
 
 export function LanguageSwitch() {

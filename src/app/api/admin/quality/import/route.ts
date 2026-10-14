@@ -4,7 +4,6 @@ import { previewImports } from "@/server/quality/import";
 import { stageImport } from "@/server/quality/import-preview";
 import { QUALITY_TOTAL_LIMIT } from "@/quality";
 import type { ReproductionSettings } from "@/reproduction-package";
-export const runtime = "nodejs";
 export async function POST(request: Request) {
   const requestId = createRequestId(), startedAt = performance.now();
   let response: Response;

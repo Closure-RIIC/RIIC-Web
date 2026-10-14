@@ -1,9 +1,8 @@
-import nextEnv from "@next/env";
+import { loadEnvConfig } from "./load-env.mjs";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool, type PoolClient } from "pg";
 
-const { loadEnvConfig } = nextEnv;
 
 const ONLINE_PLAN_TASK_INDEX_MANIFEST_VERSION = 1;
 const MIGRATION_ADVISORY_LOCK_NAME = "riic-web:migrate-db:v1";

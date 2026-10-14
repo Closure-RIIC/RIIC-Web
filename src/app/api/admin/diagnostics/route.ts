@@ -2,8 +2,6 @@ import { createRequestId, enforceRateLimit, failureResponse, PublicApiError, suc
 import { requireWebsiteReviewer } from "@/server/auth/authorization";
 import { readDiagnostics } from "@/server/request-diagnostics";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const requestId=createRequestId();

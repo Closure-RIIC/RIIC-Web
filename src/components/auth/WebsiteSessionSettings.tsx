@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Clock3, RefreshCw, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "use-intl";
 
 import { InfraTechnicalCard, InfraTechnicalHeading } from "@/components/InfraTechnicalCard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -92,7 +92,7 @@ export function WebsiteSessionSettings() {
               <ShieldCheck />{intl("manage")}
             </Button>
           ) : (
-            <Button type="button" nativeButton={false} variant="outline" size="dialog" className="w-full border-white/22 bg-white/5 text-white hover:bg-white/10 hover:text-white sm:w-auto" render={<Link href="/account" />}>{intl("signIn")}</Button>
+            <Button type="button" nativeButton={false} variant="outline" size="dialog" className="w-full border-white/22 bg-white/5 text-white hover:bg-white/10 hover:text-white sm:w-auto" render={<Link to="/account" />}>{intl("signIn")}</Button>
           )}
         </div>
 

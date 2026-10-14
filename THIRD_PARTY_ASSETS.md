@@ -31,7 +31,7 @@ The Rainyun logo at `public/images/partners/rainyun-logo.png` was provided for t
 
 ## Site icon
 
-The Closure artwork at `assets/branding/closure-site-icon.png` was provided for this site integration. The generated Next.js, Apple touch, and favicon variants preserve the supplied artwork and transparency. Arknights character designs and related rights remain the property of Hypergryph and their respective rights holders; this project does not claim ownership of the artwork.
+The Closure artwork at `assets/branding/closure-site-icon.png` was provided for this site integration. The generated website, Apple touch, and favicon variants preserve the supplied artwork and transparency. Arknights character designs and related rights remain the property of Hypergryph and their respective rights holders; this project does not claim ownership of the artwork.
 
 Run `npm run assets:site-icon` after updating the source PNG. CI regenerates the browser variants and rejects stale output.
 
@@ -64,4 +64,4 @@ Numeric UI text uses the Bender Bold font distributed in the public [1001 Fonts 
 - License: SIL Open Font License 1.1, preserved verbatim in `src/app/fonts/Bender-OFL.txt`
 - License SHA-256: `7F18EC1EBB6B50E3ED0F74B2C61F25B8D7CD69E43F4DE66E991BCFD3C419A8BB`
 
-The font is self-hosted by Next.js. Runtime pages do not request the font from 1001 Fonts, Hypergryph, or another third-party font CDN.
+The font is self-hosted in the Vite build. Runtime pages do not request the font from 1001 Fonts, Hypergryph, or another third-party font CDN.

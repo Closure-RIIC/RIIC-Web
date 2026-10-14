@@ -2,8 +2,6 @@ import { createRequestId, failureResponse, successResponse, PublicApiError } fro
 import { requireFeatureSession } from "@/server/auth/feature-access";
 import { getOrder, getWallet } from "@/server/billing/service";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const requestId = createRequestId();

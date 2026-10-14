@@ -1,7 +1,5 @@
 import { handleDeleteSavedPlan, handleUpdateSavedPlan } from "@/server/saved-plans-api";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   const response = await handleUpdateSavedPlan(request, context, "/api/plans/[id]");
   const { id } = await context.params;

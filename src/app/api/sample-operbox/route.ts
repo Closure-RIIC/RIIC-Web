@@ -2,8 +2,6 @@ import { getSampleOperbox } from "@/server/infra";
 import { createRequestId, failureResponse, successResponse } from "@/server/api-contract";
 import type { OperBoxEntry, SampleOperboxData } from "@/types";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET() {
   const requestId = createRequestId();
