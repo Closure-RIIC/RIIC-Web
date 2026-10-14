@@ -1,9 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockApis } from "./production-readiness.fixture";
 
-async function prepare(page: Page) {
+async function prepare(page: Page, performanceMode: "quality" | "saver" = "quality") {
   // These existing motion regressions exercise continuous high-quality avatars.
-  await page.addInitScript(() => localStorage.setItem("riic.plush.performance.v1", "quality"));
+  await page.addInitScript(mode => localStorage.setItem("riic.plush.performance.v1", mode), performanceMode);
   await mockApis(page);
   await page.route("**/api/account/data-consent", route => route.fulfill({ json: { success: true, data: { current: false, cloudSyncEnabled: false } } }));
   await page.route("**/api/billing", route => route.fulfill({ json: { data: { wallet: { totalPoints: 100 } } } }));
@@ -41,7 +41,7 @@ async function emit(page: Page, parts: unknown[], done = false) {
 }
 
 async function startLongReply(page: Page) {
-  await prepare(page);
+  await prepare(page, "saver");
   await page.goto("/agent");
   await page.getByRole("textbox", { name: "发给可露希尔的消息" }).fill("滚动测试");
   await page.getByRole("button", { name: "发送", exact: true }).click();
@@ -113,7 +113,7 @@ test("conversation fades follow boundaries and scrollbar dragging releases strea
 });
 
 test("IME confirmation never sends and the composer grows, caps and resets", async ({ page }) => {
-  await prepare(page);
+  await prepare(page, "saver");
   await page.goto("/agent");
   const input = page.getByRole("textbox", { name: "发给可露希尔的消息" });
   // Match the mobile viewport suite's cold route hydration allowance.
