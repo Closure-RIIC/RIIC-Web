@@ -16,7 +16,7 @@
 .modeTrigger:hover { background: var(--muted); }
 .modeTrigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 .modeTrigger > svg { flex-shrink: 0; }
-.promptInput { height: 80px; width: 100%; min-width: 0; resize: none; overflow-y: auto; border: 0; background: transparent; padding: 4px; font-size: 14px; line-height: 24px; color: var(--foreground); outline: none; }
+.promptInput { height: 48px; min-height: 48px; max-height: min(240px, 35dvh); width: 100%; min-width: 0; resize: none; overflow-y: auto; border: 0; background: transparent; padding: 4px; font-size: 14px; line-height: 24px; color: var(--foreground); outline: none; }
 .promptInput::placeholder { color: var(--muted-foreground); }
 .promptControls { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; min-width: 0; }
 .promptTools { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; min-width: 0; }
@@ -34,10 +34,21 @@
 .assistantTurn[data-pending="true"] { min-height: 28px; }
 .activity { min-width: 0; flex-shrink: 0; margin-left: calc(var(--dialogue-avatar-size) + var(--dialogue-avatar-gap)); }
 .activity + .activity { margin-top: -4px; }
-.conversation { --conversation-edge: 24px; isolation: isolate; margin-left: -6px; width: calc(100% + 6px); }
+.conversation { --conversation-edge: 24px; --conversation-fade-top: 0px; --conversation-fade-bottom: 0px; isolation: isolate; margin-left: -6px; width: calc(100% + 6px); }
 .conversation > [data-slot="scroll-area-viewport"] {
   padding-left: 6px;
-  mask-image: linear-gradient(to bottom, transparent, black var(--conversation-edge), black calc(100% - var(--conversation-edge)), transparent);
+  /* This viewport has explicit follow ownership; native anchoring can otherwise
+     move a paused reader when the final streamed paragraph grows. */
+  overflow-anchor: none;
+  mask-image: linear-gradient(to bottom,
+    transparent, #0000000d calc(var(--conversation-fade-top) * .15),
+    #00000026 calc(var(--conversation-fade-top) * .3), #0000004d calc(var(--conversation-fade-top) * .45),
+    #00000080 calc(var(--conversation-fade-top) * .6), #000000b3 calc(var(--conversation-fade-top) * .75),
+    #000000d9 calc(var(--conversation-fade-top) * .87), #000 var(--conversation-fade-top),
+    #000 calc(100% - var(--conversation-fade-bottom)), #000000d9 calc(100% - var(--conversation-fade-bottom) * .87),
+    #000000b3 calc(100% - var(--conversation-fade-bottom) * .75), #00000080 calc(100% - var(--conversation-fade-bottom) * .6),
+    #0000004d calc(100% - var(--conversation-fade-bottom) * .45), #00000026 calc(100% - var(--conversation-fade-bottom) * .3),
+    #0000000d calc(100% - var(--conversation-fade-bottom) * .15), transparent);
 }
 .conversation::before, .conversation::after {
   content: "";
@@ -49,8 +60,8 @@
   pointer-events: none;
   backdrop-filter: blur(3px);
 }
-.conversation::before { top: 0; mask-image: linear-gradient(to bottom, black, transparent); }
-.conversation::after { bottom: 0; mask-image: linear-gradient(to top, black, transparent); }
+.conversation::before { top: 0; height: var(--conversation-fade-top); mask-image: linear-gradient(to bottom, black, transparent); }
+.conversation::after { bottom: 0; height: var(--conversation-fade-bottom); mask-image: linear-gradient(to top, black, transparent); }
 .pageScrollbar { position: fixed; z-index: 40; top: 0; right: 0; bottom: 0; width: 8px; pointer-events: none; }
 .pageScrollbar :global(.os-scrollbar-vertical) { top: 0; right: 0; height: 100%; pointer-events: auto; }
 .prompt {
@@ -142,7 +153,7 @@
   .modeTrigger { width: 116px; padding-inline: 6px; border-color: transparent; background: transparent; }
   .newConversation { width: 44px; height: 44px; padding: 0; }
   .prompt { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 2px; padding: 4px; border-radius: 28px; }
-  .promptInput { grid-column: 2; grid-row: 1; height: 44px; padding: 10px 2px; font-size: 16px; line-height: 24px; }
+  .promptInput { grid-column: 2; grid-row: 1; height: 44px; min-height: 44px; max-height: min(168px, calc(var(--agent-viewport-height, 100dvh) * .35)); padding: 10px 2px; font-size: 16px; line-height: 24px; }
   .promptControls, .promptTools { display: contents; }
   .promptTools > button { grid-column: 1; grid-row: 1; }
   .sendButton { grid-column: 3; grid-row: 1; width: 44px; height: 44px; }
