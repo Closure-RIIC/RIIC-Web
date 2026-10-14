@@ -543,7 +543,7 @@ test("compact schedule reserves one skeleton card per room while its view loads"
     releaseCompactChunk = resolve;
   });
   let compactChunkRequested = false;
-  await page.route("**/assets/**", async (route) => {
+  await page.route(/\/(?:assets\/CompactScheduleView-[^/]+\.js|src\/components\/CompactScheduleView\.tsx)(?:\?.*)?$/, async (route) => {
     const response = await route.fetch();
     const body = await response.body();
     if (body.toString("utf8").includes("data-compact-schedule-view")) {

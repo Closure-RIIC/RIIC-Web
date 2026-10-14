@@ -3,12 +3,13 @@
 ## Scope and provenance
 
 - Baseline: production commit `d31a6ae7c7b0b21d24b696aca9a14dda513d84a0`.
-- Branch: `migration/tanstack-start-d31a6ae`; independent worktree and dependencies.
+- Production branch: `release/tanstack-start-20261014`, incorporating the latest main maintenance changes; independent worktree and dependencies. Development uses a separate `migration/tanstack-start-development` branch based on develop.
 - Original worktree and the earlier migration worktree remain separate. The original tracked working diff was checked against the earlier snapshot and is unchanged.
 - All 40 baseline page entries and 68 API route entries have corresponding Start routes, including optional/splat routes and redirects.
 - The baseline's Agent, billing, inventory, gacha, Mower, account health, preferences, plush gallery, wishes and administration features are preserved.
 - No database schema, migration or production data changes are part of this migration.
-- Local preview build ID: `d31a6ae-tanstack-generation`. This is an uncommitted migration build, not a deployed Git release.
+- Local previews use synthetic build IDs and must not be treated as deployed Git releases. CI artifacts identify the exact release commit and tree.
+- Result generation wireframes and card reveal animations have been removed. Ordinary loading skeletons remain; completed cards render directly.
 
 ## Runtime changes
 
@@ -53,7 +54,7 @@ The independent artifact includes public assets, runtime dependencies, Drizzle m
 
 The release stage requires an absent destination outside the worktree plus RELEASE_SHA and RELEASE_TREE_SHA. Local smoke artifacts use all-zero synthetic identifiers and must never be published.
 
-The deployment and preflight workflows now require helper contract **7**. Existing authorization, SHA verification, branch policy, environment gates and health checks remain in place. The private host helper is not in this repository and has not been upgraded by this task. Before deployment it must support:
+The deployment and preflight workflows now require helper contract **7**. Existing authorization, SHA verification, branch policy, environment gates and health checks remain in place. The host helper is maintained separately; its contract 7 upgrade must pass its own checks and be installed before either deployment. It must support:
 
 1. Artifact kind `riic-web-tanstack-start` and the `.output` layout.
 2. Starting the Node entry and running the bundled operational commands.
@@ -62,7 +63,7 @@ The deployment and preflight workflows now require helper contract **7**. Existi
 5. Existing readiness, SHA, solver, observation-window and rollback checks.
 6. Rolling back atomically to the previous Next release, including its old directory layout.
 
-Do not bypass the contract check to publish. Verify the host helper and reverse proxy in a deployment-authorized task first.
+Do not bypass the contract check to publish. Verify the installed helper, worker adapters and reverse proxy before merging the application release.
 
 ## Local validation
 
@@ -84,7 +85,7 @@ The optional Skland-disabled artifact profile still fails the strict client text
 
 ## Manual acceptance — pending user verification
 
-Use the new preview at http://127.0.0.1:5178. Use isolated preview accounts supplied in the task handoff. Data is not production data. Skland login is enabled; the user supplies authorization through the existing QR/credential flow. The local Windows solver is connected; the staged artifact passed readiness and a real public-sample calculation. Model providers, payment services and email delivery remain unconfigured. See [schedule generation](SCHEDULE_GENERATION.md) for the new result reveal and manual acceptance steps.
+Use the preview at http://127.0.0.1:5178 and the isolated preview accounts supplied in the task handoff. Data is not production data. Skland login is enabled; the user supplies authorization through the existing QR/credential flow. The local Windows solver is connected; the staged artifact passed readiness and a real public-sample calculation. Model providers, payment services and email delivery remain unconfigured. Result cards should appear directly after the ordinary loading skeleton, without the generation wireframe animation.
 
 | Step | Entry and action | Expected result |
 | --- | --- | --- |
@@ -111,7 +112,7 @@ Mark each applicable row after user testing. A local green build alone is not re
 - Required remote CI and the supported browser matrix.
 - Host deployment helper contract 7 and a verified old-release rollback.
 - Reverse-proxy/CDN verification of compression, no-store private HTML, cookies and long-lived streaming responses.
-- Deploy only the reviewed migration commit through the existing release policy. No push, PR, merge or deployment was performed here.
+- Deploy only the reviewed migration commit through the existing release policy. Track production in PR #510 and development in PR #511; their CI and deployment records are the source of release status.
 
 ## Official guidance used
 
