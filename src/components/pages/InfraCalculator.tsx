@@ -666,7 +666,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
               <>
                 <Suspense fallback={<DeferredResultLoading />}>
                   <PlanResultSummary
-                    key={scheduleResult.diagnosticId}
+                    key={result?.diagnosticId ?? scheduleResult.diagnosticId}
                     profile={scheduleResult.profile}
                     rotation={scheduleResult.rotation}
                     maa={scheduleResult.maa}

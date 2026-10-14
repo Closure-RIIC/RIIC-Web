@@ -6,6 +6,7 @@ import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
 import { isSklandFeatureEnabled } from "./src/deployment.ts";
+import { assetCacheControl } from "./src/server/http-cache-policy.ts";
 
 export default defineConfig(({ mode }) => {
   const environment = { ...loadEnv(mode, process.cwd(), ""), ...process.env };
@@ -44,7 +45,31 @@ export default defineConfig(({ mode }) => {
     css: { postcss: { plugins: [] } },
     ssr: { noExternal: ["cookie-es"] },
     build: { manifest: true },
-    plugins: [{ name: "riic-build-metadata", apply: "build", closeBundle() { mkdirSync("dist", { recursive: true }); writeFileSync("dist/riic-build.json", JSON.stringify({ sklandEnabled, buildId: publicEnvironment.APP_CLIENT_BUILD_ID })); } }, tailwindcss(), tanstackStart(), nitro({ preset: "node-server", compressPublicAssets: true,
+    plugins: [{
+      name: "riic-development-asset-cache",
+      configureServer(server) {
+        server.middlewares.use((req, res, next) => {
+          const url = new URL(req.url ?? "/", "http://localhost");
+          if (!/^\/images\//.test(url.pathname) && !/^\/wasm\//.test(url.pathname)) return next();
+          const policy = assetCacheControl(url) ?? "public, max-age=0";
+          const writeHead = res.writeHead;
+          // Vite's static middleware otherwise replaces the production cache policy.
+          res.writeHead = function (this: typeof res, ...args: Parameters<typeof writeHead>) {
+            if (args[0] >= 200 && args[0] < 300) {
+              const headers = args[1];
+              if (headers && typeof headers === "object" && !Array.isArray(headers)) {
+                for (const key of Object.keys(headers)) {
+                  if (key.toLowerCase() === "cache-control") delete headers[key];
+                }
+              }
+              this.setHeader("Cache-Control", policy);
+            }
+            return writeHead.apply(this, args);
+          } as typeof writeHead;
+          next();
+        });
+      },
+    }, { name: "riic-build-metadata", apply: "build", closeBundle() { mkdirSync("dist", { recursive: true }); writeFileSync("dist/riic-build.json", JSON.stringify({ sklandEnabled, buildId: publicEnvironment.APP_CLIENT_BUILD_ID })); } }, tailwindcss(), tanstackStart(), nitro({ preset: "node-server", compressPublicAssets: true,
       plugins: ["./src/server/nitro-http.ts"],
       routeRules: { "/assets/**": { headers: { "Cache-Control": "public, max-age=31536000, immutable" } } },
     }), react()],

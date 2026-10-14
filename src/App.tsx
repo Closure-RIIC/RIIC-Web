@@ -2405,6 +2405,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     <div
       className="contents"
       data-workbench-hydrated={hasRestoredSession ? "true" : "false"}
+      inert={!hasRestoredSession}
       onKeyDown={(event) => {
         if (event.key === "Escape" && websiteAuthDialogOpen) handleWebsiteAuthDialogOpenChange(false);
       }}

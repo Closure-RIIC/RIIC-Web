@@ -64,6 +64,7 @@ test("an anonymous cold start probes the shared session once and does not touch 
   await expect(page.getByRole("dialog", { name: "登录网站账号" })).toHaveCount(0);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByText(/正在恢复网站账号|正在确认网站账号|正在打开账号登录/)).toHaveCount(0);
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
   await expect.poll(() => sessionRequests).toBe(1);
   await page.waitForTimeout(100);
   expect(sklandRequests).toEqual([]);
@@ -440,11 +441,11 @@ test("filing links and Rainyun cloud services align left on mobile and right on 
   }
 });
 
-test("primary pages prefetch after hydration and navigate on the first click", async ({ page }) => {
+test("primary pages load their route modules and navigate on the first click", async ({ page }) => {
   const trainingRouteRequests: string[] = [];
   page.on("request", (request) => {
     const url = new URL(request.url());
-    if (url.pathname === "/training") {
+    if (/\/(?:src\/routes\/_workbench\.training\.tsx|assets\/_workbench\.training-[^/]+\.js)$/.test(url.pathname)) {
       trainingRouteRequests.push(request.url());
     }
   });
@@ -569,13 +570,11 @@ test("website login lazy-loads its UI without probing the shared session again",
     releaseChunks = resolve;
   });
   let deferredChunkRequests = 0;
-  await page.route("**/assets/*.js", async (route) => {
+  await page.route(/\/(?:assets\/WebsiteAccountDialog-[^/]+\.js|src\/components\/auth\/WebsiteAccountDialog\.tsx)(?:\?.*)?$/, async (route) => {
     const response = await route.fetch();
     const body = await response.body();
-    if (/function WebsiteAccountDialog\s*\(/.test(body.toString("utf8"))) {
-      deferredChunkRequests += 1;
-      await chunkGate;
-    }
+    deferredChunkRequests += 1;
+    await chunkGate;
     await route.fulfill({ response, body });
   });
   await mockApis(page);

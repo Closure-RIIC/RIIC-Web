@@ -1,4 +1,4 @@
-import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
+import { HeadContent, Outlet, Scripts, createRootRoute, useHydrated } from "@tanstack/react-router";
 import { IntlProvider } from "use-intl";
 import { LocaleProvider } from "@/i18n/client";
 import { getRequestI18n } from "@/i18n/locale";
@@ -34,10 +34,11 @@ export const Route = createRootRoute({
 });
 
 function RootDocument() {
+  const hydrated = useHydrated();
   const { locale, messages } = Route.useRouteContext();
   return <html lang={locale === "zh" ? "zh-CN" : "en"} className="antialiased" suppressHydrationWarning>
     <head><HeadContent /></head>
-    <body>
+    <body inert={!hydrated} data-app-hydrated={hydrated ? "true" : "false"}>
       <noscript><div style={{ padding: 24, fontFamily: "sans-serif", lineHeight: 1.6 }}>当前浏览器无法运行页面脚本。请启用 JavaScript，或升级浏览器 / Android System WebView。</div></noscript>
       <IntlProvider locale={locale} messages={messages} timeZone="Asia/Shanghai">
         <LocaleProvider><AgentRuntimeProvider><Outlet /></AgentRuntimeProvider></LocaleProvider>
