@@ -1,8 +1,8 @@
 "use client";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { IssueSolutionPicker } from "@/components/help/IssueSolutionPicker";
@@ -37,7 +37,7 @@ export default function OwnedOperatorsHelpPage() {
   return (
     <article className="flex w-full flex-col gap-5 pt-5">
       <header>
-        <Link className="inline-flex min-h-10 items-center gap-2 text-xs text-muted-foreground underline-offset-4 outline-none hover:underline hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring" href="/help">
+        <Link className="inline-flex min-h-10 items-center gap-2 text-xs text-muted-foreground underline-offset-4 outline-none hover:underline hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring" to="/help">
           <ArrowLeft className="size-3.5" aria-hidden="true" />{intl("app_help_owned_operators_page.backToHelp")}
         </Link>
         <div className="mt-2 flex min-w-0 items-center gap-2.5">
@@ -96,7 +96,7 @@ export default function OwnedOperatorsHelpPage() {
               <p className="mt-5 rounded-lg bg-muted/60 p-4 text-base leading-7 text-muted-foreground">不要上传排班文件或本站导出的 MAA 排班 JSON。当前 MAA 导入需要已验证的网站账号。</p>
             </section>
           </div>
-          <Link className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-lg border border-border px-5 text-lg font-semibold text-primary outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" href="/help/import-operators">
+          <Link className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-lg border border-border px-5 text-lg font-semibold text-primary outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" to="/help/import-operators">
             查看含截图位的详细导入教程<ArrowRight className="size-4" aria-hidden="true" />
           </Link>
         </section>
@@ -131,7 +131,7 @@ export default function OwnedOperatorsHelpPage() {
 
         <section className="hidden flex-wrap items-center justify-between gap-4 rounded-xl bg-foreground p-5 text-background" aria-label="返回计算器">
           <div><strong className="block text-2xl">准备好了</strong><p className="mt-2 text-lg text-background/75">回到计算器，按步骤更换并重新生成。</p></div>
-          <Link className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-background px-5 text-lg font-semibold text-foreground outline-none hover:bg-background/90 focus-visible:ring-2 focus-visible:ring-background" href="/">
+          <Link className="inline-flex min-h-12 items-center gap-2 rounded-lg bg-background px-5 text-lg font-semibold text-foreground outline-none hover:bg-background/90 focus-visible:ring-2 focus-visible:ring-background" to="/">
             返回基建计算器
           </Link>
         </section>

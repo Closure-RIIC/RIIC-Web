@@ -3,8 +3,8 @@ import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeadin
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Activity, ArrowLeft, ClipboardCheck, PackageOpen, RefreshCw, Settings2, UsersRound } from "lucide-react";
-import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@tanstack/react-router";
+import { useLocale, useTranslations } from "use-intl";
 
 import { getSklandInventory } from "@/api";
 import { extractAccountHealthInput } from "@/account-health-input";
@@ -131,7 +131,7 @@ function AccountHealthContent({ identityKey }: { identityKey: string }) {
           <Metric label={en ? "Gold bars" : "赤金"} value={fmt(stock.goldUnits)} note={approx(stock.goldUnits * GOLD_BAR_VALUE)} />
           <Metric label={en ? "Available pulls" : "可用常规抽数"} value={fmt(stock.directPulls)}
             note={stock.directPulls === 0
-              ? <Link href="/skland/inventory" className="underline decoration-dotted underline-offset-2 hover:text-foreground">{en ? "Fill in via Skland status · Backpack" : "到森空岛状态·背包补充填写"}</Link>
+              ? <Link to="/skland/$tab" params={{ tab: "inventory" }} className="underline decoration-dotted underline-offset-2 hover:text-foreground">{en ? "Fill in via Skland status · Backpack" : "到森空岛状态·背包补充填写"}</Link>
               : stock.yellowCertificatePulls > 0 ? (en ? `Includes ${fmt(stock.yellowCertificatePulls)} from yellow certificates` : `含黄票兑换 ${fmt(stock.yellowCertificatePulls)} 抽`) : undefined} />
           <Metric label={en ? "LMD / EXP in stock" : "库存钱书比"} value={ratio(stock.lmdToExperience)} emphasis={stock.lmdToExperience != null} />
           <Metric label={en ? "LMD / EXP gap (modules in)" : "钱书缺口（含模组比）"} value={gap
@@ -158,7 +158,7 @@ function AccountHealthContent({ identityKey }: { identityKey: string }) {
     <section className="grid min-w-0 gap-3 md:gap-4" aria-labelledby="health-advice-heading" data-health-advice>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 id="health-advice-heading" className="text-base font-semibold">{en ? "Diagnosis and advice" : "诊断与建议"}</h2>
-        <SetupActionButton nativeButton={false} variant="outline" className="max-md:!min-w-0 max-md:!px-3" render={<Link href="/" />}><ArrowLeft aria-hidden="true" />{en ? "Back to calculator" : "返回基建计算器"}</SetupActionButton>
+        <SetupActionButton nativeButton={false} variant="outline" className="max-md:!min-w-0 max-md:!px-3" render={<Link to="/" />}><ArrowLeft aria-hidden="true" />{en ? "Back to calculator" : "返回基建计算器"}</SetupActionButton>
       </div>
       <InfraTechnicalCard group="control" showEmblem={false} className="min-w-0 p-4 md:p-6" dataSlot="account-health-advice-card">
       {advice.summary ? <p className="text-base font-medium leading-7 text-white/95">{advice.summary}</p> : null}

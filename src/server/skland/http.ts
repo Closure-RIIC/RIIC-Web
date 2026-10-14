@@ -1,5 +1,5 @@
-import { cookies, headers } from "next/headers";
-import { NextResponse } from "next/server";
+import { getCookies, getRequestHeaders } from "@tanstack/react-start/server";
+import { setResponseCookie } from "../response-cookies";
 
 import { isSklandFeatureEnabled } from "../../deployment.ts";
 import type { SklandAccountSummary, SklandScheduleSnapshot, SklandStatusSnapshot } from "../../types.ts";
@@ -55,14 +55,15 @@ function cookieOptions(request: Request, maxAge = SKLAND_SESSION_TTL_SECONDS) {
 }
 
 export async function readSklandAccountStore(verifiedWebsiteUserId?: string): Promise<SklandAccountStore> {
-  const websiteUserId = verifiedWebsiteUserId ?? (await websiteSession(await headers()))?.user.id;
+  const websiteUserId = verifiedWebsiteUserId ?? (await websiteSession(getRequestHeaders()))?.user.id;
   const websiteOwnerTag = websiteUserId ? websiteUserOwnerTag(websiteUserId) : null;
   if (!websiteOwnerTag) return { accounts: [], activeAccountId: null, staleCookieNames: [], migratedSnapshot: null, websiteOwnerTag: null };
   if (!isSklandConfigured()) {
     return { accounts: [], activeAccountId: null, staleCookieNames: [], migratedSnapshot: null, websiteOwnerTag };
   }
-  const store = await cookies();
-  const allCookies = store.getAll();
+  const cookieValues = getCookies();
+  const allCookies = Object.entries(cookieValues).map(([name, value]) => ({ name, value }));
+  const store = { get: (name: string) => allCookies.find((cookie) => cookie.name === name) };
   const indexCookie = store.get(SKLAND_ACCOUNT_INDEX_COOKIE);
   const index = indexCookie ? unsealSklandAccountIndex(indexCookie.value) : null;
   const staleCookieNames = [
@@ -184,7 +185,7 @@ export async function loadActiveSklandAccount(
 }
 
 export function setSklandAccountStoreCookies(
-  response: NextResponse,
+  response: Response,
   request: Request,
   store: SklandAccountStore,
   previous?: SklandAccountStore
@@ -202,13 +203,13 @@ export function setSklandAccountStoreCookies(
   ) && !currentNames.has(name));
 
   for (const name of new Set(removedNames)) {
-    response.cookies.set(name, "", cookieOptions(request, 0));
+    setResponseCookie(response, name, "", cookieOptions(request, 0));
   }
-  response.cookies.set(SKLAND_SESSION_COOKIE, "", cookieOptions(request, 0));
-  response.cookies.set(LEGACY_SKLAND_ACCOUNT_INDEX_COOKIE, "", cookieOptions(request, 0));
+  setResponseCookie(response, SKLAND_SESSION_COOKIE, "", cookieOptions(request, 0));
+  setResponseCookie(response, LEGACY_SKLAND_ACCOUNT_INDEX_COOKIE, "", cookieOptions(request, 0));
 
   if (store.accounts.length === 0) {
-    response.cookies.set(SKLAND_ACCOUNT_INDEX_COOKIE, "", cookieOptions(request, 0));
+    setResponseCookie(response, SKLAND_ACCOUNT_INDEX_COOKIE, "", cookieOptions(request, 0));
     return;
   }
 
@@ -216,7 +217,7 @@ export function setSklandAccountStoreCookies(
   const latestExpiry = Math.max(...store.accounts.map((account) => account.session.expiresAt));
   const indexMaxAge = Math.max(1, Math.ceil((latestExpiry - now) / 1000));
 
-  response.cookies.set(
+  setResponseCookie(response,
     SKLAND_ACCOUNT_INDEX_COOKIE,
     sealSklandAccountIndex({
       version: 3,
@@ -228,7 +229,7 @@ export function setSklandAccountStoreCookies(
   );
   for (const account of store.accounts) {
     const accountMaxAge = Math.max(1, Math.ceil((account.session.expiresAt - now) / 1000));
-    response.cookies.set(
+    setResponseCookie(response,
       sklandAccountCookieName(account.accountId),
       sealOwnedSklandAccount(account, store.websiteOwnerTag),
       cookieOptions(request, accountMaxAge)
@@ -267,7 +268,7 @@ export function sklandErrorResponse(
   route: string,
   startedAt: number,
   request?: Request,
-): NextResponse {
+): Response {
   if (error instanceof PublicApiError) {
     return failureResponse(error, requestId, route, startedAt, "AIC-SYS-5000", request);
   }

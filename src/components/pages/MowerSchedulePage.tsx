@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale } from "use-intl";
 import { ArrowDown, ArrowUp, Bot, Check, Download, FileJson, GitBranch, Pencil, Plus, Search, Settings2, Trash2, Upload, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";

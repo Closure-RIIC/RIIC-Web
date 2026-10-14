@@ -12,6 +12,7 @@ test("wish wall reports unauthenticated submissions and keeps the form", async (
     body: JSON.stringify({ data: { items: [], donation: { enabled: false, imageUrl: null } } }),
   }));
   await page.goto("/wishes");
+  await expect(page.locator('body[data-app-hydrated="true"]')).toBeVisible();
   await page.locator("#wish-title").fill("测试许愿");
   await page.locator("#wish-content").fill("需要登录才能提交");
   await page.locator('form button[type="submit"]').click();

@@ -1,11 +1,11 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { lazy, Suspense } from "react";
 
 import { RichTextStatic } from "@/components/RichTextStatic";
 
-const InteractiveRichText = dynamic(() =>
-  import("@/components/RichTextInteractive").then((module) => module.RichTextInteractive),
+const InteractiveRichText = lazy(() =>
+  import("@/components/RichTextInteractive").then((module) => ({ default: module.RichTextInteractive })),
 );
 
 /**
@@ -23,7 +23,7 @@ export function RichText({
   interactive?: boolean;
 }) {
   if (interactive) {
-    return <InteractiveRichText text={text} onTermOpen={onTermOpen} />;
+    return <Suspense fallback={<RichTextStatic text={text} />}><InteractiveRichText text={text} onTermOpen={onTermOpen} /></Suspense>;
   }
 
   return <RichTextStatic text={text} />;

@@ -1,7 +1,7 @@
 "use client";
 import { localize as rotationText } from "../i18n/helpers/RotationLabels.ts";
 
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { useState } from "react";
 

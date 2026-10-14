@@ -1,24 +1,12 @@
-import type { Metadata } from "next";
-import { headers } from "next/headers";
-import { notFound } from "next/navigation";
 
 import { PlanArtifactView } from "@/components/agent/PlanArtifactView";
-import { requireFeatureSession } from "@/server/auth/feature-access";
-import { getAgentPlanArtifact } from "@/server/agent/plan-artifact";
 
-export const metadata: Metadata = {
-  title: "排班结果 · 可露希尔基建终端",
-};
 
-export const dynamic = "force-dynamic";
 
-export default async function PlanArtifactPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const session = await requireFeatureSession(await headers(), "agent").catch(() => null);
-  if (!session?.user) notFound();
-  const artifact = await getAgentPlanArtifact(id, session.user.id).catch(() => null);
-  if (!artifact) notFound();
-  const createdAt = new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(artifact.createdAt);
+import type { getPlanArtifactPage } from "@/server/page-data";
+
+export default function PlanArtifactPage({ artifact }: { artifact: Awaited<ReturnType<typeof getPlanArtifactPage>> }) {
+  const createdAt = new Intl.DateTimeFormat("zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(artifact.createdAt));
   return (
     <section className="mx-auto w-full max-w-3xl px-4 py-6" data-plan-artifact-page>
       <header className="mb-4 flex items-center gap-2.5">
@@ -32,7 +20,7 @@ export default async function PlanArtifactPage({ params }: { params: Promise<{ i
           </p>
         </div>
       </header>
-      <PlanArtifactView plan={artifact.plan} />
+      <PlanArtifactView plan={JSON.parse(artifact.planJson)} />
       <p className="mt-6 text-xs text-muted-foreground">
         <a className="underline underline-offset-4" href="/agent">← 返回可露希尔助理</a>
       </p>

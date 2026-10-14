@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "../api-contract.ts";
 import { requireWebsiteAdmin, requireWebsiteReviewer } from "../auth/authorization.ts";
 import { findFeedbackRecord, findPlanRunRecord } from "../business-records.ts";

@@ -1,7 +1,6 @@
 import { NO_FEATURE_ACCESS } from "@/feature-access";
 import { getFeatureAccess } from "@/server/auth/feature-access";
 
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   try {

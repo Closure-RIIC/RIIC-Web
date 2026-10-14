@@ -15,14 +15,13 @@ test("Skland reuse requires consent and an owned login, and returns only public 
   let existing = false;
   let exchanges = 0;
   const owners: string[] = [];
-  const cookies: unknown[][] = [];
   await context.mock.module(new URL("./api-contract.ts", import.meta.url), { namedExports: {
     assertSameOrigin: (request: Request) => { if (request.headers.get("origin") !== "https://riic.test") throw new Error("origin"); },
     createRequestId: () => "test-id", enforceRateLimit: () => {}, requestClientIp: () => "127.0.0.1",
     readJsonBody: (request: Request) => request.json(),
     PublicApiError: class extends Error {},
     failureResponse: () => Response.json({ success: false }, { status: 400 }),
-    successResponse: (data: unknown) => Object.assign(Response.json({ success: true, data }), { cookies: { set: (...args: unknown[]) => cookies.push(args) } }),
+    successResponse: (data: unknown) => Response.json({ success: true, data }),
   } });
   await context.mock.module(new URL("./auth/authorization.ts", import.meta.url), { namedExports: {
     requireWebsiteSession: async () => { if (!authenticated) throw new Error("login"); return { user: { id: "verified-owner" } }; },
@@ -64,12 +63,13 @@ test("Skland reuse requires consent and an owned login, and returns only public 
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { success: true, data: { roles: [{ uid: "10001", nickname: "test" }], selectedUid: "10001" } });
   assert.equal(response.headers.get("Cache-Control"), "private, no-store");
-  assert.deepEqual(cookies, [["aic_gacha_session", "opaque-session", { httpOnly: true, sameSite: "lax", secure: true, path: "/api/gacha", maxAge: 3600 }]]);
+  assert.deepEqual(response.headers.getSetCookie(), ["aic_gacha_session=opaque-session; Max-Age=3600; Path=/api/gacha; HttpOnly; Secure; SameSite=Lax"]);
   assert.equal(exchanges, 1);
   existing = true;
-  assert.equal((await POST(request(body))).status, 200);
+  const reused = await POST(request(body));
+  assert.equal(reused.status, 200);
   assert.equal(exchanges, 1);
-  assert.equal(cookies.length, 1);
+  assert.deepEqual(reused.headers.getSetCookie(), []);
   assert.equal((await POST(request({ ...body, accountId: "other-owner-account" }))).status, 400);
   assert.equal((await POST(request({ ...body, accountId: "second", uid: "10003" }))).status, 400);
   const second = await POST(request({ ...body, accountId: "second", uid: "10002" }));

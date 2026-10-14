@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 import { getDatabasePool } from "../db/index.ts";
 import { gatewaySettings } from "./gateway-config.ts";
 

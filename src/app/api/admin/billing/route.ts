@@ -2,8 +2,6 @@ import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, P
 import { requireWebsiteAdmin } from "@/server/auth/authorization";
 import { adjustBilling, BillingAdminError, billingOverview, billingRange, billingRunDetail, changeAgentPolicy, getAgentPolicies, listBilling, resolveBillingReview, testAgentFilter } from "@/server/billing/admin";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 async function handle(request: Request) {
   const id = createRequestId(); const start = performance.now(); let response: Response;
   try {

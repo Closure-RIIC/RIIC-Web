@@ -4,7 +4,6 @@ import { publicGachaError, startGachaScan } from "@/server/gacha-history";
 import { isCurrentPolicyConsent } from "@/legal-policy";
 import { assertSklandFeatureEnabled } from "@/server/skland/http";
 
-export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const requestId = createRequestId();

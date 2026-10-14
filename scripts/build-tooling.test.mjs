@@ -114,15 +114,16 @@ test("batched deployment inspections make one SSH call and fail closed on invali
   }
 });
 
-test("Next.js commands use the default Turbopack bundler", async () => {
+test("TanStack Start commands use Vite", async () => {
   const packageJson = JSON.parse(await readRepoFile("package.json"));
-  const playwrightConfig = await readRepoFile("playwright.config.ts");
-  const productionPlaywrightConfig = await readRepoFile("playwright.production.config.ts");
-
-  assert.equal(packageJson.scripts.build, "next build");
-  assert.doesNotMatch(packageJson.scripts.dev, /--webpack\b/);
-  assert.doesNotMatch(playwrightConfig, /--webpack\b/);
-  assert.doesNotMatch(productionPlaywrightConfig, /--webpack\b/);
+  assert.equal(packageJson.scripts.build, "vite build && tsc --noEmit");
+  assert.match(packageJson.scripts.dev, /vite/);
+  assert.equal(packageJson.dependencies.next, undefined);
+  assert.equal(packageJson.dependencies["next-intl"], undefined);
+  assert.ok(packageJson.dependencies["@tanstack/react-start"]);
+  for (const config of ["playwright.config.ts", "playwright.production.config.ts"]) {
+    assert.match(await readRepoFile(config), /npx vite --host/);
+  }
 });
 
 test("PostgreSQL integration tests register the TypeScript path alias loader", async () => {
@@ -142,38 +143,28 @@ test("business backfill shares the 30-day retention constant for scanning and ex
 
 test("production builds prepare a solver-free standalone runtime with static assets", async () => {
   const packageJson = JSON.parse(await readRepoFile("package.json"));
-  const nextConfig = await readRepoFile("next.config.ts");
-  const prepareStandalone = await readRepoFile("scripts/prepare-standalone.mjs");
-  const startStandalone = await readRepoFile("scripts/start-standalone.mjs");
-  const stageStandalone = await readRepoFile("scripts/stage-standalone-release.mjs");
-
-  assert.match(nextConfig, /output: "standalone"/);
-  assert.match(nextConfig, /generateBuildId: async \(\) => process\.env\.APP_BUILD_ID \?\? "local-development"/);
-  assert.match(nextConfig, /deploymentId: process\.env\.APP_BUILD_ID/);
-  assert.match(nextConfig, /APP_CLIENT_BUILD_ID: process\.env\.APP_BUILD_ID \?\? "local-development"/);
+  const config = await readRepoFile("vite.config.ts");
+  const prepare = await readRepoFile("scripts/prepare-standalone.mjs");
+  const start = await readRepoFile("scripts/start-standalone.mjs");
+  const stage = await readRepoFile("scripts/stage-standalone-release.mjs");
+  assert.match(config, /preset: "node-server"/);
+  assert.match(config, /APP_CLIENT_BUILD_ID: environment.APP_BUILD_ID/);
   assert.equal(packageJson.scripts.postbuild, "node scripts/prepare-standalone.mjs");
   assert.equal(packageJson.scripts.start, "node scripts/start-standalone.mjs");
   assert.equal(packageJson.scripts["release:stage"], "node scripts/stage-standalone-release.mjs");
-  assert.match(prepareStandalone, /process\.env\.RIIC_NEXT_DIST_DIR \|\| "\.next"/);
-  assert.match(prepareStandalone, /standaloneRoot, "public"/);
-  assert.match(prepareStandalone, /standaloneRoot, "\.next", "static"/);
-  assert.match(prepareStandalone, /\["infra-cli", "infra-cli\.exe"\]/);
-  assert.match(prepareStandalone, /\["\.env", "\.env\.production", "\.env\.local", "\.env\.production\.local"\]/);
-  assert.match(prepareStandalone, /standalone website output must not contain/);
-  assert.match(prepareStandalone, /node_modules\/drizzle-orm/);
-  assert.match(prepareStandalone, /scripts\/backfill-business-data\.mts/);
-  assert.match(prepareStandalone, /scripts\/migrate-db\.mts/);
-  assert.match(prepareStandalone, /scripts\/check-auth-readiness\.mts/);
-  assert.match(prepareStandalone, /src\/server\/business-backfill\.ts/);
-  assert.match(startStandalone, /ARKNIGHTS_INFRA_HOSTNAME \|\| "0\.0\.0\.0"/);
-  assert.match(startStandalone, /process\.env\.PORT = String\(numericPort\)/);
-  assert.match(startStandalone, /\.next\/standalone\/server\.js/);
-  assert.match(stageStandalone, /kind: "riic-web-standalone"/);
-  assert.match(stageStandalone, /standalone release root must not contain/);
-  assert.match(stageStandalone, /\["bin\/infra-cli", "infra-cli"\]/);
-  assert.match(stageStandalone, /\["\.env\.production\.local", "\.env\.production\.local"\]/);
-  assert.match(stageStandalone, /dereference: true/);
-  assert.doesNotMatch(stageStandalone, /outputRoot, "\.next", "cache"/);
+  for (const entry of ["bin/infra-cli", "bin/infra-cli.exe", ".env", ".env.production", ".env.local", ".env.production.local"]) assert.ok(prepare.includes('"' + entry + '"'));
+  for (const entry of ["migrate-db", "backfill-business-data", "check-auth-readiness"]) {
+    assert.ok(prepare.includes("scripts/" + entry + ".mts"));
+    assert.ok(stage.includes(".output/scripts/" + entry + ".mjs"));
+  }
+  assert.match(prepare, /bundle: true, platform: "node"/);
+  assert.match(start, /ARKNIGHTS_INFRA_HOSTNAME \|\| "0.0.0.0"/);
+  assert.match(start, /process.env.PORT = String\(numericPort\)/);
+  assert.match(start, /\.output\/server\/index.mjs/);
+  assert.match(stage, /kind: "riic-web-tanstack-start"/);
+  assert.match(stage, /standalone release root must not contain/);
+  assert.match(stage, /dereference: true/);
+  assert.match(stage, /release staging output must not already exist/);
 });
 
 test("the plan worker centrally dispatches an eight-task pipeline across four isolated solver lanes", async () => {
@@ -239,9 +230,9 @@ test("database migrations build queue indexes online after additive schema chang
   assert.match(schema, /plan_task_active_expires_idx[\s\S]+\.concurrently\(\)/);
 });
 
-test("Next.js owns graceful shutdown while systemd accepts its signal exit statuses", async () => {
+test("Nitro owns graceful shutdown while systemd accepts its signal exit statuses", async () => {
   const processCleanup = await readRepoFile("src/server/process-cleanup.ts");
-  const systemdDropIn = await readRepoFile("deploy/next-graceful-exit.conf");
+  const systemdDropIn = await readRepoFile("deploy/node-graceful-exit.conf");
   const systemdGuide = await readRepoFile("deploy/SYSTEMD.md");
 
   assert.doesNotMatch(processCleanup, /SIGINT|SIGTERM/);
@@ -265,35 +256,33 @@ test("CI enforces route and document preload JavaScript budgets after building",
   assert.match(budgetCheck, /MAX_SKLAND_ENABLED_DOCUMENT_INITIAL_JS_BYTES = 1_406_000/);
   assert.match(budgetCheck, /MAX_SKLAND_DISABLED_DOCUMENT_INITIAL_GZIP_JS_BYTES = 442_000/);
   assert.match(budgetCheck, /MAX_SKLAND_ENABLED_DOCUMENT_INITIAL_GZIP_JS_BYTES = 448_000/);
-  assert.match(budgetCheck, /const sklandEnabled = sklandRoute\.firstLoadChunkPaths\.some/);
+  assert.match(budgetCheck, /const sklandEnabled = buildMetadata.sklandEnabled/);
   assert.match(budgetCheck, /MAX_SECONDARY_ROUTE_INITIAL_JS_BYTES = 1_672_000/);
   assert.match(budgetCheck, /MAX_MANUAL_ROUTE_INITIAL_JS_BYTES = 1_692_000/);
   assert.match(budgetCheck, /MAX_DOCUMENT_INITIAL_JS_FILES = 18/);
   assert.match(budgetCheck, /WORKBENCH_ROUTES = \["\/", "\/manual", "\/training", "\/mastery", "\/recruitment", "\/skills", "\/skland", "\/account"\]/);
   assert.match(budgetCheck, /firstLoadUncompressedJsBytes/);
-  assert.match(budgetCheck, /server\/app\/index\.html/);
-  assert.match(budgetCheck, /return renderBuildDocument\(\)/);
+  assert.match(budgetCheck, /\.output\/public/);
+  assert.match(budgetCheck, /await renderBuildDocument\(\)/);
   assert.match(budgetCheck, /gzipSync/);
   assert.match(budgetCheck, /COMPACT_SCHEDULE_MARKER = "data-compact-schedule-view"/);
   assert.match(budgetCheck, /compact schedule code leaked into the initially loaded application chunk/);
 });
 
-test("Next and the verified deployment keep real public GET responses compressed", async () => {
-  const nextConfig = await readRepoFile("next.config.ts");
-  const deployWorkflow = await readRepoFile(".github/workflows/deploy.yml");
-  const rootLayout = await readRepoFile("src/app/layout.tsx");
-  const publicVerification = await readRepoFile("scripts/verify-public-compression.mjs");
-
-  assert.match(nextConfig, /compress: true/);
-  assert.match(nextConfig, /const uncachedDocumentRoutes = \[/);
-  assert.match(nextConfig, /const uncachedDocumentRoutes = \[[\s\S]+"\/manual"/);
-  assert.match(nextConfig, /private, no-cache, no-store, max-age=0, must-revalidate/);
-  assert.match(rootLayout, /"riic-build-id": process\.env\.APP_CLIENT_BUILD_ID \?\? "local-development"/);
-  assert.match(publicVerification, /public HTML build ID is/);
-  assert.match(publicVerification, /public HTML must not be stored by a shared cache/);
-  assert.match(deployWorkflow, /Deploy and verify[\s\S]+Verify public response compression/);
-  assert.match(deployWorkflow, /node scripts\/verify-public-compression\.mjs\s*$/m);
-  assert.doesNotMatch(deployWorkflow, /verify-public-compression\.mjs "\$DEPLOY_PUBLIC_HEALTH_URL"/);
+test("Start and Nitro preserve compression and private document caching", async () => {
+  const config = await readRepoFile("vite.config.ts");
+  const server = await readRepoFile("src/server.ts");
+  const policy = await readRepoFile("src/server/http-cache-policy.ts");
+  const root = await readRepoFile("src/routes/__root.tsx");
+  const verify = await readRepoFile("scripts/verify-public-compression.mjs");
+  assert.match(config, /compressPublicAssets: true/);
+  assert.match(server, /new CompressionStream\("gzip"\)/);
+  assert.match(server, /Cache-Control.*, DOCUMENT_CACHE_CONTROL/);
+  assert.match(policy, /private, no-cache, no-store, max-age=0, must-revalidate/);
+  assert.match(root, /"riic-build-id", content: process.env.APP_CLIENT_BUILD_ID/);
+  assert.match(verify, /public HTML build ID is/);
+  assert.match(verify, /public HTML must not be stored by a shared cache/);
+  assert.match(await readRepoFile(".github/workflows/deploy.yml"), /node scripts\/verify-public-compression.mjs\s*$/m);
 });
 
 test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedules the full WebKit suite", async () => {
@@ -318,7 +307,7 @@ test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedul
   assert.doesNotMatch(workflow, /^\s*pull_request\s*:/m);
   assert.match(workflow, /cancel-in-progress: false/);
   assert.equal(readinessSpecs.length, 4);
-  assert.equal(readinessTestCount, 117);
+  assert.equal(readinessTestCount, 118);
   assert.equal(e2eFiles.includes("production-readiness.spec.ts"), false);
   assert.match(playwrightConfig, /fullyParallel: true/);
   assert.match(playwrightConfig, /workers: process\.env\.CI \? 2 : undefined/);
@@ -343,7 +332,7 @@ test("CI change scope keeps one required quality gate and fails closed", async (
   assert.match(workflow, /static_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /database_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /release_artifact:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
-  assert.match(workflow, /browser_e2e:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_browser == 'true'/);
+  assert.match(workflow, /browser_e2e:[\s\S]+needs: \[changes, release_artifact\][\s\S]+needs\.changes\.outputs\.run_browser == 'true'/);
   assert.match(workflow, /quality:[\s\S]+test "\$CHANGES_RESULT" = "success"[\s\S]+test "\$HYGIENE_RESULT" = "success"[\s\S]+"\$DEPLOY_REQUIRED" == "true"[\s\S]+"\$required" == "true"[\s\S]+verify_result "\$RUN_CORE" "\$STATIC_RESULT"[\s\S]+verify_result "\$RUN_BROWSER" "\$BROWSER_E2E_RESULT"/);
   assert.match(workflow, /deploy:[\s\S]+needs\.changes\.outputs\.deploy_required == 'true'/);
 
@@ -388,7 +377,7 @@ test("public deployment automation is repository-bound, opt-in, and secret-safe"
   assert.doesNotMatch(deployWorkflow, /allow_workflow_dispatch|github\.event_name/);
   assert.match(deployWorkflow, /deployment_authorized:[\s\S]+type: boolean[\s\S]+deploy_required:[\s\S]+type: boolean/);
   assert.match(deployWorkflow, /inputs\.deployment_authorized &&[\s\S]+inputs\.deploy_required &&[\s\S]+github\.ref_name == 'main'[\s\S]+vars\.DEPLOY_AUTOMATION_ENABLED == '1'[\s\S]+github\.repository == 'KnightCodeSquareMatrix\/RIIC-Web'/);
-  assert.match(deployWorkflow, /DEPLOY_APPROVED_SOLVER_SHA256: \$\{\{ github\.ref_name == 'develop' && vars\.DEPLOY_APPROVED_SOLVER_SHA256 \|\| '' \}\}[\s\S]+DEPLOY_EXPECTED_REPOSITORY: KnightCodeSquareMatrix\/RIIC-Web[\s\S]+DEPLOY_RELEASE_HELPER_CONTRACT: "6"/);
+  assert.match(deployWorkflow, /DEPLOY_APPROVED_SOLVER_SHA256: \$\{\{ github\.ref_name == 'develop' && vars\.DEPLOY_APPROVED_SOLVER_SHA256 \|\| '' \}\}[\s\S]+DEPLOY_EXPECTED_REPOSITORY: KnightCodeSquareMatrix\/RIIC-Web[\s\S]+DEPLOY_RELEASE_HELPER_CONTRACT: "7"/);
   assert.doesNotMatch(deployWorkflow, /DEPLOY_PREPARE_HELPER_CONTRACT|arknights-infra-prepare-release/);
   assert.match(deployWorkflow, /DEPLOY_PUBLIC_HEALTH_URL: \$\{\{ secrets\.DEPLOY_PUBLIC_HEALTH_URL \}\}/);
   assert.doesNotMatch(deployWorkflow, /DEPLOY_PUBLIC_HEALTH_URL: \$\{\{ vars\./);
@@ -399,7 +388,7 @@ test("public deployment automation is repository-bound, opt-in, and secret-safe"
   assert.match(preflightWorkflow, /PREFLIGHT_MODE: \$\{\{ inputs\.mode \}\}/);
   assert.match(preflightWorkflow, /DEPLOY_ENVIRONMENT: \$\{\{ inputs\.environment \}\}/);
   assert.match(preflightWorkflow, /if \[\[ "\$PREFLIGHT_MODE" == "cutover-ready" \]\][\s\S]+test "\$actual_contract" = "\$expected_contract"/);
-  assert.match(preflightWorkflow, /DEPLOY_APPROVED_SOLVER_SHA256: \$\{\{ inputs\.environment == 'development' && vars\.DEPLOY_APPROVED_SOLVER_SHA256 \|\| '' \}\}[\s\S]+DEPLOY_RELEASE_HELPER_CONTRACT: "6"/);
+  assert.match(preflightWorkflow, /DEPLOY_APPROVED_SOLVER_SHA256: \$\{\{ inputs\.environment == 'development' && vars\.DEPLOY_APPROVED_SOLVER_SHA256 \|\| '' \}\}[\s\S]+DEPLOY_RELEASE_HELPER_CONTRACT: "7"/);
   assert.match(preflightWorkflow, /"\$PREFLIGHT_MODE" == "cutover-ready" && "\$DEPLOY_ENVIRONMENT" == "production"[\s\S]+cat '\$DEPLOY_APP_ROOT\/shared\/bin\/infra-cli\.sha256'[\s\S]+sudo -n \/usr\/local\/sbin\/arknights-infra-deploy/);
   assert.match(preflightWorkflow, /Inspect deploy helper, solver, and disk[\s\S]+verify_helper deploy \/usr\/local\/sbin\/arknights-infra-deploy/);
   assert.match(preflightWorkflow, /sudo -n \/usr\/local\/sbin\/arknights-infra-deploy[\s\S]+--preflight "\$deployment_environment" "\$app_root"[\s\S]+"\$expected_repository" "\$approved_solver_sha256"/);
@@ -461,7 +450,7 @@ test("CI builds once and deploy transfers the verified solver-free standalone ar
   assert.match(deployWorkflow, /tar --sort=name[\s\S]+--mtime='@\$SOURCE_DATE_EPOCH'[\s\S]+--mode='u\+rwX,go\+rX,go-w'[\s\S]+-C \\"\\\$remote_cache_path\\" \.[\s\S]+gzip --best --no-name --rsyncable[\s\S]+test \\"\\\$remote_sha256\\" = '\$DEPLOY_ARCHIVE_SHA256'[\s\S]+mv -fT/);
   assert.doesNotMatch(deployWorkflow, /archive_cache=|remote_prefix_sha256|upload_chunk_bytes/);
   assert.doesNotMatch(deployWorkflow, /\bscp\b/);
-  assert.match(deployWorkflow, /DEPLOY_RELEASE_HELPER_CONTRACT: "6"/);
+  assert.match(deployWorkflow, /DEPLOY_RELEASE_HELPER_CONTRACT: "7"/);
   assert.match(deployWorkflow, /'\$DEPLOY_SOLVER_SHA256' \\\n\s+'\$DEPLOY_TREE_SHA'/);
   assert.match(deployWorkflow, /Remove staged release artifacts from the runner[\s\S]+if: always\(\)[\s\S]+"\$RUNNER_TEMP"\/riic-web-release-\[0-9\]\*-\[0-9\]\*/);
   assert.doesNotMatch(deployWorkflow, /git (?:archive|bundle)|repository\.git|DEPLOY_PREVIOUS_SHA|remote_bundle/);
@@ -635,18 +624,18 @@ test("CI browser jobs use the matching pinned Playwright image without runtime a
 });
 
 test("production injects the client feature flag at every browser boundary", async () => {
-  const nextConfig = await readRepoFile("next.config.ts");
+  const nextConfig = await readRepoFile("vite.config.ts");
   const app = await readRepoFile("src/App.tsx");
   const sklandPage = await readRepoFile("src/app/(workbench)/skland/page.tsx");
   const developmentSklandCenter = await readRepoFile("src/components/pages/DevelopmentSklandStatusCenter.tsx");
   const setupDialog = await readRepoFile("src/setup-dialog.tsx");
   const workflow = await readRepoFile(".github/workflows/frontend-quality.yml");
 
-  assert.match(nextConfig, /APP_CLIENT_SKLAND_ENABLED: isSklandFeatureEnabled\(\) \? "1" : "0"/);
-  assert.match(nextConfig, /APP_CLIENT_SKLAND_API_PREFIX: isSklandFeatureEnabled\(\) \? "\/api\/skland" : ""/);
-  assert.match(nextConfig, /"account-cloud-workspace-bridge": process\.env\.ACCOUNT_CLOUD_SYNC_ENABLED === "1"/);
+  assert.match(nextConfig, /APP_CLIENT_SKLAND_ENABLED: sklandEnabled \? "1" : "0"/);
+  assert.match(nextConfig, /APP_CLIENT_SKLAND_API_PREFIX: sklandEnabled \? "\/api\/skland" : ""/);
+  assert.match(nextConfig, /environment.ACCOUNT_CLOUD_SYNC_ENABLED === "1"/);
   assert.match(nextConfig, /useAccountCloudWorkspace\.disabled\.ts/);
-  assert.match(nextConfig, /"workbench-skland-route": isSklandFeatureEnabled\(\)/);
+  assert.match(nextConfig, /"workbench-skland-route":[\s\S]+new URL\(sklandEnabled/);
   assert.match(nextConfig, /SklandRoute\.disabled\.tsx/);
   assert.match(app, /process\.env\.APP_CLIENT_SKLAND_ENABLED === "1"/);
   assert.match(sklandPage, /process\.env\.APP_CLIENT_SKLAND_ENABLED !== "1"/);
@@ -683,7 +672,7 @@ test("workbench views use five prefetched route entries under one persistent lay
   assert.match(routeMap, /"skill-query": "\/skills"/);
   assert.match(routeMap, /skland: "\/skland"/);
   assert.match(routeMap, /account: "\/account"/);
-  assert.match(sidebar, /import Link from "next\/link"/);
+  assert.match(sidebar, /import \{ Link \} from "@tanstack\/react-router"/);
   assert.doesNotMatch(sidebar, /useLinkStatus|data-navigation-pending/);
   assert.match(sidebar, /data-primary-navigation-prefetch="eager"/);
   assert.doesNotMatch(sidebar, /prefetch=\{false\}/);
@@ -693,10 +682,10 @@ test("workbench views use five prefetched route entries under one persistent lay
   assert.doesNotMatch(sidebar, /\?beta|betaRequested/);
 });
 
-test("the Skland entry is request-rendered so releases cannot retain stale login chunks", async () => {
-  const sklandPage = await readRepoFile("src/app/(workbench)/skland/page.tsx");
-
-  assert.match(sklandPage, /export const dynamic = "force-dynamic"/);
+test("the Skland entry checks the runtime feature gate and documents remain uncached", async () => {
+  assert.match(await readRepoFile("src/routes/_workbench.skland.tsx"), /beforeLoad:[\s\S]+context.publicConfig.sklandEnabled[\s\S]+throw notFound/);
+  assert.match(await readRepoFile("src/server.ts"), /DOCUMENT_CACHE_CONTROL/);
+  assert.doesNotMatch(await readRepoFile("vite.config.ts"), /prerender:\s*true/);
 });
 
 test("the critical calculator board stays initial while the compact view loads on demand", async () => {
@@ -740,17 +729,13 @@ test("heavy account, operator, and scrollbar modules stay behind runtime boundar
 });
 
 test("versioned product assets receive immutable cache headers", async () => {
-  const nextConfig = await readRepoFile("next.config.ts");
-
-  assert.match(nextConfig, /source: "\/images\/products\/:asset"/);
-  assert.match(nextConfig, /key: "v", value: "\\\\d\+-\[0-9a-f\]\{12\}"/);
-  assert.match(nextConfig, /public, max-age=31536000, immutable/);
+  const { assetCacheControl } = await import("../src/server/http-cache-policy.ts");
+  assert.equal(assetCacheControl(new URL("https://test.invalid/images/products/item.png?v=123-abcdef123456")), "public, max-age=31536000, immutable");
+  assert.equal(assetCacheControl(new URL("https://test.invalid/images/products/item.png")), "public, max-age=0");
 });
 
 test("building skill immutable cache headers require an asset version", async () => {
-  const nextConfig = await readRepoFile("next.config.ts");
-  const rules = [...nextConfig.matchAll(/source: "\/images\/building-skills\/:asset"([\s\S]*?)\n\s*},/g)];
-  assert.equal(rules.length, 1);
-  assert.match(rules[0][1], /has: \[\{ type: "query", key: "v", value: "\\\\d\+-\[0-9a-f\]\{12\}" }\]/);
-  assert.match(rules[0][1], /public, max-age=31536000, immutable/);
+  const { assetCacheControl } = await import("../src/server/http-cache-policy.ts");
+  assert.equal(assetCacheControl(new URL("https://test.invalid/images/building-skills/item.png?v=123-abcdef123456")), "public, max-age=31536000, immutable");
+  for (const suffix of ["", "?v=123", "?v=bad-abcdef123456"]) assert.equal(assetCacheControl(new URL("https://test.invalid/images/building-skills/item.png" + suffix)), "public, max-age=0");
 });

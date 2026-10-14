@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { useRender } from "@base-ui/react/use-render"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/navigation"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"

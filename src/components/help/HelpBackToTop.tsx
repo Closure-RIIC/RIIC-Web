@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 
 import { ArrowUp } from "lucide-react";
 import { useReducedMotion } from "motion/react";

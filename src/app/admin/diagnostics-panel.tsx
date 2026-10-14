@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "use-intl";
 import { Button } from "@/components/ui/button";
 import { DIAGNOSTIC_CATEGORIES, type DiagnosticReport } from "@/diagnostics";
 import { useAdminRequest } from "./admin-context";

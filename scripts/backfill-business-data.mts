@@ -1,4 +1,4 @@
-import nextEnv from "@next/env";
+import { loadEnvConfig } from "./load-env.mjs";
 import { createHash } from "node:crypto";
 import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
@@ -7,7 +7,6 @@ import { Pool } from "pg";
 import { legacyFeedbackSummary, legacyPlanRunSummary } from "../src/server/business-backfill.ts";
 import { BUSINESS_DATA_TTL_MS } from "../src/server/business-config.ts";
 
-const { loadEnvConfig } = nextEnv;
 loadEnvConfig(process.cwd());
 
 const databaseUrl = process.env.DATABASE_URL?.trim();

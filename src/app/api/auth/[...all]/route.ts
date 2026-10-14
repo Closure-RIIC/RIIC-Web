@@ -7,8 +7,6 @@ import { isForbiddenNativeAdminPath } from "@/server/auth/native-route-policy";
 import { responseWithClearedSklandCookies } from "@/server/auth/session-cookie-cleanup";
 import { evictPlanCacheKeys, userPlanCacheKeys } from "@/server/plan-cache";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 async function handle(request: Request) {
   if (isForbiddenNativeAdminPath(request.url)) {

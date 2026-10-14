@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { Link } from "@tanstack/react-router";
+import { usePathname } from "@/navigation";
+import { useTranslations } from "use-intl";
 import { ArrowUpRight, BookOpen, Bug, FlaskConical, Gauge, Gift, MessageSquareText, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 
@@ -29,7 +29,7 @@ export function AdminNav({ isAdmin, name, basePath = "/admin" }: { isAdmin: bool
   const items = adminNavigation(isAdmin, basePath);
   return <Sidebar collapsible="icon" mobileWidth="18rem" className="border-r-0">
     <SidebarHeader className="h-16 justify-center px-3">
-      <Link href={basePath} onClick={() => setOpenMobile(false)} className="flex items-center gap-2.5 rounded-lg p-1 outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t("workspace")}>
+      <Link to={basePath} onClick={() => setOpenMobile(false)} className="flex items-center gap-2.5 rounded-lg p-1 outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t("workspace")}>
         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"><ShieldCheck className="size-5" aria-hidden="true" /></span>
         <span className="grid min-w-0 group-data-[collapsible=icon]:hidden"><span className="text-sm font-semibold tracking-tight">RIIC Admin</span><span className="text-[11px] text-muted-foreground">{t("workspace")}</span></span>
       </Link>
@@ -46,7 +46,7 @@ export function AdminNav({ isAdmin, name, basePath = "/admin" }: { isAdmin: bool
                 const active = item.path ? pathname === href || pathname.startsWith(href + "/") : pathname === href;
                 return <SidebarMenuItem key={item.path}>
                   <SidebarMenuButton isActive={active} tooltip={t(item.title)} className="h-10 gap-3 rounded-lg data-[active=true]:bg-primary/8 data-[active=true]:font-semibold motion-safe:active:scale-[0.98]"
-                    render={<Link href={href} aria-current={active ? "page" : undefined} onClick={() => setOpenMobile(false)} />}>
+                    render={<Link to={href} aria-current={active ? "page" : undefined} onClick={() => setOpenMobile(false)} />}>
                     <item.icon aria-hidden="true" className="size-4" /><span>{t(item.title)}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>;
@@ -57,7 +57,7 @@ export function AdminNav({ isAdmin, name, basePath = "/admin" }: { isAdmin: bool
       </nav>
     </SidebarContent>
     <SidebarFooter className="gap-3 px-3 pb-4">
-      <SidebarMenu><SidebarMenuItem><SidebarMenuButton tooltip={t("backToSite")} className="h-10" render={<Link href="/" />}><ArrowUpRight className="size-4" aria-hidden="true" /><span>{t("backToSite")}</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu>
+      <SidebarMenu><SidebarMenuItem><SidebarMenuButton tooltip={t("backToSite")} className="h-10" render={<Link to="/" />}><ArrowUpRight className="size-4" aria-hidden="true" /><span>{t("backToSite")}</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu>
       <div className="flex items-center gap-2.5 border-t pt-4">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold" aria-hidden="true">{name.slice(0, 2).toUpperCase()}</span>
         <div className="grid min-w-0 group-data-[collapsible=icon]:hidden"><span className="truncate text-xs font-medium">{name}</span><span className="mt-0.5 text-[11px] text-muted-foreground">{t(isAdmin ? "administrator" : "reviewer")}</span></div>

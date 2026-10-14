@@ -1,7 +1,7 @@
 "use client";
 import { useAdminFetch } from "../admin-context";
 import { useEffect, useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale } from "use-intl";
 import { Button } from "@/components/ui/button";
 import type { AdminFeedbackRecordData, ApiResponse } from "@/types";
 type Related = { operators: string[]; matches: { feedback: AdminFeedbackRecordData; reason: string; operators: string[] }[]; links: { feedbackId: string; masterId: string }[] };

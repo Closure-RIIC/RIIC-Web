@@ -1750,9 +1750,12 @@ test("Skland status center loads full status on demand and deletion preserves no
   expect(deleteBox).not.toBeNull();
   await page.mouse.move(deleteBox!.x + deleteBox!.width / 2, deleteBox!.y + deleteBox!.height / 2);
   await page.mouse.down();
-  await page.waitForTimeout(1900);
-  await page.mouse.up();
-  await expect(page.getByRole("heading", { name: "把当前罗德岛带进排班助手" })).toBeVisible();
+  try {
+    // Hold until the real confirmation finishes, including a delayed WebKit frame.
+    await expect(page.getByRole("heading", { name: "把当前罗德岛带进排班助手" })).toBeVisible();
+  } finally {
+    await page.mouse.up();
+  }
 
   await page.getByRole("button", { name: "Toggle Sidebar" }).click();
   await page.getByRole("button", { name: "基建计算器", exact: true }).click();
@@ -1778,7 +1781,7 @@ test("Skland status center keeps profile and recruitment in overview and support
   let statusRequests = 0;
   let currentStatusSnapshot: typeof authenticatedSklandSnapshot | typeof switchedSnapshot = authenticatedSklandSnapshot;
   page.on("request", (request) => {
-    if (/attendance|sign/i.test(request.url())) attendanceRequests += 1;
+    if (["fetch", "xhr"].includes(request.resourceType()) && /attendance|sign/i.test(request.url())) attendanceRequests += 1;
     if (new URL(request.url()).pathname === "/api/skland/status/refresh") statusRequests += 1;
   });
   await mockApis(page, {

@@ -2,7 +2,7 @@
 
 import { Play } from "lucide-react";
 import { useState, type ReactNode } from "react";
-import { useLocale } from "next-intl";
+import { useLocale } from "use-intl";
 
 export function TutorialVideo({ src, title, cover, duration }: {
   src: string;

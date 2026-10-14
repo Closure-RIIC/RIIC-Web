@@ -1,5 +1,5 @@
 import { localize as localize_components } from "./i18n/helpers/components.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import {
   Check,
   ChevronDown,

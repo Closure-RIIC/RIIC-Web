@@ -1,6 +1,7 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import { lazy, Suspense } from "react";
+import { ClientOnly } from "@tanstack/react-router";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWorkbench } from "@/workbench-context";
@@ -23,12 +24,9 @@ function ManualScheduleLoading() {
   );
 }
 
-const ManualSchedulePage = dynamic(
-  () => import("@/components/pages/ManualSchedulePage").then((module) => module.ManualSchedulePage),
-  { ssr: false, loading: ManualScheduleLoading },
-);
+const ManualSchedulePage = lazy(() => import("@/components/pages/ManualSchedulePage").then((module) => ({ default: module.ManualSchedulePage })));
 
 export function ManualScheduleRoute() {
   const { manual } = useWorkbench();
-  return <ManualSchedulePage {...manual} />;
+  return <ClientOnly fallback={<ManualScheduleLoading />}><Suspense fallback={<ManualScheduleLoading />}><ManualSchedulePage {...manual} /></Suspense></ClientOnly>;
 }

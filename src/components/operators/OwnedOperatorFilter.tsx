@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
 
 export function OwnedOperatorFilter({ value, onChange }: {

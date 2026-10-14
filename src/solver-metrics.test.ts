@@ -162,7 +162,7 @@ test("admin solver metrics polling deduplicates requests and pauses in hidden ta
 test("admin routes split overview, issue triage, and users while keeping the accessible metrics chart", async () => {
   const [page, issuesPage, usersPage, chartClient, chart] = await Promise.all([
     readFile(new URL("./app/admin/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("./app/admin/issues/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("./routes/admin.issues.tsx", import.meta.url), "utf8"),
     readFile(new URL("./app/admin/users/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("./app/admin/users/solver-metrics-client.tsx", import.meta.url), "utf8"),
     readFile(new URL("./app/admin/users/solver-metrics-chart.tsx", import.meta.url), "utf8"),
@@ -173,8 +173,8 @@ test("admin routes split overview, issue triage, and users while keeping the acc
   assert.equal(page.includes("<AdminUserManagement"), false);
   assert.equal(issuesPage.includes("<AdminIssues"), true);
   assert.equal(usersPage.includes("<AdminUserManagement"), true);
-  assert.equal(chartClient.includes("dynamic("), true);
-  assert.equal(chartClient.includes("ssr: false"), true);
+  assert.equal(chartClient.includes("lazy("), true);
+  assert.equal(chartClient.includes("<ClientOnly"), true);
   assert.equal(chart.includes("<AreaChart accessibilityLayer"), true);
   assert.equal(chart.match(/<Area/g)?.length, 3);
 });
