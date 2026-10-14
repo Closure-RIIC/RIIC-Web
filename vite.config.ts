@@ -51,6 +51,12 @@ export default defineConfig(({ mode }) => {
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
           const url = new URL(req.url ?? "/", "http://localhost");
+          // Nitro dev otherwise compresses this already-gzipped binary again.
+          // Linux WebKit preserves application/gzip bodies during HTTP decoding,
+          // leaving an extra gzip layer for the texture loader to misinterpret.
+          if (/^\/textures\/[^/]+\.bin\.gz$/.test(url.pathname)) {
+            req.headers["accept-encoding"] = "identity";
+          }
           if (!/^\/images\//.test(url.pathname) && !/^\/wasm\//.test(url.pathname)) return next();
           const policy = assetCacheControl(url) ?? "public, max-age=0";
           const writeHead = res.writeHead;
