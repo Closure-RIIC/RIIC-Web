@@ -21,21 +21,24 @@ export function useAgentScroll() {
     const root = viewport?.parentElement;
     if (!viewport || !root) return;
     let frame = 0;
-    let previousTop = viewport.scrollTop;
     let previousHeight = viewport.clientHeight;
     let previousContentHeight = viewport.scrollHeight;
     let downIntent = false;
+    let downStartTop = viewport.scrollTop;
     let manualUntil = 0;
     let draggingScrollbar = false;
     let touchY: number | undefined;
     const observed = new Set<Element>();
     const update = () => {
       const remaining = Math.max(0, viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop);
+      // WebKit may deliver ResizeObserver before scroll. Keep the gesture's
+      // starting position independently of geometry observations.
+      if (!following.current && downIntent && viewport.scrollTop > downStartTop && remaining <= 2
+        && (draggingScrollbar || performance.now() < manualUntil)) following.current = true;
       const overflow = viewport.scrollHeight > viewport.clientHeight + 2;
       root.style.setProperty("--conversation-fade-top", overflow && viewport.scrollTop > 2 ? "var(--conversation-edge)" : "0px");
       root.style.setProperty("--conversation-fade-bottom", overflow && remaining > 2 ? "var(--conversation-edge)" : "0px");
       setShowLatest(!following.current && remaining > 2);
-      previousTop = viewport.scrollTop;
       previousHeight = viewport.clientHeight;
       previousContentHeight = viewport.scrollHeight;
     };
@@ -53,15 +56,10 @@ export function useAgentScroll() {
     };
     const direction = (delta: number) => {
       if (delta < 0) pause();
-      else if (delta > 0) { downIntent = true; manualUntil = performance.now() + 1500; }
+      else if (delta > 0) { downStartTop = viewport.scrollTop; downIntent = true; manualUntil = performance.now() + 1500; }
     };
     const scroll = () => {
       const geometryChanged = previousHeight !== viewport.clientHeight || previousContentHeight !== viewport.scrollHeight;
-      const movedDown = viewport.scrollTop > previousTop;
-      const atBottom = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop <= 2;
-      // Layout/scroll anchoring events cannot silently resume a paused reader.
-      if (!geometryChanged && !following.current && movedDown && atBottom && downIntent
-        && (draggingScrollbar || performance.now() < manualUntil)) following.current = true;
       if (geometryChanged && following.current) schedule();
       update();
     };
@@ -81,9 +79,9 @@ export function useAgentScroll() {
     const pointerDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
       pause();
-      if (event.target === viewport) { draggingScrollbar = true; downIntent = true; }
+      if (event.target === viewport) { draggingScrollbar = true; downStartTop = viewport.scrollTop; downIntent = true; }
     };
-    scrollbarInput.current = () => { pause(); draggingScrollbar = true; downIntent = true; };
+    scrollbarInput.current = () => { pause(); draggingScrollbar = true; downStartTop = viewport.scrollTop; downIntent = true; };
     const pointerUp = () => { draggingScrollbar = false; manualUntil = performance.now() + 1500; };
     const observer = new ResizeObserver(schedule);
     observer.observe(viewport);
