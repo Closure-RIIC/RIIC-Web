@@ -477,11 +477,24 @@ async function verifyConversationScrolling(page: Page, width: number) {
   await expect(input).toBeVisible();
   await expect(page.locator("[data-agent-streaming-text]")).toContainText("第 45 段");
   await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThan(80);
+  // Late composer layout must keep restored history at the latest message.
+  const composerPanel = page.locator("[data-agent-composer]");
+  await composerPanel.evaluate((el) => {
+    el.style.paddingBottom = "211px";
+    // WebKit can deliver multiple layout scrolls before ResizeObserver.
+    const conversation = document.querySelector('[aria-label="对话记录"]')!;
+    conversation.dispatchEvent(new Event("scroll", { bubbles: true }));
+    conversation.dispatchEvent(new Event("scroll", { bubbles: true }));
+  });
+  await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThan(80);
   await conversation.hover();
-  // Mobile WebKit has no mouse wheel; keyboard scrolling exercises the same viewport.
+  // Keyboard scrolling also works in mobile WebKit, which has no mouse wheel.
   await conversation.focus();
   await conversation.press("PageUp");
   await conversation.press("PageUp");
+  await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeGreaterThan(300);
+  // Resizing must preserve the reader's position after scrolling back.
+  await composerPanel.evaluate((el) => { el.style.paddingBottom = ""; });
   await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeGreaterThan(300);
   await expect(input).toBeVisible();
   // The relocated track still drives the original viewport and supports dragging.
