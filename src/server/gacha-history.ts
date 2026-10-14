@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 
 import { randomUUID } from "node:crypto";
 import { createClient, STORAGE_DID_KEY, type Client } from "skland-kit";

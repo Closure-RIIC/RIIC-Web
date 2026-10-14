@@ -1,7 +1,7 @@
 "use client";
 import { adminPageClass } from "../admin-page";
 import { localize as localize_app_admin_skills_skill_annotations_client } from "../../../i18n/helpers/app_admin_skills_skill_annotations_client.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { Check, Loader2, Pencil, Plus, Search, Trash2, X } from "lucide-react";

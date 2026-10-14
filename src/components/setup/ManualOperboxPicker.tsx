@@ -1,6 +1,6 @@
 "use client";
 import { localize as localize_components_setup_ManualOperboxPicker } from "../../i18n/helpers/components_setup_ManualOperboxPicker.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import {
   memo,

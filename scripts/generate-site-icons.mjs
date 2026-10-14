@@ -9,6 +9,8 @@ import sharp from "sharp";
 const repoRoot = new URL("../", import.meta.url);
 const masterUrl = new URL("assets/branding/closure-site-icon.png", repoRoot);
 const outputDefinitions = [
+  { url: new URL("public/icon.png", repoRoot), size: 512 },
+  { url: new URL("public/apple-icon.png", repoRoot), size: 180 },
   { url: new URL("src/app/icon.png", repoRoot), size: 512 },
   { url: new URL("src/app/apple-icon.png", repoRoot), size: 180 },
 ];

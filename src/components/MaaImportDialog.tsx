@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 import type { RefObject } from "react";
 import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";

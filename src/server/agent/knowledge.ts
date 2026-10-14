@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 
 import { readFile } from "node:fs/promises";
 import path from "node:path";

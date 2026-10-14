@@ -1,6 +1,6 @@
 "use client";
 import { localize as localize_components_UpgradeSimulationDialog } from "../i18n/helpers/components_UpgradeSimulationDialog.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
 import { FlaskConical, Loader2 } from "lucide-react";

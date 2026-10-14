@@ -1,9 +1,10 @@
 "use client";
 import { useAdminFetch } from "../admin-context";
 import { localize as localize_app_admin_users_solver_metrics_client } from "../../../i18n/helpers/app_admin_users_solver_metrics_client.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
-import dynamic from "next/dynamic";
+import { lazy, Suspense } from "react";
+import { ClientOnly } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
 
@@ -19,13 +20,10 @@ function MetricsChartLoading() {
   return <SkeletonRouteFallback><Skeleton className="h-[280px] rounded-xl sm:h-[320px]" aria-label={intl("app_admin_users_solver_metrics_client.loadingSolverTrendChart")} /></SkeletonRouteFallback>;
 }
 
-const AdminSolverMetricsChart = dynamic(
-  () => import("./solver-metrics-chart").then((module) => module.AdminSolverMetricsChart),
-  {
-    ssr: false,
-    loading: () => <MetricsChartLoading />,
-  },
-);
+const LazyMetricsChart = lazy(() => import("./solver-metrics-chart").then((module) => ({ default: module.AdminSolverMetricsChart })));
+function AdminSolverMetricsChart(props: React.ComponentProps<typeof LazyMetricsChart>) {
+  return <ClientOnly fallback={<MetricsChartLoading />}><Suspense fallback={<MetricsChartLoading />}><LazyMetricsChart {...props} /></Suspense></ClientOnly>;
+}
 
 const PERCENT_FORMATTER = new Intl.NumberFormat("zh-CN", {
   style: "percent",

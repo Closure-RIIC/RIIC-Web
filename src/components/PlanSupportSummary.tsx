@@ -1,8 +1,7 @@
 "use client";
 
-import { useLocale } from "next-intl";
+import { useLocale } from "use-intl";
 import { ChevronDown, HeartPulse } from "lucide-react";
-import Image from "next/image";
 import { PRODUCT_ICON_URLS } from "@/product-assets";
 import { Switch } from "@/components/ui/switch";
 import { localizedOperatorName, localizedRoomTitle } from "@/i18n/game-data";
@@ -37,7 +36,7 @@ export function PlanSupportSummary({ drones, target, portrait, automatic, onAuto
   return <>
     <div className={cell} data-plan-support="drones">
       <span className={label}>{en ? "Drones" : "无人机"}</span>
-      <Image src={PRODUCT_ICON_URLS.drone} alt="" width={32} height={32} unoptimized loading="eager" className="pointer-events-none absolute right-1.5 top-1.5 size-8 object-contain opacity-75" aria-hidden="true" />
+      <img src={PRODUCT_ICON_URLS.drone} alt="" width={32} height={32} loading="eager" className="pointer-events-none absolute right-1.5 top-1.5 size-8 object-contain opacity-75" aria-hidden="true" />
       {!automatic && (onAutomaticChange || automaticDisabled) ? (
         <button type="button" className={`${value} max-w-full text-purple-700 outline-none hover:underline focus-visible:underline max-sm:min-h-8`} aria-label={en ? "Choose facility" : "选择设施"} onClick={onChooseFacility}>
           <span className={droneText}>{room}</span><ChevronDown className="size-3 shrink-0" />

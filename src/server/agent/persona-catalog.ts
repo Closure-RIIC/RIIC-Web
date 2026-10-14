@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 
 import { readFile } from "node:fs/promises";
 import { builtinAgentPersona, BUILTIN_AGENT_PERSONAS } from "../../agent-personas.ts";

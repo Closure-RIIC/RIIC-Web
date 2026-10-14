@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import type { CSSProperties } from "react";
 import { motion, useReducedMotion } from "motion/react";

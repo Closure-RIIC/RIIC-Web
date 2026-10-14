@@ -5,7 +5,6 @@ import { assertSklandFeatureEnabled } from "@/server/skland/http";
 import { clearGachaArchive, readGachaArchive, saveGachaArchive } from "@/server/gacha-archive";
 import { validateGachaImport } from "@/server/gacha-archive-validation";
 
-export const runtime = "nodejs";
 
 async function handle(request: Request) {
   const requestId = createRequestId();

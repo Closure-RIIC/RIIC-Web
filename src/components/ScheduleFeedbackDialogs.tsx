@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Loader2, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";

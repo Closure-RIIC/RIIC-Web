@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useSyncExternalStore } from "react";
-import { useLocale } from "next-intl";
+import { useLocale } from "use-intl";
 import { loadGameCatalog } from "./game-data.ts";
 import type { EnglishCatalog } from "./game-catalog.ts";
 import { loadUserSettings, USER_SETTINGS_CHANGED_EVENT, type UserSettings } from "../user-settings.ts";

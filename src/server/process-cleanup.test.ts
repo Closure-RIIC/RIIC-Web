@@ -4,7 +4,7 @@ import test from "node:test";
 
 import { registerProcessCleanup, type ProcessCleanupTarget } from "./process-cleanup.ts";
 
-test("process cleanup leaves SIGINT and SIGTERM entirely to Next.js", () => {
+test("process cleanup leaves SIGINT and SIGTERM entirely to the HTTP runtime", () => {
   const target = new EventEmitter();
   const reasons: string[] = [];
   registerProcessCleanup(target as ProcessCleanupTarget, (reason) => reasons.push(reason));
@@ -16,7 +16,7 @@ test("process cleanup leaves SIGINT and SIGTERM entirely to Next.js", () => {
   assert.deepEqual(reasons, []);
 });
 
-test("process cleanup releases the Worker only after Next.js reaches process exit", () => {
+test("process cleanup releases the Worker only after the HTTP runtime reaches process exit", () => {
   const target = new EventEmitter();
   const reasons: string[] = [];
   const unregister = registerProcessCleanup(target as ProcessCleanupTarget, (reason) => reasons.push(reason));

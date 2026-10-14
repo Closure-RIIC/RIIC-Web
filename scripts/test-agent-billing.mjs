@@ -1,4 +1,4 @@
-import nextEnv from "@next/env";
+import { loadEnvConfig } from "./load-env.mjs";
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import process from "node:process";
@@ -7,7 +7,7 @@ import { Client } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 
-nextEnv.loadEnvConfig(process.env.RIIC_TEST_ENV_DIR || process.cwd());
+loadEnvConfig(process.env.RIIC_TEST_ENV_DIR || process.cwd());
 const configured = process.env.AUTH_INTEGRATION_DATABASE_URL || process.env.DATABASE_URL;
 if (!configured) throw new Error("A local PostgreSQL connection is required.");
 const url = new URL(configured);

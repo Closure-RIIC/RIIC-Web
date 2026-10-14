@@ -12,7 +12,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import type { AdminSolverMetricsData } from "@/types";
-import { useLocale } from "next-intl";
+import { useLocale } from "use-intl";
 
 function chartConfig(en: boolean): ChartConfig { return {
   successCount: {

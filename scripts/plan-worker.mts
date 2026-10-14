@@ -1,6 +1,5 @@
-import nextEnv from "@next/env";
+import { loadEnvConfig } from "./load-env.mjs";
 
-const { loadEnvConfig } = nextEnv;
 
 async function bootstrap(): Promise<void> {
   // Runtime modules resolve solver and storage paths during module evaluation,

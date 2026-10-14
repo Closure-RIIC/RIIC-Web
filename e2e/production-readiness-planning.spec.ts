@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, expectButtonGeometryStable, armEndingTransitionCapture, expectCapturedExitDuration, armMotionCapture, armMotionCollectionCapture, expectCapturedMotion, expectCapturedMotionDelays, armTransientStyleCapture, expectCapturedStyleMotion, waitForContentReady, waitForOwnAnimations, planData, twoShiftPlanData, scheduleVisualPlanData, productChangePlanData, motionPlanData, authenticatedSklandSnapshot, mockApis, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
+import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, expectButtonGeometryStable, armEndingTransitionCapture, expectCapturedExitDuration, armMotionCapture, expectCapturedMotion, armTransientStyleCapture, expectCapturedStyleMotion, waitForContentReady, waitForOwnAnimations, planData, twoShiftPlanData, scheduleVisualPlanData, productChangePlanData, motionPlanData, authenticatedSklandSnapshot, mockApis, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
 import type { PublicPlanData } from "../src/types";
 
 test.beforeEach(async ({ page }) => {
@@ -440,20 +440,24 @@ test("desktop sidebar defaults open at 1280px and collapsed below it", async ({ 
 
   const sidebar = page.locator('[data-slot="sidebar"]:not([data-mobile="true"])');
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(sidebar).toHaveAttribute("data-state", "expanded");
 
   await page.setViewportSize({ width: 1279, height: 900 });
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(sidebar).toHaveAttribute("data-state", "collapsed");
 
   await context.addCookies([{ name: "sidebar_state", value: "true", domain: "127.0.0.1", path: "/" }]);
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(sidebar).toHaveAttribute("data-state", "expanded");
 
   await context.addCookies([{ name: "sidebar_state", value: "false", domain: "127.0.0.1", path: "/" }]);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(sidebar).toHaveAttribute("data-state", "collapsed");
   expect(hydrationErrors).toEqual([]);
 });
@@ -543,7 +547,7 @@ test("compact schedule reserves one skeleton card per room while its view loads"
     releaseCompactChunk = resolve;
   });
   let compactChunkRequested = false;
-  await page.route("**/_next/static/chunks/**", async (route) => {
+  await page.route(/\/(?:assets\/CompactScheduleView-[^/]+\.js|src\/components\/CompactScheduleView\.tsx)(?:\?.*)?$/, async (route) => {
     const response = await route.fetch();
     const body = await response.body();
     if (body.toString("utf8").includes("data-compact-schedule-view")) {
@@ -582,7 +586,17 @@ test("mobile list follows the in-game assignment overview without rendering the 
   ))).toEqual(["control", "meeting", "manufacture", "trading", "power", "hire"]);
 });
 
-test("plan completion reveals status, metrics, and schedule once without resetting board state", async ({ page, browserName }) => {
+test("plan completion reveals status, metrics, and schedule once without resetting board state", async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.assign(window, { resultGenerationOverlays: 0 });
+    new MutationObserver(records => {
+      for (const record of records) for (const node of record.addedNodes) {
+        if (node instanceof Element && (node.matches(".t-gen") || node.querySelector(".t-gen"))) {
+          (window as unknown as { resultGenerationOverlays: number }).resultGenerationOverlays++;
+        }
+      }
+    }).observe(document, { childList: true, subtree: true });
+  });
   const invalidTransformWarnings: string[] = [];
   page.on("console", (message) => {
     if (/Invalid keyframe value for property transform|translate0d/i.test(message.text())) {
@@ -618,19 +632,21 @@ test("plan completion reveals status, metrics, and schedule once without resetti
   await expect(status).toHaveAttribute("data-activity-phase", "running");
   await expectCapturedStyleMotion(page, "loading-status");
 
-  if (browserName === "webkit") {
-    await armTransientStyleCapture(page, "[data-plan-summary]", "plan-summary");
-    await armTransientStyleCapture(page, "[data-plan-metric]", "plan-metrics");
-  } else {
-    await armMotionCapture(page, "[data-plan-summary]", "plan-summary", 460);
-    await armMotionCollectionCapture(page, "[data-plan-metric]", "plan-metrics", 360);
-  }
+  await expect(page.locator("[data-plan-result-summary-skeleton]")).toBeVisible();
   releasePlan();
   await expect(status).toHaveAttribute("data-activity-phase", "success");
   const summary = page.locator("[data-plan-summary]");
   await expect(summary).toBeVisible();
-  await expect(summary).toHaveAttribute("data-plan-entrance", "animated");
+  await expect(summary).toHaveAttribute("data-plan-entrance", "steady");
+  await expect(page.locator(".t-gen[data-generation-surface=summary]")).toHaveCount(0);
+  await expect(summary).toHaveCSS("opacity", "1");
   await expect(board).toHaveAttribute("data-plan-revision", diagnosticId);
+  const compactCards = board.locator("[data-compact-schedule-view] [data-schedule-room]");
+  await expect(compactCards.first()).toBeVisible();
+  expect(await compactCards.evaluateAll(cards => cards.every(card => {
+    const style = getComputedStyle(card);
+    return style.opacity === "1" && style.clipPath === "none" && style.filter === "none";
+  }))).toBe(true);
   await listTab.click();
   const listTrainingRoom = board.locator('[data-schedule-view="list"] [data-room-group="training"]');
   await expect(listTrainingRoom).toBeVisible();
@@ -645,13 +661,10 @@ test("plan completion reveals status, metrics, and schedule once without resetti
   const restoreHidden = page.getByRole("button").filter({ hasText: "恢复已隐藏" });
   await expect(restoreHidden).toBeVisible();
 
-  if (browserName === "webkit") {
-    await expectCapturedStyleMotion(page, "plan-summary");
-    await expectCapturedStyleMotion(page, "plan-metrics");
-  } else {
-    await expectCapturedMotion(page, "plan-summary", 460, 40);
-    await expectCapturedMotionDelays(page, "plan-metrics", 360, [100, 150, 215, 280]);
-  }
+  await expect(page.locator(".t-gen")).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as { resultGenerationOverlays: number }).resultGenerationOverlays)).toBe(0);
+  await expect(summary).toHaveCSS("opacity", "1");
+  await expect(summary).toHaveCSS("clip-path", "none");
   const renderingBudget = await page.evaluate(() => {
     const summaryElement = document.querySelector<HTMLElement>("[data-plan-summary]")!;
     const boardElement = document.querySelector<HTMLElement>("[data-plan-board]")!;
@@ -757,7 +770,7 @@ test("plan completion reveals status, metrics, and schedule once without resetti
   expect(invalidTransformWarnings).toEqual([]);
 });
 
-test("reduced motion keeps feedback timing while removing movement, clipping, and staggering", async ({ page, browserName }) => {
+test("reduced motion keeps feedback timing while removing movement, clipping, and staggering", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await mockApis(page);
   let releasePlan!: () => void;
@@ -788,27 +801,16 @@ test("reduced motion keeps feedback timing while removing movement, clipping, an
   await expect(board).toBeVisible();
   await expect(board).not.toHaveAttribute("data-plan-revision", /.+/);
 
-  if (browserName === "webkit") {
-    await armTransientStyleCapture(page, "[data-plan-summary]", "reduced-summary");
-    await armTransientStyleCapture(page, "[data-plan-metric]", "reduced-metric");
-  } else {
-    await armMotionCapture(page, "[data-plan-summary]", "reduced-summary", 140);
-    await armMotionCapture(page, "[data-plan-metric]", "reduced-metric", 140);
-  }
   releasePlan();
   await expect(page.locator('[data-slot="live-activity"]')).toHaveAttribute("data-activity-phase", "success");
   const summary = page.locator("[data-plan-summary]");
   await expect(summary).toBeVisible();
-  await expect(summary).toHaveAttribute("data-plan-entrance", "animated");
+  await expect(summary).toHaveAttribute("data-plan-entrance", "steady");
+  await expect(summary).toHaveCSS("opacity", "1");
+  await expect(page.locator(".t-gen")).toHaveCount(0);
+  await expect(summary).toHaveCSS("clip-path", "none");
   await expect(board).toHaveAttribute("data-plan-revision", diagnosticId);
   expect(await board.evaluate((element) => element.getAnimations().filter((animation) => animation.playState === "running").length)).toBe(0);
-  if (browserName === "webkit") {
-    await expectCapturedStyleMotion(page, "reduced-summary");
-    await expectCapturedStyleMotion(page, "reduced-metric");
-  } else {
-    await expectCapturedMotion(page, "reduced-summary", 140);
-    await expectCapturedMotion(page, "reduced-metric", 140);
-  }
   const reduced = await page.evaluate(() => {
     const activity = document.querySelector<HTMLElement>('[data-slot="live-activity"]')!;
     const boardElement = document.querySelector<HTMLElement>("[data-plan-board]")!;

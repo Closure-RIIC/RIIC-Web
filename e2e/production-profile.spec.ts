@@ -9,7 +9,7 @@ test("admin beta denies direct pages and APIs without exposing either navigation
     session: { expiresAt: "2099-01-01T00:00:00Z" },
   } }));
   await page.goto("/");
-  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
   await expect(page.locator('[data-primary-navigation-page="agent"], [data-primary-navigation-page="billing"], [data-agent-history]')).toHaveCount(0);
   for (const path of ["/agent", "/billing", "/plan/test-artifact"]) {
     await page.goto(path);

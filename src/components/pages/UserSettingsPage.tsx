@@ -1,7 +1,7 @@
 "use client";
 
-import { useLocale } from "next-intl";
-import Link from "next/link";
+import { useLocale } from "use-intl";
+import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Eye, RotateCcw, SlidersHorizontal, Trash2 } from "lucide-react";
 import { useState } from "react";
 
@@ -73,7 +73,7 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
           <WorkbenchPageHeading page="settings">{en ? "Settings" : "设置"}</WorkbenchPageHeading>
           <p className="mt-1 text-xs leading-5 text-muted-foreground md:mt-2 md:text-sm">{en ? "Personalize scheduling and display. Changes are saved in this browser." : "调整排班与显示方式，修改自动保存在当前浏览器。"}</p>
         </div>
-        <SetupActionButton nativeButton={false} variant="outline" className="!min-w-0 max-w-full max-md:!h-auto max-md:min-h-11 max-md:whitespace-normal max-md:!px-3 max-md:py-2" render={<Link href="/" />}>
+        <SetupActionButton nativeButton={false} variant="outline" className="!min-w-0 max-w-full max-md:!h-auto max-md:min-h-11 max-md:whitespace-normal max-md:!px-3 max-md:py-2" render={<Link to="/" />}>
           <ArrowLeft />{en ? "Back to calculator" : "返回基建计算器"}
         </SetupActionButton>
       </header>

@@ -1,6 +1,6 @@
-import nextEnv from "@next/env";
+import { loadEnvConfig } from "./load-env.mjs";
 async function main() {
-  nextEnv.loadEnvConfig(process.cwd());
+  loadEnvConfig(process.cwd());
   const { maintainAgentGateway, recordGatewayMaintenanceFailure } = await import("../src/server/agent/gateway-maintenance.ts");
   const { getDatabasePool } = await import("../src/server/db/index.ts");
   const { recoverAgentRuns } = await import("../src/server/billing/agent-accounting.ts");

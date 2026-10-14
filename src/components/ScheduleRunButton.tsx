@@ -20,7 +20,7 @@
  */
 import { AlertCircle, Check, LoaderCircle, Play } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

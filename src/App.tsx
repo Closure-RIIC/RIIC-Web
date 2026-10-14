@@ -1,15 +1,16 @@
 "use client";
 import { withDefaultDormAutofill } from "./automatic-dorm-defaults";
 import { localize as localize_App } from "./i18n/helpers/App.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Link } from "@tanstack/react-router";
+import { usePathname, useRouter } from "@/navigation";
 import {
   lazy,
   Suspense,
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -260,7 +261,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const defaultPreset = PRESETS[0];
   const defaultLayout = buildBlueprint(defaultPreset);
   const hasRenderedCalculator = useRef(false);
-  const revealedPlanRevisions = useRef(new Set<string>());
   const planClickAtRef = useRef<number | null>(null);
   const websiteAuthReturnFocusRef = useRef<HTMLElement | null>(null);
   const websiteAuthIntentRef = useRef<WebsiteAuthIntent | null>(null);
@@ -807,6 +807,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [agentArtifactApplied]);
 
+  const reportPersistenceFailure = useEffectEvent(() => {
+    setStorageNotice(displayError("AIC-LOCAL-7001", intl("App.theBrowserCouldNotSaveLocalDataButSchedules")));
+  });
   useEffect(() => {
     if (!hasRestoredSession || typeof window === "undefined") return;
     if (skipNextPersistence.current) {
@@ -830,9 +833,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       });
       setStorageNotice(null);
     } catch {
-      setStorageNotice(displayError("AIC-LOCAL-7001", intl("App.theBrowserCouldNotSaveLocalDataButSchedules")));
+      reportPersistenceFailure();
     }
-  }, [intl, hasRestoredSession, preset, layout, operbox, fileName, boxSource, layoutDirty, layoutSource, localLayoutBackup, rotationProfile, fiammettaEnabled, result, activeShift, locale]);
+  }, [hasRestoredSession, preset, layout, operbox, fileName, boxSource, layoutDirty, layoutSource, localLayoutBackup, rotationProfile, fiammettaEnabled, result, activeShift, locale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2164,12 +2167,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       cancelPreload?.();
     };
   }, [activeShift, page, result?.maa]);
-  const visiblePlanRevision = scheduleResult?.diagnosticId;
-  const animatePlanEntrance = Boolean(
-    page === "calculator"
-    && visiblePlanRevision
-    && !revealedPlanRevisions.current.has(visiblePlanRevision)
-  );
   const animateEmptyScheduleEntrance = page === "calculator" && hasRenderedCalculator.current;
   const workbenchContext = {
     inventory: {
@@ -2212,10 +2209,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         resumeCountdown: planTask.resumeCountdown,
         onResumePoll: planTask.resume,
       } : null,
-      animatePlanEntrance,
       animateEmptyScheduleEntrance,
-      onPlanEntranceConsumed: (revision: string) => {
-        revealedPlanRevisions.current.add(revision);
+      onPlanEntranceConsumed: () => {
         // 只统计"本次生成"的首次渲染；切班次/重挂载不再重复打点。
         if (planClickAtRef.current !== null) {
           trackTelemetry({
@@ -2414,6 +2409,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     <div
       className="contents"
       data-workbench-hydrated={hasRestoredSession ? "true" : "false"}
+      inert={!hasRestoredSession}
       onKeyDown={(event) => {
         if (event.key === "Escape" && websiteAuthDialogOpen) handleWebsiteAuthDialogOpenChange(false);
       }}
@@ -2504,12 +2500,12 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       {page !== "agent" ? <footer className="app-content-track workbench-footer mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/70 py-5 text-xs text-muted-foreground">
         <div className="w-full md:w-auto max-md:[&>div]:h-12 max-md:[&_button]:h-11 max-md:[&_button]:min-w-12 max-md:[&_span]:h-11"><LanguageSwitch /></div>
         <div className="flex w-full flex-wrap items-center gap-x-4 md:contents">
-        <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/help" data-help-link>{intl("App.help")}</Link>
-        <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/terms">{intl("App.terms")}</Link>
-        <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/privacy">{intl("App.privacy")}</Link>
+        <Link preload={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" to="/help" data-help-link>{intl("App.help")}</Link>
+        <Link preload={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" to="/terms">{intl("App.terms")}</Link>
+        <Link preload={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" to="/privacy">{intl("App.privacy")}</Link>
         <span className="inline-flex items-center gap-x-4">
           <a className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/about" data-about-link>{intl("App.about")}</a>
-          <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/wishes" data-wishes-link>{intl("App.wishes")}</Link>
+          <Link preload={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" to="/wishes" data-wishes-link>{intl("App.wishes")}</Link>
         </span>
         </div>
         <div className="flex w-full min-w-0 flex-col items-start gap-x-3 gap-y-1 md:ml-auto md:w-auto md:flex-row md:flex-wrap md:items-center md:justify-end">

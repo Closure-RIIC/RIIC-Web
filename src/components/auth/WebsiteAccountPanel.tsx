@@ -1,10 +1,10 @@
 "use client";
 import { localize as authText } from "../../i18n/helpers/AuthValidation.ts";
 import { localize as localize_components_auth_WebsiteAccountPanel } from "../../i18n/helpers/components_auth_WebsiteAccountPanel.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
   ArrowLeft,
@@ -578,7 +578,7 @@ export function WebsiteAccountPanel({
                 ) : null}
                 {mode === "signup" ? (
                   <p className="text-xs leading-5 text-muted-foreground">
-                    {intl.rich("components_auth_WebsiteAccountPanel.rich1", { element1: (chunks) => (<Link className="underline underline-offset-2" href="/terms">{chunks}</Link>), element2: (chunks) => (<Link className="underline underline-offset-2" href="/privacy">{chunks}</Link>) })}
+                    {intl.rich("components_auth_WebsiteAccountPanel.rich1", { element1: (chunks) => (<Link className="underline underline-offset-2" to="/terms">{chunks}</Link>), element2: (chunks) => (<Link className="underline underline-offset-2" to="/privacy">{chunks}</Link>) })}
                   </p>
                 ) : null}
                 {error ? <p role="alert" className="text-sm text-destructive">{error}</p> : null}

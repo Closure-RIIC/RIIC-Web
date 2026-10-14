@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "use-intl";
 import { SetupStepper } from "@/components/setup/SetupStepper";
 import { cn } from "@/lib/utils";
 import { formatManualShiftDuration, manualShiftTimeRanges, moveManualShiftBoundaryByHour, snapManualShiftDurationsToHours } from "@/manual-schedule";

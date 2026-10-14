@@ -11,8 +11,6 @@ import {
 import { requireWebsiteSession } from "@/server/auth/authorization";
 import { getWorkspace, putWorkspace, revokeAccountDataConsentAndPurgeCloudData } from "@/server/workspace";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const requestId = createRequestId();

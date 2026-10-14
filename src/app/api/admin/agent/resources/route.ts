@@ -5,8 +5,6 @@ import { BillingAdminError, changeAgentPolicy } from "@/server/billing/admin";
 import { importAgentResources } from "@/server/agent/resources";
 import { RESOURCE_PAYLOAD_LIMIT } from "@/server/agent/resource-policy";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 async function handle(request: Request) {
   const requestId = createRequestId(); const start = performance.now();

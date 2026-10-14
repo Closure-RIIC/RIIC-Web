@@ -3,8 +3,6 @@ import { requireWebsiteAdmin } from "@/server/auth/authorization";
 import { issueAdminCdks, listAdminCdks, revokeAdminCdks } from "@/server/billing/admin-cdk";
 import { CdkValidationError } from "@/server/billing/cdk";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 async function handle(request: Request) {
   const requestId = createRequestId();

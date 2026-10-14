@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
 import { ArrowUpRight, Code2, Database, Github, HeartHandshake, Image as ImageIcon, MessageSquareText, UsersRound, type LucideIcon } from "lucide-react";

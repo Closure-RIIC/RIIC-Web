@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 
 import { and, count, desc, eq, gt, ilike, or } from "drizzle-orm";
 

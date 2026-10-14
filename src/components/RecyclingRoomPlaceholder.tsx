@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 import { InfraTechnicalCard } from "@/components/InfraTechnicalCard";
 import { OperatorSlot } from "@/components";
 
