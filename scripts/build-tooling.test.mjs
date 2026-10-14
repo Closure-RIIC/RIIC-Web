@@ -332,7 +332,7 @@ test("CI change scope keeps one required quality gate and fails closed", async (
   assert.match(workflow, /static_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /database_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /release_artifact:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
-  assert.match(workflow, /browser_e2e:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_browser == 'true'/);
+  assert.match(workflow, /browser_e2e:[\s\S]+needs: \[changes, release_artifact\][\s\S]+needs\.changes\.outputs\.run_browser == 'true'/);
   assert.match(workflow, /quality:[\s\S]+test "\$CHANGES_RESULT" = "success"[\s\S]+test "\$HYGIENE_RESULT" = "success"[\s\S]+"\$DEPLOY_REQUIRED" == "true"[\s\S]+"\$required" == "true"[\s\S]+verify_result "\$RUN_CORE" "\$STATIC_RESULT"[\s\S]+verify_result "\$RUN_BROWSER" "\$BROWSER_E2E_RESULT"/);
   assert.match(workflow, /deploy:[\s\S]+needs\.changes\.outputs\.deploy_required == 'true'/);
 

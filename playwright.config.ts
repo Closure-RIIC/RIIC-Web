@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:5184";
 const webServerPort = new URL(baseURL).port || "80";
+const releaseDirectory = process.env.PLAYWRIGHT_RELEASE_DIR;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -44,12 +45,16 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npx vite --host 127.0.0.1 --port ${webServerPort}`,
+    command: releaseDirectory
+      ? `node scripts/start-standalone.mjs --hostname 127.0.0.1 --port ${webServerPort}`
+      : `npx vite --host 127.0.0.1 --port ${webServerPort}`,
+    cwd: releaseDirectory,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
       RIIC_E2E: "1",
+      APP_DEPLOYMENT_ENV: "local",
       // Use the actual browser origin for signed session cookies and CSRF checks.
       BETTER_AUTH_URL: baseURL,
       ACCOUNT_CLOUD_SYNC_ENABLED: "1",
