@@ -10,6 +10,7 @@ import {
   Suspense,
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -806,6 +807,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [agentArtifactApplied]);
 
+  const reportPersistenceFailure = useEffectEvent(() => {
+    setStorageNotice(displayError("AIC-LOCAL-7001", intl("App.theBrowserCouldNotSaveLocalDataButSchedules")));
+  });
   useEffect(() => {
     if (!hasRestoredSession || typeof window === "undefined") return;
     if (skipNextPersistence.current) {
@@ -829,9 +833,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       });
       setStorageNotice(null);
     } catch {
-      setStorageNotice(displayError("AIC-LOCAL-7001", intl("App.theBrowserCouldNotSaveLocalDataButSchedules")));
+      reportPersistenceFailure();
     }
-  }, [intl, hasRestoredSession, preset, layout, operbox, fileName, boxSource, layoutDirty, layoutSource, localLayoutBackup, rotationProfile, fiammettaEnabled, result, activeShift, locale]);
+  }, [hasRestoredSession, preset, layout, operbox, fileName, boxSource, layoutDirty, layoutSource, localLayoutBackup, rotationProfile, fiammettaEnabled, result, activeShift, locale]);
 
   useEffect(() => {
     let cancelled = false;

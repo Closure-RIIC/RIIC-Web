@@ -1,5 +1,6 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import type { IncomingMessage, ServerResponse } from "node:http";
 import { defineConfig, loadEnv } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react-swc";
@@ -72,6 +73,19 @@ export default defineConfig(({ mode }) => {
     }, { name: "riic-build-metadata", apply: "build", closeBundle() { mkdirSync("dist", { recursive: true }); writeFileSync("dist/riic-build.json", JSON.stringify({ sklandEnabled, buildId: publicEnvironment.APP_CLIENT_BUILD_ID })); } }, tailwindcss(), tanstackStart(), nitro({ preset: "node-server", compressPublicAssets: true,
       plugins: ["./src/server/nitro-http.ts"],
       routeRules: { "/assets/**": { headers: { "Cache-Control": "public, max-age=31536000, immutable" } } },
-    }), react()],
+    }), react(), {
+      name: "riic-development-request-cancellation",
+      configureServer(server) {
+        return () => {
+          // Nitro forwards disconnected HTTP streams to Connect. A client leaving
+          // a page must not broadcast Vite's error overlay to every open tab.
+          server.middlewares.use((error: unknown, req: IncomingMessage, res: ServerResponse, next: (error?: unknown) => void) => {
+            if ((req.aborted || res.destroyed) && error instanceof Error &&
+              (("code" in error && error.code === "ECONNRESET") || error.name === "AbortError")) return;
+            next(error);
+          });
+        };
+      },
+    }],
   };
 });

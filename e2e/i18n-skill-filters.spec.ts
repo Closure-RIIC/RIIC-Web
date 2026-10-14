@@ -96,6 +96,7 @@ for (const locale of ["zh", "en"] as const) {
         ? page.waitForResponse(response => new URL(response.url()).pathname === "/api/releases" && new URL(response.url()).searchParams.get("mode") === "announcement")
         : null;
       const response = await page.goto(route);
+      await expect(page.locator('body')).toHaveAttribute('data-app-hydrated', 'true');
       expect(response?.ok(), route).toBe(true);
       expect(await response!.text()).toContain(`lang="${locale === "zh" ? "zh-CN" : "en"}"`);
       await expect(page).toHaveTitle(new RegExp(titles[index]));
@@ -110,6 +111,7 @@ for (const locale of ["zh", "en"] as const) {
     }
     for (const source of ["skland", "maa"] as const) {
       await page.goto(`/help/import-operators?step=4&source=${source}`);
+      await expect(page.locator('body')).toHaveAttribute('data-app-hydrated', 'true');
       const method = page.locator(`[data-help-import-method="${source}"]`);
       await expect(method).toBeVisible();
       await expect(method).toContainText(locale === "en" ? "Done when:" : "完成标志：");
