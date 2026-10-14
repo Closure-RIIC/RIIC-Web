@@ -368,6 +368,7 @@ test("filing links and Rainyun cloud services align left on mobile and right on 
   await mockApis(page);
   await seedPreferences(page);
   await page.goto("/");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
 
   const filingLink = page.getByRole("link", { name: "沪ICP备2026041492号" });
   const publicSecurityLink = page.getByRole("link", { name: "沪公网安备31011502407364号" });
@@ -477,6 +478,19 @@ test("primary pages load their route modules and navigate on the first click", a
   await page.getByRole("button", { name: "基建计算器", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator("[data-calculator-controls]")).toBeVisible();
+});
+
+test("API routes reject unsupported methods instead of rendering HTML", async ({ request }) => {
+  for (const pathname of ["/api/health", "/api/skland/status", "/api/auth/get-session"]) {
+    const denied = await request.patch(pathname);
+    expect(denied.status(), pathname).toBe(405);
+    expect(await denied.text()).toBe("");
+    const options = await request.fetch(pathname, { method: "OPTIONS" });
+    expect(options.status(), pathname).toBe(204);
+    expect(options.headers().allow).toContain("GET");
+    expect(options.headers().allow).toContain("HEAD");
+    expect(options.headers().allow).toContain("OPTIONS");
+  }
 });
 
 test("legacy plans API identifies the account saved-plans successor", async ({ request }) => {
