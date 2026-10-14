@@ -455,6 +455,14 @@ jobs:
       - name: Chromium end-to-end tests
         run: npm run test:e2e -- --shard=${{ matrix.shard }}
 
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: chromium-failures-${{ strategy.job-index }}-${{ github.sha }}
+          path: test-results/
+          retention-days: 3
+
   browser_boundaries:
     name: Browser release boundaries
     needs: changes
@@ -570,6 +578,14 @@ jobs:
 
       - name: WebKit end-to-end tests
         run: npm run test:e2e:webkit -- --shard=${{ matrix.shard }}
+
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: webkit-failures-${{ strategy.job-index }}-${{ github.sha }}
+          path: test-results/
+          retention-days: 3
 
   quality:
     name: quality

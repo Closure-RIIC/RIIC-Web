@@ -440,20 +440,24 @@ test("desktop sidebar defaults open at 1280px and collapsed below it", async ({ 
 
   const sidebar = page.locator('[data-slot="sidebar"]:not([data-mobile="true"])');
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(sidebar).toHaveAttribute("data-state", "expanded");
 
   await page.setViewportSize({ width: 1279, height: 900 });
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(sidebar).toHaveAttribute("data-state", "collapsed");
 
   await context.addCookies([{ name: "sidebar_state", value: "true", domain: "127.0.0.1", path: "/" }]);
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(sidebar).toHaveAttribute("data-state", "expanded");
 
   await context.addCookies([{ name: "sidebar_state", value: "false", domain: "127.0.0.1", path: "/" }]);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.reload();
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(sidebar).toHaveAttribute("data-state", "collapsed");
   expect(hydrationErrors).toEqual([]);
 });

@@ -731,11 +731,11 @@ test("heavy account, operator, and scrollbar modules stay behind runtime boundar
 test("versioned product assets receive immutable cache headers", async () => {
   const { assetCacheControl } = await import("../src/server/http-cache-policy.ts");
   assert.equal(assetCacheControl(new URL("https://test.invalid/images/products/item.png?v=123-abcdef123456")), "public, max-age=31536000, immutable");
-  assert.equal(assetCacheControl(new URL("https://test.invalid/images/products/item.png")), undefined);
+  assert.equal(assetCacheControl(new URL("https://test.invalid/images/products/item.png")), "public, max-age=0");
 });
 
 test("building skill immutable cache headers require an asset version", async () => {
   const { assetCacheControl } = await import("../src/server/http-cache-policy.ts");
   assert.equal(assetCacheControl(new URL("https://test.invalid/images/building-skills/item.png?v=123-abcdef123456")), "public, max-age=31536000, immutable");
-  for (const suffix of ["", "?v=123", "?v=bad-abcdef123456"]) assert.equal(assetCacheControl(new URL("https://test.invalid/images/building-skills/item.png" + suffix)), undefined);
+  for (const suffix of ["", "?v=123", "?v=bad-abcdef123456"]) assert.equal(assetCacheControl(new URL("https://test.invalid/images/building-skills/item.png" + suffix)), "public, max-age=0");
 });

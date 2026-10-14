@@ -201,6 +201,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 
       }
       await page.locator("#scroll-fixture").evaluate(node => node.remove());
       await page.goto("/help/import-operators");
+      await expect(page.locator("body")).toHaveAttribute("data-app-hydrated", "true");
       await page.evaluate(() => window.scrollTo(0, 500));
       await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
     });
