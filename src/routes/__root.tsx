@@ -30,7 +30,7 @@ export const Route = createRootRoute({
     };
   },
   component: RootDocument,
-  notFoundComponent: () => <main className="p-8"><h1>404</h1><a href="/">返回首页 / Home</a></main>,
+  notFoundComponent: () => <><meta name="robots" content="noindex" /><main className="p-8"><h1>404</h1><a href="/">返回首页 / Home</a></main></>,
 });
 
 function RootDocument() {
