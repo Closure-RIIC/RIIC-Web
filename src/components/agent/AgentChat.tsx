@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Chat, useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, convertFileListToFileUIParts, type FileUIPart, type UIMessage } from "ai";
-import { ArrowUpRight, BookOpen, Bot, ClipboardCheck, FileText, Paperclip, Plus, RotateCcw, Settings2, Upload, UsersRound, X } from "lucide-react";
+import { ArrowDown, ArrowUpRight, BookOpen, Bot, ClipboardCheck, FileText, Paperclip, Plus, RotateCcw, Settings2, Upload, UsersRound, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useLocale, useTranslations } from "use-intl";
 
@@ -33,6 +33,7 @@ import { agentChatErrorMessage } from "@/agent-chat-errors";
 import { useAgentRuntime } from "./AgentRuntimeProvider";
 import { useAgentHistory } from "@/hooks/use-agent-history";
 import { useAgentViewport } from "@/hooks/use-agent-viewport";
+import { useAgentScroll } from "@/hooks/use-agent-scroll";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AGENT_BROADCAST_CHANNEL, agentArtifactFromOutput, requestAgentArtifactOpen } from "@/agent-artifact-bridge";
 import type { AgentPlanProjection } from "@/server/agent/plan-artifact";
@@ -316,8 +317,8 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   const [headerHidden, setHeaderHidden] = useState(false);
   const modeAnchor = useRef<HTMLButtonElement>(null);
   const touchY = useRef<number | null>(null);
-  const conversationRef = useRef<HTMLDivElement>(null);
-  const followMessages = useRef(true);
+  const { viewportRef: conversationRef, showLatest, followLatest, onScrollbarPointerDown } = useAgentScroll();
+  const composing = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const personaInputRef = useRef<HTMLInputElement>(null);
   const personaAvatarInputRef = useRef<HTMLInputElement>(null);
@@ -413,18 +414,6 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     };
   }, [runtimeConversation, creditRevision]);
 
-  useEffect(() => {
-    const container = conversationRef.current;
-    if (container && followMessages.current) container.scrollTop = container.scrollHeight;
-  }, [messages, agentStatus, status]);
-
-  useEffect(() => {
-    const container = conversationRef.current;
-    const follow = () => { if (container && followMessages.current) container.scrollTop = container.scrollHeight; };
-    container?.addEventListener("yeye-scrollbar-ready", follow);
-    return () => container?.removeEventListener("yeye-scrollbar-ready", follow);
-  }, []);
-
   // 求解完成时通知同浏览器内已打开的工作台标签页（幂等，每个工具结果只广播一次）。
   // Restoring history must not re-announce old solver results to other pages.
   const broadcastRef = useRef<Set<string>>(new Set(initialMessages.flatMap((message) => message.parts.map((_, index) => `${message.id}:${index}`))));
@@ -458,7 +447,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     if (!personaHydrated || personaUnavailable || (!trimmed && files.length === 0) || busy || runtimeConversation.running || agentStatus !== "ready") return;
     setDraft("");
     setAttachments([]);
-    followMessages.current = true;
+    followLatest();
     runtime.setRequestOptions(runtimeConversation, { body: {
       model: selectedModel,
       conversationId, attemptId: crypto.randomUUID(),
@@ -475,7 +464,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     const question = [...messages].reverse().find((message) => message.role === "user");
     if (!question) return;
     clearError();
-    followMessages.current = true;
+    followLatest();
     runtime.setRequestOptions(runtimeConversation, { body: { ...runtimeConversation.requestOptions?.body, model: selectedModel, conversationId, attemptId: crypto.randomUUID() } });
     await runtime.run(runtimeConversation, () => regenerate({ messageId: question.id, ...runtimeConversation.requestOptions }));
   };
@@ -599,6 +588,9 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
 
       <ChatPanel
         composer={agentStatus === "ready" ? <>
+          {showLatest ? <Button type="button" size="sm" variant="outline" className="absolute -top-10 left-1/2 z-10 -translate-x-1/2 rounded-full bg-background shadow-sm" onClick={followLatest}>
+            <ArrowDown className="size-3.5" aria-hidden="true" />{en ? "Back to latest" : "回到最新"}
+          </Button> : null}
           <PromptBar
             busy={busy}
             disabled={!personaHydrated || personaUnavailable || (!draft.trim() && attachments.length === 0)}
@@ -613,8 +605,11 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
               rows: 1,
               value: draft,
               onChange: (event) => setDraft(event.target.value),
+              onCompositionStart: () => { composing.current = true; },
+              onCompositionEnd: () => { composing.current = false; },
+              onBlur: () => { composing.current = false; },
               onKeyDown: (event) => {
-                if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                if (event.key === "Enter" && !event.shiftKey && !composing.current && !event.nativeEvent.isComposing && event.nativeEvent.keyCode !== 229) {
                   event.preventDefault();
                   void submit(draft);
                 }
@@ -633,8 +628,8 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
           {uploadError ? <p role="alert" className="mt-2 px-1 text-xs text-destructive">{uploadError}</p> : <p className="mt-2 hidden flex-wrap justify-between gap-1 px-1 text-[10px] text-muted-foreground md:flex"><span>{en ? "Up to 4 attachments · 8 MB each" : "最多 4 个附件 · 单个 ≤ 8 MB"}</span><span>{en ? "Enter to send · Shift + Enter for a new line" : "Enter 发送 · Shift + Enter 换行"}</span></p>}
         </> : null}
       >
-        <AgentConversationScrollArea className={`${dialogueStyles.conversation} min-h-0 flex-1 bg-transparent`} viewportClassName="flex min-w-0 flex-col gap-6 overscroll-contain py-3 md:gap-10 md:py-8" viewportProps={{ ref: conversationRef,
-          onScroll: (event) => { const el = event.currentTarget; followMessages.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80; if (el.scrollTop <= 0) setHeaderHidden(false); },
+        <AgentConversationScrollArea onScrollbarPointerDown={onScrollbarPointerDown} className={`${dialogueStyles.conversation} min-h-0 flex-1 bg-transparent`} viewportClassName="flex min-w-0 flex-col gap-6 overscroll-contain py-3 md:gap-10 md:py-8" viewportProps={{ ref: conversationRef,
+          onScroll: (event) => { if (event.currentTarget.scrollTop <= 0) setHeaderHidden(false); },
           onWheel: (event) => readingGesture(event.deltaY),
           onTouchStart: (event) => { touchY.current = event.touches[0]?.clientY ?? null; },
           onTouchMove: (event) => { const y = event.touches[0]?.clientY; if (y !== undefined && touchY.current !== null && Math.abs(touchY.current - y) > 12) { readingGesture(touchY.current - y); touchY.current = y; } },

@@ -40,6 +40,132 @@ async function emit(page: Page, parts: unknown[], done = false) {
   }, { parts, done });
 }
 
+async function startLongReply(page: Page) {
+  await prepare(page);
+  await page.goto("/agent");
+  await page.getByRole("textbox", { name: "发给可露希尔的消息" }).fill("滚动测试");
+  await page.getByRole("button", { name: "发送", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { agentTestRequests: number }).agentTestRequests)).toBe(1);
+  await emit(page, [{ type: "start", messageId: "scroll-answer" }, { type: "start-step" },
+    { type: "text-start", id: "scroll-text" }, { type: "text-delta", id: "scroll-text", delta: Array.from({ length: 45 }, (_, i) => `第 ${i + 1} 行基建建议。`).join("\n\n") }]);
+  const viewport = page.getByRole("region", { name: "对话记录", exact: true });
+  await expect(viewport).toContainText("第 45 行基建建议。");
+  await expect.poll(() => viewport.evaluate(el => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThanOrEqual(2);
+  return viewport;
+}
+
+test("conversation releases small upward gestures and only resumes on an explicit return", async ({ page }) => {
+  const viewport = await startLongReply(page);
+  await viewport.hover();
+  await page.mouse.wheel(0, -38);
+  await expect(page.getByRole("button", { name: "回到最新" })).toBeVisible();
+  const top = await viewport.evaluate(el => el.scrollTop);
+  expect(await viewport.evaluate(el => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThan(80);
+  await emit(page, [{ type: "text-delta", id: "scroll-text", delta: "\n\n上滑后追加内容。" }]);
+  await expect(viewport).toContainText("上滑后追加内容。");
+  // Wait beyond a cooldown: elapsed time alone must never re-enable following.
+  await page.waitForTimeout(250);
+  expect(await viewport.evaluate(el => el.scrollTop)).toBeCloseTo(top, 0);
+  await page.getByRole("textbox", { name: "发给可露希尔的消息" }).fill("下一问\n".repeat(12));
+  await expect(page.getByRole("button", { name: "回到最新" })).toBeVisible();
+  expect(await viewport.evaluate(el => el.scrollTop)).toBeCloseTo(top, 0);
+  await page.getByRole("button", { name: "回到最新" }).click();
+  await expect.poll(() => viewport.evaluate(el => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThanOrEqual(2);
+  await emit(page, [{ type: "text-delta", id: "scroll-text", delta: "\n\n恢复跟随。" }]);
+  await expect(viewport).toContainText("恢复跟随。");
+  await expect.poll(() => viewport.evaluate(el => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThanOrEqual(2);
+  await viewport.focus();
+  await page.keyboard.press("Home");
+  await expect.poll(() => viewport.evaluate(el => el.scrollTop)).toBe(0);
+  await emit(page, [{ type: "text-delta", id: "scroll-text", delta: "\n\n键盘阅读。" }]);
+  await expect(viewport).toContainText("键盘阅读。");
+  expect(await viewport.evaluate(el => el.scrollTop)).toBe(0);
+  await page.keyboard.press("End");
+  await expect(page.getByRole("button", { name: "回到最新" })).toHaveCount(0);
+  await emit(page, [{ type: "text-delta", id: "scroll-text", delta: "\n\n主动回到底部。" }]);
+  await expect(viewport).toContainText("主动回到底部。");
+  await expect.poll(() => viewport.evaluate(el => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThanOrEqual(2);
+});
+
+test("conversation fades follow boundaries and scrollbar dragging releases streaming", async ({ page }) => {
+  const viewport = await startLongReply(page);
+  const root = viewport.locator("..");
+  await expect(root).toHaveCSS("--conversation-fade-bottom", "0px");
+  expect(await root.evaluate(el => parseFloat(getComputedStyle(el, "::before").height))).toBeGreaterThan(0);
+  await viewport.hover();
+  const handle = page.locator("[data-agent-page-scrollbar] .os-scrollbar-vertical .os-scrollbar-handle");
+  await expect(handle).toBeVisible();
+  const box = (await handle.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2 - 80, { steps: 8 });
+  await page.mouse.up();
+  await expect(page.getByRole("button", { name: "回到最新" })).toBeVisible();
+  const top = await viewport.evaluate(el => el.scrollTop);
+  await emit(page, [{ type: "text-delta", id: "scroll-text", delta: "\n\n拖动后追加。" }]);
+  await expect(viewport).toContainText("拖动后追加。");
+  expect(await viewport.evaluate(el => el.scrollTop)).toBeCloseTo(top, 0);
+  await viewport.focus();
+  await page.keyboard.press("Home");
+  await expect(root).toHaveCSS("--conversation-fade-top", "0px");
+  await expect.poll(() => root.evaluate(el => getComputedStyle(el, "::before").height)).toBe("0px");
+  expect(await root.evaluate(el => parseFloat(getComputedStyle(el, "::after").height))).toBeGreaterThan(0);
+});
+
+test("IME confirmation never sends and the composer grows, caps and resets", async ({ page }) => {
+  await prepare(page);
+  await page.goto("/agent");
+  const input = page.getByRole("textbox", { name: "发给可露希尔的消息" });
+  // Match the mobile viewport suite's cold route hydration allowance.
+  await expect(input).toBeVisible({ timeout: 30_000 });
+  const initial = (await input.boundingBox())!.height;
+  await input.fill("第一行\n第二行\n第三行\n第四行");
+  await expect.poll(async () => (await input.boundingBox())!.height).toBeGreaterThan(initial);
+  await input.fill("很长的排班条件\n".repeat(50));
+  expect((await input.boundingBox())!.height).toBeLessThanOrEqual(240);
+  expect(await input.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
+  await input.fill("博士");
+  await input.dispatchEvent("compositionstart", { data: "bo" });
+  await input.press("Enter");
+  expect(await page.evaluate(() => (window as typeof window & { agentTestRequests: number }).agentTestRequests)).toBe(0);
+  await input.dispatchEvent("compositionend", { data: "博士" });
+  await input.dispatchEvent("keydown", { key: "Enter", keyCode: 229, bubbles: true });
+  expect(await page.evaluate(() => (window as typeof window & { agentTestRequests: number }).agentTestRequests)).toBe(0);
+  await input.press("Shift+Enter");
+  await expect(input).toHaveValue(/\n/);
+  await input.press("Enter");
+  await expect.poll(() => page.evaluate(() => (window as typeof window & { agentTestRequests: number }).agentTestRequests)).toBe(1);
+  await expect(input).toHaveValue("");
+  expect((await input.boundingBox())!.height).toBe(initial);
+  await emit(page, [{ type: "start", messageId: "short-answer" }, { type: "start-step" }, { type: "text-start", id: "short-text" },
+    { type: "text-delta", id: "short-text", delta: "你好，博士。" }, { type: "text-end", id: "short-text" }, { type: "finish-step" }, { type: "finish", finishReason: "stop" }], true);
+  const root = page.getByRole("region", { name: "对话记录", exact: true }).locator("..");
+  await expect(root).toHaveCSS("--conversation-fade-top", "0px");
+  await expect(root).toHaveCSS("--conversation-fade-bottom", "0px");
+});
+
+test("touch reading stays paused through viewport changes and a mobile multiline draft", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" });
+  const viewport = await startLongReply(page);
+  await viewport.dispatchEvent("touchstart", { touches: [{ identifier: 0, clientY: 300 }] });
+  await viewport.dispatchEvent("touchmove", { touches: [{ identifier: 0, clientY: 360 }] });
+  await viewport.evaluate(el => { el.scrollTop -= 60; });
+  await viewport.dispatchEvent("touchend", { touches: [] });
+  await expect(page.getByRole("button", { name: "回到最新" })).toBeVisible();
+  const top = await viewport.evaluate(el => el.scrollTop);
+  await emit(page, [{ type: "text-delta", id: "scroll-text", delta: "\n\n触摸阅读期间追加。" }]);
+  await expect(viewport).toContainText("触摸阅读期间追加。");
+  expect(await viewport.evaluate(el => el.scrollTop)).toBeCloseTo(top, 0);
+  const input = page.getByRole("textbox", { name: "发给可露希尔的消息" });
+  await input.fill("手机端多行条件\n".repeat(30));
+  expect((await input.boundingBox())!.height).toBeLessThanOrEqual(168);
+  await page.setViewportSize({ width: 375, height: 360 });
+  await expect.poll(async () => (await input.boundingBox())!.height).toBeLessThanOrEqual(126);
+  await expect(page.getByRole("button", { name: "停止", exact: true })).toBeInViewport();
+  await expect(page.getByRole("button", { name: "回到最新" })).toBeVisible();
+});
+
 test("revoking feature access removes navigation and stops the active conversation", async ({ page }) => {
   await prepare(page);
   let allowed = true;
