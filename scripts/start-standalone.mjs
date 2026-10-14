@@ -4,7 +4,8 @@ import { fileURLToPath, URL } from "node:url";
 import { loadEnvConfig } from "./load-env.mjs";
 
 process.env.NODE_ENV ??= "production";
-loadEnvConfig(fileURLToPath(new URL("../.output", import.meta.url)), false);
+const runtimeDirectory = fileURLToPath(new URL("../.output", import.meta.url));
+loadEnvConfig(runtimeDirectory, false);
 
 const args = process.argv.slice(2);
 let hostname = process.env.ARKNIGHTS_INFRA_HOSTNAME || "0.0.0.0";
@@ -35,4 +36,7 @@ assert.ok(numericPort > 0 && numericPort <= 65_535, "standalone port is outside 
 process.env.NITRO_HOST = hostname;
 process.env.HOST = hostname;
 process.env.PORT = String(numericPort);
+// The solver, fixtures and sealed runtime files are relative to .output.
+// Nitro does not change cwd automatically like Next's standalone server did.
+process.chdir(runtimeDirectory);
 await import(new URL("../.output/server/index.mjs", import.meta.url).href);
