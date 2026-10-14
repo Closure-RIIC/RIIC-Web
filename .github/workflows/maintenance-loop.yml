@@ -1,0 +1,75 @@
+name: Maintenance loop
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 02:37 UTC = 10:37 Asia/Shanghai. Scheduling may be delayed by GitHub.
+    - cron: "37 2 * * *"
+
+permissions:
+  contents: read
+  actions: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: maintenance-loop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  observe:
+    if: github.repository == 'KnightCodeSquareMatrix/RIIC-Web'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+      - name: Test observer logic
+        run: node --test scripts/maintenance-loop.test.mjs
+      - name: Restore last available observation
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .tmp/maintenance-loop-prior
+          if ids=$(gh run list --workflow maintenance-loop.yml --branch "$GITHUB_REF_NAME" --status completed --limit 5 --json databaseId --jq '.[].databaseId'); then
+            for run_id in $ids; do
+              prior=".tmp/maintenance-loop-prior/$run_id"
+              if gh run download "$run_id" --name maintenance-loop --dir "$prior" && test -f "$prior/run.json"; then
+                echo "LOOP_PREVIOUS=$prior/run.json" >> "$GITHUB_ENV"
+                break
+              fi
+            done
+          fi
+          # Missing/expired artifacts yield an explicit first-run report, not a clean bill of health.
+      - name: Observe repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--ref "$GITHUB_REF_NAME")
+          if [[ -n "${LOOP_PREVIOUS:-}" ]]; then args+=(--previous "$LOOP_PREVIOUS"); fi
+          node scripts/maintenance-loop.mjs "${args[@]}"
+      - name: Publish run summary
+        if: always()
+        shell: bash
+        run: |
+          if test -f .tmp/maintenance-loop/report.md; then
+            cat .tmp/maintenance-loop/report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Observer did not produce a report; status UNKNOWN. Inspect the failed step.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Retain observation
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maintenance-loop
+          path: .tmp/maintenance-loop/
+          include-hidden-files: true
+          retention-days: 14
+          if-no-files-found: warn
