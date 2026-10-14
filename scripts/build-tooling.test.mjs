@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { readdir, readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { readdir, readFile, mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
+import { resolve, join } from "node:path";
+import { tmpdir } from "node:os";
 import process from "node:process";
 import test from "node:test";
 import { URL } from "node:url";
@@ -139,6 +140,37 @@ test("business backfill shares the 30-day retention constant for scanning and ex
   assert.match(source, /const cutoff = Date\.now\(\) - BUSINESS_DATA_TTL_MS/);
   assert.equal((source.match(/\+ BUSINESS_DATA_TTL_MS/g) ?? []).length, 2);
   assert.doesNotMatch(source, /30 \* 24 \* 60 \* 60 \* 1000/);
+});
+
+test("standalone startup resolves the solver and fixtures from its runtime, regardless of caller cwd", async (t) => {
+  const temporary = await mkdtemp(join(tmpdir(), "riic-runtime-cwd-"));
+  t.after(() => rm(temporary, { recursive: true, force: true }));
+  const release = join(temporary, "release");
+  const runtime = join(release, ".output");
+  await Promise.all(["scripts", ".output/server", ".output/bin", ".output/fixtures"].map(
+    (directory) => mkdir(join(release, directory), { recursive: true }),
+  ));
+  await writeFile(join(release, "scripts/start-standalone.mjs"), await readRepoFile("scripts/start-standalone.mjs"));
+  await writeFile(join(release, "scripts/load-env.mjs"), "export function loadEnvConfig(directory) { process.env.TEST_RUNTIME_DIRECTORY = directory; }");
+  await writeFile(join(runtime, "bin/solver.marker"), "solver available");
+  await writeFile(join(runtime, "fixtures/box.json"), "{\"operators\":[]}");
+  await writeFile(join(runtime, "server/index.mjs"), `
+    import { readFileSync } from 'node:fs';
+    console.log(JSON.stringify({
+      cwd: process.cwd(), environmentDirectory: process.env.TEST_RUNTIME_DIRECTORY,
+      solver: readFileSync('bin/solver.marker', 'utf8'),
+      fixture: JSON.parse(readFileSync('fixtures/box.json', 'utf8')),
+      host: process.env.NITRO_HOST, port: process.env.PORT,
+    }));
+  `);
+  const result = spawnSync(process.execPath, [join(release, "scripts/start-standalone.mjs"), "--hostname", "127.0.0.1", "--port", "5199"], {
+    cwd: temporary, encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(JSON.parse(result.stdout), {
+    cwd: runtime, environmentDirectory: runtime, solver: "solver available",
+    fixture: { operators: [] }, host: "127.0.0.1", port: "5199",
+  });
 });
 
 test("production builds prepare a solver-free standalone runtime with static assets", async () => {
