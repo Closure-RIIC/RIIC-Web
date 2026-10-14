@@ -118,11 +118,11 @@ test("IME confirmation never sends and the composer grows, caps and resets", asy
   const input = page.getByRole("textbox", { name: "发给可露希尔的消息" });
   // Match the mobile viewport suite's cold route hydration allowance.
   await expect(input).toBeVisible({ timeout: 30_000 });
-  const initial = (await input.boundingBox())!.height;
+  const initial = await input.evaluate(el => el.clientHeight);
   await input.fill("第一行\n第二行\n第三行\n第四行");
-  await expect.poll(async () => (await input.boundingBox())!.height).toBeGreaterThan(initial);
+  await expect.poll(() => input.evaluate(el => el.clientHeight)).toBeGreaterThan(initial);
   await input.fill("很长的排班条件\n".repeat(50));
-  expect((await input.boundingBox())!.height).toBeLessThanOrEqual(240);
+  expect(await input.evaluate(el => el.clientHeight)).toBeLessThanOrEqual(240);
   expect(await input.evaluate(el => el.scrollHeight > el.clientHeight)).toBe(true);
   await input.fill("博士");
   await input.dispatchEvent("compositionstart", { data: "bo" });
@@ -136,7 +136,7 @@ test("IME confirmation never sends and the composer grows, caps and resets", asy
   await input.press("Enter");
   await expect.poll(() => page.evaluate(() => (window as typeof window & { agentTestRequests: number }).agentTestRequests)).toBe(1);
   await expect(input).toHaveValue("");
-  expect((await input.boundingBox())!.height).toBe(initial);
+  expect(await input.evaluate(el => el.clientHeight)).toBe(initial);
   await emit(page, [{ type: "start", messageId: "short-answer" }, { type: "start-step" }, { type: "text-start", id: "short-text" },
     { type: "text-delta", id: "short-text", delta: "你好，博士。" }, { type: "text-end", id: "short-text" }, { type: "finish-step" }, { type: "finish", finishReason: "stop" }], true);
   const root = page.getByRole("region", { name: "对话记录", exact: true }).locator("..");
@@ -159,9 +159,9 @@ test("touch reading stays paused through viewport changes and a mobile multiline
   expect(await viewport.evaluate(el => el.scrollTop)).toBeCloseTo(top, 0);
   const input = page.getByRole("textbox", { name: "发给可露希尔的消息" });
   await input.fill("手机端多行条件\n".repeat(30));
-  expect((await input.boundingBox())!.height).toBeLessThanOrEqual(168);
+  expect(await input.evaluate(el => el.clientHeight)).toBeLessThanOrEqual(168);
   await page.setViewportSize({ width: 375, height: 360 });
-  await expect.poll(async () => (await input.boundingBox())!.height).toBeLessThanOrEqual(126);
+  await expect.poll(() => input.evaluate(el => el.clientHeight)).toBeLessThanOrEqual(126);
   await expect(page.getByRole("button", { name: "停止", exact: true })).toBeInViewport();
   await expect(page.getByRole("button", { name: "回到最新" })).toBeVisible();
 });
