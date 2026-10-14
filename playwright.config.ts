@@ -54,7 +54,7 @@ export default defineConfig({
     timeout: 120_000,
     env: {
       RIIC_E2E: "1",
-      APP_DEPLOYMENT_ENV: "local",
+      APP_DEPLOYMENT_ENV: "development",
       // Use the actual browser origin for signed session cookies and CSRF checks.
       BETTER_AUTH_URL: baseURL,
       ACCOUNT_CLOUD_SYNC_ENABLED: "1",
