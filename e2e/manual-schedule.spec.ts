@@ -89,7 +89,7 @@ test("manual recycling assignments preserve the second slot across reload and mo
   await expect(mobile.getByRole('button', { name: '空置', exact: true })).toHaveCount(2);
 });
 
-test("sidebar resumes an existing manual draft without invoking the solver", async ({ page }) => {
+test("sidebar resumes an existing manual draft without invoking the solver and keeps editing scoped to manual", async ({ page }) => {
   let planRequests = 0;
   await page.route("**/api/plan", (route) => {
     planRequests += 1;
@@ -116,6 +116,17 @@ test("sidebar resumes an existing manual draft without invoking the solver", asy
   await expect(page).toHaveURL(/\/manual$/);
   await expect(page.getByRole("tab", { name: /第 1 班.*24h/ })).toBeVisible();
   await expect(page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"] [data-operator-identity="阿米娅"]')).toBeVisible();
+  const recycling = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycling"]');
+  await recycling.getByRole("button", { name: "空置", exact: true }).nth(1).click();
+  const picker = page.getByRole("dialog");
+  await picker.getByLabel("搜索可选干员或基建技能").fill("锡兰");
+  await picker.getByRole("button", { name: /锡兰/ }).click();
+  await expect(recycling.locator('[data-operator-identity="锡兰"]')).toBeVisible();
+  await page.reload();
+  await expect(recycling.locator('[data-operator-identity="锡兰"]')).toBeVisible();
+  await page.locator('[data-primary-navigation-page="calculator"]').click();
+  await expect(page.locator('[data-primary-page="calculator"]')).toBeVisible();
+  await expect(page.locator("[data-manual-editor-board]")).toHaveCount(0);
   expect(planRequests).toBe(0);
 });
 

@@ -19,7 +19,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { createContext, lazy, Suspense, useContext, useId, useState, type ReactNode } from "react";
+import { createContext, lazy, Suspense, useContext, useEffect, useId, useState, type ReactNode } from "react";
+import { useRouter } from "@/navigation";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import styles from "./AppSidebar.module.css";
 import { useWebsiteSession } from "@/website-session";
@@ -70,6 +71,8 @@ function AppNavigationItem({
   const href = workbenchHref(target);
   const highlight = useContext(SidebarHighlight);
   const reducedMotion = useReducedMotion();
+  const router = useRouter();
+  useEffect(() => () => router.cancelPrefetch(href), [router, href]);
 
   return (
     <SidebarMenuItem onPointerEnter={() => highlight.setHovered(target)} onFocus={() => highlight.setHovered(target)}>
@@ -78,11 +81,17 @@ function AppNavigationItem({
         render={(
           <Link
             to={href}
+            preload={false}
             role="button"
             aria-label={label}
             aria-current={page === target ? "page" : undefined}
             data-primary-navigation-page={target}
+            onPointerEnter={(event) => { if (event.pointerType === "mouse" && page !== target) router.prefetch(href); }}
+            onPointerLeave={() => router.cancelPrefetch(href)}
+            onFocus={(event) => { if (event.currentTarget.matches(":focus-visible") && page !== target) router.prefetch(href); }}
+            onBlur={() => router.cancelPrefetch(href)}
             onClick={(event) => {
+              router.cancelPrefetch(href);
               if (!onPageChange(target, event.currentTarget)) event.preventDefault();
               if (isMobile) setOpenMobile(false);
             }}
@@ -108,7 +117,7 @@ export function AppSidebar({ page, onPageChange, showMower = false }: AppSidebar
   const [hovered, setHovered] = useState<string | null>(null);
   const highlightId = useId();
   return (
-    <Sidebar collapsible="icon" mobileWidth="min(17rem, calc(100vw - 3rem))" data-primary-navigation-prefetch="eager">
+    <Sidebar collapsible="icon" mobileWidth="min(17rem, calc(100vw - 3rem))" data-primary-navigation-prefetch="intent-code">
       <div className={styles.sidebar} data-beautiful-sidebar onPointerLeave={() => setHovered(null)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setHovered(null); }}>
       <SidebarHeader className={styles.header}>
         <SidebarTrigger className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground" />
