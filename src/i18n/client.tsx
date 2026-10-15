@@ -14,6 +14,8 @@ function saveLocale(locale: AppLocale) {
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const locale = useLocale();
   const sourceMessages = useMessages();
+  // Keep this nested provider isolated from its parent. Sharing the same object
+  // regresses restored manual drafts with a combobox update loop.
   const messages = { ...sourceMessages };
   const router = useRouter();
   useEffect(() => {

@@ -677,7 +677,7 @@ test("production injects the client feature flag at every browser boundary", asy
   assert.match(workflow, /Release output checks[\s\S]+APP_DEPLOYMENT_ENV: production[\s\S]+SKLAND_FEATURE_ENABLED: "1"[\s\S]+npm run check:production-client/);
 });
 
-test("workbench views use five prefetched route entries under one persistent layout", async () => {
+test("workbench views use intent-only code preloading under one persistent layout", async () => {
   const layout = await readRepoFile("src/app/(workbench)/layout.tsx");
   const app = await readRepoFile("src/App.tsx");
   const sidebar = await readRepoFile("src/components/layout/AppSidebar.tsx");
@@ -704,18 +704,22 @@ test("workbench views use five prefetched route entries under one persistent lay
   assert.match(routeMap, /"skill-query": "\/skills"/);
   assert.match(routeMap, /skland: "\/skland"/);
   assert.match(routeMap, /account: "\/account"/);
-  assert.match(sidebar, /import \{ Link \} from "@tanstack\/react-router"/);
+  assert.match(sidebar, /import \{[^}]*\bLink\b[^}]*\} from "@tanstack\/react-router"/);
   assert.doesNotMatch(sidebar, /useLinkStatus|data-navigation-pending/);
-  assert.match(sidebar, /data-primary-navigation-prefetch="eager"/);
-  assert.doesNotMatch(sidebar, /prefetch=\{false\}/);
-  assert.match(app, /router\.prefetch\(workbenchHref\(target\)\)/);
+  assert.match(sidebar, /data-primary-navigation-prefetch="intent-code"/);
+  assert.match(sidebar, /preload=\{false\}/);
+  assert.doesNotMatch(app, /router\.prefetch/);
+  assert.match(await readRepoFile("src/navigation.ts"), /router\.loadRouteChunk\(route\)/);
+  assert.doesNotMatch(await readRepoFile("src/navigation.ts"), /router\.preloadRoute/);
   assert.doesNotMatch(app, /betaRequested|showBetaPanels|DebugActions|IssuePanel/);
   assert.doesNotMatch(routeMap, /\?beta|betaRequested/);
   assert.doesNotMatch(sidebar, /\?beta|betaRequested/);
 });
 
-test("the Skland entry checks the runtime feature gate and documents remain uncached", async () => {
-  assert.match(await readRepoFile("src/routes/_workbench.skland.tsx"), /beforeLoad:[\s\S]+context.publicConfig.sklandEnabled[\s\S]+throw notFound/);
+test("Skland entries check the shared build feature gate and documents remain uncached", async () => {
+  for (const page of ["skland", "inventory", "gacha"]) {
+    assert.match(await readRepoFile(`src/routes/_workbench.${page}.tsx`), /beforeLoad:[\s\S]+process\.env\.APP_CLIENT_SKLAND_ENABLED !== "1"[\s\S]+throw notFound/);
+  }
   assert.match(await readRepoFile("src/server.ts"), /DOCUMENT_CACHE_CONTROL/);
   assert.doesNotMatch(await readRepoFile("vite.config.ts"), /prerender:\s*true/);
 });
