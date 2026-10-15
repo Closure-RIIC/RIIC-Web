@@ -465,7 +465,7 @@ test("primary pages load their route modules and navigate on the first click", a
     await expect(page.getByRole("button", { name: destination.name, exact: true })).toHaveAttribute("href", destination.href);
   }
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
-  await expect(page.locator('[data-primary-navigation-prefetch="eager"]')).toBeVisible();
+  await expect(page.locator('[data-primary-navigation-prefetch="intent-code"]')).toBeVisible();
   await expect(page.locator('[data-navigation-pending]')).toHaveCount(0);
 
   for (const destination of destinations) {
