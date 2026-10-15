@@ -14,7 +14,7 @@ function saveLocale(locale: AppLocale) {
 export function LocaleProvider({ children }: { children: ReactNode }) {
   const locale = useLocale();
   const sourceMessages = useMessages();
-  const messages = { ...sourceMessages };
+  const messages = sourceMessages;
   const router = useRouter();
   useEffect(() => {
     document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";

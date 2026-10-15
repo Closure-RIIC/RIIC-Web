@@ -11,12 +11,15 @@ import "@fontsource/barlow-condensed/latin-500.css";
 import "@fontsource/barlow-condensed/latin-600.css";
 
 export const Route = createRootRoute({
-  beforeLoad: async () => {
+  // Public bootstrap data belongs to this router/request, not a module-global cache.
+  // Explicit invalidation (e.g. a language change) refreshes it; navigation reuses it.
+  staleTime: Infinity,
+  loader: async () => {
     const [{ locale, messages }, publicConfig] = await Promise.all([getRequestI18n(), getPublicPageConfig()]);
     return { locale, messages, publicConfig };
   },
-  head: ({ matches }) => {
-    const { messages } = matches[0].context;
+  head: ({ loaderData }) => {
+    const messages = loaderData?.messages;
     if (!messages) return {};
     return {
       meta: [
@@ -35,7 +38,7 @@ export const Route = createRootRoute({
 
 function RootDocument() {
   const hydrated = useHydrated();
-  const { locale, messages } = Route.useRouteContext();
+  const { locale, messages } = Route.useLoaderData();
   return <html lang={locale === "zh" ? "zh-CN" : "en"} className="antialiased" suppressHydrationWarning>
     <head><HeadContent /></head>
     <body inert={!hydrated} data-app-hydrated={hydrated ? "true" : "false"}>
