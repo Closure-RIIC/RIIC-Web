@@ -704,7 +704,7 @@ test("workbench views use intent-only code preloading under one persistent layou
   assert.match(routeMap, /"skill-query": "\/skills"/);
   assert.match(routeMap, /skland: "\/skland"/);
   assert.match(routeMap, /account: "\/account"/);
-  assert.match(sidebar, /import \{ Link \} from "@tanstack\/react-router"/);
+  assert.match(sidebar, /import \{[^}]*\bLink\b[^}]*\} from "@tanstack\/react-router"/);
   assert.doesNotMatch(sidebar, /useLinkStatus|data-navigation-pending/);
   assert.match(sidebar, /data-primary-navigation-prefetch="intent-code"/);
   assert.match(sidebar, /preload=\{false\}/);
@@ -716,8 +716,10 @@ test("workbench views use intent-only code preloading under one persistent layou
   assert.doesNotMatch(sidebar, /\?beta|betaRequested/);
 });
 
-test("the Skland entry checks the runtime feature gate and documents remain uncached", async () => {
-  assert.match(await readRepoFile("src/routes/_workbench.skland.tsx"), /beforeLoad:[\s\S]+context.publicConfig.sklandEnabled[\s\S]+throw notFound/);
+test("Skland entries check the shared build feature gate and documents remain uncached", async () => {
+  for (const page of ["skland", "inventory", "gacha"]) {
+    assert.match(await readRepoFile(`src/routes/_workbench.${page}.tsx`), /beforeLoad:[\s\S]+process\.env\.APP_CLIENT_SKLAND_ENABLED !== "1"[\s\S]+throw notFound/);
+  }
   assert.match(await readRepoFile("src/server.ts"), /DOCUMENT_CACHE_CONTROL/);
   assert.doesNotMatch(await readRepoFile("vite.config.ts"), /prerender:\s*true/);
 });
