@@ -10,6 +10,7 @@ import {
   CreditCard,
   GraduationCap,
   History,
+  LoaderCircle,
   Search,
   Settings2,
   SquarePen,
@@ -18,7 +19,7 @@ import {
   UserRoundPlus,
   type LucideIcon,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouterState } from "@tanstack/react-router";
 import { createContext, lazy, Suspense, useContext, useEffect, useId, useState, type ReactNode } from "react";
 import { useRouter } from "@/navigation";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
@@ -69,6 +70,7 @@ function AppNavigationItem({
 }: AppNavigationItemProps) {
   const { isMobile, setOpenMobile } = useSidebar();
   const href = workbenchHref(target);
+  const pending = useRouterState({ select: state => state.status === "pending" && state.location.pathname === href });
   const highlight = useContext(SidebarHighlight);
   const reducedMotion = useReducedMotion();
   const router = useRouter();
@@ -85,6 +87,7 @@ function AppNavigationItem({
             role="button"
             aria-label={label}
             aria-current={page === target ? "page" : undefined}
+            aria-busy={pending || undefined}
             data-primary-navigation-page={target}
             onPointerEnter={(event) => { if (event.pointerType === "mouse" && page !== target) router.prefetch(href); }}
             onPointerLeave={() => router.cancelPrefetch(href)}
@@ -100,7 +103,7 @@ function AppNavigationItem({
         isActive={page === target}
         tooltip={label}
       >
-        <Icon className="size-5" />
+        {pending ? <LoaderCircle aria-hidden="true" className="size-5 animate-spin motion-reduce:animate-none" /> : <Icon className="size-5" />}
         <span className={styles.copy}>{label}</span>
       </SidebarMenuButton>
       {children}
