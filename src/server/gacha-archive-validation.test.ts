@@ -4,8 +4,8 @@ import { validateGachaImport } from "./gacha-archive-validation.ts";
 import { gachaAccountOptions } from "../gacha-accounts.ts";
 
 test("legacy import rejects mismatched ownership and malformed data without trusting record IDs", (context) => {
-  // Keep the one-millisecond future boundary fixed while earlier cases run.
-  context.mock.method(Date, "now", () => Date.UTC(2026, 9, 13));
+  const now = Date.now();
+  context.mock.method(Date, "now", () => now);
   const record = { id: "spoofed", category: "normal", poolId: "p", poolName: "Pool", charId: "char_1", charName: "One", stars: 6, isNew: true, timestamp: Date.now() - 1000, pos: 0 };
   const history = { uid: "10001", records: [record, { ...record, id: "different" }] };
   const result = validateGachaImport(history, "10001");
