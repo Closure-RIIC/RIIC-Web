@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { D, ledger, operator, type World } from "./rules.ts";
-import { detailAt, pointAt, segmentAt, simulate } from "./engine.ts";
+import { detailAt, pointAt, segmentAt, simulate, prepare } from "./engine.ts";
 import { defaultMoodSettings, type MoodSimulationInput } from "./types.ts";
 import type { RoomKind } from "../types.ts";
 type FixtureRoom = { type: string; level: number; operators: {name: string; elite: number; level: number; mood: number}[] };
@@ -24,6 +24,35 @@ test("all reference skill/unlock/mood and interacting-room rates match Python", 
   }
 });
 const kinds: Record<string,RoomKind>={control_center:"control_center",trading:"trade_post",dormitory:"dormitory"};
+
+test("new operators have explicit mood rules and unlock conditions", () => {
+  const clem = operator("克莱门莎", 2, 1);
+  const world: World = { initial: {}, rooms: [{ id: "meet", type: "reception", level: 3, capacity: 2, ops: [clem] }] };
+  assert.equal(ledger(world, clem).consume.toNumber(), 2);
+  world.rooms[0]!.ops.push(operator("芬"));
+  assert.equal(ledger(world, clem).consume.toNumber(), 3);
+  const rookie = operator("克莱门莎", 0, 1);
+  world.rooms[0]!.ops[0] = rookie;
+  assert.equal(ledger(world, rookie).consume.toNumber(), 2);
+  const toledo = operator("德·托莱多", 2, 1);
+  world.rooms = [{ id: "office", type: "office", level: 3, capacity: 1, ops: [toledo] }];
+  assert.equal(ledger(world, toledo).consume.toNumber(), 0.75);
+  assert.equal(toledo.skills.filter(skill => skill.kind === "self_consume").length, 1);
+  assert.equal(toledo.skills.filter(skill => skill.kind === "dorm_group").length, 2);
+  assert.equal(operator("德·托莱多", 0, 1).skills.some(skill => skill.kind === "dorm_group"), false);
+  assert.equal(operator("旅骨").skills.length, 0);
+});
+
+test("a BOX with new operators no longer aborts simulation; unknown assigned names still fail", () => {
+  const input = structuredClone(referenceInput(fixtures.trajectories[0]!));
+  for (const name of ["克莱门莎", "德·托莱多", "旅骨", "Future unassigned operator"]) input.operbox.push({ id: name, name, own: true, elite: 2, level: 1, potential: 0, rarity: 5 });
+  const result = simulate(input);
+  assert.ok(result.names.includes("克莱门莎"));
+  assert.equal(result.names.includes("Future unassigned operator"), false);
+  const roomId = input.layout.rooms[0]!.id;
+  input.draft.shifts[0]!.rooms[roomId]!.operators[0] = "Future unassigned operator";
+  assert.throws(() => prepare(input), /Unknown operator/);
+});
 export function referenceInput(f: typeof fixtures.trajectories[number]): MoodSimulationInput {
   const names=[...new Set(f.shifts.flatMap(s => s.flatMap(r => r.operators)))];
   return {

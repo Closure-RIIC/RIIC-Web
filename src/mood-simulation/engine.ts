@@ -14,7 +14,9 @@ export function prepare(input: MoodSimulationInput) {
   // can resolve one operator before another at the final precision digit.
   const names = new Set<string>();
   for (const shift of input.draft.shifts) for (const room of input.layout.rooms) for (const name of shift.rooms[room.id]?.operators ?? []) if (name) names.add(name);
-  for (const name of roster.keys()) names.add(name);
+  // Unassigned, fully rested operators cannot enter the idle-recovery queue.
+  // A newer BOX must not abort an otherwise supported schedule.
+  for (const name of roster.keys()) if (catalog.knownOperators.includes(name)) names.add(name);
   const ops = new Map([...names].map(name => {
     const e = roster.get(name);
     if (!e) warnings.push(name);
