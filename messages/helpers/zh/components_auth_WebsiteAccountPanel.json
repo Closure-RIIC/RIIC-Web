@@ -3,6 +3,7 @@
   "enterTheEmailAddressYouWantToVerify": "请先输入要验证的邮箱。",
   "verificationCodeSentCompleteVerificationWithin10Minutes": "验证码已发送，请在 10 分钟内完成验证。",
   "ifThisEmailIsRegisteredAResetMessageWill": "如果这个邮箱已注册，重置邮件会很快送达。",
+  "userNotRegistered": "该用户未注册。",
   "emailVerifiedYouCanNowSignIn": "邮箱验证完成，现在可以登录网站账号。",
   "restoringWebsiteAccount": "正在恢复网站账号",
   "emailVerified": "邮箱已验证",

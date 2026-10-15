@@ -2,7 +2,7 @@
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 
 import { useMemo, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "use-intl";
 import { ChevronDown, Settings2 } from "lucide-react";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { InfraTechnicalCard } from "@/components/InfraTechnicalCard";

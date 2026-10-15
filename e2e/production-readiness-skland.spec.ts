@@ -2,7 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { gachaAccountOptions } from "../src/gacha-accounts";
 import type { GachaHistory } from "../src/gacha-history";
 import { TERMS_VERSION, PRIVACY_VERSION } from "../src/legal-policy";
-import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, waitForOwnAnimations, planData, sampleData, authenticatedSklandSnapshot, productionHeavySklandSnapshot, primarySklandAccount, mockApis, openSklandOverview, seedPreferences, seedV4Session } from "./production-readiness.fixture";
+import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, waitForContentReady, waitForOwnAnimations, planData, sampleData, authenticatedSklandSnapshot, productionHeavySklandSnapshot, primarySklandAccount, mockApis, openSklandOverview, seedPreferences, seedV4Session } from "./production-readiness.fixture";
 
 async function mockGachaSession(page: Page, roles: Array<{ uid: string; nickname: string }> = [], authorized = true) {
   const activeRoles = (roles.length ? roles : [{ uid: "10001", nickname: "扫码测试" }]).map((role) => ({ ...role, channelName: "官服", isDefault: true }));
@@ -64,6 +64,7 @@ test.beforeEach(async ({ page }) => {
 
 test("Skland tab URLs support direct entry, refresh and browser history", async ({ page }) => {
   test.slow();
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await mockApis(page, { sklandConfigured: true, sklandSnapshot: authenticatedSklandSnapshot });
   await seedPreferences(page);
   await mockGachaSession(page);
@@ -76,6 +77,7 @@ test("Skland tab URLs support direct entry, refresh and browser history", async 
   for (const [index, path] of paths.entries()) {
     const response = await page.goto(path);
     expect(response?.status()).toBe(200);
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     await expect(tabs).toHaveCount(3);
     await expect(tabs.nth(index)).toHaveAttribute("href", path);
     await expect(tabs.nth(index)).toHaveAttribute("aria-selected", "true");
@@ -83,6 +85,7 @@ test("Skland tab URLs support direct entry, refresh and browser history", async 
     await expect(page.locator("[data-skland-page] [data-slot=tabs-list][data-yeye-scroll]")).toHaveCount(0);
     await expect(page.locator("[data-skland-view-header] .os-scrollbar-horizontal")).toHaveCount(0);
     await page.reload();
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     await expect(tabs.nth(index)).toHaveAttribute("aria-selected", "true");
   }
   await page.setViewportSize({ width: 390, height: 844 });
@@ -99,7 +102,9 @@ test("Skland tab URLs support direct entry, refresh and browser history", async 
   await expect(page).toHaveURL(/\/skland$/);
   await expect(tabs.nth(0)).toHaveAttribute("aria-selected", "true");
   await page.goForward();
+  await expect(page).toHaveURL(/\/skland\/inventory$/);
   await expect(tabs.nth(1)).toHaveAttribute("aria-selected", "true");
+  await waitForContentReady(tabs.nth(0));
   await tabs.nth(0).click();
   await expect(page).toHaveURL(/\/skland$/);
   await tabs.nth(0).focus();
@@ -1179,9 +1184,18 @@ test("Skland QR expires locally without polling after its deadline", async ({ pa
   await expect(page.getByRole("img", { name: "森空岛登录二维码" })).toBeVisible();
 });
 
-test("credential import explains the risk, gates consent, recovers from errors, and clears secrets on success", async ({ page, context }) => {
+test("credential import explains the risk, gates consent, recovers from errors, and clears secrets on success", async ({ page, context, browserName }) => {
   await mockApis(page, { sklandConfigured: true });
-  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  if (browserName === "chromium") await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  // WebKit cannot grant Chromium's clipboard permissions. Capture the same
+  // Clipboard API writes so the exact copied command is still asserted.
+  else await page.addInitScript(() => {
+    let copied = "";
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: {
+      writeText: async (text: string) => { copied = text; },
+      readText: async () => copied,
+    } });
+  });
   const submittedCredential = "cred-private-fixture,token-private-fixture";
   const requestBodies: unknown[] = [];
   let attempts = 0;
@@ -1736,9 +1750,12 @@ test("Skland status center loads full status on demand and deletion preserves no
   expect(deleteBox).not.toBeNull();
   await page.mouse.move(deleteBox!.x + deleteBox!.width / 2, deleteBox!.y + deleteBox!.height / 2);
   await page.mouse.down();
-  await page.waitForTimeout(1900);
-  await page.mouse.up();
-  await expect(page.getByRole("heading", { name: "把当前罗德岛带进排班助手" })).toBeVisible();
+  try {
+    // Hold until the real confirmation finishes, including a delayed WebKit frame.
+    await expect(page.getByRole("heading", { name: "把当前罗德岛带进排班助手" })).toBeVisible();
+  } finally {
+    await page.mouse.up();
+  }
 
   await page.getByRole("button", { name: "Toggle Sidebar" }).click();
   await page.getByRole("button", { name: "基建计算器", exact: true }).click();
@@ -1764,7 +1781,7 @@ test("Skland status center keeps profile and recruitment in overview and support
   let statusRequests = 0;
   let currentStatusSnapshot: typeof authenticatedSklandSnapshot | typeof switchedSnapshot = authenticatedSklandSnapshot;
   page.on("request", (request) => {
-    if (/attendance|sign/i.test(request.url())) attendanceRequests += 1;
+    if (["fetch", "xhr"].includes(request.resourceType()) && /attendance|sign/i.test(request.url())) attendanceRequests += 1;
     if (new URL(request.url()).pathname === "/api/skland/status/refresh") statusRequests += 1;
   });
   await mockApis(page, {

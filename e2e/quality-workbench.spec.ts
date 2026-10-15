@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 import { Pool } from "pg";
 
-test("reviewer previews imports, saves changes and follows a named batch without changing personal data", async ({ page, context, request, baseURL, browserName }, testInfo) => {
+test("reviewer previews imports, saves changes and follows a named batch without changing personal data", async ({ page, context, request, baseURL }, testInfo) => {
   test.skip(!process.env.AUTH_INTEGRATION_DATABASE_URL, "Requires an isolated authentication database.");
   test.setTimeout(180000);
   const pool = new Pool({ connectionString: process.env.AUTH_INTEGRATION_DATABASE_URL, max: 1 });
@@ -24,7 +24,7 @@ test("reviewer previews imports, saves changes and follows a named batch without
   try {
     await pool.query('INSERT INTO "user" (id,name,email,email_verified,role) VALUES ($1,$2,$3,true,$4)', [id, "Quality UI test", `${id}@example.test`, "reviewer"]);
     await pool.query("INSERT INTO account (id,account_id,provider_id,user_id,password) VALUES ($1,$2,'credential',$2,$3)", [randomUUID(), id, await hashPassword(password)]);
-    const login = await request.post("/api/auth/sign-in/email", { headers: { origin: process.env.BETTER_AUTH_URL ?? baseURL! }, data: { email: `${id}@example.test`, password } });
+    const login = await request.post("/api/auth/sign-in/email", { headers: { origin: baseURL! }, data: { email: `${id}@example.test`, password } });
     expect(login.status(), await login.text()).toBe(200);
     const sessionCookies: string[] = [];
     for (const header of login.headersArray().filter(header => header.name.toLowerCase() === "set-cookie")) {
@@ -35,16 +35,6 @@ test("reviewer previews imports, saves changes and follows a named batch without
       await context.addCookies([{ name: pair.slice(0, separator), value: pair.slice(separator + 1), domain: new URL(baseURL!).hostname, path: "/", httpOnly: true, secure: header.value.toLowerCase().includes("; secure"), sameSite: "Lax" }]);
     }
     expect(sessionCookies).toHaveLength(1);
-    // CI serves the app on HTTP loopback while auth issues a Secure cookie.
-    // Pass the real signed session on same-origin page requests for WebKit too.
-    // Chromium handles loopback Secure cookies natively. Proxying its document
-    // would change the address-space classification and block local resources.
-    if (browserName === "webkit") await page.route(url => url.origin === new URL(baseURL!).origin && url.pathname.startsWith("/admin"), async route => {
-      const headers = await route.request().allHeaders();
-      const locale = (await context.cookies()).find(cookie => cookie.name === "riic-locale")?.value ?? "zh";
-      const response = await route.fetch({ headers: { ...headers, cookie: [...sessionCookies, `riic-locale=${locale}`].join("; ") } });
-      await route.fulfill({ response });
-    });
     await context.addCookies([{ name: "riic-locale", value: "zh", domain: new URL(baseURL!).hostname, path: "/" }]);
     page.on("request", request => {
       if (["POST", "PATCH", "PUT", "DELETE"].includes(request.method()) && new URL(request.url()).pathname.startsWith("/api/account/")) personalWrites.push(request.url());

@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 
 /*
  * Drawer interaction adapted from interior.dev by Dominic Doemann.
@@ -11,7 +11,7 @@ import { animate, motion, type PanInfo, useDragControls, useMotionValue, useRedu
 import { XIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useId, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/navigation";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

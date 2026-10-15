@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { useId } from "react";
 
 import {
@@ -43,7 +43,7 @@ export function SklandPolicyConsent({
         />
         <label htmlFor={termsId}>
           我已阅读并同意
-          <Link className="mx-1 font-medium text-foreground underline underline-offset-4" href="/terms" target="_blank">本站服务条款</Link>
+          <Link className="mx-1 font-medium text-foreground underline underline-offset-4" to="/terms" target="_blank">本站服务条款</Link>
           。
         </label>
       </div>
@@ -57,7 +57,7 @@ export function SklandPolicyConsent({
         />
         <label htmlFor={privacyId}>
           我已阅读
-          <Link className="mx-1 font-medium text-foreground underline underline-offset-4" href="/privacy" target="_blank">本站隐私政策</Link>
+          <Link className="mx-1 font-medium text-foreground underline underline-offset-4" to="/privacy" target="_blank">本站隐私政策</Link>
           ，并同意本站为登录和数据同步处理我的森空岛凭证、角色、干员与基建数据。
         </label>
       </div>

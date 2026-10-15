@@ -2,7 +2,7 @@
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 import { localize as localize_components_pages_MasteryPlanner } from "../../i18n/helpers/components_pages_MasteryPlanner.ts";
 
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { Settings2, Timer } from "lucide-react";

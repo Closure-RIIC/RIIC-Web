@@ -10,12 +10,13 @@ const scriptBody = "globalThis.__compressionCheck = true;\n".repeat(64);
 const expectedBuildId = "b".repeat(40);
 
 function documentBody(buildId) {
-  return `<!doctype html><html><head><meta name="riic-build-id" content="${buildId}"></head><body><script src="/_next/static/chunks/app.js"></script></body></html>`;
+  return `<!doctype html><html><head><meta name="riic-build-id" content="${buildId}"></head><body><script src="/assets/app.js"></script></body></html>`;
 }
 
 async function withServer({
   buildId = expectedBuildId,
   compressScript,
+  moduleBootstrap = false,
   pageCacheControl = "private, no-cache, no-store, max-age=0, must-revalidate",
 }, run) {
   const server = createServer((request, response) => {
@@ -25,10 +26,16 @@ async function withServer({
         "content-encoding": "gzip",
         "content-type": "text/html; charset=utf-8",
       });
-      response.end(gzipSync(documentBody(buildId)));
+      const html = moduleBootstrap ? documentBody(buildId).replace('<script src="/assets/app.js"></script>', '<script type="module" src="/assets/bootstrap.js"></script><link rel="modulepreload" href="/assets/app.js">') : documentBody(buildId);
+      response.end(gzipSync(html));
       return;
     }
-    if (request.url === "/_next/static/chunks/app.js") {
+    if (request.url === "/assets/bootstrap.js") {
+      response.writeHead(200, { "content-type": "application/javascript" });
+      response.end('import "./app.js";');
+      return;
+    }
+    if (request.url === "/assets/app.js") {
       response.writeHead(200, {
         ...(compressScript ? { "content-encoding": "gzip" } : {}),
         "content-type": "application/javascript; charset=utf-8",
@@ -65,6 +72,19 @@ test("public compression verification rejects an uncompressed JavaScript GET res
       verifyPublicCompression(healthUrl, globalThis.fetch, expectedBuildId),
       /public JavaScript must use gzip or Brotli for a real GET response/,
     );
+  });
+});
+
+test("module bootstrap verification checks the substantial preloaded payload", async () => {
+  await withServer({ compressScript: true, moduleBootstrap: true }, async (healthUrl) => {
+    const result = await verifyPublicCompression(healthUrl, globalThis.fetch, expectedBuildId);
+    assert.equal(result.scriptBytes, Buffer.byteLength(scriptBody));
+    assert.equal(result.scriptEncoding, "gzip");
+  });
+});
+test("a tiny bootstrap cannot hide an uncompressed preloaded payload", async () => {
+  await withServer({ compressScript: false, moduleBootstrap: true }, async (healthUrl) => {
+    await assert.rejects(verifyPublicCompression(healthUrl, globalThis.fetch, expectedBuildId), /public JavaScript must use gzip or Brotli/);
   });
 });
 

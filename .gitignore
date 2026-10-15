@@ -68,3 +68,10 @@ fixtures/*.xls
 .DS_Store
 Thumbs.db
 .gstack/
+
+# TanStack Start build and generated routes
+.output/
+.tanstack/
+dist/
+src/routeTree.gen.ts
+.tmp/

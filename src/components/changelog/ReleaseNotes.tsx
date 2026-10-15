@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { useLocale, useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "use-intl";
 import type { ReleaseNote } from "@/releases/types";
 
 const SECTION_KEYS = { added: "new", improved: "improved", fixed: "fixed" } as const;

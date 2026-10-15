@@ -1,5 +1,5 @@
 import { localize as localize_components } from "./i18n/helpers/components.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import {
   Check,
   ChevronDown,
@@ -72,7 +72,7 @@ import {
 } from "./rotation-presentation";
 import { DEFAULT_ROTATION_PROFILE } from "./rotation-settings";
 import { RoomRow } from "./schedule";
-import { withRecyclingRoom } from "./recycling-room";
+import { recyclingRoom, withRecyclingRoom, type RecyclingRoom } from "./recycling-room";
 import { RecyclingRoomNotice } from "./components/RecyclingRoomNotice";
 import {
   COMPACT_OPERATOR_SIZE_CLASS,
@@ -100,6 +100,7 @@ import {
   MaaPlan,
   PresetDef,
   RotationJson,
+  RoomProduct,
 } from "./types";
 
 const OperatorSkillTooltip = lazy(() => import("@/components/OperatorSkillTooltip").then((module) => ({
@@ -386,7 +387,7 @@ function RoomLevelControl({
   />;
 }
 
-function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"]): string {
+function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"] | "recycling"): string {
   if (kind === "trade_post") return "trading";
   if (kind === "factory") return "manufacture";
   if (kind === "power_plant") return "power";
@@ -396,6 +397,7 @@ function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"]): s
   if (kind === "workshop") return "processing";
   if (kind === "training_room") return "training";
   if (kind === "office") return "hire";
+  if (kind === "recycling") return "recycling";
   return "default";
 }
 
@@ -404,22 +406,27 @@ export function LayoutEditor({
   onFactoryRecipeChange,
   onTradeOrderChange,
   onRoomLevelChange,
+  recyclingRoomLevel = 3,
+  onRecyclingRoomLevelChange,
 }: {
   layout: BaseBlueprint;
   onFactoryRecipeChange: (roomId: string, recipe: FactoryRecipe) => void;
   onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
   onRoomLevelChange: (roomId: string, level: number) => void;
+  recyclingRoomLevel?: number;
+  onRecyclingRoomLevelChange: (level: number) => void;
 }) {
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
 
   const factoryRecipesUnlocked = hasUnlockedFactoryRecipes(layout);
-  const roomGroups = [
+  type LayoutEditorRoom = BaseBlueprint["rooms"][number] | RecyclingRoom;
+  const roomGroups: Array<{ key: string; label: string; rooms: LayoutEditorRoom[] }> = [
     { key: "trade", label: intl("components.tradingPosts"), rooms: layout.rooms.filter((room) => room.kind === "trade_post") },
     { key: "factory", label: intl("components.factories"), rooms: layout.rooms.filter((room) => room.kind === "factory") },
     { key: "power", label: intl("components.powerPlants"), rooms: layout.rooms.filter((room) => room.kind === "power_plant") },
-    { key: "function", label: intl("components.controlFunctional"), rooms: layout.rooms.filter((room) => !["trade_post", "factory", "power_plant", "dormitory"].includes(room.kind)) },
+    { key: "function", label: intl("components.controlFunctional"), rooms: [...layout.rooms.filter((room) => !["trade_post", "factory", "power_plant", "dormitory"].includes(room.kind)), recyclingRoom(recyclingRoomLevel)] },
     { key: "dormitory", label: intl("components.dormitories"), rooms: layout.rooms.filter((room) => room.kind === "dormitory") },
   ].filter((group) => group.rooms.length > 0);
 
@@ -451,10 +458,11 @@ export function LayoutEditor({
                 : isFactory
                   ? FACTORY_RECIPE_OPTIONS
                   : [];
-              const product = productLabel(room);
-              const levelMax = maxRoomLevel(room.kind);
+              const product = room.kind === "recycling" ? undefined : productLabel(room);
+              const levelMax = room.kind === "recycling" ? 3 : maxRoomLevel(room.kind);
               const visualGroup = roomVisualGroupForKind(room.kind);
-              const originalName = group.rooms.length > 1 ? `${roomKindLabel(room.kind)} ${roomIndex + 1}` : roomKindLabel(room.kind);
+              const roomName = room.kind === "recycling" ? intl("RecyclingRoom.title") : roomKindLabel(room.kind);
+              const originalName = group.key === "function" || group.rooms.length === 1 ? roomName : `${roomName} ${roomIndex + 1}`;
               const displayName = localizedRoomTitle(originalName, visualGroup, locale, gameCatalog);
 
               return (
@@ -479,7 +487,7 @@ export function LayoutEditor({
                       roomId={room.id}
                       level={room.level}
                       levelMax={levelMax}
-                      onChange={(level) => onRoomLevelChange(room.id, level)}
+                      onChange={(level) => room.kind === "recycling" ? onRecyclingRoomLevelChange(level) : onRoomLevelChange(room.id, level)}
                     />
                   </div>
 
@@ -791,11 +799,13 @@ function RoomEfficiencyDetails({
 export function RoomProductControls({
   row,
   layoutRoom,
+  product,
   onFactoryRecipeChange,
   onTradeOrderChange,
 }: {
   row: RoomRow;
   layoutRoom: BaseBlueprint["rooms"][number] | undefined;
+  product?: RoomProduct;
   onFactoryRecipeChange: (roomId: string, recipe: FactoryRecipe) => void;
   onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
 }) {
@@ -809,8 +819,8 @@ export function RoomProductControls({
 
   const isTrade = layoutRoom?.kind === "trade_post";
   const isFactory = layoutRoom?.kind === "factory";
-  const activeOrder = isTrade ? tradeOrderFor(layoutRoom) : null;
-  const activeRecipe = isFactory ? factoryRecipeFor(layoutRoom) : null;
+  const activeOrder = isTrade ? (product && "trade" in product ? product.trade.order : tradeOrderFor(layoutRoom!)) : null;
+  const activeRecipe = isFactory ? (product && "factory" in product ? product.factory.recipe : factoryRecipeFor(layoutRoom!)) : null;
   const activeProduct = activeOrder ?? activeRecipe;
 
   if (activeProduct) {
@@ -1119,12 +1129,12 @@ export function OperatorSlot({
             exit={{
               opacity: 0,
               x: exitX,
-              pointerEvents: "none",
               transition: {
                 duration: MOTION_DURATION.fast,
                 ease: MOTION_EASE_OUT,
               },
             }}
+            style={{ pointerEvents: "none" }}
             transition={{
               duration: shouldReduceMotion ? MOTION_DURATION.feedback : MOTION_DURATION.state,
               delay: shouldReduceMotion ? 0 : transitionDelay,
@@ -1272,6 +1282,8 @@ export function ScheduleBoard({
   onManualSkillEfficiencyChange,
   highlightNoLayoutSkill = false,
   noLayoutSkillOperators,
+  roomProducts,
+  compactProductControls = false,
 }: {
   simulation?: { moods: Readonly<Record<string, number>>; selected: string; onSelect: (name: string) => void };
   rows: RoomRow[];
@@ -1311,6 +1323,8 @@ export function ScheduleBoard({
   onManualSkillEfficiencyChange?: (row: RoomRow, value: number | null) => void;
   highlightNoLayoutSkill?: boolean;
   noLayoutSkillOperators?: ReadonlySet<string>;
+  roomProducts?: ReadonlyMap<string, RoomProduct>;
+  compactProductControls?: boolean;
 }) {
   const intl = useTranslations();
   const locale = useLocale();
@@ -1434,7 +1448,7 @@ export function ScheduleBoard({
           {rowGroups.map((group) => {
         const visual = roomVisualFor(group.rows[0]?.group ?? "default");
         const firstGroup = group.rows[0]?.group ?? "";
-        const displayGroupLabel = en ? ({ control: "Control Center", trading: "Trading Posts", manufacture: "Factories", power: "Power Plants", dormitory: "Dormitories", meeting: "Reception Room", hire: "Office", processing: "Workshop", training: "Training Room", recycling: "Recycling Station" }[firstGroup] ?? (group.label === "功能设施" ? "Functional Facilities" : group.label)) : group.label;
+        const displayGroupLabel = en ? ({ control: "Control Center", trading: "Trading Posts", manufacture: "Factories", power: "Power Plants", dormitory: "Dormitories", meeting: "Reception Room", hire: "Office", processing: "Workshop", training: "Training Room", recycling: "Recycling Station", recycle: "Recycling Station" }[firstGroup] ?? (group.label === "功能设施" ? "Functional Facilities" : group.label)) : group.label;
         const groupStyle = {
           "--room-accent": visual.accent,
         } as CSSProperties;
@@ -1581,6 +1595,7 @@ export function ScheduleBoard({
                         {!simulation && <RoomProductControls
                           row={row}
                           layoutRoom={layoutRoom}
+                          product={roomProducts?.get(row.roomId)}
                           onFactoryRecipeChange={onFactoryRecipeChange}
                           onTradeOrderChange={onTradeOrderChange}
                         />}
@@ -1720,7 +1735,7 @@ export function ScheduleBoard({
 
   ), [simulation, highlightNoLayoutSkill, noLayoutSkillOperators, rowGroups, en, layout, collapsedGroups, hiddenGroups, intl, locale, gameCatalog,
     onSortToggle, sortRoomId, renderListRoomActions, shiftDirection, onFactoryRecipeChange,
-    onTradeOrderChange, eliteByOperator, levelByOperator, onSlotClick, sortSelection,
+    onTradeOrderChange, eliteByOperator, levelByOperator, onSlotClick, sortSelection, roomProducts,
     onSortSlotClick, onIssue, feedbackDisabled, normalizedQuery, onClearRoom, onManualSkillEfficiencyChange]);
 
   const compactContent = useMemo(() => (
@@ -1735,6 +1750,10 @@ export function ScheduleBoard({
               levelByOperator={levelByOperator}
               activeShift={activeShift}
               activePlan={activePlan}
+              roomProducts={roomProducts}
+              compactProductControls={compactProductControls}
+              onFactoryRecipeChange={simulation ? undefined : onFactoryRecipeChange}
+              onTradeOrderChange={simulation ? undefined : onTradeOrderChange}
               shiftDirection={shiftDirection}
               onIssue={onIssue}
               feedbackDisabled={feedbackDisabled}
@@ -1762,7 +1781,7 @@ export function ScheduleBoard({
   ), [simulation, highlightNoLayoutSkill, noLayoutSkillOperators, CompactScheduleView, visibleRows, layout, eliteByOperator, levelByOperator,
     activeShift, activePlan, shiftDirection, onIssue, feedbackDisabled, hideImages,
     onSlotClick, sortRoomId, sortSelection, onSortToggle, onSortSlotClick, onClearRoom,
-    onDormAutofillChange, droneTargetRoomId, onDroneTargetChange, onManualSkillEfficiencyChange, compactScheduleLoadFailed, intl]);
+    onDormAutofillChange, droneTargetRoomId, onDroneTargetChange, onManualSkillEfficiencyChange, onFactoryRecipeChange, onTradeOrderChange, roomProducts, compactProductControls, compactScheduleLoadFailed, intl]);
 
   if (rows.length === 0) {
     return (

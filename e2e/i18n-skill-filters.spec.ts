@@ -92,14 +92,26 @@ for (const locale of ["zh", "en"] as const) {
       : ["关于我们", "使用帮助", "导入干员", "核对干员数据", "隐私政策", "服务条款", "账号", "更新日志"];
     const routes = ["/about", "/help", "/help/import-operators", "/help/owned-operators", "/privacy", "/terms", "/account", "/changelog"];
     for (const [index, route] of routes.entries()) {
+      const announcement = route === "/account"
+        ? page.waitForResponse(response => new URL(response.url()).pathname === "/api/releases" && new URL(response.url()).searchParams.get("mode") === "announcement")
+        : null;
       const response = await page.goto(route);
+      await expect(page.locator('body')).toHaveAttribute('data-app-hydrated', 'true');
       expect(response?.ok(), route).toBe(true);
       expect(await response!.text()).toContain(`lang="${locale === "zh" ? "zh-CN" : "en"}"`);
       await expect(page).toHaveTitle(new RegExp(titles[index]));
       await expect(page.getByRole("heading").first(), route).toBeVisible();
+      if (announcement) await (await announcement).finished();
+      if (route === "/changelog") {
+        // Its heading is server rendered. Let the translated client feed settle
+        // before navigating away while hydration is still starting its fetch.
+        await expect(page.locator("[data-changelog-page] [data-skeleton-swap]")).toHaveAttribute("aria-busy", "false");
+        await expect(page.locator("[data-changelog-page]").getByText(locale === "en" ? "No published updates yet." : "暂时没有已发布的更新。", { exact: true })).toBeVisible();
+      }
     }
     for (const source of ["skland", "maa"] as const) {
       await page.goto(`/help/import-operators?step=4&source=${source}`);
+      await expect(page.locator('body')).toHaveAttribute('data-app-hydrated', 'true');
       const method = page.locator(`[data-help-import-method="${source}"]`);
       await expect(method).toBeVisible();
       await expect(method).toContainText(locale === "en" ? "Done when:" : "完成标志：");

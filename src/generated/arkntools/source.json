@@ -2,7 +2,7 @@
   "version": 2,
   "source": {
     "repository": "https://github.com/arkntools/arknights-toolbox-data",
-    "commit": "1b7752b9374f452bc23b153fc658d4f9019463a8"
+    "commit": "8f11a13c4b4d41d2c15ab52885a2e787088c732f"
   },
   "portraitsSource": {
     "repository": "https://github.com/yuanyan3060/ArknightsGameResource",

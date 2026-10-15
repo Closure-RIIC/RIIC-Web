@@ -64,6 +64,7 @@ test("an anonymous cold start probes the shared session once and does not touch 
   await expect(page.getByRole("dialog", { name: "登录网站账号" })).toHaveCount(0);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByText(/正在恢复网站账号|正在确认网站账号|正在打开账号登录/)).toHaveCount(0);
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
   await expect.poll(() => sessionRequests).toBe(1);
   await page.waitForTimeout(100);
   expect(sklandRequests).toEqual([]);
@@ -367,6 +368,7 @@ test("filing links and Rainyun cloud services align left on mobile and right on 
   await mockApis(page);
   await seedPreferences(page);
   await page.goto("/");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
 
   const filingLink = page.getByRole("link", { name: "沪ICP备2026041492号" });
   const publicSecurityLink = page.getByRole("link", { name: "沪公网安备31011502407364号" });
@@ -440,11 +442,11 @@ test("filing links and Rainyun cloud services align left on mobile and right on 
   }
 });
 
-test("primary pages prefetch after hydration and navigate on the first click", async ({ page }) => {
+test("primary pages load their route modules and navigate on the first click", async ({ page }) => {
   const trainingRouteRequests: string[] = [];
   page.on("request", (request) => {
     const url = new URL(request.url());
-    if (url.pathname === "/training") {
+    if (/\/(?:src\/routes\/_workbench\.training\.tsx|assets\/_workbench\.training-[^/]+\.js)$/.test(url.pathname)) {
       trainingRouteRequests.push(request.url());
     }
   });
@@ -476,6 +478,19 @@ test("primary pages prefetch after hydration and navigate on the first click", a
   await page.getByRole("button", { name: "基建计算器", exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
   await expect(page.locator("[data-calculator-controls]")).toBeVisible();
+});
+
+test("API routes reject unsupported methods instead of rendering HTML", async ({ request }) => {
+  for (const pathname of ["/api/health", "/api/skland/status", "/api/auth/get-session"]) {
+    const denied = await request.patch(pathname);
+    expect(denied.status(), pathname).toBe(405);
+    expect(await denied.text()).toBe("");
+    const options = await request.fetch(pathname, { method: "OPTIONS" });
+    expect(options.status(), pathname).toBe(204);
+    expect(options.headers().allow).toContain("GET");
+    expect(options.headers().allow).toContain("HEAD");
+    expect(options.headers().allow).toContain("OPTIONS");
+  }
 });
 
 test("legacy plans API identifies the account saved-plans successor", async ({ request }) => {
@@ -569,13 +584,11 @@ test("website login lazy-loads its UI without probing the shared session again",
     releaseChunks = resolve;
   });
   let deferredChunkRequests = 0;
-  await page.route("**/_next/static/chunks/*.js", async (route) => {
+  await page.route(/\/(?:assets\/WebsiteAccountDialog-[^/]+\.js|src\/components\/auth\/WebsiteAccountDialog\.tsx)(?:\?.*)?$/, async (route) => {
     const response = await route.fetch();
     const body = await response.body();
-    if (/function WebsiteAccountDialog\s*\(/.test(body.toString("utf8"))) {
-      deferredChunkRequests += 1;
-      await chunkGate;
-    }
+    deferredChunkRequests += 1;
+    await chunkGate;
     await route.fulfill({ response, body });
   });
   await mockApis(page);
@@ -613,8 +626,8 @@ test("website login lazy-loads its UI without probing the shared session again",
     expect(box).not.toBeNull();
     if (viewport.width < 768) {
       // The shared loading dialog uses the same mobile sheet as the loaded UI.
-      expect(box?.width).toBe(viewport.width);
-      expect(box?.height).toBe(viewport.height);
+      expect(Math.abs(box!.width - viewport.width)).toBeLessThan(1);
+      expect(Math.abs(box!.height - viewport.height)).toBeLessThan(1);
     } else {
       expect(box?.width ?? 0).toBeLessThanOrEqual(viewport.width - 16);
       expect(box?.height ?? 0).toBeLessThanOrEqual(viewport.height - 16);
@@ -622,7 +635,7 @@ test("website login lazy-loads its UI without probing the shared session again",
   }
 
   releaseChunks?.();
-  await page.unroute("**/_next/static/chunks/*.js");
+  await page.unroute("**/assets/*.js");
   await expect(loadingDialog).toHaveCount(0);
   const accountDialog = page.getByRole("dialog", { name: "登录网站账号" });
   await expect(accountDialog.locator("[data-website-account-panel]")).toBeVisible();
@@ -824,6 +837,11 @@ test("password reset requires matching password confirmation before making a req
   });
   await page.goto("/account/reset-password?token=valid-reset-token");
 
+  // The form is server rendered; confirm its controls are hydrated before typing.
+  await page.getByRole("button", { name: "显示新密码" }).click();
+  await expect(page.getByLabel("新密码", { exact: true })).toHaveAttribute("type", "text");
+  await page.getByRole("button", { name: "隐藏新密码" }).click();
+  await expect(page.getByLabel("新密码", { exact: true })).toHaveAttribute("type", "password");
   await page.getByLabel("新密码", { exact: true }).fill("weakpassword1");
   await page.getByLabel("确认新密码", { exact: true }).fill("weakpassword1");
   await page.getByRole("button", { name: "确认重置" }).click();

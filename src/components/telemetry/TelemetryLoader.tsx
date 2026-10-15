@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-import { usePathname } from "next/navigation";
+import { usePathname } from "@/navigation";
 
 export function TelemetryLoader() {
   const pathname = usePathname();

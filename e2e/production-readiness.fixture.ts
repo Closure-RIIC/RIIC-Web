@@ -62,12 +62,27 @@ export async function armEndingTransitionCapture(element: Locator, label: string
     const attribute = `data-motion-exit-${captureLabel}`;
     const root = document.documentElement;
     root.removeAttribute(attribute);
+    const observedDurations = new Set<number | string>();
+    const record = (durations: Array<number | string>) => {
+      for (const duration of durations) observedDurations.add(duration);
+      if (observedDurations.size) root.setAttribute(attribute, JSON.stringify([...observedDurations]));
+    };
+    // A busy runner can deliver the next frame after the exit has finished.
+    // Record native completion events as well as active animation timings.
+    const onEnd = (event: Event) => {
+      if (event.target !== node || !node.hasAttribute("data-ending-style")) return;
+      record([Math.round((event as AnimationEvent | TransitionEvent).elapsedTime * 1_000)]);
+    };
+    node.addEventListener("animationend", onEnd);
+    node.addEventListener("transitionend", onEnd);
 
     const capture = () => {
       if (!node.hasAttribute("data-ending-style")) return false;
       requestAnimationFrame(() => {
-        const durations = node.getAnimations().map((animation) => animation.effect?.getTiming().duration ?? 0);
-        root.setAttribute(attribute, JSON.stringify(durations));
+        record(node.getAnimations().map((animation) => {
+          const duration = animation.effect?.getTiming().duration ?? 0;
+          return typeof duration === "object" ? String(duration) : duration;
+        }));
       });
       return true;
     };
@@ -169,29 +184,54 @@ export async function armTransientStyleCapture(page: Page, selector: string, lab
   await page.evaluate(({ selector, label }) => {
     const attribute = `data-motion-style-${label}`;
     const root = document.documentElement;
-    const startedAt = performance.now();
+    let startedAt: number | undefined;
+    let framePending = false;
     root.removeAttribute(attribute);
 
+    const observer = new MutationObserver(() => inspect());
     const inspect = () => {
-      for (const element of document.querySelectorAll(selector)) {
+      if (root.hasAttribute(attribute)) return;
+      const elements = document.querySelectorAll(selector);
+      if (!elements.length) return;
+      startedAt ??= performance.now();
+      for (const element of elements) {
         const style = getComputedStyle(element);
         const opacity = Number(style.opacity);
         const transform = style.transform;
         const moved = !["none", "matrix(1, 0, 0, 1, 0, 0)", "matrix3d(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)"].includes(transform);
         if (moved || opacity < 0.999) {
           root.setAttribute(attribute, JSON.stringify({ opacity, transform }));
+          observer.disconnect();
           return;
         }
       }
-      if (performance.now() - startedAt < 5_000) requestAnimationFrame(inspect);
+      if (performance.now() - startedAt < 5_000 && !framePending) {
+        framePending = true;
+        requestAnimationFrame(() => { framePending = false; inspect(); });
+      } else if (performance.now() - startedAt >= 5_000) {
+        observer.disconnect();
+      }
     };
 
+    // Cold route compilation may outlast the capture window before the target
+    // mounts. Observe its arrival, then sample the original five-second window.
+    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ["data-activity-phase"] });
     inspect();
   }, { selector, label });
 }
 
 export async function expectCapturedStyleMotion(page: Page, label: string) {
   await expect.poll(() => page.locator("html").getAttribute(`data-motion-style-${label}`)).not.toBeNull();
+}
+
+export async function waitForContentReady(element: Locator) {
+  await expect.poll(() => element.evaluate(node => {
+    for (let parent = node.parentElement; parent; parent = parent.parentElement) {
+      if (parent.inert || parent.getAttribute("aria-hidden") === "true") return false;
+      if (parent.getAnimations().some(animation => animation.playState === "running")) return false;
+    }
+    return true;
+  })).toBe(true);
 }
 
 export async function waitForOwnAnimations(element: Locator) {
@@ -1062,6 +1102,9 @@ export async function mockApis(
 }
 
 export async function openSklandOverview(page: Page) {
+  // These signed-in fixtures expose Agent history. Wait for its async insertion
+  // above the personal navigation so WebKit does not click a moving target.
+  await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
   await page.getByRole("button", { name: "森空岛状态中心", exact: true }).click();
   await expect(page.locator("[data-skland-page]")).toBeVisible({ timeout: 45_000 });
   await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCount(0);

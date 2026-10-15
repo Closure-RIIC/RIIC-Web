@@ -1,4 +1,6 @@
 {
+  "wishes": "Wishes",
+  "wishesHint": "Review wish wall submissions",
   "cdkBatchLabel": "Batch name",
   "cdkStartsAt": "Available from (optional)",
   "cdkExpiresAt": "Expires at (optional)",

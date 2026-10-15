@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { RECYCLING_ROOM, RECYCLING_ROOM_ID, withRecyclingRoom } from "./recycling-room.ts";
+import { RECYCLING_ROOM, RECYCLING_ROOM_ID, recyclingRoom, withRecyclingRoom } from "./recycling-room.ts";
 import { assignManualOperator, clearManualRoom, createManualScheduleDraft, findManualOperatorConflict, loadManualScheduleDraft, manualRoomCapacity, manualScheduleToMaa, persistManualScheduleDraft, reconcileManualScheduleDraft } from "./manual-schedule.ts";
 import type { BaseBlueprint } from "./types.ts";
 
@@ -47,6 +47,14 @@ test("the display helper keeps empty states and existing recycling assignments i
   const row = { key: "control", roomId: "control", group: "control" as const, groupLabel: "控制中枢", title: "控制中枢", index: 0, operators: [], operatorSlots: [], autofill: false, rule: "", suspicious: false };
   const rows = withRecyclingRoom([row]);
   assert.equal(rows.length, 2);
-  assert.equal(rows[1]!.level, undefined);
+  assert.equal(rows[1]!.level, 3);
   assert.equal(withRecyclingRoom(rows), rows);
+});
+
+test("the recycling room level stays within its level one through three range", () => {
+  assert.equal(recyclingRoom(0).level, 1);
+  assert.equal(recyclingRoom(2).level, 2);
+  assert.equal(recyclingRoom(4).level, 3);
+  const row = { key: "control", roomId: "control", group: "control" as const, groupLabel: "控制中枢", title: "控制中枢", index: 0, operators: [], operatorSlots: [], autofill: false, rule: "", suspicious: false };
+  assert.equal(withRecyclingRoom([row], 2)[1]?.level, 2);
 });

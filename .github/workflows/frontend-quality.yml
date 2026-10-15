@@ -288,7 +288,7 @@ jobs:
   release_artifact:
     name: Build release once
     needs: changes
-    if: needs.changes.outputs.run_core == 'true'
+    if: always() && (github.event_name == 'schedule' || needs.changes.outputs.run_core == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
@@ -372,6 +372,16 @@ jobs:
             echo "| $DEPLOYMENT_ENV | \`${GITHUB_SHA:0:12}\` | \`${release_tree_sha:0:12}\` | $archive_bytes | \`$archive_sha256\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Upload release for browser verification
+        if: needs.changes.outputs.run_browser == 'true' || github.event_name == 'schedule' || inputs.run_webkit
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: riic-web-browser-${{ github.sha }}
+          path: ${{ runner.temp }}/riic-web-release-upload/*
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+
       - name: Upload release for deployment
         if: >-
           needs.changes.outputs.deploy_required == 'true' &&
@@ -386,7 +396,7 @@ jobs:
 
   browser_e2e:
     name: Chromium E2E (${{ matrix.shard }})
-    needs: changes
+    needs: [changes, release_artifact]
     if: needs.changes.outputs.run_browser == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -401,6 +411,7 @@ jobs:
       DATABASE_URL: postgresql://arknights_e2e:e2e-test-only@postgres:5432/arknights_auth_test
       DATABASE_MIGRATION_URL: postgresql://arknights_e2e:e2e-test-only@postgres:5432/arknights_auth_test
       AUTH_INTEGRATION_DATABASE_URL: postgresql://arknights_e2e:e2e-test-only@postgres:5432/arknights_auth_test
+      PLAYWRIGHT_RELEASE_DIR: ${{ github.workspace }}/.tmp/browser-release
     services:
       postgres:
         image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
@@ -431,8 +442,26 @@ jobs:
       - name: Apply committed authentication migrations
         run: npm run db:migrate
 
+      - name: Download browser release
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: riic-web-browser-${{ github.sha }}
+          path: .tmp/browser-download
+
+      - name: Verify browser release identity
+        shell: bash
+        run: bash scripts/prepare-browser-release.sh "$GITHUB_WORKSPACE/.tmp/browser-download" "$PLAYWRIGHT_RELEASE_DIR" "$GITHUB_SHA" "$(git rev-parse 'HEAD^{tree}')"
+
       - name: Chromium end-to-end tests
         run: npm run test:e2e -- --shard=${{ matrix.shard }}
+
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: chromium-failures-${{ strategy.job-index }}-${{ github.sha }}
+          path: test-results/
+          retention-days: 3
 
   browser_boundaries:
     name: Browser release boundaries
@@ -490,10 +519,15 @@ jobs:
         run: npm run test:agent-billing:e2e
 
   webkit_e2e:
-    name: Scheduled WebKit compatibility
-    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_webkit)
+    name: Scheduled WebKit compatibility (${{ matrix.shard }})
+    needs: release_artifact
+    if: always() && needs.release_artifact.result == 'success' && (github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.run_webkit))
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1/4, 2/4, 3/4, 4/4]
     container:
       image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:c091b21d9fae78c76e85cd4356431e9b018402f172a214fc7d7a5e9a7e29d8ac
       options: --user 1001
@@ -501,6 +535,7 @@ jobs:
       DATABASE_URL: postgresql://arknights_e2e:e2e-test-only@postgres:5432/arknights_auth_test
       DATABASE_MIGRATION_URL: postgresql://arknights_e2e:e2e-test-only@postgres:5432/arknights_auth_test
       AUTH_INTEGRATION_DATABASE_URL: postgresql://arknights_e2e:e2e-test-only@postgres:5432/arknights_auth_test
+      PLAYWRIGHT_RELEASE_DIR: ${{ github.workspace }}/.tmp/browser-release
     services:
       postgres:
         image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
@@ -531,8 +566,26 @@ jobs:
       - name: Apply committed authentication migrations
         run: npm run db:migrate
 
+      - name: Download browser release
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: riic-web-browser-${{ github.sha }}
+          path: .tmp/browser-download
+
+      - name: Verify browser release identity
+        shell: bash
+        run: bash scripts/prepare-browser-release.sh "$GITHUB_WORKSPACE/.tmp/browser-download" "$PLAYWRIGHT_RELEASE_DIR" "$GITHUB_SHA" "$(git rev-parse 'HEAD^{tree}')"
+
       - name: WebKit end-to-end tests
-        run: npm run test:e2e:webkit
+        run: npm run test:e2e:webkit -- --shard=${{ matrix.shard }}
+
+      - name: Preserve browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: webkit-failures-${{ strategy.job-index }}-${{ github.sha }}
+          path: test-results/
+          retention-days: 3
 
   quality:
     name: quality

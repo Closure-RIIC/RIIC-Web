@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 import { useEffect, useRef, useState } from "react";
 
 import { acceptAccountDataConsent, getAccountDataConsent, getCloudWorkspace, putCloudWorkspace } from "@/api";

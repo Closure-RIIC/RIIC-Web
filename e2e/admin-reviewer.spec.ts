@@ -13,7 +13,7 @@ test("reviewer sees only overview and issues, and direct admin routes remain pro
     await pool.query('INSERT INTO "user" (id,name,email,email_verified,role) VALUES ($1,$2,$3,true,$4)', [id, "Reviewer browser test", `${id}@example.test`, "reviewer"]);
     await pool.query("INSERT INTO account (id,account_id,provider_id,user_id,password) VALUES ($1,$2,'credential',$2,$3)", [randomUUID(), id, await hashPassword(password)]);
     const login = await request.post("/api/auth/sign-in/email", {
-      headers: { origin: process.env.BETTER_AUTH_URL ?? baseURL! },
+      headers: { origin: baseURL! },
       data: { email: `${id}@example.test`, password },
     });
     expect(login.status(), await login.text()).toBe(200);
@@ -29,9 +29,7 @@ test("reviewer sees only overview and issues, and direct admin routes remain pro
         secure: header.value.toLowerCase().includes("; secure"), sameSite: "Lax",
       }]);
     }
-    // APIRequestContext does not send Secure cookies over CI's HTTP loopback URL,
-    // while Chromium treats loopback as trustworthy. Use the same real session
-    // explicitly for API assertions so they test authorization, not missing login.
+    // Reuse the real signed session for direct authorization assertions.
     expect(sessionCookies).toHaveLength(1);
     const apiHeaders = { cookie: sessionCookies.join("; ") };
     await page.goto("/admin");
@@ -46,8 +44,7 @@ test("reviewer sees only overview and issues, and direct admin routes remain pro
     await expect(page.locator("h1")).toBeVisible();
     for (const path of ["/admin/users", "/admin/skills", "/admin/changelog"]) {
       const response = await page.goto(path);
-      // Next may stream a not-found boundary with HTTP 200.
-      expect([200, 404]).toContain(response!.status());
+      expect(response!.status()).toBe(404);
       await expect(page.locator('meta[name="robots"][content="noindex"]')).toHaveCount(1);
       await expect(page.locator("[data-admin-user-management]")).toHaveCount(0);
     }

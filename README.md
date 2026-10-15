@@ -6,7 +6,9 @@
 - 前端仓库：[KnightCodeSquareMatrix/RIIC-Web](https://github.com/KnightCodeSquareMatrix/RIIC-Web)
 - 问题反馈：[GitHub Issues](https://github.com/KnightCodeSquareMatrix/RIIC-Web/issues)
 
-本仓库只包含 Next.js 应用、API 边界和协议适配，不包含排班搜索算法、干员技能数据逻辑或求解器源码。
+本仓库只包含 TanStack Start 应用、API 边界和协议适配，不包含排班搜索算法、干员技能数据逻辑或求解器源码。
+
+框架切换、验证结果与部署目录升级见 [TanStack Start 迁移记录](docs/TANSTACK_START_MIGRATION.md)。
 
 ## 功能
 
@@ -40,15 +42,15 @@
 
 ## 技术栈
 
-- Next.js 16 App Router
+- TanStack Start 16 App Router
 - React 19 与 TypeScript
-- next-intl 与 ICU 消息格式
+- use-intl 与 ICU 消息格式
 - Tailwind CSS 4、shadcn/ui、Base UI
 - Better Auth、Drizzle ORM 与 PostgreSQL
 - `skland-kit`，仅用于可选的森空岛扫码或凭证导入授权
 - 外部长驻进程 `infra-cli serve`；生产排班 Worker 用中央调度器驱动四个相互隔离的求解通道，每通道保留两个有界任务槽
 
-页面和 `/api/*` 由同一个 Next.js 服务提供，不需要单独启动 Express 或 Vite 服务。
+页面和 `/api/*` 由同一个 TanStack Start 服务提供，不需要单独启动 Express 或 Vite 服务。
 
 ## 本地运行
 
@@ -132,7 +134,7 @@ cp .env.example .env.local
 | `src/server` | API 契约、求解器客户端、认证与持久化边界 |
 | `src/layouts` | 基建布局预设 |
 | `drizzle` | 数据库 schema 迁移 |
-| `messages` | next-intl 中英文界面消息、结构化展示记录与翻译维护说明 |
+| `messages` | use-intl 中英文界面消息、结构化展示记录与翻译维护说明 |
 | `public` | 静态图片与第三方素材快照 |
 | `scripts` | 构建、公开测试、资源同步和仓库卫生检查 |
 
@@ -155,7 +157,7 @@ npm run audit:security
 npm run build
 ```
 
-`npm run check` 会执行公开仓库卫生检查、生成资源与国际化校验、ESLint、单元测试、API 契约测试和排班对比测试；翻译目录也可单独运行 `npm run check:i18n`。浏览器测试可分别通过 `npm run test:e2e`、`npm run test:e2e:production-profile` 和 `npm run test:e2e:webkit` 运行。`npm run build` 会准备不含求解器的 `.next/standalone` 运行目录，并补齐 `public` 与 `.next/static`；生产启动脚本会使用这一目录。涉及数据库 schema 的改动，应先设置 `DATABASE_MIGRATION_URL`，再执行：
+`npm run check` 会执行公开仓库卫生检查、生成资源与国际化校验、ESLint、单元测试、API 契约测试和排班对比测试；翻译目录也可单独运行 `npm run check:i18n`。浏览器测试可分别通过 `npm run test:e2e`、`npm run test:e2e:production-profile` 和 `npm run test:e2e:webkit` 运行。`npm run build` 会准备不含求解器的 `.output` 运行目录，并补齐 `public` 与 `public/assets`；生产启动脚本会使用这一目录。涉及数据库 schema 的改动，应先设置 `DATABASE_MIGRATION_URL`，再执行：
 
 ```bash
 npm run db:generate

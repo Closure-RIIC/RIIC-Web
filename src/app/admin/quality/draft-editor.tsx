@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Download, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +47,6 @@ export function DraftEditor({ draft, input, setInput, busy, onSave }: { draft: Q
       {!!removedOperators.length && <li>{t("移除干员：", "Removed: ")}{removedOperators.join("、")}</li>}
     </ul><details><summary className="cursor-pointer">{t("查看完整输入对照", "View full input comparison")}</summary><div className="mt-2 grid min-w-0 gap-3 md:grid-cols-2">{[[t("原始输入", "Original"), draft.original], [t("当前输入", "Current"), input]].map(([label, value]) => <div className="min-w-0" key={String(label)}><h4>{String(label)}</h4><div data-yeye-scroll="auto" className="max-h-64 overflow-auto whitespace-pre rounded border p-2 text-xs"><pre className="m-0 whitespace-[inherit]">{JSON.stringify(value, null, 2)}</pre></div></div>)}</div></details></div>}
     <div className="flex flex-wrap gap-2"><Button disabled={busy} onClick={onSave}><Save aria-hidden="true" />{t("保存并选中草稿", "Save and select draft")}</Button>{dirty && <Button variant="outline" disabled={busy} onClick={() => setInput(structuredClone(draft.input))}>{t("放弃未保存修改", "Discard unsaved changes")}</Button>}<Button variant="ghost" disabled={busy || !changed} onClick={() => setInput(structuredClone(draft.original))}><RotateCcw aria-hidden="true" />{t("恢复原始输入", "Restore original input")}</Button><Button variant="ghost" onClick={() => download("reproduction.json", input)}><Download aria-hidden="true" />{t("导出复现包", "Export reproduction")}</Button></div>
-    {draft.sources.filter(source => source.feedbackId).map(source => <Link className="text-sm underline underline-offset-4" key={source.feedbackId} href={`/admin/issues?q=${encodeURIComponent(source.feedbackId!)}`}>{t("返回来源反馈", "Back to source feedback")} · {source.name}</Link>)}
+    {draft.sources.filter(source => source.feedbackId).map(source => <Link className="text-sm underline underline-offset-4" key={source.feedbackId} to="/admin/issues" search={{ q: encodeURIComponent(source.feedbackId!) }}>{t("返回来源反馈", "Back to source feedback")} · {source.name}</Link>)}
   </Panel>;
 }

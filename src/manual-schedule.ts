@@ -32,6 +32,8 @@ export {
 export interface ManualRoomAssignment {
   operators: Array<string | null>;
   autofill?: boolean;
+  /** Per-shift production choice. Falls back to the base layout when absent. */
+  product?: BlueprintRoom["product"];
   /** User-entered paper skill efficiency in percentage points, per shift and room. */
   manualSkillEfficiencyPct?: number;
 }
@@ -266,6 +268,33 @@ export function manualRoomCapacity(room: EditableRoom): number {
 
 function emptyShift(durationHours: number): ManualShift {
   return { durationHours, rooms: {}, fiammettaTarget: null, droneTargetRoomId: null };
+}
+
+function roomProduct(room: BlueprintRoom): BlueprintRoom["product"] {
+  return room.product ? structuredClone(room.product) : undefined;
+}
+
+type ManualProductRoom = {
+  kind: EditableRoom["kind"];
+  level: number;
+  product?: BlueprintRoom["product"];
+};
+
+function normalizedManualProduct(
+  room: ManualProductRoom,
+  product: BlueprintRoom["product"] | undefined,
+  layout: BaseBlueprint,
+): BlueprintRoom["product"] | undefined {
+  if (room.kind === "trade_post") {
+    const order = product && "trade" in product ? product.trade.order : room.product && "trade" in room.product ? room.product.trade.order : "gold";
+    return { trade: { order: normalizeProductForLevel(room.level, order) } };
+  }
+  if (room.kind === "factory") {
+    const recipe = product && "factory" in product ? product.factory.recipe : room.product && "factory" in room.product ? room.product.factory.recipe : "gold";
+    const unlocked = layout.rooms.some((candidate) => candidate.kind === "factory" && candidate.level >= 3);
+    return { factory: { recipe: unlocked || recipe !== "originium" ? recipe : "gold" } };
+  }
+  return undefined;
 }
 
 export function createManualScheduleDraft(
@@ -524,12 +553,27 @@ export function createManualScheduleDraftFromCalculator(input: {
             .find(Boolean)
           ?? []
         : sourceRoom.operators;
+      const importedProduct = typeof sourceRoom.product === "string"
+        ? (room.kind === "factory"
+          ? (() => {
+              const recipe = sourceRoom.product === "all" ? "all" : factoryRecipeFromMaaProduct(sourceRoom.product);
+              return recipe ? { factory: { recipe } } : undefined;
+            })()
+          : room.kind === "trade_post"
+            ? (["Orundum", "Originium Shard", "originium", "开采协力"].includes(sourceRoom.product)
+              ? { trade: { order: "originium" as const } }
+              : ["LMD", "Gold", "gold", "龙门商法"].includes(sourceRoom.product)
+                ? { trade: { order: "gold" as const } }
+                : undefined)
+            : undefined)
+        : undefined;
       shift.rooms[room.id] = {
         operators: Array.from(
           { length: manualRoomCapacity(room) },
           (_, slotIndex) => maaOperatorName(sourceOperators[slotIndex] ?? null),
         ),
         ...(room.kind === "dormitory" ? { autofill: sourceRoom.autofill ?? true } : {}),
+        ...(importedProduct ? { product: normalizedManualProduct(room, importedProduct, input.layout) } : {}),
       };
     }
     const target = plan.Fiammetta?.target;
@@ -576,6 +620,10 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
         ? Object.fromEntries(Object.entries(candidate.rooms).flatMap(([roomId, assignment]) => {
           if (!assignment || typeof assignment !== "object" || !Array.isArray((assignment as ManualRoomAssignment).operators)) return [];
           const manualSkillEfficiencyPct = Number((assignment as ManualRoomAssignment).manualSkillEfficiencyPct);
+          const rawProduct = (assignment as ManualRoomAssignment).product;
+          const product = rawProduct && typeof rawProduct === "object" && !Array.isArray(rawProduct)
+            ? structuredClone(rawProduct)
+            : undefined;
           return [[roomId, {
             operators: (assignment as ManualRoomAssignment).operators.map((name) => typeof name === "string" ? name : null),
             ...(typeof (assignment as ManualRoomAssignment).autofill === "boolean"
@@ -584,6 +632,7 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
             ...(Number.isFinite(manualSkillEfficiencyPct) && manualSkillEfficiencyPct >= 0
               ? { manualSkillEfficiencyPct: Math.round(manualSkillEfficiencyPct * 100) / 100 }
               : {}),
+            ...(product ? { product } : {}),
           }]];
         }))
         : {};
@@ -697,9 +746,11 @@ export function reconcileManualScheduleDraft(
           );
           const manualSkillEfficiencyPct = Number(assignment?.manualSkillEfficiencyPct);
           const isProductionRoom = room.kind === "trade_post" || room.kind === "factory" || room.kind === "power_plant";
+          const product = normalizedManualProduct(room, assignment?.product, layout);
           return [room.id, {
             operators,
             ...(room.kind === "dormitory" ? { autofill: assignment?.autofill ?? true } : {}),
+            ...(product ? { product } : {}),
             ...(isProductionRoom && Number.isFinite(manualSkillEfficiencyPct) && manualSkillEfficiencyPct >= 0
               ? { manualSkillEfficiencyPct: Math.round(manualSkillEfficiencyPct * 100) / 100 }
               : {}),
@@ -838,6 +889,25 @@ export function setManualRoomSkillEfficiency(
   return next;
 }
 
+export function setManualRoomProduct(
+  draft: ManualScheduleDraft,
+  layout: BaseBlueprint,
+  shiftIndex: number,
+  roomId: string,
+  product: BlueprintRoom["product"],
+): ManualScheduleDraft {
+  const room = layout.rooms.find((candidate) => candidate.id === roomId);
+  const normalized = room ? normalizedManualProduct(room, product, layout) : undefined;
+  if (!room || !normalized || !draft.shifts[shiftIndex] || (room.kind !== "trade_post" && room.kind !== "factory")) return draft;
+  const next = structuredClone(draft);
+  const assignment = next.shifts[shiftIndex]!.rooms[roomId] ?? {
+    operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
+  };
+  assignment.product = normalized;
+  next.shifts[shiftIndex]!.rooms[roomId] = assignment;
+  return next;
+}
+
 export function setManualDormAutofill(
   draft: ManualScheduleDraft,
   layout: BaseBlueprint,
@@ -879,9 +949,13 @@ export function clearManualRoom(
   const room = manualEditableRooms(layout).find((candidate) => candidate.id === roomId);
   if (!room || !draft.shifts[shiftIndex]) return draft;
   const next = structuredClone(draft);
+  const previousProduct = next.shifts[shiftIndex]!.rooms[roomId]?.product;
   next.shifts[shiftIndex]!.rooms[roomId] = {
     operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
     ...(room.kind === "dormitory" ? { autofill: false } : {}),
+    ...((room.kind === "trade_post" || room.kind === "factory")
+      ? { product: previousProduct ? structuredClone(previousProduct) : roomProduct(room) }
+      : {}),
   };
   return next;
 }
@@ -895,20 +969,28 @@ export function clearManualShift(
   const next = structuredClone(draft);
   const shift = next.shifts[shiftIndex]!;
   shift.droneTargetRoomId = null;
-  shift.rooms = Object.fromEntries(layout.rooms.map((room) => [room.id, {
-    operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
-    ...(room.kind === "dormitory" ? { autofill: false } : {}),
-  } satisfies ManualRoomAssignment]));
+  shift.rooms = Object.fromEntries(layout.rooms.map((room) => {
+    const previousProduct = shift.rooms[room.id]?.product;
+    return [room.id, {
+      operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
+      ...(room.kind === "dormitory" ? { autofill: false } : {}),
+      ...((room.kind === "trade_post" || room.kind === "factory")
+        ? { product: previousProduct ? structuredClone(previousProduct) : roomProduct(room) }
+        : {}),
+    } satisfies ManualRoomAssignment];
+  }));
   return next;
 }
 
-function maaProduct(room: BlueprintRoom): string | undefined {
+function maaProduct(room: BlueprintRoom, productOverride?: BlueprintRoom["product"]): string | undefined {
   if (room.kind === "trade_post") {
-    const order = room.product && "trade" in room.product ? room.product.trade.order : "gold";
+    const product = productOverride ?? room.product;
+    const order = product && "trade" in product ? product.trade.order : "gold";
     return order === "originium" ? "Orundum" : "LMD";
   }
   if (room.kind !== "factory") return undefined;
-  const recipe = room.product && "factory" in room.product ? room.product.factory.recipe : "gold";
+  const product = productOverride ?? room.product;
+  const recipe = product && "factory" in product ? product.factory.recipe : "gold";
   if (recipe === "battle_record") return "Battle Record";
   if (recipe === "originium") return "Originium Shard";
   if (recipe === "all") return "all";
@@ -919,7 +1001,7 @@ function maaRoom(room: BlueprintRoom, assignment: ManualRoomAssignment | undefin
   const operators = (assignment?.operators ?? []).slice(0, manualRoomCapacity(room)).filter(
     (operator): operator is string => typeof operator === "string" && operator.length > 0,
   );
-  const product = maaProduct(room);
+  const product = maaProduct(room, assignment?.product);
   return {
     operators,
     sort: true,

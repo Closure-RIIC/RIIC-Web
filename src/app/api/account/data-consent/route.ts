@@ -15,8 +15,6 @@ import {
 } from "@/server/data-consent";
 import { revokeAccountDataConsentAndPurgeCloudData } from "@/server/workspace";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const requestId = createRequestId();

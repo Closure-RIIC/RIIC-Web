@@ -6,7 +6,7 @@ After=network-online.target
 Type=simple
 User=arkinfra
 Group=arkinfra
-WorkingDirectory=/opt/arknights-infra/current/.next/standalone
+WorkingDirectory=/opt/arknights-infra/current/.output
 Environment=NODE_ENV=production
 EnvironmentFile=/etc/arknights-infra-quality-private.env
 ExecStart=/usr/local/bin/node /opt/arknights-infra/current/worker/quality-worker.cjs

@@ -1,5 +1,5 @@
 import { localize as localize_components_pages_TrainingAdvice } from "../../i18n/helpers/components_pages_TrainingAdvice.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 import { messageRecord } from "@/i18n/translate";
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";

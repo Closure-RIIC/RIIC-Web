@@ -1,12 +1,12 @@
 "use client";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { motion, type HTMLMotionProps, useReducedMotion } from "motion/react";
 import { Check, CircleHelp, X } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link } from "@tanstack/react-router";
+import { usePathname } from "@/navigation";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -103,7 +103,7 @@ export function HelpFloatingNav() {
                           "group relative flex min-h-16 items-start overflow-hidden rounded-[4px] px-3 py-3 outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
                           active && "bg-muted text-foreground ring-1 ring-border",
                         )}
-                        href={href}
+                        to={href}
                         onClick={() => setOpenPath(null)}
                       >
                         {active ? <span aria-hidden="true" className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-amber-400" /> : null}

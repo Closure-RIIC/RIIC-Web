@@ -1,7 +1,7 @@
 "use client";
 import { localize as localize_components_pages_InfraCalculator } from "../../i18n/helpers/components_pages_InfraCalculator.ts";
 
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { ArrowRight, Download, Ellipsis, FlaskConical, Keyboard, Loader2, PencilLine, Play, RefreshCw, Search, Settings2, SlidersHorizontal, X } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -20,7 +20,6 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlanResultSummarySkeleton } from "@/components/PlanResultSummarySkeleton";
 import { ScheduleRunButton } from "@/components/ScheduleRunButton";
-import { SkeletonSuspense } from "@/components/ui/skeleton-swap";
 
 import type { FactoryRecipe, TradeOrder } from "@/blueprint";
 import { cn } from "@/lib/utils";
@@ -308,7 +307,6 @@ export interface InfraCalculatorProps {
     resumeCountdown: number;
     onResumePoll: () => void;
   } | null;
-  animatePlanEntrance: boolean;
   animateEmptyScheduleEntrance: boolean;
   onPlanEntranceConsumed: (revision: string) => void;
   requiresAccount?: boolean;
@@ -364,7 +362,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
     resultClearNotice,
     feedbackResult,
     operbox,
-    sampleLoading, loading, canRun, runCooldownSeconds, hasBox, hasPersonalBox, feedbackDisabledForSampleBox, plannerReady, websiteAuthenticated, showOnboarding, taskQueue, animatePlanEntrance, animateEmptyScheduleEntrance, onPlanEntranceConsumed, requiresAccount = false, accountControl,
+    sampleLoading, loading, canRun, runCooldownSeconds, hasBox, hasPersonalBox, feedbackDisabledForSampleBox, plannerReady, websiteAuthenticated, showOnboarding, taskQueue, animateEmptyScheduleEntrance, onPlanEntranceConsumed, requiresAccount = false, accountControl,
     onRunSampleTrial, onStartPersonalFlow, onDismissOnboarding, onOpenSetup, upgradeSimulationOpen, onOpenUpgradeSimulation, onUpgradeSimulationOpenChange, onRun, onAutoDroneAllocation, onManualDroneAllocation, manualDroneSelection = false, onSimulateUpgrades, upgradeComparison, scheduleVariant, onScheduleVariantChange, onUpgradeTrialReady, onCancelRun,
     onSetActiveShift, onMarkIssue, onPerformanceIssue,
     onFactoryRecipeChange, onTradeOrderChange, droneTargetRoomId, onDroneTargetChange,
@@ -387,6 +385,12 @@ export function InfraCalculator(props: InfraCalculatorProps) {
     }
     return map;
   }, [operbox]);
+  const skillProgressByOperator = useMemo(() => new Map(
+    (operbox ?? []).filter((entry) => entry.own).map((entry) => [entry.name, {
+      elite: entry.elite,
+      level: entry.level,
+    }]),
+  ), [operbox]);
   const [shortcutGuideOpen, setShortcutGuideOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [planActionsOpen, setPlanActionsOpen] = useState(false);
@@ -405,7 +409,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
     }).catch(() => { /* Leave highlighting unavailable until the next toggle. */ });
     return () => { active = false; };
   }, [highlightNoLayoutSkill]);
-  const noLayoutSkillOperators = useMemo(() => operatorsWithoutLayoutSkills(highlightCatalog, layout.rooms), [highlightCatalog, layout.rooms]);
+  const noLayoutSkillOperators = useMemo(() => operatorsWithoutLayoutSkills(highlightCatalog, layout.rooms, skillProgressByOperator), [highlightCatalog, layout.rooms, skillProgressByOperator]);
   const imageExportInFlight = useRef(false);
 
   function toggleSortMode(row: RoomRow) {
@@ -657,10 +661,12 @@ export function InfraCalculator(props: InfraCalculatorProps) {
               </div>
             ) : null}
           >
+            {!scheduleResult && loading ? <DeferredResultLoading /> : null}
             {scheduleResult ? (
               <>
-                <SkeletonSuspense fallback={<DeferredResultLoading />}>
+                <Suspense fallback={<DeferredResultLoading />}>
                   <PlanResultSummary
+                    key={result?.diagnosticId ?? scheduleResult.diagnosticId}
                     profile={scheduleResult.profile}
                     rotation={scheduleResult.rotation}
                     maa={scheduleResult.maa}
@@ -670,7 +676,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
                     durationMs={scheduleResult.durationMs}
                     planRevision={scheduleResult.diagnosticId}
                     animationRevision={result?.diagnosticId ?? scheduleResult.diagnosticId}
-                    animateEntrance={animatePlanEntrance}
+                    animateEntrance={false}
                     onEntranceConsumed={onPlanEntranceConsumed}
                     onPerformanceIssue={showFeedback ? onPerformanceIssue : undefined}
                     feedbackDisabled={feedbackDisabledForSampleBox}
@@ -680,7 +686,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
                       </Suspense>
                     )}
                   />
-                </SkeletonSuspense>
+                </Suspense>
               </>
             ) : null}
             {imageExportFailed ? (

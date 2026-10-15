@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type messages from "../../../messages/zh.json";
 

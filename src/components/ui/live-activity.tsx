@@ -1,6 +1,6 @@
 "use client";
 import { localize as localize_components_ui_live_activity } from "../../i18n/helpers/components_ui_live_activity.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -119,6 +119,7 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
   const [copied, setCopied] = useState(false);
   const [dismissed, setDismissed] = useState<{ id: number; phase: ActivityPhase } | null>(null);
   const [solverWarningOpen, setSolverWarningOpen] = useState(false);
+  const [acknowledgedSchedule, setAcknowledgedSchedule] = useState<number>();
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [peek, setPeek] = useState(false);
@@ -407,7 +408,12 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
       ) : null}
       </AnimatePresence>
 
-      <Dialog open={solverWarningOpen} onOpenChange={setSolverWarningOpen}>
+      {activity?.phase === "success" && activity.kind === "schedule" && acknowledgedSchedule !== activity.id
+        ? <span hidden data-schedule-notice-pending /> : null}
+      <Dialog open={solverWarningOpen} onOpenChange={(open) => {
+        setSolverWarningOpen(open);
+        if (!open) setAcknowledgedSchedule(activity?.id);
+      }}>
         <DialogContent className="grid max-h-[min(680px,calc(100dvh-2rem))] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 sm:max-w-[min(540px,calc(100vw-2rem))]">
           <DialogHeader>
             <DialogTitle className="text-xl">{intl("components_ui_live_activity.scheduleGenerated")}</DialogTitle>

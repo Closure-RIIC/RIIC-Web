@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 import { ArrowLeftRight, Trash2 } from "lucide-react";
 import { DroneIcon } from "@/components/DroneIcon";
 import { Button } from "@/components/ui/button";

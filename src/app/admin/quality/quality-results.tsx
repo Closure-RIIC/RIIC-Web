@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { Download, RotateCcw, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,7 @@ export function BatchDetails({ batch, busy, onAction, onResult }: { batch: Quali
       const name = item.sources.map(source => source.name).join(" · ") || t(`用例 ${index + 1}`, `Case ${index + 1}`);
       return <article key={item.id} className="grid gap-3 py-4"><div className="flex flex-wrap items-start justify-between gap-2"><h3 className="min-w-0 flex-1 break-words text-sm font-medium">{index + 1}. {name}</h3><Status status={item.status} /></div>
         {item.attempts.length > 0 ? <div className="flex flex-wrap gap-2">{item.attempts.map((attempt, i) => <Button key={attempt.id} variant="outline" size="sm" disabled={busy || attempt.status === "running"} title={dateText(attempt.startedAt, en)} onClick={() => onResult(attempt.id, name)}>{t(`第 ${item.attempts.length - i} 次 · `, `Attempt ${item.attempts.length - i} · `)}{statusText(attempt.status, en)}{attempt.status !== "running" && t(" · 查看结果", " · View result")}</Button>)}</div> : <p className="text-xs text-muted-foreground">{t("暂无执行记录", "No attempts yet")}</p>}
-        {item.sources.filter(source => source.feedbackId).map(source => <Link key={source.feedbackId} className="text-sm underline underline-offset-4" href={`/admin/issues?q=${encodeURIComponent(source.feedbackId!)}`}>{t("返回反馈填写结论", "Record findings on feedback")} · {source.name}</Link>)}
+        {item.sources.filter(source => source.feedbackId).map(source => <Link key={source.feedbackId} className="text-sm underline underline-offset-4" to="/admin/issues" search={{ q: encodeURIComponent(source.feedbackId!) }}>{t("返回反馈填写结论", "Record findings on feedback")} · {source.name}</Link>)}
       </article>;
     })}</div>
   </Panel>;

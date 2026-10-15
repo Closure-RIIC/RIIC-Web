@@ -1,10 +1,10 @@
-import { getTranslations } from "next-intl/server";
+import { useTranslations } from "use-intl";
 
 import { LEGAL_OFFICIAL_ACCOUNT_URL } from "@/legal-policy";
 
-export async function LegalUpdates({ document }: { document: "terms" | "privacy" }) {
-  const t = await getTranslations("legal_updates");
-  const gacha = await getTranslations("gacha_archive_privacy");
+export function LegalUpdates({ document }: { document: "terms" | "privacy" }) {
+  const t = useTranslations("legal_updates");
+  const gacha = useTranslations("gacha_archive_privacy");
   return <>{t.rich(document, {
     section: (chunks) => <section>{chunks}</section>,
     heading: (chunks) => <h2>{chunks}</h2>,

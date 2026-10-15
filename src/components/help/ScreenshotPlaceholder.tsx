@@ -1,7 +1,6 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 
-import Image from "next/image";
 
 type ScreenshotPlaceholderProps = {
   slot: string;
@@ -57,12 +56,11 @@ export function ScreenshotPlaceholder({
             className="absolute inset-0 block transition-transform duration-200 group-hover:scale-[1.01] motion-reduce:transform-none motion-reduce:transition-none"
             data-help-screenshot-zoom-layer
           >
-            <Image
+            <img
               src={src}
               alt={alt}
-              fill
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
               sizes="(min-width: 1280px) 68rem, (min-width: 640px) calc(100vw - 8rem), calc(100vw - 3rem)"
-              unoptimized
               className="object-contain"
             />
             {highlights.length > 0 ? (

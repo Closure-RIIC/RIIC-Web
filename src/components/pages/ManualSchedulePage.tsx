@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { ArrowLeft, Download, Ellipsis, Search, Settings2, Sparkles, Trash2, Upload, X } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -56,6 +56,7 @@ import {
   setManualDormAutofill,
   setManualDroneTarget,
   setManualRoomSkillEfficiency,
+  setManualRoomProduct,
   swapManualOperators,
   type ManualOperatorConflict,
   type ManualScheduleDraft,
@@ -116,14 +117,16 @@ export interface ManualSchedulePageProps {
   onImportedLayoutChange: (layout: BaseBlueprint) => void;
   onFiammettaEnabledChange: (enabled: boolean) => void;
   onOpenSetup: () => void;
-  onFactoryRecipeChange: (roomId: string, recipe: FactoryRecipe) => void;
-  onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
+  onDraftChange?: (draft: ManualScheduleDraft) => void;
+  manualProductChangeRequest?: { shiftIndex: number; roomId: string; product: import("@/types").RoomProduct; token: number } | null;
+  onManualProductChangeRequestConsumed?: (token: number) => void;
   strictMaaOperatorOrder: boolean;
   allowReplacementOperatorSort: boolean;
   scheduleViewControl?: "tabs" | "select";
   shiftViewControl?: "tabs" | "select";
   showImages?: boolean;
   showMower?: boolean;
+  recyclingRoomLevel?: number;
 }
 
 type PickerTarget =
@@ -237,14 +240,16 @@ export function ManualSchedulePage({
   onImportedLayoutChange,
   onFiammettaEnabledChange,
   onOpenSetup,
-  onFactoryRecipeChange,
-  onTradeOrderChange,
+  onDraftChange,
+  manualProductChangeRequest,
+  onManualProductChangeRequestConsumed,
   strictMaaOperatorOrder,
   allowReplacementOperatorSort,
   scheduleViewControl = "tabs",
   shiftViewControl = "tabs",
   showImages = true,
   showMower = false,
+  recyclingRoomLevel = 3,
 }: ManualSchedulePageProps) {
   const intl = useTranslations();
   const skillFilters = useTranslations("SkillFilters");
@@ -252,6 +257,13 @@ export function ManualSchedulePage({
   const gameCatalog = useGameCatalog();
   const en = locale === "en";
   const [draft, setDraft] = useState<ManualScheduleDraft>(() => createManualScheduleDraft(shiftDurations, shiftStartTime, scheduleMode));
+  useEffect(() => { onDraftChange?.(draft); }, [draft, onDraftChange]);
+  useEffect(() => {
+    const request = manualProductChangeRequest;
+    if (!request) return;
+    setDraft((current) => setManualRoomProduct(current, layout, request.shiftIndex, request.roomId, request.product));
+    onManualProductChangeRequestConsumed?.(request.token);
+  }, [layout, manualProductChangeRequest, onManualProductChangeRequestConsumed]);
   const [moodRevision, setMoodRevision] = useState(0);
   const [moodSettingsOpen, setMoodSettingsOpen] = useState(false);
   const [restored, setRestored] = useState(false);
@@ -353,6 +365,15 @@ export function ManualSchedulePage({
   const shiftRanges = manualShiftTimeRanges(draft.startTime, draft.shifts.map((shift) => shift.durationHours));
   const maa = useMemo(() => manualScheduleToMaa(draft, layout, fiammettaEnabled), [draft, fiammettaEnabled, layout]);
   const activePlan = maa.plans[activeShift];
+  const activeRoomProducts = useMemo(() => new Map(
+    layout.rooms
+      .filter((room) => room.kind === "trade_post" || room.kind === "factory")
+      .flatMap((room) => {
+        const product = draft.shifts[activeShift]?.rooms[room.id]?.product
+          ?? room.product;
+        return product ? [[room.id, product] as const] : [];
+      }),
+  ), [activeShift, draft.shifts, layout.rooms]);
   const activeDronePlan = maa.plans[droneStoragePlanIndex(activeShift, maa.plans.length)];
   const trainingRoom = layout.rooms.find((room) => room.kind === "training_room");
   const trainingAssignment = trainingRoom ? draft.shifts[activeShift]?.rooms[trainingRoom.id] : undefined;
@@ -362,9 +383,9 @@ export function ManualSchedulePage({
   } : undefined, [trainingAssignment?.operators, trainingRoom]);
   const activeEvaluationShift = result?.rotation.shifts[activeShift];
   const rows = useMemo(
-    () => addOperatorPresentations(withRecyclingRoom(planToRows(activePlan, activeEvaluationShift, layout, activeTrainingRoomShift)).map((row) => {
+    () => addOperatorPresentations(withRecyclingRoom(planToRows(activePlan, activeEvaluationShift, layout, activeTrainingRoomShift), recyclingRoomLevel).map((row) => {
       const assignment = draft.shifts[activeShift]?.rooms[row.roomId];
-      const room = manualEditableRooms(layout).find((candidate) => candidate.id === row.roomId);
+      const room = manualEditableRooms(layout, recyclingRoomLevel).find((candidate) => candidate.id === row.roomId);
       const capacity = room ? manualRoomCapacity(room) : 0;
       const visibleSlots = row.group === "control" ? 5 : row.group === "trading" || row.group === "manufacture" ? 3 : capacity;
       return {
@@ -389,7 +410,7 @@ export function ManualSchedulePage({
           : {}),
       };
     })),
-    [activeEvaluationShift, activePlan, activeShift, activeTrainingRoomShift, draft.shifts, layout],
+    [activeEvaluationShift, activePlan, activeShift, activeTrainingRoomShift, draft.shifts, layout, recyclingRoomLevel],
   );
   const selectedRoom = picker?.kind === "slot" ? rows.find((row) => row.roomId === picker.roomId) : undefined;
   const selectedAssignment = picker?.kind === "slot" ? draft.shifts[activeShift]?.rooms[picker.roomId] : undefined;
@@ -603,6 +624,18 @@ export function ManualSchedulePage({
     setDraft((current) => setManualRoomSkillEfficiency(current, layout, activeShift, row.roomId, value));
   }
 
+  function setRoomProduct(roomId: string, product: import("@/types").RoomProduct) {
+    setDraft((current) => setManualRoomProduct(current, layout, activeShift, roomId, product));
+  }
+
+  function handleFactoryRecipeChange(roomId: string, recipe: FactoryRecipe) {
+    setRoomProduct(roomId, { factory: { recipe } });
+  }
+
+  function handleTradeOrderChange(roomId: string, order: TradeOrder) {
+    setRoomProduct(roomId, { trade: { order } });
+  }
+
   function toggleDroneTarget(row: RoomRow) {
     setDraft((current) => setManualDroneTarget(
       current,
@@ -770,8 +803,10 @@ export function ManualSchedulePage({
         droneTargetRoomId={simulation ? undefined : draft.shifts[activeShift]?.droneTargetRoomId}
         onDroneTargetChange={simulation ? undefined : toggleDroneTarget}
         onManualSkillEfficiencyChange={simulation ? undefined : setRoomSkillEfficiency}
-        onFactoryRecipeChange={onFactoryRecipeChange}
-        onTradeOrderChange={onTradeOrderChange}
+        onFactoryRecipeChange={handleFactoryRecipeChange}
+        onTradeOrderChange={handleTradeOrderChange}
+        roomProducts={simulation ? undefined : activeRoomProducts}
+        compactProductControls={!simulation}
       />
     </div>
   );

@@ -22,7 +22,6 @@ import {
   sklandErrorResponse,
 } from "@/server/skland/http";
 
-export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const requestId = createRequestId();

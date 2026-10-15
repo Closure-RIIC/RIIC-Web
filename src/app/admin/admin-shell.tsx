@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link } from "@tanstack/react-router";
+import { usePathname } from "@/navigation";
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 import { ChevronRight, Command, LayoutDashboard, Search, ShieldCheck } from "lucide-react";
 import { LanguageSwitch } from "@/i18n/client";
 import { AppMotionProvider } from "@/components/MotionProvider";
@@ -57,7 +57,7 @@ export function AdminShell({ children, isAdmin, name, basePath = "/admin" }: {
       {children}
       <footer className="mt-auto flex flex-wrap items-center justify-between gap-2 px-4 py-5 text-xs text-muted-foreground sm:px-6 lg:px-8">
         <span className="inline-flex items-center gap-1.5"><ShieldCheck className="size-3.5" aria-hidden="true" />RIIC · {t("workspace")}</span>
-        <div className="flex gap-4"><Link className="hover:text-foreground focus-visible:underline" href="/privacy">{t("privacy")}</Link><Link className="hover:text-foreground focus-visible:underline" href="/terms">{t("terms")}</Link></div>
+        <div className="flex gap-4"><Link className="hover:text-foreground focus-visible:underline" to="/privacy">{t("privacy")}</Link><Link className="hover:text-foreground focus-visible:underline" to="/terms">{t("terms")}</Link></div>
       </footer>
     </div>
     <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
@@ -65,7 +65,7 @@ export function AdminShell({ children, isAdmin, name, basePath = "/admin" }: {
         <DialogHeader><DialogTitle className="flex items-center gap-2"><Command className="size-4" aria-hidden="true" />{t("searchPages")}</DialogTitle><DialogDescription>{t("searchDescription")}</DialogDescription></DialogHeader>
         <Input autoFocus aria-label={t("searchPages")} placeholder={t("searchPlaceholder")} value={query} onChange={event => setQuery(event.target.value)} />
         <nav aria-label={t("searchResults")} className="grid gap-1">
-          {matches.map(item => <Link key={item.path} href={basePath + item.path} onClick={() => setSearchOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-3 outline-none hover:bg-muted focus-visible:bg-muted">
+          {matches.map(item => <Link key={item.path} to={basePath + item.path} onClick={() => setSearchOpen(false)} className="flex items-center gap-3 rounded-lg px-3 py-3 outline-none hover:bg-muted focus-visible:bg-muted">
             <item.icon className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" /><span className="min-w-0"><span className="block text-sm font-medium">{t(item.title)}</span><span className="block text-xs text-muted-foreground">{t(item.description)}</span></span><ChevronRight aria-hidden="true" className="ml-auto size-4 shrink-0 text-muted-foreground" />
           </Link>)}
           {!matches.length && <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground"><LayoutDashboard className="size-4" aria-hidden="true" />{t("noPages")}</p>}

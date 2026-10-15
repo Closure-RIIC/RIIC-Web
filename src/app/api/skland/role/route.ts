@@ -22,7 +22,6 @@ import { removeSklandAccount } from "@/server/skland/session";
 import { requireWebsiteSession } from "@/server/auth/authorization";
 import { getSklandBindingSummary } from "@/server/skland/bindings";
 
-export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const requestId = createRequestId();

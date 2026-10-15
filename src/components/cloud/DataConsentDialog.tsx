@@ -1,7 +1,7 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 
-import Link from "next/link";
+import { Link } from "@tanstack/react-router";
 import { useId, useState } from "react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -56,11 +56,11 @@ export function DataConsentDialog({
           </ul>
           <label className="flex min-h-11 items-start gap-3" htmlFor={`${id}-terms`}>
             <input id={`${id}-terms`} type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} className="mt-1 size-4 shrink-0 accent-primary" />
-            <span>{intl.rich("components_cloud_DataConsentDialog.rich1", { element1: (chunks) => (<Link href="/terms" target="_blank" className="mx-1 text-foreground underline underline-offset-4">{chunks}</Link>) })}</span>
+            <span>{intl.rich("components_cloud_DataConsentDialog.rich1", { element1: (chunks) => (<Link to="/terms" target="_blank" className="mx-1 text-foreground underline underline-offset-4">{chunks}</Link>) })}</span>
           </label>
           <label className="flex min-h-11 items-start gap-3" htmlFor={`${id}-privacy`}>
             <input id={`${id}-privacy`} type="checkbox" checked={privacy} onChange={(event) => setPrivacy(event.target.checked)} className="mt-1 size-4 shrink-0 accent-primary" />
-            <span>{intl.rich("components_cloud_DataConsentDialog.rich2", { element1: (chunks) => (<Link href="/privacy" target="_blank" className="mx-1 text-foreground underline underline-offset-4">{chunks}</Link>) })}</span>
+            <span>{intl.rich("components_cloud_DataConsentDialog.rich2", { element1: (chunks) => (<Link to="/privacy" target="_blank" className="mx-1 text-foreground underline underline-offset-4">{chunks}</Link>) })}</span>
           </label>
           {error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
         </DialogBody>

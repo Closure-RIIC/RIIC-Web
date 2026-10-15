@@ -298,11 +298,29 @@ export const qualityDraft = appSchema.table("quality_draft", {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 });
+
+export const wish = appSchema.table("wish", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  imageUrls: jsonb("image_urls").$type<string[]>().default([]).notNull(),
+  status: text("status").default("pending").notNull(),
+  adminNote: text("admin_note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index("wish_status_created_at_idx").on(table.status, table.createdAt), index("wish_user_created_at_idx").on(table.userId, table.createdAt)]);
 export const qualityBundle = appSchema.table("quality_bundle", {
   id: text("id").primaryKey(),
   label: text("label").notNull(),
   executableSha256: text("executable_sha256").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const siteSetting = appSchema.table("site_setting", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
 export const qualityBatch = appSchema.table("quality_batch", {
   id: text("id").primaryKey(),

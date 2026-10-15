@@ -140,7 +140,7 @@ All paths are selected by the frontend. After a successful response, the fronten
 
 ## Public API boundary
 
-The CLI response is an internal transport object. It must never be returned directly from a Next.js route handler.
+The CLI response is an internal transport object. It must never be returned directly from a HTTP route handler.
 
 `src/server/infra.ts` may retain CLI paths, commands, stdout, stderr, serve requests/responses, the ping observation and run-directory metadata for local diagnostics. Feedback looks up that exact private run by diagnostic ID and copies its solver observation into private `meta.json`; old or missing runs use `solver: null`. `src/server/public-plan.ts` is the required boundary before `/api/plan`: it constructs a new allowlisted DTO containing profile, MAA, rotation, duration, an opaque diagnostic ID and, when supplied by the current Worker, optional `trainingRoom` and `trainingAdvice` values parsed through their own strict public contracts. Training-room operators remain outside `maa.plans[*].rooms`, so MAA downloads never contain a training room or its occupants. Rotation is rebuilt through `src/rotation-result.ts`; only the selected profile, daily summary, normalized shifts, team state, weighted efficiency and normalized room efficiency are public. Raw `efficiencies`, assignments, solver identities and future unknown Worker or training fields are not forwarded in production.
 
@@ -154,7 +154,7 @@ Do not extend the public DTO by spreading an internal result:
 
 ```ts
 // Incorrect: leaks new internal fields automatically.
-return NextResponse.json({ success: true, data: { ...internalResult } });
+return Response.json({ success: true, data: { ...internalResult } });
 
 // Correct: construct the allowlist through the boundary mapper.
 return successResponse(toPublicPlanData(internalResult, labels, requestId), requestId);

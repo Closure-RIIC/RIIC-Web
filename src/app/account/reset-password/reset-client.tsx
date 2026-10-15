@@ -1,6 +1,6 @@
 "use client";
 import { localize as authText } from "../../../i18n/helpers/AuthValidation.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
 import { useEffect, useMemo, useState } from "react";

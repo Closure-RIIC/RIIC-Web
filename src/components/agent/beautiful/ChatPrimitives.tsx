@@ -3,7 +3,7 @@
 // Adapted from Beautiful UI's Chat, Loading State, Thinking, Streaming Text and Tool Chips.
 // https://www.beautifului.dev/ — Copyright (c) 2026 Shane Levine, MIT.
 // See LICENSE.txt. Demo timers/data replaced with controlled application state.
-import { memo, useEffect, useId, useState, type ComponentProps, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { ArrowUp, Check, ChevronDown, CircleAlert, Loader2, Square } from "lucide-react";
 import { MarkdownMessage } from "../MarkdownMessage";
 import { ReasoningPreview } from "./ReasoningPreview";
@@ -113,10 +113,42 @@ type PromptBarProps = {
 };
 
 export function PromptBar({ input, attachments, toolbar, busy, disabled, sendLabel, stopLabel, onSend, onStop, onDrop }: PromptBarProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const resize = useCallback(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    const scrollTop = textarea.scrollTop;
+    textarea.style.height = "0px";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+    textarea.scrollTop = scrollTop;
+  }, []);
+  useLayoutEffect(resize, [input.value, resize]);
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+    let width = textarea.clientWidth;
+    let frame = 0;
+    const schedule = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(resize);
+    };
+    const observer = new ResizeObserver(() => {
+      if (textarea.clientWidth !== width) { width = textarea.clientWidth; schedule(); }
+    });
+    observer.observe(textarea);
+    window.addEventListener("resize", schedule);
+    window.visualViewport?.addEventListener("resize", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", schedule);
+      window.visualViewport?.removeEventListener("resize", schedule);
+    };
+  }, [resize]);
   return <div className={`${dialogue.prompt} relative flex min-w-0 flex-col gap-2 p-3 sm:p-4 focus-within:ring-2 focus-within:ring-ring/25`} onDragOver={(event) => event.preventDefault()} onDrop={onDrop} data-agent-prompt-bar>
     <div className={dialogue.promptDecoration} aria-hidden="true" data-agent-glass />
     {attachments ? <div className="hidden md:block">{attachments}</div> : null}
-    <textarea {...input} className={dialogue.promptInput} />
+    <textarea {...input} ref={textareaRef} className={dialogue.promptInput} />
     <div className={dialogue.promptControls}>
       <div className={dialogue.promptTools}>{toolbar}</div>
       <button type="button" aria-label={busy ? stopLabel : sendLabel} title={busy ? stopLabel : sendLabel} disabled={!busy && disabled} onClick={busy ? onStop : onSend} className={`${dialogue.sendButton} flex size-10 shrink-0 items-center justify-center rounded-full transition-[filter,transform] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring enabled:active:scale-95 motion-reduce:transition-none`}>

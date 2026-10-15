@@ -1,0 +1,22 @@
+{
+  "title": "登录有效期",
+  "description": "查看当前设备的网站登录有效期，并可手动延长。",
+  "loading": "正在读取登录状态",
+  "signedOut": "当前未登录",
+  "signInToManage": "登录后可查看并延长当前设备的 Session。",
+  "signIn": "前往登录",
+  "manage": "查看与延长",
+  "dialogTitle": "管理登录有效期",
+  "dialogDescription": "延长仅作用于当前设备，其他登录设备不会改变。",
+  "timeRemaining": "剩余有效期",
+  "remainingDaysHours": "剩余 {days} 天 {hours} 小时",
+  "remainingHoursMinutes": "剩余 {hours} 小时 {minutes} 分钟",
+  "expired": "登录已过期",
+  "unavailable": "暂时无法获取",
+  "expiresAt": "到期时间：{value}",
+  "extendThirtyDays": "延长 30 天",
+  "extending": "正在延长…",
+  "extended": "当前设备的登录有效期已延长 30 天。",
+  "extendFailed": "延长登录有效期失败，请稍后重试。",
+  "close": "关闭"
+}

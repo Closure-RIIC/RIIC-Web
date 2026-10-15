@@ -3,8 +3,8 @@ import { useAdminFetch, useAdminHref } from "../admin-context";
 import { adminPageClass } from "../admin-page";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useSearchParams } from "next/navigation";
-import Link from "next/link";
+import { useSearchParams } from "@/navigation";
+import { Link } from "@tanstack/react-router";
 import { AlertCircle, CheckCircle2, FlaskConical, Loader2, Play, RefreshCw, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { FileUploadDialog } from "@/components/FileUploadDialog";
@@ -128,7 +128,7 @@ export function QualityWorkbench() {
   const workerReady = !!overview?.worker && checkedAt - Date.parse(overview.worker.at) < 15000;
   const versionOptions = overview?.versions.map((version, index) => ({ value: version.id, label: versionText(version, index, en) })) ?? [];
   return <main id="admin-content" className={adminPageClass}>
-    <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="flex items-center gap-2 text-2xl font-semibold"><FlaskConical aria-hidden="true" className="size-6" />{t("复现测试工作台", "Reproduction workbench")}</h1><p className="mt-2 max-w-2xl text-sm text-muted-foreground">{t("导入或选择复现草稿，运行测试，再回到反馈记录处理结论。", "Import or select reproduction drafts, run tests, then record your findings on the source feedback.")}</p></div><Link className="text-sm underline underline-offset-4" href={adminHref("/admin/issues")}>{t("返回反馈审阅", "Back to feedback review")}</Link></header>
+    <header className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="flex items-center gap-2 text-2xl font-semibold"><FlaskConical aria-hidden="true" className="size-6" />{t("复现测试工作台", "Reproduction workbench")}</h1><p className="mt-2 max-w-2xl text-sm text-muted-foreground">{t("导入或选择复现草稿，运行测试，再回到反馈记录处理结论。", "Import or select reproduction drafts, run tests, then record your findings on the source feedback.")}</p></div><Link className="text-sm underline underline-offset-4" to={adminHref("/admin/issues")}>{t("返回反馈审阅", "Back to feedback review")}</Link></header>
     {error && <Alert variant="destructive"><AlertCircle aria-hidden="true" /><AlertTitle>{t("操作未完成", "Action not completed")}</AlertTitle><AlertDescription className="break-words">{error}</AlertDescription></Alert>}
     <div className="flex flex-wrap items-center gap-3"><Button variant="outline" onClick={() => reveal(historySection.current)}>{t("查看测试结果", "View test results")}{overview ? `（${overview.batches.length}）` : ""}</Button><p className="text-sm text-muted-foreground">{t("已运行的测试都保存在测试记录中，点击批次查看排班、收益或失败原因。", "Find previous runs in test history. Open a batch to see schedules, revenue, or failure details.")}</p></div>
     {notice && <Alert role="status"><CheckCircle2 aria-hidden="true" /><AlertDescription>{notice}</AlertDescription></Alert>}

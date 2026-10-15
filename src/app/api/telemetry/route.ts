@@ -20,8 +20,6 @@ import {
   telemetryValidationIssue,
 } from "@/server/telemetry";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const requestId = createRequestId();

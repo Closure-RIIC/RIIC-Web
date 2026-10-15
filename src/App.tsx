@@ -1,15 +1,16 @@
 "use client";
 import { withDefaultDormAutofill } from "./automatic-dorm-defaults";
 import { localize as localize_App } from "./i18n/helpers/App.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Link } from "@tanstack/react-router";
+import { usePathname, useRouter } from "@/navigation";
 import {
   lazy,
   Suspense,
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -112,6 +113,7 @@ import {
   PublicPlanData,
   PresetDef,
   RotationProfile,
+  RoomProduct,
   SavedPlanData,
   ShiftComparison,
   SklandAccountSummary,
@@ -260,7 +262,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const defaultPreset = PRESETS[0];
   const defaultLayout = buildBlueprint(defaultPreset);
   const hasRenderedCalculator = useRef(false);
-  const revealedPlanRevisions = useRef(new Set<string>());
   const planClickAtRef = useRef<number | null>(null);
   const websiteAuthReturnFocusRef = useRef<HTMLElement | null>(null);
   const websiteAuthIntentRef = useRef<WebsiteAuthIntent | null>(null);
@@ -314,6 +315,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [manualShiftStartTime, setManualShiftStartTime] = useState(DEFAULT_MANUAL_SHIFT_START_TIME);
   const [manualScheduleMode, setManualScheduleMode] = useState<ManualScheduleMode>("sequential");
   const [manualDraftHandoff, setManualDraftHandoff] = useState<ManualScheduleDraft | null>(null);
+  const [manualDraftSnapshot, setManualDraftSnapshot] = useState<ManualScheduleDraft | null>(null);
+  const [manualProductChangeRequest, setManualProductChangeRequest] = useState<{ shiftIndex: number; roomId: string; product: RoomProduct; token: number } | null>(null);
+  const manualProductChangeToken = useRef(0);
   const [manualPlanResult, setManualPlanResult] = useState<ManualPlanResult | null>(null);
   const [manualEvaluationPending, setManualEvaluationPending] = useState(false);
   const [pendingManualDraftReplacement, setPendingManualDraftReplacement] = useState<ManualScheduleDraft | null>(null);
@@ -807,6 +811,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [agentArtifactApplied]);
 
+  const reportPersistenceFailure = useEffectEvent(() => {
+    setStorageNotice(displayError("AIC-LOCAL-7001", intl("App.theBrowserCouldNotSaveLocalDataButSchedules")));
+  });
   useEffect(() => {
     if (!hasRestoredSession || typeof window === "undefined") return;
     if (skipNextPersistence.current) {
@@ -830,9 +837,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       });
       setStorageNotice(null);
     } catch {
-      setStorageNotice(displayError("AIC-LOCAL-7001", intl("App.theBrowserCouldNotSaveLocalDataButSchedules")));
+      reportPersistenceFailure();
     }
-  }, [intl, hasRestoredSession, preset, layout, operbox, fileName, boxSource, layoutDirty, layoutSource, localLayoutBackup, rotationProfile, fiammettaEnabled, result, activeShift, locale]);
+  }, [hasRestoredSession, preset, layout, operbox, fileName, boxSource, layoutDirty, layoutSource, localLayoutBackup, rotationProfile, fiammettaEnabled, result, activeShift, locale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1721,6 +1728,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     requestScheduleProductChange({ type: "trade", roomId, order });
   }
 
+  function handleManualSetupProductChange(shiftIndex: number, roomId: string, product: RoomProduct) {
+    manualProductChangeToken.current += 1;
+    setManualProductChangeRequest({ shiftIndex, roomId, product, token: manualProductChangeToken.current });
+  }
+
   function handleScheduleDroneTargetChange(row: RoomRow) {
     setManualDroneShifts((current) => ({ ...current, [activeShift]: true }));
     setResult((current) => {
@@ -2164,12 +2176,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       cancelPreload?.();
     };
   }, [activeShift, page, result?.maa]);
-  const visiblePlanRevision = scheduleResult?.diagnosticId;
-  const animatePlanEntrance = Boolean(
-    page === "calculator"
-    && visiblePlanRevision
-    && !revealedPlanRevisions.current.has(visiblePlanRevision)
-  );
   const animateEmptyScheduleEntrance = page === "calculator" && hasRenderedCalculator.current;
   const workbenchContext = {
     inventory: {
@@ -2212,10 +2218,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         resumeCountdown: planTask.resumeCountdown,
         onResumePoll: planTask.resume,
       } : null,
-      animatePlanEntrance,
       animateEmptyScheduleEntrance,
-      onPlanEntranceConsumed: (revision: string) => {
-        revealedPlanRevisions.current.add(revision);
+      onPlanEntranceConsumed: () => {
         // 只统计"本次生成"的首次渲染；切班次/重挂载不再重复打点。
         if (planClickAtRef.current !== null) {
           trackTelemetry({
@@ -2292,6 +2296,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       scheduleMode: manualScheduleMode,
       fiammettaEnabled: effectiveManualFiammettaEnabled,
       initialDraft: accountCanUseCurrentBox ? manualDraftHandoff : null,
+      onDraftChange: setManualDraftSnapshot,
+      manualProductChangeRequest,
+      onManualProductChangeRequestConsumed: (token: number) => {
+        setManualProductChangeRequest((current) => current?.token === token ? null : current);
+      },
       restorationReady: hasRestoredSession,
       onInitialDraftConsumed: () => setManualDraftHandoff(null),
       result: manualPlanResult,
@@ -2305,10 +2314,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       onScheduleModeChange: setManualScheduleMode,
       onImportedLayoutChange: handleManualImportedLayout,
       showMower: userSettings.showMower,
+      recyclingRoomLevel: userSettings.recyclingRoomLevel,
       onFiammettaEnabledChange: setManualFiammettaEnabled,
       onOpenSetup: handleManualSetup,
-      onFactoryRecipeChange: handleFactoryRecipeChange,
-      onTradeOrderChange: handleTradeOrderChange,
       strictMaaOperatorOrder: userSettings.strictMaaOperatorOrder,
       allowReplacementOperatorSort: userSettings.allowReplacementOperatorSort,
       scheduleViewControl: userSettings.scheduleViewControl,
@@ -2413,6 +2421,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     <div
       className="contents"
       data-workbench-hydrated={hasRestoredSession ? "true" : "false"}
+      inert={!hasRestoredSession}
       onKeyDown={(event) => {
         if (event.key === "Escape" && websiteAuthDialogOpen) handleWebsiteAuthDialogOpenChange(false);
       }}
@@ -2503,10 +2512,13 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       {page !== "agent" ? <footer className="app-content-track workbench-footer mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/70 py-5 text-xs text-muted-foreground">
         <div className="w-full md:w-auto max-md:[&>div]:h-12 max-md:[&_button]:h-11 max-md:[&_button]:min-w-12 max-md:[&_span]:h-11"><LanguageSwitch /></div>
         <div className="flex w-full flex-wrap items-center gap-x-4 md:contents">
-        <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/help" data-help-link>{intl("App.help")}</Link>
-        <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/terms">{intl("App.terms")}</Link>
-        <Link prefetch={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/privacy">{intl("App.privacy")}</Link>
-        <a className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/about" data-about-link>{intl("App.about")}</a>
+        <Link preload={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" to="/help" data-help-link>{intl("App.help")}</Link>
+        <Link preload={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" to="/terms">{intl("App.terms")}</Link>
+        <Link preload={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" to="/privacy">{intl("App.privacy")}</Link>
+        <span className="inline-flex items-center gap-x-4">
+          <a className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" href="/about" data-about-link>{intl("App.about")}</a>
+          <Link preload={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" to="/wishes" data-wishes-link>{intl("App.wishes")}</Link>
+        </span>
         </div>
         <div className="flex w-full min-w-0 flex-col items-start gap-x-3 gap-y-1 md:ml-auto md:w-auto md:flex-row md:flex-wrap md:items-center md:justify-end">
           <FilingLinks />
@@ -2578,6 +2590,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         preset={preset}
         layout={layout}
         configurationKey={setupMode === "manual" ? `${setupConfigurationKey}:${manualScheduleMode}:${manualShiftStartTime}:${manualShiftDurations.join(",")}:${manualFiammettaEnabled}` : setupConfigurationKey}
+        manualDraft={setupMode === "manual" ? manualDraftSnapshot : null}
+        onManualProductChange={setupMode === "manual" ? handleManualSetupProductChange : undefined}
         rotationProfile={setupMode === "manual" ? DEFAULT_ROTATION_PROFILE : rotationProfile}
         onRotationProfileChange={handleRotationProfileChange}
         manualShiftDurations={manualShiftDurations}
@@ -2599,6 +2613,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         onFactoryRecipeChange={handleFactoryRecipeChange}
         onTradeOrderChange={handleTradeOrderChange}
         onRoomLevelChange={handleRoomLevelChange}
+        recyclingRoomLevel={userSettings.recyclingRoomLevel}
+        onRecyclingRoomLevelChange={(level) => handleUserSettingsChange({ ...userSettings, recyclingRoomLevel: Math.max(1, Math.min(3, Math.trunc(level))) as 1 | 2 | 3 })}
         powerBudget={powerBudget}
         onFinish={closeSetup}
         onSkip={closeSetup}

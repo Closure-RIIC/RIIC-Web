@@ -341,6 +341,11 @@ for (const width of [1440, 375]) {
     const conversation = page.getByRole("region", { name: "对话记录", exact: true });
     expect(await conversation.evaluate((el) => getComputedStyle(el.parentElement!).backgroundImage)).toBe("none");
     expect(await conversation.evaluate((el) => getComputedStyle(el.parentElement!).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+    await conversation.focus();
+    await conversation.press("End");
+    await expect.poll(() => conversation.evaluate(el => el.scrollHeight - el.clientHeight - el.scrollTop)).toBeLessThanOrEqual(2);
+    const overflows = await conversation.evaluate(el => el.scrollHeight > el.clientHeight + 2);
+    const fadeHeight = width < 640 ? "16px" : "24px";
     for (const edge of ["::before", "::after"]) {
       const edgeStyle = await conversation.evaluate((el, pseudo) => {
         const style = getComputedStyle(el.parentElement!, pseudo);
@@ -349,8 +354,11 @@ for (const width of [1440, 375]) {
       expect(edgeStyle.blur).toBe("blur(3px)");
       expect(edgeStyle.mask).toContain("linear-gradient");
       expect(edgeStyle.pointerEvents).toBe("none");
-      expect(edgeStyle.height).toBe(width < 640 ? "16px" : "24px");
+      expect(edgeStyle.height).toBe(edge === "::before" && overflows ? fadeHeight : "0px");
     }
+    await conversation.press("Home");
+    await expect.poll(() => conversation.evaluate(el => getComputedStyle(el.parentElement!, "::before").height)).toBe("0px");
+    await expect.poll(() => conversation.evaluate(el => getComputedStyle(el.parentElement!, "::after").height)).toBe(overflows ? fadeHeight : "0px");
     await expect(page.locator("[data-agent-prompt-bar]")).toHaveCSS("filter", "none");
     await expect(assistantMessage.locator("[data-agent-bubble]")).toHaveCSS("border-top-width", "0px");
     const glassStyle = (element: Element) => { const style = getComputedStyle(element); return { background: style.backgroundImage, mask: style.maskImage }; };
@@ -477,8 +485,24 @@ async function verifyConversationScrolling(page: Page, width: number) {
   await expect(input).toBeVisible();
   await expect(page.locator("[data-agent-streaming-text]")).toContainText("第 45 段");
   await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThan(80);
+  // Late composer layout must keep restored history at the latest message.
+  const composerPanel = page.locator("[data-agent-composer]");
+  await composerPanel.evaluate((el) => {
+    el.style.paddingBottom = "211px";
+    // WebKit can deliver multiple layout scrolls before ResizeObserver.
+    const conversation = document.querySelector('[aria-label="对话记录"]')!;
+    conversation.dispatchEvent(new Event("scroll", { bubbles: true }));
+    conversation.dispatchEvent(new Event("scroll", { bubbles: true }));
+  });
+  await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThan(80);
   await conversation.hover();
-  await page.mouse.wheel(0, -700);
+  // Keyboard scrolling also works in mobile WebKit, which has no mouse wheel.
+  await conversation.focus();
+  await conversation.press("PageUp");
+  await conversation.press("PageUp");
+  await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeGreaterThan(300);
+  // Resizing must preserve the reader's position after scrolling back.
+  await composerPanel.evaluate((el) => { el.style.paddingBottom = ""; });
   await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeGreaterThan(300);
   await expect(input).toBeVisible();
   // The relocated track still drives the original viewport and supports dragging.

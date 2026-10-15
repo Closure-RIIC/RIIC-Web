@@ -1,11 +1,11 @@
 "use client";
 import { useAdminRequest, useAdminHref } from "../admin-context";
 import { adminPageClass } from "../admin-page";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "@/navigation";
 import {
   AlertTriangle,
   Bug,
