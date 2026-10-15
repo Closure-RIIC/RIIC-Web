@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "test:pr-batch": "node --test --experimental-strip-types src/wish-validation.test.ts src/server/auth/session-lifetime.test.ts",
-    "posttest": "npm run test:pr-batch",
+    "posttest": "npm run test:pr-batch && npm run test:route-preload",
     "test:wishes-integration": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test src/server/wishes.integration.test.mjs",
     "test:agent-resources": "node --experimental-strip-types --experimental-test-module-mocks --test src/server/agent/message-history.test.ts src/server/agent/answer-boundary.test.ts src/server/agent/resource-policy.test.ts src/server/agent/resource-import.test.ts src/server/agent/resources-api.test.ts",
     "test:agent-resources-integration": "node --experimental-transform-types --test src/server/agent/resources.integration.test.mjs",
@@ -73,7 +73,8 @@
     "test:quality-integration": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test src/server/quality/quality.integration.test.mjs",
     "worker:quality": "node --experimental-strip-types --import ./scripts/register-hooks.mjs scripts/quality-worker.mts",
     "check:types": "tsc --noEmit",
-    "test:e2e:migration": "playwright test --config=playwright.migration.config.ts"
+    "test:e2e:migration": "playwright test --config=playwright.migration.config.ts",
+    "test:route-preload": "node --test --experimental-strip-types src/route-preload.test.ts"
   },
   "browserslist": {
     "production": [
