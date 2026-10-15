@@ -4,7 +4,7 @@ import Pending from "@/app/(workbench)/training/loading";
 import Page from "@/app/(workbench)/training/page";
 import { pageHead } from "@/i18n/metadata";
 export const Route = createFileRoute("/_workbench/training")({
-  head: ({ matches }) => pageHead(matches[0].context.messages, "training"),
+  head: ({ matches }) => pageHead(matches, "training"),
   component: withPageScrollbars(Page),
   pendingComponent: Pending,
 });

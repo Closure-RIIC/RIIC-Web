@@ -8,7 +8,7 @@ import { LEGAL_EFFECTIVE_DATE } from "@/legal-policy";
 export default function TermsPage() {
   const t = useTranslations("app_terms_page");
   const meta = useTranslations("Metadata");
-  const { identity, sklandEnabled } = RootRoute.useRouteContext().publicConfig;
+  const { identity, sklandEnabled } = RootRoute.useLoaderData().publicConfig;
   const englishOperatorName = identity.operatorName === "\u53ef\u9732\u5e0c\u5c14\u57fa\u5efa\u7ec8\u7aef\u9879\u76ee\u7ef4\u62a4\u8005" ? "Closure Infrastructure Terminal maintainers" : identity.operatorName;
 
   return (

@@ -5,6 +5,6 @@ import { pageHead } from "@/i18n/metadata";
 import { getAdminAccess } from "@/server/page-data";
 export const Route = createFileRoute("/admin/changelog")({
   beforeLoad: () => getAdminAccess(),
-  head: ({ matches }) => pageHead(matches[0].context.messages, "changelog"),
+  head: ({ matches }) => pageHead(matches, "changelog"),
   component: withPageScrollbars(Page),
 });
