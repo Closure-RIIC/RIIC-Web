@@ -79,7 +79,7 @@ export function DotDistortionBackground() {
         context.moveTo(x + 1.1, y);
         context.arc(x, y, 1.1, 0, Math.PI * 2);
       }
-      context.fillStyle = dark ? "rgba(181, 199, 219, 0.26)" : "rgba(53, 75, 100, 0.2)";
+      context.fillStyle = dark ? "rgba(200, 200, 200, 0.2)" : "rgba(53, 75, 100, 0.2)";
       context.fill();
 
       if (unsettled && !document.hidden) frame = window.requestAnimationFrame(draw);
@@ -151,6 +151,8 @@ export function DotDistortionBackground() {
     };
 
     const observer = new ResizeObserver(rebuild);
+    const themeObserver = new MutationObserver(scheduleDraw);
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     observer.observe(canvas);
     rebuild();
     window.addEventListener("pointermove", onPointerMove, { passive: true });
@@ -161,6 +163,7 @@ export function DotDistortionBackground() {
 
     return () => {
       observer.disconnect();
+      themeObserver.disconnect();
       window.cancelAnimationFrame(frame);
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerout", onPointerOut);

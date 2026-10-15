@@ -7,6 +7,8 @@ import { TelemetryLoader } from "@/components/telemetry/TelemetryLoader";
 import "overlayscrollbars/overlayscrollbars.css";
 import "@/app/globals.css";
 import { AgentRuntimeProvider } from "@/components/agent/AgentRuntimeProvider";
+import { ColorModeController } from "@/components/ColorMode";
+import { COLOR_MODE_BOOTSTRAP } from "@/color-mode";
 import "@fontsource/barlow-condensed/latin-500.css";
 import "@fontsource/barlow-condensed/latin-600.css";
 
@@ -40,10 +42,11 @@ function RootDocument() {
   const hydrated = useHydrated();
   const { locale, messages } = Route.useLoaderData();
   return <html lang={locale === "zh" ? "zh-CN" : "en"} className="antialiased" suppressHydrationWarning>
-    <head><HeadContent /></head>
+    <head><script dangerouslySetInnerHTML={{ __html: COLOR_MODE_BOOTSTRAP }} /><HeadContent /></head>
     <body inert={!hydrated} data-app-hydrated={hydrated ? "true" : "false"}>
       <noscript><div style={{ padding: 24, fontFamily: "sans-serif", lineHeight: 1.6 }}>当前浏览器无法运行页面脚本。请启用 JavaScript，或升级浏览器 / Android System WebView。</div></noscript>
       <IntlProvider locale={locale} messages={messages} timeZone="Asia/Shanghai">
+        <ColorModeController />
         <LocaleProvider><AgentRuntimeProvider><Outlet /></AgentRuntimeProvider></LocaleProvider>
         <TelemetryLoader />
       </IntlProvider>
