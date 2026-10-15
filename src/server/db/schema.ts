@@ -625,6 +625,7 @@ export const billingOrder = appSchema.table("billing_order", {
   idempotencyKey: text("idempotency_key").notNull(),
   providerOrderId: text("provider_order_id"),
   paymentUrl: text("payment_url"),
+  hiddenAt: timestamp("hidden_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   paidAt: timestamp("paid_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

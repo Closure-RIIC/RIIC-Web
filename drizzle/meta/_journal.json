@@ -183,6 +183,13 @@
       "when": 1791897019081,
       "tag": "0025_wish_wall",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792108800000,
+      "tag": "0026_billing_order_hidden",
+      "breakpoints": true
     }
   ]
 }

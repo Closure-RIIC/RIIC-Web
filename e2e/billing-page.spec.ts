@@ -1,6 +1,61 @@
 import { expect, test } from "@playwright/test";
 import { mockAnonymousWebsiteSession, mockApis } from "./production-readiness.fixture";
 
+test("pending orders expire and can be removed while paid history remains", async ({ page }) => {
+  await mockAnonymousWebsiteSession(page);
+  await mockApis(page);
+  const now = Date.now();
+  const order = (id: string, status: string, age: number) => ({ id, status, productId: "points_10", amountFen: 1000, points: 110, paymentUrl: null, paidAt: null, createdAt: new Date(now - age).toISOString() });
+  let orders = [order("recent", "pending", 0), order("expired", "pending", 4 * 86400000), order("paid", "paid", 5 * 86400000)];
+  await page.route("**/api/billing", route => {
+    if (route.request().method() === "DELETE") {
+      const deleted = orders.filter(order => order.status === "pending").length;
+      orders = orders.filter(order => order.status !== "pending");
+      return route.fulfill({ json: { data: { deleted } } });
+    }
+    return route.fulfill({ json: { data: {
+    wallet: { totalPoints: 110, paidPoints: 110, monthlyPoints: 0, monthlyExpiresAt: null },
+    products: [], ledger: [], usage: [], orders,
+  } } });
+  });
+  await page.route("**/api/billing/orders/recent", route => {
+    if (route.request().method() === "DELETE") {
+      orders = orders.filter(order => order.id !== "recent");
+      return route.fulfill({ json: { data: { deleted: true } } });
+    }
+    return route.fulfill({ json: { data: { order: { status: "pending" } } } });
+  });
+  await page.goto("/billing");
+  const section = page.locator("[data-billing-orders]");
+  await expect(section.locator("li")).toHaveCount(2);
+  await expect(section.getByRole("button", { name: "删除待支付订单 expired" })).toHaveCount(0);
+  await expect(section.getByRole("button", { name: "删除待支付订单 paid" })).toHaveCount(0);
+  await section.getByRole("button", { name: "删除待支付订单 recent", exact: true }).click();
+  await expect(section.locator("li")).toHaveCount(2);
+  const confirmDelete = section.getByRole("button", { name: "确认删除待支付订单 recent", exact: true });
+  await expect(confirmDelete).toHaveText("确认删除");
+  await page.getByRole("heading", { name: "最近订单", exact: true }).hover();
+  await expect(section.getByRole("button", { name: "删除待支付订单 recent", exact: true })).toHaveText("删除");
+  await section.getByRole("button", { name: "删除待支付订单 recent", exact: true }).click();
+  await section.getByRole("button", { name: "确认删除待支付订单 recent", exact: true }).click();
+  await expect(section.locator("li")).toHaveCount(1);
+  await expect(section).toContainText("已付款 · 已到账");
+  await page.reload();
+  await expect(section.locator("li")).toHaveCount(1);
+  orders.push(order("another", "pending", 0), order("third", "pending", 0));
+  await page.reload();
+  await expect(section.locator("li")).toHaveCount(3);
+  await section.getByRole("button", { name: "一键清空未支付订单", exact: true }).click();
+  await expect(section.locator("li")).toHaveCount(3);
+  await page.getByRole("heading", { name: "最近订单", exact: true }).hover();
+  await expect(section.getByRole("button", { name: "一键清空未支付订单", exact: true })).toBeVisible();
+  await section.getByRole("button", { name: "一键清空未支付订单", exact: true }).click();
+  await section.getByRole("button", { name: "确认清空所有未支付订单", exact: true }).click();
+  await expect(section.locator("li")).toHaveCount(1);
+  await expect(section).toContainText("已付款 · 已到账");
+  await expect(section.getByRole("button", { name: "一键清空未支付订单", exact: true })).toBeDisabled();
+});
+
 for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
   test(`payment plans navigate within the workbench at ${viewport.width}px`, async ({ page }) => {
     await mockAnonymousWebsiteSession(page);
