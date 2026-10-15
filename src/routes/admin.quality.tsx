@@ -4,6 +4,6 @@ import Page from "@/app/admin/quality/page";
 import { pageHead } from "@/i18n/metadata";
 export const Route = createFileRoute("/admin/quality")({
   validateSearch: (search: Record<string, unknown>): Partial<Record<"draft" | "drafts", string>> => ({ draft: typeof search.draft === "string" ? search.draft : undefined, drafts: typeof search.drafts === "string" ? search.drafts : undefined }),
-  head: ({ matches }) => pageHead(matches[0].context.messages, "admin_issues"),
+  head: ({ matches }) => pageHead(matches, "admin_issues"),
   component: withPageScrollbars(Page),
 });

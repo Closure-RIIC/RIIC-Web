@@ -9,7 +9,7 @@ function codePreloader(router: AnyRouter) {
     preloader = createIntentPreloader(async (href) => {
       // Only route code: never run beforeLoad, loaders or authentication speculatively.
       const [routes] = router.getMatchedRoutes(href);
-      for (const route of routes) await router.loadRouteChunk(route);
+      await Promise.all(routes.map(route => router.loadRouteChunk(route)));
     }, () => typeof navigator !== "undefined" && document.visibilityState === "visible"
       && router.state.status === "idle"
       && permitsPreload((navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } }).connection));
