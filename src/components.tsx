@@ -1,5 +1,5 @@
 import { localize as localize_components } from "./i18n/helpers/components.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import {
   Check,
   ChevronDown,
@@ -72,7 +72,7 @@ import {
 } from "./rotation-presentation";
 import { DEFAULT_ROTATION_PROFILE } from "./rotation-settings";
 import { RoomRow } from "./schedule";
-import { withRecyclingRoom } from "./recycling-room";
+import { recyclingRoom, withRecyclingRoom, type RecyclingRoom } from "./recycling-room";
 import { RecyclingRoomNotice } from "./components/RecyclingRoomNotice";
 import {
   COMPACT_OPERATOR_SIZE_CLASS,
@@ -387,7 +387,7 @@ function RoomLevelControl({
   />;
 }
 
-function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"]): string {
+function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"] | "recycling"): string {
   if (kind === "trade_post") return "trading";
   if (kind === "factory") return "manufacture";
   if (kind === "power_plant") return "power";
@@ -397,7 +397,7 @@ function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"]): s
   if (kind === "workshop") return "processing";
   if (kind === "training_room") return "training";
   if (kind === "office") return "hire";
-  if (kind === "recycling_station") return "recycling";
+  if (kind === "recycling") return "recycling";
   return "default";
 }
 
@@ -406,22 +406,27 @@ export function LayoutEditor({
   onFactoryRecipeChange,
   onTradeOrderChange,
   onRoomLevelChange,
+  recyclingRoomLevel = 3,
+  onRecyclingRoomLevelChange,
 }: {
   layout: BaseBlueprint;
   onFactoryRecipeChange: (roomId: string, recipe: FactoryRecipe) => void;
   onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
   onRoomLevelChange: (roomId: string, level: number) => void;
+  recyclingRoomLevel?: number;
+  onRecyclingRoomLevelChange: (level: number) => void;
 }) {
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
 
   const factoryRecipesUnlocked = hasUnlockedFactoryRecipes(layout);
-  const roomGroups = [
+  type LayoutEditorRoom = BaseBlueprint["rooms"][number] | RecyclingRoom;
+  const roomGroups: Array<{ key: string; label: string; rooms: LayoutEditorRoom[] }> = [
     { key: "trade", label: intl("components.tradingPosts"), rooms: layout.rooms.filter((room) => room.kind === "trade_post") },
     { key: "factory", label: intl("components.factories"), rooms: layout.rooms.filter((room) => room.kind === "factory") },
     { key: "power", label: intl("components.powerPlants"), rooms: layout.rooms.filter((room) => room.kind === "power_plant") },
-    { key: "function", label: intl("components.controlFunctional"), rooms: layout.rooms.filter((room) => !["trade_post", "factory", "power_plant", "dormitory"].includes(room.kind)) },
+    { key: "function", label: intl("components.controlFunctional"), rooms: [...layout.rooms.filter((room) => !["trade_post", "factory", "power_plant", "dormitory"].includes(room.kind)), recyclingRoom(recyclingRoomLevel)] },
     { key: "dormitory", label: intl("components.dormitories"), rooms: layout.rooms.filter((room) => room.kind === "dormitory") },
   ].filter((group) => group.rooms.length > 0);
 
@@ -453,11 +458,11 @@ export function LayoutEditor({
                 : isFactory
                   ? FACTORY_RECIPE_OPTIONS
                   : [];
-              const product = productLabel(room);
-              const levelMax = maxRoomLevel(room.kind);
+              const product = room.kind === "recycling" ? undefined : productLabel(room);
+              const levelMax = room.kind === "recycling" ? 3 : maxRoomLevel(room.kind);
               const visualGroup = roomVisualGroupForKind(room.kind);
-              const sameKind = group.rooms.filter((candidate) => candidate.kind === room.kind);
-              const originalName = sameKind.length > 1 ? `${roomKindLabel(room.kind)} ${sameKind.findIndex((candidate) => candidate.id === room.id) + 1}` : roomKindLabel(room.kind);
+              const roomName = room.kind === "recycling" ? intl("RecyclingRoom.title") : roomKindLabel(room.kind);
+              const originalName = group.key === "function" || group.rooms.length === 1 ? roomName : `${roomName} ${roomIndex + 1}`;
               const displayName = localizedRoomTitle(originalName, visualGroup, locale, gameCatalog);
 
               return (
@@ -482,7 +487,7 @@ export function LayoutEditor({
                       roomId={room.id}
                       level={room.level}
                       levelMax={levelMax}
-                      onChange={(level) => onRoomLevelChange(room.id, level)}
+                      onChange={(level) => room.kind === "recycling" ? onRecyclingRoomLevelChange(level) : onRoomLevelChange(room.id, level)}
                     />
                   </div>
 
@@ -1443,7 +1448,7 @@ export function ScheduleBoard({
           {rowGroups.map((group) => {
         const visual = roomVisualFor(group.rows[0]?.group ?? "default");
         const firstGroup = group.rows[0]?.group ?? "";
-        const displayGroupLabel = en ? ({ control: "Control Center", trading: "Trading Posts", manufacture: "Factories", power: "Power Plants", dormitory: "Dormitories", meeting: "Reception Room", hire: "Office", processing: "Workshop", training: "Training Room", recycling: "Recycling Station" }[firstGroup] ?? (group.label === "功能设施" ? "Functional Facilities" : group.label)) : group.label;
+        const displayGroupLabel = en ? ({ control: "Control Center", trading: "Trading Posts", manufacture: "Factories", power: "Power Plants", dormitory: "Dormitories", meeting: "Reception Room", hire: "Office", processing: "Workshop", training: "Training Room", recycling: "Recycling Station", recycle: "Recycling Station" }[firstGroup] ?? (group.label === "功能设施" ? "Functional Facilities" : group.label)) : group.label;
         const groupStyle = {
           "--room-accent": visual.accent,
         } as CSSProperties;

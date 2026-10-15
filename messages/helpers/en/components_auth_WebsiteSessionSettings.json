@@ -1,0 +1,22 @@
+{
+  "title": "Session lifetime",
+  "description": "View and manually extend this device's website session.",
+  "loading": "Loading session status",
+  "signedOut": "You are signed out",
+  "signInToManage": "Sign in to view and extend this device's session.",
+  "signIn": "Sign in",
+  "manage": "View and extend",
+  "dialogTitle": "Manage session lifetime",
+  "dialogDescription": "Extension applies only to this device and does not change other signed-in devices.",
+  "timeRemaining": "Time remaining",
+  "remainingDaysHours": "{days}d {hours}h remaining",
+  "remainingHoursMinutes": "{hours}h {minutes}m remaining",
+  "expired": "Session expired",
+  "unavailable": "Temporarily unavailable",
+  "expiresAt": "Expires: {value}",
+  "extendThirtyDays": "Extend 30 days",
+  "extending": "Extending…",
+  "extended": "This device's session has been extended by 30 days.",
+  "extendFailed": "Could not extend the session. Try again later.",
+  "close": "Close"
+}

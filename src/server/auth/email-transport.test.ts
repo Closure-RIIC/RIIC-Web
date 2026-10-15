@@ -9,7 +9,7 @@ import { deliverAuthEmail } from "./email-transport.ts";
 register("../../../scripts/ts-path-loader.mjs", import.meta.url);
 const serverOnlyHook = registerHooks({
   resolve(specifier, context, nextResolve) {
-    if (specifier === "server-only") return { shortCircuit: true, url: "data:text/javascript,export{}" };
+    if (specifier === "@tanstack/react-start/server-only") return { shortCircuit: true, url: "data:text/javascript,export{}" };
     return nextResolve(specifier, context);
   },
 });

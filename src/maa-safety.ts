@@ -1,16 +1,5 @@
 import { stripInternalFields } from "./internal-field-safety.ts";
-import type { MaaJson, MaaPlan, MaaRoom, MaaRooms } from "./types.ts";
-
-/** Recognize the explicit MAA projection of a Fiammetta-only event. */
-export function isFiammettaOnlyPlan(plan: MaaPlan): boolean {
-  if (!plan.Fiammetta?.enable || plan.drones?.enable !== false) return false;
-  const targets = Array.isArray(plan.Fiammetta.target) ? plan.Fiammetta.target : [plan.Fiammetta.target];
-  const rooms = Object.values(plan.rooms).flatMap((group) => group ?? []);
-  const active = rooms.filter((room) => room.skip !== true);
-  return rooms.some((room) => room.skip === true)
-    && active.length === 1
-    && targets.some((target) => typeof target === "string" && (active[0]?.operators ?? []).includes(target));
-}
+import type { MaaJson, MaaRoom, MaaRooms } from "./types.ts";
 
 const MAA_ROOM_KINDS = [
   "trading",
@@ -21,8 +10,6 @@ const MAA_ROOM_KINDS = [
   "meeting",
   "hire",
   "processing",
-  "training",
-  "recycle",
 ] as const satisfies readonly (keyof MaaRooms)[];
 
 function validCandidates(value: unknown): value is string[] {
@@ -41,6 +28,8 @@ export function sanitizeMaaJson<T extends MaaJson>(maa: T): T {
   source.plans.forEach((sourcePlan, planIndex) => {
     const sanitizedPlan = sanitized.plans[planIndex];
     if (!sanitizedPlan) return;
+
+    delete (sanitizedPlan.rooms as MaaRooms & { training?: unknown }).training;
 
     for (const roomKind of MAA_ROOM_KINDS) {
       const sourceRooms = sourcePlan.rooms[roomKind];
@@ -64,9 +53,9 @@ export function sanitizeMaaJson<T extends MaaJson>(maa: T): T {
  * MAA uses `sort: true` to respect the operator order in each room's
  * `operators` array. The array already follows the order shown in the UI,
  * so preserve it exactly while removing runtime-only fields.
- * Regular shifts normalize dormitories to `skip: false` + `autofill: true`;
- * Fiammetta-only events preserve skipped rooms. `candidates` is mutually
- * exclusive with autofill and is dropped.
+ * Every dormitory is normalized to `skip: false` + `autofill: true` so MAA
+ * always staffs dorms itself; `candidates` is mutually exclusive with
+ * autofill and is dropped.
  */
 export function prepareMaaForExport<T extends MaaJson>(
   maa: T,
@@ -76,20 +65,9 @@ export function prepareMaaForExport<T extends MaaJson>(
   const exported = sanitizeMaaJson(maa);
 
   for (const plan of exported.plans) {
-    const eventOnly = isFiammettaOnlyPlan(plan);
-    plan.rooms.training ??= [{ operators: [], skip: true }];
-    plan.rooms.recycle ??= [{ operators: [], ...(eventOnly ? { skip: true } : { autofill: true }) }];
-    for (const room of plan.rooms.training) {
-      const occupied = [...(room.operatorsA ?? []), ...(room.operatorsB ?? []), ...(room.operators ?? [])].some((name) => typeof name === "string" && name.trim());
-      if (!occupied) room.skip = true;
-    }
-    for (const room of plan.rooms.recycle) {
-      const occupied = [...(room.operatorsA ?? []), ...(room.operatorsB ?? []), ...(room.operators ?? [])].some((name) => typeof name === "string" && name.trim());
-      if (!occupied && room.skip !== true && !room.candidates?.length) room.autofill = true;
-    }
     plan.rooms.dormitory?.forEach((room) => {
-      room.skip = eventOnly;
-      room.autofill = !eventOnly;
+      room.skip = false;
+      room.autofill = true;
       delete room.candidates;
     });
     if (plan.Fiammetta) plan.Fiammetta.order = "pre";

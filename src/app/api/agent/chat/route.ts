@@ -20,8 +20,6 @@ import { AgentHistoryError, prepareAgentHistory } from "@/server/agent/message-h
 import { withAgentAnswerBoundary } from "@/server/agent/answer-boundary";
 import { activeAgentResources } from "@/server/agent/resources";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 // ── 临时监控（诊断"返回内容异常"用，问题定位后整段删除）──
 // 把每次 agent 请求的输入、模型逐步原始输出、工具调用结果、流错误

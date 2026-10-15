@@ -1,6 +1,6 @@
 "use client";
 import { useAdminFetch } from "../admin-context";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, Search, UsersRound } from "lucide-react";

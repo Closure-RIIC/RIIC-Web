@@ -3,9 +3,9 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { env, stdout } from "node:process";
 
-const buildRoot = path.resolve(env.RIIC_NEXT_DIST_DIR || ".next");
-const clientRoot = path.join(buildRoot, "static");
-const appRoot = path.join(buildRoot, "server", "app");
+const buildRoot = path.resolve(".output");
+const clientRoot = path.join(buildRoot, "public", "assets");
+
 const forbiddenMarkers = [
   { label: "森空岛用户文案", value: "森空岛" },
   { label: "森空岛公开 API", value: "/api/skland" },
@@ -31,14 +31,11 @@ async function collectFiles(root, include) {
 }
 
 await stat(clientRoot).catch(() => {
-  throw new Error("找不到 .next/static，请先运行 production build。");
+  throw new Error("找不到 .output/public/assets，请先运行 production build。");
 });
 
 const clientFiles = await collectFiles(clientRoot, (file) => file.endsWith(".js"));
-const publicDocuments = await collectFiles(
-  appRoot,
-  (file) => !file.includes(`${path.sep}api${path.sep}`) && (file.endsWith(".html") || file.endsWith(".rsc"))
-);
+const publicDocuments = [];
 const inspectedFiles = [...clientFiles, ...publicDocuments];
 const matches = new Map(forbiddenMarkers.map((marker) => [marker.label, []]));
 let inspectedBytes = 0;

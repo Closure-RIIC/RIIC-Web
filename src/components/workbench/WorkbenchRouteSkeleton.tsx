@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 
 import { StatusCenterLoading, StatusCenterPage } from "@/components/pages/StatusCenterShell";
 import { Skeleton } from "@/components/ui/skeleton";

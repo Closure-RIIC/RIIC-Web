@@ -1,6 +1,6 @@
 "use client";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
-import { useTranslations } from "next-intl";
+import { useTranslations } from "use-intl";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";

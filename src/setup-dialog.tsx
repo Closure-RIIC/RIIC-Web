@@ -1,6 +1,6 @@
 "use client";
 import { localize as localize_setup_dialog } from "./i18n/helpers/setup_dialog.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Database, ExternalLink, FileJson, ListChecks, Play, ScanLine, Trash2, Upload } from "lucide-react";
@@ -94,6 +94,8 @@ type SetupDialogProps = {
   onFactoryRecipeChange: (roomId: string, recipe: FactoryRecipe) => void;
   onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
   onRoomLevelChange: (roomId: string, level: number) => void;
+  recyclingRoomLevel: number;
+  onRecyclingRoomLevelChange: (level: number) => void;
   powerBudget: PowerBudget;
   onFinish: () => void;
   onSkip: () => void;
@@ -159,6 +161,8 @@ export function SetupDialog({
   onFactoryRecipeChange,
   onTradeOrderChange,
   onRoomLevelChange,
+  recyclingRoomLevel,
+  onRecyclingRoomLevelChange,
   powerBudget,
   onFinish,
   onSkip,
@@ -803,6 +807,8 @@ export function SetupDialog({
                         else onTradeOrderChange(roomId, order);
                       }}
                       onRoomLevelChange={onRoomLevelChange}
+                      recyclingRoomLevel={recyclingRoomLevel}
+                      onRecyclingRoomLevelChange={onRecyclingRoomLevelChange}
                     />
                     {inputError ? <p className="mt-3 text-sm text-destructive" role="alert">{inputError}</p> : null}
                   </motion.div>

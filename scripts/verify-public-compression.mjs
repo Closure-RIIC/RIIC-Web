@@ -61,29 +61,28 @@ export async function verifyPublicCompression(
     buildId = metaContent(document, "riic-build-id");
     assert.equal(buildId, expectedBuildId, `public HTML build ID is ${buildId || "missing"}; expected ${expectedBuildId}`);
   }
-  const scriptPaths = [...document.matchAll(/<script[^>]+src="([^"]+\.js(?:\?[^"]*)?)"/g)]
-    .map((match) => match[1]);
+  const scriptPaths = [...new Set([...document.matchAll(/(?:src|href)="([^"]+\.js(?:\?[^"]*)?)"/g)].map((match) => match[1]))];
   assert.ok(scriptPaths.length > 0, "public HTML does not reference any JavaScript chunks");
-
-  const scriptUrl = new URL(scriptPaths[0], rootUrl);
-  assert.equal(scriptUrl.origin, rootUrl.origin, "public HTML must load its initial JavaScript from the same origin");
-  const scriptResponse = await fetchImpl(scriptUrl, requestOptions);
-  assert.ok(scriptResponse.ok, `public JavaScript request failed with HTTP ${scriptResponse.status}`);
-  const scriptEncoding = assertCompressed(scriptResponse, "public JavaScript");
-  const scriptBody = await scriptResponse.arrayBuffer();
-  assert.ok(
-    scriptBody.byteLength >= MINIMUM_SCRIPT_BYTES,
-    `public JavaScript verification chunk is unexpectedly small: ${scriptBody.byteLength} bytes`,
-  );
+  let verifiedScript;
+  for (const scriptPath of scriptPaths) {
+    const scriptUrl = new URL(scriptPath, rootUrl);
+    assert.equal(scriptUrl.origin, rootUrl.origin, "public HTML must load its initial JavaScript from the same origin");
+    const scriptResponse = await fetchImpl(scriptUrl, requestOptions);
+    assert.ok(scriptResponse.ok, "public JavaScript request failed with HTTP " + scriptResponse.status);
+    const scriptBody = await scriptResponse.arrayBuffer();
+    // Vite emits a tiny bootstrap; check every substantial script and modulepreload payload.
+    if (scriptBody.byteLength < MINIMUM_SCRIPT_BYTES) continue;
+    const scriptEncoding = assertCompressed(scriptResponse, "public JavaScript");
+    verifiedScript ??= { scriptBytes: scriptBody.byteLength, scriptEncoding, scriptUrl: scriptResponse.url || scriptUrl.href };
+  }
+  assert.ok(verifiedScript, "public JavaScript verification chunks are unexpectedly small");
 
   return {
     buildId,
     pageEncoding,
     pageCacheControl,
     pageUrl: pageResponse.url || rootUrl.href,
-    scriptBytes: scriptBody.byteLength,
-    scriptEncoding,
-    scriptUrl: scriptResponse.url || scriptUrl.href,
+    ...verifiedScript,
   };
 }
 

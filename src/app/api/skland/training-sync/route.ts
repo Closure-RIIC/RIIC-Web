@@ -3,7 +3,6 @@ import { requireWebsiteSession } from "@/server/auth/authorization";
 import { SklandServiceError, syncSessionSnapshot } from "@/server/skland/adapter";
 import { activeSklandAccount, assertSklandAvailable, assertSklandFeatureEnabled, readSklandAccountStore, sklandAccountSummaries, sklandErrorResponse } from "@/server/skland/http";
 
-export const runtime = "nodejs";
 
 /** Background reads never write selection cookies: a late response must not undo a role switch. */
 export async function POST(request: Request) {

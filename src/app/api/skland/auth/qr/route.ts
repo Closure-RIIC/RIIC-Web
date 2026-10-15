@@ -12,7 +12,6 @@ import { startScan } from "@/server/skland/adapter";
 import { assertSklandAvailable, assertSklandFeatureEnabled, sklandErrorResponse } from "@/server/skland/http";
 import { requireWebsiteSession } from "@/server/auth/authorization";
 
-export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const requestId = createRequestId();

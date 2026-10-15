@@ -48,8 +48,6 @@ import { planOperboxContentHmac } from "@/server/workspace-crypto";
 import { validateSavedPlanCalculationContext } from "@/server/workspace-payload";
 import type { BaseBlueprint, OperBoxEntry, RotationProfile } from "@/types";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 type SubmitBody = {
   layout?: BaseBlueprint;

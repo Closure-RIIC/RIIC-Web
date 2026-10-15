@@ -1,4 +1,6 @@
 {
+  "wishes": "许愿审核",
+  "wishesHint": "审核公开许愿墙内容",
   "cdkBatchLabel": "批次名称",
   "cdkStartsAt": "启用时间（选填）",
   "cdkExpiresAt": "到期时间（选填）",

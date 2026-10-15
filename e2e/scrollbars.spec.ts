@@ -106,7 +106,7 @@ test("nested dialog and dropdown keep keyboard navigation, background locking an
 
 test("a failed scrollbar chunk leaves native scrolling available", async ({ page }) => {
   let blocked = 0;
-  await page.route("**/_next/static/chunks/*overlayscrollbars*.js", route => {
+  await page.route(/\/(?:assets\/[^/]*overlayscrollbars[^/]*\.js|node_modules\/\.vite\/deps\/overlayscrollbars\.js)(?:\?.*)?$/, route => {
     blocked++;
     return route.abort();
   });
@@ -201,6 +201,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 
       }
       await page.locator("#scroll-fixture").evaluate(node => node.remove());
       await page.goto("/help/import-operators");
+      await expect(page.locator("body")).toHaveAttribute("data-app-hydrated", "true");
       await page.evaluate(() => window.scrollTo(0, 500));
       await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
     });

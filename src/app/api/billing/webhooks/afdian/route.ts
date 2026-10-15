@@ -1,10 +1,7 @@
 import { createRequestId, failureResponse, readJsonBody, PublicApiError } from "@/server/api-contract";
 import { findAfdianOrderByOutTradeNo } from "@/server/billing/afdian";
 import { fulfillBillingOrder } from "@/server/billing/service";
-import { NextResponse } from "next/server.js";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 type AfdianPrototypePayload = {
   custom_order_id?: unknown;
@@ -26,7 +23,7 @@ type AfdianPrototypePayload = {
 };
 
 function afdianAck(requestId: string, data: Record<string, unknown> = {}) {
-  return NextResponse.json({ ec: 200, em: "", data: { ...data, request_id: requestId } }, { status: 200, headers: { "X-Request-Id": requestId } });
+  return Response.json({ ec: 200, em: "", data: { ...data, request_id: requestId } }, { status: 200, headers: { "X-Request-Id": requestId } });
 }
 
 // Afdian's dashboard tester may probe the configured address with GET before

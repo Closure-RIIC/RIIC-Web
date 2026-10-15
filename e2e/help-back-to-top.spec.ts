@@ -21,6 +21,7 @@ test("help pages provide an accessible back-to-top control", async ({ page }) =>
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 375, height: 320 });
   await page.goto("/help/import-operators");
+  await expect(page.locator('body[data-app-hydrated="true"]')).toBeVisible();
 
   const backToTop = page.locator("[data-help-back-to-top]");
   const helpMenu = page.getByRole("button", { name: "帮助目录", exact: true });

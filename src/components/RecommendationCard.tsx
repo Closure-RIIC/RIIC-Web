@@ -1,6 +1,6 @@
 "use client";
 import { localize as localize_components_RecommendationCard } from "../i18n/helpers/components_RecommendationCard.ts";
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
 import { motion, useReducedMotion } from "motion/react";

@@ -18,7 +18,7 @@ async function assertPng(relativePath, expectedSize) {
   assert.equal(metadata.channels, 4);
 }
 
-test("site icon PNG files have the dimensions required by Next.js and Apple devices", async () => {
+test("site icon PNG files have the dimensions required by the website and Apple devices", async () => {
   await assertPng("assets/branding/closure-site-icon.png", 1024);
   await assertPng("src/app/icon.png", 512);
   await assertPng("src/app/apple-icon.png", 180);

@@ -2,8 +2,8 @@
 
 import { useId } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useLocale } from "next-intl";
+import { Link } from "@tanstack/react-router";
+import { useLocale } from "use-intl";
 import { useAgentHistory } from "@/hooks/use-agent-history";
 import { useAgentRunningConversations } from "./AgentRuntimeProvider";
 import { SidebarMenuAction, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, useSidebar } from "@/components/ui/sidebar";
@@ -24,7 +24,7 @@ export function AgentHistoryNavigation({ active }: { active: boolean }) {
     <div id={contentId} data-agent-history hidden={!expanded}>
       <SidebarMenuSub>
         {history.conversations.map((conversation) => <SidebarMenuSubItem key={conversation.id}>
-          <SidebarMenuSubButton render={<Link href="/agent" />} title={conversation.title} aria-label={conversation.title} aria-current={active && history.activeId === conversation.id ? "page" : undefined} isActive={active && history.activeId === conversation.id} onClick={() => {
+          <SidebarMenuSubButton render={<Link to="/agent" />} title={conversation.title} aria-label={conversation.title} aria-current={active && history.activeId === conversation.id ? "page" : undefined} isActive={active && history.activeId === conversation.id} onClick={() => {
             store.select(conversation.id);
             if (isMobile) setOpenMobile(false);
           }}>

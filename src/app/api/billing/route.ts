@@ -2,8 +2,6 @@ import { assertSameOrigin, createRequestId, failureResponse, readJsonBody, succe
 import { requireFeatureActor, requireFeatureSession } from "@/server/auth/feature-access";
 import { BillingError, createBillingOrder, getWallet, listBillingProducts, listLedger, listOrders, listUsage } from "@/server/billing/service";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 
 function normalizeBillingError(error: unknown): unknown {
   if (!(error instanceof BillingError)) return error;

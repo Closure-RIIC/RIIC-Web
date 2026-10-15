@@ -31,17 +31,16 @@ try {
 }
 
 const requiredBuildFiles = [
-  ".next/BUILD_ID",
-  ".next/standalone/server.js",
-  ".next/standalone/public",
-  ".next/standalone/.next/static",
-  ".next/standalone/scripts/backfill-business-data.mts",
-  ".next/standalone/scripts/migrate-db.mts",
-  ".next/standalone/scripts/check-auth-readiness.mts",
-  ".next/standalone/src/server/auth/config.ts",
-  ".next/standalone/src/server/business-backfill.ts",
-  ".next/standalone/drizzle",
-  ".next/standalone/node_modules/drizzle-orm",
+  ".output/BUILD_ID",
+  ".output/server/index.mjs",
+  ".output/public",
+  ".output/public/assets",
+  ".output/scripts/backfill-business-data.mjs",
+  ".output/scripts/migrate-db.mjs",
+  ".output/scripts/check-auth-readiness.mjs",
+  ".output/drizzle",
+  ".output/fixtures/operbox_full_e2.json",
+  ".output/scripts/load-env.mjs",
   "dist/plan-worker.cjs",
   "dist/quality-worker.cjs",
   "dist/agent-worker.cjs",
@@ -60,7 +59,7 @@ const forbiddenBuildEntries = [
 ];
 for (const [relativePath, displayName] of forbiddenBuildEntries) {
   try {
-    await lstat(path.join(repoRoot, ".next", "standalone", relativePath));
+    await lstat(path.join(repoRoot, ".output", relativePath));
     assert.fail(`standalone website output must not contain ${displayName}`);
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
@@ -68,18 +67,20 @@ for (const [relativePath, displayName] of forbiddenBuildEntries) {
 }
 
 await mkdir(path.join(outputRoot, "scripts"), { recursive: true });
-await mkdir(path.join(outputRoot, ".next"), { recursive: true });
+await mkdir(path.join(outputRoot, ".output"), { recursive: true });
 await copyFile(path.join(repoRoot, "package.json"), path.join(outputRoot, "package.json"));
 await copyFile(
   path.join(repoRoot, "scripts", "start-standalone.mjs"),
   path.join(outputRoot, "scripts", "start-standalone.mjs"),
 );
-await copyFile(path.join(repoRoot, ".next", "BUILD_ID"), path.join(outputRoot, ".next", "BUILD_ID"));
-await cp(path.join(repoRoot, ".next", "standalone"), path.join(outputRoot, ".next", "standalone"), {
+
+await cp(path.join(repoRoot, ".output"), path.join(outputRoot, ".output"), {
   dereference: true,
   recursive: true,
   force: true,
 });
+await copyFile(path.join(repoRoot, ".output/scripts/load-env.mjs"), path.join(outputRoot, "scripts/load-env.mjs"));
+await cp(path.join(repoRoot, ".output/fixtures"), path.join(outputRoot, "fixtures"), { recursive: true });
 await mkdir(path.join(outputRoot, "worker"), { recursive: true });
 await copyFile(
   path.join(repoRoot, "dist", "plan-worker.cjs"),
@@ -90,12 +91,12 @@ await copyFile(path.join(repoRoot, "dist", "quality-worker.cjs"), path.join(outp
 await copyFile(path.join(repoRoot, "dist", "agent-worker.cjs"), path.join(outputRoot, "worker", "agent-worker.cjs"));
 await writeFile(path.join(outputRoot, ".release-artifact.json"), `${JSON.stringify({
   formatVersion: 1,
-  kind: "riic-web-standalone",
+  kind: "riic-web-tanstack-start",
   releaseSha,
   releaseTreeSha,
 }, null, 2)}\n`, "utf8");
 
-assert.equal(await lstat(path.join(outputRoot, ".next", "standalone", "server.js")).then((entry) => entry.isFile()), true);
+assert.equal(await lstat(path.join(outputRoot, ".output", "server", "index.mjs")).then((entry) => entry.isFile()), true);
 assert.equal(
   await lstat(path.join(outputRoot, "worker", "plan-worker.cjs")).then((entry) => entry.isFile()),
   true,

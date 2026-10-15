@@ -245,7 +245,7 @@ test("MAA export includes contiguous minute periods, per-shift Fiammetta targets
   assert.deepEqual(maa.plans[0]?.rooms.control?.[0], { operators: [], sort: true, skip: false, autofill: false });
   assert.equal(maa.plans[0]?.rooms.trading?.[0]?.product, "LMD");
   assert.equal(maa.plans[0]?.rooms.manufacture?.[0]?.product, "Battle Record");
-  assert.equal(maa.plans[0]?.rooms.training?.[0]?.skip, true);
+  assert.equal("training" in (maa.plans[0]?.rooms ?? {}), false);
 });
 
 test("MAA export writes Orundum for originium trading orders and Originium Shard for shard factories", () => {

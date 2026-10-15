@@ -1,7 +1,7 @@
 "use client";
 import { localize as localize_components_skill_query_SkillResultRow } from "../../i18n/helpers/components_skill_query_SkillResultRow.ts";
 
-import { useTranslations, useLocale } from "next-intl";
+import { useTranslations, useLocale } from "use-intl";
 
 import { useState } from "react";
 

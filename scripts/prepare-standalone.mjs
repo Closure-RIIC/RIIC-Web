@@ -1,71 +1,33 @@
 import assert from "node:assert/strict";
-import { log } from "node:console";
-import { cp, lstat, mkdir } from "node:fs/promises";
+import { cp, lstat, mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, URL } from "node:url";
+import { build } from "esbuild";
 
-const repoRoot = path.resolve(fileURLToPath(new URL("../", import.meta.url)));
-const nextRoot = path.resolve(repoRoot, process.env.RIIC_NEXT_DIST_DIR || ".next");
-const standaloneRoot = path.join(nextRoot, "standalone");
-const operationalRuntimeEntries = [
-  "drizzle",
-  "node_modules/drizzle-orm",
-  "scripts/backfill-business-data.mts",
-  "scripts/check-auth-readiness.mts",
-  "scripts/migrate-db.mts",
-  "src/server/auth/config.ts",
-  "src/server/business-backfill.ts",
-];
-
-async function isFile(filePath) {
-  try {
-    return (await lstat(filePath)).isFile();
-  } catch (error) {
-    if (error?.code === "ENOENT") return false;
-    throw error;
-  }
+const repoRoot = fileURLToPath(new URL("../", import.meta.url));
+const standaloneRoot = path.join(repoRoot, ".output");
+assert.ok((await lstat(path.join(standaloneRoot, "server/index.mjs"))).isFile(), "TanStack Start Node server is missing");
+for (const relative of ["bin/infra-cli", "bin/infra-cli.exe", ".env", ".env.production", ".env.local", ".env.production.local"]) {
+  await lstat(path.join(standaloneRoot, relative)).then(() => { throw new Error("standalone website output must not contain " + relative); }, (error) => { if (error.code !== "ENOENT") throw error; });
 }
-
-assert.equal(
-  await isFile(path.join(standaloneRoot, "server.js")),
-  true,
-  "Next.js standalone server is missing; build with output: 'standalone' first",
-);
-
-for (const binaryName of ["infra-cli", "infra-cli.exe"]) {
-  assert.equal(
-    await isFile(path.join(standaloneRoot, "bin", binaryName)),
-    false,
-    `standalone website output must not contain ${binaryName}`,
-  );
-}
-
-for (const environmentName of [".env", ".env.production", ".env.local", ".env.production.local"]) {
-  assert.equal(
-    await isFile(path.join(standaloneRoot, environmentName)),
-    false,
-    `standalone website output must not contain ${environmentName}`,
-  );
-}
-
-await cp(path.join(repoRoot, "public"), path.join(standaloneRoot, "public"), {
-  recursive: true,
-  force: true,
+await cp(path.join(repoRoot, "drizzle"), path.join(standaloneRoot, "drizzle"), { recursive: true });
+await cp(path.join(repoRoot, "fixtures"), path.join(standaloneRoot, "fixtures"), { recursive: true });
+await mkdir(path.join(standaloneRoot, "scripts"), { recursive: true });
+await build({
+  absWorkingDir: repoRoot,
+  entryPoints: ["scripts/migrate-db.mts", "scripts/backfill-business-data.mts", "scripts/check-auth-readiness.mts"],
+  bundle: true, platform: "node", format: "esm", outdir: path.join(standaloneRoot, "scripts"),
+  outExtension: { ".js": ".mjs" },
+  banner: { js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' },
 });
-await mkdir(path.join(standaloneRoot, ".next"), { recursive: true });
-await cp(path.join(nextRoot, "static"), path.join(standaloneRoot, ".next", "static"), {
-  recursive: true,
-  force: true,
+await build({
+  absWorkingDir: repoRoot, entryPoints: ["scripts/load-env.mjs"],
+  bundle: true, platform: "node", format: "esm", outfile: path.join(standaloneRoot, "scripts/load-env.mjs"),
+  banner: { js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);' },
 });
-
-for (const relativePath of operationalRuntimeEntries) {
-  const destination = path.join(standaloneRoot, relativePath);
-  await mkdir(path.dirname(destination), { recursive: true });
-  await cp(path.join(repoRoot, relativePath), destination, {
-    recursive: true,
-    force: true,
-  });
-}
-
-log("Prepared standalone Next.js runtime with public and .next/static assets.");
+await cp(path.join(repoRoot, "dist/riic-build.json"), path.join(standaloneRoot, "riic-build.json"));
+await writeFile(path.join(standaloneRoot, "BUILD_ID"), process.env.APP_BUILD_ID ?? "local-development");
+await cp(path.join(repoRoot, "src/app/icon.png"), path.join(standaloneRoot, "public/icon.png"));
+await cp(path.join(repoRoot, "src/app/apple-icon.png"), path.join(standaloneRoot, "public/apple-icon.png"));
+process.stdout.write("Prepared TanStack Start Node runtime, operational commands and public assets.\n");

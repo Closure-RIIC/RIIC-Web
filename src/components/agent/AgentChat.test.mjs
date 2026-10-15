@@ -17,10 +17,11 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
       platform: "node", format: "esm", packages: "external", jsx: "automatic", plugins: [{ name: "card-only", setup(builder) {
         builder.onResolve({ filter: /^react$/, namespace: "stub" }, (args) => ({ path: args.path, external: true }));
         builder.onResolve({ filter: /^@\/agent-answer$/ }, () => ({ path: path.join(root, "src/agent-answer.ts") }));
-        builder.onResolve({ filter: /^(@ai-sdk\/react|ai$|next\/link$|@\/|\.\/)/ }, (args) => ({ path: args.path, namespace: "stub" }));
+        builder.onResolve({ filter: /^(@ai-sdk\/react|ai$|@tanstack\/react-router$|@\/|\.\/)/ }, (args) => ({ path: args.path, namespace: "stub" }));
         builder.onLoad({ filter: /.*/, namespace: "stub" }, () => ({ contents: `
           import { createElement } from "react";
           export default {};
+          export const Link=({to,children,...props})=>createElement("a",{href:to,...props},children);
           export const useChat=()=>({});
           export const Chat=class{};
           export const DefaultChatTransport=class{};
@@ -28,6 +29,7 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
           export const useAgentRuntime=()=>({});
           export const useAgentHistory=()=>({});
           export const useAgentViewport=()=>{};
+          export const useAgentScroll=()=>({});
           export const subscribeBillingUpdates=()=>()=>{};
           export const useIsMobile=()=>false;
           export const AGENT_PERSONA_SELECTION_KEY="test-persona";

@@ -1,4 +1,4 @@
-import "server-only";
+import "@tanstack/react-start/server-only";
 
 import { AUTH_EMAIL_BRAND, brandedAuthEmailFrom } from "@/auth-email-brand";
 import { requireAuthEmailConfig } from "./email-config";

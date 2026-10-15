@@ -1,6 +1,6 @@
-import nextEnv from "@next/env";
+import { loadEnvConfig } from "./load-env.mjs";
 async function main() {
-  nextEnv.loadEnvConfig(process.cwd());
+  loadEnvConfig(process.cwd());
   const { runQualityWorker, stopQualityWorker } = await import("../src/server/quality/worker.ts");
   process.on("SIGTERM", stopQualityWorker);
   process.on("SIGINT", stopQualityWorker);

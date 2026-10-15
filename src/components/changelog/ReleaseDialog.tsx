@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@tanstack/react-router";
+import { useLocale, useTranslations } from "use-intl";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -40,7 +40,7 @@ export function ReleaseDialog({ open, onOpenChange, release: latestRelease, show
           {showHistoryLink ? (
             <Button variant="outline" size="dialog" nativeButton={false}
               className="max-sm:w-full"
-              render={<Link prefetch={false} href={`/changelog#v${latestRelease.version}`} />}
+              render={<Link preload={false} to="/changelog" hash={"v" + latestRelease.version} />}
               onClick={() => onOpenChange(false)}>
               {t("fullChangelog")}
             </Button>

@@ -2,11 +2,12 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:5184";
 const webServerPort = new URL(baseURL).port || "80";
+const releaseDirectory = process.env.PLAYWRIGHT_RELEASE_DIR;
 
 export default defineConfig({
   testDir: "./e2e",
   // These suites require their dedicated authenticated server configuration.
-  testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts", "agent-resources.spec.ts"],
+  testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts", "agent-resources.spec.ts", "tanstack-*.spec.ts"],
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
@@ -23,7 +24,7 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts", "agent-resources.spec.ts", "plush-*.spec.ts"],
+      testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts", "agent-resources.spec.ts", "tanstack-*.spec.ts", "plush-*.spec.ts"],
       use: { ...devices["Desktop Chrome"] },
     },
     {
@@ -44,15 +45,18 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `npx next dev -H 127.0.0.1 -p ${webServerPort}`,
+    command: releaseDirectory
+      ? `node scripts/start-standalone.mjs --hostname 127.0.0.1 --port ${webServerPort}`
+      : `npx vite --host 127.0.0.1 --port ${webServerPort}`,
+    cwd: releaseDirectory,
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
       RIIC_E2E: "1",
-      // Match the browser transport so real sign-in cookies work in all engines.
-      BETTER_AUTH_URL: baseURL,
       APP_DEPLOYMENT_ENV: "development",
+      // Use the actual browser origin for signed session cookies and CSRF checks.
+      BETTER_AUTH_URL: baseURL,
       ACCOUNT_CLOUD_SYNC_ENABLED: "1",
       // Existing interaction fixtures exercise the future public rollout.
       // The production-profile suite separately tests the admin boundary.

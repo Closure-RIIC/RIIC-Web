@@ -17,7 +17,6 @@ import { requireWebsiteSession } from "@/server/auth/authorization";
 import { finalizeSklandAuthentication } from "@/server/skland/auth-completion";
 import { enforceSklandPollRateLimit } from "@/server/skland/poll-rate-limit";
 
-export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   const requestId = createRequestId();

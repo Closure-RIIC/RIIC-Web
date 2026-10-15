@@ -28,14 +28,13 @@ export function buildNativeEvalRequest(input: {
       return {
         room_id: room.id,
         ...(assignment?.product ? { product: structuredClone(assignment.product) } : {}),
-        operators: (room.kind === "training_room"
-          ? (shift.rooms[room.id]?.operators ?? []).slice(0, 1).filter((name): name is string => Boolean(name?.trim()))
-          : namesForRoom(input.draft, shiftIndex, room.id, manualRoomCapacity(room)))
-        .map((name) => ({ name })),
+        operators: namesForRoom(input.draft, shiftIndex, room.id, manualRoomCapacity(room))
+          .slice(0, room.kind === "training_room" ? 1 : undefined)
+          .map((name) => ({ name })),
       };
     });
     const trainer = trainingRoom
-      ? shift.rooms[trainingRoom.id]?.operators[1]
+      ? namesForRoom(input.draft, shiftIndex, trainingRoom.id, manualRoomCapacity(trainingRoom))[1]
       : undefined;
     return {
       duration_hours: Math.round(shift.durationHours),

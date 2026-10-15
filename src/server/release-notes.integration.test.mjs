@@ -6,10 +6,10 @@ import test from "node:test";
 import { hashPassword } from "better-auth/crypto";
 
 /* global Request */
-// Only bypass Next's import marker. Authentication, authorization and PostgreSQL are real.
+// Only bypass Start's server-only import marker. Authentication, authorization and PostgreSQL are real.
 const marker = registerHooks({
   resolve(specifier, context, nextResolve) {
-    return specifier === "server-only" ? { shortCircuit: true, url: "data:text/javascript,export{}" } : nextResolve(specifier, context);
+    return specifier === "@tanstack/react-start/server-only" ? { shortCircuit: true, url: "data:text/javascript,export{}" } : nextResolve(specifier, context);
   },
 });
 process.once("exit", () => marker.deregister());

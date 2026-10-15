@@ -101,7 +101,7 @@ function validResponse(value: unknown): value is NativeEvalResponseV1 | NativeEv
 export async function evaluateNativeSchedule(request: NativeEvalRequestV1): Promise<NativeEvalResponseV1> {
   const bindings = await (bindingsPromise ??= (async () => {
     const glueUrl = "/wasm/infra_eval_wasm.js";
-    const module = await import(/* webpackIgnore: true */ glueUrl) as WasmBindings;
+    const module = await import(/* @vite-ignore */ glueUrl) as WasmBindings;
     await module.default(INFRA_EVAL_MANIFEST.wasmUrl);
     if (module.eval_api_version() !== INFRA_EVAL_MANIFEST.api) {
       throw new Error(`WASM API mismatch: expected ${INFRA_EVAL_MANIFEST.api}`);

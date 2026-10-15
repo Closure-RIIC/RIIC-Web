@@ -44,8 +44,7 @@ test("reviewer sees only overview and issues, and direct admin routes remain pro
     await expect(page.locator("h1")).toBeVisible();
     for (const path of ["/admin/users", "/admin/skills", "/admin/changelog"]) {
       const response = await page.goto(path);
-      // Next may stream a not-found boundary with HTTP 200.
-      expect([200, 404]).toContain(response!.status());
+      expect(response!.status()).toBe(404);
       await expect(page.locator('meta[name="robots"][content="noindex"]')).toHaveCount(1);
       await expect(page.locator("[data-admin-user-management]")).toHaveCount(0);
     }

@@ -7,7 +7,6 @@ import type {
   RotationProfile,
   UserProfile,
 } from "./types";
-import { normalizeFacilityDefaults } from "./facility-defaults.ts";
 import { stripInternalFields } from "./internal-field-safety.ts";
 import { TELEMETRY_SESSION_STORAGE_KEY } from "./telemetry-contract.ts";
 import { parseTrainingAdviceReport } from "./training-advice-contract.ts";
@@ -202,7 +201,7 @@ function normalizeSession(value: unknown, now: number): PersistedSessionV5 | nul
         : isObject(value.preset) && typeof value.preset.label === "string"
           ? value.preset.label
           : layout.template,
-    layout: normalizeFacilityDefaults(structuredClone(layout)),
+    layout: structuredClone(layout),
     operbox: operbox ? structuredClone(operbox) : null,
     sourceName: boxSource === "skland" ? SKLAND_SOURCE_NAME : rawSourceName,
     boxSource,
@@ -212,7 +211,7 @@ function normalizeSession(value: unknown, now: number): PersistedSessionV5 | nul
       : boxSource === "skland" && !layoutDirty
         ? "skland"
         : "local",
-    localLayoutBackup: localLayoutBackup ? normalizeFacilityDefaults(structuredClone(localLayoutBackup)) : null,
+    localLayoutBackup: localLayoutBackup ? structuredClone(localLayoutBackup) : null,
     rotationProfile,
     fiammettaEnabled: Boolean(value.fiammettaEnabled),
     result,
