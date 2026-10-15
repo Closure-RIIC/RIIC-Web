@@ -37,8 +37,7 @@ test("idle and navigation intent warm code without speculative server functions"
   await manual.click();
   await expect(page.locator("[data-manual-schedule-empty]")).toBeVisible();
   await expect(page.locator("[data-infra-canvas]")).toHaveCount(0);
-  expect(serverFunctions.length).toBeGreaterThan(0);
-  expect(serverFunctions.length).toBeLessThanOrEqual(2);
+  expect(serverFunctions).toHaveLength(0);
 });
 
 test("slow navigation keeps the current mode until the new page commits, then refresh and back work", async ({ page }) => {
@@ -46,12 +45,14 @@ test("slow navigation keeps the current mode until the new page commits, then re
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   let release!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
-  await page.route("**/_serverFn/**", async route => { await gate; await route.continue(); });
+  // Bootstrap data is now cached; delay the actual cold page chunk instead.
+  await page.route(/\/assets\/_workbench\.manual-[^/]+\.js|\/src\/routes\/_workbench\.manual\.tsx\?tsr-split/, async route => { await gate; await route.continue(); });
   try {
     await page.locator('[data-primary-navigation-page="manual"]').click();
     await expect(page).toHaveURL(/\/manual$/);
     await expect(page.locator('[data-primary-page="calculator"]')).toBeVisible();
     await expect(page.locator('[data-primary-navigation-page="calculator"]')).toHaveAttribute("aria-current", "page");
+    await expect(page.locator('[data-primary-navigation-page="manual"]')).toHaveAttribute("aria-busy", "true");
     await expect(page.locator("[data-infra-canvas]")).toBeVisible();
   } finally { release(); }
   await expect(page.locator("[data-manual-schedule-empty]")).toBeVisible();
@@ -71,4 +72,62 @@ test("slow navigation keeps the current mode until the new page commits, then re
   await expect(page.locator("[data-training-page]")).toBeVisible();
   await page.goForward();
   await expect(page.locator("[data-skill-query-page]")).toBeVisible();
+});
+
+for (const finalPage of ["calculator", "training"]) {
+  test(`rapid navigation commits the last intent: ${finalPage}`, async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+    const serverFunctions: string[] = [];
+    const errors: string[] = [];
+    page.on("request", request => { if (request.url().includes("/_serverFn/")) serverFunctions.push(request.url()); });
+    page.on("pageerror", error => errors.push(error.message));
+    let release!: () => void;
+    const gate = new Promise<void>(resolve => { release = resolve; });
+    await page.route(/\/assets\/_workbench\.(manual|training)-[^/]+\.js|\/src\/routes\/_workbench\.(manual|training)\.tsx\?tsr-split/, async route => { await gate; await route.continue(); });
+    try {
+      for (const target of ["manual", "training", "calculator", "manual", finalPage]) {
+        // No Playwright stability wait: model actual rapid consecutive pointer clicks.
+        const box = await page.locator(`[data-primary-navigation-page="${target}"]`).boundingBox();
+        expect(box).not.toBeNull();
+        await page.mouse.click(box!.x + box!.width / 2, box!.y + box!.height / 2);
+      }
+      if (finalPage === "training") {
+        await expect(page.locator('[data-primary-navigation-page="training"]')).toHaveAttribute("aria-busy", "true");
+        await expect(page.locator('[data-primary-page="calculator"]')).toBeVisible();
+      }
+    } finally { release(); }
+    await expect(page.locator(`[data-primary-page="${finalPage}"]`)).toBeVisible();
+    await expect(page.locator(`[data-primary-navigation-page="${finalPage}"]`)).toHaveAttribute("aria-current", "page");
+    await expect(page.locator('[data-primary-navigation-page][aria-busy="true"]')).toHaveCount(0);
+    expect(serverFunctions).toHaveLength(0);
+    expect(errors).toEqual([]);
+  });
+}
+
+test("language invalidation refreshes bootstrap data once and navigation reuses the new locale", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  const serverFunctions: string[] = [];
+  page.on("request", request => { if (request.url().includes("/_serverFn/")) serverFunctions.push(request.url()); });
+  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  await expect(page).toHaveTitle(/Closure/);
+  expect(serverFunctions).toHaveLength(2);
+  serverFunctions.length = 0;
+  // A slow/unavailable bootstrap endpoint must no longer hold ordinary navigation hostage.
+  await page.route("**/_serverFn/**", route => route.abort());
+  for (const target of ["training", "skill-query", "calculator", "manual"]) {
+    await page.locator(`[data-primary-navigation-page="${target}"]`).click();
+    await expect(page.locator(`[data-primary-page="${target}"]`)).toBeVisible();
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  }
+  expect(serverFunctions).toHaveLength(0);
+  await page.unroute("**/_serverFn/**");
+  await page.getByRole("button", { name: "中文", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
+  expect(serverFunctions).toHaveLength(2);
+  await page.reload();
+  await expect(page.locator('[data-primary-page="manual"]')).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
 });

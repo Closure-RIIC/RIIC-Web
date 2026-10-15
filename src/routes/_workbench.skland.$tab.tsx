@@ -10,6 +10,6 @@ export const Route = createFileRoute("/_workbench/skland/$tab")({
     if (!isSklandTab(params.tab)) throw notFound();
     if (params.tab === "overview") throw redirect({ to: "/skland" });
   },
-  head: ({ matches }) => pageHead(matches[0].context.messages, "skland"),
+  head: ({ matches }) => pageHead(matches, "skland"),
   component: withPageScrollbars(SklandRoute),
 });

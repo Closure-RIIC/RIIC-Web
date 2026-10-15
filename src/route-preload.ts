@@ -1,5 +1,5 @@
 /** A single speculative code download; keep only the user's latest intention. */
-export function createIntentPreloader(load: (key: string) => Promise<void>, allowed: () => boolean, delay = 180) {
+export function createIntentPreloader(load: (key: string) => Promise<void>, allowed: () => boolean, delay = 50) {
   const completed = new Set<string>();
   let active: string | undefined;
   let pending: string | undefined;

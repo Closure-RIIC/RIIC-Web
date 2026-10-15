@@ -3,6 +3,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import Page from "@/app/terms/page";
 import { pageHead } from "@/i18n/metadata";
 export const Route = createFileRoute("/terms")({
-  head: ({ matches }) => pageHead(matches[0].context.messages, "terms"),
+  head: ({ matches }) => pageHead(matches, "terms"),
   component: withPageScrollbars(Page),
 });
