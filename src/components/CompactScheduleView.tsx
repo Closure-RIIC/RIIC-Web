@@ -4,7 +4,8 @@ import { useTranslations, useLocale } from "use-intl";
 import type { CSSProperties } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion";
-import { ArrowLeftRight, FileWarning, Trash2 } from "lucide-react";
+import { ArrowLeftRight, Check, FileWarning, Trash2 } from "lucide-react";
+import { Select } from "@base-ui/react/select";
 import { DroneIcon } from "@/components/DroneIcon";
 import { RecyclingRoomNotice } from "@/components/RecyclingRoomNotice";
 
@@ -36,10 +37,11 @@ import {
   roomGridTone,
 } from "@/schedule-view-presentation";
 import type { RoomRow } from "@/schedule";
-import type { BaseBlueprint, MaaPlan } from "@/types";
+import type { BaseBlueprint, MaaPlan, RoomProduct } from "@/types";
 import type { ShiftDirection } from "@/motion";
 import { localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
+import { PRODUCT_ICON_URLS } from "@/product-assets";
 
 export interface CompactScheduleViewProps {
   simulation?: { moods: Readonly<Record<string, number>>; selected: string; onSelect: (name: string) => void };
@@ -64,12 +66,67 @@ export interface CompactScheduleViewProps {
   droneTargetRoomId?: string | null;
   onDroneTargetChange?: (row: RoomRow) => void;
   onManualSkillEfficiencyChange?: (row: RoomRow, value: number | null) => void;
+  roomProducts?: ReadonlyMap<string, RoomProduct>;
+  onFactoryRecipeChange?: (roomId: string, recipe: import("@/blueprint").FactoryRecipe) => void;
+  onTradeOrderChange?: (roomId: string, order: import("@/blueprint").TradeOrder) => void;
+  compactProductControls?: boolean;
 }
 
 /** 布局宽度百分比，自己改数值 */
 const GRID_LEFT_PCT = 55;   // 左大列宽度%
 const GRID_RIGHT_PCT = 45;  // 右大列宽度%
 const COMPACT_AUXILIARY_GROUPS = new Set(["meeting", "training", "hire", "processing", "recycling"]);
+
+function CompactProductSelect({
+  value,
+  label,
+  iconUrl,
+  options,
+  accent,
+  ariaLabel,
+  marginRight,
+  onChange,
+}: {
+  value: string;
+  label: string;
+  iconUrl?: string;
+  options: ReadonlyArray<{ value: string; label: string; iconUrl?: string }>;
+  accent: string;
+  ariaLabel: string;
+  marginRight: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <Select.Root value={value} onValueChange={(next) => { if (typeof next === "string") onChange(next); }}>
+      <Select.Trigger
+        aria-label={ariaLabel}
+        data-compact-product-select
+        style={{ marginRight }}
+        title={label}
+        className={`ml-auto inline-flex size-7 shrink-0 items-center justify-center rounded border bg-[#3C3C3C]/55 p-0.5 text-xs font-medium text-white outline-none hover:bg-[#4B4B4B] focus-visible:border-[#FFD800] ${accent}`}
+      >
+        <Select.Value>
+          {iconUrl ? <img src={iconUrl} alt="" className="size-6 object-contain" aria-hidden="true" /> : <span className="text-[10px]">{label}</span>}
+        </Select.Value>
+      </Select.Trigger>
+      <Select.Portal>
+        <Select.Positioner side="bottom" align="end" sideOffset={4} className="z-50">
+          <Select.Popup className="min-w-32 rounded-md border border-white/15 bg-[#262626] p-1 text-xs text-white shadow-xl outline-none">
+            <Select.List>
+              {options.map((option) => (
+                <Select.Item key={option.value} value={option.value} label={option.label} className="relative flex h-8 cursor-default items-center gap-2 rounded px-2 pr-7 outline-none data-[highlighted]:bg-white/12">
+                  {option.iconUrl ? <img src={option.iconUrl} alt="" className="size-6 object-contain" aria-hidden="true" /> : null}
+                  <Select.ItemText>{option.label}</Select.ItemText>
+                  <Select.ItemIndicator className="absolute right-2"><Check className="size-3.5" /></Select.ItemIndicator>
+                </Select.Item>
+              ))}
+            </Select.List>
+          </Select.Popup>
+        </Select.Positioner>
+      </Select.Portal>
+    </Select.Root>
+  );
+}
 
 function roomSlotCountFor(group: string) {
   if (group === "trading" || group === "manufacture") return 3;
@@ -104,6 +161,10 @@ function CompactRoomCard({
   droneTargetRoomId,
   onDroneTargetChange,
   onManualSkillEfficiencyChange,
+  roomProducts,
+  onFactoryRecipeChange,
+  onTradeOrderChange,
+  compactProductControls = false,
 }: {
   simulation?: CompactScheduleViewProps["simulation"];
   noLayoutSkillOperators?: ReadonlySet<string>;
@@ -130,6 +191,10 @@ function CompactRoomCard({
   droneTargetRoomId?: string | null;
   onDroneTargetChange?: (row: RoomRow) => void;
   onManualSkillEfficiencyChange?: (row: RoomRow, value: number | null) => void;
+  roomProducts?: ReadonlyMap<string, RoomProduct>;
+  onFactoryRecipeChange?: (roomId: string, recipe: import("@/blueprint").FactoryRecipe) => void;
+  onTradeOrderChange?: (roomId: string, order: import("@/blueprint").TradeOrder) => void;
+  compactProductControls?: boolean;
 }) {
   const intl = useTranslations();
   const locale = useLocale();
@@ -183,19 +248,45 @@ function CompactRoomCard({
         </Button>
       ) : null}
         {isTrade ? (() => {
-          const order = tradeOrderFor(layoutRoom!);
+          const product = roomProducts?.get(row.roomId);
+          const order = product && "trade" in product ? product.trade.order : tradeOrderFor(layoutRoom!);
           const accent = compactTradeAccent(order);
           const label = order === "gold" ? intl("components_CompactScheduleView.lmdOrder") : order === "originium" ? intl("components_CompactScheduleView.originiumOrder") : order;
-          return (
+          const iconUrl = order === "originium" ? PRODUCT_ICON_URLS.orundum : PRODUCT_ICON_URLS.lmdOrders;
+          return compactProductControls && onTradeOrderChange ? (
+            <CompactProductSelect
+              value={order}
+              label={label}
+              iconUrl={iconUrl}
+              options={[{ value: "gold", label: en ? "LMD Order" : intl("components_CompactScheduleView.lmdOrder"), iconUrl: PRODUCT_ICON_URLS.lmdOrders }, { value: "originium", label: en ? "Originium Order" : intl("components_CompactScheduleView.originiumOrder"), iconUrl: PRODUCT_ICON_URLS.orundum }]}
+              accent={accent}
+              ariaLabel={`${localizedRoomTitle(row.title, row.group, locale, gameCatalog)}${intl("components.label")}${intl("components.orders")}`}
+              marginRight={onDroneTargetChange ? "5.5rem" : onClearRoom ? "2.75rem" : "2.25rem"}
+              onChange={(next) => onTradeOrderChange(row.roomId, next as import("@/blueprint").TradeOrder)}
+            />
+          ) : (
             <div data-compact-product-badge style={{ marginRight: onDroneTargetChange ? "5.5rem" : onClearRoom ? "2.75rem" : "2.25rem" }} className={`ml-auto flex h-7 shrink-0 items-center justify-center whitespace-nowrap rounded border px-2 text-xs ${en ? "w-[118px]" : "w-[90px]"} ${accent}`}>
               {label}
             </div>
           );
         })() : isFactory ? (() => {
-          const recipe = factoryRecipeFor(layoutRoom!);
+          const product = roomProducts?.get(row.roomId);
+          const recipe = product && "factory" in product ? product.factory.recipe : factoryRecipeFor(layoutRoom!);
           const accent = compactFactoryAccent(recipe);
           const label = recipe === "all" ? intl("components_CompactScheduleView.auto") : recipe === "gold" ? intl("components_CompactScheduleView.pureGold") : recipe === "battle_record" ? intl("components_CompactScheduleView.battleRecord") : recipe === "originium" ? intl("components_CompactScheduleView.originiumShard") : recipe;
-          return (
+          const iconUrl = recipe === "gold" ? PRODUCT_ICON_URLS.gold : recipe === "battle_record" ? PRODUCT_ICON_URLS.experience : recipe === "originium" ? PRODUCT_ICON_URLS.shards : undefined;
+          return compactProductControls && onFactoryRecipeChange ? (
+            <CompactProductSelect
+              value={recipe}
+              label={label}
+              iconUrl={iconUrl}
+              options={[{ value: "gold", label: en ? "Pure Gold" : intl("components_CompactScheduleView.pureGold"), iconUrl: PRODUCT_ICON_URLS.gold }, { value: "battle_record", label: en ? "Battle Records" : intl("components_CompactScheduleView.battleRecord"), iconUrl: PRODUCT_ICON_URLS.experience }, { value: "originium", label: en ? "Originium Shards" : intl("components_CompactScheduleView.originiumShard"), iconUrl: PRODUCT_ICON_URLS.shards }]}
+              accent={accent}
+              ariaLabel={`${localizedRoomTitle(row.title, row.group, locale, gameCatalog)}${intl("components.label")}${intl("components.recipe")}`}
+              marginRight={onDroneTargetChange ? "5.5rem" : onClearRoom ? "2.75rem" : "2.25rem"}
+              onChange={(next) => onFactoryRecipeChange(row.roomId, next as import("@/blueprint").FactoryRecipe)}
+            />
+          ) : (
             <div data-compact-product-badge style={{ marginRight: onDroneTargetChange ? "5.5rem" : onClearRoom ? "2.75rem" : "2.25rem" }} className={`ml-auto flex h-7 shrink-0 items-center justify-center whitespace-nowrap rounded border px-2 text-xs ${en ? "w-[118px]" : "w-[90px]"} ${accent}`}>
               {label}
             </div>
@@ -444,7 +535,7 @@ function CompactFeedbackButton({ row, disabled, offset, onIssue }: { row: RoomRo
 export function CompactScheduleView(props: CompactScheduleViewProps) {
   const intl = useTranslations();
   const locale = useLocale();
-  const { rows, layout, eliteByOperator, levelByOperator, shiftDirection, onIssue, feedbackDisabled = false, hideImages = false, onSlotClick, sortRoomId, sortSelection, onSortToggle, onSortSlotClick, onClearRoom, onDormAutofillChange, droneTargetRoomId, onDroneTargetChange, onManualSkillEfficiencyChange } = props;
+  const { rows, layout, eliteByOperator, levelByOperator, shiftDirection, onIssue, feedbackDisabled = false, hideImages = false, onSlotClick, sortRoomId, sortSelection, onSortToggle, onSortSlotClick, onClearRoom, onDormAutofillChange, droneTargetRoomId, onDroneTargetChange, onManualSkillEfficiencyChange, roomProducts, compactProductControls = false } = props;
 
   if (rows.length === 0) {
     return (
@@ -506,6 +597,10 @@ export function CompactScheduleView(props: CompactScheduleViewProps) {
         droneTargetRoomId={droneTargetRoomId}
         onDroneTargetChange={onDroneTargetChange}
         onManualSkillEfficiencyChange={onManualSkillEfficiencyChange}
+        roomProducts={roomProducts}
+        onFactoryRecipeChange={props.onFactoryRecipeChange}
+        onTradeOrderChange={props.onTradeOrderChange}
+        compactProductControls={compactProductControls}
         horizontal={COMPACT_AUXILIARY_GROUPS.has(row.group)}
         className="min-w-0"
         style={widthPercent !== undefined ? { flexBasis: `${widthPercent}%` } : { flex: 1 }}

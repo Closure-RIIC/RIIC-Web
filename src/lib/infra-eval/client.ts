@@ -9,7 +9,7 @@ export type NativeEvalAssignedOperator = {
 
 export type NativeEvalShift = {
   duration_hours: number;
-  rooms: Array<{ room_id: string; operators: NativeEvalAssignedOperator[] }>;
+  rooms: Array<{ room_id: string; operators: NativeEvalAssignedOperator[]; product?: unknown }>;
   training_assist?: NativeEvalAssignedOperator;
 };
 

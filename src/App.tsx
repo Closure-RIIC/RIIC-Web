@@ -113,6 +113,7 @@ import {
   PublicPlanData,
   PresetDef,
   RotationProfile,
+  RoomProduct,
   SavedPlanData,
   ShiftComparison,
   SklandAccountSummary,
@@ -314,6 +315,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [manualShiftStartTime, setManualShiftStartTime] = useState(DEFAULT_MANUAL_SHIFT_START_TIME);
   const [manualScheduleMode, setManualScheduleMode] = useState<ManualScheduleMode>("sequential");
   const [manualDraftHandoff, setManualDraftHandoff] = useState<ManualScheduleDraft | null>(null);
+  const [manualDraftSnapshot, setManualDraftSnapshot] = useState<ManualScheduleDraft | null>(null);
+  const [manualProductChangeRequest, setManualProductChangeRequest] = useState<{ shiftIndex: number; roomId: string; product: RoomProduct; token: number } | null>(null);
+  const manualProductChangeToken = useRef(0);
   const [manualPlanResult, setManualPlanResult] = useState<ManualPlanResult | null>(null);
   const [manualEvaluationPending, setManualEvaluationPending] = useState(false);
   const [pendingManualDraftReplacement, setPendingManualDraftReplacement] = useState<ManualScheduleDraft | null>(null);
@@ -1724,6 +1728,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     requestScheduleProductChange({ type: "trade", roomId, order });
   }
 
+  function handleManualSetupProductChange(shiftIndex: number, roomId: string, product: RoomProduct) {
+    manualProductChangeToken.current += 1;
+    setManualProductChangeRequest({ shiftIndex, roomId, product, token: manualProductChangeToken.current });
+  }
+
   function handleScheduleDroneTargetChange(row: RoomRow) {
     setManualDroneShifts((current) => ({ ...current, [activeShift]: true }));
     setResult((current) => {
@@ -2287,6 +2296,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       scheduleMode: manualScheduleMode,
       fiammettaEnabled: effectiveManualFiammettaEnabled,
       initialDraft: accountCanUseCurrentBox ? manualDraftHandoff : null,
+      onDraftChange: setManualDraftSnapshot,
+      manualProductChangeRequest,
+      onManualProductChangeRequestConsumed: (token: number) => {
+        setManualProductChangeRequest((current) => current?.token === token ? null : current);
+      },
       restorationReady: hasRestoredSession,
       onInitialDraftConsumed: () => setManualDraftHandoff(null),
       result: manualPlanResult,
@@ -2303,8 +2317,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       recyclingRoomLevel: userSettings.recyclingRoomLevel,
       onFiammettaEnabledChange: setManualFiammettaEnabled,
       onOpenSetup: handleManualSetup,
-      onFactoryRecipeChange: handleFactoryRecipeChange,
-      onTradeOrderChange: handleTradeOrderChange,
       strictMaaOperatorOrder: userSettings.strictMaaOperatorOrder,
       allowReplacementOperatorSort: userSettings.allowReplacementOperatorSort,
       scheduleViewControl: userSettings.scheduleViewControl,
@@ -2578,6 +2590,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         preset={preset}
         layout={layout}
         configurationKey={setupMode === "manual" ? `${setupConfigurationKey}:${manualScheduleMode}:${manualShiftStartTime}:${manualShiftDurations.join(",")}:${manualFiammettaEnabled}` : setupConfigurationKey}
+        manualDraft={setupMode === "manual" ? manualDraftSnapshot : null}
+        onManualProductChange={setupMode === "manual" ? handleManualSetupProductChange : undefined}
         rotationProfile={setupMode === "manual" ? DEFAULT_ROTATION_PROFILE : rotationProfile}
         onRotationProfileChange={handleRotationProfileChange}
         manualShiftDurations={manualShiftDurations}
