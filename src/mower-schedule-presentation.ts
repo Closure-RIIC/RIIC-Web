@@ -4,7 +4,7 @@ import type { RoomGroup, RoomRow } from "./schedule.ts";
 import type { BaseBlueprint, RoomKind, RoomProduct } from "./types.ts";
 
 const fixedGroups: Record<string, RoomGroup> = {
-  central: "control", meeting: "meeting", factory: "processing", contact: "hire", train: "training",
+  central: "control", meeting: "meeting", factory: "processing", contact: "hire", train: "training", recycle: "recycling",
 };
 const kinds: Record<Exclude<RoomGroup, "recycling">, RoomKind> = {
   control: "control_center", trading: "trade_post", manufacture: "factory", power: "power_plant",
@@ -32,10 +32,10 @@ export function mowerSchedulePresentation(plan: Record<string, MowerFacility | n
     let product: RoomProduct | undefined;
     if (group === "trading") product = { trade: { order: facility?.product === "orundum" ? "originium" : "gold" } };
     if (group === "manufacture") product = { factory: { recipe: facility?.product === "exp3" ? "battle_record" : facility?.product === "orirock" ? "originium" : "gold" } };
-    if (group === "recycling") continue;
-    layout.rooms.push({ id: key, kind: kinds[group], level: group === "dormitory" ? 5 : 3, product });
+    // Recycling is an editor-only facility, outside the solver blueprint contract.
+    if (group !== "recycling") layout.rooms.push({ id: key, kind: kinds[group], level: group === "dormitory" ? 5 : 3, product });
     rows.push({
-      key, roomId: key, group, groupLabel: name, index,
+      key, roomId: key, group, groupLabel: name, index, level: group === "dormitory" ? 5 : 3,
       title: key.startsWith("room_") ? `${name} B${key.split("_")[1]}0${key.split("_")[2]}` : fixed?.name ?? name,
       operators: operatorSlots.map((slot) => slot.name), operatorSlots, slotAssignments,
       autofill: false, rule: "", suspicious: false,
