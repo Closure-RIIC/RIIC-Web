@@ -1102,6 +1102,9 @@ export async function mockApis(
 }
 
 export async function openSklandOverview(page: Page) {
+  // These signed-in fixtures expose Agent history. Wait for its async insertion
+  // above the personal navigation so WebKit does not click a moving target.
+  await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
   await page.getByRole("button", { name: "森空岛状态中心", exact: true }).click();
   await expect(page.locator("[data-skland-page]")).toBeVisible({ timeout: 45_000 });
   await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCount(0);

@@ -64,5 +64,20 @@
   "moveOperator": "移动干员",
   "evaluateBasedOnCurrentScheduleUnavailable": "按当前排班评估暂未接入",
   "calculateBasedOnSchedule": "根据排班计算",
-  "calculateBasedOnEfficiency": "根据效率计算"
+  "calculateBasedOnEfficiency": "根据效率计算",
+  "dormBatchEdit": "宿舍安排（{capacity}）",
+  "dormBatchEditTitle": "宿舍安排",
+  "dormBatchDescription": "最多选择 {capacity} 名干员；已选干员按序号置顶，点击头像选择或取消，应用后按序号填入当前班次宿舍。",
+  "searchAvailableOperators": "搜索可选干员",
+  "searchOperatorSkillOrEffect": "搜索干员、技能或效果",
+  "dormBatchSelected": "已选 {count}/{capacity}",
+  "restRequired": "需要休息",
+  "restRequiredDescription": "上一班上班、本班次未上班",
+  "selectAll": "一键全选",
+  "selected": "已选",
+  "applyDormBatch": "应用宿舍安排",
+  "restPreviousShift": "让上一班下班休息",
+  "facility": "设施",
+  "room": "房间",
+  "thisOperator": "该干员"
 }

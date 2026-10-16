@@ -1,6 +1,6 @@
 "use client";
 
-import { INFRA_EVAL_MANIFEST } from "./manifest";
+import { INFRA_EVAL_MANIFEST_URL } from "./manifest";
 
 export type NativeEvalAssignedOperator = {
   name: string;
@@ -9,7 +9,7 @@ export type NativeEvalAssignedOperator = {
 
 export type NativeEvalShift = {
   duration_hours: number;
-  rooms: Array<{ room_id: string; operators: NativeEvalAssignedOperator[] }>;
+  rooms: Array<{ room_id: string; operators: NativeEvalAssignedOperator[]; product?: unknown }>;
   training_assist?: NativeEvalAssignedOperator;
 };
 
@@ -87,7 +87,38 @@ type WasmBindings = {
   evaluate_v1: (request: string) => string;
 };
 
+type InfraEvalManifest = {
+  api: string;
+  ruleset: string;
+  glueUrl: string;
+  wasmUrl: string;
+};
+
 let bindingsPromise: Promise<WasmBindings> | null = null;
+let manifestPromise: Promise<InfraEvalManifest> | null = null;
+
+async function loadManifest(): Promise<InfraEvalManifest> {
+  const response = await fetch(INFRA_EVAL_MANIFEST_URL, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Failed to load WASM manifest (${response.status})`);
+  const value = await response.json() as Partial<InfraEvalManifest>;
+  if (typeof value.api !== "string" || typeof value.ruleset !== "string"
+    || typeof value.glueUrl !== "string" || typeof value.wasmUrl !== "string") {
+    throw new Error("WASM manifest is invalid");
+  }
+  return value as InfraEvalManifest;
+}
+
+async function loadGlueModule(url: string): Promise<WasmBindings> {
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Failed to load WASM glue (${response.status})`);
+  const source = await response.text();
+  const moduleUrl = URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+  try {
+    return await import(/* @vite-ignore */ moduleUrl) as WasmBindings;
+  } finally {
+    URL.revokeObjectURL(moduleUrl);
+  }
+}
 
 function validResponse(value: unknown): value is NativeEvalResponseV1 | NativeEvalErrorResponseV1 {
   if (!value || typeof value !== "object") return false;
@@ -100,11 +131,14 @@ function validResponse(value: unknown): value is NativeEvalResponseV1 | NativeEv
 
 export async function evaluateNativeSchedule(request: NativeEvalRequestV1): Promise<NativeEvalResponseV1> {
   const bindings = await (bindingsPromise ??= (async () => {
-    const glueUrl = "/wasm/infra_eval_wasm.js";
-    const module = await import(/* @vite-ignore */ glueUrl) as WasmBindings;
-    await module.default(INFRA_EVAL_MANIFEST.wasmUrl);
-    if (module.eval_api_version() !== INFRA_EVAL_MANIFEST.api) {
-      throw new Error(`WASM API mismatch: expected ${INFRA_EVAL_MANIFEST.api}`);
+    const manifest = await (manifestPromise ??= loadManifest().catch((error) => {
+      manifestPromise = null;
+      throw error;
+    }));
+    const module = await loadGlueModule(manifest.glueUrl);
+    await module.default(manifest.wasmUrl);
+    if (module.eval_api_version() !== manifest.api) {
+      throw new Error(`WASM API mismatch: expected ${manifest.api}`);
     }
     return module;
   })().catch((error) => {
@@ -114,7 +148,8 @@ export async function evaluateNativeSchedule(request: NativeEvalRequestV1): Prom
 
   const parsed: unknown = JSON.parse(bindings.evaluate_v1(JSON.stringify(request)));
   if (!validResponse(parsed)) throw new Error("WASM evaluator returned an invalid response");
-  if (parsed.engine.api !== INFRA_EVAL_MANIFEST.api || parsed.engine.ruleset !== INFRA_EVAL_MANIFEST.ruleset) {
+  const manifest = await (manifestPromise ??= loadManifest());
+  if (parsed.engine.api !== manifest.api || parsed.engine.ruleset !== manifest.ruleset) {
     throw new Error("WASM evaluator ruleset mismatch");
   }
   if (parsed.status === "error") {

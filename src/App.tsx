@@ -112,6 +112,7 @@ import {
   PublicPlanData,
   PresetDef,
   RotationProfile,
+  RoomProduct,
   SavedPlanData,
   ShiftComparison,
   SklandAccountSummary,
@@ -161,7 +162,7 @@ const ManualDraftReplaceDialog = lazy(() => import("@/components/ManualDraftRepl
 type ProductChange =
   | { type: "factory"; roomId: string; recipe: FactoryRecipe }
   | { type: "trade"; roomId: string; order: TradeOrder };
-type WebsiteAuthIntent = "account" | "manual" | "manual-edit" | "run" | "setup" | "skland" | "upgrade" | "mastery";
+type WebsiteAuthIntent = "account" | "billing" | "manual" | "manual-edit" | "run" | "setup" | "skland" | "upgrade" | "mastery";
 
 type SklandFullRestoreResult =
   | { session: SklandSessionData; error?: never }
@@ -312,6 +313,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [manualShiftStartTime, setManualShiftStartTime] = useState(DEFAULT_MANUAL_SHIFT_START_TIME);
   const [manualScheduleMode, setManualScheduleMode] = useState<ManualScheduleMode>("sequential");
   const [manualDraftHandoff, setManualDraftHandoff] = useState<ManualScheduleDraft | null>(null);
+  const [manualDraftSnapshot, setManualDraftSnapshot] = useState<ManualScheduleDraft | null>(null);
+  const [manualProductChangeRequest, setManualProductChangeRequest] = useState<{ shiftIndex: number; roomId: string; product: RoomProduct; token: number } | null>(null);
+  const manualProductChangeToken = useRef(0);
   const [manualPlanResult, setManualPlanResult] = useState<ManualPlanResult | null>(null);
   const [manualEvaluationPending, setManualEvaluationPending] = useState(false);
   const [pendingManualDraftReplacement, setPendingManualDraftReplacement] = useState<ManualScheduleDraft | null>(null);
@@ -1713,6 +1717,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     requestScheduleProductChange({ type: "trade", roomId, order });
   }
 
+  function handleManualSetupProductChange(shiftIndex: number, roomId: string, product: RoomProduct) {
+    manualProductChangeToken.current += 1;
+    setManualProductChangeRequest({ shiftIndex, roomId, product, token: manualProductChangeToken.current });
+  }
+
   function handleScheduleDroneTargetChange(row: RoomRow) {
     setManualDroneShifts((current) => ({ ...current, [activeShift]: true }));
     setResult((current) => {
@@ -1820,7 +1829,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       requestWebsiteAccount("manual", trigger);
       return false;
     }
-    if ((nextPage === "account" || nextPage === "skland") && !websiteSession) {
+    if ((nextPage === "account" || nextPage === "billing" || nextPage === "skland") && !websiteSession) {
       requestWebsiteAccount(nextPage, trigger);
       return false;
     }
@@ -1963,7 +1972,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       router.push(workbenchHref("mastery"));
       return;
     }
-    router.push(workbenchHref(intent === "skland" ? "skland" : "account"));
+    router.push(workbenchHref(intent));
   };
 
   function useSklandSnapshotFromSetup() {
@@ -2276,6 +2285,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       scheduleMode: manualScheduleMode,
       fiammettaEnabled: effectiveManualFiammettaEnabled,
       initialDraft: accountCanUseCurrentBox ? manualDraftHandoff : null,
+      onDraftChange: setManualDraftSnapshot,
+      manualProductChangeRequest,
+      onManualProductChangeRequestConsumed: (token: number) => {
+        setManualProductChangeRequest((current) => current?.token === token ? null : current);
+      },
       restorationReady: hasRestoredSession,
       onInitialDraftConsumed: () => setManualDraftHandoff(null),
       result: manualPlanResult,
@@ -2292,8 +2306,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       recyclingRoomLevel: userSettings.recyclingRoomLevel,
       onFiammettaEnabledChange: setManualFiammettaEnabled,
       onOpenSetup: handleManualSetup,
-      onFactoryRecipeChange: handleFactoryRecipeChange,
-      onTradeOrderChange: handleTradeOrderChange,
       strictMaaOperatorOrder: userSettings.strictMaaOperatorOrder,
       allowReplacementOperatorSort: userSettings.allowReplacementOperatorSort,
       scheduleViewControl: userSettings.scheduleViewControl,
@@ -2567,6 +2579,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         preset={preset}
         layout={layout}
         configurationKey={setupMode === "manual" ? `${setupConfigurationKey}:${manualScheduleMode}:${manualShiftStartTime}:${manualShiftDurations.join(",")}:${manualFiammettaEnabled}` : setupConfigurationKey}
+        manualDraft={setupMode === "manual" ? manualDraftSnapshot : null}
+        onManualProductChange={setupMode === "manual" ? handleManualSetupProductChange : undefined}
         rotationProfile={setupMode === "manual" ? DEFAULT_ROTATION_PROFILE : rotationProfile}
         onRotationProfileChange={handleRotationProfileChange}
         manualShiftDurations={manualShiftDurations}

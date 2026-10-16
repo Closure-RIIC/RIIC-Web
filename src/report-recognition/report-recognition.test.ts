@@ -98,6 +98,18 @@ test("PC trade rows include LMD order counts", async () => {
   assert.ok(result.days.every((day) => (day.orderCount?.maxDistance ?? 1) <= RECOGNITION_CONFIDENT_DISTANCE));
 });
 
+test("dark-panel report keeps every order count inside the confident distance", async () => {
+  const result = await recognizeFixture("three-day-dark-panel-orders.png");
+  assert.ok(!("ok" in result));
+  if ("ok" in result) return;
+  assert.equal(result.kind, "three-day");
+  assert.equal(result.panelCount, 3);
+  assert.deepEqual(result.days.map((day) => day.lmd?.value), [78000, 76000, 84200]);
+  assert.deepEqual(result.days.map((day) => day.orderCount?.value), [44, 45, 50]);
+  // 第三面板的白色订单数字比模板细一档，修复前距离 0.201 会被界面当作不可信而留空。
+  assert.ok(result.days.every((day) => (day.orderCount?.maxDistance ?? 1) <= RECOGNITION_CONFIDENT_DISTANCE));
+});
+
 test("compressed screenshot still locates all three facility panels", async () => {
   const result = await recognizeFixture("compressed-three-day.jpg");
   assert.ok(!("ok" in result));

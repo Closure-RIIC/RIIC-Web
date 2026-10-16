@@ -624,12 +624,16 @@ test("gacha groups each six-star result with its draw bar and only intervening f
   await expect(content.locator('[data-gacha-summary-metric="orundum"] strong > span').first()).toHaveText("64,200");
   await expect(intervals).toHaveCount(3);
   await expect(lower.getByRole("listitem")).toHaveCount(1);
-  const showFiveStars = content.getByRole("switch", { name: "显示五星寻访记录" });
-  await expect(showFiveStars).toBeChecked();
+  const showFiveStars = content.getByRole("group", { name: "寻访记录操作" }).getByRole("button", { name: "展示五星", exact: true });
+  await expect(content.locator("[data-gacha-summary-metric]")).toHaveCount(5);
+  await expect(content.locator("[data-gacha-summary]").getByRole("button", { name: "展示五星" })).toHaveCount(0);
+  await expect(showFiveStars).toHaveAttribute("aria-pressed", "true");
+  await expect(showFiveStars).toHaveCSS("background-color", "rgb(0, 0, 0)");
   const connector = sequence.locator("[data-gacha-multi-six]");
   const expandedHeight = (await connector.boundingBox())!.height;
   await showFiveStars.click();
-  await expect(showFiveStars).not.toBeChecked();
+  await expect(showFiveStars).toHaveAttribute("aria-pressed", "false");
+  await expect(showFiveStars).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(sequence.locator('[data-gacha-stars="5"]')).toHaveCount(0);
   await expect(sequence.locator('[data-gacha-stars="6"]')).toHaveCount(3);
   await expect(upPortraits).toHaveCount(3);
@@ -642,7 +646,7 @@ test("gacha groups each six-star result with its draw bar and only intervening f
   }).toBeLessThan(1);
   await showFiveStars.focus();
   await page.keyboard.press("Space");
-  await expect(showFiveStars).toBeChecked();
+  await expect(showFiveStars).toHaveAttribute("aria-pressed", "true");
   await expect(sequence.locator('[data-gacha-stars="5"]')).toHaveCount(101);
 });
 
@@ -766,6 +770,14 @@ test.describe("gacha touch layout", () => {
       await expect(content.locator("[data-gacha-record-start]")).toBeHidden();
       const toolbar = content.getByRole("group", { name: "寻访记录操作" });
       await expect(toolbar).toHaveCSS("position", "fixed");
+      const fiveStarToggle = toolbar.getByRole("button", { name: "展示五星", exact: true });
+      await expect(fiveStarToggle).toHaveCSS("background-color", "rgb(0, 0, 0)");
+      await fiveStarToggle.click();
+      await expect(fiveStarToggle).toHaveAttribute("aria-pressed", "false");
+      await expect(fiveStarToggle).toHaveCSS("background-color", "rgb(255, 255, 255)");
+      await expect(content.locator('[data-gacha-pool-card] [data-gacha-stars="5"]')).toHaveCount(0);
+      await fiveStarToggle.click();
+      await expect(fiveStarToggle).toHaveAttribute("aria-pressed", "true");
       let previousBottom = -1;
       for (const button of await toolbar.getByRole("button").all()) {
         await expect(button).toHaveCSS("border-radius", "50%");
@@ -914,19 +926,7 @@ test("gacha authorization dialog offers consent-gated Skland reuse with a QR fal
 test("mobile dark mode keeps every non-QR Skland state legible from first paint", async ({ page }) => {
   test.slow();
   await page.addInitScript(() => {
-    const enableDarkMode = () => {
-      const root = document.documentElement;
-      if (!root) return false;
-      root.classList.add("dark");
-      return true;
-    };
-    if (!enableDarkMode()) {
-      const observer = new MutationObserver(() => {
-        if (!enableDarkMode()) return;
-        observer.disconnect();
-      });
-      observer.observe(document, { childList: true });
-    }
+    localStorage.setItem("riic-color-mode", "dark");
   });
   await page.emulateMedia({ colorScheme: "dark", forcedColors: "none" });
   await page.setViewportSize({ width: 375, height: 812 });

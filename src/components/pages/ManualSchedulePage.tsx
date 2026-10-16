@@ -3,6 +3,7 @@ import { useTranslations, useLocale } from "use-intl";
 
 import { ArrowLeft, Download, Ellipsis, Search, Settings2, Sparkles, Trash2, Upload, X } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import type { FactoryRecipe, TradeOrder } from "@/blueprint";
 import { filterOperators, ROOM_SKILL_TAGS, type BuildingRoomPrefix } from "@/building-rooms";
@@ -53,9 +54,11 @@ import {
   persistManualScheduleDraft,
   reconcileManualScheduleDraft,
   resizeManualScheduleDraft,
+  restPreviousShiftOperators,
   setManualDormAutofill,
   setManualDroneTarget,
   setManualRoomSkillEfficiency,
+  setManualRoomProduct,
   swapManualOperators,
   type ManualOperatorConflict,
   type ManualScheduleDraft,
@@ -116,8 +119,9 @@ export interface ManualSchedulePageProps {
   onImportedLayoutChange: (layout: BaseBlueprint) => void;
   onFiammettaEnabledChange: (enabled: boolean) => void;
   onOpenSetup: () => void;
-  onFactoryRecipeChange: (roomId: string, recipe: FactoryRecipe) => void;
-  onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
+  onDraftChange?: (draft: ManualScheduleDraft) => void;
+  manualProductChangeRequest?: { shiftIndex: number; roomId: string; product: import("@/types").RoomProduct; token: number } | null;
+  onManualProductChangeRequestConsumed?: (token: number) => void;
   strictMaaOperatorOrder: boolean;
   allowReplacementOperatorSort: boolean;
   scheduleViewControl?: "tabs" | "select";
@@ -171,6 +175,7 @@ function countMaaAssignments(maa: MaaJson): number {
 function ManualOperatorChoice({
   operator,
   selected,
+  selectionNumber,
   assignmentLabel,
   en,
   tooltipDisabled,
@@ -178,6 +183,7 @@ function ManualOperatorChoice({
 }: {
   operator: OperBoxEntry;
   selected: boolean;
+  selectionNumber?: number;
   assignmentLabel?: string;
   en: boolean;
   tooltipDisabled: boolean;
@@ -189,27 +195,31 @@ function ManualOperatorChoice({
   const presentation = operatorPresentationFor({ name: operator.name, id: operator.id });
   return (
     <div
-      className="flex min-h-[calc(var(--manual-picker-portrait-size)+2.5rem)] flex-col items-center justify-start rounded-[4px] py-1 transition-colors hover:bg-muted/45 [&_.infra-operator-slot]:[--operator-slot-size:var(--manual-picker-portrait-size)]"
+      className={`relative flex min-h-[calc(var(--manual-picker-portrait-size)+2.5rem)] flex-col items-center justify-start rounded-[4px] py-1 transition-colors hover:bg-muted/45 [&_.infra-operator-slot]:[--operator-slot-size:var(--manual-picker-portrait-size)] ${selected ? "bg-[#FFD800]/12 ring-2 ring-[#FFD800] ring-offset-1 ring-offset-background" : ""}`}
       data-manual-operator-choice
       data-current-selection={selected ? "" : undefined}
+      onDragStart={(event) => event.preventDefault()}
     >
       <span className={`mb-1 block h-4 max-w-full truncate text-center text-[11px] font-medium leading-4 ${assignmentLabel ? "text-popover-foreground" : "invisible"}`}>
         {assignmentLabel ?? intl("components_pages_ManualSchedulePage.unassigned")}
       </span>
-      <OperatorSlot
-        slot={{
-          name: operator.name,
-          label: displayName,
-          portrait: presentation.portrait,
-          profession: presentation.operator?.profession,
-        }}
-        elite={operator.elite}
-        operatorLevel={operator.level}
-        showSkillTooltip
-        selectionMode
-        tooltipDisabled={tooltipDisabled}
-        onActivate={onChoose}
-      />
+      <div className="relative">
+        <OperatorSlot
+          slot={{
+            name: operator.name,
+            label: displayName,
+            portrait: presentation.portrait,
+            profession: presentation.operator?.profession,
+          }}
+          elite={operator.elite}
+          operatorLevel={operator.level}
+          showSkillTooltip
+          selectionMode
+          tooltipDisabled={tooltipDisabled}
+          onActivate={onChoose}
+        />
+        {selectionNumber ? <span data-selection-number className="pointer-events-none absolute right-0 top-0 z-10 grid size-5 place-items-center rounded-full bg-[#FFD800] text-[11px] font-bold text-[#313131] shadow-sm">{selectionNumber}</span> : null}
+      </div>
     </div>
   );
 }
@@ -238,8 +248,9 @@ export function ManualSchedulePage({
   onImportedLayoutChange,
   onFiammettaEnabledChange,
   onOpenSetup,
-  onFactoryRecipeChange,
-  onTradeOrderChange,
+  onDraftChange,
+  manualProductChangeRequest,
+  onManualProductChangeRequestConsumed,
   strictMaaOperatorOrder,
   allowReplacementOperatorSort,
   scheduleViewControl = "tabs",
@@ -254,10 +265,22 @@ export function ManualSchedulePage({
   const gameCatalog = useGameCatalog();
   const en = locale === "en";
   const [draft, setDraft] = useState<ManualScheduleDraft>(() => createManualScheduleDraft(shiftDurations, shiftStartTime, scheduleMode));
+  useEffect(() => { onDraftChange?.(draft); }, [draft, onDraftChange]);
+  useEffect(() => {
+    const request = manualProductChangeRequest;
+    if (!request) return;
+    setDraft((current) => setManualRoomProduct(current, layout, request.shiftIndex, request.roomId, request.product));
+    onManualProductChangeRequestConsumed?.(request.token);
+  }, [layout, manualProductChangeRequest, onManualProductChangeRequestConsumed]);
   const [moodRevision, setMoodRevision] = useState(0);
   const [moodSettingsOpen, setMoodSettingsOpen] = useState(false);
   const [restored, setRestored] = useState(false);
   const [picker, setPicker] = useState<PickerTarget | null>(null);
+  const [dormBatchOpen, setDormBatchOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const dormPickerPageSize = isMobile ? 12 : MANUAL_PICKER_PAGE_SIZE;
+  const [dormBatchSelection, setDormBatchSelection] = useState<string[]>([]);
+  const [dormRestOnly, setDormRestOnly] = useState(false);
   const [pickerQuery, setPickerQuery] = useState("");
   const [maaImportPreview, setMaaImportPreview] = useState<MaaImportPreview | null>(null);
   const [maaImportError, setMaaImportError] = useState<string | null>(null);
@@ -355,6 +378,15 @@ export function ManualSchedulePage({
   const shiftRanges = manualShiftTimeRanges(draft.startTime, draft.shifts.map((shift) => shift.durationHours));
   const maa = useMemo(() => manualScheduleToMaa(draft, layout, fiammettaEnabled), [draft, fiammettaEnabled, layout]);
   const activePlan = maa.plans[activeShift];
+  const activeRoomProducts = useMemo(() => new Map(
+    layout.rooms
+      .filter((room) => room.kind === "trade_post" || room.kind === "factory")
+      .flatMap((room) => {
+        const product = draft.shifts[activeShift]?.rooms[room.id]?.product
+          ?? room.product;
+        return product ? [[room.id, product] as const] : [];
+      }),
+  ), [activeShift, draft.shifts, layout.rooms]);
   const activeDronePlan = maa.plans[droneStoragePlanIndex(activeShift, maa.plans.length)];
   const trainingRoom = layout.rooms.find((room) => room.kind === "training_room");
   const trainingAssignment = trainingRoom ? draft.shifts[activeShift]?.rooms[trainingRoom.id] : undefined;
@@ -363,6 +395,11 @@ export function ManualSchedulePage({
     trainer: trainingAssignment?.operators[1] ?? null,
   } : undefined, [trainingAssignment?.operators, trainingRoom]);
   const activeEvaluationShift = result?.rotation.shifts[activeShift];
+  const dormRooms = useMemo(() => layout.rooms.filter((room) => room.kind === "dormitory"), [layout.rooms]);
+  const dormBatchCapacity = useMemo(
+    () => dormRooms.reduce((total, room) => total + manualRoomCapacity(room), 0),
+    [dormRooms],
+  );
   const rows = useMemo(
     () => addOperatorPresentations(withRecyclingRoom(planToRows(activePlan, activeEvaluationShift, layout, activeTrainingRoomShift), recyclingRoomLevel).map((row) => {
       const assignment = draft.shifts[activeShift]?.rooms[row.roomId];
@@ -422,10 +459,36 @@ export function ManualSchedulePage({
       .filter((operator) => pickerRarity === null || operator.box.rarity === pickerRarity)
       .map((operator) => operator.box);
   }, [assignedOperatorNames, ownedOperators, picker?.kind, pickerQuery, pickerRarity, pickerRoomFilter, pickerSkillTag]);
+  const previousShiftOperatorNames = useMemo(() => new Set(
+    activeShift > 0
+      ? Object.entries(draft.shifts[activeShift - 1]?.rooms ?? {})
+        .filter(([roomId]) => layout.rooms.find((room) => room.id === roomId)?.kind !== "dormitory")
+        .flatMap(([, room]) => room.operators.filter(Boolean))
+      : [],
+  ), [activeShift, draft.shifts, layout.rooms]);
+  const currentShiftOperatorNames = useMemo(() => new Set(
+    Object.entries(draft.shifts[activeShift]?.rooms ?? {})
+      .filter(([roomId]) => layout.rooms.find((room) => room.id === roomId)?.kind !== "dormitory")
+      .flatMap(([, room]) => room.operators.filter(Boolean)),
+  ), [activeShift, draft.shifts, layout.rooms]);
+  const dormFilteredOperators = useMemo(() => {
+    const candidates = dormRestOnly
+      ? filteredOperators.filter((operator) => previousShiftOperatorNames.has(operator.name) && !currentShiftOperatorNames.has(operator.name))
+      : filteredOperators;
+    const selectionOrder = new Map(dormBatchSelection.map((name, index) => [name, index]));
+    return [...candidates].sort((a, b) =>
+      (selectionOrder.get(a.name) ?? Number.MAX_SAFE_INTEGER) - (selectionOrder.get(b.name) ?? Number.MAX_SAFE_INTEGER));
+  }, [currentShiftOperatorNames, dormBatchSelection, dormRestOnly, filteredOperators, previousShiftOperatorNames]);
   const pickerPageCount = Math.max(1, Math.ceil(filteredOperators.length / MANUAL_PICKER_PAGE_SIZE));
+  const dormPickerPageCount = Math.max(1, Math.ceil(dormFilteredOperators.length / dormPickerPageSize));
+  const dormPickerPage = Math.min(pickerPage, dormPickerPageCount);
   const visibleOperators = filteredOperators.slice(
     (pickerPage - 1) * MANUAL_PICKER_PAGE_SIZE,
     pickerPage * MANUAL_PICKER_PAGE_SIZE,
+  );
+  const dormVisibleOperators = dormFilteredOperators.slice(
+    (dormPickerPage - 1) * dormPickerPageSize,
+    dormPickerPage * dormPickerPageSize,
   );
   const emptyOperatorChoiceCount = MANUAL_PICKER_PAGE_SIZE - visibleOperators.length;
   const availableSkillTags = pickerRoomFilter ? ROOM_SKILL_TAGS[pickerRoomFilter] : [];
@@ -455,6 +518,57 @@ export function ManualSchedulePage({
     setPickerRarity(null);
     setPickerPage(1);
     setPicker({ kind: "slot", roomId: row.roomId, slotIndex });
+  }
+
+  function openDormBatchPicker() {
+    const current = draft.shifts[activeShift];
+    const selected = dormRooms.flatMap((room) => current?.rooms[room.id]?.operators ?? []).filter(
+      (operator): operator is string => Boolean(operator),
+    );
+    setDormBatchSelection(selected);
+    setPickerQuery("");
+    setPickerRoomFilter(null);
+    setPickerSkillTag(null);
+    setPickerRarity(null);
+    setPickerPage(1);
+    setDormRestOnly(false);
+    setDormBatchOpen(true);
+  }
+
+  function toggleDormBatchOperator(operator: string) {
+    setDormBatchSelection((current) => current.includes(operator)
+      ? current.filter((name) => name !== operator)
+      : current.length >= dormBatchCapacity ? current : [...current, operator]);
+  }
+
+  function selectAllDormRestOperators() {
+    if (!dormRestOnly) return;
+    setDormBatchSelection(dormFilteredOperators.slice(0, dormBatchCapacity).map((operator) => operator.name));
+    setPickerPage(1);
+  }
+
+  function applyDormBatch() {
+    setDraft((current) => {
+      const next = structuredClone(current);
+      const shift = next.shifts[activeShift];
+      if (!shift) return current;
+      const selected = new Set(dormBatchSelection);
+      for (const room of Object.values(shift.rooms)) {
+        room.operators = room.operators.map((operator) => selected.has(operator ?? "") ? null : operator);
+      }
+      let offset = 0;
+      for (const room of dormRooms) {
+        const capacity = manualRoomCapacity(room);
+        shift.rooms[room.id] = {
+          ...shift.rooms[room.id],
+          operators: Array.from({ length: capacity }, (_, index) => dormBatchSelection[offset + index] ?? null),
+          autofill: false,
+        };
+        offset += capacity;
+      }
+      return next;
+    });
+    setDormBatchOpen(false);
   }
 
   function toggleSortMode(row: RoomRow) {
@@ -591,6 +705,12 @@ export function ManualSchedulePage({
     setClearShiftConfirmationOpen(false);
   }
 
+  function restPreviousShift() {
+    if (activeShift <= 0) return;
+    setDraft((current) => restPreviousShiftOperators(current, layout, activeShift));
+    setPicker(null);
+  }
+
   function setDormAutofill(row: RoomRow, enabled: boolean) {
     setDraft((current) => setManualDormAutofill(
       current,
@@ -603,6 +723,18 @@ export function ManualSchedulePage({
 
   function setRoomSkillEfficiency(row: RoomRow, value: number | null) {
     setDraft((current) => setManualRoomSkillEfficiency(current, layout, activeShift, row.roomId, value));
+  }
+
+  function setRoomProduct(roomId: string, product: import("@/types").RoomProduct) {
+    setDraft((current) => setManualRoomProduct(current, layout, activeShift, roomId, product));
+  }
+
+  function handleFactoryRecipeChange(roomId: string, recipe: FactoryRecipe) {
+    setRoomProduct(roomId, { factory: { recipe } });
+  }
+
+  function handleTradeOrderChange(roomId: string, order: TradeOrder) {
+    setRoomProduct(roomId, { trade: { order } });
   }
 
   function toggleDroneTarget(row: RoomRow) {
@@ -708,22 +840,22 @@ export function ManualSchedulePage({
         activePlan={simulation ? undefined : activePlan}
         searchQuery={scheduleQuery}
         viewModeActionSlot={!simulation && (
-          <Button type="button" variant="destructive" size="sm" onClick={() => setClearShiftConfirmationOpen(true)}>
-            <Trash2 />{intl("components_pages_ManualSchedulePage.clearEveryFacilityInShift")}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            {dormRooms.length > 0 ? (
+              <Button type="button" variant="outline" size="sm" onClick={openDormBatchPicker}>
+                {intl("components_pages_ManualSchedulePage.dormBatchEdit", { capacity: dormBatchCapacity })}
+              </Button>
+            ) : null}
+            <Button type="button" variant="outline" size="sm" disabled={activeShift <= 0} onClick={restPreviousShift}>
+              {intl("components_pages_ManualSchedulePage.restPreviousShift")}
+            </Button>
+            <Button type="button" variant="destructive" size="sm" onClick={() => setClearShiftConfirmationOpen(true)}>
+              <Trash2 />{intl("components_pages_ManualSchedulePage.clearEveryFacilityInShift")}
+            </Button>
+          </div>
         )}
-        shiftInfoSlot={!simulation && hasFiammetta ? (
-          <FiammettaTargetChip
-            target={fiammettaEnabled ? fiammettaTarget : null}
-            portrait={fiammettaEnabled ? fiammettaPortrait : null}
-            onClick={() => {
-              if (!fiammettaEnabled) onFiammettaEnabledChange(true);
-              openFiammettaPicker();
-            }}
-          />
-        ) : undefined}
         shiftTabsSlot={simulation ? <span className="text-sm text-muted-foreground">{intl("MoodSimulation.position",{cycle:simulation.cycle+1,shift:simulation.shift+1})}</span> : (
-          <div className="min-w-0 max-w-full" data-manual-shift-actions>
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2" data-manual-shift-actions>
             <ShiftTabs
               maaJson={maa}
               durations={draft.shifts.map((shift) => shift.durationHours)}
@@ -745,6 +877,16 @@ export function ManualSchedulePage({
               control={shiftViewControl}
               onChange={setActiveShift}
             />
+            {hasFiammetta ? (
+              <FiammettaTargetChip
+                target={fiammettaEnabled ? fiammettaTarget : null}
+                portrait={fiammettaEnabled ? fiammettaPortrait : null}
+                onClick={() => {
+                  if (!fiammettaEnabled) onFiammettaEnabledChange(true);
+                  openFiammettaPicker();
+                }}
+              />
+            ) : null}
           </div>
         )}
         onSlotClick={simulation ? undefined : handleSlotClick}
@@ -772,8 +914,10 @@ export function ManualSchedulePage({
         droneTargetRoomId={simulation ? undefined : draft.shifts[activeShift]?.droneTargetRoomId}
         onDroneTargetChange={simulation ? undefined : toggleDroneTarget}
         onManualSkillEfficiencyChange={simulation ? undefined : setRoomSkillEfficiency}
-        onFactoryRecipeChange={onFactoryRecipeChange}
-        onTradeOrderChange={onTradeOrderChange}
+        onFactoryRecipeChange={handleFactoryRecipeChange}
+        onTradeOrderChange={handleTradeOrderChange}
+        roomProducts={simulation ? undefined : activeRoomProducts}
+        compactProductControls={!simulation}
       />
     </div>
   );
@@ -888,7 +1032,7 @@ export function ManualSchedulePage({
       <Dialog open={Boolean(picker)} onOpenChange={(open) => { if (!open) setPicker(null); }}>
         <DialogContent className="grid max-h-[min(820px,calc(100svh-1rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:w-[calc(100vw-2rem)] sm:max-w-[min(960px,calc(100vw-2rem))]">
           <DialogHeader>
-            <DialogTitle>{picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.fiammettaMoraleTarget")) : (intl("components_pages_ManualSchedulePage.assign", { value1: (en) ? (selectedRoom?.title ?? "room") : "", value2: (en) ? "" : (selectedRoom?.title ?? "设施") }))}</DialogTitle>
+            <DialogTitle>{picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.fiammettaMoraleTarget")) : (intl("components_pages_ManualSchedulePage.assign", { value1: (en) ? (selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.room")) : "", value2: (en) ? "" : (selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.facility")) }))}</DialogTitle>
             <DialogDescription>{picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.thisTargetIsStoredOnlyForTheActiveShift")) : (intl("components_pages_ManualSchedulePage.onlyOwnedOperatorsInTheCurrentBoxAreShown"))}</DialogDescription>
           </DialogHeader>
           <SkeletonSuspense className="min-h-0 [&>[data-skeleton-swap-content]]:grid [&>[data-skeleton-swap-content]]:min-h-0" fallback={<div className="grid min-h-64 content-start gap-3 px-5 pb-5 sm:px-7"><Skeleton className="h-11" /><Skeleton className="h-24" /><div className="grid grid-cols-4 gap-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-20" />)}</div></div>}>
@@ -981,6 +1125,100 @@ export function ManualSchedulePage({
         </DialogContent>
       </Dialog>
 
+      <Dialog open={dormBatchOpen} onOpenChange={setDormBatchOpen}>
+        <DialogContent className="grid max-h-[min(900px,calc(100svh-1rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:w-[calc(100vw-2rem)] sm:max-w-[min(960px,calc(100vw-2rem))]">
+          <DialogHeader>
+            <DialogTitle>{intl("components_pages_ManualSchedulePage.dormBatchEditTitle")}</DialogTitle>
+            <DialogDescription>
+              {intl("components_pages_ManualSchedulePage.dormBatchDescription", { capacity: dormBatchCapacity })}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="min-h-0" viewportClassName="overflow-x-hidden">
+            <DialogBody className="block pt-1 pb-5 sm:pb-6">
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+                <div className="min-w-0 flex-1 basis-48">
+                  <OperatorSearch
+                    autoFocus
+                    value={pickerQuery}
+                    label={intl("components_pages_ManualSchedulePage.searchAvailableOperators")}
+                    placeholder={intl("components_pages_ManualSchedulePage.searchOperatorSkillOrEffect")}
+                    onChange={(value) => { setPickerQuery(value); setPickerPage(1); }}
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-2" data-dorm-selection-actions>
+                  <span className="font-number text-xs text-muted-foreground">
+                    {intl("components_pages_ManualSchedulePage.dormBatchSelected", { count: dormBatchSelection.length, capacity: dormBatchCapacity })}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={dormRestOnly ? "secondary" : "outline"}
+                    disabled={activeShift === 0}
+                    aria-pressed={dormRestOnly}
+                    title={intl("components_pages_ManualSchedulePage.restRequiredDescription")}
+                    onClick={() => {
+                      if (activeShift === 0) return;
+                      setDormRestOnly((current) => !current);
+                      setPickerPage(1);
+                    }}
+                  >
+                    {intl("components_pages_ManualSchedulePage.restRequired")}
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" disabled={!dormRestOnly || dormFilteredOperators.length === 0} onClick={selectAllDormRestOperators}>
+                    {intl("components_pages_ManualSchedulePage.selectAll")}
+                  </Button>
+                </div>
+              </div>
+              <div className="mb-2">
+                <SkillFilterRow label={skillFilters("room")}>
+                  <SkillRoomTagBar selected={pickerRoomFilter} onChange={changePickerRoomFilter} />
+                </SkillFilterRow>
+              </div>
+              <div className="mb-2">
+                <SkillFilterRow label={skillFilters("tag")}>
+                  {availableSkillTags.length > 0
+                    ? <SkillTagBar tags={availableSkillTags} selected={pickerSkillTag} onChange={changePickerSkillTag} />
+                    : <div className="flex min-h-7 items-center text-xs text-muted-foreground">{intl("components_pages_ManualSchedulePage.noSkillTagsAvailable")}</div>}
+                </SkillFilterRow>
+              </div>
+              <SkillFilterRow label={skillFilters("rarity")}>
+                <OperatorRarityFilter
+                  value={pickerRarity === null ? "all" : String(pickerRarity)}
+                  onChange={(value) => { setPickerRarity(value === "all" ? null : Number(value)); setPickerPage(1); }}
+                />
+              </SkillFilterRow>
+              <TooltipProvider delay={0} timeout={0}>
+                <div data-dorm-operator-grid className="relative mt-3 grid grid-cols-4 grid-rows-3 gap-x-2 gap-y-2 [--manual-picker-portrait-size:56px] min-[430px]:[--manual-picker-portrait-size:64px] md:grid-cols-8 min-[900px]:[--manual-picker-portrait-size:80px]">
+                  {dormVisibleOperators.map((operator) => (
+                    <ManualOperatorChoice
+                      key={operator.id}
+                      operator={operator}
+                      selected={dormBatchSelection.includes(operator.name)}
+                      selectionNumber={dormBatchSelection.indexOf(operator.name) + 1 || undefined}
+                      assignmentLabel={dormBatchSelection.includes(operator.name) ? intl("components_pages_ManualSchedulePage.selected") : undefined}
+                      en={en}
+                      tooltipDisabled={pickerScrolling}
+                      onChoose={() => toggleDormBatchOperator(operator.name)}
+                    />
+                  ))}
+                  {Array.from({ length: dormPickerPageSize - dormVisibleOperators.length }, (_, index) => (
+                    <div key={`empty-dorm-${index}`} className="invisible min-h-[calc(var(--manual-picker-portrait-size)+2.5rem)]" aria-hidden="true" />
+                  ))}
+                  {dormVisibleOperators.length === 0 ? <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-sm text-muted-foreground">{intl("components_pages_ManualSchedulePage.noMatchingOperators")}</p> : null}
+                </div>
+              </TooltipProvider>
+              <div className="mt-4 border-t border-border/60 pt-3">
+                <Pagination page={dormPickerPage} pageCount={dormPickerPageCount} onPageChange={changePickerPage} alwaysVisible />
+              </div>
+            </DialogBody>
+          </ScrollArea>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setDormBatchOpen(false)}>{intl("components_pages_ManualSchedulePage.cancel")}</Button>
+            <Button type="button" onClick={applyDormBatch}>{intl("components_pages_ManualSchedulePage.applyDormBatch")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {maaImportPreview && <Suspense fallback={null}><MaaImportDialog maaImportPreview={maaImportPreview} confirmMaaImport={confirmMaaImport} onCancel={() => setMaaImportPreview(null)} finalFocus={maaImportReturnFocus} /></Suspense>}
 
       <Dialog open={showMower && mowerExportOpen} onOpenChange={setMowerExportOpen}>
@@ -1006,7 +1244,7 @@ export function ManualSchedulePage({
 
       <Dialog open={Boolean(pendingMove)} onOpenChange={(open) => { if (!open) setPendingMove(null); }}>
         <DialogContent className="max-w-[min(480px,calc(100vw-2rem))]">
-          <DialogHeader><DialogTitle>{intl("components_pages_ManualSchedulePage.moveThisOperator")}</DialogTitle><DialogDescription>{intl("components_pages_ManualSchedulePage.isAlreadyAssignedToMoveThemToAndLeave", { value1: (en) ? (pendingMove?.operator ?? "") : "", previousRoomTitle: previousRoomTitle, nextRoomTitle: nextRoomTitle, value4: (en) ? "" : (pendingMove?.operator ?? "该干员") })}</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{intl("components_pages_ManualSchedulePage.moveThisOperator")}</DialogTitle><DialogDescription>{intl("components_pages_ManualSchedulePage.isAlreadyAssignedToMoveThemToAndLeave", { value1: (en) ? (pendingMove?.operator ?? intl("components_pages_ManualSchedulePage.thisOperator")) : "", previousRoomTitle: previousRoomTitle, nextRoomTitle: nextRoomTitle, value4: (en) ? "" : (pendingMove?.operator ?? intl("components_pages_ManualSchedulePage.thisOperator")) })}</DialogDescription></DialogHeader>
           <DialogFooter><Button type="button" variant="ghost" onClick={() => setPendingMove(null)}>{intl("components_pages_ManualSchedulePage.cancel")}</Button><Button type="button" onClick={confirmMove}>{intl("components_pages_ManualSchedulePage.moveOperator")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>

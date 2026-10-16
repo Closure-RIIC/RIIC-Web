@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("Mower compact view keeps every production facility reachable in sparse and unusual plans", async ({ page }) => {
-  // Exercise all 18 facility dialogs, including their opening and closing transitions.
+  // Exercise sparse main and backup plans, including their auxiliary facilities.
   test.slow();
   await page.setViewportSize({ width: 1600, height: 1000 });
   const extraPower = Object.fromEntries(MOWER_PRODUCTION_KEYS.map((key, index) => [key, {
@@ -22,6 +22,12 @@ test("Mower compact view keeps every production facility reachable in sparse and
   const board = page.locator("[data-compact-schedule-view]:visible");
   for (const name of ["主表", "空副表"]) {
     await page.getByRole("tab", { name, exact: true }).click();
+    const recycling = board.locator('[data-room-title="回收站"]');
+    await expect(recycling).toBeVisible();
+    await expect(recycling.locator('.infra-operator-slot[role="button"]')).toHaveCount(2);
+    await recycling.locator('.infra-operator-slot[role="button"]').first().click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.getByRole("button", { name: "取消", exact: true }).click();
     for (const key of MOWER_PRODUCTION_KEYS) {
       const [, floor, room] = key.split("_");
       const card = board.locator(`[data-room-title$="B${floor}0${room}"]`);

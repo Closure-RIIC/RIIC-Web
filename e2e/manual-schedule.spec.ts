@@ -68,6 +68,7 @@ test("manual recycling assignments preserve the second slot across reload and mo
   test.setTimeout(60_000);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/manual");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
   const compact = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycling"]');
   await expect(compact).toBeVisible();
   await compact.getByRole('button', { name: '空置', exact: true }).nth(1).click();

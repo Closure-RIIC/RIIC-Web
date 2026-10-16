@@ -64,5 +64,20 @@
   "moveOperator": "Move operator",
   "evaluateBasedOnCurrentScheduleUnavailable": "Evaluation based on the current schedule is not available yet.",
   "calculateBasedOnSchedule": "Calculate based on schedule",
-  "calculateBasedOnEfficiency": "Calculate based on efficiency"
+  "calculateBasedOnEfficiency": "Calculate based on efficiency",
+  "dormBatchEdit": "Dormitory assignments ({capacity})",
+  "dormBatchEditTitle": "Dormitory assignments",
+  "dormBatchDescription": "Select up to {capacity} operators. Selected operators appear first in numbered order. Click a portrait to select or deselect, then apply to fill the current shift's dormitories in that order.",
+  "searchAvailableOperators": "Search available operators",
+  "searchOperatorSkillOrEffect": "Search operators, skills, or effects",
+  "dormBatchSelected": "Selected {count}/{capacity}",
+  "restRequired": "Need rest",
+  "restRequiredDescription": "Worked in the previous shift and is not working in this shift",
+  "selectAll": "Select all",
+  "selected": "Selected",
+  "applyDormBatch": "Apply dormitory assignments",
+  "restPreviousShift": "Rest previous-shift operators",
+  "room": "room",
+  "facility": "facility",
+  "thisOperator": "this operator"
 }

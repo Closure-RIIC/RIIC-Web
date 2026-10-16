@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
-import { RefreshCw, ScanLine, Trash2, Unlink } from "lucide-react";
+import { RefreshCw, ScanLine, Star, Trash2, Unlink } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { QrCodeFrame } from "@/components/ui/qr-code-frame";
@@ -11,7 +11,6 @@ import { StatusCenterHeader } from "@/components/pages/StatusCenterShell";
 import { RemoteAvatar } from "@/components/ui/remote-avatar";
 import { operatorPortraitFor } from "@/operatorPortraits";
 import { SummaryMetric } from "@/components/ui/summary-metric";
-import { Switch } from "@/components/ui/switch";
 import { PRODUCT_ICON_URLS } from "@/product-assets";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SklandPolicyConsent, currentSklandPolicyConsent } from "@/skland-policy-consent";
@@ -375,6 +374,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
         extraMetadata={recordStartedLabel && <span className="whitespace-nowrap" data-gacha-record-start>记录始于 <time dateTime={new Date(analysis.startedAt!).toISOString()}>{recordStartedLabel}</time></span>} /> : null}
       actions={
       <div className={`${styles.actionToolbar} ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 max-lg:ml-0 max-lg:w-full max-lg:justify-start`} role="group" aria-label="寻访记录操作">
+        {history && <SetupActionButton type="button" variant="outline" className={`${gachaToolbarActionClassName} ${styles.fiveStarToggle}`} data-gacha-action="five-stars" aria-label="展示五星" aria-pressed={showFiveStars} title="展示五星" onClick={() => setShowFiveStars(current => !current)}><Star /><span className={styles.actionLabel}>展示五星</span></SetupActionButton>}
         {authorizedUids.length > 0 && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground`} data-gacha-action="disconnect" aria-label="解除授权" title="解除授权" disabled={busy} onClick={() => void disconnect()}><Unlink className="sm:hidden" /><span className={styles.actionLabel}>解除授权</span></SetupActionButton>}
         {history && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground hover:text-destructive`} data-gacha-action="delete" disabled={busy || loading} aria-label="删除云端寻访记录" title="删除云端寻访记录" onClick={() => void clearHistory()}><Trash2 /><span className={styles.actionLabel}>删除</span></SetupActionButton>}
         <Dialog open={authorizationOpen} onOpenChange={changeAuthorizationOpen}>
@@ -420,7 +420,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
             { id: "six-stars", label: "六星干员", value: sixStars.toLocaleString("zh-CN") },
             { id: "lower-stars", label: "五星 / 四星 / 三星", value: `${fiveStars} / ${fourStars} / ${threeStars}` },
           ].map((metric) => <div key={metric.id} data-gacha-summary-metric={metric.id} className={`${styles.summaryMetric} relative col-span-2 min-w-0 border-r border-[#313131]/10 last:border-r-0 sm:col-span-1 max-sm:[&:nth-child(-n+2)]:col-span-3 max-sm:[&:nth-child(2)]:border-r-0 max-sm:[&:nth-child(n+3)]:border-t`}>
-            <SummaryMetric label={metric.label} value={metric.value} unit={metric.id === "orundum" ? "折算" : metric.id === "lower-stars" ? <Switch size="sm" checked={showFiveStars} onCheckedChange={setShowFiveStars} aria-label="显示五星寻访记录" title="在卡池卡片中显示五星寻访记录" className="ml-1 data-checked:bg-[#313131] data-unchecked:bg-[#313131]/20" /> : undefined} reserveIconSpace={metric.id === "orundum"} />
+            <SummaryMetric label={metric.label} value={metric.value} unit={metric.id === "orundum" ? "折算" : undefined} reserveIconSpace={metric.id === "orundum"} />
             {metric.id === "orundum" && <img src={PRODUCT_ICON_URLS.orundum} alt="合成玉" width={24} height={24} className="pointer-events-none absolute right-1.5 top-1.5 size-6 object-contain opacity-75" />}
           </div>)}
         </div>

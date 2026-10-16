@@ -22,11 +22,25 @@
 .productBadge { background: var(--dialogue-accent); color: var(--billing-accent-foreground, #302710); }
 .price { margin-top: 18px; font-size: 36px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .pill { height: 36px; border-radius: 9999px; padding-inline: 18px; }
+.page .pill {
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding-inline: 18px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.page .pill:enabled:hover { background: var(--muted); }
 .primary { background: var(--dialogue-accent); color: var(--billing-accent-foreground, #302710); }
 .primary:enabled:hover { background: color-mix(in srgb, var(--dialogue-accent) 95%, black); }
 .page button:disabled, .page button[aria-disabled="true"] { opacity: 1; filter: saturate(.12); cursor: not-allowed; }
 .sectionHeading { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
 .sectionHeading h2 { font-size: 15px; font-weight: 600; }
+.ordersTitle { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; }
+.page .clearOrders { height: auto; min-height: 32px; padding: 0; border: 0; background: transparent; color: var(--destructive); font-size: 12px; }
 .caption { font-size: 12px; line-height: 1.6; color: var(--muted-foreground); }
 .records { margin: 0; padding: 0; list-style: none; }
 .records > li + li { border-top: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent); }
@@ -64,7 +78,8 @@
   .products { gap: 12px; }
   .redemptionForm { flex-basis: 100%; flex-wrap: wrap; }
   .redemptionForm input { flex: 1 1 170px; }
-  .pill, .redemptionForm input { height: 44px; }
+  .pill, .page .pill, .redemptionForm input { height: 44px; }
+  .page .clearOrders { min-height: 44px; }
   .row { gap: 10px; }
   .breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

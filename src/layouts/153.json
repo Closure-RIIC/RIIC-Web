@@ -1,6 +1,6 @@
 {
   "template": "153",
-  "drone_cap": 235,
+  "drone_cap": 250,
   "scenario": {
     "sui_facility_count": 2,
     "dorm_occupant_count": 20,

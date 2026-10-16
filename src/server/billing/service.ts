@@ -1,7 +1,8 @@
 import "@tanstack/react-start/server-only";
 
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, gt, isNull, ne, or, sql } from "drizzle-orm";
+import { PENDING_ORDER_VISIBLE_MS } from "@/billing-order-visibility";
 
 import { getDatabase } from "@/server/db";
 import { agentUsage, billingCdk, billingLedger, billingOrder, billingWallet } from "@/server/db/schema";
@@ -126,7 +127,10 @@ export async function listOrders(userId: string, limit = 20) {
       paidAt: billingOrder.paidAt,
     })
     .from(billingOrder)
-    .where(eq(billingOrder.userId, userId))
+    .where(and(eq(billingOrder.userId, userId), or(
+      ne(billingOrder.status, "pending"),
+      and(isNull(billingOrder.hiddenAt), gt(billingOrder.createdAt, new Date(Date.now() - PENDING_ORDER_VISIBLE_MS))),
+    )))
     .orderBy(desc(billingOrder.createdAt))
     .limit(Math.max(1, Math.min(limit, 50)));
   return rows.map((row) => ({
@@ -134,6 +138,22 @@ export async function listOrders(userId: string, limit = 20) {
     createdAt: row.createdAt.toISOString(),
     paidAt: row.paidAt?.toISOString() ?? null,
   }));
+}
+
+/** Hide only the owner's pending record; settlement remains independent. */
+export async function hidePendingOrder(userId: string, orderId: string): Promise<boolean> {
+  const rows = await getDatabase().update(billingOrder).set({ hiddenAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(billingOrder.userId, userId), eq(billingOrder.id, orderId), eq(billingOrder.status, "pending")))
+    .returning({ id: billingOrder.id });
+  return rows.length > 0;
+}
+
+export async function hideAllPendingOrders(userId: string): Promise<number> {
+  const now = new Date();
+  const rows = await getDatabase().update(billingOrder).set({ hiddenAt: now, updatedAt: now })
+    .where(and(eq(billingOrder.userId, userId), eq(billingOrder.status, "pending"), isNull(billingOrder.hiddenAt)))
+    .returning({ id: billingOrder.id });
+  return rows.length;
 }
 
 export async function getOrder(userId: string, orderId: string) {

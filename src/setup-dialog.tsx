@@ -2,7 +2,7 @@
 import { localize as localize_setup_dialog } from "./i18n/helpers/setup_dialog.ts";
 import { useTranslations, useLocale } from "use-intl";
 
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Database, ExternalLink, FileJson, ListChecks, Play, ScanLine, Trash2, Upload } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -25,6 +25,7 @@ import {
   resizeManualShiftDurations,
   snapManualShiftDurationsToHours,
   type ManualScheduleMode,
+  type ManualScheduleDraft,
 } from "@/manual-schedule";
 import { DEFAULT_MANUAL_SHIFT_START_TIME, MAX_MANUAL_SETUP_SHIFT_COUNT } from "@/manual-schedule-config";
 
@@ -34,7 +35,7 @@ import { messageRecord } from "@/i18n/translate";
 import { LayoutEditor, PresetSelector } from "./components";
 import { countOwned } from "./operbox";
 import type { SetupStep } from "./onboarding";
-import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, RotationProfile, SklandScheduleSnapshot } from "./types";
+import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, RotationProfile, RoomProduct, SklandScheduleSnapshot } from "./types";
 
 import type { MaaIssue } from "./maa-review";
 
@@ -72,6 +73,8 @@ type SetupDialogProps = {
   preset: PresetDef;
   layout: BaseBlueprint;
   configurationKey: string;
+  manualDraft?: ManualScheduleDraft | null;
+  onManualProductChange?: (shiftIndex: number, roomId: string, product: RoomProduct) => void;
   rotationProfile: RotationProfile;
   onRotationProfileChange: (value: RotationProfile) => void;
   manualShiftDurations?: number[];
@@ -137,6 +140,8 @@ export function SetupDialog({
   preset,
   layout,
   configurationKey,
+  manualDraft,
+  onManualProductChange,
   rotationProfile,
   onRotationProfileChange,
   manualShiftDurations = [12, 6, 6],
@@ -170,8 +175,23 @@ export function SetupDialog({
   const [maaChoices, setMaaChoices] = useState<Record<number, number>>({});
   const [reviewBusy, setReviewBusy] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
+  const [manualProductShift, setManualProductShift] = useState(0);
   const maaReviewRef = useRef<HTMLElement>(null);
   const importedOwnedCount = operbox?.filter((entry) => entry.own).length ?? 0;
+  useEffect(() => {
+    setManualProductShift((current) => Math.min(current, Math.max(0, (manualDraft?.shifts.length ?? manualShiftDurations.length) - 1)));
+  }, [manualDraft?.shifts.length, manualShiftDurations.length]);
+  const manualFacilityLayout = useMemo(() => {
+    if (mode !== "manual") return layout;
+    const shift = manualDraft?.shifts[manualProductShift];
+    return {
+      ...layout,
+      rooms: layout.rooms.map((room) => {
+        const product = shift?.rooms[room.id]?.product;
+        return product ? { ...room, product } : room;
+      }),
+    };
+  }, [layout, manualDraft, manualProductShift, mode]);
   async function stageMaaReview(text: string, name: string, signal?: AbortSignal) {
     try {
       const { inspectMaaProgress, normalizeMaaRarities } = await import("./maa-review");
@@ -762,10 +782,30 @@ export function SetupDialog({
                     animate={{ x: 0, opacity: 1 }}
                     transition={reducedMotion ? { duration: 0 } : PANEL_TRANSITION}
                   >
+                    {mode === "manual" ? (
+                      <div className="mb-4 grid gap-2" data-manual-product-shift-tabs>
+                        <h3 className="text-sm font-semibold">{intl("setup_dialog.shifts")}</h3>
+                        <Tabs value={String(manualProductShift)} onValueChange={(value) => setManualProductShift(Number(value))}>
+                          <TabsList className="flex w-full flex-wrap justify-start" aria-label={intl("setup_dialog.shifts")}>
+                            {Array.from({ length: manualDraft?.shifts.length ?? manualShiftDurations.length }, (_, index) => (
+                              <TabsTrigger key={index} value={String(index)} className="min-w-16">
+                                {intl("setup_dialog.shift", { value1: index + 1 })}
+                              </TabsTrigger>
+                            ))}
+                          </TabsList>
+                        </Tabs>
+                      </div>
+                    ) : null}
                     <LayoutEditor
-                      layout={layout}
-                      onFactoryRecipeChange={onFactoryRecipeChange}
-                      onTradeOrderChange={onTradeOrderChange}
+                      layout={manualFacilityLayout}
+                      onFactoryRecipeChange={(roomId, recipe) => {
+                        if (mode === "manual" && onManualProductChange) onManualProductChange(manualProductShift, roomId, { factory: { recipe } });
+                        else onFactoryRecipeChange(roomId, recipe);
+                      }}
+                      onTradeOrderChange={(roomId, order) => {
+                        if (mode === "manual" && onManualProductChange) onManualProductChange(manualProductShift, roomId, { trade: { order } });
+                        else onTradeOrderChange(roomId, order);
+                      }}
                       onRoomLevelChange={onRoomLevelChange}
                       recyclingRoomLevel={recyclingRoomLevel}
                       onRecyclingRoomLevelChange={onRecyclingRoomLevelChange}

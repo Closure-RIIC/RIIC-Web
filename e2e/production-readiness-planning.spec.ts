@@ -249,7 +249,8 @@ test("operator skill terms reveal square hover cards on pointer and keyboard foc
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
 
-  const operatorPortrait = page.getByRole("img", { name: "陈" }).first();
+  // The animated portrait ignores pointer events; hover its actual tooltip trigger.
+  const operatorPortrait = page.locator('[data-slot="tooltip-trigger"][aria-label="陈"]').first();
   const portraitBox = await operatorPortrait.boundingBox();
   await operatorPortrait.hover({ position: { x: 8, y: Math.max(8, (portraitBox?.height ?? 80) / 2) } });
   const skillTooltip = page.locator('[data-slot="tooltip-content"][data-open]');

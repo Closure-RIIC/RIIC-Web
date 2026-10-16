@@ -1,4 +1,3 @@
-import { factoryRecipeFor, tradeOrderFor } from "./blueprint.ts";
 import { manualRoomCapacity, type ManualScheduleDraft } from "./manual-schedule.ts";
 import { resolveManualManufactureRoom, resolveManualPowerRoom, resolveManualTradeRoom } from "./manual-room-efficiency-resolvers.ts";
 import { resolveGoldEquivalentEfficiency, resolveManualSpecialTradeOutput } from "./manual-trade-special-rules.ts";
@@ -167,10 +166,11 @@ export function evaluateManualSchedule(input: {
         .slice(0, manualRoomCapacity(room))
         .filter((name): name is string => Boolean(name));
       const facility: Facility = room.kind === "trade_post" ? "trade" : room.kind === "factory" ? "manufacture" : "power";
+      const product = assignment?.product ?? room.product;
       const recipe: Recipe = room.kind === "trade_post"
-        ? tradeOrderFor(room)
+        ? (product && "trade" in product ? product.trade.order : "gold")
         : room.kind === "factory"
-          ? factoryRecipeFor(room)
+          ? (product && "factory" in product ? product.factory.recipe : "gold")
           : "all";
       if (recipe === "all" && room.kind === "factory") {
         warnings.push({ code: "ambiguous-recipe", roomId: room.id, message: `${room.id} 的制造配方为“由求解器选择”，无法计算日产量。` });

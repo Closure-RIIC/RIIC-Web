@@ -2,6 +2,7 @@
 import Decimal from "decimal.js";
 import raw from "./catalog.json" with { type: "json" };
 import type { MoodRate } from "./types.ts";
+import { moodCatalogAdditions } from "./catalog-additions.ts";
 
 export const D = Decimal.clone({ precision: 28, rounding: Decimal.ROUND_HALF_UP });
 export const zero = () => new D(0);
@@ -14,11 +15,19 @@ export interface Skill {
   self_only: boolean; boost_provider: string | null; boost_group: string | null;
 }
 interface Equip { unlock_elite: number; unlock_level: number; replaces: string | null }
-export const catalog = raw as unknown as {
+const referenceCatalog = raw as unknown as {
   revision: string; skills: Record<string, Skill>; equips: Record<string, Record<string, Equip>>;
   operators: Record<string, string[]>; factions: Record<string, string[]>;
   producers: [string, number, string, string, string, string, string, [string, number, number][]][];
   spread: string[]; knownOperators: string[];
+};
+const additions = moodCatalogAdditions(referenceCatalog.skills);
+export const catalog: typeof referenceCatalog = {
+  ...referenceCatalog,
+  skills: { ...referenceCatalog.skills, ...additions.skills },
+  operators: { ...referenceCatalog.operators, ...additions.operators },
+  equips: { ...referenceCatalog.equips, ...additions.equips },
+  knownOperators: [...new Set([...referenceCatalog.knownOperators, ...Object.keys(additions.operators)])],
 };
 export interface Op { name: string; elite: number; level: number; mood: Decimal; skills: Skill[] }
 export interface Room { id: string; type: string; level: number; capacity: number; ops: Op[] }
@@ -78,6 +87,7 @@ function condition(s: Skill, w: World, owner: Op, target: Op, room: Room): boole
     case "_cond_with_cc_operator": return center.some(o => o.name === arg);
     case "_cond_with_cc_faction": return center.some(o => o !== owner && factions(o).includes(arg));
     case "_cond_with_facility_operator": return room.ops.some(o => o.name === arg);
+    case "_cond_with_other_operator": return room.ops.some(o => o !== owner);
     case "_cond_alone_in_facility": return room.ops.length === 1 && room.ops[0] === owner;
     case "_cond_target_in_faction": return list.some(f => factions(target).includes(f));
     case "_cond_target_is": return list.includes(target.name);

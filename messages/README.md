@@ -22,6 +22,14 @@ Game names and skill descriptions are a separate catalog in
 do not copy game text into website messages. The English game catalog loads on
 demand. User-authored skill notes remain user content.
 
+## Translation rules
+
+- Add every user-facing website string to both `zh` and `en` message catalogs. Do not add new UI copy through `locale === "en" ? "..." : "..."` or literal Chinese/English strings in components.
+- Use `useTranslations` in React components, `getTranslations` in server pages and metadata, and a namespace helper under `src/i18n/helpers/` for pure presentation functions.
+- Keep interpolation in ICU messages and use `t.rich` for links or styled fragments. Do not concatenate translated fragments into sentences.
+- Keep game names, building skills, and game descriptions in the game catalog rather than website message files.
+- Run `npm run check:i18n` after changing translations. The check verifies matching keys and ICU syntax; review new UI code for literal copy as well.
+
 The use-intl/ICU runtime increases the measured initial client payload by about
 78 KB raw (22 KB gzip) versus the previous bilingual shell. Bundle ceilings allow
 90 KB raw / 26 KB gzip for this migration; independent page chunks and the lazy

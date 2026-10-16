@@ -4,6 +4,8 @@ import test from "node:test";
 
 import { normalizeProductForLevel } from "./factory-recipes.ts";
 import { validateLayoutJson } from "./layout-validation.ts";
+import { manualEditableRooms } from "./recycling-room.ts";
+import type { BaseBlueprint } from "./types.ts";
 
 function validLayout() {
   return {
@@ -53,6 +55,16 @@ test("rejects unknown kinds, duplicate IDs, and padded IDs", () => {
   assert.ok(errors.some((message) => message.includes("房间 ID 重复")));
   assert.ok(errors.some((message) => message.includes("kind 不受支持")));
   assert.ok(errors.some((message) => message.includes("首尾空格")));
+});
+
+test("every preset stays solver-compatible and adds exactly one recycling editor", () => {
+  for (const preset of ["153", "243", "252", "333", "342"]) {
+    const layout: BaseBlueprint = JSON.parse(readFileSync(new URL(`./layouts/${preset}.json`, import.meta.url), "utf8"));
+    assert.deepEqual(validateLayoutJson(layout), [], preset);
+    const rooms = manualEditableRooms(layout);
+    assert.equal(new Set(rooms.map(room => room.id)).size, rooms.length, preset);
+    assert.deepEqual(rooms.filter(room => room.id === "recycling_station"), [{ id: "recycling_station", kind: "recycling", level: 3 }]);
+  }
 });
 
 test("342 preset keeps the intended power-safe room levels", () => {

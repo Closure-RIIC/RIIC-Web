@@ -23,6 +23,7 @@ export const MOWER_FIXED_ROOMS = [
   { key: "factory", name: "加工站", en: "Workshop", column: 5, row: 2, capacity: 1 },
   { key: "contact", name: "办公室", en: "Office", column: 5, row: 3, capacity: 1 },
   { key: "train", name: "训练室", en: "Training", column: 5, row: 4, capacity: 2 },
+  { key: "recycle", name: "回收站", en: "Recycling Station", column: 5, row: 5, capacity: 2 },
 ] as const;
 
 function facility(name: string, names: string[], product?: string): MowerFacility {
@@ -55,6 +56,7 @@ export function createMowerEditorDocument(): MowerEditorDocument {
       factory: facility("加工站", []),
       contact: facility("办公室", ["梓兰"]),
       train: facility("训练室", []),
+      recycle: facility("回收站", []),
     },
     conf: { ling_xi: 1, exhaust_require: "", rest_in_full: "", resting_priority: "", workaholic: "", refresh_trading: "", refresh_drained: "", ope_resting_priority: "" },
     backup_plans: [],

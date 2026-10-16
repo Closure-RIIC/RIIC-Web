@@ -1,8 +1,30 @@
 import type { UIMessage } from "ai";
+import type { AgentPersona, BuiltinAgentPersona } from "./agent-personas.ts";
+import { parsePersonaAvatar } from "./agent-persona-avatar.ts";
+
+export type AgentReplyPersona = { name?: string; avatarUrl?: string; mascot?: BuiltinAgentPersona["avatar"] };
+
+/** Save presentation with the question, independently of the browser's next selection. */
+export function snapshotAgentReplyPersona(persona: AgentPersona | null): AgentReplyPersona {
+  return persona ? {
+    name: persona.name,
+    ...(persona.kind === "builtin" ? { mascot: persona.avatar } : { avatarUrl: persona.avatarUrl }),
+  } : {};
+}
+
+function readReplyPersona(metadata: unknown): AgentReplyPersona {
+  const raw = (metadata as { replyPersona?: AgentReplyPersona } | null)?.replyPersona;
+  if (!raw || typeof raw !== "object") return {};
+  return {
+    name: typeof raw.name === "string" ? raw.name.slice(0, 40) : undefined,
+    avatarUrl: parsePersonaAvatar(raw.avatarUrl),
+    mascot: ["silverash", "exusiai", "saileach", "mountain"].includes(raw.mascot ?? "") ? raw.mascot : undefined,
+  };
+}
 
 export type AgentDisplayTurn =
   | { kind: "user"; key: string; message: UIMessage }
-  | { kind: "response"; key: string; messages: UIMessage[]; pending: boolean };
+  | { kind: "response"; key: string; messages: UIMessage[]; pending: boolean; persona: AgentReplyPersona };
 
 export function hasVisibleAgentPart(part: UIMessage["parts"][number], active: boolean): boolean {
   if (part.type === "text") return Boolean(part.text.trim());
@@ -25,11 +47,11 @@ export function buildAgentDisplayTurns(messages: UIMessage[], busy: boolean): Ag
   for (const message of messages) {
     if (message.role === "user") {
       turns.push({ kind: "user", key: message.id, message });
-      response = { kind: "response", key: `response:${message.id}`, messages: [], pending: false };
+      response = { kind: "response", key: `response:${message.id}`, messages: [], pending: false, persona: readReplyPersona(message.metadata) };
       turns.push(response);
     } else if (message.role === "assistant") {
       if (!response) {
-        response = { kind: "response", key: `response:${message.id}`, messages: [], pending: false };
+        response = { kind: "response", key: `response:${message.id}`, messages: [], pending: false, persona: readReplyPersona(message.metadata) };
         turns.push(response);
       }
       response.messages.push(message);

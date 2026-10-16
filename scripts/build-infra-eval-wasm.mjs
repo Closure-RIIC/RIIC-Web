@@ -10,6 +10,9 @@ const manifest = join(evalRoot, "Cargo.toml");
 const rawWasm = join(evalRoot, "target", "wasm32-unknown-unknown", "release", "infra_eval_wasm.wasm");
 const generated = join(webRoot, "public", "wasm");
 const temporary = join(evalRoot, "target", "web-bindgen");
+const evaluatorSource = readFileSync(join(evalRoot, "crates", "infra-eval-core", "src", "evaluator.rs"), "utf8");
+const ruleset = evaluatorSource.match(/const RULESET_VERSION: &str = "([^"]+)"/)?.[1];
+if (!ruleset) throw new Error("Unable to determine infra-eval ruleset version");
 
 function run(command, args) {
   const result = spawnSync(command, args, { cwd: evalRoot, stdio: "inherit" });
@@ -27,12 +30,17 @@ run("wasm-bindgen", [rawWasm, "--target", "web", "--out-dir", temporary, "--no-t
 
 const wasm = readFileSync(join(temporary, "infra_eval_wasm_bg.wasm"));
 const hash = createHash("sha256").update(wasm).digest("hex").slice(0, 12);
-const wasmName = `infra-eval.v3-0c35f30.${hash}.wasm`;
+const wasmName = `infra-eval.${ruleset}.${hash}.wasm`;
 mkdirSync(generated, { recursive: true });
 for (const name of readdirSync(generated)) {
   if (name.startsWith("infra-eval.") && name.endsWith(".wasm")) rmSync(join(generated, name));
 }
 cpSync(join(temporary, "infra_eval_wasm.js"), join(generated, "infra_eval_wasm.js"));
 writeFileSync(join(generated, wasmName), wasm);
-writeFileSync(join(webRoot, "src", "lib", "infra-eval", "manifest.ts"), `export const INFRA_EVAL_MANIFEST = {\n  api: "riic-infra-eval/v1",\n  ruleset: "v3-0c35f30",\n  wasmUrl: "/wasm/${wasmName}",\n} as const;\n`);
+writeFileSync(join(generated, "infra-eval-manifest.json"), `${JSON.stringify({
+  api: "riic-infra-eval/v1",
+  ruleset,
+  glueUrl: "/wasm/infra_eval_wasm.js",
+  wasmUrl: `/wasm/${wasmName}`,
+}, null, 2)}\n`);
 console.log(`Installed ${wasmName}`);

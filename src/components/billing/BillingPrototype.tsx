@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import dialogueStyles from "@/components/agent/beautiful/Dialogue.module.css";
 import styles from "./BillingPrototype.module.css";
 import { notifyBillingUpdated, subscribeBillingUpdates } from "@/lib/billing-events";
+import { isBillingOrderVisible } from "@/billing-order-visibility";
 
 type Product = { id: string; name: string; amountFen: number; points: number; badge?: string; description: string; kind: string; checkoutConfigured: boolean };
 type BillingData = {
@@ -72,6 +73,13 @@ export function BillingPrototype() {
   const containerClass = `${styles.page} grid min-w-0 w-full content-start gap-4 pt-2 pb-8 md:gap-6 md:pt-5`;
   const heading = <WorkbenchPageHeading page="billing" accentColor="var(--billing-highlight)">{locale === "en" ? "Payment plans" : "付费计划"}</WorkbenchPageHeading>;
   const [data, setData] = useState<BillingData | null>(null);
+  const [orderClock, setOrderClock] = useState(() => Date.now());
+  const [confirmClearOrders, setConfirmClearOrders] = useState(false);
+  useEffect(() => {
+    const timer = window.setInterval(() => setOrderClock(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const visibleOrders = useMemo(() => data?.orders.filter(order => isBillingOrderVisible(order, orderClock)) ?? [], [data, orderClock]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -107,7 +115,22 @@ export function BillingPrototype() {
 
   // The API is ordered newest first; show the latest order so an older duplicate
   // pending order cannot hide a newer paid callback.
-  const activeOrder = useMemo(() => data?.orders[0] ?? null, [data]);
+  const activeOrder = visibleOrders[0] ?? null;
+
+  const clearPendingOrders = async () => {
+    setConfirmClearOrders(false);
+    setBusy("clear-pending-orders");
+    setError(null);
+    try {
+      const response = await fetch("/api/billing", { method: "DELETE", credentials: "same-origin" });
+      const payload = await response.json() as { data?: { deleted?: number }; error?: { message?: string } };
+      if (!response.ok) throw new Error(payload.error?.message ?? "清空失败，请重试。");
+      setNotice(`已清空 ${payload.data?.deleted ?? 0} 笔未支付订单。`);
+      notifyBillingUpdated();
+      await reload();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "清空失败，请重试。"); }
+    finally { setBusy(null); }
+  };
 
   useEffect(() => {
     if (!activeOrder || activeOrder.status !== "pending") return;
@@ -232,7 +255,7 @@ export function BillingPrototype() {
               <p className="mt-2 text-sm">{product.points.toLocaleString()} <span className="text-xs text-muted-foreground">积分</span></p>
             </div>
             <p className="text-xs leading-6 text-muted-foreground">{product.description}</p>
-            <Button type="button" className={`${styles.pill} ${styles.primary} w-full`} disabled={busy !== null || !product.checkoutConfigured} onClick={() => void createOrder(product.id)}>{busy === product.id ? "创建中…" : product.checkoutConfigured ? "爱发电购买" : "待配置支付链接"}</Button>
+            <Button type="button" variant="outline" className={`${styles.pill} w-full`} disabled={busy !== null || !product.checkoutConfigured} onClick={() => void createOrder(product.id)}>{busy === product.id ? "创建中…" : product.checkoutConfigured ? "爱发电购买" : "待配置支付链接"}</Button>
           </BillingCard>
         ))}
       </div>
@@ -241,14 +264,24 @@ export function BillingPrototype() {
         <div><h2 id="billing-redeem-heading" className="text-sm font-semibold">{locale === "en" ? "Redeem a code" : "核销兑换码"}</h2><p className={`${styles.caption} mt-1`}>{locale === "en" ? "Each code can be redeemed once within its validity period, for permanent credits." : "每码限兑一次，请在有效期内兑换，到账后为永久积分。"}</p></div>
         <form className={styles.redemptionForm} onSubmit={(event) => { event.preventDefault(); if (busy === null && cdkCode.trim()) void cdkAction(); }}>
           <Input ref={codeInput} aria-label={locale === "en" ? "Credit code" : "积分兑换码"} placeholder="RIIC-..." maxLength={64} autoComplete="off" autoCapitalize="characters" spellCheck={false} value={cdkCode} onChange={(event) => setCdkCode(event.target.value)} />
-          <Button type="submit" className={`${styles.pill} ${styles.primary}`} disabled={busy !== null || !cdkCode.trim()}>{busy === "cdk-redeem" ? "兑换中…" : "核销并入账"}</Button>
+          <Button type="submit" variant="outline" className={styles.pill} disabled={busy !== null || !cdkCode.trim()}>{busy === "cdk-redeem" ? "兑换中…" : "核销并入账"}</Button>
         </form>
       </BillingCard>
 
       <BillingCard aria-labelledby="billing-orders-heading" data-billing-orders>
-        <div className={styles.sectionHeading}><h2 id="billing-orders-heading">最近订单</h2><p className={styles.caption}>最近 6 笔 · 支付成功后自动到账</p></div>
-        {data.orders.length === 0 ? <p className={styles.empty}>还没有订单，购买积分套餐后会显示在这里。</p> : <ul className={styles.records}>
-          {data.orders.slice(0, 6).map((order) => {
+        <div className={styles.sectionHeading}>
+          <div className={styles.ordersTitle}>
+            <h2 id="billing-orders-heading">最近订单</h2>
+            <Button type="button" variant="link" size="sm" className={styles.clearOrders} disabled={busy !== null || !visibleOrders.some(order => order.status === "pending")}
+              onMouseLeave={() => setConfirmClearOrders(false)} onBlur={() => setConfirmClearOrders(false)}
+              onKeyDown={event => { if (event.key === "Escape") setConfirmClearOrders(false); }}
+              onClick={() => { if (confirmClearOrders) void clearPendingOrders(); else setConfirmClearOrders(true); }}
+            >{busy === "clear-pending-orders" ? "清空中…" : confirmClearOrders ? "确认清空所有未支付订单" : "一键清空未支付订单"}</Button>
+          </div>
+          <p className={styles.caption}>最近 6 笔 · 待支付订单 3 天后自动隐藏</p>
+        </div>
+        {visibleOrders.length === 0 ? <p className={styles.empty}>暂无可显示的订单，购买积分套餐后会显示在这里。</p> : <ul className={styles.records}>
+          {visibleOrders.slice(0, 6).map((order) => {
             const status = orderStatus(order.status);
             return <li key={order.id} className={styles.row}>
               <div><h3 className={styles.recordTitle}>{data.products.find((product) => product.id === order.productId)?.name ?? order.productId}</h3><p className={styles.meta}>{order.points.toLocaleString()} 积分<span aria-hidden="true"> · </span><time dateTime={order.createdAt}>{formatMinute(order.createdAt)}</time></p></div>
