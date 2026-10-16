@@ -10,6 +10,7 @@ const DOCUMENTATION_METADATA = new Set([
 
 const RELEASE_WORKFLOWS = new Set([
   ".github/workflows/deploy.yml",
+  ".github/workflows/deploy-verified.yml",
   ".github/workflows/frontend-quality.yml",
 ]);
 

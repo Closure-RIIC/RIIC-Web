@@ -74,6 +74,7 @@ test("release workflow changes skip business E2E but exercise deployment", () =>
     runBrowser: false,
     deployRequired: true,
   });
+  assert.equal(classifyChanges([".github/workflows/deploy-verified.yml"]).deployRequired, true);
 });
 
 test("runtime and unclassified changes always use the full gate", () => {

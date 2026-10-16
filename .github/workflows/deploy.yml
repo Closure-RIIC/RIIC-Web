@@ -7,6 +7,11 @@ on:
         description: Immutable release artifact produced by the post-merge build job
         required: true
         type: string
+      artifact_run_id:
+        description: Validated source run, or empty for the current workflow run
+        required: false
+        default: ""
+        type: string
       deployment_authorized:
         description: The caller validated that this event may deploy the verified ref
         required: true
@@ -18,6 +23,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   deploy:
@@ -125,6 +131,8 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ${{ inputs.artifact_name }}
+          run-id: ${{ inputs.artifact_run_id || github.run_id }}
+          github-token: ${{ github.token }}
           path: ${{ runner.temp }}/riic-web-release-${{ github.run_id }}-${{ github.run_attempt }}/download
 
       - name: Validate and extract release artifact
