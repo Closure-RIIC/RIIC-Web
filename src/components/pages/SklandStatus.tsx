@@ -33,6 +33,7 @@ import { Button } from "@/components/ui/button";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { SklandAccountSelect } from "@/components/skland/SklandAccountSelect";
 import { SklandPlayerIdentity } from "@/components/skland/SklandPlayerIdentity";
+import { SklandAttendance } from "@/components/skland/SklandAttendance";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Combobox,
@@ -1560,6 +1561,8 @@ export function SklandStatus({
           </div>
         )}
       />
+
+      <SklandAttendance key={`${activeAccount.accountId}:${snapshot.player.uid}`} accountId={activeAccount.accountId} uid={snapshot.player.uid} />
 
       <Dialog open={addAccountOpen} onOpenChange={setAddAccountOpen}>
         <DialogContent className="max-h-[calc(100dvh-1rem)] grid-rows-[auto_minmax(0,1fr)] sm:max-w-[min(960px,calc(100vw-2rem))]">

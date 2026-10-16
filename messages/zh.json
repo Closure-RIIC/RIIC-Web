@@ -721,5 +721,20 @@
   },
   "app_help_import_operators_page_client": {
     "additional1": "<value2></value2>"
+  },
+  "SklandAttendance": {
+    "title": "明日方舟签到",
+    "loading": "正在查询签到状态…",
+    "done": "今日已签到",
+    "notYet": "今日未签到",
+    "unavailable": "签到状态暂不可用",
+    "sign": "一键签到",
+    "signing": "签到中…",
+    "auto": "打开本页时自动签到",
+    "rewards": "今日奖励：{awards}",
+    "failed": "签到暂未完成，请稍后重试。",
+    "storageFailed": "自动签到选择未能保存。",
+    "hint": "仅当前账号角色；自动签到默认关闭，仅打开本页时执行，关闭浏览器后不会后台签到。授权过期需重新扫码。",
+    "retry": "重试查询"
   }
 }

@@ -1781,7 +1781,7 @@ test("Skland status center keeps profile and recruitment in overview and support
   let statusRequests = 0;
   let currentStatusSnapshot: typeof authenticatedSklandSnapshot | typeof switchedSnapshot = authenticatedSklandSnapshot;
   page.on("request", (request) => {
-    if (["fetch", "xhr"].includes(request.resourceType()) && /attendance|sign/i.test(request.url())) attendanceRequests += 1;
+    if (request.method() === "POST" && /\/api\/skland\/attendance/.test(request.url())) attendanceRequests += 1;
     if (new URL(request.url()).pathname === "/api/skland/status/refresh") statusRequests += 1;
   });
   await mockApis(page, {

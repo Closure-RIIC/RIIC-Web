@@ -721,5 +721,20 @@
   },
   "app_help_import_operators_page_client": {
     "additional1": "<value1></value1>"
+  },
+  "SklandAttendance": {
+    "title": "Arknights check-in",
+    "loading": "Checking status…",
+    "done": "Checked in today",
+    "notYet": "Not checked in today",
+    "unavailable": "Check-in status unavailable",
+    "sign": "Check in",
+    "signing": "Checking in…",
+    "auto": "Check in automatically when opening this page",
+    "rewards": "Today’s rewards: {awards}",
+    "failed": "Check-in could not be completed. Please try again later.",
+    "storageFailed": "Could not save the automatic check-in preference.",
+    "hint": "Current account and role only. Automatic check-in is off by default and runs when this page opens, not after the browser closes. Scan again when authorization expires.",
+    "retry": "Retry status"
   }
 }

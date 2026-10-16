@@ -24,7 +24,7 @@
     "test:agent-models": "node --test --experimental-strip-types src/server/agent/config.test.ts src/server/agent/stream-policy.test.ts",
     "test:agent-personas": "node --test --experimental-strip-types src/agent-personas.test.ts src/server/agent/persona-catalog.test.ts",
     "test:agent-markdown": "node --test --experimental-strip-types src/agent-operator-mentions.test.ts",
-    "pretest:api-contract": "npm run test:billing-cdk && npm run test:feature-access && npm run test:agent-models && npm run test:agent-personas && npm run test:agent-markdown && npm run test:agent-gateway",
+    "pretest:api-contract": "npm run test:billing-cdk && npm run test:feature-access && npm run test:agent-models && npm run test:agent-personas && npm run test:agent-markdown && npm run test:agent-gateway && npm run test:skland-attendance",
     "dev": "vite --host 0.0.0.0 --port 5174",
     "dev:full": "npm run dev",
     "build": "vite build && tsc --noEmit",
@@ -74,7 +74,8 @@
     "worker:quality": "node --experimental-strip-types --import ./scripts/register-hooks.mjs scripts/quality-worker.mts",
     "check:types": "tsc --noEmit",
     "test:e2e:migration": "playwright test --config=playwright.migration.config.ts",
-    "test:route-preload": "node --test --experimental-strip-types src/route-preload.test.ts"
+    "test:route-preload": "node --test --experimental-strip-types src/route-preload.test.ts",
+    "test:skland-attendance": "node --test --experimental-transform-types --experimental-test-module-mocks src/skland-attendance.test.ts src/server/skland/attendance-api.test.ts src/server/skland/attendance-adapter.test.ts"
   },
   "browserslist": {
     "production": [

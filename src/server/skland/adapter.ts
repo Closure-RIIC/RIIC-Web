@@ -12,6 +12,7 @@ import {
 import type { SklandInventoryData, SklandQrStatusResponse, SklandScheduleSnapshot, SklandStatusSnapshot } from "@/types";
 import type { SklandPolicyConsentRequest } from "@/legal-policy";
 import { DeviceIdCache } from "./device-id-cache";
+import { attendanceFromStatus, type SklandAttendanceView } from "../../skland-attendance.ts";
 import { recentSklandOAuth } from "./recent-oauth";
 import {
   SKLAND_TEENAGER_PATH,
@@ -44,6 +45,42 @@ import {
 
 const SCAN_TTL_SECONDS = SCAN_TTL_MS / 1000;
 const TOKEN_REFRESH_MS = 20 * 60 * 1000;
+const attendanceTasks = new Map<string, Promise<{ session: SklandSessionPayload; attendance: SklandAttendanceView }>>();
+
+export async function sklandAttendance(payload: SklandSessionPayload, uid: string, sign: boolean) {
+  const key = `${createHash("sha256").update(payload.cred).digest("hex")}:${uid}`;
+  const existing = attendanceTasks.get(key);
+  if (sign && existing) return existing;
+  const run = async () => {
+    try {
+      assertUpstreamCapacity();
+      const client = await seedClient(payload);
+      const session = await refreshedPayload(client, payload);
+      if (session.token !== payload.token) await client.storage.setItem(STORAGE_OAUTH_TOKEN_KEY, session.token);
+      const roles = rolesFromBinding(await client.collections.player.getBinding());
+      if (!roles.some(role => role.uid === uid)) throw new SklandServiceError("BAD_DATA", "当前账号未绑定该角色。", 403);
+      const query = { uid, gameId: 1 };
+      let attendance = attendanceFromStatus(uid, await client.collections.game.getAttendanceStatus(query));
+      if (sign && !attendance.hasToday) {
+        try {
+          const result = await client.collections.game.attendance(query);
+          attendance = { ...attendance, hasToday: true, signedNow: true, awards: result.awards.flatMap(a => typeof a.resource?.name === "string" && Number.isFinite(a.count) && a.count >= 0 ? [{ name: a.resource.name.slice(0, 100), count: a.count }] : []).slice(0, 20) };
+        } catch (error) {
+          // A concurrent tab may have signed after our first status read. Verify
+          // the status instead of treating arbitrary provider errors as success.
+          attendance = attendanceFromStatus(uid, await client.collections.game.getAttendanceStatus(query));
+          if (!attendance.hasToday) throw error;
+        }
+      }
+      return { session, attendance };
+    } catch (error) { throw publicError(error); }
+  };
+  if (!sign) return run();
+  const task = run();
+  attendanceTasks.set(key, task);
+  try { return await task; }
+  finally { if (attendanceTasks.get(key) === task) attendanceTasks.delete(key); }
+}
 
 type PendingScan = {
   client: Client;

@@ -918,6 +918,7 @@ export async function mockApis(
 ) {
   // UI fixtures use the explicit public rollout in playwright.config.ts.
   await page.route("**/api/account/feature-access", (route) => route.fulfill({ json: { agent: true, billing: true } }));
+  await page.route("**/api/skland/attendance?*", route => route.fulfill({ json: { success: true, data: { uid: new URL(route.request().url()).searchParams.get("uid"), date: "2026-10-16", hasToday: false, signedNow: false, awards: [] } } }));
   if (options.dismissSolverWarning !== false) {
     // Result tests continue after acknowledging the new solver notice.
     // Its own coverage opts out and verifies the full dialog interaction.
