@@ -982,6 +982,43 @@ export function clearManualShift(
   return next;
 }
 
+/** Fill current shift dormitories with previous-shift workers who are off this shift. */
+export function restPreviousShiftOperators(
+  draft: ManualScheduleDraft,
+  layout: BaseBlueprint,
+  shiftIndex: number,
+): ManualScheduleDraft {
+  if (shiftIndex <= 0 || !draft.shifts[shiftIndex] || !draft.shifts[shiftIndex - 1]) return draft;
+  const previous = draft.shifts[shiftIndex - 1]!;
+  const current = draft.shifts[shiftIndex]!;
+  const dormitories = layout.rooms.filter((room) => room.kind === "dormitory");
+  const workingOperators = (shift: typeof current) => new Set(
+    Object.entries(shift.rooms)
+      .filter(([roomId]) => layout.rooms.find((room) => room.id === roomId)?.kind !== "dormitory")
+      .flatMap(([, assignment]) => assignment?.operators ?? [])
+      .filter((name): name is string => Boolean(name)),
+  );
+  const currentOperators = workingOperators(current);
+  const available: string[] = [];
+  const seen = new Set<string>();
+  for (const [roomId, assignment] of Object.entries(previous.rooms)) {
+    if (layout.rooms.find((room) => room.id === roomId)?.kind === "dormitory") continue;
+    for (const name of assignment?.operators ?? []) {
+      if (name && !currentOperators.has(name) && !seen.has(name)) { seen.add(name); available.push(name); }
+    }
+  }
+  const next = structuredClone(draft);
+  let cursor = 0;
+  for (const room of dormitories) {
+    const count = manualRoomCapacity(room);
+    next.shifts[shiftIndex]!.rooms[room.id] = {
+      operators: Array.from({ length: count }, () => available[cursor++] ?? null),
+      autofill: false,
+    };
+  }
+  return next;
+}
+
 function maaProduct(room: BlueprintRoom, productOverride?: BlueprintRoom["product"]): string | undefined {
   if (room.kind === "trade_post") {
     const product = productOverride ?? room.product;

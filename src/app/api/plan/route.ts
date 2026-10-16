@@ -24,6 +24,7 @@ import { activeSklandAccount, readSklandAccountStore } from "@/server/skland/htt
 import { sklandDataOwnerTag } from "@/server/skland/session";
 import { websiteSession as readWebsiteSession } from "@/server/auth";
 import { requireWebsiteSession } from "@/server/auth/authorization";
+import { localTestSession } from "@/server/auth/local-test-account";
 import { planAccessMode } from "@/server/plan-access";
 import { recordPlanRunBestEffort } from "@/server/business-records";
 import { isAccountCloudSyncEnabled, isPlanTaskQueueEnabled, workspaceMasterKeys } from "@/server/business-config";
@@ -114,13 +115,13 @@ export async function POST(request: Request) {
       const sample = await (await import("@/server/infra")).getSampleOperbox();
       body.operbox = sample.operbox as OperBoxEntry[];
       body.sourceName = "243 全精二示例";
-      const optionalSession = await readWebsiteSession(request).catch(() => null);
+      const optionalSession = localTestSession(request) ?? await readWebsiteSession(request).catch(() => null);
       if (optionalSession?.user?.id) {
         websiteUserId = optionalSession.user.id;
         websiteAccountClass = planAccountAdmissionClass(optionalSession.user);
       }
     } else {
-      const websiteSession = await requireWebsiteSession(request);
+      const websiteSession = localTestSession(request) ?? await requireWebsiteSession(request);
       websiteUserId = websiteSession.user.id;
       websiteAccountClass = planAccountAdmissionClass(websiteSession.user);
     }

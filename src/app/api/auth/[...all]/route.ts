@@ -6,9 +6,12 @@ import { assertSameOrigin, enforceRateLimit, PublicApiError, readJsonBody, reque
 import { isForbiddenNativeAdminPath } from "@/server/auth/native-route-policy";
 import { responseWithClearedSklandCookies } from "@/server/auth/session-cookie-cleanup";
 import { evictPlanCacheKeys, userPlanCacheKeys } from "@/server/plan-cache";
+import { localTestAuthResponse } from "@/server/auth/local-test-account";
 
 
 async function handle(request: Request) {
+  const localResponse = await localTestAuthResponse(request);
+  if (localResponse) return localResponse;
   if (isForbiddenNativeAdminPath(request.url)) {
     return Response.json({ code: "NOT_FOUND", message: "Not found" }, { status: 404 });
   }
