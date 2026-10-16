@@ -39,7 +39,8 @@ test("recycling uses the shared auxiliary room layout and preserves both operato
   assert.equal(row.title, "回收站");
   assert.equal(row.slotAssignments?.[0], undefined);
   assert.equal(row.slotAssignments?.[1]?.name, "旅骨");
-  assert.equal(layout.rooms.find(room => room.id === "recycle")?.kind, "recycling_station");
+  assert.equal(row.level, 3);
+  assert.equal(layout.rooms.some(room => room.id === "recycle"), false);
   assert.deepEqual(plan, before);
   assert.equal(mowerSchedulePresentation({}).rows.find(row => row.group === "recycling")?.operators.length, 0);
 });
