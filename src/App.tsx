@@ -23,6 +23,8 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useAccountCloudWorkspace } from "account-cloud-workspace-bridge";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { FilingLinks } from "@/components/layout/FilingLinks";
+import { LocalProfilesControl } from "@/components/LocalProfilesControl";
+import { LOCAL_PROFILES_KEY, readLocalProfiles, saveActiveLocalProfile } from "./local-profiles";
 import { AppTopBar, SklandAccountControl } from "@/components/layout/AppTopBar";
 import { DotDistortionBackground } from "@/components/layout/DotDistortionBackground";
 import { AppMotionProvider } from "@/components/MotionProvider";
@@ -94,6 +96,8 @@ import {
   loadPersistedSession,
   persistSession,
   RESULT_CLEAR_WARNING_DISMISSED_KEY,
+  SESSION_KEY_V5,
+  normalizeLocalProfileSession,
 } from "./persistence";
 import type { RoomRow } from "./schedule";
 import { DEFAULT_ROTATION_PROFILE, isRotationProfile, rotationDurations } from "./rotation-settings";
@@ -270,6 +274,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [websiteAuthDialogOpen, setWebsiteAuthDialogOpen] = useState(false);
   const [websiteAuthDialogMounted, setWebsiteAuthDialogMounted] = useState(false);
   const [hasRestoredSession, setHasRestoredSession] = useState(false);
+  const [localProfilesMode, setLocalProfilesMode] = useState(false);
+  const localProfileId = useRef("default");
   const restoredLocalSession = useRef(false);
   const [onboardingPreference, setOnboardingPreference] = useState<OnboardingPreference>("active");
   const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS);
@@ -560,7 +566,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   );
   const sklandBindingCount = sklandBindingSummary.totalCount;
   const sklandTrainingSyncOptions: SklandTrainingSyncOptions = {
-    enabled: Boolean(CLIENT_SKLAND_ENABLED && websiteSession?.user.id && boxSource === "skland" && activeSklandAccount && hasRestoredSession),
+    enabled: Boolean(!localProfilesMode && CLIENT_SKLAND_ENABLED && websiteSession?.user.id && boxSource === "skland" && activeSklandAccount && hasRestoredSession),
     active: page === "training",
     blocked: sklandBusy || sklandSessionLoading || loading || Boolean(planTask.taskId) || progressionAdjustmentActivity.loading || setupOpen,
     identity: `${websiteSession?.user.id}:${activeSklandAccount?.accountId}:${activeSklandAccount?.selectedUid}`,
@@ -593,7 +599,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     && trainingSyncSnapshot.resultId === sklandTrainingSyncOptions.resultId
     ? trainingSyncSnapshot.value : null;
   const accountCloudWorkspace = useAccountCloudWorkspace(CLIENT_ACCOUNT_CLOUD_SYNC_ENABLED ? {
-    userId: websiteUserId,
+    userId: localProfilesMode ? null : websiteUserId,
     hasRestoredSession,
     hasLocalSession: hadPersistedSession.current,
     preset,
@@ -683,11 +689,22 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     if (typeof window === "undefined" || restoredLocalSession.current) return;
     restoredLocalSession.current = true;
     try {
+      let profiles: ReturnType<typeof readLocalProfiles> = null;
+      try { profiles = readLocalProfiles(window.localStorage); } catch { /* A damaged profile index must not prevent recovery of the working session. */ }
+      localProfileId.current = profiles?.activeId ?? "default";
+      setLocalProfilesMode(Boolean(profiles?.managed));
+      if (profiles?.managed) {
+        const raw = window.localStorage.getItem(SESSION_KEY_V5);
+        if (raw) {
+          const session = normalizeLocalProfileSession(JSON.parse(raw));
+          if (session) window.localStorage.setItem(SESSION_KEY_V5, JSON.stringify(session));
+        }
+      }
       const restored = loadPersistedSession(window.localStorage);
       hadPersistedSession.current = Boolean(restored);
       setOnboardingPreference(resolveOnboardingPreference(
         window.localStorage.getItem(ONBOARDING_STORAGE_KEY),
-        Boolean(restored?.result),
+        Boolean(restored?.result || (profiles?.managed && restored?.operbox?.length)),
       ));
       const warningDismissed = window.localStorage.getItem(RESULT_CLEAR_WARNING_DISMISSED_KEY) === "1";
       setResultClearWarningDismissed(warningDismissed);
@@ -724,6 +741,15 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       setHasRestoredSession(true);
     }
   }, [intl, locale, setBoxSource, setLayoutDirty, setOperbox]);
+
+  useEffect(() => {
+    const changed = (event: StorageEvent) => {
+      if (event.key !== LOCAL_PROFILES_KEY || !event.newValue) return;
+      try { if (JSON.parse(event.newValue).activeId !== localProfileId.current) window.location.reload(); } catch { /* Keep current data when another tab writes invalid storage. */ }
+    };
+    window.addEventListener("storage", changed);
+    return () => window.removeEventListener("storage", changed);
+  }, []);
 
   // 将 agent 生成的排班产物注入工作台：复用会话恢复路径设置全部状态，
   // 使班次切换、手动排班导入、效率视图等现有功能立即可用。
@@ -810,7 +836,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       return;
     }
     try {
-      persistSession(window.localStorage, {
+      const profiles = readLocalProfiles(window.localStorage);
+      if (profiles && profiles.activeId !== localProfileId.current) return;
+      const savedSession = persistSession(window.localStorage, {
         presetLabel: preset.label,
         layout,
         operbox,
@@ -824,6 +852,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         result,
         activeShift,
       });
+      saveActiveLocalProfile(window.localStorage, savedSession, localProfileId.current);
       setStorageNotice(null);
     } catch {
       reportPersistenceFailure();
@@ -958,14 +987,15 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         setSklandBindingSummary(bindingSummary);
         setSklandStatusSnapshot(session.statusSnapshot ?? null);
         if (session.authenticated && session.scheduleSnapshot) {
-          setSklandScheduleSnapshot(session.scheduleSnapshot);
-          if (currentBoxSourceRef.current === "skland" || !currentOperboxRef.current?.length) {
+          setSklandScheduleSnapshot(localProfilesMode ? null : session.scheduleSnapshot);
+          if (!localProfilesMode && (currentBoxSourceRef.current === "skland" || !currentOperboxRef.current?.length)) {
             setOperbox(normalizeOperboxEntries(session.scheduleSnapshot.operbox));
             setFileName(session.scheduleSnapshot.sourceName);
             setBoxSource("skland");
           }
           if (
-            !currentLayoutDirtyRef.current
+            !localProfilesMode
+            && !currentLayoutDirtyRef.current
             && (initialBoxSource.current === "skland" || !initialOperbox.current)
             && session.scheduleSnapshot.infrastructure.layoutSuggestion
           ) {
@@ -995,7 +1025,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [intl, hasRestoredSession, locale, page, setBoxSource, setOperbox, setupOpen, websiteAuthReloadKey, websiteSessionPending, websiteUserId]);
+  }, [intl, hasRestoredSession, locale, page, setBoxSource, setOperbox, setupOpen, websiteAuthReloadKey, websiteSessionPending, websiteUserId, localProfilesMode]);
 
   useEffect(() => {
     if (
@@ -2473,6 +2503,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
             </button>
           </div>
         ) : null}
+        {hasRestoredSession && ["calculator", "manual", "mower", "training", "settings"].includes(page) ? <div className="app-content-track pt-4"><LocalProfilesControl disabled={loading || sklandBusy || sklandSessionLoading || progressionAdjustmentActivity.loading || setupOpen} session={{presetLabel:preset.label,layout,operbox,sourceName:fileName,boxSource,layoutDirty,layoutSource,localLayoutBackup,rotationProfile,fiammettaEnabled,result,activeShift}} /></div> : null}
         <LiveActivity
           activity={activity}
           onRetry={() => void handleRetry()}
@@ -2535,7 +2566,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         </div>
       </footer> : null}
 
-      {CLIENT_ACCOUNT_CLOUD_SYNC_ENABLED ? accountCloudWorkspace.syncElement : null}
+      {CLIENT_ACCOUNT_CLOUD_SYNC_ENABLED && !localProfilesMode ? accountCloudWorkspace.syncElement : null}
       {hasRestoredSession ? <Suspense fallback={null}>
         <ReleaseAnnouncement enabled={!websiteSessionPending && !websiteAuthDialogOpen && !setupOpen && !issueOpen && !pendingProductChange && !pendingManualDraftReplacement && !loading} />
       </Suspense> : null}

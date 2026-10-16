@@ -289,3 +289,9 @@ export function clearLocalProductData(storage: StorageLike, extraKeys: string[] 
     ...extraKeys,
   ].forEach((key) => storage.removeItem(key));
 }
+
+/** Validate portable local snapshots without applying the rolling session expiry. */
+export function normalizeLocalProfileSession(value: unknown, now = Date.now()): PersistedSessionV5 | null {
+  if (!isObject(value)) return null;
+  return normalizeSession({ ...value, savedAt: new Date(now).toISOString(), expiresAt: new Date(now + SESSION_TTL_MS).toISOString() }, now);
+}
