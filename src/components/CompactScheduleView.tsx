@@ -45,7 +45,7 @@ import { PRODUCT_ICON_URLS } from "@/product-assets";
 
 export interface CompactScheduleViewProps {
   simulation?: { moods: Readonly<Record<string, number>>; selected: string; onSelect: (name: string) => void };
-  noLayoutSkillOperators?: ReadonlySet<string>;
+  noRoomSkillOperators?: ReadonlyMap<string, ReadonlySet<string>>;
   rows: RoomRow[];
   layout: BaseBlueprint;
   eliteByOperator?: ReadonlyMap<string, number>;
@@ -137,7 +137,7 @@ function roomSlotCountFor(group: string) {
 
 function CompactRoomCard({
   simulation,
-  noLayoutSkillOperators,
+  noRoomSkillOperators,
   row,
   layoutRoom,
   visual,
@@ -167,7 +167,7 @@ function CompactRoomCard({
   compactProductControls = false,
 }: {
   simulation?: CompactScheduleViewProps["simulation"];
-  noLayoutSkillOperators?: ReadonlySet<string>;
+  noRoomSkillOperators?: ReadonlyMap<string, ReadonlySet<string>>;
   row: RoomRow;
   layoutRoom: BaseBlueprint["rooms"][number] | undefined;
   visual: ReturnType<typeof roomVisualFor>;
@@ -349,7 +349,7 @@ function CompactRoomCard({
     <OperatorSlot
       key={`${row.key}-${index}`}
       slot={slot}
-      highlightNoLayoutSkill={Boolean(slot && noLayoutSkillOperators?.has(slot.name))}
+      highlightNoLayoutSkill={Boolean(slot && noRoomSkillOperators?.get(row.roomId)?.has(slot.name))}
       elite={simulation ? undefined : slot ? eliteByOperator?.get(slot.name) : undefined}
       currentMorale={slot && simulation ? Math.round((simulation.moods[slot.name] ?? 24) * 100) / 100 : undefined}
       selectionMode={Boolean(simulation)}
@@ -575,7 +575,7 @@ export function CompactScheduleView(props: CompactScheduleViewProps) {
     return (
       <CompactRoomCard
         simulation={props.simulation}
-        noLayoutSkillOperators={props.noLayoutSkillOperators}
+        noRoomSkillOperators={props.noRoomSkillOperators}
         key={row.key}
         row={row}
         layoutRoom={layoutRoom!}

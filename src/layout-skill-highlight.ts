@@ -6,6 +6,7 @@ export type OperatorSkillProgress = ReadonlyMap<string, { elite: number; level: 
 const ROOM_SKILL_PREFIXES: Record<string, string> = {
   control_center: "control", trade_post: "trade", factory: "manu", power_plant: "power",
   dormitory: "dorm", office: "hire", meeting_room: "meet", workshop: "workshop", training_room: "train",
+  recycling_station: "recycle",
 };
 
 export function operatorsWithoutLayoutSkills(
@@ -24,4 +25,15 @@ export function operatorsWithoutLayoutSkills(
     return unlocked && prefixes.has(skill.id.split("_")[0]!);
   }
   )).map(operator => operator.name));
+}
+
+/** Each assignment is checked against its own room, not other rooms in the layout. */
+export function operatorsWithoutRoomSkills(
+  catalog: readonly Pick<OperatorAssetRecord, "name" | "buildingSkills">[],
+  rooms: BaseBlueprint["rooms"],
+  progress?: OperatorSkillProgress,
+): ReadonlyMap<string, ReadonlySet<string>> {
+  return new Map(rooms.map(room => [room.id, room.kind === "dormitory"
+    ? new Set<string>()
+    : operatorsWithoutLayoutSkills(catalog, [room], progress)]));
 }
