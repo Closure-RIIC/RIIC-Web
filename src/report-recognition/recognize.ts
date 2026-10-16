@@ -370,12 +370,44 @@ function templateDistance(glyph: Uint8Array, template: Uint8Array): number {
 
 type GlyphMatch = { digit: number; distance: number };
 
+/**
+ * 笔画减一像素的模板。模板取自青色数值字，而龙门币订单数量等白色数字在深色
+ * 面板上二值化后笔画普遍细一档，直接用同一份模板比对会系统性抬高距离。
+ */
+function erodeTemplate(template: Uint8Array): Uint8Array {
+  const out = new Uint8Array(template.length);
+  for (let y = 0; y < DIGIT_TEMPLATE_HEIGHT; y++) {
+    for (let x = 0; x < DIGIT_TEMPLATE_WIDTH; x++) {
+      let keep = 1;
+      for (let dy = -1; dy <= 1 && keep; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const ny = y + dy;
+          const nx = x + dx;
+          if (ny < 0 || ny >= DIGIT_TEMPLATE_HEIGHT || nx < 0 || nx >= DIGIT_TEMPLATE_WIDTH || !template[ny * DIGIT_TEMPLATE_WIDTH + nx]) {
+            keep = 0;
+            break;
+          }
+        }
+      }
+      out[y * DIGIT_TEMPLATE_WIDTH + x] = keep;
+    }
+  }
+  return out;
+}
+
+const ERODED_DIGIT_TEMPLATES = DIGIT_TEMPLATES.map(erodeTemplate);
+
+/** 取模板与其细一像素版本中的较小距离，容忍笔画粗细差异。 */
+function templateDistanceWithStrokeTolerance(glyph: Uint8Array, digit: number): number {
+  return Math.min(templateDistance(glyph, DIGIT_TEMPLATES[digit]!), templateDistance(glyph, ERODED_DIGIT_TEMPLATES[digit]!));
+}
+
 function matchGlyph(ink: Ink, glyph: Glyph, cyanOnly: boolean): GlyphMatch {
   const normalized = normalizeGlyph(ink, glyph, cyanOnly);
   let digit = -1;
   let distance = Infinity;
   for (let d = 0; d < DIGIT_TEMPLATES.length; d++) {
-    const candidate = templateDistance(normalized, DIGIT_TEMPLATES[d]!);
+    const candidate = templateDistanceWithStrokeTolerance(normalized, d);
     if (candidate < distance) {
       distance = candidate;
       digit = d;
