@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { WebsiteSessionSettings } from "@/components/auth/WebsiteSessionSettings";
 import { DEFAULT_USER_SETTINGS, type UserSettings } from "@/user-settings";
+import { setColorMode, useColorMode } from "@/components/ColorMode";
 
 const SETTINGS_SWITCH_CLASS = "data-checked:bg-white data-unchecked:bg-white/20 dark:data-unchecked:bg-white/20 [&_[data-slot=switch-thumb]]:bg-white [&_[data-slot=switch-thumb][data-checked]]:bg-[#272a2b]";
 
@@ -43,7 +44,7 @@ function SettingsDropdown<T extends string>({ id, label, value, options, disable
       disabled={disabled}
       onValueChange={(option) => { if (option) onChange(option.value); }}
     >
-      <ComboboxInput id={id} aria-label={label} readOnly disabled={disabled} className="h-9 w-44 max-w-[55%] shrink-0 border-white/22 bg-white text-[#242424] shadow-none [&_input]:text-[#242424]" />
+      <ComboboxInput id={id} aria-label={label} readOnly disabled={disabled} className="h-9 w-44 max-w-[55%] shrink-0 border-white/22 bg-white text-[#242424] shadow-none [&_input]:text-[#242424] dark:bg-[#242424] dark:text-white dark:[&_input]:text-white" />
       <ComboboxContent align="start">
         <ComboboxList>
           {(option) => <ComboboxItem key={option.value} value={option}>{option.label}</ComboboxItem>}
@@ -55,6 +56,7 @@ function SettingsDropdown<T extends string>({ id, label, value, options, disable
 
 export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPageProps) {
   const en = useLocale() === "en";
+  const colorMode = useColorMode();
   const [viewControlDetailsOpen, setViewControlDetailsOpen] = useState(!settings.linkShiftViewControl);
   const viewControlOptions: Array<{ value: UserSettings["scheduleViewControl"]; label: string }> = [
     { value: "tabs", label: en ? "Buttons" : "按钮" },
@@ -234,6 +236,15 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
             </InfraTechnicalHeading>
             <p className="mt-4 text-sm leading-6 text-white/64">{en ? "Choose which actions, images and language resources to display." : "选择显示的操作入口、图片及语言资源。"}</p>
             <div className="mt-5 grid gap-4">
+            <div className="flex items-center justify-between gap-6">
+              <Label htmlFor="color-mode" className="grid min-w-0 gap-1">
+                <span>{en ? "Appearance mode" : "外观模式"}</span>
+                <span className="font-normal text-sm text-white/64">{en ? "Choose a light or dark monochrome interface." : "选择黑白日间或夜间界面，自动保存在当前浏览器。"}</span>
+              </Label>
+              <SettingsDropdown id="color-mode" label={en ? "Appearance mode" : "外观模式"} value={colorMode}
+                options={[{ value: "light", label: en ? "Day mode" : "日间模式" }, { value: "dark", label: en ? "Night mode" : "夜间模式" }]}
+                onChange={setColorMode} />
+            </div>
             <div className="flex items-center justify-between gap-6">
               <Label htmlFor="show-progression-recalculate" className="grid min-w-0 gap-1">
                 <span>{en ? "Show progression recalculation" : "显示修改练度并重算"}</span>
