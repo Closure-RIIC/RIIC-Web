@@ -6,7 +6,7 @@ test("pending orders expire and can be removed while paid history remains", asyn
   await mockApis(page);
   const now = Date.now();
   const order = (id: string, status: string, age: number) => ({ id, status, productId: "points_10", amountFen: 1000, points: 110, paymentUrl: null, paidAt: null, createdAt: new Date(now - age).toISOString() });
-  let orders = [order("recent", "pending", 0), order("expired", "pending", 4 * 86400000), order("paid", "paid", 5 * 86400000)];
+  let orders = [order("recent", "pending", 0), order("another", "pending", 0), order("expired", "pending", 4 * 86400000), order("paid", "paid", 5 * 86400000)];
   await page.route("**/api/billing", route => {
     if (route.request().method() === "DELETE") {
       const deleted = orders.filter(order => order.status === "pending").length;
@@ -19,32 +19,17 @@ test("pending orders expire and can be removed while paid history remains", asyn
   } } });
   });
   await page.route("**/api/billing/orders/recent", route => {
-    if (route.request().method() === "DELETE") {
-      orders = orders.filter(order => order.id !== "recent");
-      return route.fulfill({ json: { data: { deleted: true } } });
-    }
+    expect(route.request().method()).toBe("GET");
     return route.fulfill({ json: { data: { order: { status: "pending" } } } });
   });
   await page.goto("/billing");
   const section = page.locator("[data-billing-orders]");
-  await expect(section.locator("li")).toHaveCount(2);
-  await expect(section.getByRole("button", { name: "删除待支付订单 expired" })).toHaveCount(0);
-  await expect(section.getByRole("button", { name: "删除待支付订单 paid" })).toHaveCount(0);
-  await section.getByRole("button", { name: "删除待支付订单 recent", exact: true }).click();
-  await expect(section.locator("li")).toHaveCount(2);
-  const confirmDelete = section.getByRole("button", { name: "确认删除待支付订单 recent", exact: true });
-  await expect(confirmDelete).toHaveText("确认删除");
-  await page.getByRole("heading", { name: "最近订单", exact: true }).hover();
-  await expect(section.getByRole("button", { name: "删除待支付订单 recent", exact: true })).toHaveText("删除");
-  await section.getByRole("button", { name: "删除待支付订单 recent", exact: true }).click();
-  await section.getByRole("button", { name: "确认删除待支付订单 recent", exact: true }).click();
-  await expect(section.locator("li")).toHaveCount(1);
-  await expect(section).toContainText("已付款 · 已到账");
-  await page.reload();
-  await expect(section.locator("li")).toHaveCount(1);
-  orders.push(order("another", "pending", 0), order("third", "pending", 0));
-  await page.reload();
+  const heading = section.getByRole("heading", { name: "最近订单", exact: true });
+  const clearButton = heading.locator("..").getByRole("button", { name: "一键清空未支付订单", exact: true });
+  await expect(clearButton).toBeVisible();
+  await expect(clearButton).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(section.locator("li")).toHaveCount(3);
+  await expect(section.locator("li").getByRole("button")).toHaveCount(0);
   await section.getByRole("button", { name: "一键清空未支付订单", exact: true }).click();
   await expect(section.locator("li")).toHaveCount(3);
   await page.getByRole("heading", { name: "最近订单", exact: true }).hover();
@@ -53,14 +38,26 @@ test("pending orders expire and can be removed while paid history remains", asyn
   await section.getByRole("button", { name: "确认清空所有未支付订单", exact: true }).click();
   await expect(section.locator("li")).toHaveCount(1);
   await expect(section).toContainText("已付款 · 已到账");
+  await page.reload();
+  await expect(section.locator("li")).toHaveCount(1);
   await expect(section.getByRole("button", { name: "一键清空未支付订单", exact: true })).toBeDisabled();
 });
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
-  test(`payment plans navigate within the workbench at ${viewport.width}px`, async ({ page }) => {
-    await mockAnonymousWebsiteSession(page);
+  test(`payment plans require sidebar login and resume navigation at ${viewport.width}px`, async ({ page }) => {
+    let authenticated = false;
+    const user = { id: "billing-user", name: "测试用户", email: "billing@example.test", emailVerified: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    await page.route("**/api/auth/get-session", route => route.fulfill({ json: authenticated ? {
+      user, session: { id: "billing-session", userId: user.id, expiresAt: new Date(Date.now() + 3_600_000).toISOString() },
+    } : null }));
+    await page.route("**/api/auth/sign-in/email", route => {
+      authenticated = true;
+      return route.fulfill({ json: { redirect: false, token: "test-token", user } });
+    });
     await mockApis(page);
+    let billingRequests = 0;
     await page.route("**/api/billing", async (route) => {
+      billingRequests += 1;
       expect(route.request().method()).toBe("GET");
       await route.fulfill({ json: { data: {
         wallet: { totalPoints: 110, paidPoints: 110, monthlyPoints: 0, monthlyExpiresAt: null },
@@ -76,6 +73,19 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     await expect(accountItem.locator("xpath=following-sibling::li[1]")).toContainText("付费计划");
     const navigation = page.getByRole("button", { name: "付费计划", exact: true });
     await navigation.click();
+    const loginDialog = page.getByRole("dialog", { name: "登录网站账号", exact: true });
+    await expect(loginDialog).toBeVisible();
+    await expect(page).toHaveURL(/\/account-health$/);
+    await expect(page.locator("[data-billing-prototype]")).toHaveCount(0);
+    expect(billingRequests).toBe(0);
+    await page.keyboard.press("Escape");
+    await expect(loginDialog).toHaveCount(0);
+    await expect(page).toHaveURL(/\/account-health$/);
+    if (viewport.width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    await navigation.click();
+    await loginDialog.getByRole("textbox", { name: "邮箱", exact: true }).fill(user.email);
+    await loginDialog.getByLabel("密码", { exact: true }).fill("secure-password-1");
+    await loginDialog.getByRole("button", { name: "登录", exact: true }).click();
     await expect(page).toHaveURL(/\/billing$/);
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "付费计划", exact: true })).toBeVisible();
@@ -90,6 +100,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     await page.goBack();
     await expect(page.locator("[data-account-health-page]")).toBeVisible();
+    if (viewport.width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    await navigation.click();
+    await expect(page).toHaveURL(/\/billing$/);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 }
 

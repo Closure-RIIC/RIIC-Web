@@ -52,8 +52,9 @@ test("Persona portraits keep Closure fixed and persist uploaded persona avatars"
   await expect(preview.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
   await page.getByLabel("上传人格卡文件", { exact: true }).setInputFiles({ name: "测试人格.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ name: "测试人格", content: "简洁回答。", avatarUrl: "/images/operator-portraits/4228_closur.webp" })) });
   await expect(page.getByRole("button", { name: "人格卡：测试人格" })).toBeVisible();
-  await expect(assistantAvatar.locator("img")).toHaveAttribute("src", "/images/operator-portraits/4228_closur.webp");
+  await expect(assistantAvatar.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
   await page.getByRole("button", { name: /人格卡：/ }).click();
+  await expect(preview.locator("img")).toHaveAttribute("src", "/images/operator-portraits/4228_closur.webp");
   await avatarInput.setInputFiles("public/images/operator-portraits/4228_closur.webp");
   await expect(preview.locator("img")).toHaveAttribute("src", /^data:image\/webp;base64,/);
   const customAvatar = await preview.locator("img").getAttribute("src");
@@ -62,7 +63,7 @@ test("Persona portraits keep Closure fixed and persist uploaded persona avatars"
   await expect(preview.locator("img")).toHaveAttribute("src", customAvatar!);
   await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
   await page.reload();
-  await expect(assistantAvatar.locator("img")).toHaveAttribute("src", customAvatar!);
+  await expect(assistantAvatar.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
   await page.getByRole("button", { name: /人格卡：/ }).click();
   await expect(preview.locator("img")).toHaveAttribute("src", customAvatar!);
   await page.getByRole("button", { name: "重置头像", exact: true }).click();

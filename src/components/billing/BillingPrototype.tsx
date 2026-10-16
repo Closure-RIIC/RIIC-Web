@@ -74,7 +74,6 @@ export function BillingPrototype() {
   const heading = <WorkbenchPageHeading page="billing" accentColor="var(--billing-highlight)">{locale === "en" ? "Payment plans" : "付费计划"}</WorkbenchPageHeading>;
   const [data, setData] = useState<BillingData | null>(null);
   const [orderClock, setOrderClock] = useState(() => Date.now());
-  const [confirmDeleteOrder, setConfirmDeleteOrder] = useState<string | null>(null);
   const [confirmClearOrders, setConfirmClearOrders] = useState(false);
   useEffect(() => {
     const timer = window.setInterval(() => setOrderClock(Date.now()), 30_000);
@@ -118,25 +117,8 @@ export function BillingPrototype() {
   // pending order cannot hide a newer paid callback.
   const activeOrder = visibleOrders[0] ?? null;
 
-  const deletePendingOrder = async (orderId: string) => {
-    setConfirmDeleteOrder(null);
-    setBusy(orderId);
-    setError(null);
-    try {
-      const response = await fetch(`/api/billing/orders/${encodeURIComponent(orderId)}`, { method: "DELETE", credentials: "same-origin" });
-      const payload = await response.json() as { error?: { message?: string } };
-      if (!response.ok) throw new Error(payload.error?.message ?? "删除失败，请重试。");
-      setNotice("待支付订单已删除。");
-      notifyBillingUpdated();
-      await reload();
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "删除失败，请重试。");
-    } finally { setBusy(null); }
-  };
-
   const clearPendingOrders = async () => {
     setConfirmClearOrders(false);
-    setConfirmDeleteOrder(null);
     setBusy("clear-pending-orders");
     setError(null);
     try {
@@ -287,23 +269,23 @@ export function BillingPrototype() {
       </BillingCard>
 
       <BillingCard aria-labelledby="billing-orders-heading" data-billing-orders>
-        <div className={styles.sectionHeading}><h2 id="billing-orders-heading">最近订单</h2><p className={styles.caption}>最近 6 笔 · 待支付订单 3 天后自动隐藏，也可手动删除</p></div>
-        <div className="mb-2 flex justify-end"><Button type="button" variant="outline" size="sm" className={`${styles.pill} min-w-44`} disabled={busy !== null || !visibleOrders.some(order => order.status === "pending")}
-          onMouseLeave={() => setConfirmClearOrders(false)} onBlur={() => setConfirmClearOrders(false)}
-          onKeyDown={event => { if (event.key === "Escape") setConfirmClearOrders(false); }}
-          onClick={() => { setConfirmDeleteOrder(null); if (confirmClearOrders) void clearPendingOrders(); else setConfirmClearOrders(true); }}
-        >{busy === "clear-pending-orders" ? "清空中…" : confirmClearOrders ? "确认清空所有未支付订单" : "一键清空未支付订单"}</Button></div>
+        <div className={styles.sectionHeading}>
+          <div className={styles.ordersTitle}>
+            <h2 id="billing-orders-heading">最近订单</h2>
+            <Button type="button" variant="link" size="sm" className={styles.clearOrders} disabled={busy !== null || !visibleOrders.some(order => order.status === "pending")}
+              onMouseLeave={() => setConfirmClearOrders(false)} onBlur={() => setConfirmClearOrders(false)}
+              onKeyDown={event => { if (event.key === "Escape") setConfirmClearOrders(false); }}
+              onClick={() => { if (confirmClearOrders) void clearPendingOrders(); else setConfirmClearOrders(true); }}
+            >{busy === "clear-pending-orders" ? "清空中…" : confirmClearOrders ? "确认清空所有未支付订单" : "一键清空未支付订单"}</Button>
+          </div>
+          <p className={styles.caption}>最近 6 笔 · 待支付订单 3 天后自动隐藏</p>
+        </div>
         {visibleOrders.length === 0 ? <p className={styles.empty}>暂无可显示的订单，购买积分套餐后会显示在这里。</p> : <ul className={styles.records}>
           {visibleOrders.slice(0, 6).map((order) => {
             const status = orderStatus(order.status);
             return <li key={order.id} className={styles.row}>
               <div><h3 className={styles.recordTitle}>{data.products.find((product) => product.id === order.productId)?.name ?? order.productId}</h3><p className={styles.meta}>{order.points.toLocaleString()} 积分<span aria-hidden="true"> · </span><time dateTime={order.createdAt}>{formatMinute(order.createdAt)}</time></p></div>
-              <div className="text-right"><p className={`${styles.amount} font-number`}>{money(order.amountFen)}</p><span className={`${styles.status} ${status.className}`}>{status.label}</span>{order.status === "pending" ? <Button type="button" variant="outline" size="sm" className={`${styles.pill} mt-1 min-w-20`} disabled={busy !== null} aria-label={`${confirmDeleteOrder === order.id ? "确认删除" : "删除"}待支付订单 ${order.id}`}
-                onMouseLeave={() => setConfirmDeleteOrder(current => current === order.id ? null : current)}
-                onBlur={() => setConfirmDeleteOrder(current => current === order.id ? null : current)}
-                onKeyDown={event => { if (event.key === "Escape") setConfirmDeleteOrder(null); }}
-                onClick={() => { if (confirmDeleteOrder === order.id) void deletePendingOrder(order.id); else setConfirmDeleteOrder(order.id); }}
-              >{busy === order.id ? "删除中…" : confirmDeleteOrder === order.id ? "确认删除" : "删除"}</Button> : null}</div>
+              <div className="text-right"><p className={`${styles.amount} font-number`}>{money(order.amountFen)}</p><span className={`${styles.status} ${status.className}`}>{status.label}</span></div>
             </li>;
           })}
         </ul>}
