@@ -20,6 +20,17 @@
 .summaryMetric > strong { margin-top: 0; min-height: 24px; align-items: center; }
 .summaryMetric > strong > span:first-child { display: flex; align-items: center; min-width: 0; }
 
+.toolbarAction.fiveStarToggle[aria-pressed] {
+  background: #fff;
+  color: #000;
+  border-color: rgb(49 49 49 / .18);
+}
+.toolbarAction.fiveStarToggle[aria-pressed="true"] {
+  background: #000;
+  color: #fff;
+  border-color: #000;
+}
+
 @media (max-width: 639px) {
   .statistics { --gacha-stat-padding: 8px; }
 }

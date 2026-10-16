@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
-import { RefreshCw, ScanLine, Trash2, Unlink } from "lucide-react";
+import { RefreshCw, ScanLine, Star, Trash2, Unlink } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { QrCodeFrame } from "@/components/ui/qr-code-frame";
@@ -11,7 +11,6 @@ import { StatusCenterHeader } from "@/components/pages/StatusCenterShell";
 import { RemoteAvatar } from "@/components/ui/remote-avatar";
 import { operatorPortraitFor } from "@/operatorPortraits";
 import { SummaryMetric } from "@/components/ui/summary-metric";
-import { Switch } from "@/components/ui/switch";
 import { PRODUCT_ICON_URLS } from "@/product-assets";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SklandPolicyConsent, currentSklandPolicyConsent } from "@/skland-policy-consent";
@@ -375,6 +374,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
         extraMetadata={recordStartedLabel && <span className="whitespace-nowrap" data-gacha-record-start>记录始于 <time dateTime={new Date(analysis.startedAt!).toISOString()}>{recordStartedLabel}</time></span>} /> : null}
       actions={
       <div className={`${styles.actionToolbar} ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 max-lg:ml-0 max-lg:w-full max-lg:justify-start`} role="group" aria-label="寻访记录操作">
+        {history && <SetupActionButton type="button" variant="outline" className={`${gachaToolbarActionClassName} ${styles.fiveStarToggle}`} data-gacha-action="five-stars" aria-label="展示五星" aria-pressed={showFiveStars} title="展示五星" onClick={() => setShowFiveStars(current => !current)}><Star /><span className={styles.actionLabel}>展示五星</span></SetupActionButton>}
         {authorizedUids.length > 0 && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground`} data-gacha-action="disconnect" aria-label="解除授权" title="解除授权" disabled={busy} onClick={() => void disconnect()}><Unlink className="sm:hidden" /><span className={styles.actionLabel}>解除授权</span></SetupActionButton>}
         {history && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground hover:text-destructive`} data-gacha-action="delete" disabled={busy || loading} aria-label="删除云端寻访记录" title="删除云端寻访记录" onClick={() => void clearHistory()}><Trash2 /><span className={styles.actionLabel}>删除</span></SetupActionButton>}
         <Dialog open={authorizationOpen} onOpenChange={changeAuthorizationOpen}>
@@ -412,7 +412,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
     {history && <>
       <div className={styles.statistics} data-gacha-statistics>
       <section aria-label="已保存寻访统计" data-gacha-summary className="overflow-hidden border border-[#313131]/18 bg-[#F3F1EA] text-[#313131] shadow-[0_12px_30px_rgba(35,38,39,0.10)]">
-        <div className="grid grid-cols-6">
+        <div className="grid grid-cols-6 sm:grid-cols-5">
           {[
             { id: "orundum", label: "总消耗合成玉", value: (history.records.length * 600).toLocaleString("zh-CN") },
             { id: "career-score", label: "生涯评分", value: <GachaRating average={analysis.career.sixAverage} scope="career" /> },
@@ -423,10 +423,6 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
             <SummaryMetric label={metric.label} value={metric.value} unit={metric.id === "orundum" ? "折算" : undefined} reserveIconSpace={metric.id === "orundum"} />
             {metric.id === "orundum" && <img src={PRODUCT_ICON_URLS.orundum} alt="合成玉" width={24} height={24} className="pointer-events-none absolute right-1.5 top-1.5 size-6 object-contain opacity-75" />}
           </div>)}
-          <label className={`${styles.summaryMetric} col-span-2 flex min-w-0 cursor-pointer flex-col items-start justify-center gap-2 sm:col-span-1 max-sm:border-t max-sm:border-[#313131]/10`}>
-            <span className="text-[10px] font-medium tracking-[0.06em] text-[#313131]/58">是否展示五星</span>
-            <Switch size="sm" checked={showFiveStars} onCheckedChange={setShowFiveStars} className="data-checked:bg-[#313131] data-unchecked:bg-[#313131]/20" />
-          </label>
         </div>
       </section>
       <GachaAnalysisOverview analysis={analysis} />

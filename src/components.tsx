@@ -1025,6 +1025,7 @@ export function OperatorSlot({
   compactFactory = false,
   compactView = false,
   selectionMode = false,
+  nameColor = selectionMode ? "popover" : "white",
   centerFrameInList = false,
   shiftDirection = 0,
   transitionDelay = 0,
@@ -1054,6 +1055,7 @@ export function OperatorSlot({
   compactView?: boolean;
   /** 选择器样式：保留点击与技能提示，但不显示排班卡片的“可编辑”标记和常驻黄框。 */
   selectionMode?: boolean;
+  nameColor?: "white" | "popover";
   centerFrameInList?: boolean;
   shiftDirection?: ShiftDirection;
   transitionDelay?: number;
@@ -1232,7 +1234,7 @@ export function OperatorSlot({
       ) : undefined}
       label={slot ? <AnimatedText value={displayName ?? slot.name} trend={shiftDirection} /> : autofill ? (intl("components.autoFill")) : (emptyLabel ?? intl("components.slot"))}
       labelClassName={slot
-        ? (searchMatched ? "bg-[#FFD501] px-1 text-[#202020]" : selectionMode ? "text-popover-foreground" : "text-white")
+        ? (searchMatched ? "bg-[#FFD501] px-1 text-[#202020]" : nameColor === "popover" ? "text-popover-foreground" : "text-white")
         : autofill || emptyLabel
           ? "text-white/55"
           : "text-transparent select-none"}
@@ -1655,6 +1657,7 @@ export function ScheduleBoard({
                             elite={simulation ? undefined : slot ? eliteByOperator?.get(slot.name) : undefined}
                             currentMorale={slot && simulation ? Math.round((simulation.moods[slot.name] ?? 24) * 100) / 100 : undefined}
                             selectionMode={Boolean(simulation)}
+                            nameColor="white"
                             operatorLevel={slot ? levelByOperator?.get(slot.name) : undefined}
                             autofill={row.group === "dormitory" && row.autofill}
                             compactFactory={compactFactoryRoom}
