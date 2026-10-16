@@ -159,18 +159,19 @@ test("help content fills the desktop container", async ({ page }) => {
   expect(900 - triggerBox!.y - triggerBox!.height).toBeLessThanOrEqual(40);
 });
 
-test("quick checks open the matching detailed help", async ({ page }) => {
+test("knowledge FAQ replaces quick checks and keeps detailed Box help reachable", async ({ page }) => {
   await page.goto("/help");
-
-  await expect(page.locator("#help-content").getByRole("heading", { level: 1 })).toHaveCount(0);
-  const quickCheckLinks = page.locator("[data-quick-check-link]");
-  await expect(quickCheckLinks).toHaveCount(4);
-  await expect(quickCheckLinks.nth(0)).toHaveAttribute("href", "/help/owned-operators?issue=unexpected-operators");
-  await expect(quickCheckLinks.nth(1)).toHaveAttribute("href", "/help/owned-operators?issue=saved-box");
-  await expect(quickCheckLinks.nth(2)).toHaveAttribute("href", "/help/owned-operators?issue=box-not-applied");
-  await expect(quickCheckLinks.nth(3)).toHaveAttribute("href", "/help/owned-operators?issue=busy");
-
-  await quickCheckLinks.nth(0).click();
+  const knowledge = page.locator("[data-help-knowledge]");
+  await expect(knowledge.getByRole("button", { name: "生成的排班怎么导入 MAA？", exact: true })).toBeVisible();
+  await knowledge.getByRole("button", { name: "生成的排班怎么导入 MAA？", exact: true }).click();
+  await expect(knowledge.locator('[data-slot="accordion-panel"]')).toContainText("MAA 自定义基建 JSON");
+  await expect(knowledge).not.toContainText("入口名称可能因版本而异");
+  await expect(knowledge.getByRole("link", { name: "查看原文", exact: true })).toHaveCount(0);
+  await expect(page.locator("#knowledge-topics-title")).toHaveCount(0);
+  await expect(page.locator("[data-quick-check-link]")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "查看来源与许可", exact: true })).toHaveCount(0);
+  await expect(knowledge.locator('a[href="https://github.com/lejciy/RIIC-knowledge"]')).toBeVisible();
+  await page.locator('#help-content a[href="/help/owned-operators?issue=unexpected-operators"]').click();
   await expect(page).toHaveURL(/\/help\/owned-operators\?issue=unexpected-operators$/);
   await expect(page.getByRole("radio", { name: "结果里有我没有的干员" })).toBeChecked();
   await expect(page.locator("#sample-warning-title")).toBeVisible();
