@@ -14,7 +14,8 @@ export type BuildingRoomPrefix =
   | "hire"
   | "meet"
   | "train"
-  | "workshop";
+  | "workshop"
+  | "recycle";
 
 export const BUILDING_ROOM_LABELS: Readonly<Record<BuildingRoomPrefix, string>> = {
   control: "控制中枢",
@@ -26,6 +27,7 @@ export const BUILDING_ROOM_LABELS: Readonly<Record<BuildingRoomPrefix, string>> 
   meet: "会客室",
   train: "训练室",
   workshop: "加工站",
+  recycle: "回收站",
 };
 
 // 按用户在页面上希望展示的顺序排列，同时驱动标签栏。
@@ -39,6 +41,7 @@ export const BUILDING_ROOM_PREFIXES: readonly BuildingRoomPrefix[] = [
   "meet",
   "train",
   "workshop",
+  "recycle",
 ];
 
 /**
@@ -55,6 +58,7 @@ export const ROOM_SKILL_TAGS: Readonly<Record<BuildingRoomPrefix, readonly strin
   meet: ["未拥有加成", "无特别加成", "线索1", "线索2", "线索3", "线索4", "线索5", "线索6", "线索7"],
   train: ["全能", "减半", "辅助", "近卫", "狙击", "术师", "特种", "先锋", "医疗", "重装"],
   workshop: ["精英材料", "技巧概要", "基建材料", "芯片", "任意材料"],
+  recycle: ["转化效率"],
 };
 
 const BUILDING_ROOM_PREFIX_SET = new Set<string>(BUILDING_ROOM_PREFIXES);
