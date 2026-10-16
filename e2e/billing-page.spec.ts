@@ -172,7 +172,12 @@ for (const width of [1440, 375]) {
     await expect(returnAction).toHaveAttribute("data-setup-action", "");
     await expect(returnAction).toHaveAttribute("href", "/agent");
     await expect(returnAction).toHaveCSS("border-radius", "18px");
-    const buttonsArePills = await root.locator('[data-slot="button"]:not([data-setup-action])').evaluateAll((buttons) => buttons.every((button) => parseFloat(getComputedStyle(button).borderTopLeftRadius) >= button.getBoundingClientRect().height / 2));
+    const clearOrders = orders.getByRole("button", { name: "一键清空未支付订单", exact: true });
+    await expect(clearOrders).toBeDisabled();
+    await expect(clearOrders).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    await expect(clearOrders).toHaveCSS("border-width", "0px");
+    const pillButtons = root.locator('[data-slot="button"]:not([data-setup-action])').filter({ hasNotText: /^一键清空未支付订单$/ });
+    const buttonsArePills = await pillButtons.evaluateAll((buttons) => buttons.length > 0 && buttons.every((button) => parseFloat(getComputedStyle(button).borderTopLeftRadius) >= button.getBoundingClientRect().height / 2));
     expect(buttonsArePills).toBe(true);
     const code = page.getByRole("textbox", { name: "积分兑换码" });
     await code.fill("RIIC-TEST");
