@@ -330,7 +330,7 @@ test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedul
     packageJson.scripts["test:e2e:webkit:skland-qr"],
     "playwright test e2e/production-readiness-skland.spec.ts --project=webkit --grep \"Skland login exposes both methods\"",
   );
-  assert.match(workflow, /browser_e2e:[\s\S]+shard: \[1\/4, 2\/4, 3\/4, 4\/4\][\s\S]+npm run test:e2e -- --shard=\$\{\{ matrix\.shard \}\}/);
+  assert.match(workflow, /browser_e2e:[\s\S]+project: \[chromium\][\s\S]+shard: \[1\/4, 2\/4, 3\/4, 4\/4\][\s\S]+project: chromium-plush\s+shard: 1\/2[\s\S]+project: chromium-plush\s+shard: 2\/2[\s\S]+npx playwright test --project=\$\{\{ matrix\.project \}\} --shard=\$\{\{ matrix\.shard \}\}/);
   assert.match(workflow, /browser_boundaries:[\s\S]+npm run test:e2e:webkit:skland-qr[\s\S]+npm run test:e2e:production-profile/);
   assert.match(workflow, /webkit_e2e:[\s\S]+github\.event_name == 'schedule'[\s\S]+npm run test:e2e:webkit/);
   assert.match(workflow, /quality:[\s\S]+needs: \[changes, repository_hygiene, static_checks, database_checks, release_artifact, browser_e2e, browser_boundaries\]/);
@@ -356,7 +356,8 @@ test("CI change scope keeps one required quality gate and fails closed", async (
   assert.match(workflow, /fetch-depth: 0/);
   assert.match(workflow, /node scripts\/ci-change-scope\.mjs/);
   assert.doesNotMatch(workflow, /PR_BASE_SHA|PR_HEAD_SHA/);
-  assert.match(workflow, /git diff --name-only -z "\$PUSH_BEFORE_SHA\.\.\$HEAD_SHA"/);
+  assert.match(workflow, /Find the last successful deployment[\s\S]+node scripts\/release-provenance\.mjs baseline/);
+  assert.match(workflow, /git merge-base --is-ancestor "\$DEPLOYED_SHA" "\$HEAD_SHA"[\s\S]+git diff --name-only -z "\$DEPLOYED_SHA\.\.\$HEAD_SHA"/);
   assert.match(workflow, /"\$\{classifier\[@\]\}" --force-full/);
   assert.match(workflow, /git merge-base --is-ancestor "\$OPERATOR_DATA_BASE_SHA" "\$HEAD_SHA"/);
   assert.match(workflow, /git diff --name-only -z "\$OPERATOR_DATA_BASE_SHA\.\.\$HEAD_SHA"/);
@@ -403,6 +404,7 @@ test("public deployment automation is repository-bound, opt-in, and secret-safe"
   assert.match(qualityWorkflow, /deployment_authorized: \$\{\{ steps\.deploy_authorization\.outputs\.authorized \}\}/);
   assert.match(qualityWorkflow, /Authorize deployment trigger[\s\S]+EVENT_NAME: \$\{\{ github\.event_name \}\}[\s\S]+DEPLOY_REQUESTED: \$\{\{ inputs\.deploy \}\}[\s\S]+test "\$GITHUB_SHA" = "\$EXPECTED_SHA"[\s\S]+authorized=true[\s\S]+printf 'authorized=%s\\n'/);
   assert.match(qualityWorkflow, /Upload release for deployment[\s\S]+needs\.changes\.outputs\.deployment_authorized == 'true'/);
+  assert.match(qualityWorkflow, /Upload release for deployment[\s\S]+needs\.changes\.outputs\.run_core == 'true'[\s\S]+retention-days: 7/);
   assert.match(qualityWorkflow, /deploy:\r?\n {4}needs: \[changes, quality, release_artifact\][\s\S]+always\(\) &&[\s\S]+needs\.changes\.result == 'success'[\s\S]+needs\.quality\.result == 'success'[\s\S]+needs\.release_artifact\.result == 'success'[\s\S]+needs\.changes\.outputs\.deployment_authorized == 'true'[\s\S]+needs\.changes\.outputs\.deploy_required == 'true'[\s\S]+uses: \.\/\.github\/workflows\/deploy\.yml[\s\S]+deployment_authorized: \$\{\{ needs\.changes\.outputs\.deployment_authorized == 'true' \}\}[\s\S]+deploy_required: \$\{\{ needs\.changes\.outputs\.deploy_required == 'true' \}\}/);
   assert.match(deployWorkflow, /^on:\r?\n {2}workflow_call:/m);
   assert.doesNotMatch(deployWorkflow, /^ {2}(?:push|workflow_dispatch):/m);
@@ -488,6 +490,20 @@ test("CI builds once and deploy transfers the verified solver-free standalone ar
   assert.doesNotMatch(deployWorkflow, /git (?:archive|bundle)|repository\.git|DEPLOY_PREVIOUS_SHA|remote_bundle/);
   const transfer = deployWorkflow.slice(deployWorkflow.indexOf("      - name: Sync standalone release tree"));
   assert.doesNotMatch(transfer, /bin\/infra-cli/);
+});
+
+test("verified release reuse preserves provenance and normal deployment gates", async () => {
+  const workflow = await readRepoFile(".github/workflows/deploy-verified.yml");
+  const deploy = await readRepoFile(".github/workflows/deploy.yml");
+  const quality = await readRepoFile(".github/workflows/frontend-quality.yml");
+  assert.match(workflow, /workflow_dispatch:[\s\S]+verified_run_id:[\s\S]+expected_sha:/);
+  assert.match(workflow, /github\.repository == 'KnightCodeSquareMatrix\/RIIC-Web'[\s\S]+github\.ref_name == 'main' \|\| github\.ref_name == 'develop'/);
+  assert.match(workflow, /EXPECTED_SHA: \$\{\{ inputs\.expected_sha \}\}[\s\S]+VERIFIED_RUN_ID: \$\{\{ inputs\.verified_run_id \}\}[\s\S]+node scripts\/release-provenance\.mjs verify/);
+  assert.match(workflow, /deploy:[\s\S]+needs: verify[\s\S]+uses: \.\/\.github\/workflows\/deploy\.yml/);
+  assert.match(workflow, /artifact_run_id: \$\{\{ needs\.verify\.outputs\.artifact_run_id \}\}/);
+  assert.match(deploy, /run-id: \$\{\{ inputs\.artifact_run_id \|\| github\.run_id \}\}[\s\S]+github-token: \$\{\{ github\.token \}\}/);
+  assert.match(quality, /Release provenance tests[\s\S]+node --test scripts\/release-provenance\.test\.mjs/);
+  assert.doesNotMatch(workflow, /npm ci|npm run build|npm test|rsync|ssh /);
 });
 
 test("deployment resumes an interrupted cache without accepting symlinks or non-directories", { skip: process.platform === "win32" }, async () => {

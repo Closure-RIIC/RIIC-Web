@@ -30,6 +30,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: post-merge-release-${{ github.ref }}
@@ -53,6 +54,9 @@ jobs:
     if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    permissions:
+      contents: read
+      deployments: read
     outputs:
       scope: ${{ steps.scope.outputs.scope }}
       reason: ${{ steps.scope.outputs.reason }}
@@ -88,12 +92,19 @@ jobs:
           fi
           printf 'authorized=%s\n' "$authorized" >> "$GITHUB_OUTPUT"
 
+      - name: Find the last successful deployment
+        if: github.event_name == 'push'
+        id: deployed
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-provenance.mjs baseline
+
       - name: Classify changed paths
         id: scope
         shell: bash
         env:
           EVENT_NAME: ${{ github.event_name }}
-          PUSH_BEFORE_SHA: ${{ github.event.before }}
+          DEPLOYED_SHA: ${{ steps.deployed.outputs.base_sha }}
           HEAD_SHA: ${{ github.sha }}
           OPERATOR_DATA_BASE_SHA: ${{ inputs.operator_data_base_sha }}
         run: |
@@ -114,12 +125,12 @@ jobs:
             git diff --name-only -z "$OPERATOR_DATA_BASE_SHA..$HEAD_SHA" > "$changed_files"
             "${classifier[@]}" --require-operator-data
           elif [[ "$EVENT_NAME" == "push" ]] \
-            && [[ "$PUSH_BEFORE_SHA" =~ ^[0-9a-f]{40}$ ]] \
-            && [[ "$PUSH_BEFORE_SHA" != "0000000000000000000000000000000000000000" ]] \
+            && [[ "$DEPLOYED_SHA" =~ ^[0-9a-f]{40}$ ]] \
             && [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] \
-            && git cat-file -e "${PUSH_BEFORE_SHA}^{commit}" \
+            && git cat-file -e "${DEPLOYED_SHA}^{commit}" \
+            && git merge-base --is-ancestor "$DEPLOYED_SHA" "$HEAD_SHA" \
             && git cat-file -e "${HEAD_SHA}^{commit}"; then
-            git diff --name-only -z "$PUSH_BEFORE_SHA..$HEAD_SHA" > "$changed_files"
+            git diff --name-only -z "$DEPLOYED_SHA..$HEAD_SHA" > "$changed_files"
             "${classifier[@]}"
           else
             "${classifier[@]}" --force-full
@@ -171,6 +182,9 @@ jobs:
 
       - name: Unit tests
         run: npm test
+
+      - name: Release provenance tests
+        run: node --test scripts/release-provenance.test.mjs
 
       - name: API contract tests
         run: npm run test:api-contract
@@ -384,18 +398,18 @@ jobs:
 
       - name: Upload release for deployment
         if: >-
-          needs.changes.outputs.deploy_required == 'true' &&
+          needs.changes.outputs.run_core == 'true' &&
           needs.changes.outputs.deployment_authorized == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: riic-web-release-${{ github.sha }}
           path: ${{ runner.temp }}/riic-web-release-upload/*
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 7
           compression-level: 0
 
   browser_e2e:
-    name: Chromium E2E (${{ matrix.shard }})
+    name: Chromium E2E (${{ matrix.project }} ${{ matrix.shard }})
     needs: [changes, release_artifact]
     if: needs.changes.outputs.run_browser == 'true'
     runs-on: ubuntu-24.04
@@ -403,7 +417,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        project: [chromium]
         shard: [1/4, 2/4, 3/4, 4/4]
+        include:
+          - project: chromium-plush
+            shard: 1/2
+          - project: chromium-plush
+            shard: 2/2
     container:
       image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:c091b21d9fae78c76e85cd4356431e9b018402f172a214fc7d7a5e9a7e29d8ac
       options: --user 1001
@@ -453,7 +473,7 @@ jobs:
         run: bash scripts/prepare-browser-release.sh "$GITHUB_WORKSPACE/.tmp/browser-download" "$PLAYWRIGHT_RELEASE_DIR" "$GITHUB_SHA" "$(git rev-parse 'HEAD^{tree}')"
 
       - name: Chromium end-to-end tests
-        run: npm run test:e2e -- --shard=${{ matrix.shard }}
+        run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}
 
       - name: Preserve browser failure evidence
         if: failure()
