@@ -6,8 +6,11 @@ import { getDatabase } from "@/server/db";
 import { user } from "@/server/db/schema";
 import { websiteSession } from ".";
 import { websiteAdminAccess } from "./admin-access";
+import { localTestSession } from "./local-test-account";
 
 export async function requireWebsiteSession(request: Request | Headers) {
+  const local = localTestSession(request);
+  if (local) return local;
   let session;
   try {
     session = await websiteSession(request);
