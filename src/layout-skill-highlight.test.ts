@@ -4,7 +4,7 @@ import { operatorsWithoutLayoutSkills, operatorsWithoutRoomSkills } from "./layo
 import { OPERATOR_CATALOG } from "./operatorPortraits.ts";
 
 test("all facility kinds highlight mismatched assignments independently", () => {
-  const roomKinds = ["control_center", "trade_post", "factory", "power_plant", "dormitory", "office", "meeting_room", "workshop", "training_room", "recycling_station"] as const;
+  const roomKinds = ["control_center", "trade_post", "factory", "power_plant", "dormitory", "office", "meeting_room", "workshop", "training_room", "recycling"] as const;
   const prefixes = ["control", "trade", "manu", "power", "dorm", "hire", "meet", "workshop", "train", "recycle"];
   const catalog = prefixes.map(prefix => ({ name: prefix, buildingSkills: [{ id: `${prefix}_skill`, index: 0, elite: 0, level: 1 }] }));
   const rooms = roomKinds.map((kind, index) => ({ id: `room-${index}`, kind, level: 3 }));
@@ -26,7 +26,7 @@ test("Silence is highlighted in reception even when the layout includes a factor
   const invalid = operatorsWithoutRoomSkills(OPERATOR_CATALOG, [
     { id: "reception", kind: "meeting_room", level: 3 },
     { id: "factory", kind: "factory", level: 3 },
-    { id: "recycling", kind: "recycling_station", level: 3 },
+    { id: "recycling", kind: "recycling", level: 3 },
   ]);
   assert.equal(invalid.get("reception")?.has("赫默"), true);
   assert.equal(invalid.get("factory")?.has("赫默"), false);

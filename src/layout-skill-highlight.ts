@@ -1,17 +1,18 @@
-import type { BaseBlueprint } from "./types.ts";
+import type { EditableRoom } from "./recycling-room.ts";
 import type { OperatorAssetRecord } from "./operatorPortraits.ts";
 
 export type OperatorSkillProgress = ReadonlyMap<string, { elite: number; level: number }>;
+type SkillRoom = { id: string; kind: EditableRoom["kind"]; level: number };
 
 const ROOM_SKILL_PREFIXES: Record<string, string> = {
   control_center: "control", trade_post: "trade", factory: "manu", power_plant: "power",
   dormitory: "dorm", office: "hire", meeting_room: "meet", workshop: "workshop", training_room: "train",
-  recycling_station: "recycle",
+  recycling: "recycle",
 };
 
 export function operatorsWithoutLayoutSkills(
   catalog: readonly Pick<OperatorAssetRecord, "name" | "buildingSkills">[],
-  rooms: BaseBlueprint["rooms"],
+  rooms: readonly SkillRoom[],
   progress?: OperatorSkillProgress,
 ): Set<string> {
   const prefixes = new Set(rooms.map(room => ROOM_SKILL_PREFIXES[room.kind]).filter(Boolean));
@@ -30,7 +31,7 @@ export function operatorsWithoutLayoutSkills(
 /** Each assignment is checked against its own room, not other rooms in the layout. */
 export function operatorsWithoutRoomSkills(
   catalog: readonly Pick<OperatorAssetRecord, "name" | "buildingSkills">[],
-  rooms: BaseBlueprint["rooms"],
+  rooms: readonly SkillRoom[],
   progress?: OperatorSkillProgress,
 ): ReadonlyMap<string, ReadonlySet<string>> {
   return new Map(rooms.map(room => [room.id, room.kind === "dormitory"
