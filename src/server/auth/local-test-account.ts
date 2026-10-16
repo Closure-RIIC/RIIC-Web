@@ -33,7 +33,7 @@ function autoSessionAllowed(input: Request | Headers) {
 export function localTestSession(input: Request | Headers) {
   if (!enabled(input) || (!hasCookie(input) && !autoSessionAllowed(input))) return null;
   return {
-    session: { expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1_000) },
+    session: { id: "local-test-session", expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1_000) },
     user: {
       id: ACCOUNT.id,
       name: ACCOUNT.name,
