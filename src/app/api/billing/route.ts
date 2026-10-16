@@ -1,6 +1,19 @@
-import { assertSameOrigin, createRequestId, failureResponse, readJsonBody, successResponse, PublicApiError } from "@/server/api-contract";
+import { assertSameOrigin, enforceRateLimit, createRequestId, failureResponse, readJsonBody, successResponse, PublicApiError } from "@/server/api-contract";
 import { requireFeatureActor, requireFeatureSession } from "@/server/auth/feature-access";
-import { BillingError, createBillingOrder, getWallet, listBillingProducts, listLedger, listOrders, listUsage } from "@/server/billing/service";
+import { BillingError, createBillingOrder, getWallet, listBillingProducts, listLedger, listOrders, listUsage, hideAllPendingOrders } from "@/server/billing/service";
+
+export async function DELETE(request: Request) {
+  const requestId = createRequestId();
+  const startedAt = performance.now();
+  try {
+    assertSameOrigin(request);
+    const session = await requireFeatureSession(request, "billing");
+    enforceRateLimit("billing-hide-all-orders", session.user.id, 10, 60_000);
+    return successResponse({ deleted: await hideAllPendingOrders(session.user.id) }, requestId);
+  } catch (error) {
+    return failureResponse(error, requestId, "/api/billing", startedAt, "AIC-SYS-5000", request);
+  }
+}
 
 
 function normalizeBillingError(error: unknown): unknown {

@@ -22,6 +22,18 @@
 .productBadge { background: var(--dialogue-accent); color: var(--billing-accent-foreground, #302710); }
 .price { margin-top: 18px; font-size: 36px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .pill { height: 36px; border-radius: 9999px; padding-inline: 18px; }
+.page .pill {
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  padding-inline: 18px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.page .pill:enabled:hover { background: var(--muted); }
 .primary { background: var(--dialogue-accent); color: var(--billing-accent-foreground, #302710); }
 .primary:enabled:hover { background: color-mix(in srgb, var(--dialogue-accent) 95%, black); }
 .page button:disabled, .page button[aria-disabled="true"] { opacity: 1; filter: saturate(.12); cursor: not-allowed; }
@@ -64,7 +76,7 @@
   .products { gap: 12px; }
   .redemptionForm { flex-basis: 100%; flex-wrap: wrap; }
   .redemptionForm input { flex: 1 1 170px; }
-  .pill, .redemptionForm input { height: 44px; }
+  .pill, .page .pill, .redemptionForm input { height: 44px; }
   .row { gap: 10px; }
   .breakdown { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

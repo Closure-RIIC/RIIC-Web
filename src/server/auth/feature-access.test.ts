@@ -46,7 +46,7 @@ test("database roles guard all Agent/billing APIs before reads, writes or model 
     BillingError: class extends Error {}, createBillingOrder: effect, getWallet: effect,
     listBillingProducts: () => [], listLedger: effect, listOrders: effect, listUsage: effect,
     issueGiftCdk: effect, redeemGiftCdk: effect, fulfillBillingOrder: effect, getOrder: effect,
-    createAgentUsage: effect, finalizeAgentUsage: effect,
+    createAgentUsage: effect, finalizeAgentUsage: effect, hidePendingOrder: effect, hideAllPendingOrders: effect,
   } });
   await t.mock.module(new URL("../agent/plan-artifact.ts", import.meta.url), { namedExports: { getAgentPlanArtifact: effect } });
   await t.mock.module(new URL("../agent/config.ts", import.meta.url), { namedExports: { agentLlmSettings: () => ({ configured: false }), agentModelChoices: () => [] } });
@@ -64,8 +64,8 @@ test("database roles guard all Agent/billing APIs before reads, writes or model 
   const context = { params: Promise.resolve({ id: "test-id" }) };
   const get = () => new Request("https://riic.test/api/test");
   const post = () => new Request("https://riic.test/api/test", { method: "POST", body: "{}" });
-  const handlers = [() => billing.GET(get()), () => billing.POST(post()), () => cdk.POST(post()),
-    () => orders.GET(get(), context), () => simulate.POST(post(), context),
+  const handlers = [() => billing.GET(get()), () => billing.POST(post()), () => billing.DELETE(new Request("https://riic.test/api/test", { method: "DELETE" })), () => cdk.POST(post()),
+    () => orders.GET(get(), context), () => orders.DELETE(new Request("https://riic.test/api/test", { method: "DELETE" }), context), () => simulate.POST(post(), context),
     () => plans.GET(get(), context), () => chat.GET(get()), () => chat.POST(post())];
   process.env.AGENT_ACCESS_MODE = "admin";
   process.env.BILLING_ACCESS_MODE = "admin";
