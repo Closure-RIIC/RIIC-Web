@@ -125,6 +125,7 @@
   "DOUBLE_77_0_2": {"six":["仇白","乌尔比安"],"five":["烈夏","折桠","裂响"],"openTime":1788984000,"endTime":1790193599,"ruleType":"DOUBLE"},
   "DOUBLE_77_0_3": {"six":["玛恩纳","涤火杰西卡"],"five":["洋灰","海霓","录武官"],"openTime":1790193600,"endTime":1791403199,"ruleType":"DOUBLE"},
   "DOUBLE_77_0_5": {"six":["斥罪","左乐"],"five":["和弦","寒檀","聆音"],"openTime":1791403200,"endTime":1792612799,"ruleType":"DOUBLE"},
+  "DOUBLE_78_0_2": {"six":["妮芙","怒潮凛冬"],"five":["玫拉","波卜","雪猎"],"openTime":1792612800,"endTime":1793822399,"ruleType":"DOUBLE"},
   "FESCLASSIC_38_0_2": {"six":[],"five":[],"openTime":1684353600,"endTime":1685563199,"ruleType":"FESCLASSIC"},
   "FESCLASSIC_41_0_2": {"six":[],"five":[],"openTime":1692820800,"endTime":1694030399,"ruleType":"FESCLASSIC"},
   "FESCLASSIC_44_0_2": {"six":[],"five":[],"openTime":1700078400,"endTime":1701287999,"ruleType":"FESCLASSIC"},

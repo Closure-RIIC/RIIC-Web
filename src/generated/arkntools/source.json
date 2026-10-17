@@ -2,11 +2,11 @@
   "version": 2,
   "source": {
     "repository": "https://github.com/arkntools/arknights-toolbox-data",
-    "commit": "8f11a13c4b4d41d2c15ab52885a2e787088c732f"
+    "commit": "49595118ce0226c3ac779016f8b0968f8f1b2220"
   },
   "portraitsSource": {
     "repository": "https://github.com/yuanyan3060/ArknightsGameResource",
-    "commit": "9bf239661e37766fba585806fb9fa67e79bb679e"
+    "commit": "70ee919165089e0ac83e8d56fdee7263e2dd5f24"
   },
   "products": [
     {
