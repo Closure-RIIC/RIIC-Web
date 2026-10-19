@@ -111,6 +111,32 @@ test("Floating assistant sends credit-required accounts to billing plans", async
   await expect(panel.getByRole("link", { name: "查看积分" })).toHaveAttribute("href", "/billing");
 });
 
+test("Floating assistant contains module load failures and recovers after refresh", async ({ page }) => {
+  await mockWorkbench(page);
+  await page.route("**/api/agent/chat", route => route.fulfill({ json: ready }));
+  let failModule = true;
+  await page.route(/\/(?:src\/components\/agent\/AgentChat\.tsx|assets\/AgentChat-[^/]+\.js)(?:\?|$)/, route =>
+    failModule ? route.abort("failed") : route.continue());
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "暂时跳过引导" }).click();
+  await page.getByRole("button", { name: "打开可露希尔助理" }).click();
+  const panel = page.locator("[data-agent-floating-panel]");
+  await expect(panel.getByRole("alert")).toContainText("对话加载失败");
+  await expect(page.locator("[data-plan-board]")).toBeVisible();
+  await expect(page.getByText("Something went wrong!")).toHaveCount(0);
+  await page.getByRole("button", { name: "收起可露希尔助理" }).click();
+  await expect(panel).toHaveCount(0);
+  await page.getByRole("button", { name: "打开可露希尔助理" }).click();
+  await expect(panel.getByRole("alert")).toBeVisible();
+
+  failModule = false;
+  await panel.getByRole("button", { name: "刷新页面" }).click();
+  await page.getByRole("button", { name: "打开可露希尔助理" }).click();
+  await expect(panel.locator('[data-agent-chat][data-agent-compact="true"]')).toBeVisible();
+  await expect(panel.getByRole("textbox", { name: "发给可露希尔的消息" })).toBeEnabled();
+});
+
 test("Persona portraits keep Closure fixed and persist uploaded persona avatars", async ({ page }) => {
   await mockWorkbench(page);
   await page.addInitScript(() => localStorage.setItem("riic.agent.persona.closure.avatar.v1", "/images/operator-portraits/4195_radian.webp"));

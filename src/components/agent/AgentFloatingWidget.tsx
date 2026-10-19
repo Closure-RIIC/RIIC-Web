@@ -1,6 +1,6 @@
 "use client";
 
-import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
+import { Component, lazy, Suspense, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useLocale } from "use-intl";
 import { useWebsiteSession } from "@/website-session";
@@ -13,6 +13,24 @@ import styles from "./AgentFloatingWidget.module.css";
 
 type Availability = "checking" | "available" | "sign_in" | "credits" | "unavailable";
 const AgentChat = lazy(() => import("./AgentChat").then((module) => ({ default: module.AgentChat })));
+
+class AgentChatErrorBoundary extends Component<{ en: boolean; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    if (!this.state.failed) return this.props.children;
+    return <div className={styles.empty} role="alert">
+      <p>{this.props.en ? "The conversation could not load. Refresh the page to try again." : "对话加载失败，请刷新页面后重试。"}</p>
+      <button type="button" className="text-primary underline underline-offset-4" onClick={() => window.location.reload()}>
+        {this.props.en ? "Refresh page" : "刷新页面"}
+      </button>
+    </div>;
+  }
+}
 
 export function AgentFloatingWidget({ pageContext, visible = true }: { pageContext: AgentPageContext | null; visible?: boolean }) {
   const locale = useLocale();
@@ -94,7 +112,7 @@ export function AgentFloatingWidget({ pageContext, visible = true }: { pageConte
   return createPortal(
     <div className={styles.root} data-agent-floating-widget>
       {open ? <section id={panelId} className={styles.panel} aria-label={en ? "Closure Assistant" : "可露希尔助理"} data-agent-floating-panel>
-        {canChat && ready && conversationId ? <Suspense fallback={<div className={styles.empty} role="status">{en ? "Opening conversation…" : "正在打开对话…"}</div>}><AgentChat
+        {canChat && ready && conversationId ? <AgentChatErrorBoundary en={en}><Suspense fallback={<div className={styles.empty} role="status">{en ? "Opening conversation…" : "正在打开对话…"}</div>}><AgentChat
           key={`${owner ?? "anonymous"}:${conversationId}:floating`}
           compact
           sharePageContext={sharePageContext}
@@ -106,7 +124,7 @@ export function AgentFloatingWidget({ pageContext, visible = true }: { pageConte
           userName={data?.user.name}
           conversationId={conversationId}
           initialMessages={restoreAgentMessages(history.conversations.find((entry) => entry.id === conversationId)?.messages ?? [])}
-        /></Suspense> : canChat ? <div className={styles.empty} role="status">{en ? "Opening conversation…" : "正在打开对话…"}</div> : <div className={styles.locked} role="status">
+        /></Suspense></AgentChatErrorBoundary> : canChat ? <div className={styles.empty} role="status">{en ? "Opening conversation…" : "正在打开对话…"}</div> : <div className={styles.locked} role="status">
           <img src="/icon.png" alt="" draggable={false} />
           <strong>{en ? "Closure Assistant" : "可露希尔助理"}</strong>
           <p>{lockedMessage}</p>
