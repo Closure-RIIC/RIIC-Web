@@ -1,5 +1,6 @@
 /* global console */
 import { readFile, writeFile } from "node:fs/promises";
+import process from "node:process";
 
 const args = process.argv.slice(2);
 const valueFor = (name, fallback) => {
