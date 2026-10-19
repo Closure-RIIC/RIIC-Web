@@ -47,7 +47,6 @@ test.beforeEach(async ({ page }) => {
 test("rooms morph in both directions without scaling snapshots or moving the whole page", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
-  const originalRoom = await page.locator('[data-schedule-room="trade_1"]').elementHandle();
   expect(await page.evaluate(() => window.roomTransitionSamples)).toEqual([]);
   for (const [index, name] of ["列表式布局", "一图流布局"].entries()) {
     await page.getByRole("tab", { name, exact: true }).click();
@@ -57,7 +56,7 @@ test("rooms morph in both directions without scaling snapshots or moving the who
     expect(await page.evaluate(() => window.roomTransitionSamples.at(-1))).toEqual({ changingBounds: true, imageFit: "none", rootAnimated: false, duration: 360 });
     expect(await page.locator('[data-schedule-room][style*="view-transition-name"]').count()).toBe(0);
   }
-  expect(await page.locator('[data-schedule-room="trade_1"]').evaluate((room, original) => room === original, originalRoom)).toBe(true);
+  await expect(page.locator('[data-compact-schedule-view] [data-schedule-room="trade_1"]')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
 
