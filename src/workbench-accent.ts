@@ -14,6 +14,7 @@ const PAGE_CATEGORIES: Record<AppPage, keyof typeof CATEGORY_ACCENTS> = {
   manual: "scheduling",
   mower: "scheduling",
   training: "scheduling",
+  "training-planner": "progression",
   "account-health": "progression",
   mastery: "progression",
   recruitment: "progression",

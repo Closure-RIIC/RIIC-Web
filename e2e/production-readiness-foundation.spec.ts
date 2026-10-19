@@ -1907,3 +1907,53 @@ for (const scenario of [
     }
   });
 }
+
+test("an elite-only training recommendation can be selected and imported into the planner", async ({ page }) => {
+  const adviceResult = {
+    ...planData,
+    trainingAdvice: {
+      schema_version: 2,
+      context: {},
+      newbie_section_status: "complete",
+      incomplete_newbie: [],
+      recommendations: [{
+        operator: "清流",
+        action: "train",
+        target: { kind: "explicit", elite: 1 },
+        priority: "newbie_four_star_elite_one",
+        priority_rank: 1,
+        reason: "newbie_required",
+        product: "trade",
+      }],
+      combinations: [],
+    },
+  };
+
+  await page.route("**/api/account/data-consent", (route) => route.fulfill({ json: {
+    success: true,
+    data: { current: false, cloudSyncEnabled: false, acceptedAt: null, revokedAt: null, termsVersion: "test", privacyVersion: "test" },
+    requestId,
+  } }));
+  await mockApis(page);
+  await seedV4Session(page, adviceResult);
+  await page.goto("/");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  await page.getByRole("button", { name: "练卡建议", exact: true }).click();
+  await expect(page).toHaveURL(/\/training$/);
+  await expect(page.getByRole("heading", { name: "练卡建议", exact: true })).toBeVisible();
+
+  const addToPlan = page.getByRole("checkbox", { name: "加入养成清单 · 精1 1级" });
+  await expect(addToPlan).toBeVisible();
+  await addToPlan.check();
+  await expect(page.locator("[data-training-plan-selection]")).toContainText("已勾选 1 名干员");
+  await page.getByRole("button", { name: "带入养成计算 · 1" }).click();
+
+  await expect(page).toHaveURL(/\/training-plan$/);
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem("arknights-infra-training-planner-v1:handoff"))).toBeNull();
+  await expect.poll(() => page.evaluate(() => Object.entries(localStorage)
+    .some(([key, value]) => key.includes(":goals:") && value.includes("char_385_finlpp")))).toBe(true);
+  const goal = page.locator('[data-training-goal="char_385_finlpp"]');
+  await expect(goal).toBeVisible();
+  await expect(goal.getByRole("combobox").nth(2)).toHaveValue("1");
+  await expect(goal.getByRole("combobox").nth(3)).toHaveValue("1");
+});

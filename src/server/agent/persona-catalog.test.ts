@@ -38,6 +38,7 @@ test("private preset loading, request selection and missing-resource behavior", 
     assert.ok(prompt.startsWith(content));
     assert.ok(prompt.includes("所选人格的自然语气"));
     assert.ok(prompt.includes("calculate_mastery"));
+    assert.ok(prompt.includes("calculate_training"));
     await assert.rejects(resolveAgentPersonaContent({ id: "../preset.md", kind: "builtin" }), /未找到/);
     assert.equal(await resolveAgentPersonaContent({ id: "upload-test", content: " 上传的语气卡 " }), "上传的语气卡");
     assert.equal(await resolveAgentPersonaContent(), undefined);

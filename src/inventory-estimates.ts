@@ -7,7 +7,7 @@ const PROMOTION = [[-1,-1],[-1,-1],[10000,-1],[15000,60000],[20000,120000],[3000
 
 /** Upgrade from E0 level 1, including promotion LMD, excluding materials and skills. */
 export function trainingCost(rarity: number, elite: number, level: number): { lmd: number; exp: number } {
-  if (!Number.isInteger(rarity) || rarity < 3 || rarity > 6 || !Number.isInteger(elite)
+  if (!Number.isInteger(rarity) || rarity < 1 || rarity > 6 || !Number.isInteger(elite)
     || elite < 0 || elite > maxEliteForRarity(rarity) || !Number.isInteger(level)
     || level < 1 || level > manualLevelFor(rarity, elite)) throw new RangeError("Invalid training target");
   let lmd = 0;
