@@ -2528,7 +2528,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       </WorkbenchContext.Provider>
       </div>
 
-      {page !== "agent" && page !== "account" ? <Suspense fallback={null}><AgentFloatingWidget
+      {page !== "agent" && page !== "account" && page !== "gacha" ? <Suspense fallback={null}><AgentFloatingWidget
         pageContext={page === "calculator" ? automaticAgentPageContext : page === "manual" ? manualAgentPageContext : page === "account-health" ? accountHealthAgentPageContext : page === "training-planner" ? trainingPlannerAgentPageContext : null}
       /></Suspense> : null}
 
