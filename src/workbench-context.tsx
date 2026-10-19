@@ -11,6 +11,7 @@ import type { MasteryPlannerProps } from "@/components/pages/MasteryPlanner";
 import type { RecruitmentCalculatorProps } from "@/components/pages/RecruitmentCalculator";
 import type { UserSettings } from "@/user-settings";
 import type { AccountHealthRawInput } from "@/account-health-input";
+import type { AgentPageContext } from "@/agent-page-context";
 
 export interface WorkbenchContextValue {
   inventory: { identityKey: string; pending: boolean };
@@ -29,6 +30,9 @@ export interface WorkbenchContextValue {
     onChange: (settings: UserSettings) => void;
   };
   skland: DevelopmentSklandStatusCenterProps | null;
+  agent: {
+    onPageContextChange: (page: AgentPageContext["page"], context: AgentPageContext | null) => void;
+  };
 }
 
 export const WorkbenchContext = createContext<WorkbenchContextValue | null>(null);

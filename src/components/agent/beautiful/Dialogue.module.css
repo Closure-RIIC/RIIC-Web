@@ -12,6 +12,18 @@
 .headerSlot { flex-shrink: 0; }
 .header { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .headerActions { display: flex; flex-shrink: 0; align-items: center; gap: 12px; }
+.compactChat { height: 100%; gap: 0; padding: 8px; }
+.compactHeaderSlot { display: block; flex: 0 0 auto; }
+.compactHeader { display: flex; min-width: 0; min-height: 44px; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); padding: 0 0 8px; }
+.compactAvatar { width: 32px; height: 32px; flex: 0 0 auto; overflow: hidden; border-radius: 50%; }
+.compactTitle { min-width: 0; flex: 1; font-size: 13px; font-weight: 600; line-height: 18px; }
+.compactShare { display: flex; min-height: 36px; flex: 0 0 auto; align-items: center; gap: 5px; color: var(--muted-foreground); font-size: 10px; white-space: nowrap; }
+.compactShare input { accent-color: var(--primary); }
+.compactConversation { --conversation-edge: 10px; width: 100%; margin: 0; }
+.compactConversation > [data-slot="scroll-area-viewport"] { padding: 8px 4px; }
+.compactChat :global([data-agent-composer]) { padding: 8px 0 0; }
+.compactChat :global([data-agent-prompt-bar]) { gap: 6px; border-radius: 12px 4px 12px 12px; padding: 8px; }
+.compactChat .promptInput { height: 56px; min-height: 44px; font-size: 14px; line-height: 21px; }
 .modeTrigger { display: flex; align-items: center; justify-content: space-between; gap: 4px; height: 44px; width: 170px; min-width: 0; padding: 4px 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--background); }
 .modeTrigger:hover { background: var(--muted); }
 .modeTrigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
@@ -140,7 +152,7 @@
 :global(.dark) .decoration, :global(.dark) .promptDecoration { opacity: .25; }
 
 @media (max-width: 767px) {
-  :global(body:has([data-agent-chat]) [data-cloud-sync-error]) {
+  :global(body:has([data-agent-chat]:not([data-agent-compact])) [data-cloud-sync-error]) {
     bottom: calc(max(6px, env(safe-area-inset-bottom)) + 68px);
     max-height: calc(100dvh - 140px);
     overflow-y: auto;
@@ -157,6 +169,12 @@
   .promptControls, .promptTools { display: contents; }
   .promptTools > button { grid-column: 1; grid-row: 1; }
   .sendButton { grid-column: 3; grid-row: 1; width: 44px; height: 44px; }
+  .compactChat { gap: 0; padding: 6px; }
+  .compactHeader { min-height: 42px; gap: 6px; padding-bottom: 6px; }
+  .compactShare { gap: 3px; font-size: 9px; }
+  .compactConversation { --conversation-edge: 6px; }
+  .compactConversation > [data-slot="scroll-area-viewport"] { padding: 6px 2px; }
+  .compactChat .promptInput { height: 44px; min-height: 44px; padding: 8px 2px; font-size: 16px; line-height: 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

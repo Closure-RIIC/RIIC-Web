@@ -68,6 +68,7 @@ import { BUILDING_SKILL_CATALOG, OPERATOR_CATALOG, operatorPortraitFor, operator
 import { addOperatorPresentations } from "@/schedule-presentation";
 import { planToRows, type RoomRow } from "@/schedule";
 import { manualEditableRooms, withRecyclingRoom } from "@/recycling-room";
+import { buildManualScheduleContext, type AgentPageContext } from "@/agent-page-context";
 import type { BaseBlueprint, MaaJson, MaaOperatorSlot, MaaRoom, OperBoxEntry } from "@/types";
 
 const ScrollArea = lazy(() => import("@/components/ui/scroll-area").then((module) => ({ default: module.ScrollArea })));
@@ -108,6 +109,7 @@ export interface ManualSchedulePageProps {
   restorationReady: boolean;
   onInitialDraftConsumed: () => void;
   result: ManualPlanResult | null;
+  onAgentContextChange?: (context: AgentPageContext | null) => void;
   evaluationPending: boolean;
   onEvaluate: (input: { draft: ManualScheduleDraft }) => Promise<void>;
   onPaperEvaluate: (input: { draft: ManualScheduleDraft }) => Promise<void>;
@@ -237,6 +239,7 @@ export function ManualSchedulePage({
   restorationReady,
   onInitialDraftConsumed,
   result,
+  onAgentContextChange,
   evaluationPending,
   onEvaluate,
   onPaperEvaluate,
@@ -430,6 +433,10 @@ export function ManualSchedulePage({
     })),
     [activeEvaluationShift, activePlan, activeShift, activeTrainingRoomShift, draft.shifts, layout, recyclingRoomLevel],
   );
+  useEffect(() => {
+    if (!restored) return;
+    onAgentContextChange?.(buildManualScheduleContext({ layout, draft, activeShift, rows, result }));
+  }, [activeShift, draft, layout, onAgentContextChange, result, restored, rows]);
   const selectedRoom = picker?.kind === "slot" ? rows.find((row) => row.roomId === picker.roomId) : undefined;
   const selectedAssignment = picker?.kind === "slot" ? draft.shifts[activeShift]?.rooms[picker.roomId] : undefined;
   const selectedOperator = picker?.kind === "slot" ? selectedAssignment?.operators[picker.slotIndex] ?? null : null;
