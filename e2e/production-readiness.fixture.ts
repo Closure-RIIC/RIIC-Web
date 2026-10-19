@@ -1128,6 +1128,7 @@ export async function navigateToPrimaryPage(
     await page.locator("[data-app-topbar]").getByRole("button", { name: "Toggle Sidebar" }).click();
     await expect(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible();
   }
+  await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
   await page.getByRole("button", { name: destination.name, exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`${destination.href.replace("/", "\\/")}$`));
   await expect(page.locator(destination.root)).toBeVisible({ timeout: 45_000 });
