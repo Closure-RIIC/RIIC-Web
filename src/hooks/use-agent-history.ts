@@ -70,9 +70,7 @@ class AgentHistoryStore {
     this.loading ??= (async () => {
       try {
         const history = this.owner ? await readHistory(this.owner) : emptyAgentHistory();
-        // A document starts a fresh chat; saved conversations remain selectable.
-        // Stores survive route changes and floating-panel toggles within this page.
-        history.activeId = crypto.randomUUID();
+        history.activeId ||= crypto.randomUUID();
         this.publish({ ready: true, history, error: false });
       } catch {
         this.publish({ ready: true, history: { ...emptyAgentHistory(), activeId: crypto.randomUUID() }, error: true });

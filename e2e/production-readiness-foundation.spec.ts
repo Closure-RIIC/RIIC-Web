@@ -750,9 +750,11 @@ test("seven-day bindings stay visible and require renewed authorization", async 
   await mockApis(page, { sklandConfigured: true, sklandBindingCount: 1, sklandRenewalDueCount: 1 });
   await seedPreferences(page);
   await page.goto("/");
+  await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
   const sklandNavigation = page.getByRole("button", { name: "森空岛状态中心", exact: true });
   await expect(sklandNavigation.locator(".lucide-cloud")).toBeVisible();
   await sklandNavigation.click();
+  await expect(page.locator("[data-skland-page]")).toBeVisible();
   await expect(page.getByText("ACCOUNT TERMINAL", { exact: true })).toHaveCount(0);
   await expect(page.getByText("统一管理网站账号、登录设备和森空岛授权。森空岛凭据固定七天失效，到期后需要重新扫码。", { exact: true })).toHaveCount(0);
   await expect(page.locator("[data-skland-binding-summary]")).toHaveCount(0);
@@ -797,6 +799,7 @@ test("account settings revokes every session and returns to the app", async ({ p
   await mockApis(page);
   await seedPreferences(page);
   await page.goto("/");
+  await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
   await page.getByRole("button", { name: "账号管理", exact: true }).click();
 
   const accountManagement = page.locator("[data-account-management]");
