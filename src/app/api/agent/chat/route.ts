@@ -19,6 +19,7 @@ import { AgentFilterError } from "@/server/agent/filter-policy";
 import { AgentHistoryError, prepareAgentHistory } from "@/server/agent/message-history";
 import { withAgentAnswerBoundary } from "@/server/agent/answer-boundary";
 import { activeAgentResources } from "@/server/agent/resources";
+import { agentPageContextPrompt, normalizeAgentPageContext } from "@/agent-page-context";
 
 
 // ── 临时监控（诊断"返回内容异常"用，问题定位后整段删除）──
@@ -128,7 +129,7 @@ export async function POST(request: Request) {
     assertSameOrigin(request);
     const { session } = await requireAgentAccess(request);
     if (agentGatewayEnabled()) enforceRateLimit("agent-chat", session.user.id, 20, 60_000);
-    const body = (await readJsonBody(request, 16 * 1024 * 1024)) as { model?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; messages?: UIMessage[]; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
+    const body = (await readJsonBody(request, 16 * 1024 * 1024)) as { model?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; messages?: UIMessage[]; pageContext?: unknown; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
     if (body.model !== undefined && body.model !== "deepseek" && body.model !== "glm") {
       throw new PublicApiError("AIC-REQ-1001", { message: "请选择可用的模型。" });
     }
@@ -146,6 +147,8 @@ export async function POST(request: Request) {
       const response = failureResponse(new Error("缺少对话消息。"), requestId, "/api/agent/chat", startedAt);
       return new Response(response.body, { status: 400, headers: response.headers });
     }
+    const pageContext = body.pageContext == null ? null : normalizeAgentPageContext(body.pageContext);
+    if (body.pageContext != null && !pageContext) throw new PublicApiError("AIC-REQ-1001", { message: "当前页面摘要无效，请刷新页面后重试。" });
     let personaContent: string | undefined;
     const resources = await activeAgentResources();
     try { personaContent = await resolveAgentPersonaContent(body.persona, resources?.policy); }
@@ -163,7 +166,7 @@ export async function POST(request: Request) {
         return new Response(response.body, { status: 413, headers: response.headers });
       }
     }
-    if (agentGatewayEnabled()) return await gatewayChat(request, session.user.id, requestId, { ...body, messages: body.messages }, personaContent, resources ?? undefined);
+    if (agentGatewayEnabled()) return await gatewayChat(request, session.user.id, requestId, { ...body, messages: body.messages, pageContext }, personaContent, resources ?? undefined);
     const messages = await prepareAgentHistory(body.messages, async () => {});
     const tools = buildAgentTools({ request, userId: session.user.id, resources: resources?.policy });
     // 临时监控：记录本次请求的完整输入（含历史消息与附件元数据）
@@ -179,7 +182,7 @@ export async function POST(request: Request) {
     const result = streamText({
       ...streamPolicy.options,
       model: withAgentAnswerBoundary(getAgentModel(settings)),
-      system: await buildAgentSystemPrompt(personaContent, resources?.policy),
+      system: `${await buildAgentSystemPrompt(personaContent, resources?.policy)}${agentPageContextPrompt(pageContext)}`,
       messages: await convertToModelMessages(messages, { tools }),
       tools,
       stopWhen: stepCountIs(12),

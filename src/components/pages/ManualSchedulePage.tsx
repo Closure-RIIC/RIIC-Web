@@ -30,6 +30,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonSuspense } from "@/components/ui/skeleton-swap";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { downloadJson } from "@/download";
+import { buildManualScheduleContext, type AgentPageContext } from "@/agent-page-context";
 import { droneStoragePlanIndex } from "@/drone-plan-mapping";
 import type { ManualPlanResult } from "@/manual-plan-result";
 import { loadManualEvaluationCache } from "@/manual-evaluation-cache";
@@ -108,6 +109,7 @@ export interface ManualSchedulePageProps {
   restorationReady: boolean;
   onInitialDraftConsumed: () => void;
   result: ManualPlanResult | null;
+  onAgentContextChange?: (context: AgentPageContext | null) => void;
   evaluationPending: boolean;
   onEvaluate: (input: { draft: ManualScheduleDraft }) => Promise<void>;
   onPaperEvaluate: (input: { draft: ManualScheduleDraft }) => Promise<void>;
@@ -237,6 +239,7 @@ export function ManualSchedulePage({
   restorationReady,
   onInitialDraftConsumed,
   result,
+  onAgentContextChange,
   evaluationPending,
   onEvaluate,
   onPaperEvaluate,
@@ -430,6 +433,10 @@ export function ManualSchedulePage({
     })),
     [activeEvaluationShift, activePlan, activeShift, activeTrainingRoomShift, draft.shifts, layout, recyclingRoomLevel],
   );
+  useEffect(() => {
+    if (!restored) return;
+    onAgentContextChange?.(buildManualScheduleContext({ layout, draft, activeShift, rows, result }));
+  }, [activeShift, draft, layout, onAgentContextChange, result, restored, rows]);
   const selectedRoom = picker?.kind === "slot" ? rows.find((row) => row.roomId === picker.roomId) : undefined;
   const selectedAssignment = picker?.kind === "slot" ? draft.shifts[activeShift]?.rooms[picker.roomId] : undefined;
   const selectedOperator = picker?.kind === "slot" ? selectedAssignment?.operators[picker.slotIndex] ?? null : null;

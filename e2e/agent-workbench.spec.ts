@@ -30,6 +30,101 @@ async function mockWorkbench(page: Page, performanceMode: "quality" | "static" =
   } }));
 }
 
+for (const width of [1440, 375]) {
+  test(`Floating assistant shares a read-only workbench snapshot at ${width}px`, async ({ page }) => {
+    await mockWorkbench(page);
+    await page.setViewportSize({ width, height: 900 });
+    let sentPageContext: unknown;
+    await page.route("**/api/agent/chat", (route) => {
+      if (route.request().method() === "GET") return route.fulfill({ json: ready });
+      sentPageContext = route.request().postDataJSON().pageContext;
+      return route.fulfill({ contentType: "text/event-stream", headers: { "x-vercel-ai-ui-message-stream": "v1" }, body: reply });
+    });
+
+    await page.goto("/");
+    await page.getByRole("button", { name: "暂时跳过引导" }).click();
+    await expect(page.locator("[data-plan-board]")).toBeVisible();
+    const launcher = page.getByRole("button", { name: "打开可露希尔助理" });
+    await expect(launcher).toBeVisible();
+    await expect(launcher.locator("img")).toHaveAttribute("src", "/icon.png");
+    await expect.poll(() => launcher.locator("img").evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+    await expect(page.getByText("博士，这页有什么想问的？")).toBeVisible();
+
+    await launcher.click();
+    const panel = page.locator("[data-agent-floating-panel]");
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('[data-agent-chat][data-agent-compact="true"]')).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.locator("[data-app-content]")).not.toHaveAttribute("inert", "");
+    await expect(panel.getByRole("heading", { name: "自动排班", exact: true })).toBeVisible();
+    await expect(panel.locator("[data-agent-page-guide]")).toContainText("已共享本页摘要");
+    await expect(panel.locator("[data-agent-page-guide]")).toContainText("页面：自动排班结果");
+    for (const shortcut of ["账号体检", "规划基建", "专精训练", "公开招募"]) await expect(panel.getByText(shortcut, { exact: true })).toHaveCount(0);
+
+    const panelBounds = await panel.boundingBox();
+    expect(panelBounds).not.toBeNull();
+    expect(panelBounds!.x).toBeGreaterThanOrEqual(0);
+    expect(panelBounds!.y).toBeGreaterThanOrEqual(0);
+    expect(panelBounds!.x + panelBounds!.width).toBeLessThanOrEqual(width);
+    expect(panelBounds!.y + panelBounds!.height).toBeLessThanOrEqual(900);
+
+    const shareToggle = page.getByRole("checkbox", { name: "随消息共享当前页面摘要" });
+    await expect(shareToggle).toBeChecked();
+    const input = page.getByRole("textbox", { name: "发给可露希尔的消息" });
+    await expect(panel).toHaveCSS("pointer-events", "auto");
+    await input.click();
+    await input.fill("帮我看看当前排班");
+    await input.press("Enter");
+    await expect.poll(() => sentPageContext).toMatchObject({ version: 1, page: "calculator" });
+    await expect.poll(() => (sentPageContext as { summary?: string } | undefined)?.summary ?? "").toContain("自动排班结果");
+
+    await shareToggle.uncheck();
+    await input.fill("只回答这条消息");
+    await expect(panel.getByRole("button", { name: "发送", exact: true })).toBeEnabled();
+    await input.press("Enter");
+    await expect.poll(() => sentPageContext).toBeNull();
+    await shareToggle.check();
+
+    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    await page.getByRole("button", { name: "账号体检", exact: true }).click();
+    await expect(page).toHaveURL(/\/account-health$/);
+    await expect(panel).toBeVisible();
+    await input.fill("解释当前体检结果");
+    await expect(panel.getByRole("button", { name: "发送", exact: true })).toBeEnabled();
+    await input.press("Enter");
+    await expect.poll(() => sentPageContext).toMatchObject({ version: 1, page: "account-health" });
+
+    await panel.getByRole("button", { name: "收起助理", exact: true }).click();
+    await expect(panel).toHaveCount(0);
+  });
+}
+
+test("Floating assistant contains module load failures and recovers after refresh", async ({ page }) => {
+  await mockWorkbench(page);
+  await page.route("**/api/agent/chat", route => route.fulfill({ json: ready }));
+  let failModule = true;
+  await page.route(/\/(?:src\/components\/agent\/AgentChat\.tsx|assets\/AgentChat-[^/]+\.js)(?:\?|$)/, route =>
+    failModule ? route.abort("failed") : route.continue());
+
+  await page.goto("/");
+  await page.getByRole("button", { name: "暂时跳过引导" }).click();
+  await page.getByRole("button", { name: "打开可露希尔助理" }).click();
+  const panel = page.locator("[data-agent-floating-panel]");
+  await expect(panel.getByRole("alert")).toContainText("对话加载失败");
+  await expect(page.locator("[data-plan-board]")).toBeVisible();
+  await expect(page.getByText("Something went wrong!")).toHaveCount(0);
+  await page.getByRole("button", { name: "收起可露希尔助理" }).click();
+  await expect(panel).toHaveCount(0);
+  await page.getByRole("button", { name: "打开可露希尔助理" }).click();
+  await expect(panel.getByRole("alert")).toBeVisible();
+
+  failModule = false;
+  await panel.getByRole("button", { name: "刷新页面" }).click();
+  await page.getByRole("button", { name: "打开可露希尔助理" }).click();
+  await expect(panel.locator('[data-agent-chat][data-agent-compact="true"]')).toBeVisible();
+  await expect(panel.getByRole("textbox", { name: "发给可露希尔的消息" })).toBeEnabled();
+});
+
 test("Persona portraits keep Closure fixed and persist uploaded persona avatars", async ({ page }) => {
   await mockWorkbench(page);
   await page.addInitScript(() => localStorage.setItem("riic.agent.persona.closure.avatar.v1", "/images/operator-portraits/4195_radian.webp"));
@@ -246,7 +341,9 @@ for (const width of [1440, 375]) {
     await group.getByRole("button", { name: "可露希尔助理", exact: true }).click();
     await expect(page).toHaveURL(/\/agent$/);
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "博士，今天从哪里开始？" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "想了解什么？" })).toBeVisible();
+    await expect(page.locator("[data-agent-welcome]")).toContainText("实时对话");
+    for (const shortcut of ["账号体检", "规划基建", "专精训练", "公开招募"]) await expect(page.locator("[data-agent-welcome]").getByText(shortcut, { exact: true })).toHaveCount(0);
     for (const name of ["发送", "新对话"]) {
       const button = page.getByRole("button", { name, exact: true });
       await expect(button).toBeDisabled();
@@ -275,10 +372,8 @@ for (const width of [1440, 375]) {
     if (width < 768) await page.getByRole("button", { name: "附件与人格卡", exact: true }).click();
     await expect(page.getByRole("button", { name: "人格卡：测试人格" })).toBeVisible();
     if (width < 768) await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: /账号体检.*帮我看看/ }).click();
     const input = page.getByRole("textbox", { name: "发给测试人格的消息" });
-    await expect(input).toBeFocused();
-    await expect(input).toHaveValue("帮我看看账号现在什么水平");
+    await input.fill("帮我看看账号现在什么水平");
     await expect(page.getByRole("button", { name: "发送", exact: true })).toBeEnabled();
     await expect(page.getByRole("button", { name: "发送", exact: true })).toHaveCSS("background-color", "rgb(255, 216, 0)");
     await page.locator('input[aria-label="上传附件"]').setInputFiles({ name: "说明.txt", mimeType: "text/plain", buffer: Buffer.from("测试附件") });
@@ -372,7 +467,7 @@ for (const width of [1440, 375]) {
     expect(conversationBounds.y + conversationBounds.height).toBeLessThanOrEqual(composer!.y);
     expect(composer!.y + composer!.height).toBeLessThanOrEqual(900);
     await page.getByRole("button", { name: "新对话", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "博士，今天从哪里开始？" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "想了解什么？" })).toBeVisible();
     await expect(tool).toHaveCount(0);
     await page.reload();
     if (width < 768) await page.getByRole("button", { name: "附件与人格卡", exact: true }).click();

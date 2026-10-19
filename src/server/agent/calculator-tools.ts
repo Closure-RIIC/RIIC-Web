@@ -1,11 +1,15 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { calculateMastery, formatMasteryTime, MASTERY_ENVIRONMENTS } from "../../mastery.ts";
-import { inspectMasteryTarget } from "./operator-tools.ts";
+import { inspectMasteryTarget, resolveAgentOperator } from "./operator-tools.ts";
 import { masteryInstructions } from "../../mastery-presentation.ts";
 import { calculateRecruitment, RECRUITMENT_TAGS, RECRUITMENT_SOURCE } from "../../recruitment.ts";
 import type { MasteryEnvironmentObservation } from "./mastery-environment.ts";
-import type { OperBoxEntry } from "../../types.ts";
+import type { OperBoxEntry, SklandInventoryItem, SklandOperatorStatus } from "../../types.ts";
+import { OPERATOR_CATALOG } from "../../operatorPortraits.ts";
+import { manualLevelFor, maxEliteForRarity } from "../../manual-operbox.ts";
+import { calculateTrainingPlan, defaultTrainingGoal, type TrainingPlannerData } from "../../training-planner.ts";
+import trainingPlannerDataJson from "../../generated/training-planner-data.json" with { type: "json" };
 
 export interface AgentOperatorPool {
   operbox: OperBoxEntry[];
@@ -16,7 +20,27 @@ export interface AgentOperatorPool {
 
 type Guard = <T>(name: string, input: unknown, run: () => Promise<T>) => Promise<T | { error: string }>;
 
-export function buildCalculatorTools(loadPool: () => Promise<AgentOperatorPool>, guard: Guard) {
+export interface AgentTrainingResources {
+  operators: SklandOperatorStatus[];
+  inventory: SklandInventoryItem[];
+  sourceName: string;
+  fetchedAt: string;
+}
+
+const TRAINING_DATA = trainingPlannerDataJson as TrainingPlannerData;
+const TRAINING_OPERATOR_BY_ID = new Map(OPERATOR_CATALOG.map((operator) => [operator.id, operator]));
+const EXPERIENCE_BOOKS = [
+  { id: "2001", name: "初级作战记录", experience: 200 },
+  { id: "2002", name: "中级作战记录", experience: 400 },
+  { id: "2003", name: "高级作战记录", experience: 1_000 },
+  { id: "2004", name: "特级作战记录", experience: 2_000 },
+] as const;
+
+export function buildCalculatorTools(
+  loadPool: () => Promise<AgentOperatorPool>,
+  guard: Guard,
+  loadTrainingResources?: () => Promise<AgentTrainingResources>,
+) {
   return {
     resolve_operator: tool({
       description: "轻量查询站内干员身份和专精资格，复用目录、干员别名及当前干员池，不查询技能机制。目标等级尚不明确时先用它核实身份；等级已明确可直接 calculate_mastery。歧义返回候选供用户选择，示例池不代表个人持有。",
@@ -62,6 +86,154 @@ export function buildCalculatorTools(loadPool: () => Promise<AgentOperatorPool>,
           simple: project(result.simple), fast: project(result.fast),
           savedSeconds: Math.max(0, result.simple.totalSeconds - result.fast.totalSeconds),
           assumptions: "按目标干员已获得且达到精二、教官心情充足、材料齐备、训练室等级满足要求计算；教官持有与练度采用所标明来源的原始干员池。环境加成需全程保持；暂不计算休息、武道秒专一和基建产能影响。",
+        };
+      }),
+    }),
+    calculate_training: tool({
+      description: "干员养成资源计算：用户说出干员和目标精英阶段、等级后直接计算升级所需龙门币、经验、作战记录、晋升材料、仓库库存和缺口；森空岛数据自动作为当前练度和库存。可选传 targetSkillLevel、targetMasteries、targetModules 追加技能等级、专精、模组目标。名称有歧义时返回候选。库存或森空岛读取失败时说明原因，不将未知库存当作零。",
+      inputSchema: z.object({
+        operator: z.string().trim().min(1).describe("干员名称、别名或 ID"),
+        targetElite: z.number().int().min(0).max(2).describe("目标精英阶段，0/1/2"),
+        targetLevel: z.number().int().min(1).max(90).describe("目标等级"),
+        targetSkillLevel: z.number().int().min(1).max(7).optional().describe("可选目标技能等级，1-7"),
+        targetMasteries: z.array(z.object({
+          skill: z.number().int().min(1).max(3).describe("第几个技能"),
+          level: z.number().int().min(0).max(3).describe("目标专精等级，0-3"),
+        }).strict()).max(3).optional().describe("可选各技能目标专精，例如 [{skill: 3, level: 3}]"),
+        targetModules: z.array(z.object({
+          module: z.string().trim().min(1).describe("模组名称或模组 ID"),
+          level: z.number().int().min(1).max(3).describe("目标模组等级，1-3"),
+        }).strict()).max(12).optional().describe("可选模组目标，例如 [{module: '模组名', level: 3}]"),
+      }).strict(),
+      execute: async (input) => guard("calculate_training", input, async () => {
+        const resolution = await resolveAgentOperator(input.operator);
+        if (resolution.status !== "resolved") {
+          const candidates = resolution.candidates.map((operator) => ({ id: operator.id, name: operator.name }));
+          if (resolution.status === "unknown") return { error: `站内目录未识别「${input.operator}」，请提供完整干员名或 ID。`, code: "identity_unknown", candidates };
+          return { error: `请确认目标干员：${candidates.map((operator) => operator.name).join("、")}。`, code: "identity_ambiguous", candidates };
+        }
+
+        const identity = resolution.candidates[0]!;
+        const operator = TRAINING_OPERATOR_BY_ID.get(identity.id);
+        const trainingData = TRAINING_DATA.operators[identity.id];
+        if (!operator || !trainingData) return { error: `「${identity.name}」暂无可用的养成成本数据。`, code: "calculation_unsupported" };
+        const maxElite = maxEliteForRarity(operator.rarity);
+        if (input.targetElite > maxElite) return { error: `${identity.name}最高可精英化至精${maxElite}。`, code: "invalid_target" };
+        const maxLevel = manualLevelFor(operator.rarity, input.targetElite);
+        if (input.targetLevel > maxLevel) return { error: `精${input.targetElite}最高等级为 ${maxLevel}。`, code: "invalid_target" };
+
+        if (!loadTrainingResources) return { error: "当前未配置森空岛养成数据读取，无法核对个人库存。", code: "inventory_unavailable" };
+        const resources = await loadTrainingResources();
+        const status = resources.operators.find((entry) => entry.id === identity.id);
+        const current = defaultTrainingGoal(
+          { id: identity.id, rarity: operator.rarity },
+          status ? { elite: status.elite, level: status.level, own: true } : { elite: 0, level: 1, own: false },
+          status,
+          trainingData.skills,
+          trainingData.modules,
+        );
+        if (input.targetElite < current.currentElite
+          || input.targetElite === current.currentElite && input.targetLevel < current.currentLevel) {
+          return { error: `${identity.name}当前为精${current.currentElite} ${current.currentLevel}级，目标练度不能低于当前练度。`, code: "invalid_target" };
+        }
+
+        const goal = { ...current, targetElite: input.targetElite, targetLevel: input.targetLevel };
+        if (input.targetSkillLevel !== undefined) {
+          const maxSkillLevel = trainingData.skillLevels.length ? trainingData.skillLevels.length + 1 : 1;
+          if (input.targetSkillLevel > maxSkillLevel) return { error: `${identity.name}技能等级上限为 ${maxSkillLevel}。`, code: "invalid_target" };
+          if (input.targetSkillLevel < current.currentSkillLevel) return { error: `目标技能等级不能低于森空岛当前等级 ${current.currentSkillLevel}。`, code: "invalid_target" };
+          goal.targetSkillLevel = input.targetSkillLevel;
+        }
+        for (const mastery of input.targetMasteries ?? []) {
+          const skill = trainingData.skills[mastery.skill - 1];
+          if (!skill) return { error: `${identity.name}没有第 ${mastery.skill} 个可计算专精的技能。`, code: "invalid_target" };
+          const currentLevel = current.currentMasteries[skill.id] ?? 0;
+          if (mastery.level > skill.masteries.length || mastery.level < currentLevel) {
+            return { error: `${identity.name}第 ${mastery.skill} 个技能当前专精 ${currentLevel}，目标范围为 ${currentLevel}-${skill.masteries.length}。`, code: "invalid_target" };
+          }
+          goal.targetMasteries[skill.id] = mastery.level;
+        }
+        const moduleWarnings: string[] = [];
+        for (const requested of input.targetModules ?? []) {
+          const query = requested.module.toLocaleLowerCase("zh-CN");
+          const matches = trainingData.modules.filter((module) => module.id.toLocaleLowerCase("en-US") === query
+            || module.name.toLocaleLowerCase("zh-CN") === query);
+          if (matches.length !== 1) {
+            return { error: matches.length ? `模组「${requested.module}」不唯一，请使用模组 ID。` : `「${identity.name}」没有名为「${requested.module}」的模组。`, code: "invalid_target" };
+          }
+          const module = matches[0]!;
+          const maxModuleLevel = Math.max(0, ...Object.keys(module.costs).map(Number).filter(Number.isFinite));
+          const currentLevel = current.currentModules[module.id] ?? 0;
+          if (requested.level > maxModuleLevel || requested.level < currentLevel) {
+            return { error: `模组「${module.name}」当前等级为 ${currentLevel}，最高等级为 ${maxModuleLevel}。`, code: "invalid_target" };
+          }
+          goal.targetModules[module.id] = requested.level;
+          if (input.targetElite < 2 || input.targetLevel < module.unlockLevel) {
+            moduleWarnings.push(`模组「${module.name}」需精二且达到 ${module.unlockLevel} 级才能解锁。`);
+          }
+        }
+
+        const inventory = Object.fromEntries(resources.inventory.map((item) => [item.id, item.count]));
+        const result = calculateTrainingPlan({
+          goals: [goal],
+          operators: [{ id: identity.id, rarity: operator.rarity }],
+          data: TRAINING_DATA,
+          inventory,
+        });
+        const shortagesById = new Map(result.shortages.map((item) => [item.id, item]));
+        const materials = Object.entries(result.requirements).map(([id, required]) => ({
+          id,
+          name: TRAINING_DATA.items[id]?.name ?? id,
+          required,
+          stock: inventory[id] ?? 0,
+          shortageAfterCrafting: shortagesById.get(id)?.missing ?? 0,
+          craftBatches: result.crafts.find((craft) => craft.id === id)?.count ?? 0,
+        }));
+        return {
+          operator: { id: identity.id, name: identity.name, rarity: operator.rarity },
+          source: resources.sourceName,
+          inventoryFetchedAt: resources.fetchedAt,
+          owned: Boolean(status),
+          current: {
+            elite: current.currentElite,
+            level: current.currentLevel,
+            skillLevel: current.currentSkillLevel,
+            masteries: Object.entries(current.currentMasteries).map(([skillId, level]) => ({ skillId, level })),
+            modules: Object.entries(current.currentModules).map(([moduleId, level]) => ({
+              moduleId,
+              name: trainingData.modules.find((module) => module.id === moduleId)?.name ?? moduleId,
+              level,
+            })),
+          },
+          target: {
+            elite: goal.targetElite,
+            level: goal.targetLevel,
+            skillLevel: goal.targetSkillLevel,
+            masteries: Object.entries(goal.targetMasteries).map(([skillId, level]) => ({ skillId, level })),
+            modules: Object.entries(goal.targetModules).map(([moduleId, level]) => ({ moduleId, level })),
+          },
+          lmd: {
+            required: result.lmd,
+            stock: result.lmdStock,
+            stockWithGoldBars: result.lmdStockWithGoldBars,
+            missing: result.lmdMissing,
+          },
+          experience: {
+            required: result.experience,
+            stock: result.experienceStock,
+            missing: result.experienceMissing,
+            missingBookEquivalent: result.experienceBooksEquivalent,
+            books: EXPERIENCE_BOOKS.map((book) => ({ ...book, count: inventory[book.id] ?? 0 })),
+          },
+          materials,
+          crafts: result.crafts,
+          materialShortages: result.shortages,
+          hasInventoryShortage: result.lmdMissing > 0 || result.experienceMissing > 0 || result.shortages.length > 0,
+          warnings: [
+            ...(!status ? [`森空岛当前干员池未持有「${identity.name}」，按精0 1级作为起点计算。`] : []),
+            ...moduleWarnings,
+          ],
+          assumptions: "库存取自当前森空岛角色；赤金按每个 500 龙门币计入可兑换余额，经验缺口以 2000 点特级作战记录折算。高阶材料优先使用库存，剩余部分按游戏内加工配方拆解。",
         };
       }),
     }),
