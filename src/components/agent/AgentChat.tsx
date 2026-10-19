@@ -705,7 +705,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
             </> : <>
               <div className="grid gap-1">
                 <p className="text-xs font-medium text-muted-foreground">{en ? "Live conversation" : "实时对话"}</p>
-                <h2 className="text-xl font-medium tracking-tight">{en ? "What would you like to know?" : "想了解什么？"}</h2>
+                <h2 className="text-xl font-medium tracking-tight">{activePersona?.kind === "builtin" ? activePersona.welcome[en ? "en" : "zh"] : (en ? "What would you like to know?" : "想了解什么？")}</h2>
               </div>
               <p className="max-w-lg text-sm leading-6 text-muted-foreground">{en ? "Ask directly about your account, operators or base plan." : "直接输入问题，我会根据当前可用信息回答。"}</p>
             </>}

@@ -36,7 +36,7 @@ async function storedHistory(page: Page, owner = "history-user") {
 }
 
 for (const width of [1440, 375]) {
-  test(`Agent starts fresh after reload, resumes history and keeps five chats at ${width}px`, async ({ page }) => {
+  test(`Agent history restores, resumes and keeps five chats at ${width}px`, async ({ page }) => {
     test.setTimeout(90_000);
     const requests = await prepare(page);
     await page.setViewportSize({ width, height: 900 });
@@ -50,9 +50,10 @@ for (const width of [1440, 375]) {
     await expect(page.getByText("已回答第 1 次提问。", { exact: true })).toBeVisible();
     await expect.poll(async () => (await storedHistory(page)).conversations[0]?.messages.length).toBe(2);
     await page.reload();
-    await expect(page.getByRole("heading", { name: "想了解什么？" })).toBeVisible();
-    await expect(page.getByText("已回答第 1 次提问。", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("已回答第 1 次提问。", { exact: true })).toBeVisible();
     expect((await storedHistory(page)).conversations[0]?.title).toBe("第一个问题");
+    await page.getByRole("button", { name: "新对话", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "想了解什么？" })).toBeVisible();
     for (let index = 2; index <= 6; index++) {
       await input.fill(`问题 ${index}`);
       await input.press("Enter");
