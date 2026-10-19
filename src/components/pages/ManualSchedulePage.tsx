@@ -30,9 +30,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonSuspense } from "@/components/ui/skeleton-swap";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { downloadJson } from "@/download";
-import { buildManualScheduleContext, type AgentPageContext } from "@/agent-page-context";
+import { createPosterDocument, POSTER_STORAGE_KEY, readPosterFile, type SchedulePosterDocument } from "@/schedule-poster-document";
+import { defaultPosterOperator, posterOperators } from "@/schedule-poster-model";
+import type { PosterTarget } from "@/components/schedule-poster/SchedulePoster";
 import { droneStoragePlanIndex } from "@/drone-plan-mapping";
 import type { ManualPlanResult } from "@/manual-plan-result";
+import { buildManualScheduleContext, type AgentPageContext } from "@/agent-page-context";
 import { loadManualEvaluationCache } from "@/manual-evaluation-cache";
 import { localizedOperatorName, localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
@@ -70,8 +73,10 @@ import { addOperatorPresentations } from "@/schedule-presentation";
 import { planToRows, type RoomRow } from "@/schedule";
 import { manualEditableRooms, withRecyclingRoom } from "@/recycling-room";
 import type { BaseBlueprint, MaaJson, MaaOperatorSlot, MaaRoom, OperBoxEntry } from "@/types";
+import { DEFAULT_MANUAL_SHIFT_START_TIME } from "@/manual-schedule-config";
 
 const ScrollArea = lazy(() => import("@/components/ui/scroll-area").then((module) => ({ default: module.ScrollArea })));
+const PosterWorkbench = lazy(() => import("@/components/schedule-poster/PosterWorkbench"));
 const MoodSimulationPanel = lazy(() => import("@/components/manual-mood/MoodSimulationPanel"));
 const OperatorRarityFilter = lazy(() => import("@/components/operators/OperatorPickerParts").then(module => ({ default: module.OperatorRarityFilter })));
 const OperatorSearch = lazy(() => import("@/components/operators/OperatorPickerParts").then(module => ({ default: module.OperatorSearch })));
@@ -98,6 +103,9 @@ const OPERATOR_CATALOG_BY_NAME = new Map(OPERATOR_CATALOG.map((operator) => [ope
 export interface ManualSchedulePageProps {
   /** Development showcases can use the real editor without touching saved drafts. */
   persistDraft?: boolean;
+  initialPosterDocument?: SchedulePosterDocument | null;
+  onImportPoster?: (document: SchedulePosterDocument) => void;
+  onPosterWorkingBoxChange?: (operators: OperBoxEntry[]) => void;
   layout: BaseBlueprint;
   operbox: OperBoxEntry[] | null;
   sourceName: string | null;
@@ -111,8 +119,8 @@ export interface ManualSchedulePageProps {
   result: ManualPlanResult | null;
   onAgentContextChange?: (context: AgentPageContext | null) => void;
   evaluationPending: boolean;
-  onEvaluate: (input: { draft: ManualScheduleDraft }) => Promise<void>;
-  onPaperEvaluate: (input: { draft: ManualScheduleDraft }) => Promise<void>;
+  onEvaluate: (input: { draft: ManualScheduleDraft; operbox?: OperBoxEntry[] }) => Promise<void>;
+  onPaperEvaluate: (input: { draft: ManualScheduleDraft; operbox?: OperBoxEntry[] }) => Promise<void>;
   onRestoreEvaluation: (result: ManualPlanResult) => void;
   onOpenCalculator: () => void;
   onShiftDurationsChange: (durations: number[]) => void;
@@ -135,6 +143,7 @@ export interface ManualSchedulePageProps {
 
 type PickerTarget =
   | { kind: "slot"; roomId: string; slotIndex: number }
+  | { kind: "poster-hanger"; shift: number }
   | { kind: "fiammetta" };
 
 type PendingMove = {
@@ -228,8 +237,11 @@ function ManualOperatorChoice({
 
 export function ManualSchedulePage({
   persistDraft = true,
+  initialPosterDocument,
+  onImportPoster,
+  onPosterWorkingBoxChange,
   layout,
-  operbox,
+  operbox: sourceOperbox,
   sourceName,
   shiftDurations,
   shiftStartTime,
@@ -238,7 +250,7 @@ export function ManualSchedulePage({
   initialDraft,
   restorationReady,
   onInitialDraftConsumed,
-  result,
+  result: suppliedResult,
   onAgentContextChange,
   evaluationPending,
   onEvaluate,
@@ -275,6 +287,47 @@ export function ManualSchedulePage({
     setDraft((current) => setManualRoomProduct(current, layout, request.shiftIndex, request.roomId, request.product));
     onManualProductChangeRequestConsumed?.(request.token);
   }, [layout, manualProductChangeRequest, onManualProductChangeRequestConsumed]);
+  const [posterSettings, setPosterSettings] = useState(() => initialPosterDocument ?? createPosterDocument(layout, undefined, sourceOperbox ?? []));
+  const [view, setView] = useState("edit");
+  const [posterVisited, setPosterVisited] = useState(Boolean(initialPosterDocument));
+  const [evaluatedKey, setEvaluatedKey] = useState("");
+  const [calculationError, setCalculationError] = useState("");
+  const assignedNamesKey = JSON.stringify([...new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators)).filter(Boolean))]);
+  const posterOperatorsKey = JSON.stringify(posterSettings.operators);
+  const operbox = useMemo(() => {
+    const entries = new Map((sourceOperbox ?? []).map(operator => [operator.name, operator]));
+    const names = new Set<string>(JSON.parse(assignedNamesKey));
+    if (draft.fiammettaEnabled) names.add("菲亚梅塔");
+    for (const name of names) {
+      if (!name || entries.get(name)?.own) continue;
+      const operator = (JSON.parse(posterOperatorsKey) as OperBoxEntry[]).find(item => item.name === name) ?? defaultPosterOperator(name);
+      if (operator) entries.set(name, { ...operator, own: true });
+    }
+    return [...entries.values()];
+  }, [sourceOperbox, posterOperatorsKey, assignedNamesKey, draft.fiammettaEnabled]);
+  const evaluationKey = JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, posterSettings.efficiencyMode]);
+  const result = evaluatedKey === evaluationKey ? suppliedResult : null;
+  const posterDocument = useMemo(() => {
+    const generated = createPosterDocument(layout, draft, operbox);
+    const hangerNames = new Set(posterSettings.presentation.dormHangerOperators.filter((name): name is string => Boolean(name)));
+    const operators = [...generated.operators, ...posterSettings.operators.filter(operator => hangerNames.has(operator.name) && !generated.operators.some(current => current.name === operator.name))];
+    return {
+      ...generated,
+      operators,
+      meta: /^\d{3} [一二两三四1234]班轮换$/.test(posterSettings.meta.title) ? { ...posterSettings.meta, title: `${layout.template} ${draft.shifts.length}班轮换` } : posterSettings.meta,
+      presentation: posterSettings.presentation,
+      efficiencyMode: posterSettings.efficiencyMode,
+    };
+  }, [layout, draft, operbox, posterSettings]);
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("tab") === "poster" || initialPosterDocument) { setView("poster"); setPosterVisited(true); }
+    if (!initialPosterDocument) {
+      try {
+        const saved = window.localStorage.getItem(POSTER_STORAGE_KEY);
+        if (saved) setPosterSettings(readPosterFile(saved));
+      } catch { /* Poster metadata must not prevent manual draft restoration. */ }
+    }
+  }, [initialPosterDocument]);
   const [moodRevision, setMoodRevision] = useState(0);
   const [moodSettingsOpen, setMoodSettingsOpen] = useState(false);
   const [restored, setRestored] = useState(false);
@@ -317,6 +370,7 @@ export function ManualSchedulePage({
     (operbox ?? []).filter((entry) => entry.own).sort((left, right) => left.name.localeCompare(right.name, "zh-CN"))
   ), [operbox]);
   const canPersistDraft = persistDraft && ownedOperators.length > 0;
+  const externalNames = ownedOperators.filter(operator => !sourceOperbox?.some(source => source.name === operator.name && source.own)).map(operator => operator.name);
   const ownedFingerprint = ownedOperators.map((operator) => operator.name).join("\0");
   const eliteByOperator = useMemo(() => new Map(
     ownedOperators.map((operator) => [operator.name, operator.elite]),
@@ -326,14 +380,14 @@ export function ManualSchedulePage({
   ), [ownedOperators]);
 
   useEffect(() => {
-    if (restored || !restorationReady || ownedOperators.length === 0) return;
+    if (restored || !restorationReady || (ownedOperators.length === 0 && !initialPosterDocument)) return;
     try {
       const saved = initialDraft ?? loadManualScheduleDraft(window.localStorage);
       if (saved) {
         const reconciled = reconcileManualScheduleDraft(saved, layout, operbox);
         setDraft(reconciled);
         onShiftDurationsChange(reconciled.shifts.map((shift) => shift.durationHours));
-        onShiftStartTimeChange(reconciled.startTime);
+        onShiftStartTimeChange(reconciled.startTime || DEFAULT_MANUAL_SHIFT_START_TIME);
         onScheduleModeChange(reconciled.scheduleMode);
         onFiammettaEnabledChange(reconciled.fiammettaEnabled);
         const cachedEvaluation = persistDraft ? loadManualEvaluationCache(window.localStorage) : null;
@@ -344,7 +398,7 @@ export function ManualSchedulePage({
     }
     if (initialDraft) onInitialDraftConsumed();
     setRestored(true);
-  }, [intl, initialDraft, layout, onFiammettaEnabledChange, onInitialDraftConsumed, onRestoreEvaluation, onScheduleModeChange, onShiftDurationsChange, onShiftStartTimeChange, operbox, ownedOperators, persistDraft, restored, restorationReady]);
+  }, [intl, initialDraft, initialPosterDocument, layout, onFiammettaEnabledChange, onInitialDraftConsumed, onRestoreEvaluation, onScheduleModeChange, onShiftDurationsChange, onShiftStartTimeChange, operbox, ownedOperators, persistDraft, restored, restorationReady]);
 
   useEffect(() => {
     if (!restored) return;
@@ -361,7 +415,7 @@ export function ManualSchedulePage({
   useEffect(() => {
     if (!restored) return;
     setDraft((current) => reconcileManualScheduleDraft(
-      resizeManualScheduleDraft(current, shiftDurations, shiftStartTime),
+      resizeManualScheduleDraft(current, shiftDurations, current.startTime === "" && shiftStartTime === DEFAULT_MANUAL_SHIFT_START_TIME ? "" : shiftStartTime),
       layout,
       operbox,
     ));
@@ -377,9 +431,18 @@ export function ManualSchedulePage({
     }
   }, [intl, canPersistDraft, draft, en, restored]);
 
+  useEffect(() => {
+    if (!restored) return;
+    try { window.localStorage.setItem(POSTER_STORAGE_KEY, JSON.stringify(posterDocument)); }
+    catch { /* The user can still download the editable document. */ }
+  }, [restored, posterDocument]);
   const activeShift = Math.min(draft.activeShift, Math.max(0, draft.shifts.length - 1));
   const shiftRanges = manualShiftTimeRanges(draft.startTime, draft.shifts.map((shift) => shift.durationHours));
-  const maa = useMemo(() => manualScheduleToMaa(draft, layout, fiammettaEnabled), [draft, fiammettaEnabled, layout]);
+  const maaDraft = useMemo(() => ({
+    ...draft,
+    startTime: draft.startTime === "" && shiftStartTime === DEFAULT_MANUAL_SHIFT_START_TIME ? "" : shiftStartTime,
+  }), [draft, shiftStartTime]);
+  const maa = useMemo(() => manualScheduleToMaa(maaDraft, layout, fiammettaEnabled), [maaDraft, fiammettaEnabled, layout]);
   const activePlan = maa.plans[activeShift];
   const activeRoomProducts = useMemo(() => new Map(
     layout.rooms
@@ -439,7 +502,9 @@ export function ManualSchedulePage({
   }, [activeShift, draft, layout, onAgentContextChange, result, restored, rows]);
   const selectedRoom = picker?.kind === "slot" ? rows.find((row) => row.roomId === picker.roomId) : undefined;
   const selectedAssignment = picker?.kind === "slot" ? draft.shifts[activeShift]?.rooms[picker.roomId] : undefined;
-  const selectedOperator = picker?.kind === "slot" ? selectedAssignment?.operators[picker.slotIndex] ?? null : null;
+  const selectedOperator = picker?.kind === "slot"
+    ? selectedAssignment?.operators[picker.slotIndex] ?? null
+    : picker?.kind === "poster-hanger" ? posterSettings.presentation.dormHangerOperators[picker.shift] ?? null : null;
   const assignedOperatorNames = useMemo(() => new Set(
     Object.values(draft.shifts[activeShift]?.rooms ?? {}).flatMap((room) => room.operators.filter(Boolean)),
   ), [activeShift, draft.shifts]);
@@ -660,6 +725,20 @@ export function ManualSchedulePage({
 
   function chooseOperator(operator: string | null) {
     if (!picker) return;
+    if (picker.kind === "poster-hanger") {
+      const shift = picker.shift;
+      const selected = operator ? ownedOperators.find(entry => entry.name === operator) : undefined;
+      setPosterSettings(current => {
+        const dormHangerOperators = Array.from({ length: current.draft.shifts.length }, (_, index) => current.presentation.dormHangerOperators[index] ?? null);
+        dormHangerOperators[shift] = operator;
+        const operators = selected
+          ? [...current.operators.filter(entry => entry.name !== selected.name), selected]
+          : current.operators;
+        return { ...current, operators, presentation: { ...current.presentation, dormHangerOperators } };
+      });
+      setPicker(null);
+      return;
+    }
     if (picker.kind === "fiammetta") {
       if (operator && !assignedOperatorNames.has(operator)) return;
       setDraft((current) => {
@@ -761,6 +840,42 @@ export function ManualSchedulePage({
     ));
   }
 
+  function updatePoster(next: SchedulePosterDocument) {
+    const scheduledNames = new Set(next.draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators)).filter((name): name is string => Boolean(name)));
+    if (next.draft.fiammettaEnabled) scheduledNames.add("菲亚梅塔");
+    const additions = posterOperators(next).filter(operator => scheduledNames.has(operator.name) && !operbox.some(current => current.name === operator.name && current.own));
+    if (additions.length) onPosterWorkingBoxChange?.([...operbox, ...additions]);
+    setPosterSettings(next);
+    setDraft(next.draft);
+    if (JSON.stringify(next.draft.shifts.map(shift => shift.durationHours)) !== JSON.stringify(shiftDurations)) onShiftDurationsChange(next.draft.shifts.map(shift => shift.durationHours));
+    const nextStartTime = next.draft.startTime || DEFAULT_MANUAL_SHIFT_START_TIME;
+    if (nextStartTime !== shiftStartTime) onShiftStartTimeChange(nextStartTime);
+    if (next.draft.scheduleMode !== scheduleMode) onScheduleModeChange(next.draft.scheduleMode);
+    if (next.draft.fiammettaEnabled !== fiammettaEnabled) onFiammettaEnabledChange(next.draft.fiammettaEnabled);
+  }
+  function importPoster(next: SchedulePosterDocument) {
+    if (onImportPoster) { onImportPoster(next); return; }
+    onImportedLayoutChange(next.layout); updatePoster({ ...next, operators: posterOperators(next) });
+  }
+  function selectPosterSlot(target: PosterTarget) {
+    setPickerQuery(""); setPickerRoomFilter(null); setPickerSkillTag(null); setPickerRarity(null); setPickerPage(1);
+    if (target.presentationOnly === "dorm-hanger") {
+      setPicker({ kind: "poster-hanger", shift: target.shift });
+      return;
+    }
+    setActiveShift(target.shift);
+    setPicker({ kind: "slot", roomId: target.roomId, slotIndex: target.slot ?? 0 });
+  }
+  async function calculateSchedule(mode: "native" | "manual") {
+    if (evaluationPending) return;
+    setCalculationError("");
+    setPosterSettings(current => ({ ...current, efficiencyMode: mode }));
+    try {
+      await (mode === "native" ? onEvaluate : onPaperEvaluate)({ draft, operbox });
+      setEvaluatedKey(JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, mode]));
+    } catch (error) { setCalculationError(error instanceof Error ? error.message : "计算失败。"); }
+  }
+
   async function prepareMaaImport(file: File, signal: AbortSignal) {
     if (file.size > 5 * 1024 * 1024) {
       throw new Error(intl("components_pages_ManualSchedulePage.scheduleFileTooLarge"));
@@ -813,7 +928,7 @@ export function ManualSchedulePage({
     setMaaImportPreview(null);
   }
 
-  if (!operbox?.some((operator) => operator.own)) {
+  if (!operbox?.some((operator) => operator.own) && !initialPosterDocument) {
     return (
       <section className="flex min-h-[calc(100svh-9rem)] items-center justify-center py-8" aria-labelledby="manual-schedule-empty-title" data-manual-schedule-empty>
         <div className="w-full max-w-2xl border border-[#313131]/15 bg-[#F3F1EA] px-6 py-12 text-center shadow-[0_18px_45px_rgb(49_49_49/0.08)] sm:px-10">
@@ -930,8 +1045,8 @@ export function ManualSchedulePage({
   );
 
   const closeMobileTools = () => { if (mobileToolsRef.current) mobileToolsRef.current.open = false; };
-  const runNativeEvaluation = () => { closeMobileTools(); void onEvaluate({ draft }); };
-  const runPaperEvaluation = () => { closeMobileTools(); void onPaperEvaluate({ draft }); };
+  const runNativeEvaluation = () => { closeMobileTools(); void calculateSchedule("native"); };
+  const runPaperEvaluation = () => { closeMobileTools(); void calculateSchedule("manual"); };
   const scheduleTools = (mobile = false) => <>
     {draft.source ? <Button type="button" variant="ghost" size="sm" onClick={() => { closeMobileTools(); onOpenCalculator(); }}>
       <ArrowLeft />{intl("components_pages_ManualSchedulePage.backToCalculation")}
@@ -986,6 +1101,7 @@ export function ManualSchedulePage({
         </div>
       </div>
 
+      {externalNames.length ? <p className="mb-3 text-xs text-muted-foreground">作业示例练度（非个人持有）：{externalNames.join("、")}。可在 Box 与排班设置中调整练度。</p> : null}
       <ManualProductionSummary
         result={result}
         activeShift={activeShift}
@@ -1001,11 +1117,16 @@ export function ManualSchedulePage({
         )}
       />
 
+      {calculationError ? <p role="alert" className="mb-3 text-sm text-destructive">{calculationError}</p> : null}
       {storageWarning ? <p className="mb-3 text-sm text-amber-700" role="status">{storageWarning}</p> : null}
 
       {restored && <Suspense fallback={<Skeleton className="mt-8 h-48 w-full" />}>
         <MoodSimulationPanel key={moodRevision} layout={layout} operbox={operbox ?? []} draft={draft}
           renderBoard={renderBoard}
+          view={view} onViewChange={value => { setView(value); if (value === "poster") setPosterVisited(true); }}
+          posterContent={posterVisited ? <Suspense fallback={<Skeleton className="h-64 w-full" />}><PosterWorkbench document={posterDocument}
+            onChange={updatePoster} onImport={importPoster} onSelect={selectPosterSlot}
+            result={result} pending={evaluationPending} onCalculate={calculateSchedule} /></Suspense> : null}
           settingsOpen={moodSettingsOpen} onSettingsOpenChange={setMoodSettingsOpen}
           fiammettaEnabled={fiammettaEnabled} onFiammettaEnabledChange={onFiammettaEnabledChange}
           onTargetChange={(shift, target) => setDraft(current => ({
@@ -1039,8 +1160,8 @@ export function ManualSchedulePage({
       <Dialog open={Boolean(picker)} onOpenChange={(open) => { if (!open) setPicker(null); }}>
         <DialogContent className="grid max-h-[min(820px,calc(100svh-1rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:w-[calc(100vw-2rem)] sm:max-w-[min(960px,calc(100vw-2rem))]">
           <DialogHeader>
-            <DialogTitle>{picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.fiammettaMoraleTarget")) : (intl("components_pages_ManualSchedulePage.assign", { value1: (en) ? (selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.room")) : "", value2: (en) ? "" : (selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.facility")) }))}</DialogTitle>
-            <DialogDescription>{picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.thisTargetIsStoredOnlyForTheActiveShift")) : (intl("components_pages_ManualSchedulePage.onlyOwnedOperatorsInTheCurrentBoxAreShown"))}</DialogDescription>
+            <DialogTitle>{picker?.kind === "poster-hanger" ? "选择宿舍挂件干员" : picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.fiammettaMoraleTarget")) : (intl("components_pages_ManualSchedulePage.assign", { value1: (en) ? (selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.room")) : "", value2: (en) ? "" : (selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.facility")) }))}</DialogTitle>
+            <DialogDescription>{picker?.kind === "poster-hanger" ? "仅用于作业图展示，不会加入宿舍排班或参与效率计算。" : picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.thisTargetIsStoredOnlyForTheActiveShift")) : (intl("components_pages_ManualSchedulePage.onlyOwnedOperatorsInTheCurrentBoxAreShown"))}</DialogDescription>
           </DialogHeader>
           <SkeletonSuspense className="min-h-0 [&>[data-skeleton-swap-content]]:grid [&>[data-skeleton-swap-content]]:min-h-0" fallback={<div className="grid min-h-64 content-start gap-3 px-5 pb-5 sm:px-7"><Skeleton className="h-11" /><Skeleton className="h-24" /><div className="grid grid-cols-4 gap-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-20" />)}</div></div>}>
           <ScrollArea className="min-h-0" viewportClassName="overflow-x-hidden" viewportProps={{ ref: pickerScrollContainerRef, onScroll: handlePickerScroll }}>
@@ -1079,6 +1200,12 @@ export function ManualSchedulePage({
             {picker?.kind === "fiammetta" ? (
               <div className="flex justify-end">
                 <Button type="button" variant="destructive" size="sm" className="px-2 text-xs max-sm:min-h-8" data-manual-clear-morale-target onClick={() => chooseOperator(null)}><Trash2 />{intl("components_pages_ManualSchedulePage.clearSlot")}</Button>
+              </div>
+            ) : null}
+
+            {picker?.kind === "poster-hanger" ? (
+              <div className="flex justify-end">
+                <Button type="button" variant="destructive" size="sm" className="px-2 text-xs max-sm:min-h-8" onClick={() => chooseOperator(null)}><Trash2 />清空挂件位</Button>
               </div>
             ) : null}
 

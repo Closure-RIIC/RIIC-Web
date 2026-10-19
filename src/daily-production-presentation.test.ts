@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { dailyProductionGroups } from "./daily-production-presentation.ts";
+import { dailyProductionGroups, dailyProductionValueBreakdown } from "./daily-production-presentation.ts";
 
 test("solver daily production drives the same summary amount and detail row", () => {
   const groups = dailyProductionGroups(null, {
@@ -93,4 +93,28 @@ test("solver totals stay authoritative while estimate rows split natural and dro
 
 test("production presentation stays empty only when neither source is available", () => {
   assert.deepEqual(dailyProductionGroups(null, null), []);
+});
+
+test("poster values reconcile with the shared summary without adding gold equivalents to orders twice", () => {
+  const production = { lmd: 34_254.5, pure_gold: 52_999.25, equivalent_gold: 2_328.77, battle_records: 22_400, originium_shards: 48, orundum: 360 };
+  const drones = { lmd: 5_525.86, pure_gold: 1_010.1, battle_records: 800 };
+  const values = dailyProductionValueBreakdown(production, drones);
+  const groups = dailyProductionGroups(null, production, drones);
+  assert.equal(values.lmd.total, 39_780.36);
+  assert.equal(values.experience.total, 23_200);
+  assert.equal(values.gold.external, 5_000);
+  assert.ok(Math.abs(values.gold.total - 61_338.12) < .000001);
+  assert.equal(values.gold.total, values.gold.natural + values.gold.equivalent + values.gold.external + values.gold.drones);
+  assert.equal(groups[1].primary.amount.value, values.lmd.total);
+  assert.equal(groups[1].supporting?.amount.value, Math.floor(values.gold.total / 500));
+  assert.equal(groups[0].primary.amount.value, values.experience.total);
+  assert.equal(groups[2].primary.amount.value, values.orundum.total);
+});
+
+test("missing drone fields mean zero increment and preserve the site's external gold allowance", () => {
+  const values = dailyProductionValueBreakdown({ lmd: 10_000, pure_gold: 500, battle_records: 8_000, originium_shards: 0, orundum: 0 });
+  assert.equal(values.lmd.total, 10_000);
+  assert.equal(values.gold.total, 5_500);
+  assert.equal(values.gold.drones, 0);
+  assert.equal(values.gold.equivalent, 0);
 });

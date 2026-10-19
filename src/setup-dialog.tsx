@@ -68,6 +68,7 @@ type SetupDialogProps = {
   onMaaFile: (file: File, signal?: AbortSignal) => Promise<void>;
   onMaaPaste: () => Promise<boolean>;
   onManualBox: (entries: OperBoxEntry[]) => void;
+  workingCopy?: boolean;
   onRequireWebsiteAccount: () => void;
   presets: PresetDef[];
   preset: PresetDef;
@@ -135,6 +136,7 @@ export function SetupDialog({
   onMaaFile,
   onMaaPaste,
   onManualBox,
+  workingCopy = false,
   onRequireWebsiteAccount,
   presets,
   preset,
@@ -335,7 +337,7 @@ export function SetupDialog({
   }
 
   function applyManualBox(entries: OperBoxEntry[]) {
-    if (!websiteSession) {
+    if (!workingCopy && !websiteSession) {
       onRequireWebsiteAccount();
       return;
     }

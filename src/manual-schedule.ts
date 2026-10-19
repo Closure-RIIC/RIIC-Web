@@ -38,6 +38,19 @@ export interface ManualRoomAssignment {
   manualSkillEfficiencyPct?: number;
 }
 
+export function manualRoomForShift(room: BlueprintRoom, assignment?: ManualRoomAssignment): BlueprintRoom {
+  const product = assignment?.product;
+  if (room.kind === "trade_post" && product && "trade" in product) {
+    return { ...room, product: { trade: { order: normalizeProductForLevel(room.level, product.trade.order) } } };
+  }
+  if (room.kind === "factory" && product && "factory" in product) return { ...room, product };
+  return room;
+}
+
+export function manualLayoutForShift(layout: BaseBlueprint, shift: ManualShift): BaseBlueprint {
+  return { ...layout, rooms: layout.rooms.map(room => manualRoomForShift(room, shift.rooms[room.id])) };
+}
+
 export interface ManualShift {
   durationHours: number;
   rooms: Record<string, ManualRoomAssignment>;
@@ -139,11 +152,24 @@ function formatTime(totalMinutes: number): string {
   return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}`;
 }
 
+function normalizeStartTime(value: unknown): string {
+  return value === "" ? "" : formatTime(parseTime(value) ?? parseTime(DEFAULT_MANUAL_SHIFT_START_TIME)!);
+}
+
 function normalizedDurationMinutes(durations: readonly number[]): number[] {
   const source = durations.length ? durations : DEFAULT_MANUAL_SHIFT_DURATIONS;
   const minutes = source.slice(0, MAX_MANUAL_SHIFT_COUNT).map((duration) => (
     Math.max(1, Math.round(finitePositive(duration, 1) * 60))
   ));
+  if (minutes.length === 1) return [MINUTES_PER_DAY];
+  // Keep each entered shift duration. A poster can describe a multi-day cycle
+  // such as 24/24 or 12/12/12; the editor must not silently move the remainder
+  // into the last shift.
+  return minutes;
+}
+
+function normalizedDailyDurationMinutes(durations: readonly number[]): number[] {
+  const minutes = normalizedDurationMinutes(durations);
   if (minutes.length === 1) return [MINUTES_PER_DAY];
   const total = minutes.reduce((sum, duration) => sum + duration, 0);
   if (total === MINUTES_PER_DAY) return minutes;
@@ -168,12 +194,13 @@ export function normalizeManualShiftDurations(durations: readonly number[]): num
 /** Quantize an explicitly edited timeline, retaining one hour for every shift. */
 export function snapManualShiftDurationsToHours(durations: readonly number[]): number[] {
   const minutes = normalizedDurationMinutes(durations);
+  const cycleHours = minutes.reduce((sum, duration) => sum + duration, 0) / 60;
   let elapsed = 0;
   let previous = 0;
   return minutes.map((duration, index) => {
     elapsed += duration;
-    const boundary = index === minutes.length - 1 ? 24
-      : Math.max(previous + 1, Math.min(24 - (minutes.length - index - 1), Math.round(elapsed / 60)));
+    const boundary = index === minutes.length - 1 ? cycleHours
+      : Math.max(previous + 1, Math.min(cycleHours - (minutes.length - index - 1), Math.round(elapsed / 60)));
     const hours = boundary - previous;
     previous = boundary;
     return hours;
@@ -307,7 +334,7 @@ export function createManualScheduleDraft(
     version: 3,
     scheduleMode,
     externalOperatorNames: [],
-    startTime: formatTime(parseTime(startTime) ?? parseTime(DEFAULT_MANUAL_SHIFT_START_TIME)!),
+    startTime: normalizeStartTime(startTime),
     activeShift: 0,
     fiammettaEnabled: false,
     shifts: normalized.slice(0, MAX_MANUAL_SHIFT_COUNT).map((duration) => emptyShift(finitePositive(duration, 12))),
@@ -525,7 +552,11 @@ export function createManualScheduleDraftFromCalculator(input: {
       ? "period"
       : "sequential");
   const startTime = input.timingOverride?.startTime ?? input.maa?.plans[0]?.period?.[0]?.[0];
-  const draft = createManualScheduleDraft(durations, startTime, scheduleMode);
+  const draft = createManualScheduleDraft(
+    input.preferMaaTiming ? durations : normalizedDailyDurationMinutes(durations).map((minutes) => minutes / 60),
+    startTime,
+    scheduleMode,
+  );
   draft.fiammettaEnabled = input.fiammettaEnabled;
   if (input.source) draft.source = { ...input.source };
   const owned = input.ownedOperatorNames ? new Set(input.ownedOperatorNames) : undefined;
@@ -667,7 +698,7 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
       externalOperatorNames: "externalOperatorNames" in value && Array.isArray(value.externalOperatorNames)
         ? value.externalOperatorNames.filter((name): name is string => typeof name === "string" && name.trim().length > 0)
         : [],
-      startTime: formatTime(parseTime("startTime" in value ? value.startTime : null) ?? parseTime(DEFAULT_MANUAL_SHIFT_START_TIME)!),
+      startTime: normalizeStartTime("startTime" in value ? value.startTime : null),
       activeShift,
       fiammettaEnabled: "fiammettaEnabled" in value && value.fiammettaEnabled === true,
       shifts,
@@ -697,7 +728,7 @@ export function resizeManualScheduleDraft(
     version: 3,
     scheduleMode: draft.scheduleMode,
     externalOperatorNames: [...draft.externalOperatorNames],
-    startTime: formatTime(parseTime(startTime) ?? parseTime(DEFAULT_MANUAL_SHIFT_START_TIME)!),
+    startTime: normalizeStartTime(startTime),
     activeShift: Math.min(draft.activeShift, shifts.length - 1),
     fiammettaEnabled: draft.fiammettaEnabled,
     shifts,
@@ -719,7 +750,7 @@ export function reconcileManualScheduleDraft(
     version: 3,
     scheduleMode: draft.scheduleMode === "period" ? "period" : "sequential",
     externalOperatorNames: [...new Set(draft.externalOperatorNames)],
-    startTime: formatTime(parseTime(draft.startTime) ?? parseTime(DEFAULT_MANUAL_SHIFT_START_TIME)!),
+    startTime: normalizeStartTime(draft.startTime),
     activeShift: Math.min(Math.max(0, draft.activeShift), Math.max(0, draft.shifts.length - 1)),
     fiammettaEnabled: draft.fiammettaEnabled === true,
     ...(draft.source ? { source: { ...draft.source } } : {}),
@@ -1038,7 +1069,7 @@ function maaRoom(room: BlueprintRoom, assignment: ManualRoomAssignment | undefin
   const operators = (assignment?.operators ?? []).slice(0, manualRoomCapacity(room)).filter(
     (operator): operator is string => typeof operator === "string" && operator.length > 0,
   );
-  const product = maaProduct(room, assignment?.product);
+  const product = maaProduct(manualRoomForShift(room, assignment));
   return {
     operators,
     sort: true,
@@ -1054,6 +1085,8 @@ export function manualScheduleToMaa(
   fiammettaEnabled: boolean,
 ): MaaJson {
   const ranges = manualShiftTimeRanges(draft.startTime, draft.shifts.map((shift) => shift.durationHours));
+  const cycleMinutes = ranges.reduce((sum, range) => sum + range.durationMinutes, 0);
+  const useDailyPeriods = draft.scheduleMode === "period" && cycleMinutes === MINUTES_PER_DAY;
   return {
     title: `手动排班 · ${layout.template}`,
     description: "由可露希尔基建终端手动排班生成",
@@ -1082,7 +1115,7 @@ export function manualScheduleToMaa(
       }
       return {
         name: `班次 ${shiftIndex + 1}`,
-        ...(draft.scheduleMode === "period" ? { period } : {}),
+        ...(useDailyPeriods ? { period } : {}),
         duration: range.durationMinutes,
         rooms,
         Fiammetta: fiammettaEnabled && shift.fiammettaTarget

@@ -1,6 +1,6 @@
-import { manualRoomCapacity, type ManualScheduleDraft } from "./manual-schedule.ts";
+import { manualRoomCapacity, manualRoomForShift, type ManualScheduleDraft } from "./manual-schedule.ts";
 import { resolveManualManufactureRoom, resolveManualPowerRoom, resolveManualTradeRoom } from "./manual-room-efficiency-resolvers.ts";
-import { resolveGoldEquivalentEfficiency, resolveManualSpecialTradeOutput } from "./manual-trade-special-rules.ts";
+import { resolveGoldEquivalentEfficiency, type SpecialTradeAnchor } from "./manual-trade-special-rules.ts";
 import type { CrossFacilityEfficiencyByShift } from "./manual-schedule-native-evaluator.ts";
 import type { BaseBlueprint, MaaJson, OperBoxEntry, RotationJson, RotationRoomLine, RotationShift } from "./types.ts";
 
@@ -32,6 +32,7 @@ export type ManualRoomEvaluation = {
   finalEfficiency: number;
   goldEquivalentEfficiency: number;
   tradeEquivalentEfficiency?: number;
+  specialTradeAnchor?: SpecialTradeAnchor;
   dailyOutput: number | null;
   outputKind?: "lmd" | "pure_gold" | "battle_records" | "originium_shards" | "power";
 };
@@ -71,12 +72,11 @@ function roomEvaluation(input: {
   const orderMultiplier = resolution.orderMultiplier;
   const final = rounded(total * orderMultiplier);
   const goldEquivalentEfficiency = facility === "trade"
-    ? resolveGoldEquivalentEfficiency(total, resolveManualSpecialTradeOutput({
-        level,
-        order: recipe === "originium" ? "originium" : "gold",
-        members: tradeMembers ?? [],
-      }).goldUnitOutputPerDay)
+    ? resolveGoldEquivalentEfficiency(total, resolution.specialTradeAnchor?.goldUnitOutputPerDay ?? 0)
     : resolution.goldEquivalentEfficiency;
+  const tradeEquivalentEfficiency = facility === "trade"
+    ? rounded(final - resolution.baseEfficiency - globalEfficiency)
+    : undefined;
   const dailyOutput = facility === "trade"
     ? (recipe === "originium" ? 240 : (TRADE_BASE_DAILY[level] ?? TRADE_BASE_DAILY[3])) * final
     : facility === "manufacture" && recipe !== "all"
@@ -102,6 +102,8 @@ function roomEvaluation(input: {
     orderMultiplier,
     finalEfficiency: final,
     goldEquivalentEfficiency,
+    ...(tradeEquivalentEfficiency === undefined ? {} : { tradeEquivalentEfficiency }),
+    ...(resolution.specialTradeAnchor ? { specialTradeAnchor: resolution.specialTradeAnchor } : {}),
     dailyOutput: dailyOutput === null ? null : rounded(dailyOutput),
     outputKind,
   };
@@ -109,7 +111,7 @@ function roomEvaluation(input: {
 
 function lineForEvaluation(room: ManualRoomEvaluation, facility: Facility): RotationRoomLine {
   const tradeEquivalentEfficiency = facility === "trade"
-    ? room.finalEfficiency - room.baseEfficiency - room.globalEfficiency
+    ? room.tradeEquivalentEfficiency ?? room.finalEfficiency - room.baseEfficiency - room.globalEfficiency
     : room.skillEfficiency;
   const line: RotationRoomLine = {
     room_id: room.roomId,
@@ -159,7 +161,8 @@ export function evaluateManualSchedule(input: {
     let power = 0;
     const production: Record<string, number> = { lmd: 0, pure_gold: 0, battle_records: 0, originium_shards: 0, orundum: 0, equivalent_gold: 0 };
 
-    for (const room of input.layout.rooms) {
+    for (const baseRoom of input.layout.rooms) {
+      const room = manualRoomForShift(baseRoom, shift.rooms[baseRoom.id]);
       if (room.kind !== "trade_post" && room.kind !== "factory" && room.kind !== "power_plant") continue;
       const assignment = shift.rooms[room.id];
       const operatorNames = (assignment?.operators ?? [])
