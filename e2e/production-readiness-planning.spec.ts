@@ -1214,7 +1214,7 @@ test("plan timing stays passive and performance feedback waits for result detail
 
 test("scheduled product changes require destructive confirmation and rerun with the updated layout", async ({ page }) => {
   test.setTimeout(60_000);
-  await mockApis(page);
+  await mockApis(page, { dismissSolverWarning: false });
   let planRequests = 0;
   let rerunPayload: Record<string, unknown> | null = null;
   let releaseRerun: (() => void) | undefined;
@@ -1240,6 +1240,8 @@ test("scheduled product changes require destructive confirmation and rerun with 
   await page.getByRole("button", { name: "生成排班" }).click();
   await expect(page.getByRole("status", { name: "排班已生成", exact: true })).toBeVisible();
   await expect.poll(() => planRequests).toBe(1);
+  const generatedSchedule = page.getByRole("dialog", { name: /^(排班已生成|Schedule generated)$/ });
+  await generatedSchedule.getByRole("button", { name: /^(关闭|Dismiss)$/ }).click();
   await page.getByRole("tab", { name: "列表式布局" }).click();
 
   const factoryControls = page.getByRole("group", { name: "制造站 1 配方" });
@@ -1274,6 +1276,7 @@ test("scheduled product changes require destructive confirmation and rerun with 
   releaseRerun?.();
   await expect(confirmation).toBeHidden();
   await expect(page.getByRole("status", { name: "排班已生成", exact: true })).toBeVisible();
+  await generatedSchedule.getByRole("button", { name: /^(关闭|Dismiss)$/ }).click();
   await page.getByRole("tab", { name: "列表式布局" }).click();
   const updatedTradeControls = page.getByRole("group", { name: "贸易站 1 订单" });
   await expect(updatedTradeControls.getByRole("button", { name: "开采协力" })).toHaveAttribute("aria-pressed", "true");
