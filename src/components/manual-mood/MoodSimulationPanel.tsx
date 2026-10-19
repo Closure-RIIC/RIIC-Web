@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { manualScheduleToMaa, type ManualScheduleDraft } from "@/manual-schedule";
+import { DEFAULT_MANUAL_SHIFT_START_TIME } from "@/manual-schedule-config";
 import { planToRows, type RoomRow } from "@/schedule";
 import { addOperatorPresentations } from "@/schedule-presentation";
 import { localizedBuildingSkill, localizedOperatorName, localizedRoomTitle } from "@/i18n/game-data";
@@ -38,11 +39,14 @@ function MoodSelect({label,value,options,onChange,className="w-44"}: {
 }
 const round=(n: number) => Math.round(n*100)/100;
 export type MoodBoardState = {rows:RoomRow[];shift:number;cycle:number;moods:Record<string,number>;selected:string;onSelect:(name:string) => void};
-export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabled,onFiammettaEnabledChange,onTargetChange,renderBoard,settingsOpen,onSettingsOpenChange}: {
+export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabled,onFiammettaEnabledChange,onTargetChange,renderBoard,settingsOpen,onSettingsOpenChange,view,onViewChange,posterContent}: {
   layout: BaseBlueprint; operbox: OperBoxEntry[]; draft: ManualScheduleDraft; fiammettaEnabled: boolean;
   onFiammettaEnabledChange: (enabled: boolean) => void;
   onTargetChange: (shift: number,target: string | null) => void;
   renderBoard: (simulation: MoodBoardState | null) => ReactNode;
+  view?: string;
+  onViewChange?: (value: string) => void;
+  posterContent?: ReactNode;
   settingsOpen:boolean;
   onSettingsOpenChange:(open:boolean) => void;
 }) {
@@ -53,7 +57,9 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
   const signature=JSON.stringify(draft.shifts.map(s => s.rooms));
   const [settings,setSettings]=useState<MoodSettings>(defaultMoodSettings);
   const [ready,setReady]=useState(false);
-  const [mode,setMode]=useState("edit");
+  const [localMode,setLocalMode]=useState("edit");
+  const mode=view ?? localMode;
+  const setMode=(value: string) => {setLocalMode(value);onViewChange?.(value);};
   const [result,setResult]=useState<MoodSimulationResult|null>(null);
   const [error,setError]=useState<string|null>(null),[storageWarning,setStorageWarning]=useState(false);
   const [pending,setPending]=useState(true),[cursor,setCursor]=useState(0),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(1);
@@ -150,7 +156,7 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
   const graphEvents=useMemo(() => result?.events.filter(e => e.kind!=="skipped" && (e.operator===selected || e.target===selected)) ?? [],[result,selected]);
   const currentRoom=segment ? Object.entries(segment.rooms).find(([,names]) => names.includes(selected))?.[0] : null;
   const clock=(hours: number) => {
-    const [h,m]=draft.startTime.split(":").map(Number),absolute=Math.round(hours*60)+(h ?? 0)*60+(m ?? 0);
+    const [h,m]=(draft.startTime || DEFAULT_MANUAL_SHIFT_START_TIME).split(":").map(Number),absolute=Math.round(hours*60)+(h ?? 0)*60+(m ?? 0);
     return `${Math.floor(absolute/1440)>0 ? `+${Math.floor(absolute/1440)}d `:""}${String(Math.floor(absolute/60)%24).padStart(2,"0")}:${String(absolute%60).padStart(2,"0")}`;
   };
   const names=result?.names ?? operbox.filter(o => o.own).map(o => o.name);
@@ -164,9 +170,11 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
   return <section className="min-w-0 space-y-5" aria-label={t("title")} data-mood-simulation>
     <div className="flex flex-wrap items-center justify-between gap-3">
       <Tabs value={mode} onValueChange={value => {setMode(String(value));setPlaying(false);}}>
-        <TabsList aria-label={t("boardMode")}><TabsTrigger value="edit">{t("editMode")}</TabsTrigger><TabsTrigger value="simulation">{t("simulationMode")}</TabsTrigger></TabsList>
+        <TabsList aria-label={t("boardMode")}><TabsTrigger value="edit">{t("editMode")}</TabsTrigger><TabsTrigger value="simulation">{t("simulationMode")}</TabsTrigger>{onViewChange && <TabsTrigger value="poster">作业图</TabsTrigger>}</TabsList>
       </Tabs>
     </div>
+    <div hidden={mode!=="poster"}>{posterContent}</div>
+    <div hidden={mode==="poster"} className="space-y-5">
     {mode==="edit" ? renderBoard(null) : valid && segment ? renderBoard({rows,shift:segment.shift,cycle:segment.cycle,moods,selected,onSelect:setSelected}) : null}
     {/* Recalculation messages stay below the editor so its controls do not move under the pointer. */}
     {storageWarning && <p role="status" className="text-sm text-amber-700">{t("storageWarning")}</p>}
@@ -225,6 +233,7 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
       </div>
       <p className="text-xs text-muted-foreground">{t("assumptions")}{result.warnings.length>0 && t("missingTraining",{names:result.warnings.map(name).join("、")})}</p>
     </div>}
+    </div>
     <Dialog open={settingsOpen} onOpenChange={onSettingsOpenChange}><DialogContent className="max-h-[90svh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] grid-rows-[auto_minmax(0,1fr)] sm:max-w-[min(960px,calc(100vw-3rem))]"><DialogHeader><DialogTitle>{t("settings")}</DialogTitle><DialogDescription>{t("settingsDescription")}</DialogDescription></DialogHeader><ScrollArea><DialogBody className="space-y-6">
       <fieldset className="space-y-3"><legend className="font-medium">{t("fiammetta")}</legend>
         <div className="flex min-h-11 items-center justify-between gap-4"><Label htmlFor={`${controlId}-fiammetta`} className="leading-5">{t("fiammettaEnabled")}</Label><Switch id={`${controlId}-fiammetta`} checked={fiammettaEnabled} onCheckedChange={onFiammettaEnabledChange}/></div>

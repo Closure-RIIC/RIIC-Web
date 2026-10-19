@@ -1,4 +1,4 @@
-import { resolveGoldEquivalentEfficiency, resolveManualSpecialTradeOutput, type ManualTradeMember } from "./manual-trade-special-rules.ts";
+import { resolveGoldEquivalentEfficiency, resolveManualSpecialTradeOutput, type ManualTradeMember, type SpecialTradeAnchor } from "./manual-trade-special-rules.ts";
 
 export type ManualRoomEfficiencyResolution = {
   baseEfficiency: number;
@@ -8,6 +8,7 @@ export type ManualRoomEfficiencyResolution = {
   totalEfficiency: number;
   finalEfficiency: number;
   goldEquivalentEfficiency: number;
+  specialTradeAnchor?: SpecialTradeAnchor;
 };
 
 function rounded(value: number): number {
@@ -38,6 +39,7 @@ export function resolveManualTradeRoom(input: {
     totalEfficiency,
     finalEfficiency: rounded(totalEfficiency * special.orderMultiplier),
     goldEquivalentEfficiency: resolveGoldEquivalentEfficiency(totalEfficiency, special.goldUnitOutputPerDay),
+    ...(special.rule ? { specialTradeAnchor: special.rule } : {}),
   };
 }
 

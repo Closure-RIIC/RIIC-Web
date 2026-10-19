@@ -319,6 +319,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [manualDraftSnapshot, setManualDraftSnapshot] = useState<ManualScheduleDraft | null>(null);
   const [manualProductChangeRequest, setManualProductChangeRequest] = useState<{ shiftIndex: number; roomId: string; product: RoomProduct; token: number } | null>(null);
   const manualProductChangeToken = useRef(0);
+  const [manualPosterBox, setManualPosterBox] = useState<OperBoxEntry[] | null>(null);
   const [manualPlanResult, setManualPlanResult] = useState<ManualPlanResult | null>(null);
   const [manualAgentPageContext, setManualAgentPageContext] = useState<AgentPageContext | null>(null);
   const [accountHealthAgentPageContext, setAccountHealthAgentPageContext] = useState<AgentPageContext | null>(null);
@@ -527,7 +528,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }, [publishAgentPageContext]);
   const effectiveFiammettaEnabled = effectiveFiammettaSetting(operbox, rotationProfile, fiammettaEnabled);
   const effectiveManualFiammettaEnabled = Boolean(
-    manualFiammettaEnabled && operbox?.some((operator) => operator.own && operator.name === "菲亚梅塔")
+    manualFiammettaEnabled && (manualPosterBox ?? operbox)?.some((operator) => operator.own && operator.name === "菲亚梅塔")
   );
   const setupConfigurationKey = useMemo(() => JSON.stringify({
     layout,
@@ -1368,12 +1369,13 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   async function evaluateManualScheduleFromPage(input: {
     draft: ManualScheduleDraft;
+    operbox?: OperBoxEntry[];
   }) {
     if (manualEvaluationPending) return;
     setManualEvaluationPending(true);
     try {
       const { assembleNativeManualPlanResult } = await import("./manual-plan-result");
-      const result = await assembleNativeManualPlanResult({ draft: input.draft, layout, operbox });
+      const result = await assembleNativeManualPlanResult({ draft: input.draft, layout, operbox: input.operbox ?? operbox });
       setManualPlanResult(result);
       try {
         persistManualEvaluationCache(window.localStorage, result);
@@ -1387,12 +1389,13 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   async function evaluatePaperManualScheduleFromPage(input: {
     draft: ManualScheduleDraft;
+    operbox?: OperBoxEntry[];
   }) {
     if (manualEvaluationPending) return;
     setManualEvaluationPending(true);
     try {
       const { assemblePaperManualPlanResult } = await import("./manual-plan-result");
-      const result = await assemblePaperManualPlanResult({ draft: input.draft, layout, operbox });
+      const result = await assemblePaperManualPlanResult({ draft: input.draft, layout, operbox: input.operbox ?? operbox });
       setManualPlanResult(result);
       try {
         persistManualEvaluationCache(window.localStorage, result);
@@ -1933,7 +1936,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   function handleManualSetup() {
     setSetupMode("manual");
-    if (!accountCanUseCurrentBox) {
+    if (!manualPosterBox && !accountCanUseCurrentBox) {
       requestWebsiteAccount("setup");
       return;
     }
@@ -2298,8 +2301,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     },
     manual: {
       layout,
-      operbox: accountCanUseCurrentBox ? operbox : null,
-      sourceName: accountCanUseCurrentBox ? fileName : null,
+      operbox: manualPosterBox ?? (accountCanUseCurrentBox ? operbox : null),
+      sourceName: manualPosterBox ? "作业练度（非个人干员池）" : accountCanUseCurrentBox ? fileName : null,
+      onPosterWorkingBoxChange: setManualPosterBox,
       shiftDurations: manualShiftDurations,
       shiftStartTime: manualShiftStartTime,
       scheduleMode: manualScheduleMode,
@@ -2596,9 +2600,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         open={setupOpen}
         mode={setupMode}
         onOpenChange={handleSetupOpenChange}
-        operbox={operbox}
-        boxSource={boxSource}
-        fileName={fileName}
+        operbox={setupMode === "manual" && manualPosterBox ? manualPosterBox : operbox}
+        boxSource={setupMode === "manual" && manualPosterBox ? "sample" : boxSource}
+        fileName={setupMode === "manual" && manualPosterBox ? "作业练度（非个人干员池）" : fileName}
         inputMode={inputMode}
         onInputModeChange={setInputMode}
         maaPaste={maaPaste}
@@ -2607,7 +2611,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         resultClearWarningDismissed={resultClearWarningDismissed}
         onMaaFile={handleFile}
         onMaaPaste={handleMaaPaste}
-        onManualBox={handleManualBox}
+        workingCopy={setupMode === "manual" && Boolean(manualPosterBox)}
+        onManualBox={setupMode === "manual" && manualPosterBox ? setManualPosterBox : handleManualBox}
         onRequireWebsiteAccount={requireWebsiteAccountFromSetup}
         presets={PRESETS}
         preset={preset}

@@ -248,6 +248,13 @@ test("MAA export includes contiguous minute periods, per-shift Fiammetta targets
   assert.equal("training" in (maa.plans[0]?.rooms ?? {}), false);
 });
 
+test("multi-day poster cycles export as sequential MAA plans without invalid daily periods", () => {
+  const draft = createManualScheduleDraft([24, 24], "08:00", "period");
+  const maa = manualScheduleToMaa(draft, layout, false);
+  assert.deepEqual(maa.plans.map((plan) => plan.duration), [1440, 1440]);
+  assert.equal(maa.plans.some((plan) => plan.period !== undefined), false);
+});
+
 test("MAA export writes Orundum for originium trading orders and Originium Shard for shard factories", () => {
   const originiumLayout: BaseBlueprint = {
     ...layout,

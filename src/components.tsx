@@ -1018,8 +1018,10 @@ function BuildingSkillBadge({
 
 export function OperatorSlot({
   slot,
+  rarity,
   currentMorale,
   elite,
+  eliteBadgeVariant = "standard",
   operatorLevel,
   autofill = false,
   compactFactory = false,
@@ -1045,9 +1047,13 @@ export function OperatorSlot({
   onSortActivate,
 }: {
   slot: RoomRow["operatorSlots"][number] | undefined;
+  /** Optional star row for shareable schedule posters. */
+  rarity?: number;
   currentMorale?: number;
   /** 干员精英化等级（0/1/2），传入后会在头像左下角显示对应角标。 */
   elite?: number;
+  /** High-resolution source artwork for composed schedule portraits. */
+  eliteBadgeVariant?: "standard" | "poster";
   /** 干员当前等级，用于判断带等级要求的基建技能是否已解锁。 */
   operatorLevel?: number;
   autofill?: boolean;
@@ -1183,12 +1189,14 @@ export function OperatorSlot({
                 ) : null}
                 {typeof elite === "number" && elite >= 0 && elite <= 2 ? (
                   <img
-                    src={`/images/elite/elite_${elite}.png`}
+                    src={eliteBadgeVariant === "poster" && elite > 0 ? `/images/schedule-poster/elite_${elite}.png` : `/images/elite/elite_${elite}.png`}
                     alt={intl("components.elite", { elite: elite })}
                     className="pointer-events-none absolute bottom-0 left-0 z-10 h-[30%] w-auto"
                     data-elite-badge={elite}
+                    data-elite-variant={eliteBadgeVariant}
                   />
                 ) : null}
+                {rarity ? <span className="pointer-events-none absolute bottom-0 right-0 z-20 leading-none text-[#FFD800]" style={{ fontSize: "calc(var(--operator-slot-size) * .16)", textShadow: "0 1px 2px #000" }} aria-label={`${rarity}星`} data-operator-rarity={rarity}>{"★".repeat(Math.min(6, rarity))}</span> : null}
                 {elite === undefined && typeof currentMorale === "number" ? (
                   <span
                     className="absolute bottom-0.5 left-0.5 flex items-center gap-0.5 whitespace-nowrap rounded-sm bg-black/72 px-1 py-0.5 text-xs font-normal leading-none text-white shadow-[0_1px_3px_rgba(0,0,0,0.5)] [&_svg]:size-2.5 max-sm:bottom-0.5 max-sm:left-0.5 max-sm:px-0.5 max-sm:[&_svg]:size-2.5"
