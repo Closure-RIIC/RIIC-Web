@@ -6,6 +6,25 @@ type SolverDailyProduction = NonNullable<RotationJson["daily"]["production"]>;
 const DAILY_GOLD_VALUE = 5_000;
 const DAILY_GOLD_UNITS = DAILY_GOLD_VALUE / 500;
 
+/** Shared value-domain accounting; equivalent gold is not physical factory output. */
+export function dailyProductionValueBreakdown(
+  production: SolverDailyProduction,
+  drone: NonNullable<RotationJson["daily"]["drone_production"]> = { lmd: 0, pure_gold: 0, battle_records: 0 },
+) {
+  return {
+    lmd: { natural: production.lmd, drones: drone.lmd, total: production.lmd + drone.lmd },
+    experience: { natural: production.battle_records, drones: drone.battle_records, total: production.battle_records + drone.battle_records },
+    gold: {
+      natural: production.pure_gold,
+      equivalent: production.equivalent_gold ?? 0,
+      external: DAILY_GOLD_VALUE,
+      drones: drone.pure_gold,
+      total: production.pure_gold + (production.equivalent_gold ?? 0) + DAILY_GOLD_VALUE + drone.pure_gold,
+    },
+    orundum: { total: production.orundum },
+  };
+}
+
 export type ProductionDetailProduct = {
   id: string;
   label: string;
@@ -56,12 +75,13 @@ function originiumBottleneck(production: DailyProductionEstimate): string {
 }
 
 function solverGroups(production: SolverDailyProduction, drone: NonNullable<RotationJson["daily"]["drone_production"]> = { lmd: 0, pure_gold: 0, battle_records: 0 }): DailyProductionGroup[] {
+  const values = dailyProductionValueBreakdown(production, drone);
   const goldUnits = Math.floor(production.pure_gold / 500);
   const droneGoldUnits = Math.floor(drone.pure_gold / 500);
   const equivalentGoldUnits = Math.floor((production.equivalent_gold ?? 0) / 500);
-  const totalGoldUnits = Math.floor((production.pure_gold + drone.pure_gold + (production.equivalent_gold ?? 0) + DAILY_GOLD_VALUE) / 500);
-  const totalLmd = production.lmd + drone.lmd;
-  const totalExperience = production.battle_records + drone.battle_records;
+  const totalGoldUnits = Math.floor(values.gold.total / 500);
+  const totalLmd = values.lmd.total;
+  const totalExperience = values.experience.total;
   return [
     {
       id: "experience",

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Chat, useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, convertFileListToFileUIParts, type FileUIPart, type UIMessage } from "ai";
-import { ArrowDown, ArrowUpRight, BookOpen, Bot, ClipboardCheck, FileText, Paperclip, Plus, RotateCcw, Settings2, Upload, UsersRound, X } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Bot, FileText, Paperclip, Plus, RotateCcw, Settings2, Upload, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useLocale, useTranslations } from "use-intl";
 
@@ -37,6 +37,7 @@ import { useAgentScroll } from "@/hooks/use-agent-scroll";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { AGENT_BROADCAST_CHANNEL, agentArtifactFromOutput, requestAgentArtifactOpen } from "@/agent-artifact-bridge";
 import type { AgentPlanProjection } from "@/server/agent/plan-artifact";
+import type { AgentPageContext } from "@/agent-page-context";
 
 type AgentStatus = "loading" | "ready" | "unconfigured" | "unauthenticated" | "payment_required" | "unavailable";
 type AgentModelChoice = { id: "deepseek" | "glm"; label: string };
@@ -100,6 +101,7 @@ function clearLocalPersona() {
 const TOOL_LABELS: Record<string, string> = {
   resolve_operator: "干员身份核实",
   calculate_mastery: "专精方案计算",
+  calculate_training: "干员养成资源计算",
   calculate_recruitment: "公招组合计算",
   analyze_stock_and_training: "库存与培养分析",
   analyze_daily_production: "日产出分析",
@@ -223,6 +225,33 @@ export function ToolResultSummary({ name, output, openLabel = "在基建计算�
       <p className="text-muted-foreground">{String(record.assumptions)}</p>
     </div>;
   }
+  if (name === "calculate_training" && record.operator && record.lmd && record.experience) {
+    const operator = asRecord(record.operator);
+    const current = asRecord(record.current);
+    const target = asRecord(record.target);
+    const lmd = asRecord(record.lmd);
+    const experience = asRecord(record.experience);
+    const shortages = Array.isArray(record.materialShortages) ? record.materialShortages : [];
+    const crafts = Array.isArray(record.crafts) ? record.crafts : [];
+    return <div className="grid gap-2 text-xs">
+      <p>{String(operator?.name)} · {String(record.source)}{record.owned === false ? " · 当前未持有" : ""}</p>
+      <p>当前精{String(current?.elite)} {String(current?.level)}级 → 目标精{String(target?.elite)} {String(target?.level)}级</p>
+      <p>龙门币 {Number(lmd?.required ?? 0).toLocaleString("zh-CN")} · 库存可用 {Number(lmd?.stockWithGoldBars ?? 0).toLocaleString("zh-CN")} · 缺口 {Number(lmd?.missing ?? 0).toLocaleString("zh-CN")}</p>
+      <p>经验 {Number(experience?.required ?? 0).toLocaleString("zh-CN")} · 库存 {Number(experience?.stock ?? 0).toLocaleString("zh-CN")} · 缺口 {Number(experience?.missing ?? 0).toLocaleString("zh-CN")}（约 {String(experience?.missingBookEquivalent)} 本特级记录）</p>
+      {record.hasInventoryShortage === true ? <p>材料缺口：{shortages.slice(0, 8).map((value) => {
+        const item = asRecord(value);
+        return `${String(item?.name)} ×${String(item?.missing)}`;
+      }).join("、")}{shortages.length > 8 ? ` 等 ${shortages.length} 项` : ""}</p> : <p>库存足够覆盖本次目标。</p>}
+      {crafts.length ? <details className="rounded border p-2">
+        <summary className="cursor-pointer">加工建议（{crafts.length} 项）</summary>
+        <ul className="mt-2 grid gap-1">{crafts.map((value, index) => {
+          const craft = asRecord(value);
+          return <li key={index}>{String(craft?.name)} ×{String(craft?.count)} · 加工费 {Number(craft?.lmd ?? 0).toLocaleString("zh-CN")}</li>;
+        })}</ul>
+      </details> : null}
+      {Array.isArray(record.warnings) ? record.warnings.map((warning, index) => <p key={index} className="text-amber-600 dark:text-amber-300">{String(warning)}</p>) : null}
+    </div>;
+  }
   if (name === "calculate_recruitment" && Array.isArray(record.results)) {
     return <div className="grid gap-2 text-xs">
       <p>招聘 {String(record.minutes)} 分钟 · 干员池：{String(record.sourceName)}</p>
@@ -290,8 +319,19 @@ function AttachmentPreview({ file, onRemove }: { file: FileUIPart; onRemove?: ()
   </div>;
 }
 
-export function AgentChat({ conversationId, initialMessages, userName, userId, billingAllowed = false }: { conversationId: string; initialMessages: UIMessage[]; userName?: string; userId?: string; billingAllowed?: boolean }) {
-  useAgentViewport();
+export function AgentChat({ conversationId, initialMessages, userName, userId, billingAllowed = false, compact = false, pageContext, sharePageContext, onSharePageContextChange, onClose }: {
+  conversationId: string;
+  initialMessages: UIMessage[];
+  userName?: string;
+  userId?: string;
+  billingAllowed?: boolean;
+  compact?: boolean;
+  pageContext?: AgentPageContext | null;
+  sharePageContext?: boolean;
+  onSharePageContextChange?: (value: boolean) => void;
+  onClose?: () => void;
+}) {
+  useAgentViewport(!compact);
   const isMobile = useIsMobile();
   const en = useLocale() === "en";
   const intl = useTranslations();
@@ -352,7 +392,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   // restoration also scroll the viewport and must not move the controls.
   const readingGesture = (delta: number) => {
     const viewport = conversationRef.current;
-    if (!window.matchMedia("(max-width: 767px)").matches || !viewport) return;
+    if (compact || !window.matchMedia("(max-width: 767px)").matches || !viewport) return;
     if (delta < -12) setHeaderHidden(false);
     else if (delta > 12 && viewport.scrollHeight > viewport.clientHeight + 24) setHeaderHidden(true);
   };
@@ -450,6 +490,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
       model: selectedModel,
       conversationId, attemptId: crypto.randomUUID(),
       ...(activePersona ? { persona: activePersona.kind === "builtin" ? { id: activePersona.id, kind: "builtin" } : { id: activePersona.id, name: activePersona.name, content: activePersona.content } } : {}),
+      pageContext: compact && sharePageContext ? pageContext ?? null : null,
     } });
     await runtime.run(runtimeConversation, () => sendMessage(
       { text: trimmed, files, metadata: { replyPersona: snapshotAgentReplyPersona(activePersona) } },
@@ -463,7 +504,13 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     if (!question) return;
     clearError();
     followLatest();
-    runtime.setRequestOptions(runtimeConversation, { body: { ...runtimeConversation.requestOptions?.body, model: selectedModel, conversationId, attemptId: crypto.randomUUID() } });
+    runtime.setRequestOptions(runtimeConversation, { body: {
+      ...runtimeConversation.requestOptions?.body,
+      model: selectedModel,
+      conversationId,
+      attemptId: crypto.randomUUID(),
+      pageContext: compact && sharePageContext ? pageContext ?? null : null,
+    } });
     await runtime.run(runtimeConversation, () => regenerate({ messageId: question.id, ...runtimeConversation.requestOptions }));
   };
 
@@ -547,16 +594,20 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     finally { setAvatarSaving(false); }
   };
 
-  const prompts = [
-    { icon: ClipboardCheck, title: en ? "Account health" : "账号体检", text: "帮我看看账号现在什么水平" },
-    { icon: Bot, title: en ? "Plan my base" : "规划基建", text: "我想搓玉，但不知道自己干员池适不适合" },
-    { icon: BookOpen, title: en ? "Skill mastery" : "专精训练", text: "帮我算能天使从未专精到专三的训练方案" },
-    { icon: UsersRound, title: en ? "Recruitment" : "公开招募", text: "公招有高级资深干员、狙击干员、远程位，九小时怎么选？" },
-  ];
+  const pageGuideLines = pageContext?.summary.split("\n").filter(Boolean).slice(0, 3) ?? [];
   return (
-    <section className={`${dialogueStyles.theme} ${dialogueStyles.chat} ${personaTheme}`} data-agent-chat data-agent-persona={activePersona?.id ?? "default"}>
-      <div className={dialogueStyles.headerSlot} data-agent-header-slot data-hidden={headerHidden} inert={headerHidden}>
-      <header className={dialogueStyles.header} data-agent-header>
+    <section className={`${dialogueStyles.theme} ${dialogueStyles.chat} ${personaTheme} ${compact ? dialogueStyles.compactChat : ""}`} data-agent-chat data-agent-compact={compact ? "true" : undefined} data-agent-persona={activePersona?.id ?? "default"}>
+      <div className={compact ? dialogueStyles.compactHeaderSlot : dialogueStyles.headerSlot} data-agent-header-slot data-hidden={headerHidden} inert={headerHidden}>
+      {compact ? <header className={dialogueStyles.compactHeader} data-agent-header>
+        <div className={dialogueStyles.compactAvatar}><PersonaAvatar name={personaName} src={activePersona?.kind === "upload" ? activePersona.avatarUrl : undefined} mascot={activePersona?.kind === "builtin" ? activePersona.avatar : undefined} size={32} active={busy} /></div>
+        <p className={dialogueStyles.compactTitle}>{personaName}</p>
+        {onSharePageContextChange ? <label className={dialogueStyles.compactShare}>
+          <input type="checkbox" checked={Boolean(sharePageContext && pageContext)} disabled={!pageContext} aria-label={en ? "Include current page context" : "随消息共享当前页面摘要"} onChange={(event) => onSharePageContextChange(event.currentTarget.checked)} />
+          <span>{en ? "Page context" : "共享本页"}</span>
+        </label> : null}
+        <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0" aria-label={en ? "New conversation" : "新对话"} title={en ? "New conversation" : "新对话"} disabled={busy || messages.length === 0} onClick={() => { runtime.flush(); historyStore.startNew(); }}><Plus className="size-4" aria-hidden="true" /></Button>
+        <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0" aria-label={en ? "Close assistant" : "收起助理"} title={en ? "Close assistant" : "收起助理"} onClick={onClose}><X className="size-4" aria-hidden="true" /></Button>
+      </header> : <header className={dialogueStyles.header} data-agent-header>
         <SidebarTrigger className="size-11 shrink-0 md:hidden" />
         <div className="min-w-0 flex-1">
           <WorkbenchPageHeading page="agent" accentColor="var(--dialogue-accent)" className="max-md:gap-1 max-md:text-sm max-md:[&>span:first-child]:hidden"><span className="md:hidden">{en ? "Closure" : "可露希尔"}</span><span className="hidden md:inline">{en ? "Closure Assistant" : "可露希尔助理"}</span></WorkbenchPageHeading>
@@ -578,7 +629,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
           <Plus className="size-4" aria-hidden="true" /><span className="max-md:hidden">{en ? "New conversation" : "新对话"}</span>
         </Button>
         </div>
-      </header>
+      </header>}
       </div>
 
       {historyError ? <p role="alert" className="text-xs text-destructive">{en ? "Chat history could not be saved in this browser. Keep this page open and check available storage." : "浏览器暂时无法保存对话历史，请暂勿关闭页面，并检查可用存储空间。"}</p> : null}
@@ -626,7 +677,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
           {uploadError ? <p role="alert" className="mt-2 px-1 text-xs text-destructive">{uploadError}</p> : <p className="mt-2 hidden flex-wrap justify-between gap-1 px-1 text-[10px] text-muted-foreground md:flex"><span>{en ? "Up to 4 attachments · 8 MB each" : "最多 4 个附件 · 单个 ≤ 8 MB"}</span><span>{en ? "Enter to send · Shift + Enter for a new line" : "Enter 发送 · Shift + Enter 换行"}</span></p>}
         </> : null}
       >
-        <AgentConversationScrollArea onScrollbarPointerDown={onScrollbarPointerDown} className={`${dialogueStyles.conversation} min-h-0 flex-1 bg-transparent`} viewportClassName="flex min-w-0 flex-col gap-6 overscroll-contain py-3 md:gap-10 md:py-8" viewportProps={{ ref: conversationRef,
+        <AgentConversationScrollArea floating={compact} onScrollbarPointerDown={onScrollbarPointerDown} className={`${compact ? dialogueStyles.compactConversation : dialogueStyles.conversation} min-h-0 flex-1 bg-transparent`} viewportClassName={`flex min-w-0 flex-col gap-6 overscroll-contain py-3 md:gap-10 md:py-8 ${compact ? "gap-4 py-2 md:gap-5 md:py-2" : ""}`} viewportProps={{ ref: conversationRef,
           onScroll: (event) => { if (event.currentTarget.scrollTop <= 0) setHeaderHidden(false); },
           onWheel: (event) => readingGesture(event.deltaY),
           onTouchStart: (event) => { touchY.current = event.touches[0]?.clientY ?? null; },
@@ -640,11 +691,24 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
           {agentStatus === "unauthenticated" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><Bot className="size-6 text-muted-foreground" aria-hidden="true" /><h2 className="font-medium">{en ? "Sign in to meet Closure" : "登录后，与可露希尔开始对话"}</h2><p className="text-muted-foreground">{en ? "Use your website account to access the assistant." : "使用网站账号登录，即可让助理帮你诊断账号、规划基建。"}</p><Button nativeButton={false} render={<Link to="/account" />} size="sm" className="h-9 rounded-full px-4">{en ? "Sign in" : "前往账号管理登录"}</Button></div> : null}
           {agentStatus === "payment_required" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><h2 className="font-medium">{en ? "Add credits to get started" : "补充积分，开始对话"}</h2><p className="text-muted-foreground">{en ? "You need at least 1 credit to use the assistant." : "当前账号需至少有 1 积分才能使用助理。"}</p>{billingAllowed ? <Button nativeButton={false} render={<Link to="/billing" />} size="sm" className={billingStyles.pill}>{en ? "View payment plans" : "查看付费计划"}</Button> : null}</div> : null}
 
-          {messages.length === 0 && agentStatus === "ready" ? <div className="my-auto grid gap-7 py-4 sm:py-8">
-            <div className="grid gap-3"><p className="flex items-center gap-2 text-xs text-muted-foreground"><Bot className="size-4" aria-hidden="true" />{activePersona?.kind === "builtin" ? activePersona.identity[en ? "en" : "zh"] : activePersona?.name ?? (en ? "CLOSURE / RHODES ISLAND" : "可露希尔 / 罗德岛")}</p><h2 className="text-2xl font-medium tracking-tight sm:text-3xl">{activePersona?.kind === "builtin" ? activePersona.welcome[en ? "en" : "zh"] : (en ? "Doctor, where shall we start?" : "博士，今天从哪里开始？")}</h2><p className="max-w-lg text-sm leading-6 text-muted-foreground">{en ? "Tell me what you want to improve. I can check your account, calculate a plan and send the result to your workbench." : "说说你想改善什么。我可以检查账号、计算方案，再把结果交给你的工作台。"}</p></div>
-            <div className="grid gap-2 sm:grid-cols-2">{prompts.map(({ icon: Icon, title, text }) => <button key={title} type="button" onClick={() => { setDraft(text); conversationRef.current?.closest("[data-agent-panel]")?.querySelector("textarea")?.focus(); }} className="group flex min-h-20 items-start gap-3 rounded-xl border border-border/70 px-4 py-3 text-left transition-colors hover:border-border hover:bg-muted/50 focus-visible:outline-2 focus-visible:outline-ring">
-              <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" /><span className="min-w-0 flex-1"><span className="block text-sm font-medium">{title}</span><span className="mt-1 block text-xs leading-5 text-muted-foreground">{text}</span></span><ArrowUpRight className="size-3.5 shrink-0 text-muted-foreground opacity-40 transition-opacity group-hover:opacity-100" aria-hidden="true" />
-            </button>)}</div>
+          {messages.length === 0 && agentStatus === "ready" ? <div className="my-auto grid gap-5 py-4 sm:py-8" data-agent-welcome>
+            {compact ? <>
+              <div className="grid gap-1">
+                <p className="text-xs font-medium text-muted-foreground">{en ? "Page guide" : "当前页面导览"}</p>
+                <h2 className="text-xl font-medium tracking-tight">{pageContext?.title ?? (en ? "Current page" : "当前页面")}</h2>
+              </div>
+              {pageContext && sharePageContext ? <div className="grid gap-1 border-l-2 border-primary/40 pl-3 text-xs leading-5 text-muted-foreground" data-agent-page-guide>
+                <p className="font-medium text-foreground">{en ? "Page summary is shared" : "已共享本页摘要"}</p>
+                {pageGuideLines.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}
+              </div> : <p className="text-sm leading-6 text-muted-foreground" data-agent-page-guide>{!sharePageContext ? (en ? "Page sharing is off. Only your message will be sent." : "已关闭本页共享，只发送你输入的消息。") : (en ? "The page summary is unavailable. You can still ask a question about what you see." : "当前页面摘要暂不可用，你仍可以直接提问。")}</p>}
+              <p className="text-sm leading-6 text-muted-foreground">{en ? "Ask about the current shift, room assignments or production output." : "可以直接问我当前班次、设施安排或产出为什么这样。"}</p>
+            </> : <>
+              <div className="grid gap-1">
+                <p className="text-xs font-medium text-muted-foreground">{en ? "Live conversation" : "实时对话"}</p>
+                <h2 className="text-xl font-medium tracking-tight">{activePersona?.kind === "builtin" ? activePersona.welcome[en ? "en" : "zh"] : (en ? "What would you like to know?" : "想了解什么？")}</h2>
+              </div>
+              <p className="max-w-lg text-sm leading-6 text-muted-foreground">{en ? "Ask directly about your account, operators or base plan." : "直接输入问题，我会根据当前可用信息回答。"}</p>
+            </>}
           </div> : null}
 
           {displayTurns.map((turn) => {

@@ -1,5 +1,6 @@
 import buildingSkillCatalogJson from "./generated/arkntools/building-skill-catalog.json" with { type: "json" };
-import operatorCatalogJson from "./generated/arkntools/operator-catalog.json" with { type: "json" };
+import { operatorFor, type OperatorAssetRecord, type OperatorBuildingSkillRef } from "./operator-catalog.ts";
+export { OPERATOR_CATALOG, type OperatorAssetRecord, type OperatorBuildingSkillRef } from "./operator-catalog.ts";
 import sourceManifest from "./generated/arkntools/source.json" with { type: "json" };
 import { richTextPlainText } from "./components/skill-query/rich-text.ts";
 import { operatorProfessionPresentationForCode } from "./operator-presentation.ts";
@@ -13,25 +14,6 @@ export {
   buildingSkillUnlockPrefix,
   operatorProfessionLabelEnglishForCode,
 } from "./operator-presentation.ts";
-
-export interface OperatorBuildingSkillRef {
-  index: number;
-  id: string;
-  elite: number;
-  level: number;
-}
-
-export interface OperatorAssetRecord {
-  id: string;
-  name: string;
-  /** 数据仓库 building.json char 字段中的原始顺序，用于默认倒序展示。 */
-  order: number;
-  rarity: number;
-  profession: number;
-  position: number;
-  portrait: string;
-  buildingSkills: OperatorBuildingSkillRef[];
-}
 
 interface BuildingSkillRecord {
   id: string;
@@ -108,13 +90,6 @@ export interface OperatorPresentation {
   buildingSkill?: BuildingSkillPresentation;
 }
 
-const OPERATOR_NAME_ALIASES: Readonly<Record<string, string>> = {
-  "阿米娅(近卫)": "char_002_amiya",
-  "阿米娅(医疗)": "char_002_amiya",
-};
-
-export const OPERATOR_CATALOG = operatorCatalogJson as OperatorAssetRecord[];
-
 const BUILDING_SKILL_VERSION = `${sourceManifest.version}-${sourceManifest.source.commit.slice(0, 12)}`;
 
 export const BUILDING_SKILL_CATALOG = Object.fromEntries(
@@ -126,21 +101,6 @@ export const BUILDING_SKILL_CATALOG = Object.fromEntries(
     }],
   ),
 ) as Record<string, BuildingSkillRecord>;
-const OPERATOR_BY_ID = new Map(OPERATOR_CATALOG.map((operator) => [operator.id, operator]));
-const OPERATOR_BY_NAME = new Map(OPERATOR_CATALOG.map((operator) => [operator.name, operator]));
-
-function operatorFor(name: string, id?: string): OperatorAssetRecord | undefined {
-  const normalizedId = id?.trim();
-  if (normalizedId) {
-    const byId = OPERATOR_BY_ID.get(normalizedId) ?? OPERATOR_BY_ID.get(`char_${normalizedId}`);
-    if (byId) return byId;
-  }
-
-  const normalizedName = name.trim();
-  const aliasId = OPERATOR_NAME_ALIASES[normalizedName];
-  return (aliasId ? OPERATOR_BY_ID.get(aliasId) : undefined) ?? OPERATOR_BY_NAME.get(normalizedName);
-}
-
 export function operatorPresentationFor({
   name,
   id,

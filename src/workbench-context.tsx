@@ -11,6 +11,8 @@ import type { MasteryPlannerProps } from "@/components/pages/MasteryPlanner";
 import type { RecruitmentCalculatorProps } from "@/components/pages/RecruitmentCalculator";
 import type { UserSettings } from "@/user-settings";
 import type { AccountHealthRawInput } from "@/account-health-input";
+import type { AgentPageContext } from "@/agent-page-context";
+import type { OperBoxEntry, SklandOperatorStatus } from "@/types";
 
 export interface WorkbenchContextValue {
   inventory: { identityKey: string; pending: boolean };
@@ -18,6 +20,11 @@ export interface WorkbenchContextValue {
   calculator: InfraCalculatorProps;
   manual: ManualSchedulePageProps;
   training: TrainingAdviceProps;
+  trainingPlanner: {
+    operbox: OperBoxEntry[] | null;
+    operators: SklandOperatorStatus[];
+    identityKey: string;
+  };
   mastery: MasteryPlannerProps;
   recruitment: RecruitmentCalculatorProps;
   account: Omit<WebsiteAccountPanelProps, "loadingMode"> & {
@@ -29,6 +36,9 @@ export interface WorkbenchContextValue {
     onChange: (settings: UserSettings) => void;
   };
   skland: DevelopmentSklandStatusCenterProps | null;
+  agent: {
+    onPageContextChange: (page: AgentPageContext["page"], context: AgentPageContext | null) => void;
+  };
 }
 
 export const WorkbenchContext = createContext<WorkbenchContextValue | null>(null);

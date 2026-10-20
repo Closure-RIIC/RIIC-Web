@@ -49,19 +49,19 @@ const bilibiliTutorials = [
   },
 ];
 
-export default function BeginnerTutorialPage() {
+export default function BeginnerTutorialPage({ embedded = false }: { embedded?: boolean }) {
   const locale = useLocale();
   const en = locale === "en";
 
   return (
     <article className="flex w-full flex-col gap-6 pt-5">
-      <header className="border-b border-border pb-5">
-        <Link to="/help" className="inline-flex min-h-11 items-center gap-2 text-xs text-muted-foreground outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring">
+      {!embedded ? <header className="border-b border-border pb-5">
+        <Link to="/docs" className="inline-flex min-h-11 items-center gap-2 text-xs text-muted-foreground outline-none hover:text-foreground hover:underline focus-visible:ring-2 focus-visible:ring-ring">
           <ArrowLeft className="size-3.5" aria-hidden="true" />{en ? "Back to Help" : "返回帮助首页"}
         </Link>
         <h1 className="mt-2 text-2xl font-semibold sm:text-3xl">{en ? "Beginner tutorials" : "新手教程"}</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">{en ? "Prepare your Operator Box, follow a schedule, and learn shift changes and Orundum production. Pick a tutorial to get started." : "准备干员 Box、手动抄作业、换班与搓玉，选一个教程开始。"}</p>
-      </header>
+      </header> : null}
 
       <section className="grid items-start gap-6 md:grid-cols-2 xl:grid-cols-3" aria-label={en ? "Video tutorials" : "视频教程列表"}>
         <article id="maa-box-video" className="min-w-0 scroll-mt-5" aria-labelledby="maa-box-video-title">
@@ -70,7 +70,7 @@ export default function BeginnerTutorialPage() {
             <span className="text-xs text-muted-foreground">{en ? "OPERATOR BOX · ON-SITE VIDEO · 00:44" : "干员数据 · 站内播放 · 00:44"}</span>
             <h2 id="maa-box-video-title" className="mt-2 text-lg font-semibold">{en ? "How to get box.json with MAA" : "如何用 MAA 获取 box.json"}</h2>
             <p className="mt-2 text-sm leading-6 text-muted-foreground">{en ? "Export your Operator Box, then upload or paste it into the calculator." : "用 MAA 导出干员 Box，再上传文件或粘贴到计算器。"}</p>
-            <Link to="/help/import-operators" search={{ source: "maa", step: "4" }} className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium underline underline-offset-4 outline-none hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring">
+            <Link to="/docs/$slug" params={{ slug: "first-import" }} search={{ source: "maa" }} hash="import-methods" className="mt-3 inline-flex min-h-11 items-center gap-2 text-sm font-medium underline underline-offset-4 outline-none hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring">
               {en ? "View import steps" : "查看导入步骤"}<ArrowRight className="size-4" aria-hidden="true" />
             </Link>
           </div>

@@ -3,8 +3,9 @@
 import { useEffect } from "react";
 
 /** Keep the mobile chat shell inside the area actually visible above the keyboard. */
-export function useAgentViewport() {
+export function useAgentViewport(enabled = true) {
   useEffect(() => {
+    if (!enabled) return;
     const root = document.documentElement;
     const mobile = window.matchMedia("(max-width: 767px), (hover: none) and (pointer: coarse)");
     const viewport = window.visualViewport;
@@ -57,5 +58,5 @@ export function useAgentViewport() {
       document.removeEventListener("focusout", schedule);
       reset();
     };
-  }, []);
+  }, [enabled]);
 }

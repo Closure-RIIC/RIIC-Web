@@ -5,7 +5,7 @@ import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
 import { Link } from "@tanstack/react-router";
-import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -60,9 +60,18 @@ type AccountAction = "signout" | "sessions" | "delete";
 const AUTH_INPUT_CLASS = "border-[#d5d7da] bg-white shadow-none dark:border-[#d5d7da] dark:bg-white dark:text-[#242424] dark:placeholder:text-[#737373]";
 const AUTH_PASSWORD_TOGGLE_CLASS = "text-[#737373] hover:text-[#242424] dark:text-[#737373] dark:hover:text-[#242424]";
 
+export interface WebsiteAccountSections {
+  headerProfile?: ReactNode;
+  profile: ReactNode;
+  securityActions?: ReactNode;
+  cloudData?: ReactNode;
+  deleteAccount?: ReactNode;
+}
+
 export interface WebsiteAccountPanelProps {
   onSessionChanged?: (authenticated: boolean) => void | Promise<void>;
   loadingMode?: "page" | "dialog";
+  renderSections?: (sections: WebsiteAccountSections) => ReactNode;
   cloudWorkspace?: CloudWorkspaceData | null;
   cloudSyncStatus?: CloudSyncStatus;
   onRestoreSavedPlan?: (plan: SavedPlanData) => void;
@@ -96,6 +105,7 @@ function formatSessionExpiry(value: unknown, locale: "zh" | "en"): string | null
 export function WebsiteAccountPanel({
   onSessionChanged,
   loadingMode = "page",
+  renderSections,
   cloudWorkspace,
   cloudSyncStatus,
   onRestoreSavedPlan,
@@ -300,50 +310,137 @@ export function WebsiteAccountPanel({
     }
   }
 
-  if (isPending && !busy && !message && !error) {
-    return loadingMode === "dialog"
+  if (isPending && !session && !busy && !message && !error) {
+    const loadingContent = loadingMode === "dialog"
       ? <WebsiteAccountLoadingStatus />
       : <SkeletonRouteFallback><StatusCenterLoading label={intl("components_auth_WebsiteAccountPanel.restoringWebsiteAccount")} /></SkeletonRouteFallback>;
+    return renderSections ? renderSections({ profile: loadingContent }) : loadingContent;
   }
 
   if (session) {
     const expiresAt = formatSessionExpiry(session.session.expiresAt, locale);
     const orbColor = accountOrbColor(session.user.id);
+    const identity = (
+      <div className={renderSections ? "flex min-w-0 items-center gap-2.5" : "flex min-w-0 items-center gap-4"}>
+        <FluidOrb
+          size={renderSections ? 32 : 56}
+          color={orbColor}
+          aria-hidden="true"
+          data-website-account-avatar
+          data-account-orb-color={orbColor}
+        />
+        <div className="min-w-0">
+          <div className={renderSections ? "flex min-w-0 items-center gap-1.5" : "flex flex-wrap items-center gap-2"}>
+            <h2 className={renderSections ? "truncate text-sm font-medium" : "truncate text-2xl font-semibold tracking-tight"} title={session.user.name}>{session.user.name}</h2>
+            {renderSections
+              ? <ShieldCheck className="size-3.5 shrink-0 text-muted-foreground" role="img" aria-label={intl("components_auth_WebsiteAccountPanel.emailVerified")} />
+              : <Badge variant="secondary"><ShieldCheck />{intl("components_auth_WebsiteAccountPanel.emailVerified")}</Badge>}
+          </div>
+          <p className={renderSections ? "truncate text-xs leading-5 text-muted-foreground" : "mt-1 break-all text-sm text-muted-foreground"} title={session.user.email}>{session.user.email}</p>
+        </div>
+      </div>
+    );
+    const signOutButton = (
+      <SetupActionButton
+        type="button"
+        variant="outline"
+        className="!min-w-0 max-w-full max-md:!h-auto max-md:min-h-11 max-md:whitespace-normal max-md:!px-3 max-md:py-2"
+        disabled={busyAction !== null}
+        onClick={() => void runAccountAction("signout")}
+        data-account-logout
+      >
+        <LogOut />{busyAction === "signout" ? (intl("components_auth_WebsiteAccountPanel.signingOut")) : (intl("components_auth_WebsiteAccountPanel.signOutOnThisDevice"))}
+      </SetupActionButton>
+    );
+    const revokeSessionsButton = (
+      <Button
+        type="button"
+        size="dialog"
+        className="bg-white text-[#272a2b] hover:bg-white/90"
+        disabled={busyAction !== null}
+        onClick={() => void runAccountAction("sessions")}
+      >
+        {busyAction === "sessions" ? (intl("components_auth_WebsiteAccountPanel.revokingSessions")) : (intl("components_auth_WebsiteAccountPanel.signOutEverywhere"))}
+      </Button>
+    );
+    const deleteAccount = (
+      <AccountTechnicalCard group="manufacture" className="min-h-64">
+        <section className="flex h-full flex-col" aria-labelledby={`${fieldId}-delete`}>
+          <AccountTechnicalHeading
+            icon={<Trash2 className="size-4" aria-hidden="true" />}
+            titleId={`${fieldId}-delete`}
+          >
+            {intl("components_auth_WebsiteAccountPanel.deleteAccountPermanently")}
+          </AccountTechnicalHeading>
+          <p className="mt-4 text-sm leading-6 text-white/64">
+            {intl("components_auth_WebsiteAccountPanel.yourAccountAndAllSessionsWillBeDeletedImmediately")}
+          </p>
+          <div className="mt-4 grid gap-1.5">
+            <Label className="text-white/72" htmlFor={`${fieldId}-delete-password`}>{intl("components_auth_WebsiteAccountPanel.currentPassword")}</Label>
+            <PasswordInput
+              id={`${fieldId}-delete-password`}
+              className="border-white/22 bg-white text-[#242424] shadow-none placeholder:text-[#737373]"
+              value={deletePassword}
+              onChange={(event) => setDeletePassword(event.target.value)}
+              minLength={8}
+              maxLength={128}
+              autoComplete="current-password"
+              revealLabel={intl("components_auth_WebsiteAccountPanel.showCurrentPassword")}
+              toggleClassName={AUTH_PASSWORD_TOGGLE_CLASS}
+            />
+          </div>
+          <label className="mt-3 flex min-h-11 items-center gap-3 text-sm text-white/72">
+            <input
+              type="checkbox"
+              checked={deleteLocalData}
+              onChange={(event) => setDeleteLocalData(event.target.checked)}
+              className="size-4 shrink-0 accent-white"
+            />
+            {intl("components_auth_WebsiteAccountPanel.alsoClearThisBrowserSLocalWorkspaceAfterDeletion")}
+          </label>
+          <div className="mt-auto flex justify-end pt-5">
+            <Button
+              type="button"
+              variant="destructive"
+              size="dialog"
+              disabled={deletePassword.length < 8 || busyAction !== null}
+              onClick={() => void runAccountAction("delete")}
+            >
+              {busyAction === "delete" ? (intl("components_auth_WebsiteAccountPanel.deleting")) : (intl("components_auth_WebsiteAccountPanel.deleteAccountPermanently"))}
+            </Button>
+          </div>
+        </section>
+      </AccountTechnicalCard>
+    );
+    const cloudData = (
+      <CloudDataPanel
+        userId={session.user.id}
+        workspace={cloudWorkspace}
+        syncStatus={cloudSyncStatus}
+        onRestorePlan={onRestoreSavedPlan}
+        onCloudDataChanged={onCloudDataChanged}
+      />
+    );
+
+    if (renderSections) return renderSections({
+      headerProfile: <div className="min-w-0 max-w-full sm:max-w-64" data-website-account-panel data-authenticated="true">{identity}</div>,
+      profile: error || message ? <div className="grid gap-3">
+        {error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
+        {message ? <p role="status" className="text-sm text-muted-foreground">{message}</p> : null}
+      </div> : null,
+      securityActions: <div className="grid gap-4 border-t border-white/14 pt-5" data-account-action-cards>
+        <p className="text-sm leading-6 text-white/64">{en ? "Revoke every session to require all devices to sign in again." : "撤销全部登录会话后，所有设备都需要重新登录。"}</p>
+        <div className="flex flex-wrap justify-end gap-3">
+          {revokeSessionsButton}
+        </div>
+      </div>,
+      cloudData,
+      deleteAccount,
+    });
+
     return (
       <div className="grid gap-6" data-website-account-panel data-authenticated="true">
-        <StatusCenterHeader
-          identity={(
-            <div className="flex min-w-0 items-center gap-4">
-              <FluidOrb
-                size={56}
-                color={orbColor}
-                aria-hidden="true"
-                data-website-account-avatar
-                data-account-orb-color={orbColor}
-              />
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="truncate text-2xl font-semibold tracking-tight">{session.user.name}</h2>
-                  <Badge variant="secondary"><ShieldCheck />{intl("components_auth_WebsiteAccountPanel.emailVerified")}</Badge>
-                </div>
-                <p className="mt-1 break-all text-sm text-muted-foreground">{session.user.email}</p>
-              </div>
-            </div>
-          )}
-          actions={(
-            <SetupActionButton
-              type="button"
-              variant="outline"
-              className="!min-w-0 max-w-full max-md:!h-auto max-md:min-h-11 max-md:whitespace-normal max-md:!px-3 max-md:py-2"
-              disabled={busyAction !== null}
-              onClick={() => void runAccountAction("signout")}
-              data-account-logout
-            >
-              <LogOut />{busyAction === "signout" ? (intl("components_auth_WebsiteAccountPanel.signingOut")) : (intl("components_auth_WebsiteAccountPanel.signOutOnThisDevice"))}
-            </SetupActionButton>
-          )}
-        />
-
+        <StatusCenterHeader identity={identity} actions={signOutButton} />
         {error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
         {message ? <p role="status" className="text-sm text-muted-foreground">{message}</p> : null}
 
@@ -360,74 +457,13 @@ export function WebsiteAccountPanel({
                 {intl("components_auth_WebsiteAccountPanel.thisSessionSigningOutEverywhereRevokesDatabaseSessionsAnd", { value1: (en) ? (expiresAt ? `expires ${expiresAt}` : "is active") : "", value2: (en) ? "" : (expiresAt ? `将在 ${expiresAt} 到期` : "处于有效状态") })}
               </p>
               <div className="mt-auto flex justify-end pt-5">
-                <Button
-                  type="button"
-                  size="dialog"
-                  className="bg-white text-[#272a2b] hover:bg-white/90"
-                  disabled={busyAction !== null}
-                  onClick={() => void runAccountAction("sessions")}
-                >
-                  {busyAction === "sessions" ? (intl("components_auth_WebsiteAccountPanel.revokingSessions")) : (intl("components_auth_WebsiteAccountPanel.signOutEverywhere"))}
-                </Button>
+                {revokeSessionsButton}
               </div>
             </section>
           </AccountTechnicalCard>
-
-          <AccountTechnicalCard group="manufacture" className="min-h-64">
-            <section className="flex h-full flex-col" aria-labelledby={`${fieldId}-delete`}>
-              <AccountTechnicalHeading
-                icon={<Trash2 className="size-4" aria-hidden="true" />}
-                titleId={`${fieldId}-delete`}
-              >
-                {intl("components_auth_WebsiteAccountPanel.deleteAccountPermanently")}
-              </AccountTechnicalHeading>
-              <p className="mt-4 text-sm leading-6 text-white/64">
-                {intl("components_auth_WebsiteAccountPanel.yourAccountAndAllSessionsWillBeDeletedImmediately")}
-              </p>
-              <div className="mt-4 grid gap-1.5">
-                <Label className="text-white/72" htmlFor={`${fieldId}-delete-password`}>{intl("components_auth_WebsiteAccountPanel.currentPassword")}</Label>
-                <PasswordInput
-                  id={`${fieldId}-delete-password`}
-                  className="border-white/22 bg-white text-[#242424] shadow-none placeholder:text-[#737373]"
-                  value={deletePassword}
-                  onChange={(event) => setDeletePassword(event.target.value)}
-                  minLength={8}
-                  maxLength={128}
-                  autoComplete="current-password"
-                  revealLabel={intl("components_auth_WebsiteAccountPanel.showCurrentPassword")}
-                  toggleClassName={AUTH_PASSWORD_TOGGLE_CLASS}
-                />
-              </div>
-              <label className="mt-3 flex min-h-11 items-center gap-3 text-sm text-white/72">
-                <input
-                  type="checkbox"
-                  checked={deleteLocalData}
-                  onChange={(event) => setDeleteLocalData(event.target.checked)}
-                  className="size-4 shrink-0 accent-white"
-                />
-                {intl("components_auth_WebsiteAccountPanel.alsoClearThisBrowserSLocalWorkspaceAfterDeletion")}
-              </label>
-              <div className="mt-auto flex justify-end pt-5">
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="dialog"
-                  disabled={deletePassword.length < 8 || busyAction !== null}
-                  onClick={() => void runAccountAction("delete")}
-                >
-                  {busyAction === "delete" ? (intl("components_auth_WebsiteAccountPanel.deleting")) : (intl("components_auth_WebsiteAccountPanel.deleteAccountPermanently"))}
-                </Button>
-              </div>
-            </section>
-          </AccountTechnicalCard>
+          {deleteAccount}
         </div>
-        <CloudDataPanel
-          userId={session.user.id}
-          workspace={cloudWorkspace}
-          syncStatus={cloudSyncStatus}
-          onRestorePlan={onRestoreSavedPlan}
-          onCloudDataChanged={onCloudDataChanged}
-        />
+        {cloudData}
       </div>
     );
   }
@@ -437,7 +473,7 @@ export function WebsiteAccountPanel({
     { id: "complete", label: intl("components_auth_WebsiteAccountPanel.checkInbox") },
   ];
 
-  return (
+  const authContent = (
     <div className="relative">
       {transientNotice ? (
         <Alert className="absolute inset-x-5 top-5 z-20 border-amber-500/50 bg-amber-50 text-amber-950 shadow-lg dark:bg-amber-950 dark:text-amber-50 sm:left-auto sm:right-8 sm:w-80" role="status">
@@ -653,4 +689,5 @@ export function WebsiteAccountPanel({
     </Card>
     </div>
   );
+  return renderSections ? renderSections({ profile: authContent }) : authContent;
 }

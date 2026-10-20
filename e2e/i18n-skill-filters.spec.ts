@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { switchWorkbenchLanguage } from "./workbench-language";
 test.setTimeout(90_000);
 
 test.beforeEach(async ({ page }) => {
@@ -21,7 +22,7 @@ test("cookie locale renders on the server, while switching preserves filters and
   await rows.nth(0).getByRole("tab", { name: "6-star operators" }).click();
   await rows.nth(1).getByRole("tab", { name: "Guard", exact: true }).click();
   await page.getByRole("textbox", { name: "Search operator, skill name, or effect" }).fill("银灰");
-  await page.getByRole("button", { name: "中文", exact: true }).first().click();
+  await switchWorkbenchLanguage(page, "zh");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   await expect(page).toHaveTitle("技能查询 · 可露希尔基建终端");
   await expect(rows.nth(0).getByRole("tab", { name: "6 星干员" })).toHaveAttribute("aria-selected", "true");
@@ -88,8 +89,8 @@ for (const locale of ["zh", "en"] as const) {
       if (/MISSING_MESSAGE|INVALID_MESSAGE|FORMATTING_ERROR/.test(message.text())) errors.push(message.text());
     });
     const titles = locale === "en"
-      ? ["About", "Help Center", "Import Operator Box", "Check Operator Data", "Privacy Policy", "Terms of Service", "Account", "Changelog"]
-      : ["关于我们", "使用帮助", "导入干员", "核对干员数据", "隐私政策", "服务条款", "账号", "更新日志"];
+      ? ["About", "Documentation", "Your first import", "Common questions", "Privacy Policy", "Terms of Service", "Account", "Changelog"]
+      : ["关于我们", "使用文档", "首次导入", "常见问题总览", "隐私政策", "服务条款", "账号", "更新日志"];
     const routes = ["/about", "/help", "/help/import-operators", "/help/owned-operators", "/privacy", "/terms", "/account", "/changelog"];
     for (const [index, route] of routes.entries()) {
       const announcement = route === "/account"

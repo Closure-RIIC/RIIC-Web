@@ -7,6 +7,15 @@ import {
   scheduleIdleTask,
   shouldPreloadPortraits,
 } from "./schedule-portrait-preload.ts";
+import type { MaaJson } from "./types.ts";
+
+test("empty facilities without an operators array do not break portrait preloading", () => {
+  const maa = { title: "test", plans: [
+    { rooms: { training: [{}] } },
+    { rooms: { training: [{}], manufacture: [{ operators: ["空"] }] } },
+  ] } as unknown as MaaJson;
+  assert.deepEqual(nextShiftPortraitUrls(maa, 0, name => name === "空" ? "/sora.webp" : undefined), ["/sora.webp"]);
+});
 
 test("collects only next-shift portrait URLs that are absent from the active shift", () => {
   const portraitByName: Record<string, string> = {

@@ -19,6 +19,7 @@ import { formatScaledAmount } from "@/resource-scale-display";
 import type { SklandInventoryData } from "@/types";
 import type { GameReportRecord } from "@/game-report";
 import { useWorkbench } from "@/workbench-context";
+import { buildAccountHealthContext } from "@/agent-page-context";
 
 const fmt = (value: number) => value.toLocaleString("zh-CN");
 const ratio = (value: number | null) => value === null ? "—" : `${value.toFixed(2)} : 1`;
@@ -33,7 +34,8 @@ export function AccountHealthRoute() {
 }
 
 function AccountHealthContent({ identityKey }: { identityKey: string }) {
-  const { account, healthOperators, skland, mastery } = useWorkbench();
+  const { account, healthOperators, skland, mastery, agent } = useWorkbench();
+  const onAgentPageContextChange = agent.onPageContextChange;
   const en = useLocale() === "en";
   const plannerText = useTranslations("components_pages_MasteryPlanner");
   const [inventory, setInventory] = useState<SklandInventoryData | null>(null);
@@ -101,6 +103,10 @@ function AccountHealthContent({ identityKey }: { identityKey: string }) {
   const advice = useMemo(() => buildHealthAdvice(
     input, holdsDurinGroup(healthOperators?.items, healthOperators?.source), en ? "en" : "zh"
   ), [en, healthOperators, input]);
+  useEffect(() => {
+    onAgentPageContextChange("account-health", buildAccountHealthContext({ health: input, advice }));
+  }, [advice, input, onAgentPageContextChange]);
+  useEffect(() => () => onAgentPageContextChange("account-health", null), [onAgentPageContextChange]);
   const adviceWan = (amount: number) => scaled(amount) ?? fmt(Math.round(amount));
 
   return <section className="grid min-w-0 gap-3 pt-2 pb-8 md:gap-5 md:pt-5" aria-labelledby="account-health-heading" data-account-health-page>

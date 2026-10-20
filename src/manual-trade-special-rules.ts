@@ -7,6 +7,14 @@ export type ManualTradeMember = {
 export type SpecialTradeOutput = {
   orderMultiplier: number;
   goldUnitOutputPerDay: number;
+  rule?: SpecialTradeAnchor;
+};
+
+export type SpecialTradeAnchor = {
+  label: string;
+  regularTradeOutputPerDay: number;
+  tradeUnitOutputPerDay: number;
+  goldUnitOutputPerDay: number;
 };
 
 const NORMAL_TRADE_OUTPUT: Record<1 | 2 | 3, number> = {
@@ -65,6 +73,19 @@ function isMember(member: ManualTradeMember, id: string, name: string): boolean 
   return member.id === id || member.name === name;
 }
 
+function anchoredOutput(level: 1 | 2 | 3, label: string, tradeUnitOutputPerDay: number, goldUnitOutputPerDay = 0): SpecialTradeOutput {
+  return {
+    orderMultiplier: multiplierFromOutput(tradeUnitOutputPerDay, level),
+    goldUnitOutputPerDay,
+    rule: {
+      label,
+      regularTradeOutputPerDay: NORMAL_TRADE_OUTPUT[level],
+      tradeUnitOutputPerDay,
+      goldUnitOutputPerDay,
+    },
+  };
+}
+
 export function resolveManualSpecialTradeOutput(input: {
   level: number;
   order: "gold" | "originium";
@@ -76,13 +97,14 @@ export function resolveManualSpecialTradeOutput(input: {
   const level = input.level as 1 | 2 | 3;
   const docus = input.members.find((member) => isMember(member, IDS.docus, NAMES.docus));
   if (docus) {
-    const output = DOCUS_OUTPUT[(docus.elite ?? 0) >= 2 ? "e2" : "low"][level];
-    return { orderMultiplier: multiplierFromOutput(output, level), goldUnitOutputPerDay: 0 };
+    const eliteTier = (docus.elite ?? 0) >= 2 ? "E2" : "E0/E1";
+    const output = DOCUS_OUTPUT[eliteTier === "E2" ? "e2" : "low"][level];
+    return anchoredOutput(level, `但书 ${eliteTier} 特殊订单`, output);
   }
 
   const closure = input.members.find((member) => isMember(member, IDS.closure, NAMES.closure));
   if (closure && (closure.elite ?? 0) >= 2) {
-    return { orderMultiplier: multiplierFromOutput(12_000, level), goldUnitOutputPerDay: 2_000 };
+    return anchoredOutput(level, "可露希尔 E2 特别订单", 12_000, 2_000);
   }
 
   if (level !== 3) return { orderMultiplier: 1, goldUnitOutputPerDay: 0 };
@@ -99,10 +121,9 @@ export function resolveManualSpecialTradeOutput(input: {
   }
   const tier = (tequila.elite ?? 0) >= 2 ? "up" : "low";
   const output = WITCH_TEQUILA_OUTPUT[tier][tailor];
-  return {
-    orderMultiplier: multiplierFromOutput(output.trade, level),
-    goldUnitOutputPerDay: output.gold,
-  };
+  const tequilaTier = tier === "up" ? "E2" : "E0/E1";
+  const tailorTier = tailor === "beta" ? "β裁缝" : tailor === "alpha" ? "α裁缝" : "无裁缝加成";
+  return anchoredOutput(level, `巫恋 E2 + 龙舌兰 ${tequilaTier} + ${tailorTier}`, output.trade, output.gold);
 }
 
 export function resolveGoldEquivalentEfficiency(totalEfficiency: number, goldUnitOutputPerDay: number): number {

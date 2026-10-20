@@ -59,16 +59,17 @@ test("nested dialog and dropdown keep keyboard navigation, background locking an
     const scroll = dialog.locator('[data-slot="scroll-area-viewport"]:visible').first();
     await expect(scroll).toHaveAttribute("data-overlayscrollbars-viewport", /scrollbarHidden/);
     await expect(scroll.locator(":scope > .os-scrollbar")).toHaveCount(2);
-    const backgroundThumb = page.locator("body > .os-scrollbar-vertical .os-scrollbar-handle");
+    const backgroundViewport = page.locator("[data-app-scroll-area]");
+    const backgroundThumb = page.locator("[data-app-page-scrollbar] .os-scrollbar-vertical .os-scrollbar-handle");
     expect(await backgroundThumb.evaluate(node => {
       const box = node.getBoundingClientRect();
       const hit = document.elementFromPoint(box.x + box.width / 2, box.y + box.height / 2);
       return hit === node || node.contains(hit);
     })).toBe(false);
-    const before = await page.evaluate(() => window.scrollY);
+    const before = await backgroundViewport.evaluate(node => node.scrollTop);
     await page.mouse.move(5, 5);
     await page.mouse.wheel(0, 500);
-    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before);
+    await expect.poll(() => backgroundViewport.evaluate(node => node.scrollTop)).toBe(before);
     await dialog.getByRole("button", { name: "继续", exact: true }).click();
     const rotation = dialog.getByRole("combobox", { name: "换班方式" });
     await rotation.click();
@@ -92,33 +93,33 @@ test("nested dialog and dropdown keep keyboard navigation, background locking an
   await expect(drawer).toHaveAttribute("data-overlayscrollbars-viewport", /scrollbarHidden/);
   const details = drawer.locator("[data-plan-details-section]");
   await expect(details).toHaveAttribute("data-overlayscrollbars-viewport", /scrollbarHidden/);
-  const before = await page.evaluate(() => window.scrollY);
+  const backgroundViewport = page.locator("[data-app-scroll-area]");
+  const before = await backgroundViewport.evaluate(node => node.scrollTop);
   await page.mouse.move(5, 5);
   await page.mouse.wheel(0, 500);
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(before);
+  await expect.poll(() => backgroundViewport.evaluate(node => node.scrollTop)).toBe(before);
   await page.keyboard.press("Escape");
   await expect(drawer).toHaveCount(0);
-  // Wheel over the document, not the independently scrollable fixed sidebar.
+  // Wheel over the page viewport after the modal releases its scroll lock.
   await page.mouse.move(550, 300);
   await page.mouse.wheel(0, 500);
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(before);
+  await expect.poll(() => backgroundViewport.evaluate(node => node.scrollTop)).toBeGreaterThan(before);
 });
 
 test("a failed scrollbar chunk leaves native scrolling available", async ({ page }) => {
   let blocked = 0;
-  await page.route(/\/(?:assets\/[^/]*overlayscrollbars[^/]*\.js|node_modules\/\.vite\/deps\/overlayscrollbars\.js)(?:\?.*)?$/, route => {
+  await page.route(/\/(?:assets\/[^/]*overlayscrollbars[^/]*\.js|node_modules\/\.vite\/(?:[^/]+\/)?deps\/overlayscrollbars\.js)(?:\?.*)?$/, route => {
     blocked++;
     return route.abort();
   });
   await page.goto("/help/import-operators");
   await expect.poll(() => blocked).toBeGreaterThan(0);
   await expect(page.locator(".os-scrollbar")).toHaveCount(0);
-  const scroll = page.locator("[data-help-step-navigation-scroll]");
+  const scroll = page.locator('[data-app-scroll-area="docs"]');
   await page.setViewportSize({ width: 390, height: 844 });
-  await scroll.evaluate(node => { node.scrollLeft = 600; });
-  await expect.poll(() => scroll.evaluate(node => node.scrollLeft)).toBeGreaterThan(0);
-  await page.evaluate(() => window.scrollTo(0, 500));
-  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+  await scroll.evaluate(node => { node.scrollTop = 600; });
+  await expect.poll(() => scroll.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
   await expect(page.locator("[data-overlayscrollbars-initialize]")).toHaveCount(0);
 });
 
@@ -190,9 +191,10 @@ test("dark and reduced-motion surfaces preserve dimensions and native textarea e
 for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 }]) {
   test.describe("touch " + viewport.width, () => {
     test.use({ hasTouch: true, viewport });
-    test("keeps native page, horizontal and local scroll viewports", async ({ page }) => {
+    test("keeps native local viewports and the external page scrollbar", async ({ page }) => {
       await addSurfaces(page);
-      await expect(page.locator(".os-scrollbar")).toHaveCount(0);
+      await expect(page.locator("#scroll-fixture .os-scrollbar")).toHaveCount(0);
+      await expect(page.locator("[data-app-page-scrollbar] .os-scrollbar")).toHaveCount(2);
       for (const direction of ["y", "x", "both"]) {
         const surface = page.locator("#scroll-" + direction);
         await surface.evaluate(node => { node.scrollTop = 80; node.scrollLeft = 80; });
@@ -202,8 +204,10 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 
       await page.locator("#scroll-fixture").evaluate(node => node.remove());
       await page.goto("/help/import-operators");
       await expect(page.locator("body")).toHaveAttribute("data-app-hydrated", "true");
-      await page.evaluate(() => window.scrollTo(0, 500));
-      await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+      const scroll = page.locator('[data-app-scroll-area="docs"]');
+      await scroll.evaluate(node => { node.scrollTop = 500; });
+      await expect.poll(() => scroll.evaluate(node => node.scrollTop)).toBeGreaterThan(0);
+      expect(await page.evaluate(() => window.scrollY)).toBe(0);
     });
   });
 }

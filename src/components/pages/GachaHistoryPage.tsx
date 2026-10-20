@@ -237,7 +237,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
 
   function acceptAuthorization(result: { roles: Array<{ uid: string; nickname: string }>; selectedUid?: string }) {
     setAuthorizedUids(result.roles.map((role) => role.uid));
-    if (!result.roles.some((role) => role.uid === selectedUid)) throw new Error("授权账号与森空岛状态中心当前角色不一致，请使用对应账号授权。切换账号请前往森空岛状态中心。");
+    if (!result.roles.some((role) => role.uid === selectedUid)) throw new Error("授权账号与森空岛同步当前角色不一致，请使用对应账号授权。切换账号请前往森空岛同步。");
     setSyncAfterScan(true);
   }
 
@@ -315,7 +315,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
         if (result.status === "authenticated") {
           setAuthorizedUids(result.roles.map((role) => role.uid));
           if (!result.roles.some((role) => role.uid === selectedUid)) {
-            setScanError("扫码账号与森空岛状态中心当前角色不一致，请使用对应账号扫码。切换账号请前往森空岛状态中心。");
+            setScanError("扫码账号与森空岛同步当前角色不一致，请使用对应账号扫码。切换账号请前往森空岛同步。");
             setScan(null);
             return;
           }

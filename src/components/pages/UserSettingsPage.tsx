@@ -1,18 +1,17 @@
 "use client";
 
 import { useLocale } from "use-intl";
-import { Link } from "@tanstack/react-router";
-import { ArrowLeft, Eye, RotateCcw, SlidersHorizontal, Trash2 } from "lucide-react";
+import { Eye, RotateCcw, SlidersHorizontal, Trash2, Image, PanelTop } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { InfraTechnicalCard, InfraTechnicalHeading } from "@/components/InfraTechnicalCard";
 import { StatusCenterPage } from "@/components/pages/StatusCenterShell";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import type { WebsiteAccountSections } from "@/components/auth/WebsiteAccountPanel";
 import { WebsiteSessionSettings } from "@/components/auth/WebsiteSessionSettings";
 import { DEFAULT_USER_SETTINGS, type UserSettings } from "@/user-settings";
 import { setColorMode, useColorMode } from "@/components/ColorMode";
@@ -22,6 +21,7 @@ const SETTINGS_SWITCH_CLASS = "data-checked:bg-white data-unchecked:bg-white/20 
 interface UserSettingsPageProps {
   settings: UserSettings;
   onSettingsChange: (settings: UserSettings) => void;
+  accountSections: WebsiteAccountSections;
 }
 
 function SettingsDropdown<T extends string>({ id, label, value, options, disabled = false, onChange }: {
@@ -54,7 +54,7 @@ function SettingsDropdown<T extends string>({ id, label, value, options, disable
   );
 }
 
-export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPageProps) {
+export function UserSettingsPage({ settings, onSettingsChange, accountSections }: UserSettingsPageProps) {
   const en = useLocale() === "en";
   const colorMode = useColorMode();
   const [viewControlDetailsOpen, setViewControlDetailsOpen] = useState(!settings.linkShiftViewControl);
@@ -69,23 +69,22 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
     shiftViewControl: DEFAULT_USER_SETTINGS.shiftViewControl,
   });
   return (
-    <StatusCenterPage className="min-w-0 gap-3 pt-2 pb-8 sm:pb-8 md:gap-5 md:pt-5" data-user-settings-page>
-      <header className="flex flex-wrap items-start justify-between gap-3">
+    <StatusCenterPage className="min-w-0 gap-0 pt-2 pb-8 sm:pb-8 md:pt-5 [&_[data-infra-heading-accent]]:hidden" data-user-settings-page data-account-management>
+      <header className="mb-4 flex min-w-0 flex-col items-start justify-between gap-3 sm:flex-row sm:items-center md:mb-5" data-settings-header>
         <div className="min-w-0">
           <WorkbenchPageHeading page="settings">{en ? "Settings" : "设置"}</WorkbenchPageHeading>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground md:mt-2 md:text-sm">{en ? "Personalize scheduling and display. Changes are saved in this browser." : "调整排班与显示方式，修改自动保存在当前浏览器。"}</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground md:mt-2 md:text-sm">{en ? "Manage your account, scheduling and display preferences." : "管理账号、排班与显示偏好。"}</p>
         </div>
-        <SetupActionButton nativeButton={false} variant="outline" className="!min-w-0 max-w-full max-md:!h-auto max-md:min-h-11 max-md:whitespace-normal max-md:!px-3 max-md:py-2" render={<Link to="/" />}>
-          <ArrowLeft />{en ? "Back to calculator" : "返回基建计算器"}
-        </SetupActionButton>
+        {accountSections.headerProfile}
       </header>
-      <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]" data-settings-cards>
+      {accountSections.profile ? <div className="mb-4 md:mb-5">{accountSections.profile}</div> : null}
+      <div className="columns-1 gap-3 lg:columns-2 [&_[data-infra-technical-card]]:mb-3 [&_[data-infra-technical-card]]:break-inside-avoid" data-settings-columns>
         <InfraTechnicalCard group="control">
-          <section aria-labelledby="settings-scheduling-title">
+          <section aria-labelledby="settings-scheduling-title" data-settings-group="scheduling">
             <InfraTechnicalHeading icon={<SlidersHorizontal className="size-4" aria-hidden="true" />} titleId="settings-scheduling-title">
               {en ? "Scheduling and export" : "排班与导出"}
             </InfraTechnicalHeading>
-            <p className="mt-4 text-sm leading-6 text-white/64">{en ? "Configure operator order, view controls and image exports." : "设置干员入驻顺序、视图切换和图片导出。"}</p>
+            <p className="mt-4 text-sm leading-6 text-white/64">{en ? "Configure operator order and exported schedules." : "设置干员入驻顺序与排班导出。"}</p>
             <div className="mt-5 grid gap-4">
             <div className="flex items-center justify-between gap-6">
               <Label htmlFor="strict-maa-operator-order" className="grid min-w-0 gap-1">
@@ -124,6 +123,46 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
                 })}
                 aria-label={en ? "Allow replacement operator sorting" : "替换排班允许调整干员顺序"}
               />
+            </div>
+            <div className="flex items-center justify-between gap-6 border-t border-white/12 pt-4">
+              <Label htmlFor="image-export-scope" className="grid min-w-0 gap-1">
+                <span>{en ? "Image export scope" : "导出图片范围"}</span>
+                <span className="font-normal text-sm text-white/64">
+                  {en ? "Choose one shift or all shifts. All-shift export is currently under maintenance." : "选择导出一班或全班；全班导出目前维护中。"}
+                </span>
+              </Label>
+              <SettingsDropdown<UserSettings["imageExportScope"]>
+                id="image-export-scope"
+                value={settings.imageExportScope}
+                options={[
+                  { value: "single", label: en ? "One shift" : "一班" },
+                  { value: "all", label: en ? "All shifts" : "全班" },
+                ]}
+                onChange={(scope) => onSettingsChange({
+                  ...settings,
+                  imageExportScope: scope,
+                })}
+                label={en ? "Image export scope" : "导出图片范围"}
+              />
+            </div>
+            </div>
+          </section>
+        </InfraTechnicalCard>
+        <InfraTechnicalCard group="manufacture">
+          <section aria-labelledby="settings-display-title" data-settings-group="display">
+            <InfraTechnicalHeading icon={<Eye className="size-4" aria-hidden="true" />} titleId="settings-display-title">
+              {en ? "Appearance and interaction" : "界面与交互"}
+            </InfraTechnicalHeading>
+            <p className="mt-4 text-sm leading-6 text-white/64">{en ? "Adjust appearance, view switching and browsing behavior." : "调整外观、视图切换与浏览方式。"}</p>
+            <div className="mt-5 grid gap-4">
+            <div className="flex items-center justify-between gap-6">
+              <Label htmlFor="color-mode" className="grid min-w-0 gap-1">
+                <span>{en ? "Appearance mode" : "外观模式"}</span>
+                <span className="font-normal text-sm text-white/64">{en ? "Choose a light or dark monochrome interface." : "选择黑白日间或夜间界面，自动保存在当前浏览器。"}</span>
+              </Label>
+              <SettingsDropdown id="color-mode" label={en ? "Appearance mode" : "外观模式"} value={colorMode}
+                options={[{ value: "light", label: en ? "Day mode" : "日间模式" }, { value: "dark", label: en ? "Night mode" : "夜间模式" }]}
+                onChange={setColorMode} />
             </div>
             <div className="grid gap-3 border-t border-white/12 pt-4">
               <div className="flex items-center justify-between gap-6">
@@ -206,45 +245,38 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
               ) : null}
             </div>
             <div className="flex items-center justify-between gap-6 border-t border-white/12 pt-4">
-              <Label htmlFor="image-export-scope" className="grid min-w-0 gap-1">
-                <span>{en ? "Image export scope" : "导出图片范围"}</span>
-                <span className="font-normal text-sm text-white/64">
-                  {en ? "Choose one shift or all shifts. All-shift export is currently under maintenance." : "选择导出一班或全班；全班导出目前维护中。"}
-                </span>
+              <Label htmlFor="skill-pagination" className="grid min-w-0 gap-1">
+                <span>{en ? "Skill page loading" : "技能页加载方式"}</span>
+                <span className="font-normal text-sm text-white/64">{en ? "Infinite scroll or click after ten results." : "无限下滚，或每显示十条后点击继续下滚。"}</span>
               </Label>
-              <SettingsDropdown<UserSettings["imageExportScope"]>
-                id="image-export-scope"
-                value={settings.imageExportScope}
+              <SettingsDropdown<UserSettings["skillPagination"]>
+                id="skill-pagination"
+                value={settings.skillPagination}
                 options={[
-                  { value: "single", label: en ? "One shift" : "一班" },
-                  { value: "all", label: en ? "All shifts" : "全班" },
+                  { value: "infinite", label: en ? "Infinite scroll" : "无限下滚" },
+                  { value: "manual", label: en ? "Click every ten" : "每十条点击加载" },
                 ]}
-                onChange={(scope) => onSettingsChange({
-                  ...settings,
-                  imageExportScope: scope,
-                })}
-                label={en ? "Image export scope" : "导出图片范围"}
+                onChange={(mode) => onSettingsChange({ ...settings, skillPagination: mode })}
+                label={en ? "Skill page loading" : "技能页加载方式"}
               />
+            </div>
+            <div className="flex items-center justify-between gap-6 border-t border-white/12 pt-4">
+              <Label htmlFor="highlight-no-layout-skill" className="grid min-w-0 gap-1">
+                <span>{en ? "Highlight operators without layout skills" : "高亮当前布局无功能干员"}</span>
+                <span className="font-normal text-sm text-white/64">{en ? "Highlight operators with no unlocked infrastructure skill matching a facility in the current layout. Off by default." : "高亮当前基建布局内没有已解锁且适配设施类型的基建技能的干员，默认关闭。"}</span>
+              </Label>
+              <Switch className={SETTINGS_SWITCH_CLASS} id="highlight-no-layout-skill" checked={settings.highlightNoLayoutSkill} onCheckedChange={(checked) => onSettingsChange({ ...settings, highlightNoLayoutSkill: checked })} aria-label={en ? "Highlight operators without layout skills" : "高亮当前布局无功能干员"} />
             </div>
             </div>
           </section>
         </InfraTechnicalCard>
-        <InfraTechnicalCard group="manufacture">
-          <section aria-labelledby="settings-display-title">
-            <InfraTechnicalHeading icon={<Eye className="size-4" aria-hidden="true" />} titleId="settings-display-title">
-              {en ? "Display and loading" : "显示与加载"}
+        <InfraTechnicalCard group="meeting">
+          <section aria-labelledby="settings-features-title" data-settings-group="features">
+            <InfraTechnicalHeading icon={<PanelTop className="size-4" aria-hidden="true" />} titleId="settings-features-title">
+              {en ? "Feature shortcuts" : "功能入口"}
             </InfraTechnicalHeading>
-            <p className="mt-4 text-sm leading-6 text-white/64">{en ? "Choose which actions, images and language resources to display." : "选择显示的操作入口、图片及语言资源。"}</p>
+            <p className="mt-4 text-sm leading-6 text-white/64">{en ? "Choose the tools and action buttons shown in the workspace." : "选择工作区中显示的工具与操作按钮。"}</p>
             <div className="mt-5 grid gap-4">
-            <div className="flex items-center justify-between gap-6">
-              <Label htmlFor="color-mode" className="grid min-w-0 gap-1">
-                <span>{en ? "Appearance mode" : "外观模式"}</span>
-                <span className="font-normal text-sm text-white/64">{en ? "Choose a light or dark monochrome interface." : "选择黑白日间或夜间界面，自动保存在当前浏览器。"}</span>
-              </Label>
-              <SettingsDropdown id="color-mode" label={en ? "Appearance mode" : "外观模式"} value={colorMode}
-                options={[{ value: "light", label: en ? "Day mode" : "日间模式" }, { value: "dark", label: en ? "Night mode" : "夜间模式" }]}
-                onChange={setColorMode} />
-            </div>
             <div className="flex items-center justify-between gap-6">
               <Label htmlFor="show-progression-recalculate" className="grid min-w-0 gap-1">
                 <span>{en ? "Show progression recalculation" : "显示修改练度并重算"}</span>
@@ -288,41 +320,28 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
               />
             </div>
             <div className="flex items-center justify-between gap-6 border-t border-white/12 pt-4">
-              <Label htmlFor="highlight-no-layout-skill" className="grid min-w-0 gap-1">
-                <span>{en ? "Highlight operators without layout skills" : "高亮当前布局无功能干员"}</span>
-                <span className="font-normal text-sm text-white/64">{en ? "Highlight operators with no unlocked infrastructure skill matching a facility in the current layout. Off by default." : "高亮当前基建布局内没有已解锁且适配设施类型的基建技能的干员，默认关闭。"}</span>
-              </Label>
-              <Switch className={SETTINGS_SWITCH_CLASS} id="highlight-no-layout-skill" checked={settings.highlightNoLayoutSkill} onCheckedChange={(checked) => onSettingsChange({ ...settings, highlightNoLayoutSkill: checked })} aria-label={en ? "Highlight operators without layout skills" : "高亮当前布局无功能干员"} />
-            </div>
-            <div className="flex items-center justify-between gap-6 border-t border-white/12 pt-4">
-              <Label htmlFor="load-english-resources" className="grid min-w-0 gap-1">
-                <span>{en ? "Load English resources" : "加载英文资源"}</span>
-                <span className="font-normal text-sm text-white/64">{en ? "When off, English game data is not requested." : "关闭后不请求英文干员名、房间名和技能数据。"}</span>
-              </Label>
-              <Switch className={SETTINGS_SWITCH_CLASS} id="load-english-resources" checked={settings.loadEnglishResources} onCheckedChange={(checked) => onSettingsChange({ ...settings, loadEnglishResources: checked })} aria-label={en ? "Load English resources" : "加载英文资源"} />
-            </div>
-            <div className="flex items-center justify-between gap-6 border-t border-white/12 pt-4">
-              <Label htmlFor="skill-pagination" className="grid min-w-0 gap-1">
-                <span>{en ? "Skill page loading" : "技能页加载方式"}</span>
-                <span className="font-normal text-sm text-white/64">{en ? "Infinite scroll or click after ten results." : "无限下滚，或每显示十条后点击继续下滚。"}</span>
-              </Label>
-              <SettingsDropdown<UserSettings["skillPagination"]>
-                id="skill-pagination"
-                value={settings.skillPagination}
-                options={[
-                  { value: "infinite", label: en ? "Infinite scroll" : "无限下滚" },
-                  { value: "manual", label: en ? "Click every ten" : "每十条点击加载" },
-                ]}
-                onChange={(mode) => onSettingsChange({ ...settings, skillPagination: mode })}
-                label={en ? "Skill page loading" : "技能页加载方式"}
-              />
-            </div>
-            <div className="flex items-center justify-between gap-6 border-t border-white/12 pt-4">
               <Label htmlFor="show-feedback" className="grid min-w-0 gap-1">
                 <span>{en ? "Show feedback buttons" : "显示反馈按钮"}</span>
                 <span className="font-normal text-sm text-white/64">{en ? "Show issue and performance feedback actions." : "控制排班结果中的问题反馈和性能反馈按钮。"}</span>
               </Label>
               <Switch className={SETTINGS_SWITCH_CLASS} id="show-feedback" checked={settings.showFeedback} onCheckedChange={(checked) => onSettingsChange({ ...settings, showFeedback: checked })} aria-label={en ? "Show feedback buttons" : "显示反馈按钮"} />
+            </div>
+            </div>
+          </section>
+        </InfraTechnicalCard>
+        <InfraTechnicalCard group="processing">
+          <section aria-labelledby="settings-resources-title" data-settings-group="resources">
+            <InfraTechnicalHeading icon={<Image className="size-4" aria-hidden="true" />} titleId="settings-resources-title">
+              {en ? "Resource loading" : "资源加载"}
+            </InfraTechnicalHeading>
+            <p className="mt-4 text-sm leading-6 text-white/64">{en ? "Choose which images and language resources to load." : "选择需要加载的图片与语言资源。"}</p>
+            <div className="mt-5 grid gap-4">
+            <div className="flex items-center justify-between gap-6">
+              <Label htmlFor="load-english-resources" className="grid min-w-0 gap-1">
+                <span>{en ? "Load English resources" : "加载英文资源"}</span>
+                <span className="font-normal text-sm text-white/64">{en ? "When off, English game data is not requested." : "关闭后不请求英文干员名、房间名和技能数据。"}</span>
+              </Label>
+              <Switch className={SETTINGS_SWITCH_CLASS} id="load-english-resources" checked={settings.loadEnglishResources} onCheckedChange={(checked) => onSettingsChange({ ...settings, loadEnglishResources: checked })} aria-label={en ? "Load English resources" : "加载英文资源"} />
             </div>
             <div className="flex items-center justify-between gap-6 border-t border-white/12 pt-4">
               <Label htmlFor="show-images" className="grid min-w-0 gap-1">
@@ -334,33 +353,38 @@ export function UserSettingsPage({ settings, onSettingsChange }: UserSettingsPag
             </div>
           </section>
         </InfraTechnicalCard>
-      </div>
-      <WebsiteSessionSettings />
-      <InfraTechnicalCard group="processing">
-        <section aria-labelledby="settings-local-data-title">
-          <InfraTechnicalHeading icon={<Trash2 className="size-4" aria-hidden="true" />} titleId="settings-local-data-title">
-            {en ? "Local data" : "本地数据"}
-          </InfraTechnicalHeading>
-            <div className="mt-4">
-              <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
-                <div className="grid min-w-0 gap-1">
-                  <span className="font-medium">{en ? "Clear local cache data" : "清除本地缓存数据"}</span>
-                  <span className="text-sm text-white/64">{en ? "Clears schedules, drafts, BOX/layout data, settings, onboarding state, and browser cache. You may need to import and configure again." : "清除本地排班、草稿、BOX/布局数据、设置、引导状态和浏览器缓存；之后可能需要重新导入和配置。"}</span>
+        {accountSections.securityActions ? <WebsiteSessionSettings actions={accountSections.securityActions} /> : null}
+        <section className="contents" aria-labelledby="settings-data-title" data-settings-group="data">
+          <h2 id="settings-data-title" className="sr-only">{en ? "Data and sync" : "数据与同步"}</h2>
+          {accountSections.cloudData}
+          <InfraTechnicalCard group="processing">
+            <section aria-labelledby="settings-local-data-title">
+              <InfraTechnicalHeading icon={<Trash2 className="size-4" aria-hidden="true" />} titleId="settings-local-data-title">
+                {en ? "Local cache" : "本地缓存"}
+              </InfraTechnicalHeading>
+                <div className="mt-4">
+                  <div className="flex flex-col items-start justify-between gap-5 sm:flex-row sm:items-end">
+                    <div className="grid min-w-0 gap-1">
+                      <span className="font-medium">{en ? "Clear local cache data" : "清除本地缓存数据"}</span>
+                      <span className="text-sm text-white/64">{en ? "Clears schedules, drafts, BOX/layout data, settings, onboarding state, and browser cache. You may need to import and configure again." : "清除本地排班、草稿、BOX/布局数据、设置、引导状态和浏览器缓存；之后可能需要重新导入和配置。"}</span>
+                    </div>
+                    <Button type="button" variant="destructive" size="dialog" className="w-full shrink-0 sm:w-auto" onClick={() => {
+                      const message = en ? "This clears all local app data and browser cache entries. Continue?" : "将清除全部本地应用数据和浏览器缓存，之后可能需要重新导入和配置。继续吗？";
+                      if (!window.confirm(message)) return;
+                      window.localStorage.clear();
+                      window.sessionStorage.clear();
+                      void window.caches?.keys().then((keys) => Promise.all(keys.map((key) => window.caches.delete(key))));
+                      window.location.reload();
+                    }}>
+                      <RotateCcw />{en ? "Clear data" : "清除数据"}
+                    </Button>
+                  </div>
                 </div>
-                <Button type="button" variant="destructive" size="dialog" className="w-full shrink-0 sm:w-auto" onClick={() => {
-                  const message = en ? "This clears all local app data and browser cache entries. Continue?" : "将清除全部本地应用数据和浏览器缓存，之后可能需要重新导入和配置。继续吗？";
-                  if (!window.confirm(message)) return;
-                  window.localStorage.clear();
-                  window.sessionStorage.clear();
-                  void window.caches?.keys().then((keys) => Promise.all(keys.map((key) => window.caches.delete(key))));
-                  window.location.reload();
-                }}>
-                  <RotateCcw />{en ? "Clear data" : "清除数据"}
-                </Button>
-              </div>
-            </div>
+            </section>
+          </InfraTechnicalCard>
         </section>
-      </InfraTechnicalCard>
+        {accountSections.deleteAccount}
+      </div>
     </StatusCenterPage>
   );
 }

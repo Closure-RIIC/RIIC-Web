@@ -132,9 +132,16 @@ test("standalone gacha page preserves login and redirects the former Skland URL"
   await expect(page.locator("[data-gacha-history]")).toBeVisible();
   const navigation = page.locator('[data-primary-navigation-page="gacha"]:visible');
   await expect(navigation).toHaveAttribute("aria-current", "page");
-  await expect(navigation.locator('xpath=ancestor::*[@data-slot="sidebar-group"]')).toContainText("养成规划");
+  const accountGroup = navigation.locator('xpath=ancestor::*[@data-slot="sidebar-group"]');
+  await expect(accountGroup).toContainText("我的角色");
+  expect(await accountGroup.locator("[data-primary-navigation-page]").evaluateAll(nodes =>
+    nodes.map(node => node.getAttribute("data-primary-navigation-page"))
+  )).toEqual(["skland", "gacha"]);
   await page.goto("/skland");
-  await expect(page.locator("[data-skland-page]").getByRole("tab", { name: "寻访记录", exact: true })).toHaveCount(0);
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  await expect(page.locator("[data-skland-page]")).toBeVisible();
+  await expect(page.locator("[data-skland-page]").getByRole("tab", { name: "抽卡分析", exact: true })).toHaveCount(0);
+  await expect(page.locator("[data-agent-history]")).toBeVisible();
   await navigation.click();
   await expect(page).toHaveURL(/\/gacha$/);
   await expect(page.locator("[data-gacha-history]")).toBeVisible();
@@ -245,7 +252,7 @@ test("standalone gacha page follows Skland identity and shows summary metrics wi
   await mockGachaArchive(page, history);
   await page.goto("/gacha");
   const content = page.locator("[data-gacha-history]");
-  await expect(content.getByRole("heading", { name: "寻访记录", exact: true })).toHaveCount(0);
+  await expect(content.getByRole("heading", { name: "抽卡分析", exact: true })).toHaveCount(0);
   await expect(content.locator("[data-skland-player-identity]").getByRole("heading", { name: "测试角色甲", exact: true })).toBeVisible();
   const actions = ["刷新", "删除云端寻访记录"].map((name) => content.getByRole("button", { name, exact: true }));
   await expect(content.getByRole("button", { name: "导出", exact: true })).toHaveCount(0);
@@ -756,6 +763,7 @@ test.describe("gacha touch layout", () => {
     await page.goto("/gacha");
     const content = page.locator("[data-gacha-history]");
     await expect(content.locator("[data-gacha-summary]")).toBeVisible();
+    await expect(page.locator("[data-agent-floating-widget]")).toHaveCount(0);
     for (const width of [280, 320, 375, 390, 430]) {
       await page.setViewportSize({ width, height: 844 });
       const overflow = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>("body, body *")].filter((node) => {
@@ -801,7 +809,7 @@ test.describe("gacha touch layout", () => {
     await expect(page.getByRole("dialog", { name: "授权寻访记录" })).toBeVisible();
     await page.getByRole("button", { name: "Close", exact: true }).click();
     const beforeScroll = (await trigger.boundingBox())!;
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.locator("[data-app-scroll-area]").evaluate((element) => element.scrollTo(0, element.scrollHeight));
     expect((await trigger.boundingBox())!.y).toBeCloseTo(beforeScroll.y, 1);
     await page.setViewportSize({ width: 1280, height: 844 });
     await expect(content.locator("[data-skland-synced-at]")).toBeVisible();

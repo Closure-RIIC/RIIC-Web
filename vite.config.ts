@@ -35,6 +35,8 @@ export default defineConfig(({ mode }) => {
     define: Object.fromEntries(Object.entries(publicEnvironment).map(([key, value]) => [
       `process.env.${key}`, JSON.stringify(value),
     ])),
+    // The assistant is loaded on demand; optimize its SDKs before the first click.
+    optimizeDeps: { include: ["ai", "@ai-sdk/react"] },
     environments: {
       client: { build: { rolldownOptions: { output: { strictExecutionOrder: true, codeSplitting: { groups: [
         { name: "core", tags: ["$initial"], priority: 30 },
@@ -42,11 +44,23 @@ export default defineConfig(({ mode }) => {
         { name: "calculator", test: /src[\\/]routes[\\/]_workbench\.index\.tsx\?tsr-split=component/, priority: 10 },
       ] } } } } },
     },
-    server: { host: "0.0.0.0", port: 5174, proxy: { "/media/tutorials": { target: "http://127.0.0.1:18900", rewrite: (url) => url.replace(/^\/media\/tutorials/, "") } } },
+    server: {
+      host: "0.0.0.0", port: 5174,
+      // Playwright trace HTML is not app source and must not reload preview tabs.
+      watch: { ignored: ["**/.tmp/**", "**/test-results/**", "**/playwright-report/**"] },
+      proxy: { "/media/tutorials": { target: "http://127.0.0.1:18900", rewrite: (url) => url.replace(/^\/media\/tutorials/, "") } },
+    },
     css: { postcss: { plugins: [] } },
     ssr: { noExternal: ["cookie-es"] },
     build: { manifest: true },
     plugins: [{
+      name: "riic-development-dependency-cache",
+      apply: "serve",
+      config(config) {
+        // Concurrent dev/test servers must not replace each other's optimized deps.
+        return { cacheDir: `node_modules/.vite/dev-${config.server?.port ?? 5174}` };
+      },
+    }, {
       name: "riic-development-asset-cache",
       configureServer(server) {
         server.middlewares.use((req, res, next) => {

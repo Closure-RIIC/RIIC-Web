@@ -15,6 +15,7 @@ export type DroneDailyProduction = {
 
 export type DroneTradeTarget =
   | { kind: "normal"; level: 1 | 2 | 3 }
+  | { kind: "evaluated"; level: 1 | 2 | 3; orderMultiplier: number; goldValuePerBase: number }
   | { kind: "dantshu"; level: 1 | 2 | 3 }
   | { kind: "tequila" }
   | { kind: "closure" };
@@ -66,6 +67,11 @@ export function droneProductionForShift(input: {
 }
 
 export function droneTradeOutputForEfficiency(target: DroneTradeTarget, equivalentEfficiency: number): DroneDailyProduction {
+  if (target.kind === "evaluated") return {
+    lmd: equivalentEfficiency * NORMAL_TRADE_DAILY[target.level] * target.orderMultiplier,
+    pure_gold: equivalentEfficiency * target.goldValuePerBase,
+    battle_records: 0,
+  };
   if (target.kind === "normal") return { lmd: equivalentEfficiency * NORMAL_TRADE_DAILY[target.level], pure_gold: 0, battle_records: 0 };
   if (target.kind === "dantshu") return { lmd: equivalentEfficiency * DANTSHU_DAILY[target.level], pure_gold: 0, battle_records: 0 };
   const output = SPECIAL_TRADE_DAILY[target.kind];
@@ -137,6 +143,7 @@ function factoryRecipe(room: MaaRoom | undefined): "gold" | "battle_record" | "o
 function selectedTarget(input: {
   layout: BaseBlueprint;
   actualPlan: MaaPlan;
+  shift: RotationShift;
   drones: NonNullable<MaaPlan["drones"]>;
 }): DroneOutputTarget | null {
   const index = input.drones.index - 1;
@@ -144,6 +151,19 @@ function selectedTarget(input: {
     const blueprint = input.layout.rooms.filter((room) => room.kind === "trade_post")[index];
     const room = input.actualPlan.rooms.trading?.[index];
     if (!blueprint || !room) return null;
+    const order = room.product ?? (blueprint.product && "trade" in blueprint.product ? blueprint.product.trade.order : undefined);
+    if (!["LMD", "Gold", "gold", "龙门商法"].includes(order ?? "")) return null;
+    const line = input.shift.scores.room_lines.find(candidate => candidate.room_id === blueprint.id);
+    // Reuse the evaluated shift's special-trade rules, including elite level and teammates.
+    if (positive(line?.order_multiplier)) return {
+      room: "trading", index: input.drones.index,
+      profile: {
+        kind: "evaluated", level: blueprint.level === 1 || blueprint.level === 2 ? blueprint.level : 3,
+        orderMultiplier: line.order_multiplier,
+        goldValuePerBase: positive(line.total_efficiency) && line.total_efficiency > 0 && positive(line.gold_equivalent_efficiency)
+          ? line.gold_equivalent_efficiency / line.total_efficiency * 10_000 : 0,
+      },
+    };
     return { room: "trading", index: input.drones.index, profile: droneTradeTarget(blueprint.level, room.operators) };
   }
   const recipe = factoryRecipe(input.actualPlan.rooms.manufacture?.[index]);
@@ -166,7 +186,7 @@ export function droneProductionForSelectedMaaTargets(input: {
     const dronePlanIndex = planIndex === null ? null : droneStoragePlanIndex(planIndex, input.maa.plans.length);
     const drones = dronePlanIndex === null ? undefined : input.maa.plans[dronePlanIndex]?.drones;
     if (!actualPlan || !drones || drones.enable === false) return;
-    const target = selectedTarget({ layout: input.layout, actualPlan, drones });
+    const target = selectedTarget({ layout: input.layout, actualPlan, shift, drones });
     if (!target) return;
     const powerStations = powerStationsFromRotation(input.layout, shift, actualPlan);
     const output = droneDailyProductionForActualShift({ powerStations, durationHours: shift.duration_hours, target });

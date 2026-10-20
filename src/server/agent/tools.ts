@@ -9,7 +9,7 @@ import type { FactoryRecipe } from "@/factory-recipes";
 import type { TradeOrder } from "@/blueprint";
 import { runPlan, getSampleOperbox } from "@/server/infra";
 import { toPublicPlanData } from "@/server/public-plan";
-import { loadStatusSnapshot } from "@/server/skland/adapter";
+import { loadInventorySnapshot, loadStatusSnapshot } from "@/server/skland/adapter";
 import { activeSklandAccount, readSklandAccountStore } from "@/server/skland/http";
 import { sklandDataOwnerTag } from "@/server/skland/session";
 import { getMaaOperboxSnapshot, listSavedPlans } from "@/server/workspace";
@@ -21,7 +21,7 @@ import { readAgentSkill } from "./knowledge-policy.ts";
 import { agentKnowledgeDir } from "./config.ts";
 import { queryAgentSkills, inspectAgentOperators } from "./operator-tools.ts";
 import { observeMasteryEnvironment, type MasteryEnvironmentObservation } from "./mastery-environment.ts";
-import { buildCalculatorTools, type AgentOperatorPool } from "./calculator-tools.ts";
+import { buildCalculatorTools, type AgentOperatorPool, type AgentTrainingResources } from "./calculator-tools.ts";
 import { buildHealthTools } from "./health-tools.ts";
 import { chargeAgentTool } from "@/server/billing/service";
 import { SOLVE_TOOL_POINTS } from "@/server/billing/config";
@@ -280,11 +280,31 @@ async function loadAgentOperatorPool(ctx: AgentToolContext): Promise<AgentOperat
   return { operbox: sample.operbox as OperBoxEntry[], source: "sample", sourceName: "全精二示例干员池" };
 }
 
+async function loadAgentTrainingResources(ctx: AgentToolContext): Promise<AgentTrainingResources> {
+  const store = await readSklandAccountStore(ctx.userId);
+  const account = activeSklandAccount(store);
+  if (!account) throw new Error("需要先绑定森空岛，才能读取当前干员练度和仓库库存。");
+  const [status, inventory] = await Promise.all([
+    loadStatusSnapshot(account.session),
+    loadInventorySnapshot(account.session),
+  ]);
+  return {
+    operators: status.snapshot.operators,
+    inventory: inventory.inventory.items,
+    sourceName: `森空岛·${status.snapshot.player.nickname}`,
+    fetchedAt: inventory.inventory.fetchedAt,
+  };
+}
+
 export function buildAgentTools(ctx: AgentToolContext) {
   let operatorPool: Promise<AgentOperatorPool> | undefined;
   const loadPool = () => operatorPool ??= loadAgentOperatorPool(ctx);
   return {
-    ...buildCalculatorTools(loadPool, (name, input, run) => guarded(ctx.userId, name, input, run)),
+    ...buildCalculatorTools(
+      loadPool,
+      (name, input, run) => guarded(ctx.userId, name, input, run),
+      () => loadAgentTrainingResources(ctx),
+    ),
     ...buildHealthTools(ctx, (name, input, run) => guarded(ctx.userId, name, input, run)),
     diagnose_account: tool({
       description:

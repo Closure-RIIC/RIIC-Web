@@ -8,7 +8,9 @@ test("settings persist and control language, schedule controls and MAA export", 
   await page.goto("/settings");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await page.getByRole("switch", { name: /^加载英文资源/ }).click();
-  await expect(page.getByRole("button", { name: "EN（关闭）", exact: true })).toBeDisabled();
+  await page.locator("[data-sidebar-account-trigger]").click();
+  await expect(page.getByRole("menuitemradio", { name: "EN（关闭）", exact: true })).toBeDisabled();
+  await page.keyboard.press("Escape");
   await page.getByRole("switch", { name: /^严格按照顺序入驻/ }).click();
   await page.getByRole("switch", { name: /^加载干员图片/ }).click();
   await page.getByRole("button", { name: "细致调整", exact: true }).click();
@@ -16,7 +18,9 @@ test("settings persist and control language, schedule controls and MAA export", 
   await page.getByRole("option", { name: "下拉表单", exact: true }).click();
   await page.reload();
   await expect(page.getByRole("switch", { name: /^严格按照顺序入驻/ })).not.toBeChecked();
-  await expect(page.getByRole("button", { name: "EN（关闭）", exact: true })).toBeDisabled();
+  await page.locator("[data-sidebar-account-trigger]").click();
+  await expect(page.getByRole("menuitemradio", { name: "EN（关闭）", exact: true })).toBeDisabled();
+  await page.keyboard.press("Escape");
   await page.goto("/");
   const shifts = page.getByRole("combobox", { name: "班次", exact: true });
   await expect(shifts).toBeVisible();
@@ -131,3 +135,84 @@ test("Mower morale rules use the current Box picker", async ({ page }) => {
   await expect(page.getByRole("dialog").getByRole("textbox", { name: "搜索当前 Box 干员" })).toBeVisible();
   await expect(page.getByRole("dialog").getByRole("button", { name: /阿米娅|Amiya/ }).first()).toBeVisible();
 });
+
+for (const { width, locale } of [{ width: 1440, locale: "zh" }, { width: 375, locale: "en" }]) {
+  test(`grouped settings keep preferences, session extension and data controls usable at ${width}px in ${locale}`, async ({ page, context, baseURL }) => {
+    const en = locale === "en";
+    await mockApis(page);
+    await context.addCookies([{ name: "riic-locale", value: locale, url: baseURL! }]);
+    await page.setViewportSize({ width, height: 900 });
+    let expiresAt = new Date(Date.now() + 86_400_000).toISOString();
+    let extensions = 0;
+    await page.route("**/api/auth/get-session", route => route.fulfill({ json: {
+      user: { id: "settings-user", name: "Settings Doctor", email: "settings@example.test" },
+      session: { expiresAt },
+    } }));
+    await page.route("**/api/account/data-consent", route => route.fulfill({ json: {
+      success: true, data: { current: false, cloudSyncEnabled: true, acceptedAt: null, revokedAt: null },
+    } }));
+    await page.route("**/api/account/session/extend", route => {
+      expect(route.request().method()).toBe("POST");
+      extensions += 1;
+      expiresAt = new Date(Date.parse(expiresAt) + 30 * 86_400_000).toISOString();
+      return route.fulfill({ json: { data: { expiresAt } } });
+    });
+    await page.goto("/settings");
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+    await expect(page.getByRole("heading", { name: /^(账号管理|Account management)$/ })).toHaveCount(0);
+    const header = page.locator("[data-settings-header]");
+    await expect(header.locator("[data-website-account-avatar]")).toBeVisible();
+    await expect(header.getByText("Settings Doctor", { exact: true })).toBeVisible();
+    await expect(header.getByText("settings@example.test", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^(返回基建计算器|Back to calculator)$/ })).toHaveCount(0);
+    const consent = page.locator("[data-cloud-consent-dialog]");
+    await consent.getByRole("button", { name: en ? "Keep local-only mode" : "继续纯本地模式", exact: true }).click();
+    await expect(consent).toHaveCount(0);
+    const display = page.locator('[data-settings-group="display"]');
+    await display.getByRole("button", { name: en ? "Detailed controls" : "细致调整", exact: true }).click();
+    await expect(display.getByRole("combobox", { name: en ? "Overview and list control" : "一图流和列表式控件", exact: true })).toBeVisible();
+    const resources = page.locator('[data-settings-group="resources"]');
+    const images = resources.getByRole("switch", { name: en ? /^Load operator images/ : /^加载干员图片/ });
+    await expect(images).toBeChecked();
+    await images.click();
+    await page.reload();
+    await expect(images).not.toBeChecked();
+    expect(await page.locator("[data-user-settings-page] [data-infra-heading-accent]").evaluateAll(nodes =>
+      nodes.every(node => getComputedStyle(node).display === "none")
+    )).toBe(true);
+    const cards = await page.locator("[data-settings-columns] [data-infra-technical-card]").evaluateAll(nodes =>
+      nodes.map(node => {
+        const rect = node.getBoundingClientRect();
+        return { left: Math.round(rect.left), top: rect.top, bottom: rect.bottom };
+      })
+    );
+    const columns = [...new Set(cards.map(card => card.left))].map(left => cards.filter(card => card.left === left));
+    expect(columns).toHaveLength(width >= 1024 ? 2 : 1);
+    for (const column of columns) {
+      for (let index = 1; index < column.length; index += 1) {
+        expect(column[index].top - column[index - 1].bottom).toBeCloseTo(12, 0);
+      }
+    }
+    if (columns.length === 2) {
+      const heights = columns.map(column => column.at(-1)!.bottom - column[0].top);
+      expect(Math.abs(heights[0] - heights[1]) / Math.max(...heights)).toBeLessThan(0.2);
+    }
+
+    const security = page.locator('[data-settings-group="security"]');
+    await expect(security.getByRole("heading", { name: en ? "Sign-in and security" : "登录与安全", exact: true })).toBeVisible();
+    await expect(security.locator("[data-account-logout]")).toHaveCount(0);
+    await expect(security.getByRole("button", { name: en ? "Sign out everywhere" : "退出全部设备", exact: true })).toHaveCount(1);
+    const oldExpiry = await security.getByText(/^(到期时间：|Expires:)/).textContent();
+    await security.getByRole("button", { name: en ? "View and extend" : "查看与延长", exact: true }).click();
+    const lifetime = page.getByRole("dialog", { name: en ? "Manage session lifetime" : "管理登录有效期", exact: true });
+    await lifetime.getByRole("button", { name: en ? "Extend 30 days" : "延长 30 天", exact: true }).click();
+    await expect(lifetime.getByText(en ? "This device's session has been extended by 30 days." : "当前设备的登录有效期已延长 30 天。", { exact: true })).toBeVisible();
+    await lifetime.locator('[data-slot="dialog-footer"]').getByRole("button", { name: en ? "Close" : "关闭", exact: true }).click();
+    await expect(security.getByText(/^(到期时间：|Expires:)/)).not.toHaveText(oldExpiry!);
+    expect(extensions).toBe(1);
+    const data = page.locator('[data-settings-group="data"]');
+    await expect(data.locator("[data-cloud-data-panel]")).toHaveCount(1);
+    await expect(data.getByRole("button", { name: en ? "Clear data" : "清除数据", exact: true })).toHaveCount(1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+}

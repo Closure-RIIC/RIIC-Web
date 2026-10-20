@@ -12,9 +12,10 @@ import { buildAgentTools } from "./tools.ts";
 import { prepareAgentHistory } from "./message-history.ts";
 import { withAgentAnswerBoundary } from "./answer-boundary.ts";
 import type { AgentResourcePolicy } from "./resource-policy.ts";
+import { agentPageContextPrompt, type AgentPageContext } from "../../agent-page-context.ts";
 
 export async function gatewayChat(request: Request, userId: string, requestId: string, body: {
-  messages: UIMessage[]; id?: unknown; conversationId?: unknown; attemptId?: unknown;
+  messages: UIMessage[]; id?: unknown; conversationId?: unknown; attemptId?: unknown; pageContext?: AgentPageContext | null;
 }, personaContent?: string, resources?: { id: string; policy: AgentResourcePolicy }) {
   gatewaySettings();
   const conversationId = body.conversationId ?? body.id;
@@ -33,7 +34,7 @@ export async function gatewayChat(request: Request, userId: string, requestId: s
   };
   await check(personaContent ?? "", "persona");
   const messages = await prepareAgentHistory(body.messages, check);
-  const system = await buildAgentSystemPrompt(personaContent, resources?.policy);
+  const system = `${await buildAgentSystemPrompt(personaContent, resources?.policy)}${agentPageContextPrompt(body.pageContext ?? null)}`;
   await check(system, "system");
   const runId = await beginAgentRun({ userId, conversationId, idempotencyKey: attemptId,
     requestHash: createHash("sha256").update(JSON.stringify({ messages, system, resources: resources?.id })).digest("hex"), rates: policies.rates, filterVersion: policies.filter.id });

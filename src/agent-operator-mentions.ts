@@ -51,7 +51,12 @@ export function findOperatorMentions(text: string, explicit = false): readonly O
     const latin = /[A-Za-z0-9]/.test(label);
     const boundedLatin = (!before || !latinWord.test(before)) && (!after || !latinWord.test(after));
     const shortName = [...label].length <= 2;
-    if ((!latin || boundedLatin) && (!shortName || standalone || (explicit && text.trim() === label) || (context && (!after || boundary.test(after) || /^(?:的|与|和|及|进行|到|至|升|练)/.test(text.slice(candidate.end)))))) {
+    // “空” alone is also an empty-slot label, including bold text and table cells.
+    // Require an operator label here; [干员:空] is resolved separately below.
+    const soraContext = /干员[：:、\s]*$/.test(text.slice(Math.max(0, start - 12), start));
+    const allowedName = label === "空" ? soraContext && (!after || boundary.test(after) || after === "的")
+      : !shortName || standalone || (explicit && text.trim() === label) || (context && (!after || boundary.test(after) || /^(?:的|与|和|及|进行|到|至|升|练)/.test(text.slice(candidate.end))));
+    if ((!latin || boundedLatin) && allowedName) {
       mentions.push(candidate);
     }
     // Consume rejected longest names too: never reinterpret 红云 as 红.

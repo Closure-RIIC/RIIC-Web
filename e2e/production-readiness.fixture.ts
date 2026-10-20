@@ -1105,7 +1105,7 @@ export async function openSklandOverview(page: Page) {
   // These signed-in fixtures expose Agent history. Wait for its async insertion
   // above the personal navigation so WebKit does not click a moving target.
   await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
-  await page.getByRole("button", { name: "森空岛状态中心", exact: true }).click();
+  await page.getByRole("button", { name: "森空岛同步", exact: true }).click();
   await expect(page.locator("[data-skland-page]")).toBeVisible({ timeout: 45_000 });
   await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCount(0);
 }
@@ -1119,6 +1119,25 @@ export async function mockAnonymousWebsiteSession(page: Page) {
   }));
 }
 
+export async function sidebarNavigation(page: Page, name: string) {
+  if (["账号管理", "付费计划", "更新日志"].includes(name)) {
+    const trigger = page.locator("[data-sidebar-account-trigger]");
+    if (await trigger.getAttribute("aria-expanded") !== "true") {
+      await trigger.click();
+    }
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await expect(page.locator("[data-sidebar-account-menu]")).toBeVisible();
+    if (name === "账号管理") {
+      const signIn = page.locator("[data-sidebar-sign-in]");
+      if (await signIn.isVisible()) return signIn;
+      await page.keyboard.press("Escape");
+      return page.locator("[data-sidebar-settings-trigger]");
+    }
+    return page.getByRole("menuitem", { name, exact: true });
+  }
+  return page.getByRole("button", { name, exact: true });
+}
+
 export async function navigateToPrimaryPage(
   page: Page,
   destination: { name: string; href: string; root: string },
@@ -1128,7 +1147,8 @@ export async function navigateToPrimaryPage(
     await page.locator("[data-app-topbar]").getByRole("button", { name: "Toggle Sidebar" }).click();
     await expect(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible();
   }
-  await page.getByRole("button", { name: destination.name, exact: true }).click();
+  await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
+  await (await sidebarNavigation(page, destination.name)).click();
   await expect(page).toHaveURL(new RegExp(`${destination.href.replace("/", "\\/")}$`));
   await expect(page.locator(destination.root)).toBeVisible({ timeout: 45_000 });
   await expect(page.locator('[data-navigation-pending]')).toHaveCount(0);

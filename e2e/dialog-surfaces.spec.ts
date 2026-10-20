@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gotoStable, mockAnonymousWebsiteSession, mockApis, seedV4Session, waitForOwnAnimations } from "./production-readiness.fixture";
+import { gotoStable, mockAnonymousWebsiteSession, mockApis, sidebarNavigation, seedV4Session, waitForOwnAnimations } from "./production-readiness.fixture";
 
 test.beforeEach(async ({ page }) => {
   await mockApis(page);
@@ -12,8 +12,8 @@ for (const [path, accent] of [["/", "#FFD800"], ["/mastery", "#B8F03A"], ["/skil
     await page.setViewportSize({ width: 1440, height: 900 });
     await gotoStable(page, path!);
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
-    const trigger = page.getByRole("button", { name: "账号管理", exact: true });
-    await trigger.click();
+    const trigger = page.locator("[data-sidebar-account-trigger]");
+    await (await sidebarNavigation(page, "账号管理")).click();
     const dialog = page.locator('[data-website-account-dialog]:not([data-website-account-dialog-loading])');
     await expect(dialog).toBeVisible();
     await waitForOwnAnimations(dialog);
@@ -46,7 +46,7 @@ for (const [path, accent] of [["/", "#FFD800"], ["/mastery", "#B8F03A"], ["/skil
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
     await expect(trigger).toBeFocused();
-    await trigger.click();
+    await (await sidebarNavigation(page, "账号管理")).click();
     await expect(dialog).toBeVisible();
     await dialog.getByRole("button", { name: "Close", exact: true }).click();
     await expect(dialog).toHaveCount(0);
@@ -75,8 +75,7 @@ test("resizing during dialog exit removes the popup and restores page interactio
   await page.setViewportSize({ width: 1440, height: 900 });
   await gotoStable(page, "/");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
-  const trigger = page.getByRole("button", { name: "账号管理", exact: true });
-  await trigger.click();
+  await (await sidebarNavigation(page, "账号管理")).click();
   const dialog = page.locator('[data-website-account-dialog]:not([data-website-account-dialog-loading])');
   await expect(dialog).toBeVisible();
   await waitForOwnAnimations(dialog);
@@ -87,7 +86,7 @@ test("resizing during dialog exit removes the popup and restores page interactio
   await expect(dialog).toHaveCount(0);
   await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCount(0);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await trigger.click();
+  await (await sidebarNavigation(page, "账号管理")).click();
   await expect(dialog).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
@@ -96,8 +95,7 @@ test("resizing during dialog exit removes the popup and restores page interactio
 test("cancelled exit animations still release the modal and its backdrop", async ({ page }) => {
   await gotoStable(page, "/");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
-  const trigger = page.getByRole("button", { name: "账号管理", exact: true });
-  await trigger.click();
+  await (await sidebarNavigation(page, "账号管理")).click();
   const dialog = page.locator('[data-website-account-dialog]:not([data-website-account-dialog-loading])');
   await expect(dialog).toBeVisible();
   await waitForOwnAnimations(dialog);
@@ -120,6 +118,6 @@ test("cancelled exit animations still release the modal and its backdrop", async
   await expect(page.locator("html")).toHaveAttribute("data-cancelled-dialog-animations", /^[1-9]\d*$/);
   await expect(dialog).toHaveCount(0);
   await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCount(0);
-  await trigger.click();
+  await (await sidebarNavigation(page, "账号管理")).click();
   await expect(dialog).toBeVisible();
 });

@@ -1,4 +1,5 @@
 import { verifyPublicCompression } from "../scripts/verify-public-compression.mjs";
+import { switchWorkbenchLanguage } from "./workbench-language";
 import { readdir } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
@@ -34,7 +35,7 @@ test("hydration, language changes, persistent workbench navigation and browser h
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await expect(page.locator("[data-primary-navigation-page=calculator]")).toBeVisible();
-  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await switchWorkbenchLanguage(page, "en");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page).toHaveTitle(/Closure/);
   await page.locator("[data-primary-navigation-page=training]").click();
@@ -52,8 +53,11 @@ test("public help links preserve search state and mobile legal pages hydrate", a
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/help");
-  await page.locator('a[data-quick-check-link][href*="issue=unexpected-operators"]').click();
-  await expect(page).toHaveURL(/\/help\/owned-operators\?issue=unexpected-operators/);
+  await expect(page).toHaveURL(/\/docs$/);
+  await page.locator('[data-docs-home] a[href="/docs/faq-box"]').click();
+  await expect(page).toHaveURL(/\/docs\/faq-box$/);
+  await page.goto("/help/owned-operators?issue=unexpected-operators");
+  await expect(page).toHaveURL(/\/docs\/faq-box$/);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/terms");
   await expect(page.locator("h1")).toBeVisible();

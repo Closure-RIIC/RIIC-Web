@@ -41,7 +41,7 @@ export default function ImportOperatorsHelpPage() {
   );
 }
 
-function guidePages(locale: AppLocale): ImportGuidePage[] { return [{id: "open-settings",
+export function guidePages(locale: AppLocale): ImportGuidePage[] { return [{id: "open-settings",
 title: localize_ImportGuide.text(locale, "part1"),
 summary: localize_ImportGuide.text(locale, "part2"),
 content: localize_ImportGuide.rich(locale, "part3", { element1: (chunks) => (<section className="grid gap-4" aria-label={localize_ImportGuide.text(locale, "detail1")}>{chunks}</section>), element2: (chunks) => (<p className="text-sm leading-6 text-muted-foreground">{chunks}</p>), value3: () => (<ScreenshotPlaceholder
