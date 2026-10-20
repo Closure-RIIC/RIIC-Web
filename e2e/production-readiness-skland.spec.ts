@@ -756,6 +756,7 @@ test.describe("gacha touch layout", () => {
     await page.goto("/gacha");
     const content = page.locator("[data-gacha-history]");
     await expect(content.locator("[data-gacha-summary]")).toBeVisible();
+    await expect(page.locator("[data-agent-floating-widget]")).toHaveCount(0);
     for (const width of [280, 320, 375, 390, 430]) {
       await page.setViewportSize({ width, height: 844 });
       const overflow = await page.evaluate(() => [...document.querySelectorAll<HTMLElement>("body, body *")].filter((node) => {

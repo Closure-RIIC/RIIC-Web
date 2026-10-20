@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 import type { ManualScheduleDraft } from "../src/manual-schedule";
 import layout243 from "../src/layouts/243.json" with { type: "json" };
@@ -88,6 +89,132 @@ test("manual recycling assignments preserve the second slot across reload and mo
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await mobile.getByRole('button', { name: '一键清空回收站' }).click();
   await expect(mobile.getByRole('button', { name: '空置', exact: true })).toHaveCount(2);
+});
+
+test("manual schedule poster loads, calculates and restores its metadata", async ({ page }) => {
+  test.setTimeout(90_000);
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  page.on("requestfailed", request => {
+    if (/\/(src|node_modules)\//.test(new URL(request.url()).pathname)) {
+      errors.push(`${request.url()}: ${request.failure()?.errorText}`);
+    }
+  });
+  page.on("response", response => {
+    if (response.status() >= 400 && /\/(src|node_modules)\//.test(new URL(response.url()).pathname)) {
+      errors.push(`${response.url()}: HTTP ${response.status()}`);
+    }
+  });
+  await page.addInitScript(() => {
+    if (localStorage.getItem("arknights-infra-manual-schedule-v1")) return;
+    localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify({
+      version: 2,
+      activeShift: 0,
+      fiammettaEnabled: false,
+      shifts: [{ durationHours: 24, rooms: { trade_1: { operators: ["阿米娅", null, null] } } }],
+    }));
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/manual");
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  const workbench = page.locator("[data-poster-workbench]");
+  const poster = workbench.locator("[data-schedule-poster]");
+  await expect(workbench).toBeVisible();
+  await expect(poster.locator('[data-poster-room="trade_1"]')).toBeVisible();
+  const dorm = poster.locator('[data-poster-room="dorm_1"]');
+  const hanger = dorm.locator('[data-poster-shift="0"] [data-poster-hanger-slot]');
+  await expect(dorm.locator('[data-poster-shift="0"] .poster-member')).toHaveCount(6);
+  await expect(poster.locator('[data-poster-room="trade_1"] [data-poster-shift="0"]')).toContainText("08:00—次日07:59");
+  const scheduledDormBefore = await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).shifts[0].rooms.dorm_1.operators);
+  await hanger.getByRole("button", { name: "空位", exact: true }).click();
+  const hangerPicker = page.getByRole("dialog");
+  await expect(hangerPicker).toContainText("不会加入宿舍排班或参与效率计算");
+  await hangerPicker.getByLabel("搜索可选干员或基建技能").fill("锡兰");
+  await hangerPicker.getByRole("button", { name: /锡兰/ }).click();
+  await expect(hanger).toContainText("锡兰");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).presentation.dormHangerOperators[0])).toBe("锡兰");
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).shifts[0].rooms.dorm_1.operators)).toEqual(scheduledDormBefore);
+  await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
+  await expect(page.locator('[data-manual-editor-board] [data-room-title="宿舍 1"] .infra-operator-slot')).toHaveCount(5);
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  const firstShiftStart = workbench.getByLabel("第一班开始时间", { exact: true });
+  await workbench.getByRole("button", { name: "清除第一班开始时间", exact: true }).click();
+  await expect(firstShiftStart).toHaveValue("");
+  expect(await poster.innerText()).not.toMatch(/\b\d{2}:\d{2}\b/);
+  await expect(poster).toContainText("24 h");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("arknights-infra-manual-evaluation-v1"))).not.toBeNull();
+  const tradeEfficiency = poster.locator('[data-poster-room="trade_1"] .poster-efficiency-pair');
+  await expect(tradeEfficiency).toContainText("纸面");
+  await expect(tradeEfficiency).toContainText("等效");
+  await expect(tradeEfficiency).toContainText("贸易");
+  await expect(tradeEfficiency).toContainText("赤金");
+  await workbench.getByRole("button", { name: "批量填写排班" }).click();
+  const bulk = page.getByLabel("批量排班文本");
+  const shiftCount = await poster.locator('[data-poster-room="trade_1"] [data-poster-shift]').count();
+  await bulk.fill(`贸易站1：巫恋、龙舌兰、柏喙 @自动 #龙门币${Array.from({ length: shiftCount - 1 }, () => " | -").join("")}`);
+  await page.getByRole("button", { name: "检查并应用" }).click();
+  await expect(tradeEfficiency).toContainText(/(?:[1-9]\d*|\d+\.\d+)%赤金/);
+  await expect(tradeEfficiency).toHaveAttribute("title", /巫恋 E2 \+ 龙舌兰 E2/);
+  await workbench.getByLabel("班次数", { exact: true }).click();
+  await page.getByRole("option", { name: "4 班", exact: true }).click();
+  await expect(poster).toHaveAttribute("data-shift-count", "4");
+  const productAlignment = await poster.locator('[data-poster-room="trade_1"] [data-poster-shift="0"]').evaluate(node => {
+    const heading = node.querySelector(".poster-production-heading")!.getBoundingClientRect();
+    const shift = node.querySelector(".poster-shift-label b")!.getBoundingClientRect();
+    const product = node.querySelector(".poster-shift-meta")!.getBoundingClientRect();
+    return { heading, shift, product };
+  });
+  expect(productAlignment.product.x).toBeGreaterThanOrEqual(productAlignment.shift.right - 1);
+  expect(productAlignment.product.x).toBeLessThan(productAlignment.heading.x + productAlignment.heading.width / 2);
+  const equivalentValueSizes = await poster.locator('[data-poster-room="trade_1"] .poster-equivalent-values').evaluateAll(nodes =>
+    nodes.map(node => ({ clientWidth: node.clientWidth, scrollWidth: node.scrollWidth })),
+  );
+  expect(equivalentValueSizes).toHaveLength(4);
+  expect(equivalentValueSizes.every(size => size.scrollWidth <= size.clientWidth + 1)).toBe(true);
+  const productionLayout = await poster.locator('[data-poster-room="trade_1"] [data-poster-shift="0"]').evaluate(node => {
+    const members = node.querySelector(".poster-members")!.getBoundingClientRect();
+    const efficiency = node.querySelector(".poster-efficiency-panel")!.getBoundingClientRect();
+    return { members, efficiency };
+  });
+  expect(productionLayout.efficiency.x).toBeGreaterThanOrEqual(productionLayout.members.right - 1);
+  expect(productionLayout.efficiency.y).toBeLessThan(productionLayout.members.bottom);
+  expect(productionLayout.efficiency.bottom).toBeGreaterThan(productionLayout.members.y);
+  await workbench.getByLabel("班次数", { exact: true }).click();
+  await page.getByRole("option", { name: "3 班", exact: true }).click();
+  await expect(poster).toHaveAttribute("data-shift-count", "3");
+  const dormLayout = await poster.locator('[data-poster-room="dorm_1"] [data-poster-shift]').evaluateAll(nodes =>
+    nodes.map(node => {
+      const members = node.querySelector(".poster-members")!.getBoundingClientRect();
+      const slots = [...node.querySelectorAll(".poster-member")].map(slot => {
+        const rect = slot.getBoundingClientRect();
+        return { left: rect.left, right: rect.right };
+      });
+      return { members: { left: members.left, right: members.right }, slots };
+    }),
+  );
+  expect(dormLayout).toHaveLength(3);
+  expect(dormLayout.every(row => row.slots.length === 6)).toBe(true);
+  expect(dormLayout.every(row => row.slots.every(slot => slot.left >= row.members.left - 1 && slot.right <= row.members.right + 1))).toBe(true);
+  for (let slot = 0; slot < 6; slot += 1) {
+    const positions = dormLayout.map(row => row.slots[slot]!.left);
+    expect(Math.max(...positions) - Math.min(...positions)).toBeLessThan(1);
+  }
+  const imageDownload = page.waitForEvent("download");
+  await workbench.getByRole("button", { name: "导出一页 PNG", exact: true }).click();
+  const downloadedImage = await imageDownload;
+  const image = await readFile((await downloadedImage.path())!);
+  expect(image.subarray(0, 8)).toEqual(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  expect(image.readUInt32BE(16)).toBe(1920);
+  expect(image.readUInt32BE(20)).toBe(1080);
+  await workbench.getByLabel("作业名称", { exact: true }).fill("243 作业图测试");
+  await expect(poster).toContainText("243 作业图测试");
+  await page.goto("/manual?tab=poster");
+  await expect(workbench).toBeVisible({ timeout: 20_000 });
+  await expect(workbench.getByLabel("作业名称", { exact: true })).toHaveValue("243 作业图测试");
+  await expect(poster).toContainText("243 作业图测试");
+  await expect(page.getByText("Something went wrong!", { exact: true })).toHaveCount(0);
+  await expect(workbench.getByRole("alert")).toHaveCount(0);
+  expect(errors).toEqual([]);
 });
 
 test("sidebar resumes an existing manual draft without invoking the solver and keeps editing scoped to manual", async ({ page }) => {

@@ -3,7 +3,7 @@ import { useTranslations, useLocale } from "use-intl";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 import { messageRecord } from "@/i18n/translate";
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
-import { CircleAlert, ChevronDown, GraduationCap } from "lucide-react";
+import { Calculator, CircleAlert, ChevronDown, GraduationCap, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { InfraTechnicalCard, InfraTechnicalHeading } from "@/components/InfraTechnicalCard";
@@ -19,9 +19,12 @@ import type {
   BaseBlueprint,
   OperBoxEntry,
   TrainingAdviceReport,
+  TrainingRecommendation,
   UserProfile,
   UserProfileAction,
 } from "@/types";
+import type { TrainingPlannerHandoff } from "@/training-planner-store";
+import { trainingPlannerTargetFromAdvice } from "@/training-planner-handoff";
 
 const TRAINING_BLACKLIST_KEY = "arknights-infra-training-blacklist-v1";
 const TrainingCombinationCard = lazy(() => import("@/components/training-advice/TrainingCombinationCard").then((module) => ({
@@ -50,6 +53,7 @@ export type TrainingAdviceProps = {
     refresh: () => void;
   };
   onOpenCalculator: () => void;
+  onOpenTrainingPlanner?: (targets: TrainingPlannerHandoff) => void;
 };
 
 function countRooms(layout: BaseBlueprint | null | undefined) {
@@ -73,6 +77,15 @@ function duplicateValues(values: string[]) {
     seen.add(normalized);
   }
   return [...duplicates];
+}
+
+function trainingPlannerTarget(recommendation: TrainingRecommendation): TrainingPlannerHandoff[number] | null {
+  const operator = operatorPresentationFor({ name: recommendation.operator }).operator;
+  return trainingPlannerTargetFromAdvice(operator, recommendation.target);
+}
+
+function trainingRecommendationKey(recommendation: TrainingRecommendation, target: TrainingPlannerHandoff[number]) {
+  return `${recommendation.combination_id ?? "standalone"}:${recommendation.operator}:${target.targetElite}:${target.targetLevel}`;
 }
 
 function contractIssues(layout: BaseBlueprint | null | undefined, operbox: OperBoxEntry[] | null | undefined, en = false) {
@@ -160,6 +173,7 @@ export function TrainingAdvice({
   requiresAccount = false,
   sync,
   onOpenCalculator,
+  onOpenTrainingPlanner,
 }: TrainingAdviceProps) {
   const intl = useTranslations();
   const locale = useLocale();
@@ -169,6 +183,7 @@ export function TrainingAdvice({
   const [rarityFilter, setRarityFilter] = useState("all");
   const [professionFilter, setProfessionFilter] = useState("all");
   const [blacklist, setBlacklist] = useState<string[]>([]);
+  const [selectedTrainingTargets, setSelectedTrainingTargets] = useState<Record<string, TrainingPlannerHandoff[number]>>({});
   useEffect(() => {
     try {
       const stored: unknown = JSON.parse(window.localStorage.getItem(TRAINING_BLACKLIST_KEY) ?? "[]");
@@ -209,6 +224,19 @@ export function TrainingAdvice({
       <p className="py-6 text-center text-sm text-white/76">{localize_components_pages_TrainingAdvice.text(en, onlyOwned && rarityFilter === "all" && professionFilter === "all" && blacklist.length === 0 ? "noOwnedRecommendations" : "noMatchingRecommendations")}</p>
     </InfraTechnicalCard>
   );
+  const selectedOperatorCount = new Set(Object.values(selectedTrainingTargets).map((target) => target.operatorId)).size;
+  function openTrainingPlanner() {
+    if (!onOpenTrainingPlanner) return;
+    const targets = new Map<string, TrainingPlannerHandoff[number]>();
+    for (const target of Object.values(selectedTrainingTargets)) {
+      const existing = targets.get(target.operatorId);
+      if (!existing || target.targetElite > existing.targetElite
+        || (target.targetElite === existing.targetElite && target.targetLevel > existing.targetLevel)) {
+        targets.set(target.operatorId, target);
+      }
+    }
+    onOpenTrainingPlanner([...targets.values()]);
+  }
 
   if (requiresAccount) {
     return (
@@ -386,17 +414,36 @@ export function TrainingAdvice({
             filter={ownedFilter}
           >
             {recommendations.length ? (
-              <div className="grid min-w-0 gap-3" data-training-advice-list>
-                {recommendations.map((recommendation, index) => (
-                  <TrainingAdviceActionCard
+              <>
+                {onOpenTrainingPlanner && selectedOperatorCount ? <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/12 pb-3" data-training-plan-selection>
+                  <p className="text-sm text-white/72">{intl("components_pages_TrainingAdvice.selectedTrainingTargets", { count: selectedOperatorCount })}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button type="button" onClick={openTrainingPlanner} className="bg-white text-[#272a2b] hover:bg-white/90"><Calculator className="size-4" aria-hidden="true" />{intl("components_pages_TrainingAdvice.openTrainingPlanner", { count: selectedOperatorCount })}</Button>
+                    <Button type="button" size="icon-sm" variant="ghost" onClick={() => setSelectedTrainingTargets({})} aria-label={intl("components_pages_TrainingAdvice.clearTrainingTargets")} title={intl("components_pages_TrainingAdvice.clearTrainingTargets")} className="border border-white/15 text-white/70 hover:bg-white/10 hover:text-white"><X className="size-4" aria-hidden="true" /></Button>
+                  </div>
+                </div> : null}
+                <div className="grid min-w-0 gap-3" data-training-advice-list>
+                {recommendations.map((recommendation, index) => {
+                  const target = trainingPlannerTarget(recommendation);
+                  const selectionKey = target ? trainingRecommendationKey(recommendation, target) : "";
+                  return <TrainingAdviceActionCard
                     key={`${recommendation.combination_id}-${recommendation.operator}`}
                     action={recommendation}
                     entry={ownedByName.get(recommendation.operator)}
                     index={index}
                     onToggleBlacklist={() => updateBlacklist([...blacklist, recommendation.operator])}
-                  />
-                ))}
-              </div>
+                    trainingTarget={target}
+                    trainingSelected={Boolean(selectionKey && selectedTrainingTargets[selectionKey])}
+                    onToggleTraining={onOpenTrainingPlanner && target ? () => setSelectedTrainingTargets((current) => {
+                      const next = { ...current };
+                      if (next[selectionKey]) delete next[selectionKey];
+                      else next[selectionKey] = target;
+                      return next;
+                    }) : undefined}
+                  />;
+                })}
+                </div>
+              </>
             ) : hasFilters ? ownedEmpty : (
               <InfraTechnicalCard group="training" className="min-h-[248px]" dataSlot="training-empty" showEmblem={false}>
                 <div className="grid min-h-[216px] place-content-center text-center">

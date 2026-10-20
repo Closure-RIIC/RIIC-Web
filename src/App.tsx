@@ -34,6 +34,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { trackTelemetry } from "@/lib/telemetry-dispatch";
 import { WorkbenchContext } from "@/workbench-context";
 import { workbenchHref, workbenchPageFromPathname, type AppPage } from "@/workbench-routes";
+import { setTrainingPlannerHandoff, type TrainingPlannerHandoff } from "@/training-planner-store";
 import { useWebsiteSession } from "@/website-session";
 import { usePlanTask } from "@/hooks/use-plan-task";
 import { useAgentHistory } from "@/hooks/use-agent-history";
@@ -320,11 +321,13 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [manualScheduleMode, setManualScheduleMode] = useState<ManualScheduleMode>("sequential");
   const [manualDraftHandoff, setManualDraftHandoff] = useState<ManualScheduleDraft | null>(null);
   const [manualDraftSnapshot, setManualDraftSnapshot] = useState<ManualScheduleDraft | null>(null);
-  const [manualAgentPageContext, setManualAgentPageContext] = useState<AgentPageContext | null>(null);
-  const [accountHealthAgentPageContext, setAccountHealthAgentPageContext] = useState<AgentPageContext | null>(null);
   const [manualProductChangeRequest, setManualProductChangeRequest] = useState<{ shiftIndex: number; roomId: string; product: RoomProduct; token: number } | null>(null);
   const manualProductChangeToken = useRef(0);
+  const [manualPosterBox, setManualPosterBox] = useState<OperBoxEntry[] | null>(null);
   const [manualPlanResult, setManualPlanResult] = useState<ManualPlanResult | null>(null);
+  const [manualAgentPageContext, setManualAgentPageContext] = useState<AgentPageContext | null>(null);
+  const [accountHealthAgentPageContext, setAccountHealthAgentPageContext] = useState<AgentPageContext | null>(null);
+  const [trainingPlannerAgentPageContext, setTrainingPlannerAgentPageContext] = useState<AgentPageContext | null>(null);
   const [manualEvaluationPending, setManualEvaluationPending] = useState(false);
   const [pendingManualDraftReplacement, setPendingManualDraftReplacement] = useState<ManualScheduleDraft | null>(null);
   const [inputMode, setInputMode] = useState<"skland" | "maa" | "manual">(CLIENT_SKLAND_ENABLED ? "skland" : "maa");
@@ -519,9 +522,19 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     return () => { cancelled = true; };
   }, [baseRows]);
   const rows = presentedRows?.source === baseRows ? presentedRows.rows : baseRows;
+  const automaticAgentPageContext = useMemo(() => buildAutomaticScheduleContext({ layout, result, scheduleResult, activeShift, rows }), [activeShift, layout, result, rows, scheduleResult]);
+  const publishAgentPageContext = useCallback((sourcePage: AgentPageContext["page"], context: AgentPageContext | null) => {
+    if (page !== sourcePage) return;
+    if (sourcePage === "manual") setManualAgentPageContext((current) => sameAgentPageContext(current, context) ? current : context);
+    if (sourcePage === "account-health") setAccountHealthAgentPageContext((current) => sameAgentPageContext(current, context) ? current : context);
+    if (sourcePage === "training-planner") setTrainingPlannerAgentPageContext((current) => sameAgentPageContext(current, context) ? current : context);
+  }, [page]);
+  const publishManualAgentPageContext = useCallback((context: AgentPageContext | null) => {
+    publishAgentPageContext("manual", context);
+  }, [publishAgentPageContext]);
   const effectiveFiammettaEnabled = effectiveFiammettaSetting(operbox, rotationProfile, fiammettaEnabled);
   const effectiveManualFiammettaEnabled = Boolean(
-    manualFiammettaEnabled && operbox?.some((operator) => operator.own && operator.name === "菲亚梅塔")
+    manualFiammettaEnabled && (manualPosterBox ?? operbox)?.some((operator) => operator.own && operator.name === "菲亚梅塔")
   );
   const setupConfigurationKey = useMemo(() => JSON.stringify({
     layout,
@@ -1362,12 +1375,13 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   async function evaluateManualScheduleFromPage(input: {
     draft: ManualScheduleDraft;
+    operbox?: OperBoxEntry[];
   }) {
     if (manualEvaluationPending) return;
     setManualEvaluationPending(true);
     try {
       const { assembleNativeManualPlanResult } = await import("./manual-plan-result");
-      const result = await assembleNativeManualPlanResult({ draft: input.draft, layout, operbox });
+      const result = await assembleNativeManualPlanResult({ draft: input.draft, layout, operbox: input.operbox ?? operbox });
       setManualPlanResult(result);
       try {
         persistManualEvaluationCache(window.localStorage, result);
@@ -1381,12 +1395,13 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   async function evaluatePaperManualScheduleFromPage(input: {
     draft: ManualScheduleDraft;
+    operbox?: OperBoxEntry[];
   }) {
     if (manualEvaluationPending) return;
     setManualEvaluationPending(true);
     try {
       const { assemblePaperManualPlanResult } = await import("./manual-plan-result");
-      const result = await assemblePaperManualPlanResult({ draft: input.draft, layout, operbox });
+      const result = await assemblePaperManualPlanResult({ draft: input.draft, layout, operbox: input.operbox ?? operbox });
       setManualPlanResult(result);
       try {
         persistManualEvaluationCache(window.localStorage, result);
@@ -1927,7 +1942,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   function handleManualSetup() {
     setSetupMode("manual");
-    if (!accountCanUseCurrentBox) {
+    if (!manualPosterBox && !accountCanUseCurrentBox) {
       requestWebsiteAccount("setup");
       return;
     }
@@ -2176,23 +2191,18 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     };
   }, [activeShift, page, result?.maa]);
   const animateEmptyScheduleEntrance = page === "calculator" && hasRenderedCalculator.current;
-  const automaticAgentPageContext = useMemo(() => buildAutomaticScheduleContext({ layout, result, scheduleResult, activeShift, rows }), [activeShift, layout, result, rows, scheduleResult]);
-  const publishAgentPageContext = useCallback((sourcePage: AgentPageContext["page"], context: AgentPageContext | null) => {
-    if (page !== sourcePage) return;
-    if (sourcePage === "manual") setManualAgentPageContext((current) => sameAgentPageContext(current, context) ? current : context);
-    if (sourcePage === "account-health") setAccountHealthAgentPageContext((current) => sameAgentPageContext(current, context) ? current : context);
-  }, [page]);
-  const publishManualAgentPageContext = useCallback((context: AgentPageContext | null) => {
-    publishAgentPageContext("manual", context);
-  }, [publishAgentPageContext]);
   const healthOperators = useMemo(() => boxSource === "skland"
     ? sklandStatusSnapshot && sklandStatusSnapshot.player.uid === activeSklandAccount?.selectedUid
       ? { items: sklandStatusSnapshot.operators, source: "skland" as const } : undefined
     : accountCanUseCurrentBox && operbox ? { items: operbox, source: boxSource } : undefined,
   [accountCanUseCurrentBox, activeSklandAccount?.selectedUid, boxSource, operbox, sklandStatusSnapshot]);
+  const inventoryIdentityKey = JSON.stringify([websiteUserId, sklandActiveAccountId, activeSklandAccount?.selectedUid ?? null]);
+  const trainingOperators = activeSklandAccount && sklandStatusSnapshot?.player.uid === activeSklandAccount.selectedUid
+    ? sklandStatusSnapshot.operators
+    : [];
   const workbenchContext = {
     inventory: {
-      identityKey: JSON.stringify([websiteUserId, sklandActiveAccountId, activeSklandAccount?.selectedUid ?? null]),
+      identityKey: inventoryIdentityKey,
       pending: websiteSessionPending || !hasRestoredSession,
     },
     healthOperators,
@@ -2299,8 +2309,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     },
     manual: {
       layout,
-      operbox: accountCanUseCurrentBox ? operbox : null,
-      sourceName: accountCanUseCurrentBox ? fileName : null,
+      operbox: manualPosterBox ?? (accountCanUseCurrentBox ? operbox : null),
+      sourceName: manualPosterBox ? "作业练度（非个人干员池）" : accountCanUseCurrentBox ? fileName : null,
+      onPosterWorkingBoxChange: setManualPosterBox,
       shiftDurations: manualShiftDurations,
       shiftStartTime: manualShiftStartTime,
       scheduleMode: manualScheduleMode,
@@ -2343,6 +2354,14 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       sync: sklandTrainingSync ?? undefined,
       requiresAccount: !accountCanUseCurrentBox,
       onOpenCalculator: () => navigateToPage("calculator"),
+      onOpenTrainingPlanner: (targets: TrainingPlannerHandoff) => {
+        if (setTrainingPlannerHandoff(targets)) navigateToPage("training-planner");
+      },
+    },
+    trainingPlanner: {
+      operbox: accountCanUseCurrentBox ? operbox : null,
+      operators: trainingOperators,
+      identityKey: inventoryIdentityKey,
     },
     recruitment: {
       operbox: accountCanUseCurrentBox && boxSource !== "sample" ? operbox : null,
@@ -2387,7 +2406,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         onCloudDataChanged: accountCloudWorkspace.refreshCloudData,
       } : {}),
     },
-    agent: { onPageContextChange: publishAgentPageContext },
     settings: {
       value: userSettings,
       onChange: handleUserSettingsChange,
@@ -2425,6 +2443,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         },
       },
     } : null,
+    agent: { onPageContextChange: publishAgentPageContext },
   };
 
   return (
@@ -2521,8 +2540,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       </WorkbenchContext.Provider>
       </div>
 
-      {page !== "agent" && page !== "account" ? <Suspense fallback={null}><AgentFloatingWidget
-        pageContext={page === "calculator" ? automaticAgentPageContext : page === "manual" ? manualAgentPageContext : page === "account-health" ? accountHealthAgentPageContext : null}
+      {page !== "agent" && page !== "account" && page !== "gacha" ? <Suspense fallback={null}><AgentFloatingWidget
+        pageContext={page === "calculator" ? automaticAgentPageContext : page === "manual" ? manualAgentPageContext : page === "account-health" ? accountHealthAgentPageContext : page === "training-planner" ? trainingPlannerAgentPageContext : null}
       /></Suspense> : null}
 
       {page !== "agent" ? <footer className="app-content-track workbench-footer mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/70 py-5 text-xs text-muted-foreground">
@@ -2589,9 +2608,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         open={setupOpen}
         mode={setupMode}
         onOpenChange={handleSetupOpenChange}
-        operbox={operbox}
-        boxSource={boxSource}
-        fileName={fileName}
+        operbox={setupMode === "manual" && manualPosterBox ? manualPosterBox : operbox}
+        boxSource={setupMode === "manual" && manualPosterBox ? "sample" : boxSource}
+        fileName={setupMode === "manual" && manualPosterBox ? "作业练度（非个人干员池）" : fileName}
         inputMode={inputMode}
         onInputModeChange={setInputMode}
         maaPaste={maaPaste}
@@ -2600,7 +2619,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         resultClearWarningDismissed={resultClearWarningDismissed}
         onMaaFile={handleFile}
         onMaaPaste={handleMaaPaste}
-        onManualBox={handleManualBox}
+        workingCopy={setupMode === "manual" && Boolean(manualPosterBox)}
+        onManualBox={setupMode === "manual" && manualPosterBox ? setManualPosterBox : handleManualBox}
         onRequireWebsiteAccount={requireWebsiteAccountFromSetup}
         presets={PRESETS}
         preset={preset}

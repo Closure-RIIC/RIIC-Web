@@ -101,6 +101,7 @@ function clearLocalPersona() {
 const TOOL_LABELS: Record<string, string> = {
   resolve_operator: "干员身份核实",
   calculate_mastery: "专精方案计算",
+  calculate_training: "干员养成资源计算",
   calculate_recruitment: "公招组合计算",
   analyze_stock_and_training: "库存与培养分析",
   analyze_daily_production: "日产出分析",
@@ -222,6 +223,33 @@ export function ToolResultSummary({ name, output, openLabel = "在基建计算�
         </details>;
       })}
       <p className="text-muted-foreground">{String(record.assumptions)}</p>
+    </div>;
+  }
+  if (name === "calculate_training" && record.operator && record.lmd && record.experience) {
+    const operator = asRecord(record.operator);
+    const current = asRecord(record.current);
+    const target = asRecord(record.target);
+    const lmd = asRecord(record.lmd);
+    const experience = asRecord(record.experience);
+    const shortages = Array.isArray(record.materialShortages) ? record.materialShortages : [];
+    const crafts = Array.isArray(record.crafts) ? record.crafts : [];
+    return <div className="grid gap-2 text-xs">
+      <p>{String(operator?.name)} · {String(record.source)}{record.owned === false ? " · 当前未持有" : ""}</p>
+      <p>当前精{String(current?.elite)} {String(current?.level)}级 → 目标精{String(target?.elite)} {String(target?.level)}级</p>
+      <p>龙门币 {Number(lmd?.required ?? 0).toLocaleString("zh-CN")} · 库存可用 {Number(lmd?.stockWithGoldBars ?? 0).toLocaleString("zh-CN")} · 缺口 {Number(lmd?.missing ?? 0).toLocaleString("zh-CN")}</p>
+      <p>经验 {Number(experience?.required ?? 0).toLocaleString("zh-CN")} · 库存 {Number(experience?.stock ?? 0).toLocaleString("zh-CN")} · 缺口 {Number(experience?.missing ?? 0).toLocaleString("zh-CN")}（约 {String(experience?.missingBookEquivalent)} 本特级记录）</p>
+      {record.hasInventoryShortage === true ? <p>材料缺口：{shortages.slice(0, 8).map((value) => {
+        const item = asRecord(value);
+        return `${String(item?.name)} ×${String(item?.missing)}`;
+      }).join("、")}{shortages.length > 8 ? ` 等 ${shortages.length} 项` : ""}</p> : <p>库存足够覆盖本次目标。</p>}
+      {crafts.length ? <details className="rounded border p-2">
+        <summary className="cursor-pointer">加工建议（{crafts.length} 项）</summary>
+        <ul className="mt-2 grid gap-1">{crafts.map((value, index) => {
+          const craft = asRecord(value);
+          return <li key={index}>{String(craft?.name)} ×{String(craft?.count)} · 加工费 {Number(craft?.lmd ?? 0).toLocaleString("zh-CN")}</li>;
+        })}</ul>
+      </details> : null}
+      {Array.isArray(record.warnings) ? record.warnings.map((warning, index) => <p key={index} className="text-amber-600 dark:text-amber-300">{String(warning)}</p>) : null}
     </div>;
   }
   if (name === "calculate_recruitment" && Array.isArray(record.results)) {
@@ -677,7 +705,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
             </> : <>
               <div className="grid gap-1">
                 <p className="text-xs font-medium text-muted-foreground">{en ? "Live conversation" : "实时对话"}</p>
-                <h2 className="text-xl font-medium tracking-tight">{en ? "What would you like to know?" : "想了解什么？"}</h2>
+                <h2 className="text-xl font-medium tracking-tight">{activePersona?.kind === "builtin" ? activePersona.welcome[en ? "en" : "zh"] : (en ? "What would you like to know?" : "想了解什么？")}</h2>
               </div>
               <p className="max-w-lg text-sm leading-6 text-muted-foreground">{en ? "Ask directly about your account, operators or base plan." : "直接输入问题，我会根据当前可用信息回答。"}</p>
             </>}

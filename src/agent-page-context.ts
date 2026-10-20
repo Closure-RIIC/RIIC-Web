@@ -4,12 +4,13 @@ import { manualScheduleToMaa, type ManualScheduleDraft } from "./manual-schedule
 import type { BaseBlueprint, PublicPlanData } from "./types.ts";
 import type { AccountHealthInput } from "./account-health-input.ts";
 import type { HealthAdviceReport } from "./account-health-advice.ts";
+import type { TrainingGoal, TrainingPlannerData, TrainingPlannerResult } from "./training-planner.ts";
 
 export const AGENT_PAGE_CONTEXT_LIMIT = 24_000;
 
 export interface AgentPageContext {
   version: 1;
-  page: "calculator" | "manual" | "account-health";
+  page: "calculator" | "manual" | "account-health" | "training-planner";
   title: string;
   summary: string;
 }
@@ -198,10 +199,81 @@ export function buildAccountHealthContext(input: {
   ]);
 }
 
+export function buildTrainingPlannerContext(input: {
+  goals: readonly TrainingGoal[];
+  operators: readonly { id: string; name: string; rarity: number }[];
+  data: TrainingPlannerData;
+  result: TrainingPlannerResult;
+  inventory: Readonly<Record<string, number>>;
+  dailyLmd: number;
+  dailyExperience: number;
+  inventoryStatus: string;
+}): AgentPageContext {
+  const operatorById = new Map(input.operators.map((operator) => [operator.id, operator]));
+  const goals = input.goals.slice(0, 100).flatMap((goal) => {
+    const operator = operatorById.get(goal.operatorId);
+    if (!operator) return [];
+    const skillCosts = input.data.operators[goal.operatorId]?.skills ?? [];
+    const skills = skillCosts.flatMap((skill, index) => {
+      const current = goal.currentMasteries[skill.id] ?? 0;
+      const target = goal.targetMasteries[skill.id] ?? current;
+      return skill.masteries.length ? [`技能${index + 1}专精 ${current}→${target}`] : [];
+    });
+    const modules = (input.data.operators[goal.operatorId]?.modules ?? []).flatMap((module) => {
+      const current = goal.currentModules[module.id] ?? 0;
+      const target = goal.targetModules[module.id] ?? current;
+      return [`${text(module.name, 60)} ${current}→${target}`];
+    });
+    return [
+      `- ${text(operator.name, 60)}（${operator.rarity}★）：精英${goal.currentElite} Lv.${goal.currentLevel} → 精英${goal.targetElite} Lv.${goal.targetLevel}；技能等级 ${goal.currentSkillLevel}→${goal.targetSkillLevel}${skills.length ? `；${skills.join("，")}` : ""}${modules.length ? `；模组 ${modules.join("，")}` : ""}`,
+    ];
+  });
+  const requirementLines = Object.entries(input.result.requirements)
+    .filter(([, count]) => count > 0)
+    .sort(([left], [right]) => (input.data.items[right]?.rarity ?? 0) - (input.data.items[left]?.rarity ?? 0) || left.localeCompare(right))
+    .slice(0, 100)
+    .map(([id, count]) => `- ${text(input.data.items[id]?.name ?? id, 60)}：目标直接需求 ${count}，库存 ${Math.max(0, Math.floor(input.inventory[id] ?? 0))}`);
+  const shortageLines = input.result.shortages.slice(0, 100).map((item) =>
+    `- ${text(item.name, 60)}：缺 ${item.missing}（需求 ${item.need}，库存 ${item.stock}）${item.drops.length ? `；掉落 ${item.drops.slice(0, 5).map((drop) => text(drop, 60)).join("、")}` : ""}`,
+  );
+  const craftLines = input.result.crafts.slice(0, 100).map((craft) => {
+    const inputs = craft.inputs.map((item) => `${text(input.data.items[item.id]?.name ?? item.id, 50)}×${item.count}`).join("、");
+    return `- 加工 ${text(craft.name, 60)}×${craft.count}；${craft.facility === "WORKSHOP" ? "加工站" : "制造站"} Lv.${craft.level}；龙门币 ${craft.lmd}${inputs ? `；消耗 ${inputs}` : ""}`;
+  });
+  const resourceIds = ["4001", "3003", "2001", "2002", "2003", "2004"];
+  const resourceStock = resourceIds.map((id) => `${text(input.data.items[id]?.name ?? id, 40)} ${Math.max(0, Math.floor(input.inventory[id] ?? 0))}`).join("；");
+  const positiveMaterials = Object.entries(input.inventory)
+    .filter(([id, count]) => count > 0 && input.data.items[id] && !resourceIds.includes(id))
+    .sort(([left], [right]) => (input.data.items[right]?.rarity ?? 0) - (input.data.items[left]?.rarity ?? 0) || left.localeCompare(right))
+    .slice(0, 100)
+    .map(([id, count]) => `${text(input.data.items[id]?.name ?? id, 50)}×${Math.floor(count)}`);
+  const lmdDays = input.result.lmdMissing && input.dailyLmd > 0 ? Math.ceil(input.result.lmdMissing / input.dailyLmd) : null;
+  const experienceDays = input.result.experienceMissing && input.dailyExperience > 0 ? Math.ceil(input.result.experienceMissing / input.dailyExperience) : null;
+
+  return createContext("training-planner", "养成规划", [
+    `页面：养成规划；准备目标 ${input.goals.length} 名；材料库存状态：${text(input.inventoryStatus, 80)}。`,
+    "干员当前练度与目标：",
+    ...(goals.length ? goals : ["暂无已载入的养成目标。"]),
+    ...(input.goals.length > goals.length ? [`其余 ${input.goals.length - goals.length} 名目标未展开。`] : []),
+    `钱书汇总：龙门币需求 ${input.result.lmd}；现有龙门币 ${input.result.lmdStock}；赤金折算后 ${input.result.lmdStockWithGoldBars}；缺口 ${input.result.lmdMissing}。经验需求 ${input.result.experience}；现有经验 ${input.result.experienceStock}；缺口 ${input.result.experienceMissing}（约 ${input.result.experienceBooksEquivalent} 本中级经验书）。`,
+    `钱书库存：${resourceStock}。`,
+    `按日产出估算：龙门币 ${input.dailyLmd > 0 ? `${input.dailyLmd}/日${lmdDays === null ? "" : `，约 ${lmdDays} 天`}` : "未设置日产量"}；经验 ${input.dailyExperience > 0 ? `${input.dailyExperience}/日${experienceDays === null ? "" : `，约 ${experienceDays} 天`}` : "未设置日产量"}。`,
+    "目标直接材料需求（含当前库存）：",
+    ...(requirementLines.length ? requirementLines : ["无直接材料需求。"]),
+    "材料缺口（已扣除库存并尝试逐级加工）：",
+    ...(shortageLines.length ? shortageLines : ["没有未覆盖的材料缺口。"]),
+    "加工方案：",
+    ...(craftLines.length ? craftLines : ["无需加工材料。"]),
+    positiveMaterials.length ? `其他非零材料库存：${positiveMaterials.join("；")}` : "其他非零材料库存：无。",
+    ...(input.result.crafts.length > craftLines.length ? [`其余 ${input.result.crafts.length - craftLines.length} 条加工记录未展开。`] : []),
+    ...(input.result.shortages.length > shortageLines.length ? [`其余 ${input.result.shortages.length - shortageLines.length} 项材料缺口未展开。`] : []),
+  ]);
+}
+
 export function normalizeAgentPageContext(value: unknown): AgentPageContext | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const candidate = value as Record<string, unknown>;
-  if (candidate.version !== 1 || (candidate.page !== "calculator" && candidate.page !== "manual" && candidate.page !== "account-health")
+  if (candidate.version !== 1 || (candidate.page !== "calculator" && candidate.page !== "manual" && candidate.page !== "account-health" && candidate.page !== "training-planner")
     || typeof candidate.title !== "string" || typeof candidate.summary !== "string"
     || candidate.title.length > 80 || candidate.summary.length > AGENT_PAGE_CONTEXT_LIMIT) return null;
   return {

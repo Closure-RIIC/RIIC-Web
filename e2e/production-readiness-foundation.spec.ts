@@ -750,9 +750,11 @@ test("seven-day bindings stay visible and require renewed authorization", async 
   await mockApis(page, { sklandConfigured: true, sklandBindingCount: 1, sklandRenewalDueCount: 1 });
   await seedPreferences(page);
   await page.goto("/");
+  await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
   const sklandNavigation = page.getByRole("button", { name: "森空岛状态中心", exact: true });
   await expect(sklandNavigation.locator(".lucide-cloud")).toBeVisible();
   await sklandNavigation.click();
+  await expect(page.locator("[data-skland-page]")).toBeVisible();
   await expect(page.getByText("ACCOUNT TERMINAL", { exact: true })).toHaveCount(0);
   await expect(page.getByText("统一管理网站账号、登录设备和森空岛授权。森空岛凭据固定七天失效，到期后需要重新扫码。", { exact: true })).toHaveCount(0);
   await expect(page.locator("[data-skland-binding-summary]")).toHaveCount(0);
@@ -797,6 +799,7 @@ test("account settings revokes every session and returns to the app", async ({ p
   await mockApis(page);
   await seedPreferences(page);
   await page.goto("/");
+  await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
   await page.getByRole("button", { name: "账号管理", exact: true }).click();
 
   const accountManagement = page.locator("[data-account-management]");
@@ -1907,3 +1910,53 @@ for (const scenario of [
     }
   });
 }
+
+test("an elite-only training recommendation can be selected and imported into the planner", async ({ page }) => {
+  const adviceResult = {
+    ...planData,
+    trainingAdvice: {
+      schema_version: 2,
+      context: {},
+      newbie_section_status: "complete",
+      incomplete_newbie: [],
+      recommendations: [{
+        operator: "清流",
+        action: "train",
+        target: { kind: "explicit", elite: 1 },
+        priority: "newbie_four_star_elite_one",
+        priority_rank: 1,
+        reason: "newbie_required",
+        product: "trade",
+      }],
+      combinations: [],
+    },
+  };
+
+  await page.route("**/api/account/data-consent", (route) => route.fulfill({ json: {
+    success: true,
+    data: { current: false, cloudSyncEnabled: false, acceptedAt: null, revokedAt: null, termsVersion: "test", privacyVersion: "test" },
+    requestId,
+  } }));
+  await mockApis(page);
+  await seedV4Session(page, adviceResult);
+  await page.goto("/");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  await page.getByRole("button", { name: "练卡建议", exact: true }).click();
+  await expect(page).toHaveURL(/\/training$/);
+  await expect(page.getByRole("heading", { name: "练卡建议", exact: true })).toBeVisible();
+
+  const addToPlan = page.getByRole("checkbox", { name: "加入养成清单 · 精1 1级" });
+  await expect(addToPlan).toBeVisible();
+  await addToPlan.check();
+  await expect(page.locator("[data-training-plan-selection]")).toContainText("已勾选 1 名干员");
+  await page.getByRole("button", { name: "带入养成计算 · 1" }).click();
+
+  await expect(page).toHaveURL(/\/training-plan$/);
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem("arknights-infra-training-planner-v1:handoff"))).toBeNull();
+  await expect.poll(() => page.evaluate(() => Object.entries(localStorage)
+    .some(([key, value]) => key.includes(":goals:") && value.includes("char_385_finlpp")))).toBe(true);
+  const goal = page.locator('[data-training-goal="char_385_finlpp"]');
+  await expect(goal).toBeVisible();
+  await expect(goal.getByRole("combobox").nth(2)).toHaveValue("1");
+  await expect(goal.getByRole("combobox").nth(3)).toHaveValue("1");
+});

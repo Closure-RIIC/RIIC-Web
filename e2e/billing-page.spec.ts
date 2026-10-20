@@ -68,7 +68,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     await page.setViewportSize(viewport);
     await page.goto("/account-health");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
-    if (viewport.width < 768) await page.getByRole("main").getByRole("button", { name: "Toggle Sidebar" }).click();
+    if (viewport.width < 768) await page.locator("[data-app-topbar]").getByRole("button", { name: "Toggle Sidebar" }).click();
     const accountItem = page.getByRole("button", { name: "账号管理", exact: true }).locator("..");
     await expect(accountItem.locator("xpath=following-sibling::li[1]")).toContainText("付费计划");
     const navigation = page.getByRole("button", { name: "付费计划", exact: true });
@@ -81,7 +81,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     await page.keyboard.press("Escape");
     await expect(loginDialog).toHaveCount(0);
     await expect(page).toHaveURL(/\/account-health$/);
-    if (viewport.width < 768) await page.getByRole("main").getByRole("button", { name: "Toggle Sidebar" }).click();
+    if (viewport.width < 768) await page.locator("[data-app-topbar]").getByRole("button", { name: "Toggle Sidebar" }).click();
     await navigation.click();
     await loginDialog.getByRole("textbox", { name: "邮箱", exact: true }).fill(user.email);
     await loginDialog.getByLabel("密码", { exact: true }).fill("secure-password-1");
@@ -100,7 +100,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     await page.goBack();
     await expect(page.locator("[data-account-health-page]")).toBeVisible();
-    if (viewport.width < 768) await page.getByRole("main").getByRole("button", { name: "Toggle Sidebar" }).click();
+    if (viewport.width < 768) await page.locator("[data-app-topbar]").getByRole("button", { name: "Toggle Sidebar" }).click();
     await navigation.click();
     await expect(page).toHaveURL(/\/billing$/);
     await expect(page.getByRole("dialog")).toHaveCount(0);

@@ -141,6 +141,7 @@ export function AppSidebar({ page, onPageChange, showMower = false }: AppSidebar
           <SidebarGroupLabel>{labels.progressionGroup}</SidebarGroupLabel>
           <SidebarMenu>
             <AppNavigationItem page={page} target="account-health" label={locale === "en" ? "Account Health" : "账号体检"} icon={ClipboardCheck} onPageChange={onPageChange} />
+            <AppNavigationItem page={page} target="training-planner" label={labels.trainingPlanner} icon={Calculator} onPageChange={onPageChange} />
             <AppNavigationItem page={page} target="mastery" label={labels.mastery} icon={BookOpen} onPageChange={onPageChange} />
             <AppNavigationItem page={page} target="recruitment" label={labels.recruitment} icon={UserRoundPlus} onPageChange={onPageChange} />
             {CLIENT_SKLAND_ENABLED ? <AppNavigationItem page={page} target="gacha" label={locale === "en" ? "Headhunting history" : "寻访记录"} icon={History} onPageChange={onPageChange} /> : null}

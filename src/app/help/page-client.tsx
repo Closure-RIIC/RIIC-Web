@@ -1,32 +1,9 @@
 "use client";
 import { useTranslations, useLocale } from "use-intl";
-import { messageRecord } from "@/i18n/translate";
 
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-
-const quickChecks = [
-  {
-    zh: messageRecord("zh", "app_help_page_content").value as [string, string],
-    en: messageRecord("en", "app_help_page_content").value as [string, string],
-    href: "/help/owned-operators?issue=unexpected-operators",
-  },
-  {
-    zh: messageRecord("zh", "app_help_page_content2").value as [string, string],
-    en: messageRecord("en", "app_help_page_content2").value as [string, string],
-    href: "/help/owned-operators?issue=saved-box",
-  },
-  {
-    zh: messageRecord("zh", "app_help_page_content3").value as [string, string],
-    en: messageRecord("en", "app_help_page_content3").value as [string, string],
-    href: "/help/owned-operators?issue=box-not-applied",
-  },
-  {
-    zh: messageRecord("zh", "app_help_page_content4").value as [string, string],
-    en: messageRecord("en", "app_help_page_content4").value as [string, string],
-    href: "/help/owned-operators?issue=busy",
-  },
-];
+import { KnowledgeHelpSection } from "@/components/help/KnowledgeHelpSection";
 
 export default function HelpHomePage() {
   const intl = useTranslations();
@@ -64,32 +41,7 @@ export default function HelpHomePage() {
         <ArrowRight className="size-5 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden="true" />
       </Link>
 
-      <section aria-labelledby="quick-check-title">
-        <div className="mb-2 flex min-w-0 items-center gap-2.5">
-          <span className="h-5 w-1 shrink-0 bg-[#22BBFF]" aria-hidden="true" />
-          <h2 id="quick-check-title" className="text-sm font-medium text-[#313131]">{intl("app_help_page.30SecondCheck")}</h2>
-        </div>
-        <ol className="divide-y divide-border border-y border-border">
-          {quickChecks.map((item, index) => {
-            const [title, description] = en ? item.en : item.zh;
-            return <li key={item.href}>
-              <Link
-                to={item.href}
-                data-quick-check-link
-                className="group grid min-h-24 grid-cols-[2.5rem_minmax(0,1fr)_auto] items-center gap-3 px-2 py-4 outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:px-3"
-                aria-labelledby={`quick-check-${index}`}
-              >
-                <span className="font-number text-sm text-[#313131]/38">{String(index + 1).padStart(2, "0")}</span>
-                <span className="min-w-0">
-                  <strong id={`quick-check-${index}`} className="block text-sm font-semibold">{title}</strong>
-                  <span className="mt-1 block text-sm leading-6 text-muted-foreground">{description}</span>
-                </span>
-                <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-1 motion-reduce:transform-none" aria-hidden="true" />
-              </Link>
-            </li>;
-          })}
-        </ol>
-      </section>
+      <KnowledgeHelpSection />
 
       <section className="border-t border-border pt-5" aria-labelledby="more-help-title">
         <h2 id="more-help-title" className="text-sm font-semibold">{intl("app_help_page.stillNotWorking")}</h2>

@@ -36,12 +36,18 @@ export function TrainingAdviceActionCard({
   index,
   blacklisted = false,
   onToggleBlacklist,
+  trainingTarget,
+  trainingSelected = false,
+  onToggleTraining,
 }: {
   action: ActionCardItem;
   entry?: OperBoxEntry;
   index: number;
   blacklisted?: boolean;
   onToggleBlacklist?: () => void;
+  trainingTarget?: { targetElite: number; targetLevel: number } | null;
+  trainingSelected?: boolean;
+  onToggleTraining?: () => void;
 }) {
   const intl = useTranslations();
   const reduceMotion = useReducedMotion();
@@ -122,7 +128,11 @@ export function TrainingAdviceActionCard({
                 </ul>
               ) : null}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+              {trainingTarget && onToggleTraining ? <label className="flex min-h-9 max-w-full cursor-pointer items-center gap-2 text-xs text-white/72">
+                <input type="checkbox" className="size-4 shrink-0 accent-[var(--room-accent)]" checked={trainingSelected} onChange={onToggleTraining} aria-label={intl("components_training_advice_TrainingAdviceActionCard.selectForTrainingPlan", { elite: trainingTarget.targetElite, level: trainingTarget.targetLevel })} />
+                <span className="max-w-[15rem] text-right leading-4">{intl("components_training_advice_TrainingAdviceActionCard.selectForTrainingPlan", { elite: trainingTarget.targetElite, level: trainingTarget.targetLevel })}</span>
+              </label> : null}
               <div className="flex flex-col items-center gap-2">
                 <span className="font-number border border-[var(--room-accent)] bg-[var(--room-accent)] px-2.5 py-1 text-xs font-semibold text-[#202223]">
                   {trainingPriorityLabel("priority" in action ? action.priority : undefined, en)}

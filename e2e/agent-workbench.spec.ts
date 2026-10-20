@@ -110,7 +110,6 @@ test("Floating assistant sends credit-required accounts to billing plans", async
   await expect(panel.getByRole("status")).toContainText("准备积分后即可开始对话。");
   await expect(panel.getByRole("link", { name: "查看积分" })).toHaveAttribute("href", "/billing");
 });
-
 test("Floating assistant contains module load failures and recovers after refresh", async ({ page }) => {
   await mockWorkbench(page);
   await page.route("**/api/agent/chat", route => route.fulfill({ json: ready }));
