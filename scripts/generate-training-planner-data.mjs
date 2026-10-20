@@ -13,15 +13,15 @@ const inputPaths = {
   buildingData: valueFor("--building-data", ".tmp/training-planner/building_data.json"),
   itemTable: valueFor("--item-table", ".tmp/training-planner/item_table.json"),
 };
-const outputPath = valueFor("--output", "src/generated/training-planner-data.json");
+const outputPath = valueFor("--output", "apps/arknights/src/generated/training-planner-data.json");
 const read = async (file) => JSON.parse(await readFile(file, "utf8"));
 const [characters, uniequips, building, itemsTable, operatorCatalog, itemCatalog] = await Promise.all([
   read(inputPaths.characterTable),
   read(inputPaths.uniequipTable),
   read(inputPaths.buildingData),
   read(inputPaths.itemTable),
-  read("src/generated/arkntools/operator-catalog.json"),
-  read("src/generated/item-catalog.json"),
+  read("apps/arknights/src/generated/arkntools/operator-catalog.json"),
+  read("apps/arknights/src/generated/item-catalog.json"),
 ]);
 
 const costs = (entries) => (entries ?? []).map(({ id, count }) => ({ id: String(id), count }));

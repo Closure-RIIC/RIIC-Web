@@ -1,12 +1,12 @@
-import { normalizePersistedPlanData } from "../src/persistence.ts";
-import { PublicApiError } from "../src/server/api-contract.ts";
-import { diagnosticText } from "../src/server/diagnostic-text.ts";
-import { makeDiagnostic, persistDiagnostic } from "../src/server/request-diagnostics.ts";
+import { normalizePersistedPlanData } from "../apps/arknights/src/persistence.ts";
+import { PublicApiError } from "../apps/arknights/src/server/api-contract.ts";
+import { diagnosticText } from "../apps/arknights/src/server/diagnostic-text.ts";
+import { makeDiagnostic, persistDiagnostic } from "../apps/arknights/src/server/request-diagnostics.ts";
 import {
   recordPlanRunBestEffort,
   updatePlanRunExecutionBestEffort,
-} from "../src/server/business-records.ts";
-import { getDatabase } from "../src/server/db/index.ts";
+} from "../apps/arknights/src/server/business-records.ts";
+import { getDatabase } from "../apps/arknights/src/server/db/index.ts";
 import {
   assertPlanArtifactStorageReady,
   describePlanArtifact,
@@ -18,7 +18,7 @@ import {
   stopInfraServeClients,
   waitForPlanArtifactFinalizers,
   warmPlanServeLane,
-} from "../src/server/infra.ts";
+} from "../apps/arknights/src/server/infra.ts";
 import {
   completePlanCache,
   evictPlanCacheKeys,
@@ -26,8 +26,8 @@ import {
   releasePlanCacheLease,
   resolvePlanCache,
   type PlanCacheResolution,
-} from "../src/server/plan-cache.ts";
-import { publicPlanSha256, resolveSavedPlanCalculationContext } from "../src/server/plan-result-binding.ts";
+} from "../apps/arknights/src/server/plan-cache.ts";
+import { publicPlanSha256, resolveSavedPlanCalculationContext } from "../apps/arknights/src/server/plan-result-binding.ts";
 import {
   claimNextPlanTask,
   cleanupExpiredPlanTasks,
@@ -39,8 +39,8 @@ import {
   recoverStaleRunningTasks,
   PLAN_TASK_WORKER_CONCURRENCY,
   type ClaimedPlanTask,
-} from "../src/server/plan-task.ts";
-import { toPublicPlanData } from "../src/server/public-plan.ts";
+} from "../apps/arknights/src/server/plan-task.ts";
+import { toPublicPlanData } from "../apps/arknights/src/server/public-plan.ts";
 
 const HEARTBEAT_INTERVAL_MS = 5_000;
 const CLEANUP_INTERVAL_MS = 60_000;

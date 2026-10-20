@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, expectButtonGeometryStable, armEndingTransitionCapture, expectCapturedExitDuration, armMotionCapture, expectCapturedMotion, armTransientStyleCapture, expectCapturedStyleMotion, waitForContentReady, waitForOwnAnimations, planData, twoShiftPlanData, scheduleVisualPlanData, productChangePlanData, motionPlanData, authenticatedSklandSnapshot, mockApis, sidebarNavigation, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
-import type { PublicPlanData } from "../src/types";
+import type { PublicPlanData } from "../apps/arknights/src/types";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/auth/get-session", (route) => route.fulfill({

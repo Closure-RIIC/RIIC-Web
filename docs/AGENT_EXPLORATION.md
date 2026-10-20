@@ -57,12 +57,12 @@
 
 | 文件 | 职责 |
 |---|---|
-| `src/server/agent/config.ts` | AGENT_* 环境变量（provider 预设 deepseek/glm、base URL、model、key、知识库路径） |
-| `src/server/agent/llm.ts` | `@ai-sdk/openai-compatible` provider 工厂，两家厂商同一通道 |
-| `src/server/agent/persona.ts` | 外部人格卡加载 + 同源知识规则 + 宿主工具编排 |
-| `src/server/agent/knowledge.ts` | 知识库访问器：标题清单索引检索、正文读取（路径白名单防越界，16K 分页续读） |
-| `src/server/agent/tools.ts` | 工具注册、干员池来源解析、结果投影、审计日志 |
-| `src/server/agent/calculator-tools.ts` | 专精训练、公招词条工具参数与共享计算核心适配 |
+| `apps/arknights/src/server/agent/config.ts` | AGENT_* 环境变量（provider 预设 deepseek/glm、base URL、model、key、知识库路径） |
+| `apps/arknights/src/server/agent/llm.ts` | `@ai-sdk/openai-compatible` provider 工厂，两家厂商同一通道 |
+| `apps/arknights/src/server/agent/persona.ts` | 外部人格卡加载 + 同源知识规则 + 宿主工具编排 |
+| `apps/arknights/src/server/agent/knowledge.ts` | 知识库访问器：标题清单索引检索、正文读取（路径白名单防越界，16K 分页续读） |
+| `apps/arknights/src/server/agent/tools.ts` | 工具注册、干员池来源解析、结果投影、审计日志 |
+| `apps/arknights/src/server/agent/calculator-tools.ts` | 专精训练、公招词条工具参数与共享计算核心适配 |
 
 ## 工具清单
 
@@ -77,7 +77,7 @@
 | `preview_solve_defaults` | 账号、排班历史与场景默认配置 | 排班前预览实际采用的配置 |
 | `diagnose_account` | `readSklandAccountStore` + `loadStatusSnapshot` + `listSavedPlans` | 森空岛绑定/玩家信息/干员池练度统计/当前基建/最近排班 |
 | `solve_schedule` | `buildBlueprint`/`updateFactoryRecipe` + `runPlan`/`getSampleOperbox` + `toPublicPlanData` | 真实求解：布局预设、box 来源、换班节奏、制造站配方（搓玉配 originium）；返回排班、日产出、练卡建议 |
-| `query_skills` | `src/generated/arkntools/building-skill-catalog.json` | 干员名/id、技能名/关键词/标签查询，复用网页技能原文及解锁练度 |
+| `query_skills` | `apps/arknights/src/generated/arkntools/building-skill-catalog.json` | 干员名/id、技能名/关键词/标签查询，复用网页技能原文及解锁练度 |
 | `kb_route` | `RIIC-knowledge/index/标题清单.md` | 关键词→候选文档路径（2-gram 匹配扩大召回） |
 | `kb_read` | `RIIC-knowledge/docs/**` | 读正文，仅限知识库目录内 .md |
 
@@ -130,7 +130,7 @@ AGENT_KB_DIR=E:/arknights-infra-project/RIIC-knowledge
 核心思路：agent 的排班结果不另起炉灶，而是**注入现有工作台**，班次切换、手动排班导入、效率视图等全部现有功能即刻可用。
 
 - `solve_schedule` 求解后把「精简投影 + 完整工作台会话（完整求解结果、布局、box、换班参数）」落库 `app.agent_plan_artifact`（7 天 TTL，仅本人可读，v2 结构）。
-- 交接通道（`src/agent-artifact-bridge.ts`）：
+- 交接通道（`apps/arknights/src/agent-artifact-bridge.ts`）：
   - **跨页面**：聊天卡片"在工作台中打开"→ sessionStorage 交接 + 跳转 `/` → 工作台启动时自动注入；
   - **同浏览器已开标签**：聊天页在求解完成时经 `BroadcastChannel("riic-agent")` 广播 → 工作台顶部横幅提示，一键注入。
 - 注入实现（`App.tsx` 的 `applyAgentArtifact`）：拉取 `GET /api/agent/plan/<id>`（登录鉴权）后复用会话恢复路径（同 `loadPersistedSession`）设置 preset/layout/operbox/boxSource/rotation/fiammetta/result/activeShift 全部状态，并自动切到计算器页；注入结果经既有持久化机制写入 localStorage，刷新不丢。

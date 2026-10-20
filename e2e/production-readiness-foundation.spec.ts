@@ -1,5 +1,5 @@
 import { expect, test, type Route } from "@playwright/test";
-import { TERMS_VERSION, PRIVACY_VERSION } from "../src/legal-policy";
+import { TERMS_VERSION, PRIVACY_VERSION } from "../packages/platform/legal-policy";
 import { amiyaPortrait, requestId, diagnosticId, layout243, waitForOwnAnimations, planData, twoShiftPlanData, fourShiftPlanData, adjacentPortraitPlanData, lazyPortraitPlanData, authenticatedSklandSnapshot, mockApis, sidebarNavigation, mockAnonymousWebsiteSession, openSklandOverview, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
 
 test.beforeEach(async ({ page }) => {

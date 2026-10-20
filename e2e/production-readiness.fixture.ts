@@ -1,5 +1,5 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import operatorCatalog from "../src/generated/arkntools/operator-catalog.json" with { type: "json" };
+import operatorCatalog from "../apps/arknights/src/generated/arkntools/operator-catalog.json" with { type: "json" };
 
 const amiyaPortraitCandidate = operatorCatalog.find((operator) => operator.id === "char_002_amiya")?.portrait;
 

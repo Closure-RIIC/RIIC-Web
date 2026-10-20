@@ -20,12 +20,12 @@ async function assertPng(relativePath, expectedSize) {
 
 test("site icon PNG files have the dimensions required by the website and Apple devices", async () => {
   await assertPng("assets/branding/closure-site-icon.png", 1024);
-  await assertPng("src/app/icon.png", 512);
-  await assertPng("src/app/apple-icon.png", 180);
+  await assertPng("apps/arknights/src/app/icon.png", 512);
+  await assertPng("apps/arknights/src/app/apple-icon.png", 180);
 });
 
 test("favicon.ico contains transparent PNG entries for common browser sizes", async () => {
-  const favicon = await readFile(new URL("public/favicon.ico", repoRoot));
+  const favicon = await readFile(new URL("apps/arknights/public/favicon.ico", repoRoot));
   const expectedSizes = [16, 32, 48, 64, 128, 256];
 
   assert.equal(favicon.readUInt16LE(0), 0);

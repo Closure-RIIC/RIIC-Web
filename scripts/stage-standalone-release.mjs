@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { cp, copyFile, lstat, mkdir, writeFile } from "node:fs/promises";
+import { cp, copyFile, lstat, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, URL } from "node:url";
@@ -31,16 +31,16 @@ try {
 }
 
 const requiredBuildFiles = [
-  ".output/BUILD_ID",
-  ".output/server/index.mjs",
-  ".output/public",
-  ".output/public/assets",
-  ".output/scripts/backfill-business-data.mjs",
-  ".output/scripts/migrate-db.mjs",
-  ".output/scripts/check-auth-readiness.mjs",
-  ".output/drizzle",
-  ".output/fixtures/operbox_full_e2.json",
-  ".output/scripts/load-env.mjs",
+  "apps/arknights/.output/BUILD_ID",
+  "apps/arknights/.output/server/index.mjs",
+  "apps/arknights/.output/public",
+  "apps/arknights/.output/public/assets",
+  "apps/arknights/.output/scripts/backfill-business-data.mjs",
+  "apps/arknights/.output/scripts/migrate-db.mjs",
+  "apps/arknights/.output/scripts/check-auth-readiness.mjs",
+  "apps/arknights/.output/drizzle",
+  "apps/arknights/.output/fixtures/operbox_full_e2.json",
+  "apps/arknights/.output/scripts/load-env.mjs",
   "dist/plan-worker.cjs",
   "dist/quality-worker.cjs",
   "dist/agent-worker.cjs",
@@ -59,7 +59,7 @@ const forbiddenBuildEntries = [
 ];
 for (const [relativePath, displayName] of forbiddenBuildEntries) {
   try {
-    await lstat(path.join(repoRoot, ".output", relativePath));
+    await lstat(path.join(repoRoot, "apps/arknights/.output", relativePath));
     assert.fail(`standalone website output must not contain ${displayName}`);
   } catch (error) {
     if (error?.code !== "ENOENT") throw error;
@@ -68,19 +68,23 @@ for (const [relativePath, displayName] of forbiddenBuildEntries) {
 
 await mkdir(path.join(outputRoot, "scripts"), { recursive: true });
 await mkdir(path.join(outputRoot, ".output"), { recursive: true });
-await copyFile(path.join(repoRoot, "package.json"), path.join(outputRoot, "package.json"));
+const appManifest = JSON.parse(await readFile(path.join(repoRoot, "apps/arknights/package.json"), "utf8"));
+await writeFile(path.join(outputRoot, "package.json"), `${JSON.stringify({
+  name: "@riic/arknights-release", version: appManifest.version, private: true, type: "module",
+  scripts: { start: "node scripts/start-standalone.mjs" }, engines: { node: ">=22.12.0" },
+}, null, 2)}\n`);
 await copyFile(
   path.join(repoRoot, "scripts", "start-standalone.mjs"),
   path.join(outputRoot, "scripts", "start-standalone.mjs"),
 );
 
-await cp(path.join(repoRoot, ".output"), path.join(outputRoot, ".output"), {
+await cp(path.join(repoRoot, "apps/arknights/.output"), path.join(outputRoot, ".output"), {
   dereference: true,
   recursive: true,
   force: true,
 });
-await copyFile(path.join(repoRoot, ".output/scripts/load-env.mjs"), path.join(outputRoot, "scripts/load-env.mjs"));
-await cp(path.join(repoRoot, ".output/fixtures"), path.join(outputRoot, "fixtures"), { recursive: true });
+await copyFile(path.join(repoRoot, "apps/arknights/.output/scripts/load-env.mjs"), path.join(outputRoot, "scripts/load-env.mjs"));
+await cp(path.join(repoRoot, "apps/arknights/.output/fixtures"), path.join(outputRoot, "fixtures"), { recursive: true });
 await mkdir(path.join(outputRoot, "worker"), { recursive: true });
 await copyFile(
   path.join(repoRoot, "dist", "plan-worker.cjs"),

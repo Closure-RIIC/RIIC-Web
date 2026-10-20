@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
-import { PRIVACY_VERSION, TERMS_VERSION } from "../src/legal-policy";
-import { SESSION_KEY_V5 } from "../src/persistence";
-import { cloudSyncPreferenceKey } from "../src/cloud-sync";
+import { PRIVACY_VERSION, TERMS_VERSION } from "../packages/platform/legal-policy";
+import { SESSION_KEY_V5 } from "../apps/arknights/src/persistence";
+import { cloudSyncPreferenceKey } from "../apps/arknights/src/cloud-sync";
 import { mockApis, planData, requestId, seedV4Session } from "./production-readiness.fixture";
 
 test.beforeEach(async ({ page }) => {

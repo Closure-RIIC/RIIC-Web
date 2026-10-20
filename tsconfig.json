@@ -1,53 +1,29 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": [
-      "DOM",
-      "DOM.Iterable",
-      "ES2022"
-    ],
-    "allowJs": false,
-    "allowImportingTsExtensions": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true,
-    "esModuleInterop": true,
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "jsx": "react-jsx",
-    "incremental": true,
     "paths": {
       "workbench-inventory-route": [
-        "./src/components/pages/InventoryPage.tsx"
+        "./apps/arknights/src/components/pages/InventoryPage.tsx"
       ],
       "@/*": [
-        "./src/*"
+        "./apps/arknights/src/*"
       ],
       "account-cloud-workspace-bridge": [
-        "./src/components/cloud/useAccountCloudWorkspace.tsx"
+        "./apps/arknights/src/components/cloud/useAccountCloudWorkspace.tsx"
       ],
       "workbench-skland-route": [
-        "./src/components/workbench/SklandRoute.tsx"
+        "./apps/arknights/src/components/workbench/SklandRoute.tsx"
       ]
     },
-    "types": [
-      "vite/client",
-      "node"
-    ]
+    "tsBuildInfoFile": "./node_modules/.cache/tooling.tsbuildinfo"
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "messages/**/*.ts",
-    "vite.config.ts",
     "playwright*.config.ts",
     "drizzle.config.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    ".output"
+    "**/dist",
+    "**/.output"
   ]
 }

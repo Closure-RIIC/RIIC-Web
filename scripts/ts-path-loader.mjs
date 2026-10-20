@@ -4,7 +4,7 @@
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import { cwd } from "node:process";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL, URL } from "node:url";
 
 async function isFile(target) {
   try {
@@ -17,7 +17,7 @@ async function isFile(target) {
 export async function resolve(specifier, context, nextResolve) {
   let target;
   if (specifier.startsWith("@/")) {
-    target = path.join(cwd(), "src", specifier.slice(2));
+    target = path.join(fileURLToPath(new URL("../apps/arknights/src/", import.meta.url)), specifier.slice(2));
   } else if (specifier === "." || specifier === ".." || specifier.startsWith("./") || specifier.startsWith("../")) {
     const parent = context.parentURL ? fileURLToPath(context.parentURL) : cwd();
     target = path.resolve(path.dirname(parent), specifier);

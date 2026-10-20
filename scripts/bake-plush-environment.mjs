@@ -27,7 +27,7 @@ try {
   await page.addScriptTag({ content: bundle.outputFiles[0].text });
   const result = await page.evaluate(() => globalThis.bakedEnvironment);
   const compressed = gzipSync(Buffer.from(result.data, "base64"), { level: 9 });
-  await mkdir("public/textures", { recursive: true });
-  await writeFile("public/textures/plush-room-environment.bin.gz", compressed);
+  await mkdir("apps/arknights/public/textures", { recursive: true });
+  await writeFile("apps/arknights/public/textures/plush-room-environment.bin.gz", compressed);
   process.stdout.write(`${JSON.stringify({ width: result.width, height: result.height, compressedBytes: compressed.length })}\n`);
 } finally { await browser.close(); }

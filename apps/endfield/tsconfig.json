@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": { "@endfield/*": ["./src/*"], "@shared/*": ["../../packages/*"] },
+    "tsBuildInfoFile": "./node_modules/.cache/endfield.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "../../packages/**/*.ts", "../../packages/**/*.tsx"],
+  "exclude": ["node_modules", "dist", ".output", "../../packages/**/*.test.ts"]
+}

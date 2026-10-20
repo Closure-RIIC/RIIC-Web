@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { mockApis, requestId } from "./production-readiness.fixture";
 
-const fixture = (name: string) => path.resolve("src/report-recognition/fixtures", name);
+const fixture = (name: string) => path.resolve("apps/arknights/src/report-recognition/fixtures", name);
 
 test("screenshot recognition, correction and three-day average stay on account health", async ({ page }) => {
   await mockApis(page);

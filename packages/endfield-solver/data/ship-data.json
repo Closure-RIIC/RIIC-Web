@@ -1,0 +1,5441 @@
+{
+  "meta": {
+    "gameVersion": "1.6（数据更新 2026/10/15）",
+    "generatedAt": "2026-10-17T07:25:27.540Z",
+    "scope": "帝江号舱室设施 + 干员及帝江号技能",
+    "notes": [
+      "所有文本经 I18nTextTable_CN.json 解析",
+      "int64 文本 id 以字符串处理，避免 JS 数值精度丢失",
+      "干员技能参数已按 effectType 解码为 rate/target"
+    ],
+    "tables": [
+      [
+        "SpaceshipRoomTypeTable",
+        "舱室类型",
+        5
+      ],
+      [
+        "SpaceshipRoomLvTable",
+        "舱室升级消耗/解锁条件",
+        15
+      ],
+      [
+        "SpaceshipControlCenterLvTable",
+        "总控中枢各等级",
+        5
+      ],
+      [
+        "SpaceshipManufacturingStationLvTable",
+        "制造舱各等级",
+        3
+      ],
+      [
+        "SpaceshipGrowCabinLvTable",
+        "培养舱各等级",
+        3
+      ],
+      [
+        "SpaceshipGuestRoomClueLvTable",
+        "会客室(线索)各等级",
+        3
+      ],
+      [
+        "SpaceshipGuestRoomLvTable",
+        "会客室(接待)各等级",
+        1
+      ],
+      [
+        "SpaceshipRoomAttrTypeTable",
+        "舱室属性类型",
+        18
+      ],
+      [
+        "SpaceshipSkillTable",
+        "干员帝江号技能",
+        128
+      ],
+      [
+        "SpaceshipCharSkillTable",
+        "干员→技能槽映射",
+        32
+      ],
+      [
+        "CharacterTable",
+        "干员主表",
+        35
+      ],
+      [
+        "SpaceshipManufactureFormulaTable",
+        "制造配方",
+        8
+      ],
+      [
+        "SpaceshipGrowCabinFormulaTable",
+        "培养配方",
+        18
+      ],
+      [
+        "CharProfessionTable / CharTypeTable",
+        "职业/属性字典",
+        "6 / 5"
+      ]
+    ]
+  },
+  "enums": {
+    "roomType": {
+      "0": {
+        "key": "ControlCenter",
+        "name": "总控中枢"
+      },
+      "1": {
+        "key": "ManufacturingStation",
+        "name": "制造舱"
+      },
+      "2": {
+        "key": "GrowCabin",
+        "name": "培养舱"
+      },
+      "3": {
+        "key": "GuestRoom",
+        "name": "会客室(接待/展示)"
+      },
+      "5": {
+        "key": "GuestRoomClueExtension",
+        "name": "会客室(线索)"
+      }
+    },
+    "effectType": {
+      "0": {
+        "key": "MoodRecoveryAll",
+        "cn": "全员心情恢复提升"
+      },
+      "1": {
+        "key": "RoomMoodConsumeDown",
+        "cn": "舱室内干员心情消耗降低"
+      },
+      "3": {
+        "key": "GrowSpeedUp",
+        "cn": "培养舱 · 指定质料培养速度提升"
+      },
+      "4": {
+        "key": "ClueEfficiencyUp",
+        "cn": "会客室 · 线索收集效率提升"
+      },
+      "6": {
+        "key": "ClueProbabilityUp",
+        "cn": "会客室 · 指定线索出现概率提升"
+      },
+      "7": {
+        "key": "ManufactureEfficiencyUp",
+        "cn": "制造舱 · 指定经验素材生产效率提升"
+      }
+    },
+    "effectParam": {
+      "MoodRecoveryAll": "[rate] 0.08 = +8%",
+      "RoomMoodConsumeDown": "[rate] 0.14 = -14%",
+      "GrowSpeedUp": "[rate, materialType] materialType: 1=菌类 2=晶植 3=矿物",
+      "ClueEfficiencyUp": "[rate]",
+      "ClueProbabilityUp": "[clueIndex(1-7), tier] tier: 1=小幅提升 2=提升",
+      "ManufactureEfficiencyUp": "[rate, expType] expType: 1=干员经验 2=武器经验"
+    },
+    "materialType": {
+      "1": "菌类质料",
+      "2": "晶植质料",
+      "3": "矿物质料"
+    },
+    "expType": {
+      "1": "干员经验素材",
+      "2": "武器经验素材"
+    },
+    "roomAttrType": {
+      "0": {
+        "name": "全员心情恢复/小时",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_ps_recovery_rate"
+      },
+      "1": {
+        "name": "心情消耗/小时",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_ps_cost_rate"
+      },
+      "2": {
+        "name": "生产效能",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      },
+      "3": {
+        "name": "菌类培养效能",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_grow_cabin_char_material_produce_rate"
+      },
+      "4": {
+        "name": "晶植培养效能",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_grow_cabin_skill_material_produce_rate"
+      },
+      "5": {
+        "name": "矿物培养效能",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_grow_cabin_weapon_material_produce_rate"
+      },
+      "7": {
+        "name": "信赖提升",
+        "isPercent": false,
+        "desc": "进驻的干员可持续增加信赖，管理员不在帝江号时，信赖关系会继续累积并在下次返回时获取。",
+        "icon": "icon_spaceship_room_effect_trust"
+      },
+      "8": {
+        "name": "01",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      },
+      "9": {
+        "name": "02",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      },
+      "10": {
+        "name": "03",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      },
+      "11": {
+        "name": "04",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      },
+      "12": {
+        "name": "05",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      },
+      "13": {
+        "name": "06",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      },
+      "14": {
+        "name": "07",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      },
+      "16": {
+        "name": "干员培养素材效能",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      },
+      "17": {
+        "name": "武器培养素材效能",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      },
+      "24": {
+        "name": "干员线索收集效能",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      },
+      "25": {
+        "name": "线索收集概率提升",
+        "isPercent": true,
+        "desc": "",
+        "icon": "ss_room_attr_icon_room_produce_rate"
+      }
+    },
+    "weaponType": {
+      "1": "单手剑",
+      "2": "施术单元",
+      "3": "双手剑",
+      "4": "手铳",
+      "5": "长柄武器",
+      "6": "手铳"
+    },
+    "profession": {
+      "0": "近卫",
+      "2": "重装",
+      "4": "辅助",
+      "5": "术师",
+      "7": "先锋",
+      "8": "突击"
+    },
+    "charType": {
+      "Cryst": "寒冷",
+      "Fire": "灼热",
+      "Pulse": "电磁",
+      "Natural": "自然",
+      "Physical": "物理"
+    },
+    "clue": {
+      "1": {
+        "name": "联盟工团的线索",
+        "roomAttrType": 8
+      },
+      "2": {
+        "name": "环塔商会的线索",
+        "roomAttrType": 9
+      },
+      "3": {
+        "name": "宏山科学院的线索",
+        "roomAttrType": 10
+      },
+      "4": {
+        "name": "铁誓军的线索",
+        "roomAttrType": 11
+      },
+      "5": {
+        "name": "寂语修会的线索",
+        "roomAttrType": 12
+      },
+      "6": {
+        "name": "众生长地的线索",
+        "roomAttrType": 13
+      },
+      "7": {
+        "name": "塞什卡的线索",
+        "roomAttrType": 14
+      }
+    }
+  },
+  "facilities": [
+    {
+      "roomType": 0,
+      "roomTypeKey": "ControlCenter",
+      "name": "总控中枢",
+      "nameRaw": "总控中枢",
+      "desc": "帝江号的总控中枢，提升总控中枢等级可以解锁更多建设内容。",
+      "helpDesc": "获得好友助力后，总控中枢将提供心情激励点数。使用点数可恢复干员心情。每日未使用的点数将被清空。",
+      "extraDesc": "",
+      "icon": "icon_sapceship_room_icon_control_console",
+      "bg": "icon_sapceship_room_bg_control_center",
+      "color": "1e92ff",
+      "sortId": 10,
+      "allowBuildType": 0,
+      "previewProducts": [],
+      "opts": {
+        "upgrade": "升级",
+        "maxLv": "中枢详情",
+        "view": "查看",
+        "newFormulaTitle": ""
+      },
+      "levelSource": "SpaceshipControlCenterLvTable",
+      "levels": [
+        {
+          "level": 1,
+          "id": "control_center_level_1",
+          "summary": {
+            "stationCount": 1,
+            "manufacturingStationMaxCount": 2,
+            "growCabinMaxCount": 0,
+            "commandCenterMaxCount": 0,
+            "unlockRoomType": 1,
+            "unlockArea": "construction_area_1",
+            "unlockAreaText": "多功能区段1",
+            "roomDisplayLevelText": ""
+          },
+          "raw": {
+            "commandCenterMaxCount": 0,
+            "growCabinMaxCount": 0,
+            "id": "control_center_level_1",
+            "level": 1,
+            "manufacturingStationMaxCount": 2,
+            "roomDisplayLevel": {
+              "id": 0,
+              "text": ""
+            },
+            "roomType": 0,
+            "stationMaxCount": 1,
+            "unlockArea": "construction_area_1",
+            "unlockAreaText": {
+              "id": "-2244839709451475451",
+              "text": ""
+            },
+            "unlockRoomType": 1
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢1级可建造此舱室",
+            "conditionType": 2147483647,
+            "conditionId": "",
+            "conditionParam": 1,
+            "upgradeDialogId": "dlg_control_center_level_2",
+            "costItems": []
+          },
+          "helperRoomType": 0
+        },
+        {
+          "level": 2,
+          "id": "control_center_level_2",
+          "summary": {
+            "stationCount": 2,
+            "manufacturingStationMaxCount": 2,
+            "growCabinMaxCount": 1,
+            "commandCenterMaxCount": 0,
+            "unlockRoomType": 2,
+            "unlockArea": "",
+            "unlockAreaText": "",
+            "roomDisplayLevelText": "制造舱可升至2级"
+          },
+          "raw": {
+            "commandCenterMaxCount": 0,
+            "growCabinMaxCount": 1,
+            "id": "control_center_level_2",
+            "level": 2,
+            "manufacturingStationMaxCount": 2,
+            "roomDisplayLevel": {
+              "id": "-4765828608586637151",
+              "text": ""
+            },
+            "roomType": 0,
+            "stationMaxCount": 2,
+            "unlockArea": "",
+            "unlockAreaText": {
+              "id": 0,
+              "text": ""
+            },
+            "unlockRoomType": 2
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢达1级可升级",
+            "conditionType": 5022,
+            "conditionId": "control_center_level_2",
+            "conditionParam": 1,
+            "upgradeDialogId": "dlg_control_center_level_2",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 8,
+                "rarity": 3
+              },
+              {
+                "id": "item_spaceship_key_1",
+                "name": "扩容演算芯片",
+                "count": 1,
+                "rarity": 5
+              },
+              {
+                "id": "item_gold",
+                "name": "折金票",
+                "count": 1000,
+                "rarity": 4
+              }
+            ]
+          },
+          "helperRoomType": 0
+        },
+        {
+          "level": 3,
+          "id": "control_center_level_3",
+          "summary": {
+            "stationCount": 3,
+            "manufacturingStationMaxCount": 2,
+            "growCabinMaxCount": 1,
+            "commandCenterMaxCount": 0,
+            "unlockRoomType": 999999,
+            "unlockArea": "construction_area_2",
+            "unlockAreaText": "多功能区段2",
+            "roomDisplayLevelText": "培养舱可升至2级"
+          },
+          "raw": {
+            "commandCenterMaxCount": 0,
+            "growCabinMaxCount": 1,
+            "id": "control_center_level_3",
+            "level": 3,
+            "manufacturingStationMaxCount": 2,
+            "roomDisplayLevel": {
+              "id": "-5863552035031371316",
+              "text": ""
+            },
+            "roomType": 0,
+            "stationMaxCount": 3,
+            "unlockArea": "construction_area_2",
+            "unlockAreaText": {
+              "id": "8367668863668871219",
+              "text": ""
+            },
+            "unlockRoomType": 999999
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢达2级可升级",
+            "conditionType": 5022,
+            "conditionId": "control_center_level_3",
+            "conditionParam": 2,
+            "upgradeDialogId": "dlg_control_center_level_3",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 16,
+                "rarity": 3
+              },
+              {
+                "id": "item_spaceship_key_1",
+                "name": "扩容演算芯片",
+                "count": 1,
+                "rarity": 5
+              },
+              {
+                "id": "item_gold",
+                "name": "折金票",
+                "count": 3000,
+                "rarity": 4
+              }
+            ]
+          },
+          "helperRoomType": 0
+        },
+        {
+          "level": 4,
+          "id": "control_center_level_4",
+          "summary": {
+            "stationCount": 3,
+            "manufacturingStationMaxCount": 2,
+            "growCabinMaxCount": 1,
+            "commandCenterMaxCount": 0,
+            "unlockRoomType": 999999,
+            "unlockArea": "",
+            "unlockAreaText": "",
+            "roomDisplayLevelText": "制造舱可升至3级，会客室可升至2级"
+          },
+          "raw": {
+            "commandCenterMaxCount": 0,
+            "growCabinMaxCount": 1,
+            "id": "control_center_level_4",
+            "level": 4,
+            "manufacturingStationMaxCount": 2,
+            "roomDisplayLevel": {
+              "id": "3770418930842086507",
+              "text": ""
+            },
+            "roomType": 0,
+            "stationMaxCount": 3,
+            "unlockArea": "",
+            "unlockAreaText": {
+              "id": 0,
+              "text": ""
+            },
+            "unlockRoomType": 999999
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢达3级可升级",
+            "conditionType": 5022,
+            "conditionId": "control_center_level_4",
+            "conditionParam": 3,
+            "upgradeDialogId": "dlg_control_center_level_4",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 24,
+                "rarity": 3
+              },
+              {
+                "id": "item_spaceship_cmpt_2",
+                "name": "高级航天建材",
+                "count": 12,
+                "rarity": 4
+              },
+              {
+                "id": "item_spaceship_key_1",
+                "name": "扩容演算芯片",
+                "count": 1,
+                "rarity": 5
+              },
+              {
+                "id": "item_gold",
+                "name": "折金票",
+                "count": 10000,
+                "rarity": 4
+              }
+            ]
+          },
+          "helperRoomType": 0
+        },
+        {
+          "level": 5,
+          "id": "control_center_level_5",
+          "summary": {
+            "stationCount": 3,
+            "manufacturingStationMaxCount": 2,
+            "growCabinMaxCount": 1,
+            "commandCenterMaxCount": 0,
+            "unlockRoomType": 999999,
+            "unlockArea": "",
+            "unlockAreaText": "",
+            "roomDisplayLevelText": "培养舱可升至3级，会客室可升至3级"
+          },
+          "raw": {
+            "commandCenterMaxCount": 0,
+            "growCabinMaxCount": 1,
+            "id": "control_center_level_5",
+            "level": 5,
+            "manufacturingStationMaxCount": 2,
+            "roomDisplayLevel": {
+              "id": "1604604630714922806",
+              "text": ""
+            },
+            "roomType": 0,
+            "stationMaxCount": 3,
+            "unlockArea": "",
+            "unlockAreaText": {
+              "id": 0,
+              "text": ""
+            },
+            "unlockRoomType": 999999
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢达4级可升级",
+            "conditionType": 5022,
+            "conditionId": "control_center_level_5",
+            "conditionParam": 4,
+            "upgradeDialogId": "dlg_control_center_level_5",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 32,
+                "rarity": 3
+              },
+              {
+                "id": "item_spaceship_cmpt_2",
+                "name": "高级航天建材",
+                "count": 64,
+                "rarity": 4
+              },
+              {
+                "id": "item_spaceship_key_1",
+                "name": "扩容演算芯片",
+                "count": 1,
+                "rarity": 5
+              },
+              {
+                "id": "item_gold",
+                "name": "折金票",
+                "count": 20000,
+                "rarity": 4
+              }
+            ]
+          },
+          "helperRoomType": 0
+        }
+      ]
+    },
+    {
+      "roomType": 1,
+      "roomTypeKey": "ManufacturingStation",
+      "name": "制造舱",
+      "nameRaw": "制造舱",
+      "desc": "制造舱可以生产干员养成和武器培养所需的强化素材。",
+      "helpDesc": "获得好友助力后，制造舱将提供生产激励点数。使用点数可加速当前舱室的生产任务。每日未使用的点数将被清空。",
+      "extraDesc": "生产载荷影响制造舱的最大生产数量。在设定生产数量时，会占用一定的生产载荷（不能超过最高生产载荷）。升级制造舱可以提升生产载荷的上限。",
+      "icon": "icon_sapceship_room_icon_manufacturing_station",
+      "bg": "icon_sapceship_room_bg_manufacturing_station",
+      "color": "fadf19",
+      "sortId": 7,
+      "allowBuildType": 999998,
+      "previewProducts": [
+        {
+          "id": "item_expcard_stage1_low",
+          "name": "初级作战记录",
+          "rarity": 1
+        },
+        {
+          "id": "item_expcard_stage1_mid",
+          "name": "中级作战记录",
+          "rarity": 2
+        },
+        {
+          "id": "item_expcard_stage1_high",
+          "name": "高级作战记录",
+          "rarity": 3
+        },
+        {
+          "id": "item_expcard_stage2_low",
+          "name": "初级认知载体",
+          "rarity": 4
+        },
+        {
+          "id": "item_weapon_expcard_low",
+          "name": "武器检查单元",
+          "rarity": 2
+        },
+        {
+          "id": "item_weapon_expcard_mid",
+          "name": "武器检查装置",
+          "rarity": 3
+        },
+        {
+          "id": "item_weapon_expcard_high",
+          "name": "武器检查套组",
+          "rarity": 4
+        }
+      ],
+      "opts": {
+        "upgrade": "升级舱室",
+        "maxLv": "舱室详情",
+        "view": "查看制造",
+        "newFormulaTitle": "制造方案"
+      },
+      "levelSource": "SpaceshipManufacturingStationLvTable",
+      "levels": [
+        {
+          "level": 1,
+          "id": "manufacturing_station_level_1",
+          "summary": {
+            "stationCount": 1,
+            "machineCapacity": 120,
+            "unlockRecipes": [
+              {
+                "id": "mfg_exp_1_1",
+                "level": 1,
+                "product": "初级作战记录",
+                "productItemId": "item_expcard_stage1_low",
+                "rarity": 1,
+                "totalProgress": 92000,
+                "perCapacity": 1,
+                "roomAttrType": 16
+              },
+              {
+                "id": "mfg_weapon_exp_1",
+                "level": 1,
+                "product": "武器检查单元",
+                "productItemId": "item_weapon_expcard_low",
+                "rarity": 2,
+                "totalProgress": 92000,
+                "perCapacity": 1,
+                "roomAttrType": 17
+              }
+            ]
+          },
+          "raw": {
+            "id": "manufacturing_station_level_1",
+            "level": 1,
+            "machineCapacity": 120,
+            "rewardId": "",
+            "roomType": 1,
+            "stationMaxCount": 1,
+            "unlockRecipe": [
+              "mfg_exp_1_1",
+              "mfg_weapon_exp_1"
+            ]
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢1级可建造此舱室",
+            "conditionType": 2147483647,
+            "conditionId": "",
+            "conditionParam": 1,
+            "upgradeDialogId": "dlg_manufacturing_station_level_1",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 3,
+                "rarity": 3
+              }
+            ]
+          },
+          "helperRoomType": 1
+        },
+        {
+          "level": 2,
+          "id": "manufacturing_station_level_2",
+          "summary": {
+            "stationCount": 2,
+            "machineCapacity": 240,
+            "unlockRecipes": [
+              {
+                "id": "mfg_exp_1_2",
+                "level": 2,
+                "product": "中级作战记录",
+                "productItemId": "item_expcard_stage1_mid",
+                "rarity": 2,
+                "totalProgress": 420000,
+                "perCapacity": 2,
+                "roomAttrType": 16
+              },
+              {
+                "id": "mfg_exp_2_1",
+                "level": 2,
+                "product": "初级认知载体",
+                "productItemId": "item_expcard_stage2_low",
+                "rarity": 4,
+                "totalProgress": 1050000,
+                "perCapacity": 5,
+                "roomAttrType": 16
+              },
+              {
+                "id": "mfg_weapon_exp_2",
+                "level": 2,
+                "product": "武器检查装置",
+                "productItemId": "item_weapon_expcard_mid",
+                "rarity": 3,
+                "totalProgress": 420000,
+                "perCapacity": 2,
+                "roomAttrType": 17
+              }
+            ]
+          },
+          "raw": {
+            "id": "manufacturing_station_level_2",
+            "level": 2,
+            "machineCapacity": 240,
+            "rewardId": "",
+            "roomType": 1,
+            "stationMaxCount": 2,
+            "unlockRecipe": [
+              "mfg_exp_1_2",
+              "mfg_exp_2_1",
+              "mfg_weapon_exp_2"
+            ]
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢2级可升级此舱室",
+            "conditionType": 5022,
+            "conditionId": "manufacturing_station_level_2",
+            "conditionParam": 2,
+            "upgradeDialogId": "dlg_manufacturing_station_level_2",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 6,
+                "rarity": 3
+              },
+              {
+                "id": "item_gold",
+                "name": "折金票",
+                "count": 1500,
+                "rarity": 4
+              }
+            ]
+          },
+          "helperRoomType": 1
+        },
+        {
+          "level": 3,
+          "id": "manufacturing_station_level_3",
+          "summary": {
+            "stationCount": 3,
+            "machineCapacity": 480,
+            "unlockRecipes": [
+              {
+                "id": "mfg_exp_1_3",
+                "level": 3,
+                "product": "高级作战记录",
+                "productItemId": "item_expcard_stage1_high",
+                "rarity": 3,
+                "totalProgress": 3520000,
+                "perCapacity": 12,
+                "roomAttrType": 16
+              },
+              {
+                "id": "mfg_exp_2_2",
+                "level": 3,
+                "product": "高级认知载体",
+                "productItemId": "item_expcard_stage2_high",
+                "rarity": 5,
+                "totalProgress": 8800000,
+                "perCapacity": 30,
+                "roomAttrType": 16
+              },
+              {
+                "id": "mfg_weapon_exp_3",
+                "level": 3,
+                "product": "武器检查套组",
+                "productItemId": "item_weapon_expcard_high",
+                "rarity": 4,
+                "totalProgress": 3520000,
+                "perCapacity": 12,
+                "roomAttrType": 17
+              }
+            ]
+          },
+          "raw": {
+            "id": "manufacturing_station_level_3",
+            "level": 3,
+            "machineCapacity": 480,
+            "rewardId": "",
+            "roomType": 1,
+            "stationMaxCount": 3,
+            "unlockRecipe": [
+              "mfg_exp_1_3",
+              "mfg_exp_2_2",
+              "mfg_weapon_exp_3"
+            ]
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢4级可升级此舱室",
+            "conditionType": 5022,
+            "conditionId": "manufacturing_station_level_3",
+            "conditionParam": 4,
+            "upgradeDialogId": "dlg_manufacturing_station_level_3",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 12,
+                "rarity": 3
+              },
+              {
+                "id": "item_spaceship_cmpt_2",
+                "name": "高级航天建材",
+                "count": 6,
+                "rarity": 4
+              },
+              {
+                "id": "item_gold",
+                "name": "折金票",
+                "count": 5000,
+                "rarity": 4
+              }
+            ]
+          },
+          "helperRoomType": 1
+        }
+      ]
+    },
+    {
+      "roomType": 2,
+      "roomTypeKey": "GrowCabin",
+      "name": "培养舱",
+      "nameRaw": "培养舱",
+      "desc": "培养舱可以培养菌类质料、晶植质料、矿物质料等强化素材。",
+      "helpDesc": "获得好友助力后，培养舱可使随机培养物获得基核增量效果，在收获时，将额外产出1个基核。每个培养物可获得一次助力。",
+      "extraDesc": "",
+      "icon": "icon_sapceship_room_icon_grow_cabin",
+      "bg": "icon_sapceship_room_bg_grow_cabin",
+      "color": "99f320",
+      "sortId": 6,
+      "allowBuildType": 999997,
+      "previewProducts": [
+        {
+          "id": "item_plant_mushroom_1_1",
+          "name": "轻红柱状菌",
+          "rarity": 4
+        },
+        {
+          "id": "item_plant_mushroom_1_2",
+          "name": "中红柱状菌",
+          "rarity": 4
+        },
+        {
+          "id": "item_plant_mushroom_1_3",
+          "name": "重红柱状菌",
+          "rarity": 4
+        },
+        {
+          "id": "item_plant_mushroom_2_1",
+          "name": "血菌",
+          "rarity": 5
+        },
+        {
+          "id": "item_plant_mushroom_2_2",
+          "name": "星门菌",
+          "rarity": 5
+        },
+        {
+          "id": "item_plant_mushroom_2_3",
+          "name": "塔罗斯菌",
+          "rarity": 5
+        },
+        {
+          "id": "item_plant_crylplant_1_1",
+          "name": "晶化多齿叶",
+          "rarity": 4
+        },
+        {
+          "id": "item_plant_crylplant_1_2",
+          "name": "纯晶多齿叶",
+          "rarity": 4
+        },
+        {
+          "id": "item_plant_crylplant_1_3",
+          "name": "至晶多齿叶",
+          "rarity": 4
+        },
+        {
+          "id": "item_plant_crylplant_2_1",
+          "name": "受蚀玉化叶",
+          "rarity": 5
+        },
+        {
+          "id": "item_plant_crylplant_2_2",
+          "name": "岩天使叶",
+          "rarity": 5
+        },
+        {
+          "id": "item_plant_crylplant_2_3",
+          "name": "红矛叶",
+          "rarity": 5
+        },
+        {
+          "id": "item_plant_spcstone_1_1",
+          "name": "轻黯石",
+          "rarity": 4
+        },
+        {
+          "id": "item_plant_spcstone_1_2",
+          "name": "中黯石",
+          "rarity": 4
+        },
+        {
+          "id": "item_plant_spcstone_1_3",
+          "name": "重黯石",
+          "rarity": 4
+        },
+        {
+          "id": "item_plant_spcstone_2_1",
+          "name": "燎石",
+          "rarity": 5
+        },
+        {
+          "id": "item_plant_spcstone_2_2",
+          "name": "武陵石",
+          "rarity": 5
+        },
+        {
+          "id": "item_plant_spcstone_2_3",
+          "name": "协议纹石",
+          "rarity": 5
+        }
+      ],
+      "opts": {
+        "upgrade": "升级舱室",
+        "maxLv": "舱室详情",
+        "view": "查看培养",
+        "newFormulaTitle": "培养方案"
+      },
+      "levelSource": "SpaceshipGrowCabinLvTable",
+      "levels": [
+        {
+          "level": 1,
+          "id": "grow_cabin_level_1",
+          "summary": {
+            "stationCount": 1,
+            "plantingFields": [
+              1,
+              2,
+              3
+            ],
+            "plantingFieldCount": 3,
+            "unlockRecipes": [
+              {
+                "id": "growcabin_plant_mushroom_1_1",
+                "level": 1,
+                "type": 1,
+                "materialTypeName": "菌类质料",
+                "seed": "轻红柱状菌块",
+                "seedItemId": "item_plant_mushroom_seed_1_1",
+                "seedCount": 1,
+                "outcome": "轻红柱状菌",
+                "outcomeItemId": "item_plant_mushroom_1_1",
+                "outcomeCount": 1,
+                "rarity": 4,
+                "totalProgress": 6250000,
+                "roomAttrType": 3
+              },
+              {
+                "id": "growcabin_plant_crylplant_1_1",
+                "level": 1,
+                "type": 2,
+                "materialTypeName": "晶植质料",
+                "seed": "晶化多齿叶根茎",
+                "seedItemId": "item_plant_crylplant_seed_1_1",
+                "seedCount": 1,
+                "outcome": "晶化多齿叶",
+                "outcomeItemId": "item_plant_crylplant_1_1",
+                "outcomeCount": 3,
+                "rarity": 4,
+                "totalProgress": 6250000,
+                "roomAttrType": 4
+              },
+              {
+                "id": "growcabin_plant_spcstone_1_1",
+                "level": 1,
+                "type": 3,
+                "materialTypeName": "矿物质料",
+                "seed": "轻黯石子簇",
+                "seedItemId": "item_plant_spcstone_seed_1_1",
+                "seedCount": 1,
+                "outcome": "轻黯石",
+                "outcomeItemId": "item_plant_spcstone_1_1",
+                "outcomeCount": 1,
+                "rarity": 4,
+                "totalProgress": 6250000,
+                "roomAttrType": 5
+              }
+            ]
+          },
+          "raw": {
+            "id": "grow_cabin_level_1",
+            "level": 1,
+            "rewardId": "",
+            "roomType": 2,
+            "stationMaxCount": 1,
+            "unlockPlantingField": [
+              1,
+              2,
+              3
+            ],
+            "unlockRecipe": [
+              "growcabin_plant_mushroom_1_1",
+              "growcabin_plant_crylplant_1_1",
+              "growcabin_plant_spcstone_1_1"
+            ]
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢2级可建造此舱室",
+            "conditionType": 2147483647,
+            "conditionId": "",
+            "conditionParam": 1,
+            "upgradeDialogId": "dlg_grow_cabin_level_1",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 3,
+                "rarity": 3
+              }
+            ]
+          },
+          "helperRoomType": 2
+        },
+        {
+          "level": 2,
+          "id": "grow_cabin_level_2",
+          "summary": {
+            "stationCount": 2,
+            "plantingFields": [
+              4,
+              5,
+              6
+            ],
+            "plantingFieldCount": 3,
+            "unlockRecipes": [
+              {
+                "id": "growcabin_plant_mushroom_1_2",
+                "level": 2,
+                "type": 1,
+                "materialTypeName": "菌类质料",
+                "seed": "中红柱状菌块",
+                "seedItemId": "item_plant_mushroom_seed_1_2",
+                "seedCount": 1,
+                "outcome": "中红柱状菌",
+                "outcomeItemId": "item_plant_mushroom_1_2",
+                "outcomeCount": 1,
+                "rarity": 4,
+                "totalProgress": 10000000,
+                "roomAttrType": 3
+              },
+              {
+                "id": "growcabin_plant_crylplant_1_2",
+                "level": 2,
+                "type": 2,
+                "materialTypeName": "晶植质料",
+                "seed": "纯晶多齿叶根茎",
+                "seedItemId": "item_plant_crylplant_seed_1_2",
+                "seedCount": 1,
+                "outcome": "纯晶多齿叶",
+                "outcomeItemId": "item_plant_crylplant_1_2",
+                "outcomeCount": 3,
+                "rarity": 4,
+                "totalProgress": 10000000,
+                "roomAttrType": 4
+              },
+              {
+                "id": "growcabin_plant_spcstone_1_2",
+                "level": 2,
+                "type": 3,
+                "materialTypeName": "矿物质料",
+                "seed": "中黯石子簇",
+                "seedItemId": "item_plant_spcstone_seed_1_2",
+                "seedCount": 1,
+                "outcome": "中黯石",
+                "outcomeItemId": "item_plant_spcstone_1_2",
+                "outcomeCount": 1,
+                "rarity": 4,
+                "totalProgress": 10000000,
+                "roomAttrType": 5
+              }
+            ]
+          },
+          "raw": {
+            "id": "grow_cabin_level_2",
+            "level": 2,
+            "rewardId": "",
+            "roomType": 2,
+            "stationMaxCount": 2,
+            "unlockPlantingField": [
+              4,
+              5,
+              6
+            ],
+            "unlockRecipe": [
+              "growcabin_plant_mushroom_1_2",
+              "growcabin_plant_crylplant_1_2",
+              "growcabin_plant_spcstone_1_2"
+            ]
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢3级可升级此舱室",
+            "conditionType": 5022,
+            "conditionId": "grow_cabin_level_2",
+            "conditionParam": 3,
+            "upgradeDialogId": "dlg_grow_cabin_level_2",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 8,
+                "rarity": 3
+              },
+              {
+                "id": "item_gold",
+                "name": "折金票",
+                "count": 2000,
+                "rarity": 4
+              }
+            ]
+          },
+          "helperRoomType": 2
+        },
+        {
+          "level": 3,
+          "id": "grow_cabin_level_3",
+          "summary": {
+            "stationCount": 3,
+            "plantingFields": [
+              7,
+              8,
+              9
+            ],
+            "plantingFieldCount": 3,
+            "unlockRecipes": [
+              {
+                "id": "growcabin_plant_mushroom_1_3",
+                "level": 3,
+                "type": 1,
+                "materialTypeName": "菌类质料",
+                "seed": "重红柱状菌块",
+                "seedItemId": "item_plant_mushroom_seed_1_3",
+                "seedCount": 1,
+                "outcome": "重红柱状菌",
+                "outcomeItemId": "item_plant_mushroom_1_3",
+                "outcomeCount": 1,
+                "rarity": 4,
+                "totalProgress": 22000000,
+                "roomAttrType": 3
+              },
+              {
+                "id": "growcabin_plant_crylplant_1_3",
+                "level": 3,
+                "type": 2,
+                "materialTypeName": "晶植质料",
+                "seed": "至晶多齿叶根茎",
+                "seedItemId": "item_plant_crylplant_seed_1_3",
+                "seedCount": 1,
+                "outcome": "至晶多齿叶",
+                "outcomeItemId": "item_plant_crylplant_1_3",
+                "outcomeCount": 3,
+                "rarity": 4,
+                "totalProgress": 22000000,
+                "roomAttrType": 4
+              },
+              {
+                "id": "growcabin_plant_spcstone_1_3",
+                "level": 3,
+                "type": 3,
+                "materialTypeName": "矿物质料",
+                "seed": "重黯石子簇",
+                "seedItemId": "item_plant_spcstone_seed_1_3",
+                "seedCount": 1,
+                "outcome": "重黯石",
+                "outcomeItemId": "item_plant_spcstone_1_3",
+                "outcomeCount": 1,
+                "rarity": 4,
+                "totalProgress": 22000000,
+                "roomAttrType": 5
+              },
+              {
+                "id": "growcabin_plant_mushroom_2_1",
+                "level": 3,
+                "type": 1,
+                "materialTypeName": "菌类质料",
+                "seed": "血菌块",
+                "seedItemId": "item_plant_mushroom_seed_2_1",
+                "seedCount": 1,
+                "outcome": "血菌",
+                "outcomeItemId": "item_plant_mushroom_2_1",
+                "outcomeCount": 1,
+                "rarity": 5,
+                "totalProgress": 45000000,
+                "roomAttrType": 3
+              },
+              {
+                "id": "growcabin_plant_crylplant_2_1",
+                "level": 3,
+                "type": 2,
+                "materialTypeName": "晶植质料",
+                "seed": "受蚀玉化叶根茎",
+                "seedItemId": "item_plant_crylplant_seed_2_1",
+                "seedCount": 1,
+                "outcome": "受蚀玉化叶",
+                "outcomeItemId": "item_plant_crylplant_2_1",
+                "outcomeCount": 3,
+                "rarity": 5,
+                "totalProgress": 45000000,
+                "roomAttrType": 4
+              },
+              {
+                "id": "growcabin_plant_spcstone_2_1",
+                "level": 3,
+                "type": 3,
+                "materialTypeName": "矿物质料",
+                "seed": "燎石子簇",
+                "seedItemId": "item_plant_spcstone_seed_2_1",
+                "seedCount": 1,
+                "outcome": "燎石",
+                "outcomeItemId": "item_plant_spcstone_2_1",
+                "outcomeCount": 1,
+                "rarity": 5,
+                "totalProgress": 45000000,
+                "roomAttrType": 5
+              },
+              {
+                "id": "growcabin_plant_mushroom_2_2",
+                "level": 3,
+                "type": 1,
+                "materialTypeName": "菌类质料",
+                "seed": "星门菌块",
+                "seedItemId": "item_plant_mushroom_seed_2_2",
+                "seedCount": 1,
+                "outcome": "星门菌",
+                "outcomeItemId": "item_plant_mushroom_2_2",
+                "outcomeCount": 1,
+                "rarity": 5,
+                "totalProgress": 45000000,
+                "roomAttrType": 3
+              },
+              {
+                "id": "growcabin_plant_mushroom_2_3",
+                "level": 3,
+                "type": 1,
+                "materialTypeName": "菌类质料",
+                "seed": "塔罗斯菌块",
+                "seedItemId": "item_plant_mushroom_seed_2_3",
+                "seedCount": 1,
+                "outcome": "塔罗斯菌",
+                "outcomeItemId": "item_plant_mushroom_2_3",
+                "outcomeCount": 1,
+                "rarity": 5,
+                "totalProgress": 45000000,
+                "roomAttrType": 3
+              },
+              {
+                "id": "growcabin_plant_crylplant_2_2",
+                "level": 3,
+                "type": 2,
+                "materialTypeName": "晶植质料",
+                "seed": "岩天使叶根茎",
+                "seedItemId": "item_plant_crylplant_seed_2_2",
+                "seedCount": 1,
+                "outcome": "岩天使叶",
+                "outcomeItemId": "item_plant_crylplant_2_2",
+                "outcomeCount": 3,
+                "rarity": 5,
+                "totalProgress": 45000000,
+                "roomAttrType": 4
+              },
+              {
+                "id": "growcabin_plant_crylplant_2_3",
+                "level": 3,
+                "type": 2,
+                "materialTypeName": "晶植质料",
+                "seed": "红矛叶根茎",
+                "seedItemId": "item_plant_crylplant_seed_2_3",
+                "seedCount": 1,
+                "outcome": "红矛叶",
+                "outcomeItemId": "item_plant_crylplant_2_3",
+                "outcomeCount": 3,
+                "rarity": 5,
+                "totalProgress": 45000000,
+                "roomAttrType": 4
+              },
+              {
+                "id": "growcabin_plant_spcstone_2_2",
+                "level": 3,
+                "type": 3,
+                "materialTypeName": "矿物质料",
+                "seed": "武陵石子簇",
+                "seedItemId": "item_plant_spcstone_seed_2_2",
+                "seedCount": 1,
+                "outcome": "武陵石",
+                "outcomeItemId": "item_plant_spcstone_2_2",
+                "outcomeCount": 1,
+                "rarity": 5,
+                "totalProgress": 45000000,
+                "roomAttrType": 5
+              },
+              {
+                "id": "growcabin_plant_spcstone_2_3",
+                "level": 3,
+                "type": 3,
+                "materialTypeName": "矿物质料",
+                "seed": "协议纹石子簇",
+                "seedItemId": "item_plant_spcstone_seed_2_3",
+                "seedCount": 1,
+                "outcome": "协议纹石",
+                "outcomeItemId": "item_plant_spcstone_2_3",
+                "outcomeCount": 1,
+                "rarity": 5,
+                "totalProgress": 45000000,
+                "roomAttrType": 5
+              }
+            ]
+          },
+          "raw": {
+            "id": "grow_cabin_level_3",
+            "level": 3,
+            "rewardId": "",
+            "roomType": 2,
+            "stationMaxCount": 3,
+            "unlockPlantingField": [
+              7,
+              8,
+              9
+            ],
+            "unlockRecipe": [
+              "growcabin_plant_mushroom_1_3",
+              "growcabin_plant_crylplant_1_3",
+              "growcabin_plant_spcstone_1_3",
+              "growcabin_plant_mushroom_2_1",
+              "growcabin_plant_crylplant_2_1",
+              "growcabin_plant_spcstone_2_1",
+              "growcabin_plant_mushroom_2_2",
+              "growcabin_plant_mushroom_2_3",
+              "growcabin_plant_crylplant_2_2",
+              "growcabin_plant_crylplant_2_3",
+              "growcabin_plant_spcstone_2_2",
+              "growcabin_plant_spcstone_2_3"
+            ]
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢5级可升级此舱室",
+            "conditionType": 5022,
+            "conditionId": "grow_cabin_level_3",
+            "conditionParam": 5,
+            "upgradeDialogId": "dlg_grow_cabin_level_3",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 16,
+                "rarity": 3
+              },
+              {
+                "id": "item_spaceship_cmpt_2",
+                "name": "高级航天建材",
+                "count": 16,
+                "rarity": 4
+              },
+              {
+                "id": "item_gold",
+                "name": "折金票",
+                "count": 6400,
+                "rarity": 4
+              }
+            ]
+          },
+          "helperRoomType": 2
+        }
+      ]
+    },
+    {
+      "roomType": 3,
+      "roomTypeKey": "GuestRoom",
+      "name": "会客室(接待/展示)",
+      "nameRaw": "会客室",
+      "desc": "会客室中设置了干员履历、武器、奖章等内容的展示区域，以及访问好友飞船的传送入口。",
+      "helpDesc": "",
+      "extraDesc": "",
+      "icon": "icon_sapceship_room_icon_reception_room",
+      "bg": "icon_sapceship_room_bg_guest_room",
+      "color": "9f8bff",
+      "sortId": 8,
+      "allowBuildType": 3,
+      "previewProducts": [
+        {
+          "id": "item_spaceship_credit",
+          "name": "信用",
+          "rarity": 4
+        },
+        {
+          "id": "item_spaceship_intelligence",
+          "name": "情报档案",
+          "rarity": 4
+        }
+      ],
+      "opts": {
+        "upgrade": "升级舱室",
+        "maxLv": "舱室详情",
+        "view": "查看线索",
+        "newFormulaTitle": ""
+      },
+      "levelSource": "SpaceshipGuestRoomLvTable",
+      "levels": [
+        {
+          "level": 1,
+          "id": "guest_room_level_1",
+          "summary": {
+            "stationCount": null
+          },
+          "raw": {
+            "id": "guest_room_level_1",
+            "level": 1
+          },
+          "upgrade": {
+            "conditionDesc": "推进剧情以开启此舱室",
+            "conditionType": 2147483647,
+            "conditionId": "",
+            "conditionParam": 1,
+            "upgradeDialogId": "dlg_gpl_guest_room_level_2",
+            "costItems": []
+          },
+          "helperRoomType": null
+        }
+      ]
+    },
+    {
+      "roomType": 5,
+      "roomTypeKey": "GuestRoomClueExtension",
+      "name": "会客室(线索)",
+      "nameRaw": "会客室",
+      "desc": "会客室可通过线索收集和情报交流获取信用奖励。",
+      "helpDesc": "",
+      "extraDesc": "",
+      "icon": "icon_sapceship_room_icon_guest_room_clue",
+      "bg": "icon_sapceship_room_bg_guest_room",
+      "color": "9f8bff",
+      "sortId": 9,
+      "allowBuildType": 5,
+      "previewProducts": [
+        {
+          "id": "item_spaceship_credit",
+          "name": "信用",
+          "rarity": 4
+        },
+        {
+          "id": "item_spaceship_intelligence",
+          "name": "情报档案",
+          "rarity": 4
+        }
+      ],
+      "opts": {
+        "upgrade": "升级舱室",
+        "maxLv": "舱室详情",
+        "view": "查看线索",
+        "newFormulaTitle": ""
+      },
+      "levelSource": "SpaceshipGuestRoomClueLvTable",
+      "levels": [
+        {
+          "level": 1,
+          "id": "guest_room_clue_extension_level_1",
+          "summary": {
+            "stationCount": 1,
+            "baseCreditReward": 200,
+            "extraCreditPerRole": 15,
+            "maxCalcRoleCount": 10,
+            "maxExtraCredit": 150,
+            "baseInfoReward": 0,
+            "extraInfoPerRole": 0,
+            "maxExtraInfo": 0,
+            "creditFriendJoinExchangeGain": 50
+          },
+          "raw": {
+            "baseCreditReward": 200,
+            "baseInfoReward": 0,
+            "creditFriendJoinExchangeGain": 50,
+            "extraCreditPerRole": 15,
+            "extraInfoPerRole": 0,
+            "id": "guest_room_clue_extension_level_1",
+            "level": 1,
+            "maxCalcRoleCount": 10,
+            "maxExtraCredit": 150,
+            "maxExtraInfo": 0,
+            "stationMaxCount": 1
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢3级后推进剧情可开启此舱室",
+            "conditionType": 2147483647,
+            "conditionId": "",
+            "conditionParam": 1,
+            "upgradeDialogId": "dlg_gpl_guest_room_level_2",
+            "costItems": []
+          },
+          "helperRoomType": 5
+        },
+        {
+          "level": 2,
+          "id": "guest_room_clue_extension_level_2",
+          "summary": {
+            "stationCount": 2,
+            "baseCreditReward": 300,
+            "extraCreditPerRole": 15,
+            "maxCalcRoleCount": 15,
+            "maxExtraCredit": 225,
+            "baseInfoReward": 0,
+            "extraInfoPerRole": 0,
+            "maxExtraInfo": 0,
+            "creditFriendJoinExchangeGain": 50
+          },
+          "raw": {
+            "baseCreditReward": 300,
+            "baseInfoReward": 0,
+            "creditFriendJoinExchangeGain": 50,
+            "extraCreditPerRole": 15,
+            "extraInfoPerRole": 0,
+            "id": "guest_room_clue_extension_level_2",
+            "level": 2,
+            "maxCalcRoleCount": 15,
+            "maxExtraCredit": 225,
+            "maxExtraInfo": 0,
+            "stationMaxCount": 2
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢4级可升级此舱室",
+            "conditionType": 5022,
+            "conditionId": "guest_room_clue_extension_level_2",
+            "conditionParam": 4,
+            "upgradeDialogId": "dlg_gpl_guest_room_level_2",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 8,
+                "rarity": 3
+              },
+              {
+                "id": "item_gold",
+                "name": "折金票",
+                "count": 2000,
+                "rarity": 4
+              }
+            ]
+          },
+          "helperRoomType": 5
+        },
+        {
+          "level": 3,
+          "id": "guest_room_clue_extension_level_3",
+          "summary": {
+            "stationCount": 3,
+            "baseCreditReward": 400,
+            "extraCreditPerRole": 15,
+            "maxCalcRoleCount": 20,
+            "maxExtraCredit": 300,
+            "baseInfoReward": 0,
+            "extraInfoPerRole": 0,
+            "maxExtraInfo": 0,
+            "creditFriendJoinExchangeGain": 50
+          },
+          "raw": {
+            "baseCreditReward": 400,
+            "baseInfoReward": 0,
+            "creditFriendJoinExchangeGain": 50,
+            "extraCreditPerRole": 15,
+            "extraInfoPerRole": 0,
+            "id": "guest_room_clue_extension_level_3",
+            "level": 3,
+            "maxCalcRoleCount": 20,
+            "maxExtraCredit": 300,
+            "maxExtraInfo": 0,
+            "stationMaxCount": 3
+          },
+          "upgrade": {
+            "conditionDesc": "总控中枢5级可升级此舱室",
+            "conditionType": 5022,
+            "conditionId": "guest_room_clue_extension_level_3",
+            "conditionParam": 5,
+            "upgradeDialogId": "dlg_gpl_guest_room_level_3",
+            "costItems": [
+              {
+                "id": "item_spaceship_cmpt_1",
+                "name": "基础航天建材",
+                "count": 16,
+                "rarity": 3
+              },
+              {
+                "id": "item_spaceship_cmpt_2",
+                "name": "高级航天建材",
+                "count": 16,
+                "rarity": 4
+              },
+              {
+                "id": "item_gold",
+                "name": "折金票",
+                "count": 6400,
+                "rarity": 4
+              }
+            ]
+          },
+          "helperRoomType": 5
+        }
+      ]
+    }
+  ],
+  "operators": [
+    {
+      "charId": "chr_9000_endmin",
+      "name": "管理员",
+      "enName": "Endministrator",
+      "rarity": 6,
+      "profession": 0,
+      "professionName": "近卫",
+      "charType": "Physical",
+      "charTypeName": "物理",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 1,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 0,
+      "shipSkills": [],
+      "behaviourTypes": null
+    },
+    {
+      "charId": "chr_0002_endminm",
+      "name": "管理员",
+      "enName": "Endministrator",
+      "rarity": 6,
+      "profession": 0,
+      "professionName": "近卫",
+      "charType": "Physical",
+      "charTypeName": "物理",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 2,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 0,
+      "shipSkills": [],
+      "behaviourTypes": null
+    },
+    {
+      "charId": "chr_0003_endminf",
+      "name": "管理员",
+      "enName": "Endministrator",
+      "rarity": 6,
+      "profession": 0,
+      "professionName": "近卫",
+      "charType": "Physical",
+      "charTypeName": "物理",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 3,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 0,
+      "shipSkills": [],
+      "behaviourTypes": null
+    },
+    {
+      "charId": "chr_0004_pelica",
+      "name": "佩丽卡",
+      "enName": "Perlica",
+      "rarity": 5,
+      "profession": 5,
+      "professionName": "术师",
+      "charType": "Pulse",
+      "charTypeName": "电磁",
+      "weaponType": 2,
+      "weaponTypeName": "施术单元",
+      "sortOrder": 4,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0004_pelica_1_1",
+          "name": "监督·α",
+          "talentName": "监督",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升8%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.08
+          },
+          "rawParams": [
+            0.08
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0004_pelica_1_2",
+          "name": "监督·β",
+          "talentName": "监督",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升12%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.12
+          },
+          "rawParams": [
+            0.12
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0004_pelica_2_1",
+          "name": "协议调度·β",
+          "talentName": "协议调度",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.2,
+            2
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0004_pelica_2_2",
+          "name": "协议调度·γ",
+          "talentName": "协议调度",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升30%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.3,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.3,
+            2
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        2,
+        1
+      ]
+    },
+    {
+      "charId": "chr_0005_chen",
+      "name": "陈千语",
+      "enName": "Chen Qianyu",
+      "rarity": 5,
+      "profession": 0,
+      "professionName": "近卫",
+      "charType": "Physical",
+      "charTypeName": "物理",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 5,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0005_chen_1_1",
+          "name": "名剑选评·α",
+          "talentName": "名剑选评",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升10%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.1,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.1,
+            2
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0005_chen_1_2",
+          "name": "名剑选评·β",
+          "talentName": "名剑选评",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.2,
+            2
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0005_chen_2_1",
+          "name": "琢玉·β",
+          "talentName": "琢玉",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_mineral",
+          "desc": "进驻培养舱时，矿物质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 3,
+            "materialName": "矿物质料"
+          },
+          "rawParams": [
+            0.2,
+            3
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0005_chen_2_2",
+          "name": "琢玉·γ",
+          "talentName": "琢玉",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_mineral",
+          "desc": "进驻培养舱时，矿物质料的培养速度提升30%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.3,
+            "materialType": 3,
+            "materialName": "矿物质料"
+          },
+          "rawParams": [
+            0.3,
+            3
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        1,
+        0
+      ]
+    },
+    {
+      "charId": "chr_0006_wolfgd",
+      "name": "狼卫",
+      "enName": "Wulfgard",
+      "rarity": 5,
+      "profession": 5,
+      "professionName": "术师",
+      "charType": "Fire",
+      "charTypeName": "灼热",
+      "weaponType": 6,
+      "weaponTypeName": "手铳",
+      "sortOrder": 6,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0006_wolfgd_1_1",
+          "name": "狼群的技巧·α",
+          "talentName": "狼群的技巧",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升10%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.1,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.1,
+            1
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0006_wolfgd_1_2",
+          "name": "狼群的技巧·β",
+          "talentName": "狼群的技巧",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0006_wolfgd_2_1",
+          "name": "荒野卓识·β",
+          "talentName": "荒野卓识",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_mineral",
+          "desc": "进驻培养舱时，矿物质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 3,
+            "materialName": "矿物质料"
+          },
+          "rawParams": [
+            0.2,
+            3
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0006_wolfgd_2_2",
+          "name": "荒野卓识·γ",
+          "talentName": "荒野卓识",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_mineral",
+          "desc": "进驻培养舱时，矿物质料的培养速度提升30%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.3,
+            "materialType": 3,
+            "materialName": "矿物质料"
+          },
+          "rawParams": [
+            0.3,
+            3
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        1,
+        0
+      ]
+    },
+    {
+      "charId": "chr_0007_ikut",
+      "name": "弧光",
+      "enName": "Arclight",
+      "rarity": 5,
+      "profession": 7,
+      "professionName": "先锋",
+      "charType": "Pulse",
+      "charTypeName": "电磁",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 7,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0007_ikut_1_1",
+          "name": "荒野锋刃·α",
+          "talentName": "荒野锋刃",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升10%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.1,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.1,
+            2
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0007_ikut_1_2",
+          "name": "荒野锋刃·β",
+          "talentName": "荒野锋刃",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.2,
+            2
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0007_ikut_2_1",
+          "name": "歌谣传唱·α",
+          "talentName": "歌谣传唱",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索6——众生长地的概率小幅提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 6,
+            "clueName": "众生长地的线索",
+            "tier": 1,
+            "tierName": "概率小幅提升"
+          },
+          "rawParams": [
+            6,
+            1
+          ]
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0007_ikut_2_2",
+          "name": "歌谣传唱·β",
+          "talentName": "歌谣传唱",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索6——众生长地的概率提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 6,
+            "clueName": "众生长地的线索",
+            "tier": 2,
+            "tierName": "概率提升"
+          },
+          "rawParams": [
+            6,
+            2
+          ]
+        }
+      ],
+      "behaviourTypes": [
+        1,
+        7
+      ]
+    },
+    {
+      "charId": "chr_0009_azrila",
+      "name": "余烬",
+      "enName": "Ember",
+      "rarity": 6,
+      "profession": 2,
+      "professionName": "重装",
+      "charType": "Fire",
+      "charTypeName": "灼热",
+      "weaponType": 3,
+      "weaponTypeName": "双手剑",
+      "sortOrder": 8,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0009_azrila_1_1",
+          "name": "北地特训·β",
+          "talentName": "北地特训",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0009_azrila_1_2",
+          "name": "北地特训·γ",
+          "talentName": "北地特训",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升30%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.3,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.3,
+            1
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0009_azrila_2_1",
+          "name": "同袍相系·α",
+          "talentName": "同袍相系",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索4——铁誓军的概率小幅提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 4,
+            "clueName": "铁誓军的线索",
+            "tier": 1,
+            "tierName": "概率小幅提升"
+          },
+          "rawParams": [
+            4,
+            1
+          ]
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0009_azrila_2_2",
+          "name": "同袍相系·β",
+          "talentName": "同袍相系",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索4——铁誓军的概率提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 4,
+            "clueName": "铁誓军的线索",
+            "tier": 2,
+            "tierName": "概率提升"
+          },
+          "rawParams": [
+            4,
+            2
+          ]
+        }
+      ],
+      "behaviourTypes": [
+        1,
+        7
+      ]
+    },
+    {
+      "charId": "chr_0011_seraph",
+      "name": "赛希",
+      "enName": "Xaihi",
+      "rarity": 5,
+      "profession": 4,
+      "professionName": "辅助",
+      "charType": "Cryst",
+      "charTypeName": "寒冷",
+      "weaponType": 2,
+      "weaponTypeName": "施术单元",
+      "sortOrder": 9,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0011_seraph_1_1",
+          "name": "标准化编译·α",
+          "talentName": "标准化编译",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升10%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.1,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.1,
+            1
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0011_seraph_1_2",
+          "name": "标准化编译·β",
+          "talentName": "标准化编译",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0011_seraph_2_1",
+          "name": "会话与细语·α",
+          "talentName": "会话与细语",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索5——寂语修会的概率小幅提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 5,
+            "clueName": "寂语修会的线索",
+            "tier": 1,
+            "tierName": "概率小幅提升"
+          },
+          "rawParams": [
+            5,
+            1
+          ]
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0011_seraph_2_2",
+          "name": "会话与细语·β",
+          "talentName": "会话与细语",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索5——寂语修会的概率提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 5,
+            "clueName": "寂语修会的线索",
+            "tier": 2,
+            "tierName": "概率提升"
+          },
+          "rawParams": [
+            5,
+            2
+          ]
+        }
+      ],
+      "behaviourTypes": [
+        1,
+        7
+      ]
+    },
+    {
+      "charId": "chr_0012_avywen",
+      "name": "艾维文娜",
+      "enName": "Avywenna",
+      "rarity": 5,
+      "profession": 8,
+      "professionName": "突击",
+      "charType": "Pulse",
+      "charTypeName": "电磁",
+      "weaponType": 5,
+      "weaponTypeName": "长柄武器",
+      "sortOrder": 10,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0012_avywen_1_1",
+          "name": "居家顾问·α",
+          "talentName": "居家顾问",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升8%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.08
+          },
+          "rawParams": [
+            0.08
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0012_avywen_1_2",
+          "name": "居家顾问·β",
+          "talentName": "居家顾问",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升12%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.12
+          },
+          "rawParams": [
+            0.12
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0012_avywen_2_1",
+          "name": "信使的秘密·α",
+          "talentName": "信使的秘密",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索2——环塔商会的概率小幅提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 2,
+            "clueName": "环塔商会的线索",
+            "tier": 1,
+            "tierName": "概率小幅提升"
+          },
+          "rawParams": [
+            2,
+            1
+          ]
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0012_avywen_2_2",
+          "name": "信使的秘密·β",
+          "talentName": "信使的秘密",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索2——环塔商会的概率提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 2,
+            "clueName": "环塔商会的线索",
+            "tier": 2,
+            "tierName": "概率提升"
+          },
+          "rawParams": [
+            2,
+            2
+          ]
+        }
+      ],
+      "behaviourTypes": [
+        2,
+        7
+      ]
+    },
+    {
+      "charId": "chr_0013_aglina",
+      "name": "洁尔佩塔",
+      "enName": "Gilberta",
+      "rarity": 6,
+      "profession": 4,
+      "professionName": "辅助",
+      "charType": "Natural",
+      "charTypeName": "自然",
+      "weaponType": 2,
+      "weaponTypeName": "施术单元",
+      "sortOrder": 11,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0013_aglina_1_1",
+          "name": "信使的加工艺术·β",
+          "talentName": "信使的加工艺术",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0013_aglina_1_2",
+          "name": "信使的加工艺术·γ",
+          "talentName": "信使的加工艺术",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0013_aglina_2_1",
+          "name": "信使的武器知识·β",
+          "talentName": "信使的武器知识",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.2,
+            2
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0013_aglina_2_2",
+          "name": "信使的武器知识·γ",
+          "talentName": "信使的武器知识",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升30%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.3,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.3,
+            2
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        1
+      ]
+    },
+    {
+      "charId": "chr_0014_aurora",
+      "name": "昼雪",
+      "enName": "Snowshine",
+      "rarity": 5,
+      "profession": 2,
+      "professionName": "重装",
+      "charType": "Cryst",
+      "charTypeName": "寒冷",
+      "weaponType": 3,
+      "weaponTypeName": "双手剑",
+      "sortOrder": 12,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0014_aurora_1_1",
+          "name": "救援者的恒心·α",
+          "talentName": "救援者的恒心",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低10%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.1
+          },
+          "rawParams": [
+            0.1
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0014_aurora_1_2",
+          "name": "救援者的恒心·β",
+          "talentName": "救援者的恒心",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0014_aurora_2_1",
+          "name": "乐天派·β",
+          "talentName": "乐天派",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升12%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.12
+          },
+          "rawParams": [
+            0.12
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0014_aurora_2_2",
+          "name": "乐天派·γ",
+          "talentName": "乐天派",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升16%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.16
+          },
+          "rawParams": [
+            0.16
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        1,
+        2
+      ]
+    },
+    {
+      "charId": "chr_0015_lifeng",
+      "name": "黎风",
+      "enName": "Lifeng",
+      "rarity": 6,
+      "profession": 0,
+      "professionName": "近卫",
+      "charType": "Physical",
+      "charTypeName": "物理",
+      "weaponType": 5,
+      "weaponTypeName": "长柄武器",
+      "sortOrder": 13,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0015_lifeng_1_1",
+          "name": "少年意气·β",
+          "talentName": "少年意气",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升12%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.12
+          },
+          "rawParams": [
+            0.12
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0015_lifeng_1_2",
+          "name": "少年意气·γ",
+          "talentName": "少年意气",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升16%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.16
+          },
+          "rawParams": [
+            0.16
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0015_lifeng_2_1",
+          "name": "小大人·α",
+          "talentName": "小大人",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索3——宏山科学院的概率小幅提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 3,
+            "clueName": "宏山科学院的线索",
+            "tier": 1,
+            "tierName": "概率小幅提升"
+          },
+          "rawParams": [
+            3,
+            1
+          ]
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0015_lifeng_2_2",
+          "name": "小大人·β",
+          "talentName": "小大人",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索3——宏山科学院的概率提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 3,
+            "clueName": "宏山科学院的线索",
+            "tier": 2,
+            "tierName": "概率提升"
+          },
+          "rawParams": [
+            3,
+            2
+          ]
+        }
+      ],
+      "behaviourTypes": [
+        7,
+        2
+      ]
+    },
+    {
+      "charId": "chr_0016_laevat",
+      "name": "莱万汀",
+      "enName": "Laevatain",
+      "rarity": 6,
+      "profession": 8,
+      "professionName": "突击",
+      "charType": "Fire",
+      "charTypeName": "灼热",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 14,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0016_laevat_1_1",
+          "name": "记忆熔炉·β",
+          "talentName": "记忆熔炉",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0016_laevat_1_2",
+          "name": "记忆熔炉·γ",
+          "talentName": "记忆熔炉",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升30%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.3,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.3,
+            1
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0016_laevat_2_1",
+          "name": "不熄炎火·β",
+          "talentName": "不熄炎火",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0016_laevat_2_2",
+          "name": "不熄炎火·γ",
+          "talentName": "不熄炎火",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        1
+      ]
+    },
+    {
+      "charId": "chr_0017_yvonne",
+      "name": "伊冯",
+      "enName": "Yvonne",
+      "rarity": 6,
+      "profession": 8,
+      "professionName": "突击",
+      "charType": "Cryst",
+      "charTypeName": "寒冷",
+      "weaponType": 6,
+      "weaponTypeName": "手铳",
+      "sortOrder": 15,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0017_yvonne_1_1",
+          "name": "菌类颜料提取·β",
+          "talentName": "菌类颜料提取",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_fungus",
+          "desc": "进驻培养舱时，菌类质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 1,
+            "materialName": "菌类质料"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0017_yvonne_1_2",
+          "name": "菌类颜料提取·γ",
+          "talentName": "菌类颜料提取",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_fungus",
+          "desc": "进驻培养舱时，菌类质料的培养速度提升30%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.3,
+            "materialType": 1,
+            "materialName": "菌类质料"
+          },
+          "rawParams": [
+            0.3,
+            1
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0017_yvonne_2_1",
+          "name": "时尚达人·β",
+          "talentName": "时尚达人",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_power_consume",
+          "desc": "进驻培养舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0017_yvonne_2_2",
+          "name": "时尚达人·γ",
+          "talentName": "时尚达人",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_power_consume",
+          "desc": "进驻培养舱时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        0
+      ]
+    },
+    {
+      "charId": "chr_0018_dapan",
+      "name": "大潘",
+      "enName": "Da Pan",
+      "rarity": 5,
+      "profession": 8,
+      "professionName": "突击",
+      "charType": "Physical",
+      "charTypeName": "物理",
+      "weaponType": 3,
+      "weaponTypeName": "双手剑",
+      "sortOrder": 16,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0018_dapan_1_1",
+          "name": "擅烹山珍·α",
+          "talentName": "擅烹山珍",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_plant_fungus",
+          "desc": "进驻培养舱时，菌类质料的培养速度提升10%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.1,
+            "materialType": 1,
+            "materialName": "菌类质料"
+          },
+          "rawParams": [
+            0.1,
+            1
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0018_dapan_1_2",
+          "name": "擅烹山珍·β",
+          "talentName": "擅烹山珍",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_fungus",
+          "desc": "进驻培养舱时，菌类质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 1,
+            "materialName": "菌类质料"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0018_dapan_2_1",
+          "name": "人情练达·β",
+          "talentName": "人情练达",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升12%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.12
+          },
+          "rawParams": [
+            0.12
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0018_dapan_2_2",
+          "name": "人情练达·γ",
+          "talentName": "人情练达",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升16%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.16
+          },
+          "rawParams": [
+            0.16
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        2,
+        0
+      ]
+    },
+    {
+      "charId": "chr_0019_karin",
+      "name": "秋栗",
+      "enName": "Akekuri",
+      "rarity": 4,
+      "profession": 7,
+      "professionName": "先锋",
+      "charType": "Fire",
+      "charTypeName": "灼热",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 17,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0019_karin_1_1",
+          "name": "咖啡或茶·α",
+          "talentName": "咖啡或茶",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低10%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.1
+          },
+          "rawParams": [
+            0.1
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0019_karin_1_2",
+          "name": "咖啡或茶·β",
+          "talentName": "咖啡或茶",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0019_karin_2_1",
+          "name": "破冰游戏·β",
+          "talentName": "破冰游戏",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_power_consume",
+          "desc": "进驻会客室时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0019_karin_2_2",
+          "name": "破冰游戏·γ",
+          "talentName": "破冰游戏",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_guestroom_power_consume",
+          "desc": "进驻会客室时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        1,
+        7
+      ]
+    },
+    {
+      "charId": "chr_0020_meurs",
+      "name": "卡契尔",
+      "enName": "Catcher",
+      "rarity": 4,
+      "profession": 2,
+      "professionName": "重装",
+      "charType": "Physical",
+      "charTypeName": "物理",
+      "weaponType": 3,
+      "weaponTypeName": "双手剑",
+      "sortOrder": 18,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0020_meurs_1_1",
+          "name": "缄默关怀·α",
+          "talentName": "缄默关怀",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升8%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.08
+          },
+          "rawParams": [
+            0.08
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0020_meurs_1_2",
+          "name": "缄默关怀·β",
+          "talentName": "缄默关怀",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升12%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.12
+          },
+          "rawParams": [
+            0.12
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0020_meurs_2_1",
+          "name": "务实心态·β",
+          "talentName": "务实心态",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_power_consume",
+          "desc": "进驻培养舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0020_meurs_2_2",
+          "name": "务实心态·γ",
+          "talentName": "务实心态",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_power_consume",
+          "desc": "进驻培养舱时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        2,
+        0
+      ]
+    },
+    {
+      "charId": "chr_0021_whiten",
+      "name": "埃特拉",
+      "enName": "Estella",
+      "rarity": 4,
+      "profession": 0,
+      "professionName": "近卫",
+      "charType": "Cryst",
+      "charTypeName": "寒冷",
+      "weaponType": 5,
+      "weaponTypeName": "长柄武器",
+      "sortOrder": 19,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0021_whiten_1_1",
+          "name": "碎片化休息·α",
+          "talentName": "碎片化休息",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升8%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.08
+          },
+          "rawParams": [
+            0.08
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0021_whiten_1_2",
+          "name": "碎片化休息·β",
+          "talentName": "碎片化休息",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升12%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.12
+          },
+          "rawParams": [
+            0.12
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0021_whiten_2_1",
+          "name": "监听频段·β",
+          "talentName": "监听频段",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_efficiency",
+          "desc": "进驻会客室时，干员收集线索的效率提升20%",
+          "effect": {
+            "type": 4,
+            "key": "ClueEfficiencyUp",
+            "cn": "会客室 · 线索收集效率提升",
+            "rate": 0.2
+          },
+          "rawParams": [
+            0.2
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0021_whiten_2_2",
+          "name": "监听频段·γ",
+          "talentName": "监听频段",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_guestroom_efficiency",
+          "desc": "进驻会客室时，干员收集线索的效率提升30%",
+          "effect": {
+            "type": 4,
+            "key": "ClueEfficiencyUp",
+            "cn": "会客室 · 线索收集效率提升",
+            "rate": 0.3
+          },
+          "rawParams": [
+            0.3
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        2,
+        7
+      ]
+    },
+    {
+      "charId": "chr_0022_bounda",
+      "name": "萤石",
+      "enName": "Fluorite",
+      "rarity": 4,
+      "profession": 5,
+      "professionName": "术师",
+      "charType": "Natural",
+      "charTypeName": "自然",
+      "weaponType": 6,
+      "weaponTypeName": "手铳",
+      "sortOrder": 20,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0022_bounda_1_1",
+          "name": "荒芜行者·α",
+          "talentName": "荒芜行者",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_plant_mineral",
+          "desc": "进驻培养舱时，矿物质料的培养速度提升10%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.1,
+            "materialType": 3,
+            "materialName": "矿物质料"
+          },
+          "rawParams": [
+            0.1,
+            3
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0022_bounda_1_2",
+          "name": "荒芜行者·β",
+          "talentName": "荒芜行者",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_mineral",
+          "desc": "进驻培养舱时，矿物质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 3,
+            "materialName": "矿物质料"
+          },
+          "rawParams": [
+            0.2,
+            3
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0022_bounda_2_1",
+          "name": "知人所想·β",
+          "talentName": "知人所想",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升12%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.12
+          },
+          "rawParams": [
+            0.12
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0022_bounda_2_2",
+          "name": "知人所想·γ",
+          "talentName": "知人所想",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升16%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.16
+          },
+          "rawParams": [
+            0.16
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        2,
+        0
+      ]
+    },
+    {
+      "charId": "chr_0023_antal",
+      "name": "安塔尔",
+      "enName": "Antal",
+      "rarity": 4,
+      "profession": 4,
+      "professionName": "辅助",
+      "charType": "Pulse",
+      "charTypeName": "电磁",
+      "weaponType": 2,
+      "weaponTypeName": "施术单元",
+      "sortOrder": 21,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0023_antal_1_1",
+          "name": "实验性施术单元·α",
+          "talentName": "实验性施术单元",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升10%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.1,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.1,
+            2
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0023_antal_1_2",
+          "name": "实验性施术单元·β",
+          "talentName": "实验性施术单元",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.2,
+            2
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0023_antal_2_1",
+          "name": "冷笑话学习·β",
+          "talentName": "冷笑话学习",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_power_consume",
+          "desc": "进驻培养舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0023_antal_2_2",
+          "name": "冷笑话学习·γ",
+          "talentName": "冷笑话学习",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_power_consume",
+          "desc": "进驻培养舱时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        1,
+        0
+      ]
+    },
+    {
+      "charId": "chr_0024_deepfin",
+      "name": "阿列什",
+      "enName": "Alesh",
+      "rarity": 5,
+      "profession": 7,
+      "professionName": "先锋",
+      "charType": "Cryst",
+      "charTypeName": "寒冷",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 22,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0024_deepfin_1_1",
+          "name": "悠闲垂钓·α",
+          "talentName": "悠闲垂钓",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升8%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.08
+          },
+          "rawParams": [
+            0.08
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0024_deepfin_1_2",
+          "name": "悠闲垂钓·β",
+          "talentName": "悠闲垂钓",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升12%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.12
+          },
+          "rawParams": [
+            0.12
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0024_deepfin_2_1",
+          "name": "钓友情报网·α",
+          "talentName": "钓友情报网",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索1——联盟工团的概率小幅提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 1,
+            "clueName": "联盟工团的线索",
+            "tier": 1,
+            "tierName": "概率小幅提升"
+          },
+          "rawParams": [
+            1,
+            1
+          ]
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0024_deepfin_2_2",
+          "name": "钓友情报网·β",
+          "talentName": "钓友情报网",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索1——联盟工团的概率提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 1,
+            "clueName": "联盟工团的线索",
+            "tier": 2,
+            "tierName": "概率提升"
+          },
+          "rawParams": [
+            1,
+            2
+          ]
+        }
+      ],
+      "behaviourTypes": [
+        2,
+        7
+      ]
+    },
+    {
+      "charId": "chr_0025_ardelia",
+      "name": "艾尔黛拉",
+      "enName": "Ardelia",
+      "rarity": 6,
+      "profession": 4,
+      "professionName": "辅助",
+      "charType": "Natural",
+      "charTypeName": "自然",
+      "weaponType": 2,
+      "weaponTypeName": "施术单元",
+      "sortOrder": 23,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0025_ardelia_1_1",
+          "name": "大地的故事·β",
+          "talentName": "大地的故事",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_efficiency",
+          "desc": "进驻会客室时，干员收集线索的效率提升20%",
+          "effect": {
+            "type": 4,
+            "key": "ClueEfficiencyUp",
+            "cn": "会客室 · 线索收集效率提升",
+            "rate": 0.2
+          },
+          "rawParams": [
+            0.2
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0025_ardelia_1_2",
+          "name": "大地的故事·γ",
+          "talentName": "大地的故事",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_guestroom_efficiency",
+          "desc": "进驻会客室时，干员收集线索的效率提升30%",
+          "effect": {
+            "type": 4,
+            "key": "ClueEfficiencyUp",
+            "cn": "会客室 · 线索收集效率提升",
+            "rate": 0.3
+          },
+          "rawParams": [
+            0.3
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0025_ardelia_2_1",
+          "name": "多利先生的游戏·β",
+          "talentName": "多利先生的游戏",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_power_consume",
+          "desc": "进驻会客室时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0025_ardelia_2_2",
+          "name": "多利先生的游戏·γ",
+          "talentName": "多利先生的游戏",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_guestroom_power_consume",
+          "desc": "进驻会客室时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        7
+      ]
+    },
+    {
+      "charId": "chr_0026_lastrite",
+      "name": "别礼",
+      "enName": "Last Rite",
+      "rarity": 6,
+      "profession": 8,
+      "professionName": "突击",
+      "charType": "Cryst",
+      "charTypeName": "寒冷",
+      "weaponType": 3,
+      "weaponTypeName": "双手剑",
+      "sortOrder": 24,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0026_lastrite_1_1",
+          "name": "墓地园艺·β",
+          "talentName": "墓地园艺",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_flower",
+          "desc": "进驻培养舱时，晶植质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 2,
+            "materialName": "晶植质料"
+          },
+          "rawParams": [
+            0.2,
+            2
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0026_lastrite_1_2",
+          "name": "墓地园艺·γ",
+          "talentName": "墓地园艺",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_flower",
+          "desc": "进驻培养舱时，晶植质料的培养速度提升30%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.3,
+            "materialType": 2,
+            "materialName": "晶植质料"
+          },
+          "rawParams": [
+            0.3,
+            2
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0026_lastrite_2_1",
+          "name": "王庭盛名·α",
+          "talentName": "王庭盛名",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索7——塞什卡的概率小幅提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 7,
+            "clueName": "塞什卡的线索",
+            "tier": 1,
+            "tierName": "概率小幅提升"
+          },
+          "rawParams": [
+            7,
+            1
+          ]
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0026_lastrite_2_2",
+          "name": "王庭盛名·β",
+          "talentName": "王庭盛名",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索7——塞什卡的概率提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 7,
+            "clueName": "塞什卡的线索",
+            "tier": 2,
+            "tierName": "概率提升"
+          },
+          "rawParams": [
+            7,
+            2
+          ]
+        }
+      ],
+      "behaviourTypes": [
+        7,
+        0
+      ]
+    },
+    {
+      "charId": "chr_0029_pograni",
+      "name": "骏卫",
+      "enName": "Pogranichnik",
+      "rarity": 6,
+      "profession": 7,
+      "professionName": "先锋",
+      "charType": "Physical",
+      "charTypeName": "物理",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 25,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0029_pograni_1_1",
+          "name": "先利其器·β",
+          "talentName": "先利其器",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.2,
+            2
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0029_pograni_1_2",
+          "name": "先利其器·γ",
+          "talentName": "先利其器",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升30%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.3,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.3,
+            2
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0029_pograni_2_1",
+          "name": "鼓舞士气·β",
+          "talentName": "鼓舞士气",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0029_pograni_2_2",
+          "name": "鼓舞士气·γ",
+          "talentName": "鼓舞士气",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        1
+      ]
+    },
+    {
+      "charId": "chr_0027_tangtang",
+      "name": "汤汤",
+      "enName": "Tangtang",
+      "rarity": 6,
+      "profession": 5,
+      "professionName": "术师",
+      "charType": "Cryst",
+      "charTypeName": "寒冷",
+      "weaponType": 6,
+      "weaponTypeName": "手铳",
+      "sortOrder": 26,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0027_tangtang_1_1",
+          "name": "大当家·β",
+          "talentName": "大当家",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_power_consume",
+          "desc": "进驻培养舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0027_tangtang_1_2",
+          "name": "大当家·γ",
+          "talentName": "大当家",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_power_consume",
+          "desc": "进驻培养舱时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0027_tangtang_2_1",
+          "name": "河流的女儿·β",
+          "talentName": "河流的女儿",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_flower",
+          "desc": "进驻培养舱时，晶植质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 2,
+            "materialName": "晶植质料"
+          },
+          "rawParams": [
+            0.2,
+            2
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0027_tangtang_2_2",
+          "name": "河流的女儿·γ",
+          "talentName": "河流的女儿",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_flower",
+          "desc": "进驻培养舱时，晶植质料的培养速度提升30%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.3,
+            "materialType": 2,
+            "materialName": "晶植质料"
+          },
+          "rawParams": [
+            0.3,
+            2
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        0
+      ]
+    },
+    {
+      "charId": "chr_0028_wulfa",
+      "name": "洛茜",
+      "enName": "Rossi",
+      "rarity": 6,
+      "profession": 0,
+      "professionName": "近卫",
+      "charType": "Physical",
+      "charTypeName": "物理",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 27,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0028_wulfa_1_1",
+          "name": "氏族的礼仪·β",
+          "talentName": "氏族的礼仪",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_power_consume",
+          "desc": "进驻会客室时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0028_wulfa_1_2",
+          "name": "氏族的礼仪·γ",
+          "talentName": "氏族的礼仪",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_guestroom_power_consume",
+          "desc": "进驻会客室时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0028_wulfa_2_1",
+          "name": "狩猎嗅觉·β",
+          "talentName": "狩猎嗅觉",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_efficiency",
+          "desc": "进驻会客室时，干员收集线索的效率提升20%",
+          "effect": {
+            "type": 4,
+            "key": "ClueEfficiencyUp",
+            "cn": "会客室 · 线索收集效率提升",
+            "rate": 0.2
+          },
+          "rawParams": [
+            0.2
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0028_wulfa_2_2",
+          "name": "狩猎嗅觉·γ",
+          "talentName": "狩猎嗅觉",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_guestroom_efficiency",
+          "desc": "进驻会客室时，干员收集线索的效率提升30%",
+          "effect": {
+            "type": 4,
+            "key": "ClueEfficiencyUp",
+            "cn": "会客室 · 线索收集效率提升",
+            "rate": 0.3
+          },
+          "rawParams": [
+            0.3
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        7
+      ]
+    },
+    {
+      "charId": "chr_0030_zhuangfy",
+      "name": "庄方宜",
+      "enName": "Zhuang Fangyi",
+      "rarity": 6,
+      "profession": 8,
+      "professionName": "突击",
+      "charType": "Pulse",
+      "charTypeName": "电磁",
+      "weaponType": 2,
+      "weaponTypeName": "施术单元",
+      "sortOrder": 28,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0030_zhuangfy_1_1",
+          "name": "管代经验·β",
+          "talentName": "管代经验",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0030_zhuangfy_1_2",
+          "name": "管代经验·γ",
+          "talentName": "管代经验",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0030_zhuangfy_2_1",
+          "name": "天师养气法·β",
+          "talentName": "天师养气法",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0030_zhuangfy_2_2",
+          "name": "天师养气法·γ",
+          "talentName": "天师养气法",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升30%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.3,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.3,
+            1
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        1
+      ]
+    },
+    {
+      "charId": "chr_0031_mifu",
+      "name": "弭弗",
+      "enName": "Mifu",
+      "rarity": 6,
+      "profession": 0,
+      "professionName": "近卫",
+      "charType": "Physical",
+      "charTypeName": "物理",
+      "weaponType": 3,
+      "weaponTypeName": "双手剑",
+      "sortOrder": 30,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0031_mifu_1_1",
+          "name": "暗桩眼线·α",
+          "talentName": "暗桩眼线",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索3——宏山科学院的概率小幅提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 3,
+            "clueName": "宏山科学院的线索",
+            "tier": 1,
+            "tierName": "概率小幅提升"
+          },
+          "rawParams": [
+            3,
+            1
+          ]
+        },
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0031_mifu_1_2",
+          "name": "暗桩眼线·β",
+          "talentName": "暗桩眼线",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索3——宏山科学院的概率提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 3,
+            "clueName": "宏山科学院的线索",
+            "tier": 2,
+            "tierName": "概率提升"
+          },
+          "rawParams": [
+            3,
+            2
+          ]
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0031_mifu_2_1",
+          "name": "草药偏方·β",
+          "talentName": "草药偏方",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_fungus",
+          "desc": "进驻培养舱时，菌类质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 1,
+            "materialName": "菌类质料"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0031_mifu_2_2",
+          "name": "草药偏方·γ",
+          "talentName": "草药偏方",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_fungus",
+          "desc": "进驻培养舱时，菌类质料的培养速度提升30%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.3,
+            "materialType": 1,
+            "materialName": "菌类质料"
+          },
+          "rawParams": [
+            0.3,
+            1
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        7,
+        0
+      ]
+    },
+    {
+      "charId": "chr_0032_lizhiyan",
+      "name": "诀",
+      "enName": "Arcane",
+      "rarity": 6,
+      "profession": 5,
+      "professionName": "术师",
+      "charType": "Natural",
+      "charTypeName": "自然",
+      "weaponType": 2,
+      "weaponTypeName": "施术单元",
+      "sortOrder": 31,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0032_lizhiyan_1_1",
+          "name": "摘山煮海·β",
+          "talentName": "摘山煮海",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_mineral",
+          "desc": "进驻培养舱时，矿物质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 3,
+            "materialName": "矿物质料"
+          },
+          "rawParams": [
+            0.2,
+            3
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0032_lizhiyan_1_2",
+          "name": "摘山煮海·γ",
+          "talentName": "摘山煮海",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_mineral",
+          "desc": "进驻培养舱时，矿物质料的培养速度提升30%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.3,
+            "materialType": 3,
+            "materialName": "矿物质料"
+          },
+          "rawParams": [
+            0.3,
+            3
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0032_lizhiyan_2_1",
+          "name": "多识草木·β",
+          "talentName": "多识草木",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_flower",
+          "desc": "进驻培养舱时，晶植质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 2,
+            "materialName": "晶植质料"
+          },
+          "rawParams": [
+            0.2,
+            2
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0032_lizhiyan_2_2",
+          "name": "多识草木·γ",
+          "talentName": "多识草木",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_flower",
+          "desc": "进驻培养舱时，晶植质料的培养速度提升30%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.3,
+            "materialType": 2,
+            "materialName": "晶植质料"
+          },
+          "rawParams": [
+            0.3,
+            2
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        0
+      ]
+    },
+    {
+      "charId": "chr_0033_camille",
+      "name": "卡缪",
+      "enName": "Camille",
+      "rarity": 6,
+      "profession": 7,
+      "professionName": "先锋",
+      "charType": "Fire",
+      "charTypeName": "灼热",
+      "weaponType": 5,
+      "weaponTypeName": "长柄武器",
+      "sortOrder": 32,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0033_camille_1_1",
+          "name": "血晶层析·β",
+          "talentName": "血晶层析",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_flower",
+          "desc": "进驻培养舱时，晶植质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 2,
+            "materialName": "晶植质料"
+          },
+          "rawParams": [
+            0.2,
+            2
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0033_camille_1_2",
+          "name": "血晶层析·γ",
+          "talentName": "血晶层析",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_flower",
+          "desc": "进驻培养舱时，晶植质料的培养速度提升30%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.3,
+            "materialType": 2,
+            "materialName": "晶植质料"
+          },
+          "rawParams": [
+            0.3,
+            2
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0033_camille_2_1",
+          "name": "看护人手册·β",
+          "talentName": "看护人手册",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0033_camille_2_2",
+          "name": "看护人手册·γ",
+          "talentName": "看护人手册",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升30%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.3,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.3,
+            1
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        0,
+        1
+      ]
+    },
+    {
+      "charId": "chr_0034_typhoea",
+      "name": "提弗洛斯",
+      "enName": "Typhoeus",
+      "rarity": 6,
+      "profession": 8,
+      "professionName": "突击",
+      "charType": "Natural",
+      "charTypeName": "自然",
+      "weaponType": 2,
+      "weaponTypeName": "施术单元",
+      "sortOrder": 33,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0034_typhoea_1_1",
+          "name": "晶石低语·β",
+          "talentName": "晶石低语",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_mineral",
+          "desc": "进驻培养舱时，矿物质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 3,
+            "materialName": "矿物质料"
+          },
+          "rawParams": [
+            0.2,
+            3
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0034_typhoea_1_2",
+          "name": "晶石低语·γ",
+          "talentName": "晶石低语",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_mineral",
+          "desc": "进驻培养舱时，矿物质料的培养速度提升30%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.3,
+            "materialType": 3,
+            "materialName": "矿物质料"
+          },
+          "rawParams": [
+            0.3,
+            3
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0034_typhoea_2_1",
+          "name": "孢子生灵·β",
+          "talentName": "孢子生灵",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_plant_fungus",
+          "desc": "进驻培养舱时，菌类质料的培养速度提升20%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.2,
+            "materialType": 1,
+            "materialName": "菌类质料"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 2,
+          "roomName": "培养舱",
+          "skillId": "spaceship_skill_chr_0034_typhoea_2_2",
+          "name": "孢子生灵·γ",
+          "talentName": "孢子生灵",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_plant_fungus",
+          "desc": "进驻培养舱时，菌类质料的培养速度提升30%",
+          "effect": {
+            "type": 3,
+            "key": "GrowSpeedUp",
+            "cn": "培养舱 · 指定质料培养速度提升",
+            "rate": 0.3,
+            "materialType": 1,
+            "materialName": "菌类质料"
+          },
+          "rawParams": [
+            0.3,
+            1
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        0
+      ]
+    },
+    {
+      "charId": "chr_0038_purrche",
+      "name": "噗切娜",
+      "enName": "Purrchena",
+      "rarity": 5,
+      "profession": 2,
+      "professionName": "重装",
+      "charType": "Physical",
+      "charTypeName": "物理",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 34,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0038_purrche_1_1",
+          "name": "形象代言人·α",
+          "talentName": "形象代言人",
+          "level": 1,
+          "postfix": "α",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索2——环塔商会的概率小幅提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 2,
+            "clueName": "环塔商会的线索",
+            "tier": 1,
+            "tierName": "概率小幅提升"
+          },
+          "rawParams": [
+            2,
+            1
+          ]
+        },
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0038_purrche_1_2",
+          "name": "形象代言人·β",
+          "talentName": "形象代言人",
+          "level": 2,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_clue",
+          "desc": "进驻会客室时，干员收集到线索2——环塔商会的概率提升（进驻即生效，同类不可叠加）",
+          "effect": {
+            "type": 6,
+            "key": "ClueProbabilityUp",
+            "cn": "会客室 · 指定线索出现概率提升",
+            "clueIndex": 2,
+            "clueName": "环塔商会的线索",
+            "tier": 2,
+            "tierName": "概率提升"
+          },
+          "rawParams": [
+            2,
+            2
+          ]
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0038_purrche_2_1",
+          "name": "任务后的点心·β",
+          "talentName": "任务后的点心",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0038_purrche_2_2",
+          "name": "任务后的点心·γ",
+          "talentName": "任务后的点心",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升30%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.3,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.3,
+            1
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        1,
+        7
+      ]
+    },
+    {
+      "charId": "chr_0035_liino",
+      "name": "梨诺",
+      "enName": "Liino",
+      "rarity": 6,
+      "profession": 4,
+      "professionName": "辅助",
+      "charType": "Pulse",
+      "charTypeName": "电磁",
+      "weaponType": 5,
+      "weaponTypeName": "长柄武器",
+      "sortOrder": 35,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0035_liino_1_1",
+          "name": "偶像的热忱·β",
+          "talentName": "偶像的热忱",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_power_consume",
+          "desc": "进驻会客室时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0035_liino_1_2",
+          "name": "偶像的热忱·γ",
+          "talentName": "偶像的热忱",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_guestroom_power_consume",
+          "desc": "进驻会客室时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0035_liino_2_1",
+          "name": "演出余韵·β",
+          "talentName": "演出余韵",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升12%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.12
+          },
+          "rawParams": [
+            0.12
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 0,
+          "roomName": "总控中枢",
+          "skillId": "spaceship_skill_chr_0035_liino_2_2",
+          "name": "演出余韵·γ",
+          "talentName": "演出余韵",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_physical_power",
+          "desc": "进驻总控中枢时，所有干员心情恢复提升16%",
+          "effect": {
+            "type": 0,
+            "key": "MoodRecoveryAll",
+            "cn": "全员心情恢复提升",
+            "rate": 0.16
+          },
+          "rawParams": [
+            0.16
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        2,
+        7
+      ]
+    },
+    {
+      "charId": "chr_0036_jsspsi",
+      "name": "祀",
+      "enName": "Si",
+      "rarity": 6,
+      "profession": 4,
+      "professionName": "辅助",
+      "charType": "Cryst",
+      "charTypeName": "寒冷",
+      "weaponType": 3,
+      "weaponTypeName": "双手剑",
+      "sortOrder": 36,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0036_jsspsi_1_1",
+          "name": "点器为伥·β",
+          "talentName": "点器为伥",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_efficiency",
+          "desc": "进驻会客室时，干员收集线索的效率提升20%",
+          "effect": {
+            "type": 4,
+            "key": "ClueEfficiencyUp",
+            "cn": "会客室 · 线索收集效率提升",
+            "rate": 0.2
+          },
+          "rawParams": [
+            0.2
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0036_jsspsi_1_2",
+          "name": "点器为伥·γ",
+          "talentName": "点器为伥",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_guestroom_efficiency",
+          "desc": "进驻会客室时，干员收集线索的效率提升30%",
+          "effect": {
+            "type": 4,
+            "key": "ClueEfficiencyUp",
+            "cn": "会客室 · 线索收集效率提升",
+            "rate": 0.3
+          },
+          "rawParams": [
+            0.3
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0036_jsspsi_2_1",
+          "name": "墨魉代劳·β",
+          "talentName": "墨魉代劳",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_guestroom_power_consume",
+          "desc": "进驻会客室时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 5,
+          "roomName": "会客室(线索)",
+          "skillId": "spaceship_skill_chr_0036_jsspsi_2_2",
+          "name": "墨魉代劳·γ",
+          "talentName": "墨魉代劳",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_guestroom_power_consume",
+          "desc": "进驻会客室时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 4
+        }
+      ],
+      "behaviourTypes": [
+        7
+      ]
+    }
+  ]
+}

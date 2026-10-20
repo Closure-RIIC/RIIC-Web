@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import { mockApis, mockAnonymousWebsiteSession } from "./production-readiness.fixture";
-import { MOWER_PRODUCTION_KEYS } from "../src/mower-editor";
+import { MOWER_PRODUCTION_KEYS } from "../apps/arknights/src/mower-editor";
 
 test.beforeEach(async ({ page }) => {
   await mockAnonymousWebsiteSession(page);

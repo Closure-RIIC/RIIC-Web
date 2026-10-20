@@ -2,10 +2,10 @@ import { renderBuildDocument } from "./render-build-document.mjs";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { URL } from "node:url";
-const publicRoot = new URL("../.output/public/", import.meta.url);
+const publicRoot = new URL("../apps/arknights/.output/public/", import.meta.url);
 
 export async function loadRouteBundleStats() {
-  const metadata = JSON.parse(await readFile(new URL("../.output/riic-build.json", import.meta.url), "utf8"));
+  const metadata = JSON.parse(await readFile(new URL("../apps/arknights/.output/riic-build.json", import.meta.url), "utf8"));
   const manifest = JSON.parse(await readFile(new URL(".vite/manifest.json", publicRoot), "utf8"));
   const entryKeys = Object.keys(manifest).filter((key) => manifest[key].isEntry);
   assert.ok(entryKeys.length, "Vite client manifest has no entry points");

@@ -6,7 +6,7 @@ import { existsSync } from "node:fs";
 import { build } from "esbuild";
 
 function resolveAtAlias(request) {
-  const base = path.resolve("src", request.slice(2));
+  const base = path.resolve("apps/arknights/src", request.slice(2));
   const candidates = [
     base,
     `${base}.ts`,

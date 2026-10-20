@@ -11,7 +11,7 @@ import { extractTitleAccent } from "./lib/gacha-title-color.mjs";
 
 const run = promisify(execFile);
 const root = new URL("../", import.meta.url);
-const manifestUrl = new URL("src/generated/gacha-titles.json", root);
+const manifestUrl = new URL("apps/arknights/src/generated/gacha-titles.json", root);
 const sources = [
   { repository: "ArknightsAssets/ArknightsAssets", branch: "cn", directory: "assets/torappu/dynamicassets/ui/gacha" },
   { repository: "ArknightsAssets/ArknightsAssets2", branch: "cn", directory: "assets/dyn/ui/gacha" },
@@ -123,11 +123,11 @@ async function sync() {
     }
   }));
   const { titles } = await readManifest();
-  await mkdir(new URL("public/images/gacha-titles/", root), { recursive: true });
+  await mkdir(new URL("apps/arknights/public/images/gacha-titles/", root), { recursive: true });
   const layers = new Map();
   for (const { poolId, layer, bytes, ...asset } of downloaded) {
     const src = `/images/gacha-titles/${poolId}${layer ? `/${layer}` : ""}.png`;
-    if (layer) await mkdir(new URL(`public/images/gacha-titles/${poolId}/`, root), { recursive: true });
+    if (layer) await mkdir(new URL(`apps/arknights/public/images/gacha-titles/${poolId}/`, root), { recursive: true });
     await writeFile(new URL(`public${src}`, root), bytes);
     if (layer) layers.set(`${poolId}/${layer}`, { src, ...asset });
     else titles[poolId] = { src, ...asset };

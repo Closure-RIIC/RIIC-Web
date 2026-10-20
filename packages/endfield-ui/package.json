@@ -1,0 +1,8 @@
+{
+  "name": "@riic/endfield-ui",
+  "private": true,
+  "type": "module",
+  "peerDependencies": {
+    "react": "^19.2.8"
+  }
+}

@@ -5,9 +5,9 @@ import { log } from "node:console";
 import process from "node:process";
 
 // Use the same reviewed upstream revision as the operator catalog.
-const source = JSON.parse(await readFile("src/generated/arkntools/source.json", "utf8")).source;
-const output = "src/generated/recruitment-data.json";
-const catalog = JSON.parse(await readFile("src/generated/arkntools/operator-catalog.json", "utf8"));
+const source = JSON.parse(await readFile("apps/arknights/src/generated/arkntools/source.json", "utf8")).source;
+const output = "apps/arknights/src/generated/recruitment-data.json";
+const catalog = JSON.parse(await readFile("apps/arknights/src/generated/arkntools/operator-catalog.json", "utf8"));
 const check = process.argv.includes("--check");
 let data;
 if (check) {
