@@ -52,7 +52,11 @@ for (const mobile of [false,true]) {
       const result = page.locator("[data-mastery-results]");
       await expect(result).toContainText("17:16:57");
       const expectResultsAtTop = async () => {
-        await expect.poll(async () => Math.round((await result.boundingBox())?.y ?? -1)).toBe(mobile ? 80 : 24);
+        await expect.poll(async () => {
+          const resultBox = await result.boundingBox();
+          const viewport = await page.locator("[data-app-scroll-area]").boundingBox();
+          return Math.round((resultBox?.y ?? -1) - (viewport?.y ?? 0));
+        }).toBe(mobile ? 80 : 24);
         await expect(result.getByRole("tab",{name:"省操作",exact:true})).toBeInViewport();
       };
       await expectResultsAtTop();

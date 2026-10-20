@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import layout252 from '../src/layouts/252.json' with { type: 'json' };
 import layout243 from '../src/layouts/243.json' with { type: 'json' };
 import { SESSION_KEY_V5 } from '../src/persistence';
+import { openAgentHistory } from './agent-history';
 import { authenticatedSklandSnapshot, mockApis, planData, seedV4Session } from './production-readiness.fixture';
 
 const result252 = {
@@ -75,6 +76,7 @@ test('opening an Agent 252 schedule survives a late 243 Skland restore and reloa
   expect((await saved()).result.diagnosticId).toBe(result252.diagnosticId);
   expect(await page.evaluate(() => sessionStorage.getItem('riic-agent-artifact-handoff'))).toBeNull();
   await page.locator('[data-primary-navigation-page="agent"]').click();
+  await openAgentHistory(page, '生成 252 排班');
   await page.getByRole('button', { name: '在基建计算器打开' }).click();
   await expect(page.getByText(/可露希尔已完成排班（252）/)).toBeVisible();
   await expect.poll(async () => (await saved()).presetLabel).toBe('252');
