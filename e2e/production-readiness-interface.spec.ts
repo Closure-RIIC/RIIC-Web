@@ -17,8 +17,8 @@ test.beforeEach(async ({ page }) => {
   }));
 });
 
-async function expectSetupAction(button: Locator) {
-  await expect(button).toHaveAttribute("data-setup-action", "");
+async function expectSetupAction(button: Locator, sharedSelection = false) {
+  await expect(button).toHaveAttribute(sharedSelection ? "data-selection-button" : "data-setup-action", sharedSelection ? "true" : "");
   const expectedHeight = await button.evaluate(() => (
     window.matchMedia("(max-width: 639px)").matches ? "44px" : "36px"
   ));
@@ -529,7 +529,7 @@ test("setup exposes and persists only worker-supported rotation profiles", async
     manualPicker.getByRole("button", { name: "已拥有全精英", exact: true }),
     manualPicker.getByRole("button", { name: "清空选择", exact: true }),
   ];
-  await expectSetupAction(manualActionButtons[0]);
+  await expectSetupAction(manualActionButtons[0], true);
   await expectSetupAction(manualActionButtons[1]);
   await expectSetupAction(manualActionButtons[2]);
   await expect(manualActionButtons[0]).toHaveAttribute("aria-pressed", "false");
