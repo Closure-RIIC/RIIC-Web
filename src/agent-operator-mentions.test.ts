@@ -30,6 +30,14 @@ test("short names and Latin boundaries avoid ordinary words", () => {
   assert.equal(mentions("**红色**很漂亮；**今年**有空闲。").length, 0);
 });
 
+test("empty training slots never become Sora portraits, while explicit Sora mentions still do", () => {
+  for (const content of ["训练室：空。学员：空；协助：空。", "训练室：**空**", "| 设施 | 干员 |\n| --- | --- |\n| 训练室 | 空 |", "未安排干员，暂无学员和教官。"]) {
+    assert.equal(mentions(content).length, 0, content);
+  }
+  assert.deepEqual(mentions("干员空的技能；[干员:空]；**[干员:空]**。").map(item => item.name), ["空", "空", "空"]);
+  assert.deepEqual(mentions("| 干员 |\n| --- |\n| [干员:空] |").map(item => item.name), ["空"]);
+});
+
 test("Markdown excludes code and links without consuming their first occurrence", () => {
   const content = "`能天使` [银灰](https://example.test/阿米娅) https://example.test/红云\n\n```text\n可露希尔\n```\n\n能天使、银灰、阿米娅、红云、可露希尔。";
   assert.deepEqual(mentions(content).map((item) => item.name), ["能天使", "银灰", "阿米娅", "红云", "可露希尔"]);

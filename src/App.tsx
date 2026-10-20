@@ -37,6 +37,8 @@ import { workbenchHref, workbenchPageFromPathname, type AppPage } from "@/workbe
 import { setTrainingPlannerHandoff, type TrainingPlannerHandoff } from "@/training-planner-store";
 import { useWebsiteSession } from "@/website-session";
 import { usePlanTask } from "@/hooks/use-plan-task";
+import { useAgentHistory } from "@/hooks/use-agent-history";
+import { useAgentRuntime } from "@/components/agent/AgentRuntimeProvider";
 import type { SklandTrainingSyncOptions } from "@/hooks/use-skland-training-sync";
 import type { TrainingSyncSnapshot } from "@/components/workbench/SklandTrainingSyncBridge";
 import { LanguageSwitch } from "@/i18n/client";
@@ -260,6 +262,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const router = useRouter();
   const page = workbenchPageFromPathname(pathname);
   const { data: websiteSession, isPending: websiteSessionPending, refetch: refetchWebsiteSession } = useWebsiteSession();
+  const { store: agentHistoryStore } = useAgentHistory();
+  const agentRuntime = useAgentRuntime();
   const defaultPreset = PRESETS[0];
   const defaultLayout = buildBlueprint(defaultPreset);
   const hasRenderedCalculator = useRef(false);
@@ -436,6 +440,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   const planTask = usePlanTask({
     onDone: (rawResult) => {
+      agentRuntime.flush();
+      agentHistoryStore.startNew();
       const finalizedResult = withDefaultDormAutofill(rawResult);
       setCliReady(true);
       setActiveShift(0);
@@ -2185,6 +2191,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     };
   }, [activeShift, page, result?.maa]);
   const animateEmptyScheduleEntrance = page === "calculator" && hasRenderedCalculator.current;
+  const healthOperators = useMemo(() => boxSource === "skland"
+    ? sklandStatusSnapshot && sklandStatusSnapshot.player.uid === activeSklandAccount?.selectedUid
+      ? { items: sklandStatusSnapshot.operators, source: "skland" as const } : undefined
+    : accountCanUseCurrentBox && operbox ? { items: operbox, source: boxSource } : undefined,
+  [accountCanUseCurrentBox, activeSklandAccount?.selectedUid, boxSource, operbox, sklandStatusSnapshot]);
   const inventoryIdentityKey = JSON.stringify([websiteUserId, sklandActiveAccountId, activeSklandAccount?.selectedUid ?? null]);
   const trainingOperators = activeSklandAccount && sklandStatusSnapshot?.player.uid === activeSklandAccount.selectedUid
     ? sklandStatusSnapshot.operators
@@ -2194,10 +2205,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       identityKey: inventoryIdentityKey,
       pending: websiteSessionPending || !hasRestoredSession,
     },
-    healthOperators: boxSource === "skland"
-      ? sklandStatusSnapshot && sklandStatusSnapshot.player.uid === activeSklandAccount?.selectedUid
-        ? { items: sklandStatusSnapshot.operators, source: "skland" as const } : undefined
-      : accountCanUseCurrentBox && operbox ? { items: operbox, source: boxSource } : undefined,
+    healthOperators,
     calculator: {
       layout,
       result,

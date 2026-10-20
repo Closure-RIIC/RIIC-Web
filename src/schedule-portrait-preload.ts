@@ -27,7 +27,7 @@ function planOperatorNames(plan: MaaPlan): string[] {
   const names = new Set<string>();
   for (const rooms of Object.values(plan.rooms)) {
     for (const room of rooms ?? []) {
-      for (const operator of room.operators) {
+      for (const operator of Array.isArray(room.operators) ? room.operators : []) {
         const name = operatorName(operator);
         if (name) names.add(name);
       }

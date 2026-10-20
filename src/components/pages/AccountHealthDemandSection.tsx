@@ -1,7 +1,7 @@
 "use client";
 
 import { ClipboardList } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { loadHealthDemand, persistHealthDemand, type HealthDemand, type HealthDemandField } from "@/account-health-demand";
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
@@ -42,6 +42,10 @@ const FIELDS: Field[] = [
 
 export function AccountHealthDemandSection({ identityKey, en, hidden = false, onChange }: { identityKey: string; en: boolean; hidden?: boolean; onChange?: (value: HealthDemand) => void }) {
   const [demand, setDemand] = useState<HealthDemand>({});
+  const fields = useMemo(() => FIELDS.map((field) => ({ ...field, options: [
+    { value: "", label: en ? "Not specified" : "未设置" },
+    ...field.choices.map((choice) => ({ value: choice.value, label: en ? choice.en : choice.zh })),
+  ] })), [en]);
   useEffect(() => {
     setDemand(loadHealthDemand(window.localStorage, identityKey) ?? {});
   }, [identityKey]);
@@ -59,11 +63,8 @@ export function AccountHealthDemandSection({ identityKey, en, hidden = false, on
         <h2 id="account-health-demand-title" className="flex items-center gap-2 text-sm font-semibold"><ClipboardList className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />{en ? "Infrastructure usage preferences" : "基建使用偏好"}</h2>
         <p className="mt-2 text-xs leading-5 text-muted-foreground">{en ? "Only settled choices belong here; unset items fall back to neutral defaults and do not affect other answers." : "每项只保留已定的选择；尚未决定的项保持未设置即可，按中性默认处理，不影响其他判断。"}</p>
         <div className="mt-4 grid gap-4 border-t border-border pt-4 sm:grid-cols-2 md:gap-x-6 md:gap-y-5 xl:grid-cols-3">
-          {FIELDS.map((field) => {
-            const options = [
-              { value: "", label: en ? "Not specified" : "未设置" },
-              ...field.choices.map((choice) => ({ value: choice.value, label: en ? choice.en : choice.zh })),
-            ];
+          {fields.map((field) => {
+            const options = field.options;
             const selected = options.find((option) => option.value === (demand[field.key] ?? "")) ?? options[0];
             return (
             <div key={field.key} className="grid min-w-0 gap-2">

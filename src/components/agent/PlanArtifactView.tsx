@@ -87,7 +87,7 @@ export function PlanArtifactView({ plan, dense = false }: { plan: AgentPlanProje
             >
               <span className="w-20 shrink-0 text-xs text-muted-foreground">{roomLabel(room.room)}</span>
               <span className="font-number min-w-0 text-sm">
-                {room.operators.join("、") || "（空）"}
+                {room.operators.join("、") || "（未安排干员）"}
               </span>
             </div>
           ))}

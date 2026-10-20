@@ -99,6 +99,17 @@ for (const width of [1440, 375]) {
   });
 }
 
+test("Floating assistant sends credit-required accounts to billing plans", async ({ page }) => {
+  await mockWorkbench(page);
+  await page.route("**/api/agent/chat", (route) => route.fulfill({ status: 402, json: { error: "credits_required" } }));
+  await page.goto("/");
+  const launcher = page.getByRole("button", { name: "打开可露希尔助理" });
+  await expect(launcher).toBeVisible();
+  await launcher.click();
+  const panel = page.locator("[data-agent-floating-panel]");
+  await expect(panel.getByRole("status")).toContainText("准备积分后即可开始对话。");
+  await expect(panel.getByRole("link", { name: "查看积分" })).toHaveAttribute("href", "/billing");
+});
 test("Floating assistant contains module load failures and recovers after refresh", async ({ page }) => {
   await mockWorkbench(page);
   await page.route("**/api/agent/chat", route => route.fulfill({ json: ready }));

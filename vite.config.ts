@@ -35,6 +35,8 @@ export default defineConfig(({ mode }) => {
     define: Object.fromEntries(Object.entries(publicEnvironment).map(([key, value]) => [
       `process.env.${key}`, JSON.stringify(value),
     ])),
+    // The assistant is loaded on demand; optimize its SDKs before the first click.
+    optimizeDeps: { include: ["ai", "@ai-sdk/react"] },
     environments: {
       client: { build: { rolldownOptions: { output: { strictExecutionOrder: true, codeSplitting: { groups: [
         { name: "core", tags: ["$initial"], priority: 30 },
@@ -47,6 +49,13 @@ export default defineConfig(({ mode }) => {
     ssr: { noExternal: ["cookie-es"] },
     build: { manifest: true },
     plugins: [{
+      name: "riic-development-dependency-cache",
+      apply: "serve",
+      config(config) {
+        // Concurrent dev/test servers must not replace each other's optimized deps.
+        return { cacheDir: `node_modules/.vite/dev-${config.server?.port ?? 5174}` };
+      },
+    }, {
       name: "riic-development-asset-cache",
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
