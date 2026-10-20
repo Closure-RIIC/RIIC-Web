@@ -2,7 +2,7 @@
 
 import { Link } from "@tanstack/react-router";
 import { Clock3, RefreshCw, ShieldCheck } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocale, useTranslations } from "use-intl";
 
 import { InfraTechnicalCard, InfraTechnicalHeading } from "@/components/InfraTechnicalCard";
@@ -29,7 +29,7 @@ function remainingParts(value: Date | string, now: number) {
   };
 }
 
-export function WebsiteSessionSettings() {
+export function WebsiteSessionSettings({ actions }: { actions?: ReactNode }) {
   const intl = useTranslations("components_auth_WebsiteSessionSettings");
   const locale = useLocale() as "zh" | "en";
   const { data: session, isPending, refetch } = useWebsiteSession();
@@ -77,9 +77,9 @@ export function WebsiteSessionSettings() {
 
   return (
     <InfraTechnicalCard group="meeting">
-      <section aria-labelledby="settings-session-title">
+      <section aria-labelledby="settings-session-title" data-settings-group="security">
         <InfraTechnicalHeading icon={<Clock3 className="size-4" aria-hidden="true" />} titleId="settings-session-title">
-          {intl("title")}
+          {actions ? (locale === "en" ? "Sign-in and security" : "登录与安全") : intl("title")}
         </InfraTechnicalHeading>
         <p className="mt-4 text-sm leading-6 text-white/64">{intl("description")}</p>
         <div className="mt-5 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
@@ -95,6 +95,8 @@ export function WebsiteSessionSettings() {
             <Button type="button" nativeButton={false} variant="outline" size="dialog" className="w-full border-white/22 bg-white/5 text-white hover:bg-white/10 hover:text-white sm:w-auto" render={<Link to="/account" />}>{intl("signIn")}</Button>
           )}
         </div>
+
+        {actions ? <div className="mt-5">{actions}</div> : null}
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="max-w-[min(460px,calc(100vw-2rem))]">

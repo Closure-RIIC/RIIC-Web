@@ -9,12 +9,11 @@ import { motion, useReducedMotion } from "motion/react";
 import { InfraTechnicalCard, InfraTechnicalHeading } from "@/components/InfraTechnicalCard";
 import { cn } from "@/lib/utils";
 import { MOTION_DURATION, MOTION_EASE_IN_OUT } from "@/motion";
-import { TrainingAdviceActionCard } from "@/components/training-advice/TrainingAdviceActionCard";
 import { Button } from "@/components/ui/button";
 import { OwnedOperatorFilter } from "@/components/operators/OwnedOperatorFilter";
 import { OperatorRarityFilter, OperatorProfessionFilter } from "@/components/operators/OperatorPickerParts";
 import { SkillFilterRow } from "@/components/skill-query/SkillFilterRow";
-import { operatorPresentationFor } from "@/operatorPortraits";
+import { operatorFor } from "@/operator-catalog";
 import type {
   BaseBlueprint,
   OperBoxEntry,
@@ -27,6 +26,10 @@ import type { TrainingPlannerHandoff } from "@/training-planner-store";
 import { trainingPlannerTargetFromAdvice } from "@/training-planner-handoff";
 
 const TRAINING_BLACKLIST_KEY = "arknights-infra-training-blacklist-v1";
+const TrainingAdviceActionCard = lazy(() => import("@/components/training-advice/TrainingAdviceActionCard").then((module) => ({
+  default: module.TrainingAdviceActionCard,
+})));
+
 const TrainingCombinationCard = lazy(() => import("@/components/training-advice/TrainingCombinationCard").then((module) => ({
   default: module.TrainingCombinationCard,
 })));
@@ -80,7 +83,7 @@ function duplicateValues(values: string[]) {
 }
 
 function trainingPlannerTarget(recommendation: TrainingRecommendation): TrainingPlannerHandoff[number] | null {
-  const operator = operatorPresentationFor({ name: recommendation.operator }).operator;
+  const operator = operatorFor(recommendation.operator);
   return trainingPlannerTargetFromAdvice(operator, recommendation.target);
 }
 
@@ -200,7 +203,7 @@ export function TrainingAdvice({
   const issues = contractIssues(layout, operbox, en);
   function matchesFilters(name: string) {
     const entry = ownedByName.get(name);
-    const operator = operatorPresentationFor({ name }).operator;
+    const operator = operatorFor(name);
     return (!onlyOwned || entry?.own === true)
       && (rarityFilter === "all" || (operator?.rarity ?? entry?.rarity) === Number(rarityFilter))
       && (professionFilter === "all" || operator?.profession === Number(professionFilter))
@@ -381,6 +384,7 @@ export function TrainingAdvice({
               onToggle={() => toggleSection("newbie")}
             >
               <div className="grid min-w-0 gap-3" data-training-newbie-list>
+                <Suspense fallback={<p className="py-4 text-sm text-white/62" role="status">{intl("components_pages_TrainingAdvice.loadingTrainingRecommendations")}</p>}>
                 {newbie.map((item, index) => (
                   <TrainingAdviceActionCard
                     key={`${item.action}-${item.operator}`}
@@ -389,6 +393,7 @@ export function TrainingAdvice({
                     onToggleBlacklist={() => updateBlacklist([...blacklist, item.operator])}
                   />
                 ))}
+                </Suspense>
               </div>
             </CollapsibleSection>
           ) : advice.newbie_section_status === "skipped_by_efficiency" ? (
@@ -423,6 +428,7 @@ export function TrainingAdvice({
                   </div>
                 </div> : null}
                 <div className="grid min-w-0 gap-3" data-training-advice-list>
+                <Suspense fallback={<p className="py-4 text-sm text-white/62" role="status">{intl("components_pages_TrainingAdvice.loadingTrainingRecommendations")}</p>}>
                 {recommendations.map((recommendation, index) => {
                   const target = trainingPlannerTarget(recommendation);
                   const selectionKey = target ? trainingRecommendationKey(recommendation, target) : "";
@@ -442,6 +448,7 @@ export function TrainingAdvice({
                     }) : undefined}
                   />;
                 })}
+                </Suspense>
                 </div>
               </>
             ) : hasFilters ? ownedEmpty : (

@@ -134,7 +134,7 @@ test("standalone gacha page preserves login and redirects the former Skland URL"
   await expect(navigation).toHaveAttribute("aria-current", "page");
   await expect(navigation.locator('xpath=ancestor::*[@data-slot="sidebar-group"]')).toContainText("养成规划");
   await page.goto("/skland");
-  await expect(page.locator("[data-skland-page]").getByRole("tab", { name: "寻访记录", exact: true })).toHaveCount(0);
+  await expect(page.locator("[data-skland-page]").getByRole("tab", { name: "抽卡分析", exact: true })).toHaveCount(0);
   await navigation.click();
   await expect(page).toHaveURL(/\/gacha$/);
   await expect(page.locator("[data-gacha-history]")).toBeVisible();
@@ -245,7 +245,7 @@ test("standalone gacha page follows Skland identity and shows summary metrics wi
   await mockGachaArchive(page, history);
   await page.goto("/gacha");
   const content = page.locator("[data-gacha-history]");
-  await expect(content.getByRole("heading", { name: "寻访记录", exact: true })).toHaveCount(0);
+  await expect(content.getByRole("heading", { name: "抽卡分析", exact: true })).toHaveCount(0);
   await expect(content.locator("[data-skland-player-identity]").getByRole("heading", { name: "测试角色甲", exact: true })).toBeVisible();
   const actions = ["刷新", "删除云端寻访记录"].map((name) => content.getByRole("button", { name, exact: true }));
   await expect(content.getByRole("button", { name: "导出", exact: true })).toHaveCount(0);
@@ -802,7 +802,7 @@ test.describe("gacha touch layout", () => {
     await expect(page.getByRole("dialog", { name: "授权寻访记录" })).toBeVisible();
     await page.getByRole("button", { name: "Close", exact: true }).click();
     const beforeScroll = (await trigger.boundingBox())!;
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.locator("[data-app-scroll-area]").evaluate((element) => element.scrollTo(0, element.scrollHeight));
     expect((await trigger.boundingBox())!.y).toBeCloseTo(beforeScroll.y, 1);
     await page.setViewportSize({ width: 1280, height: 844 });
     await expect(content.locator("[data-skland-synced-at]")).toBeVisible();

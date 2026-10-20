@@ -1,6 +1,6 @@
 import { expect, test, type Route } from "@playwright/test";
 import { TERMS_VERSION, PRIVACY_VERSION } from "../src/legal-policy";
-import { amiyaPortrait, requestId, diagnosticId, layout243, waitForOwnAnimations, planData, twoShiftPlanData, fourShiftPlanData, adjacentPortraitPlanData, lazyPortraitPlanData, authenticatedSklandSnapshot, mockApis, mockAnonymousWebsiteSession, openSklandOverview, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
+import { amiyaPortrait, requestId, diagnosticId, layout243, waitForOwnAnimations, planData, twoShiftPlanData, fourShiftPlanData, adjacentPortraitPlanData, lazyPortraitPlanData, authenticatedSklandSnapshot, mockApis, sidebarNavigation, mockAnonymousWebsiteSession, openSklandOverview, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/auth/get-session", (route) => route.fulfill({
@@ -458,18 +458,19 @@ test("primary pages load their route modules and navigate on the first click", a
   const destinations = [
     { name: "练卡建议", href: "/training", root: "[data-training-page]" },
     { name: "技能查询", href: "/skills", root: "[data-skill-query-page]" },
-    { name: "森空岛状态中心", href: "/skland", root: "[data-skland-page]" },
-    { name: "账号管理", href: "/account", root: "[data-account-management]" },
+    { name: "森空岛同步", href: "/skland", root: "[data-skland-page]" },
+    { name: "账号管理", href: "/settings", root: "[data-account-management]" },
   ];
   for (const destination of destinations) {
-    await expect(page.getByRole("button", { name: destination.name, exact: true })).toHaveAttribute("href", destination.href);
+    await expect(await sidebarNavigation(page, destination.name)).toHaveAttribute("href", destination.href);
+    if (destination.href === "/settings") await page.keyboard.press("Escape");
   }
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(page.locator('[data-primary-navigation-prefetch="intent-code"]')).toBeVisible();
   await expect(page.locator('[data-navigation-pending]')).toHaveCount(0);
 
   for (const destination of destinations) {
-    await page.getByRole("button", { name: destination.name, exact: true }).click();
+    await (await sidebarNavigation(page, destination.name)).click();
     await expect(page).toHaveURL(new RegExp(`${destination.href.replace("/", "\\/")}$`));
     await expect(page.locator(destination.root)).toBeVisible({ timeout: 45_000 });
     if (destination.href === "/training") expect(trainingRouteRequests.length).toBeGreaterThan(0);
@@ -598,7 +599,7 @@ test("website login lazy-loads its UI without probing the shared session again",
   await expect.poll(() => sessionRequests).toBe(1);
   await page.waitForTimeout(100);
 
-  await page.getByRole("button", { name: "账号管理", exact: true }).click();
+  await (await sidebarNavigation(page, "账号管理")).click();
   const loadingDialog = page.locator("[data-website-account-dialog-loading]");
   await expect(loadingDialog).toBeVisible();
   await expect(loadingDialog.getByRole("status")).toContainText("正在加载登录界面…");
@@ -611,8 +612,8 @@ test("website login lazy-loads its UI without probing the shared session again",
   await expect(loadingDialog.locator("[data-website-account-loading-spinner]")).toHaveCSS("animation-name", "none");
   await page.keyboard.press("Escape");
   await expect(loadingDialog).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "账号管理", exact: true })).toBeFocused();
-  await page.getByRole("button", { name: "账号管理", exact: true }).click();
+  await expect(page.locator("[data-sidebar-account-trigger]")).toBeFocused();
+  await (await sidebarNavigation(page, "账号管理")).click();
   await expect(loadingDialog).toBeVisible();
 
   for (const viewport of [
@@ -646,8 +647,8 @@ test("website login lazy-loads its UI without probing the shared session again",
 
   await page.keyboard.press("Escape");
   await expect(accountDialog).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "账号管理", exact: true })).toBeFocused();
-  await page.getByRole("button", { name: "账号管理", exact: true }).click();
+  await expect(page.locator("[data-sidebar-account-trigger]")).toBeFocused();
+  await (await sidebarNavigation(page, "账号管理")).click();
   await expect(accountDialog.locator("[data-website-account-panel]")).toBeVisible();
   expect(sessionRequests).toBe(1);
 });
@@ -670,16 +671,16 @@ test("website login opens account management after the gated navigation dialog",
   await mockApis(page, { sklandConfigured: true });
   await seedPreferences(page);
   await page.goto("/");
-  await page.getByRole("button", { name: "账号管理", exact: true }).click();
+  await (await sidebarNavigation(page, "账号管理")).click();
   const accountPanel = page.locator("[data-website-account-panel]");
   await accountPanel.getByRole("textbox", { name: "邮箱", exact: true }).fill("signed-in@example.test");
   await accountPanel.getByLabel("密码", { exact: true }).fill("secure-password-1");
   await accountPanel.getByRole("button", { name: "登录", exact: true }).click();
 
   await expect(page.getByRole("dialog", { name: "登录网站账号" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "账号管理", exact: true })).toHaveAttribute("data-active", "");
+  await expect(page).toHaveURL(/\/account$/);
   await expect(page.locator("[data-account-management]")).toBeVisible();
-  await expect(page.getByText("signed-in@example.test", { exact: true })).toBeVisible();
+  await expect(page.locator("[data-account-management]").getByText("signed-in@example.test", { exact: true })).toBeVisible();
   const websiteAvatar = page.locator("[data-website-account-avatar]");
   await expect(websiteAvatar).toBeVisible();
   await expect(websiteAvatar).toHaveAttribute("data-account-orb-color", /^#[0-9A-F]{6}$/);
@@ -751,7 +752,7 @@ test("seven-day bindings stay visible and require renewed authorization", async 
   await seedPreferences(page);
   await page.goto("/");
   await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
-  const sklandNavigation = page.getByRole("button", { name: "森空岛状态中心", exact: true });
+  const sklandNavigation = page.getByRole("button", { name: "森空岛同步", exact: true });
   await expect(sklandNavigation.locator(".lucide-cloud")).toBeVisible();
   await sklandNavigation.click();
   await expect(page.locator("[data-skland-page]")).toBeVisible();
@@ -800,7 +801,7 @@ test("account settings revokes every session and returns to the app", async ({ p
   await seedPreferences(page);
   await page.goto("/");
   await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
-  await page.getByRole("button", { name: "账号管理", exact: true }).click();
+  await (await sidebarNavigation(page, "账号管理")).click();
 
   const accountManagement = page.locator("[data-account-management]");
   await expect(accountManagement).toBeVisible();
@@ -1021,14 +1022,14 @@ test("defers a portrait far below the mobile viewport until it approaches view",
   await expect(deferredPortrait).toHaveAttribute("loading", "lazy");
   const viewportHeight = await page.evaluate(() => window.innerHeight);
   await expect.poll(() => deferredPortrait.evaluate((element) => {
-    window.scrollTo(0, 0);
+    document.querySelector("[data-app-scroll-area]")?.scrollTo(0, 0);
     return element.getBoundingClientRect().top;
   })).toBeGreaterThan(viewportHeight * 2);
   await page.waitForTimeout(300);
   expect(requestedPortraits).toHaveLength(3);
   expect(requestedPortraits.some((url) => url.includes("/4237_jcinta.webp?"))).toBe(false);
 
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await deferredPortrait.scrollIntoViewIfNeeded();
   await expect.poll(() => requestedPortraits.some((url) => url.includes("/4237_jcinta.webp?"))).toBe(true);
 });
 
@@ -1141,7 +1142,7 @@ test("a failed complete Skland restore keeps the independently restored identity
   await page.goto("/");
 
   const accountControl = page.locator("[data-skland-account-control]");
-  await expect(accountControl).toHaveAttribute("aria-label", "测试博士，进入森空岛状态中心");
+  await expect(accountControl).toHaveAttribute("aria-label", "测试博士，进入森空岛同步");
   const accountAvatar = accountControl.locator("[data-skland-account-avatar]");
   await expect(accountAvatar).toBeVisible();
   await expect(accountAvatar.locator("img")).toHaveCount(0);
@@ -1154,7 +1155,7 @@ test("a failed complete Skland restore keeps the independently restored identity
   await accountControl.click();
   await expect(page.getByText(/森空岛会话恢复失败，请稍后刷新。/)).toBeVisible();
   await page.getByRole("button", { name: "基建计算器", exact: true }).click();
-  await expect(accountControl).toHaveAttribute("aria-label", "测试博士，进入森空岛状态中心");
+  await expect(accountControl).toHaveAttribute("aria-label", "测试博士，进入森空岛同步");
   releaseStatus();
 });
 
@@ -1174,7 +1175,7 @@ test("a failed Skland avatar request leaves the logged-in calculator control bla
   const accountControl = page.locator("[data-skland-account-control]");
   const accountAvatar = accountControl.locator("[data-skland-account-avatar]");
   await expect(accountControl).toBeVisible();
-  await expect(accountControl).toHaveAttribute("aria-label", "测试博士，进入森空岛状态中心");
+  await expect(accountControl).toHaveAttribute("aria-label", "测试博士，进入森空岛同步");
   await expect(accountAvatar.locator("img")).toHaveCount(0);
   const failedRemoteAvatar = accountAvatar.locator('[data-remote-avatar-state="fallback"]');
   await expect(failedRemoteAvatar).toBeVisible();
@@ -1424,8 +1425,8 @@ for (const viewport of [
 
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     if (viewport.width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
-    const accountNavigation = page.getByRole("button", { name: "账号管理", exact: true });
-    await expect(accountNavigation.locator(".lucide-user-round")).toBeVisible();
+    const accountNavigation = await sidebarNavigation(page, "账号管理");
+    await expect(accountNavigation).toHaveAttribute("href", "/account");
     await accountNavigation.click();
     await expect(page.locator("[data-account-management]")).toHaveCount(0);
     const accountDialog = page.getByRole("dialog", { name: "登录网站账号" });
@@ -1714,7 +1715,7 @@ for (const viewport of [
 
     await navigateToPrimaryPage(page, {
       name: "账号管理",
-      href: "/account",
+      href: "/settings",
       root: "[data-account-management]",
     }, viewport.width < 768);
     const cloudPanel = page.locator("[data-cloud-data-panel]");
@@ -1760,7 +1761,7 @@ for (const viewport of [
     await expect(page.locator("[data-plan-result-summary]")).toContainText("333 基建方案");
     await navigateToPrimaryPage(page, {
       name: "账号管理",
-      href: "/account",
+      href: "/settings",
       root: "[data-account-management]",
     }, viewport.width < 768);
     const restoredCloudPanel = page.locator("[data-cloud-data-panel]");

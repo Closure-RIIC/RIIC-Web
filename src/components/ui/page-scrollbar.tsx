@@ -22,7 +22,7 @@ export function PageScrollbar() {
       function refresh() {
         page?.destroy();
         page = undefined;
-        if (!isTouchViewport()) {
+        if (!isTouchViewport() && !document.querySelector("[data-app-scroll-area]")) {
           page = OverlayScrollbars({
             target: document.body,
             cancel: { nativeScrollbarsOverlaid: false, body: false },

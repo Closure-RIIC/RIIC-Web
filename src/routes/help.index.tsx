@@ -1,8 +1,7 @@
-import { withPageScrollbars } from "@/components/ui/page-scrollbar-boundary";
-import { createFileRoute } from "@tanstack/react-router";
-import Page from "@/app/help/page";
-import { pageHead } from "@/i18n/metadata";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 export const Route = createFileRoute("/help/")({
-  head: ({ matches }) => pageHead(matches, "help"),
-  component: withPageScrollbars(Page),
+  beforeLoad: ({ location }) => {
+    if (location.hash === "base-knowledge") throw redirect({ to: "/docs/$slug", params: { slug: "faq" }, statusCode: 301, replace: true });
+    throw redirect({ to: "/docs", statusCode: 301, replace: true });
+  },
 });

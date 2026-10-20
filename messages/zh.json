@@ -95,8 +95,8 @@
     "trainingPlanner": "养成计算",
     "recruitment": "公招计算",
     "skills": "技能查询",
-    "skland": "森空岛状态",
-    "gacha": "寻访记录",
+    "skland": "森空岛同步",
+    "gacha": "抽卡分析",
     "training": "练卡建议",
     "account_reset_password": "重置密码",
     "admin_issues": "求解问题",
@@ -544,8 +544,8 @@
   },
   "components_layout_AppTopBar": {
     "closureInfrastructureTerminal": "可露希尔基建终端",
-    "openSklandStatus": "{value2}，进入森空岛状态中心",
-    "sklandStatus": "森空岛状态中心"
+    "openSklandStatus": "{value2}，进入森空岛同步",
+    "sklandStatus": "森空岛同步"
   },
   "components_legal_LegalDocument": {
     "backToClosureInfrastructureTerminal": "返回可露希尔基建终端",
@@ -572,7 +572,7 @@
     "filterByProfession": "职业筛选"
   },
   "components_pages_DevelopmentSklandStatusCenter": {
-    "sklandStatus": "森空岛状态中心",
+    "sklandStatus": "森空岛同步",
     "signInToYourWebsiteAccount": "先登录网站账号",
     "yourSklandConnectionBelongsToTheCurrentWebsiteAccount": "森空岛绑定属于当前网站账号。登录后可通过扫码或凭证导入完成绑定、查看当前基建状态，并在七天授权到期后重新续期。",
     "websiteAccountNotSignedIn": "网站账号尚未登录",

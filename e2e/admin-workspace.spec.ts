@@ -84,3 +84,17 @@ test("English navigation and page copy resolve", async ({ page, context, baseURL
   await expect(page.getByRole("table")).toContainText("Kestrel");
   await expect(page.getByText("AdminWorkspace.", { exact: false })).toHaveCount(0);
 });
+
+for (const width of [1440, 375]) {
+  test(`admin pages scroll to their footer at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 650 });
+    await page.goto("/admin-preview/users");
+    await expect(page.getByRole("table")).toBeVisible();
+    const footer = page.locator('[data-slot="sidebar-wrapper"] footer');
+    expect((await footer.boundingBox())!.y).toBeGreaterThan(650);
+    await page.mouse.move(width - 80, 450);
+    await page.mouse.wheel(0, 1500);
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(100);
+    await expect(footer).toBeInViewport();
+  });
+}

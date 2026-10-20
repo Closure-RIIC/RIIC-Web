@@ -48,7 +48,7 @@ export function ImportMethodChoice({ sklandContent, maaContent }: ImportMethodCh
 
       if (source && !method) {
         url.searchParams.delete("source");
-        window.history.replaceState({}, "", url);
+        window.history.replaceState(window.history.state, "", url);
       }
 
       setSelectedMethod(method);
@@ -64,7 +64,7 @@ export function ImportMethodChoice({ sklandContent, maaContent }: ImportMethodCh
 
     const url = new URL(window.location.href);
     url.searchParams.set("source", method);
-    window.history.replaceState({}, "", url);
+    window.history.replaceState(window.history.state, "", url);
   }
 
   const selectedMethodData = methods.find((method) => method.id === selectedMethod);

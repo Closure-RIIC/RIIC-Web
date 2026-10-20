@@ -94,7 +94,7 @@
   "currentInfrastructure": "Current infrastructure",
   "facilities": "facilities",
   "restoringSklandSession": "Restoring Skland session",
-  "sklandStatus": "Skland Status",
+  "sklandStatus": "Skland Sync",
   "credentialsStayInThisBrowserAndExpireAfter7": "Credentials stay in this browser and expire after 7 days.",
   "label": " ({code})",
   "fullStatusIsTemporarilyUnavailable": "Full status is temporarily unavailable",

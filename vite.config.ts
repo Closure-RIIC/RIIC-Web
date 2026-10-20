@@ -44,7 +44,12 @@ export default defineConfig(({ mode }) => {
         { name: "calculator", test: /src[\\/]routes[\\/]_workbench\.index\.tsx\?tsr-split=component/, priority: 10 },
       ] } } } } },
     },
-    server: { host: "0.0.0.0", port: 5174, proxy: { "/media/tutorials": { target: "http://127.0.0.1:18900", rewrite: (url) => url.replace(/^\/media\/tutorials/, "") } } },
+    server: {
+      host: "0.0.0.0", port: 5174,
+      // Playwright trace HTML is not app source and must not reload preview tabs.
+      watch: { ignored: ["**/.tmp/**", "**/test-results/**", "**/playwright-report/**"] },
+      proxy: { "/media/tutorials": { target: "http://127.0.0.1:18900", rewrite: (url) => url.replace(/^\/media\/tutorials/, "") } },
+    },
     css: { postcss: { plugins: [] } },
     ssr: { noExternal: ["cookie-es"] },
     build: { manifest: true },

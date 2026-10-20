@@ -3,8 +3,9 @@
 import { lazy, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { POSTER_HANDOFF_KEY, posterDraftForManual, readPosterFile, type SchedulePosterDocument } from "@/schedule-poster-document";
-import { posterOperators } from "@/schedule-poster-model";
+import type { SchedulePosterDocument } from "@/schedule-poster-document";
+import type { ManualScheduleDraft } from "@/manual-schedule";
+import { POSTER_HANDOFF_KEY } from "@/schedule-poster-storage";
 import { DEFAULT_MANUAL_SHIFT_START_TIME } from "@/manual-schedule-config";
 import { useWorkbench } from "@/workbench-context";
 
@@ -20,10 +21,13 @@ export function ManualScheduleRoute() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
   const restored = useRef(false);
-  const [initial, setInitial] = useState<ReturnType<typeof posterDraftForManual> | null>(null);
+  const [initial, setInitial] = useState<ManualScheduleDraft | null>(null);
   const callbacks = useRef(manual);
   useEffect(() => { callbacks.current = manual; }, [manual]);
-  function importPoster(document: SchedulePosterDocument) {
+  async function importPoster(document: SchedulePosterDocument) {
+    const [{ posterDraftForManual }, { posterOperators }] = await Promise.all([
+      import("@/schedule-poster-document"), import("@/schedule-poster-model"),
+    ]);
     setInitial(posterDraftForManual(document));
     setPoster({ ...document, operators: posterOperators(document) }); setRevision(value => value + 1);
     const shared = callbacks.current;
@@ -44,10 +48,15 @@ export function ManualScheduleRoute() {
           if (!/^[a-f0-9]{12}$/.test(code)) throw new Error("作业码格式不正确。");
           const response = await fetch(`/api/schedule-posters?code=${code}`);
           const payload = await response.json(); if (!response.ok) throw new Error(payload.error);
-          importPoster(readPosterFile(JSON.stringify(payload.document)));
+          const { readPosterFile } = await import("@/schedule-poster-document");
+          await importPoster(readPosterFile(JSON.stringify(payload.document)));
         } else {
           const value = window.sessionStorage.getItem(`${POSTER_HANDOFF_KEY}.manual`);
-          if (value) { importPoster(readPosterFile(value)); window.sessionStorage.removeItem(`${POSTER_HANDOFF_KEY}.manual`); }
+          if (value) {
+            const { readPosterFile } = await import("@/schedule-poster-document");
+            await importPoster(readPosterFile(value));
+            window.sessionStorage.removeItem(`${POSTER_HANDOFF_KEY}.manual`);
+          }
         }
       } catch (e) { setError(e instanceof Error ? e.message : "读取作业失败。"); }
       finally { setReady(true); }
@@ -58,6 +67,6 @@ export function ManualScheduleRoute() {
   return <>
     {error ? <p role="alert" className="mb-3 text-sm text-destructive">{error}</p> : null}
     {poster ? <div className="mb-3 flex flex-wrap items-center gap-3 border-y py-2 text-xs text-muted-foreground"><span>作业副本：{poster.meta.title} · 使用作业练度，可在排班编辑中调整；个人干员池保留。</span><Button size="sm" variant="ghost" onClick={() => { window.location.href = "/manual"; }}>返回个人草稿</Button></div> : null}
-    <ManualSchedulePage key={revision} {...manual} {...(poster ? { persistDraft: false, sourceName: "作业练度（非个人干员池）", initialDraft: initial, restorationReady: true, onInitialDraftConsumed: () => setInitial(null) } : {})} initialPosterDocument={poster} onImportPoster={importPoster} />
+    <ManualSchedulePage key={revision} {...manual} {...(poster ? { persistDraft: false, sourceName: "作业练度（非个人干员池）", initialDraft: initial, restorationReady: true, onInitialDraftConsumed: () => setInitial(null) } : {})} initialPosterDocument={poster} onImportPoster={document => { void importPoster(document).catch(error => setError(error instanceof Error ? error.message : "读取作业失败。")); }} />
   </>;
 }

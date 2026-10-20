@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { switchWorkbenchLanguage } from "./workbench-language";
 import { expect, test, type Page } from "@playwright/test";
 import type { ManualScheduleDraft } from "../src/manual-schedule";
 import layout243 from "../src/layouts/243.json" with { type: "json" };
@@ -450,11 +451,11 @@ async function openManualWorkflow(page: Page, tradeOperators?: Array<string | nu
 test("manual scheduling configures independent shifts and responsive drone controls", async ({ page }) => {
   const planRequests = await openManualWorkflow(page);
 
-  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await switchWorkbenchLanguage(page, "en");
   await expect(page.getByRole("button", { name: "Configure Box & layout" }).first()).toBeVisible();
   await expect(page.getByRole("button", { name: "Export MAA" })).toBeVisible();
   await expect(page.getByRole("tab", { name: /Shift 1.*12h/ })).toBeVisible();
-  await page.getByRole("button", { name: "中文", exact: true }).click();
+  await switchWorkbenchLanguage(page, "zh");
 
   const scheduleToolbar = page.locator("[data-manual-editor-board] [data-schedule-toolbar]");
   const layoutTabs = scheduleToolbar.getByRole("tablist", { name: "排班布局切换" });

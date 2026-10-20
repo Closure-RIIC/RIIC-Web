@@ -94,7 +94,7 @@
   "currentInfrastructure": "当前基建",
   "facilities": "个设施",
   "restoringSklandSession": "正在恢复森空岛会话",
-  "sklandStatus": "森空岛状态中心",
+  "sklandStatus": "森空岛同步",
   "credentialsStayInThisBrowserAndExpireAfter7": "登录凭证只保存在当前浏览器，7 天后失效。",
   "label": "（{code}）",
   "fullStatusIsTemporarilyUnavailable": "完整状态暂时无法加载",

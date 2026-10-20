@@ -33,6 +33,7 @@ import { LiveActivity, usePlanActivity } from "@/components/ui/live-activity";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { trackTelemetry } from "@/lib/telemetry-dispatch";
 import { WorkbenchContext } from "@/workbench-context";
+import { FeatureAccessBoundary } from "@/components/workbench/FeatureAccessProvider";
 import { workbenchHref, workbenchPageFromPathname, type AppPage } from "@/workbench-routes";
 import { setTrainingPlannerHandoff, type TrainingPlannerHandoff } from "@/training-planner-store";
 import { useWebsiteSession } from "@/website-session";
@@ -41,7 +42,6 @@ import { useAgentHistory } from "@/hooks/use-agent-history";
 import { useAgentRuntime } from "@/components/agent/AgentRuntimeProvider";
 import type { SklandTrainingSyncOptions } from "@/hooks/use-skland-training-sync";
 import type { TrainingSyncSnapshot } from "@/components/workbench/SklandTrainingSyncBridge";
-import { LanguageSwitch } from "@/i18n/client";
 
 import {
   computePlan,
@@ -78,7 +78,7 @@ import {
 import { normalizeOperboxEntries } from "./operbox-normalization";
 import { droneStoragePlanIndex } from "./drone-plan-mapping";
 import { AGENT_BROADCAST_CHANNEL, consumeAgentArtifactHandoff, isAgentArtifactHandoff, receiveAgentArtifactMessage, type AgentArtifactHandoff } from "./agent-artifact-bridge";
-import { buildAutomaticScheduleContext, sameAgentPageContext, type AgentPageContext } from "./agent-page-context";
+import { sameAgentPageContext, type AgentPageContext } from "./agent-page-context-shared";
 import { prepareMaaForExport } from "./maa-safety";
 import { upgradeSimulationBoxSource } from "./upgrade-simulation";
 import {
@@ -522,7 +522,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     return () => { cancelled = true; };
   }, [baseRows]);
   const rows = presentedRows?.source === baseRows ? presentedRows.rows : baseRows;
-  const automaticAgentPageContext = useMemo(() => buildAutomaticScheduleContext({ layout, result, scheduleResult, activeShift, rows }), [activeShift, layout, result, rows, scheduleResult]);
+  const automaticAgentContextInput = useMemo(() => ({ layout, result, scheduleResult, activeShift, rows }), [activeShift, layout, result, rows, scheduleResult]);
   const publishAgentPageContext = useCallback((sourcePage: AgentPageContext["page"], context: AgentPageContext | null) => {
     if (page !== sourcePage) return;
     if (sourcePage === "manual") setManualAgentPageContext((current) => sameAgentPageContext(current, context) ? current : context);
@@ -1882,7 +1882,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       websiteAuthFocusReturnTimerRef.current = null;
       const focusTarget = trigger?.isConnected
         ? trigger
-        : document.querySelector<HTMLElement>('[data-primary-navigation-page="account"]');
+        : document.querySelector<HTMLElement>('[data-sidebar-account-trigger]');
       focusTarget?.focus();
     }, WEBSITE_AUTH_FOCUS_RETURN_DELAY_MS);
   }
@@ -2457,15 +2457,16 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         if (event.key === "Escape" && websiteAuthDialogOpen) handleWebsiteAuthDialogOpenChange(false);
       }}
     >
-    <SidebarProvider defaultOpen defaultOpenBreakpoint={1280} style={{ "--sidebar-width": "14rem", "--sidebar-width-icon": "3.25rem" } as React.CSSProperties}>
+    <SidebarProvider data-workbench-shell defaultOpen defaultOpenBreakpoint={1280} style={{ "--sidebar-width": "14rem", "--sidebar-width-icon": "3.25rem" } as React.CSSProperties}>
       {trainingSyncLoaded || page === "training" ? (
         <Suspense fallback={null}>
           <SklandTrainingSyncBridge options={sklandTrainingSyncOptions} onChange={setTrainingSyncSnapshot} />
         </Suspense>
       ) : null}
-      <AppSidebar page={page} onPageChange={handleAppPageChange} showMower={userSettings.showMower} />
+      <AppSidebar page={page} onPageChange={handleAppPageChange} showMower={userSettings.showMower} onSessionChanged={handleWebsiteSessionChanged} />
       <SidebarInset className="isolate">
         <DotDistortionBackground />
+        <div data-app-scroll-area={page} data-scroll-restoration-id="workbench-page" data-yeye-scroll={page === "agent" ? undefined : "y"} data-yeye-scroll-slot="workbench-page-scrollbar">
         {page !== "agent" ? <AppTopBar /> : null}
         {agentArtifactNotice && page !== "agent" ? (
           <div className="flex flex-wrap items-center gap-3 border-b bg-[#FFD501]/15 px-4 py-2 text-sm" data-agent-artifact-banner>
@@ -2540,14 +2541,15 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       </WorkbenchContext.Provider>
       </div>
 
-      {page !== "agent" && page !== "account" && page !== "gacha" ? <Suspense fallback={null}><AgentFloatingWidget
-        pageContext={page === "calculator" ? automaticAgentPageContext : page === "manual" ? manualAgentPageContext : page === "account-health" ? accountHealthAgentPageContext : page === "training-planner" ? trainingPlannerAgentPageContext : null}
-      /></Suspense> : null}
+      {page !== "agent" && page !== "account" && page !== "gacha" ? <FeatureAccessBoundary feature="agent"><Suspense fallback={null}>
+        <AgentFloatingWidget
+          automaticContextInput={page === "calculator" ? automaticAgentContextInput : undefined}
+          pageContext={page === "manual" ? manualAgentPageContext : page === "account-health" ? accountHealthAgentPageContext : page === "training-planner" ? trainingPlannerAgentPageContext : null}
+        />
+      </Suspense></FeatureAccessBoundary> : null}
 
       {page !== "agent" ? <footer className="app-content-track workbench-footer mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/70 py-5 text-xs text-muted-foreground">
-        <div className="w-full md:w-auto max-md:[&>div]:h-12 max-md:[&_button]:h-11 max-md:[&_button]:min-w-12 max-md:[&_span]:h-11"><LanguageSwitch /></div>
         <div className="flex w-full flex-wrap items-center gap-x-4 md:contents">
-        <Link preload={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" to="/help" data-help-link>{intl("App.help")}</Link>
         <Link preload={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" to="/terms">{intl("App.terms")}</Link>
         <Link preload={false} className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-foreground" to="/privacy">{intl("App.privacy")}</Link>
         <span className="inline-flex items-center gap-x-4">
@@ -2580,6 +2582,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
           </a>
         </div>
       </footer> : null}
+        </div>
 
       {CLIENT_ACCOUNT_CLOUD_SYNC_ENABLED ? accountCloudWorkspace.syncElement : null}
       {hasRestoredSession ? <Suspense fallback={null}>
@@ -2681,6 +2684,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         onConfirm={confirmManualDraftReplacement}
       /></Suspense> : null}
       </SidebarInset>
+      <div id="workbench-page-scrollbar" data-yeye-scroll-slot-host data-app-page-scrollbar aria-hidden="true" />
     </SidebarProvider>
     </div>
       </TooltipProvider>

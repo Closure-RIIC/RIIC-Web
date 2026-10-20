@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, expectButtonGeometryStable, armEndingTransitionCapture, expectCapturedExitDuration, armMotionCapture, expectCapturedMotion, armTransientStyleCapture, expectCapturedStyleMotion, waitForContentReady, waitForOwnAnimations, planData, twoShiftPlanData, scheduleVisualPlanData, productChangePlanData, motionPlanData, authenticatedSklandSnapshot, mockApis, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
+import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, expectButtonGeometryStable, armEndingTransitionCapture, expectCapturedExitDuration, armMotionCapture, expectCapturedMotion, armTransientStyleCapture, expectCapturedStyleMotion, waitForContentReady, waitForOwnAnimations, planData, twoShiftPlanData, scheduleVisualPlanData, productChangePlanData, motionPlanData, authenticatedSklandSnapshot, mockApis, sidebarNavigation, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
 import type { PublicPlanData } from "../src/types";
 
 test.beforeEach(async ({ page }) => {
@@ -379,8 +379,8 @@ test("Skland calculator keeps the schedule visible before and after sidebar navi
   await expect(page.locator('[data-slot="drawer-root"]')).toHaveCount(0);
   await expect(comparisonTrigger).toBeFocused();
 
-  const returnToCalculator = async (destination: "练卡建议" | "森空岛状态中心", marker: string, label: string) => {
-    await page.getByRole("button", { name: destination, exact: true }).click();
+  const returnToCalculator = async (destination: "练卡建议" | "森空岛同步", marker: string, label: string) => {
+    await (await sidebarNavigation(page, destination)).click();
     await expect(page.locator(marker)).toBeVisible();
     await armMotionCapture(page, "[data-plan-board]", label, 320);
     await armMotionCapture(page, "[data-plan-result-summary]", `${label}-summary`, 460);
@@ -400,7 +400,7 @@ test("Skland calculator keeps the schedule visible before and after sidebar navi
 
   await returnToCalculator("练卡建议", '[data-slot="training-summary"]', "calculator-return-training");
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await returnToCalculator("森空岛状态中心", "[data-skland-view-tabs]", "calculator-return-skland-reduced");
+  await returnToCalculator("森空岛同步", "[data-skland-view-tabs]", "calculator-return-skland-reduced");
 });
 
 test("desktop sidebar state survives navigation and a hard reload without hydration errors", async ({ page, context }) => {
@@ -1347,8 +1347,8 @@ test("responsive navigation and the two locked areas keep their current behavior
 
   await expect(page.getByRole("button", { name: "基建计算器" })).toBeVisible();
   await expect(page.getByRole("button", { name: "练卡建议" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "森空岛状态中心", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "账号管理", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "森空岛同步", exact: true })).toBeVisible();
+  await expect(page.locator("[data-sidebar-account-trigger]")).toBeVisible();
 });
 
 test("the compact mobile navigation stays pinned while the account control belongs to the calculator", async ({ page }) => {
@@ -1378,7 +1378,7 @@ test("the compact mobile navigation stays pinned while the account control belon
   await expect(topbar.locator("[data-skland-account-control]")).toHaveCount(0);
   await expect(page.locator("[data-skland-account-control]")).toHaveAttribute(
     "aria-label",
-    "测试博士，进入森空岛状态中心",
+    "测试博士，进入森空岛同步",
     { timeout: 10_000 },
   );
   await expect(page.locator("[data-skland-account-loading]")).toHaveCount(0);
@@ -1387,12 +1387,14 @@ test("the compact mobile navigation stays pinned while the account control belon
   const mobileBar = topbar.locator(".app-content-track");
   await expect(mobileBar).toHaveCSS("height", "48px");
 
-  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-  await expect.poll(async () => (await topbar.boundingBox())?.y ?? -1).toBeCloseTo(0, 0);
+  const pageViewport = page.locator("[data-app-scroll-area]");
+  await pageViewport.evaluate((element) => element.scrollTo(0, element.scrollHeight));
+  await expect.poll(() => pageViewport.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+  await expect.poll(async () => (await topbar.boundingBox())?.y ?? -1).toBeCloseTo(4, 0);
 
-  for (const destination of ["练卡建议", "森空岛状态中心", "账号管理"]) {
+  for (const destination of ["练卡建议", "森空岛同步", "账号管理"]) {
     await topbar.getByRole("button", { name: "Toggle Sidebar" }).click();
-    await page.getByRole("button", { name: destination, exact: true }).click();
+    await (await sidebarNavigation(page, destination)).click();
     await expect(page.locator("[data-skland-account-control]")).toHaveCount(0);
   }
   await topbar.getByRole("button", { name: "Toggle Sidebar" }).click();
@@ -1400,9 +1402,9 @@ test("the compact mobile navigation stays pinned while the account control belon
   await expect(page.locator("[data-skland-account-control]")).toBeVisible();
 
   await page.setViewportSize({ width: 768, height: 900 });
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await pageViewport.evaluate((element) => element.scrollTo(0, 0));
   await expect(topbar).toBeHidden();
-  await expect.poll(async () => (await page.locator("[data-app-content]").boundingBox())?.y ?? -1).toBeCloseTo(0, 0);
+  await expect.poll(async () => (await page.locator("[data-app-content]").boundingBox())?.y ?? -1).toBeCloseTo(8, 0);
 });
 
 test("the initial onboarding is full-screen while other primary pages keep one content offset", async ({ page }) => {
@@ -1424,8 +1426,8 @@ test("the initial onboarding is full-screen while other primary pages keep one c
     for (const destination of [
       { name: "练卡建议", pageKey: "training", root: "[data-training-page]" },
       { name: "技能查询", pageKey: "skill-query", root: "[data-skill-query-page]" },
-      { name: "森空岛状态中心", pageKey: "skland", root: "[data-skland-page]" },
-      { name: "账号管理", pageKey: "account", root: "[data-account-management]" },
+      { name: "森空岛同步", pageKey: "skland", root: "[data-skland-page]" },
+      { name: "账号管理", pageKey: "settings", root: "[data-account-management]" },
     ]) {
       const href = destination.pageKey === "skill-query" ? "/skills" : `/${destination.pageKey}`;
       await navigateToPrimaryPage(page, {
@@ -1433,7 +1435,7 @@ test("the initial onboarding is full-screen while other primary pages keep one c
         href,
         root: destination.root,
       }, viewport.width < 768);
-      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.locator("[data-app-scroll-area]").evaluate((element) => element.scrollTo(0, 0));
       await waitForOwnAnimations(page.locator(`[data-primary-page="${destination.pageKey}"]`));
       const pageTop = (await page.locator(`[data-primary-page="${destination.pageKey}"]`).boundingBox())?.y ?? -1;
       regularPageTops.push(pageTop);
@@ -1461,7 +1463,7 @@ for (const viewport of [
     await expect(page.locator('[data-navigation-pending]')).toHaveCount(0);
 
     await navigateToPrimaryPage(page, {
-      name: "森空岛状态中心",
+      name: "森空岛同步",
       href: "/skland",
       root: "[data-skland-page]",
     }, viewport.width < 768);
@@ -1482,7 +1484,7 @@ for (const viewport of [
 
     await navigateToPrimaryPage(page, {
       name: "账号管理",
-      href: "/account",
+      href: "/settings",
       root: "[data-account-management]",
     }, viewport.width < 768);
     const accountRoot = page.locator("[data-account-management]");
