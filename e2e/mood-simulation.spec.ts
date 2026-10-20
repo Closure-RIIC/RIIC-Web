@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { switchWorkbenchLanguage } from "./workbench-language";
 import layout from "../src/layouts/243.json" with {type:"json"};
 import { mockApis, mockAnonymousWebsiteSession } from "./production-readiness.fixture";
 
@@ -114,7 +115,7 @@ test("manual morale worker, timeline, shared targets and simulation-only setting
   await page.setViewportSize({width:390,height:844});
   await expect(page.locator('[data-manual-more-tools] summary')).toBeVisible();
   expect(await panel.evaluate(e => e.scrollWidth-e.clientWidth)).toBeLessThanOrEqual(2);
-  await page.getByRole("button",{name:"EN",exact:true}).click();
+  await switchWorkbenchLanguage(page, "en");
   await expect(panel.getByRole("button",{name:"Play",exact:true})).toBeVisible();
   await openSettings("Simulation settings");
   await expect(page.getByRole("dialog",{name:"Simulation settings"})).toContainText("simulation-only");

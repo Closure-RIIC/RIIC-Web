@@ -99,6 +99,35 @@ for (const width of [1440, 375]) {
   });
 }
 
+test("Restricted accounts cannot see the floating assistant or trigger its availability request", async ({ page }) => {
+  await mockWorkbench(page);
+  let allowed = false;
+  let featureReads = 0;
+  let chatReads = 0;
+  await page.route("**/api/account/feature-access", route => {
+    featureReads++;
+    return route.fulfill({ json: { agent: allowed, billing: allowed } });
+  });
+  await page.route("**/api/agent/chat", route => { chatReads++; return route.fulfill({ json: ready }); });
+  await page.goto("/account-health");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  await expect.poll(() => featureReads).toBeGreaterThan(0);
+  await expect(page.locator("[data-agent-floating-widget]")).toHaveCount(0);
+  expect(chatReads).toBe(0);
+  await page.locator("[data-sidebar-account-trigger]").click();
+  await expect(page.locator('[data-primary-navigation-page="billing"]')).toHaveCount(0);
+  await page.keyboard.press("Escape");
+  allowed = true;
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.locator("[data-agent-floating-trigger]")).toBeVisible();
+  await expect.poll(() => chatReads).toBeGreaterThan(0);
+  await page.locator("[data-agent-floating-trigger]").click();
+  await expect(page.locator("[data-agent-floating-panel]")).toBeVisible();
+  allowed = false;
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(page.locator("[data-agent-floating-widget]")).toHaveCount(0);
+});
+
 test("Floating assistant sends credit-required accounts to billing plans", async ({ page }) => {
   await mockWorkbench(page);
   await page.route("**/api/agent/chat", (route) => route.fulfill({ status: 402, json: { error: "credits_required" } }));

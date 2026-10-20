@@ -929,6 +929,13 @@ html.schedule-layout-return::view-transition-new(.schedule-room-entering) {
 :root {
   --app-content-gutter: 0.75rem;
   --app-content-track-max: 1600px;
+  --app-shell-background: color-mix(in oklab, var(--sidebar) 70%, var(--muted));
+  --app-page-background: var(--background);
+}
+
+.dark {
+  --app-shell-background: var(--background);
+  --app-page-background: color-mix(in oklab, var(--background) 40%, var(--sidebar));
 }
 
 @media (min-width: 640px) {
@@ -951,6 +958,91 @@ html.schedule-layout-return::view-transition-new(.schedule-room-entering) {
   margin-inline: auto;
   padding-inline-start: max(var(--app-content-gutter), env(safe-area-inset-left));
   padding-inline-end: max(var(--app-content-gutter), env(safe-area-inset-right));
+}
+
+[data-workbench-shell] {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--app-shell-background);
+}
+
+[data-workbench-shell] [data-slot="sidebar-container"][data-side="left"] {
+  border-right: 0;
+}
+
+[data-workbench-shell] [data-slot="sidebar-inset"] {
+  --app-content-gutter: 0.5rem;
+  min-height: 0;
+  margin: 0.25rem;
+  border-radius: 1rem;
+  background: var(--app-page-background);
+  outline: 1px solid color-mix(in oklab, var(--border) 65%, transparent);
+  outline-offset: -1px;
+  /* The frame stays fixed while its inner viewport owns page scrolling. */
+  overflow: clip;
+}
+
+[data-app-scroll-area] {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  border-radius: inherit;
+}
+
+[data-app-scroll-area] > :is([data-app-topbar], [data-app-content], .workbench-footer) {
+  flex-shrink: 0;
+}
+
+[data-app-page-scrollbar] {
+  position: fixed;
+  z-index: 40;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  pointer-events: none;
+}
+
+[data-app-page-scrollbar] .os-scrollbar-vertical {
+  top: 0;
+  right: 0;
+  height: 100%;
+  pointer-events: auto;
+}
+
+[data-app-scroll-area="agent"] {
+  overflow: hidden;
+}
+
+[data-app-scroll-area="agent"] > [data-app-content] {
+  min-height: 0;
+  flex: 1;
+}
+
+[data-primary-page="agent"],
+[data-primary-page="agent"] > [data-skeleton-swap],
+[data-primary-page="agent"] > [data-skeleton-swap] > [data-skeleton-swap-content],
+[data-app-scroll-area="agent"] [data-agent-chat] {
+  height: 100%;
+  min-height: 0;
+}
+
+@media (min-width: 768px) {
+  [data-workbench-shell] [data-slot="sidebar-inset"] {
+    --app-content-gutter: 1rem;
+    margin: 0.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  [data-workbench-shell] [data-slot="sidebar-inset"] {
+    --app-content-gutter: 1.5rem;
+  }
 }
 
 @media (max-width: 767px) {
@@ -999,14 +1091,6 @@ html[data-agent-viewport] [data-app-content] {
   flex: 1;
   min-height: 0;
   padding-block: 0;
-}
-
-html[data-agent-viewport] [data-primary-page="agent"],
-html[data-agent-viewport] [data-primary-page="agent"] > [data-skeleton-swap],
-html[data-agent-viewport] [data-primary-page="agent"] > [data-skeleton-swap] > [data-skeleton-swap-content],
-html[data-agent-viewport] [data-agent-chat] {
-  height: 100%;
-  min-height: 0;
 }
 
 html[data-agent-viewport] [data-agent-composer] {

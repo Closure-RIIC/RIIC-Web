@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, lazy, Suspense, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { Component, lazy, Suspense, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useLocale } from "use-intl";
 import { useWebsiteSession } from "@/website-session";
@@ -8,7 +8,7 @@ import { useFeatureAccess } from "@/components/workbench/FeatureAccessProvider";
 import { useAgentHistory } from "@/hooks/use-agent-history";
 import { subscribeBillingUpdates } from "@/lib/billing-events";
 import { restoreAgentMessages } from "@/agent-history";
-import type { AgentPageContext } from "@/agent-page-context";
+import { buildAutomaticScheduleContext, type AgentPageContext } from "@/agent-page-context";
 import styles from "./AgentFloatingWidget.module.css";
 
 type Availability = "checking" | "available" | "sign_in" | "credits" | "unavailable";
@@ -32,7 +32,12 @@ class AgentChatErrorBoundary extends Component<{ en: boolean; children: ReactNod
   }
 }
 
-export function AgentFloatingWidget({ pageContext, visible = true }: { pageContext: AgentPageContext | null; visible?: boolean }) {
+export function AgentFloatingWidget({ pageContext, automaticContextInput, visible = true }: {
+  pageContext: AgentPageContext | null;
+  automaticContextInput?: Parameters<typeof buildAutomaticScheduleContext>[0];
+  visible?: boolean;
+}) {
+  const resolvedPageContext = useMemo(() => automaticContextInput ? buildAutomaticScheduleContext(automaticContextInput) : pageContext, [automaticContextInput, pageContext]);
   const locale = useLocale();
   const en = locale === "en";
   const { data, isPending } = useWebsiteSession();
@@ -56,7 +61,7 @@ export function AgentFloatingWidget({ pageContext, visible = true }: { pageConte
   }, [owner]);
 
   useEffect(() => {
-    if (!visible) {
+    if (!visible || !features.agent) {
       setOpen(false);
       return;
     }
@@ -94,7 +99,7 @@ export function AgentFloatingWidget({ pageContext, visible = true }: { pageConte
     };
   }, [features.agent, isPending, owner, visible]);
 
-  if (!mounted || !visible) return null;
+  if (!mounted || !visible || !features.agent) return null;
   const conversationId = history.activeId;
   const canChat = availability === "available" && features.agent;
   const lockedMessage = availability === "checking"
@@ -106,7 +111,7 @@ export function AgentFloatingWidget({ pageContext, visible = true }: { pageConte
         : (en ? "The assistant is temporarily unavailable." : "助理暂时不可用，请稍后再试。");
   const lockedAction = availability === "sign_in"
     ? { href: "/account", label: en ? "Sign in" : "前往登录" }
-    : availability === "credits"
+    : availability === "credits" && features.billing
       ? { href: "/billing", label: en ? "View credits" : "查看积分" }
       : null;
   return createPortal(
@@ -117,7 +122,7 @@ export function AgentFloatingWidget({ pageContext, visible = true }: { pageConte
           compact
           sharePageContext={sharePageContext}
           onSharePageContextChange={setSharePageContext}
-          pageContext={pageContext}
+          pageContext={resolvedPageContext}
           onClose={() => setOpen(false)}
           billingAllowed={features.billing}
           userId={owner ?? undefined}

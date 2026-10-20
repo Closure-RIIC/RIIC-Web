@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { switchWorkbenchLanguage } from "./workbench-language";
 import arkntoolsSource from "../src/generated/arkntools/source.json" with { type: "json" };
 import { twoShiftPlanData } from "./production-readiness.fixture";
 import { requestId, diagnosticId, waitForOwnAnimations, gotoStable, expectVisibleNumbersUseNumberFont, profile, planData, scheduleVisualPlanData, sampleData, authenticatedSklandSnapshot, mockApis, openSklandOverview, seedPreferences, seedV4Session } from "./production-readiness.fixture";
@@ -828,7 +829,7 @@ test("calculator owns scheduling controls and training advice uses a single tech
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
-  await page.getByRole("button", { name: "中文", exact: true }).click();
+  await switchWorkbenchLanguage(page, "zh");
 
   const calculatorControls = page.locator("[data-calculator-controls]");
   await expect(calculatorControls).toBeVisible();

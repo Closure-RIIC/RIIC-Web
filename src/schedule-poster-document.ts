@@ -4,8 +4,7 @@ import { manualEditableRooms } from "./recycling-room.ts";
 import { validateLayoutJson } from "./layout-validation.ts";
 import type { BaseBlueprint, OperBoxEntry } from "./types.ts";
 
-export const POSTER_STORAGE_KEY = "riic.schedule-poster.v1";
-export const POSTER_HANDOFF_KEY = "riic.schedule-poster.handoff.v1";
+export { POSTER_STORAGE_KEY, POSTER_HANDOFF_KEY } from "./schedule-poster-storage.ts";
 export const POSTER_MAX_BYTES = 256 * 1024;
 const text = (max: number) => z.string().max(max);
 const product = z.union([

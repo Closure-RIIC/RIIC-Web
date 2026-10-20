@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { switchWorkbenchLanguage } from "./workbench-language";
 import { mockApis } from "./production-readiness.fixture";
 
 test("latest operators expose their skills and portraits without duplicate Amiya forms", async ({ page }) => {
@@ -36,7 +37,7 @@ test("skill search combines Chinese pinyin and English operator names", async ({
   }
   await search.fill("Exusiai");
   await expect(results.getByRole("article", { name: /能天使/ })).toHaveCount(0);
-  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await switchWorkbenchLanguage(page, "en");
   await expect(results.getByRole("article", { name: "Exusiai's infrastructure skills", exact: true })).toBeVisible();
   await search.fill("nts");
   await expect(results.getByRole("article", { name: "Exusiai's infrastructure skills", exact: true })).toBeVisible();

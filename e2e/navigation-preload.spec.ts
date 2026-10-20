@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { switchWorkbenchLanguage } from "./workbench-language";
 import { mockApis, seedPreferences } from "./production-readiness.fixture";
 
 test.beforeEach(async ({ page }) => {
@@ -110,7 +111,7 @@ test("language invalidation refreshes bootstrap data once and navigation reuses 
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   const serverFunctions: string[] = [];
   page.on("request", request => { if (request.url().includes("/_serverFn/")) serverFunctions.push(request.url()); });
-  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await switchWorkbenchLanguage(page, "en");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page).toHaveTitle(/Closure/);
   expect(serverFunctions).toHaveLength(2);
@@ -124,7 +125,7 @@ test("language invalidation refreshes bootstrap data once and navigation reuses 
   }
   expect(serverFunctions).toHaveLength(0);
   await page.unroute("**/_serverFn/**");
-  await page.getByRole("button", { name: "中文", exact: true }).click();
+  await switchWorkbenchLanguage(page, "zh");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   expect(serverFunctions).toHaveLength(2);
   await page.reload();

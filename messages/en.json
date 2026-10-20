@@ -95,8 +95,8 @@
     "trainingPlanner": "Training Calculator",
     "recruitment": "Recruitment",
     "skills": "Skill Reference",
-    "skland": "Skland Status",
-    "gacha": "Headhunting history",
+    "skland": "Skland Sync",
+    "gacha": "Gacha Analysis",
     "training": "Training Advice",
     "account_reset_password": "Reset Password",
     "admin_issues": "Solver Issues",
@@ -544,8 +544,8 @@
   },
   "components_layout_AppTopBar": {
     "closureInfrastructureTerminal": "Closure Infrastructure Terminal",
-    "openSklandStatus": "{value1}, open Skland Status",
-    "sklandStatus": "Skland Status"
+    "openSklandStatus": "{value1}, open Skland Sync",
+    "sklandStatus": "Skland Sync"
   },
   "components_legal_LegalDocument": {
     "backToClosureInfrastructureTerminal": "Back to Closure Infrastructure Terminal",
@@ -572,7 +572,7 @@
     "filterByProfession": "Filter by profession"
   },
   "components_pages_DevelopmentSklandStatusCenter": {
-    "sklandStatus": "Skland Status",
+    "sklandStatus": "Skland Sync",
     "signInToYourWebsiteAccount": "Sign in to your website account",
     "yourSklandConnectionBelongsToTheCurrentWebsiteAccount": "Your Skland connection belongs to the current website account. Sign in to connect by QR code or credentials, view infrastructure status, and renew access after seven days.",
     "websiteAccountNotSignedIn": "Website account not signed in",

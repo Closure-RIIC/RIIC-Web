@@ -6,19 +6,8 @@ import type { AccountHealthInput } from "./account-health-input.ts";
 import type { HealthAdviceReport } from "./account-health-advice.ts";
 import type { TrainingGoal, TrainingPlannerData, TrainingPlannerResult } from "./training-planner.ts";
 
-export const AGENT_PAGE_CONTEXT_LIMIT = 24_000;
-
-export interface AgentPageContext {
-  version: 1;
-  page: "calculator" | "manual" | "account-health" | "training-planner";
-  title: string;
-  summary: string;
-}
-
-export function sameAgentPageContext(left: AgentPageContext | null, right: AgentPageContext | null): boolean {
-  return left === right || Boolean(left && right && left.version === right.version
-    && left.page === right.page && left.title === right.title && left.summary === right.summary);
-}
+import { AGENT_PAGE_CONTEXT_LIMIT, type AgentPageContext } from "./agent-page-context-shared.ts";
+export { AGENT_PAGE_CONTEXT_LIMIT, sameAgentPageContext, type AgentPageContext } from "./agent-page-context-shared.ts";
 
 function text(value: unknown, limit = 180): string {
   return typeof value === "string" ? value.replace(/[\r\n\t]+/g, " ").trim().slice(0, limit) : "";

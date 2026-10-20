@@ -4,18 +4,14 @@ import { messageRecord } from "@/i18n/translate";
 import {
   Calculator,
   BookOpen,
-  CircleHelp,
   ClipboardCheck,
   Cloud,
-  CreditCard,
   GraduationCap,
   History,
   LoaderCircle,
   Search,
-  Settings2,
   SquarePen,
   Bot,
-  UserRound,
   UserRoundPlus,
   type LucideIcon,
 } from "lucide-react";
@@ -24,6 +20,7 @@ import { createContext, lazy, Suspense, useContext, useEffect, useId, useState, 
 import { useRouter } from "@/navigation";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import styles from "./AppSidebar.module.css";
+import { SidebarAccountMenu } from "./SidebarAccountMenu";
 import { useWebsiteSession } from "@/website-session";
 import { useFeatureAccess } from "@/components/workbench/FeatureAccessProvider";
 
@@ -111,12 +108,13 @@ function AppNavigationItem({
   );
 }
 
-export function AppSidebar({ page, onPageChange, showMower = false }: AppSidebarProps) {
+export function AppSidebar({ page, onPageChange, showMower = false, onSessionChanged }: AppSidebarProps & {
+  onSessionChanged: (authenticated: boolean) => Promise<void>;
+}) {
   const locale = useLocale();
   const { data: websiteSession } = useWebsiteSession();
   const features = useFeatureAccess();
   const labels = messageRecord(locale, "components_layout_AppSidebar_labels");
-  const billingLabel = locale === "en" ? "Payment plans" : "付费计划";
   const [hovered, setHovered] = useState<string | null>(null);
   const highlightId = useId();
   return (
@@ -144,7 +142,6 @@ export function AppSidebar({ page, onPageChange, showMower = false }: AppSidebar
             <AppNavigationItem page={page} target="training-planner" label={labels.trainingPlanner} icon={Calculator} onPageChange={onPageChange} />
             <AppNavigationItem page={page} target="mastery" label={labels.mastery} icon={BookOpen} onPageChange={onPageChange} />
             <AppNavigationItem page={page} target="recruitment" label={labels.recruitment} icon={UserRoundPlus} onPageChange={onPageChange} />
-            {CLIENT_SKLAND_ENABLED ? <AppNavigationItem page={page} target="gacha" label={locale === "en" ? "Headhunting history" : "寻访记录"} icon={History} onPageChange={onPageChange} /> : null}
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup>
@@ -161,41 +158,18 @@ export function AppSidebar({ page, onPageChange, showMower = false }: AppSidebar
             </AppNavigationItem>
           </SidebarMenu>
         </SidebarGroup> : null}
-        <SidebarGroup>
+        {CLIENT_SKLAND_ENABLED ? <SidebarGroup>
           <SidebarGroupLabel>{labels.personalGroup}</SidebarGroupLabel>
           <SidebarMenu>
-            {CLIENT_SKLAND_ENABLED ? (
-              <AppNavigationItem page={page} target="skland" label={labels.skland} icon={Cloud} onPageChange={onPageChange} />
-            ) : null}
-            <AppNavigationItem page={page} target="account" label={labels.account} icon={UserRound} onPageChange={onPageChange} />
-            {features.billing ? <AppNavigationItem page={page} target="billing" label={billingLabel} icon={CreditCard} onPageChange={onPageChange} /> : null}
-            <AppNavigationItem page={page} target="settings" label={labels.settings} icon={Settings2} onPageChange={onPageChange} />
+            <AppNavigationItem page={page} target="skland" label={labels.skland} icon={Cloud} onPageChange={onPageChange} />
+            <AppNavigationItem page={page} target="gacha" label={labels.gacha} icon={History} onPageChange={onPageChange} />
           </SidebarMenu>
-        </SidebarGroup>
+        </SidebarGroup> : null}
       </SidebarContent>
       </LayoutGroup>
       </SidebarHighlight.Provider>
       <SidebarFooter className={styles.footer}>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              render={<Link to="/changelog" aria-label={locale === "en" ? "Changelog" : "更新日志"} data-changelog-link />}
-              tooltip={locale === "en" ? "Changelog" : "更新日志"}
-            >
-              <BookOpen className="size-5" />
-              <span className={styles.copy}>{locale === "en" ? "Changelog" : "更新日志"}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              render={<Link to="/help" aria-label={labels.help} data-help-link />}
-              tooltip={labels.help}
-            >
-              <CircleHelp className="size-5" />
-              <span className={styles.copy}>{labels.help}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <SidebarAccountMenu page={page} onPageChange={onPageChange} onSessionChanged={onSessionChanged} />
       </SidebarFooter>
       </div>
     </Sidebar>

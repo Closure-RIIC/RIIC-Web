@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { sidebarNavigation } from "./production-readiness.fixture";
 
 test("admin beta denies direct pages and APIs without exposing either navigation entry", async ({ page, request }) => {
   test.setTimeout(90_000);
@@ -10,7 +11,9 @@ test("admin beta denies direct pages and APIs without exposing either navigation
   } }));
   await page.goto("/");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
-  await expect(page.locator('[data-primary-navigation-page="agent"], [data-primary-navigation-page="billing"], [data-agent-history]')).toHaveCount(0);
+  await page.locator("[data-sidebar-account-trigger]").click();
+  await expect(page.locator('[data-primary-navigation-page="agent"], [data-primary-navigation-page="billing"], [data-agent-history], [data-agent-floating-widget]')).toHaveCount(0);
+  await page.keyboard.press("Escape");
   for (const path of ["/agent", "/billing", "/plan/test-artifact"]) {
     await page.goto(path);
     await expect(page.locator('[data-agent-chat], [data-billing-prototype], [data-plan-artifact-page]')).toHaveCount(0);
@@ -41,13 +44,15 @@ test("production profile exposes explicitly enabled Skland while preserving secu
 
   await page.goto("/");
   await expect(page.getByRole("button", { name: "基建计算器", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "森空岛状态中心", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "森空岛同步", exact: true })).toBeVisible();
   await expect(page.getByText("调试工具", { exact: false })).toHaveCount(0);
+  await page.locator("[data-sidebar-account-trigger]").click();
   await expect(page.locator('[data-primary-navigation-page="agent"], [data-primary-navigation-page="billing"], [data-agent-history]')).toHaveCount(0);
+  await page.keyboard.press("Escape");
   await expect(page.getByText("智能助理", { exact: true })).toHaveCount(0);
   expect(sklandRequests).toEqual([]);
 
-  await page.getByRole("button", { name: "账号管理", exact: true }).click();
+  await (await sidebarNavigation(page, "账号管理")).click();
   await expect(page.locator("[data-account-management]")).toHaveCount(0);
   const accountDialog = page.getByRole("dialog", { name: "登录网站账号" });
   await expect(accountDialog).toBeVisible();

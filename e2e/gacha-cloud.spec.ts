@@ -85,7 +85,7 @@ test("cloud gacha switches Skland accounts, leaves legacy data untouched without
   await expect(identity.getByText("Lv.100", { exact: true })).toBeVisible();
   await expect(identity.getByText("官服", { exact: true })).toBeVisible();
   await expect(savedCount).toHaveText("1");
-  await expect(page.locator("[data-gacha-history]").getByRole("heading", { name: "寻访记录", exact: true })).toHaveCount(0);
+  await expect(page.locator("[data-gacha-history]").getByRole("heading", { name: "抽卡分析", exact: true })).toHaveCount(0);
   await expect(page.getByText(/抽已保存至云端/)).toHaveCount(0);
   await expect(page.getByRole("button", { name: /导入|上传本机历史/ })).toHaveCount(0);
   expect(await page.evaluate(() => !!localStorage.getItem("aic-gacha-history-v1:10001"))).toBe(true);
@@ -163,7 +163,7 @@ test("gacha keeps the current Skland role when archive order or QR authorization
   await dialog.getByRole("button", { name: "生成二维码", exact: true }).click();
   await expect(dialog.getByRole("status")).toHaveText("等待扫码确认");
   await page.clock.fastForward(3100);
-  await expect(dialog.getByRole("alert")).toContainText("扫码账号与森空岛状态中心当前角色不一致");
+  await expect(dialog.getByRole("alert")).toContainText("扫码账号与森空岛同步当前角色不一致");
   await dialog.getByRole("button", { name: "Close", exact: true }).click();
   await expect(identity.getByRole("heading", { name: "当前角色" })).toBeVisible();
   expect(writes).toBe(0);

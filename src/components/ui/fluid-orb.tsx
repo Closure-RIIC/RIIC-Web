@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 export type FluidOrbProps = ComponentProps<"div"> & {
   size?: number;
   color?: string;
+  animation?: "always" | "hover";
 };
 
 // RareUI Fluid Orb shader, provided by the project owner:
@@ -117,6 +118,7 @@ function compile(gl: WebGLRenderingContext, type: number, source: string): WebGL
 export function FluidOrb({
   size = 56,
   color = "#1A73F2",
+  animation = "always",
   className,
   style,
   ...props
@@ -197,23 +199,29 @@ export function FluidOrb({
     if (fallback) fallback.style.opacity = "0";
 
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const startedAt = performance.now();
     let reduceMotion = motionQuery.matches;
     let inViewport = true;
+    let hovered = root.matches(":hover") && window.matchMedia("(hover: hover)").matches;
     let frame = 0;
+    let elapsed = 0;
+    let previousTime: number | null = null;
 
     const render = (now: number) => {
       frame = 0;
-      gl.uniform1f(uTime, reduceMotion ? 0 : (now - startedAt) / 1_000);
+      const playing = !reduceMotion && inViewport && !document.hidden && (animation === "always" || hovered);
+      if (playing && previousTime !== null) elapsed += now - previousTime;
+      previousTime = playing ? now : null;
+      gl.uniform1f(uTime, reduceMotion ? 0 : elapsed / 1_000);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-      root.dataset.fluidOrbMotion = reduceMotion ? "still" : "animated";
-      if (!reduceMotion && inViewport && !document.hidden) {
+      root.dataset.fluidOrbMotion = playing ? "animated" : "still";
+      if (playing) {
         frame = window.requestAnimationFrame(render);
       }
     };
     const restart = () => {
       window.cancelAnimationFrame(frame);
       frame = 0;
+      previousTime = null;
       render(performance.now());
     };
     const observer = new IntersectionObserver(([entry]) => {
@@ -222,6 +230,15 @@ export function FluidOrb({
     });
     const handleMotionChange = (event: MediaQueryListEvent) => {
       reduceMotion = event.matches;
+      restart();
+    };
+    const handlePointerEnter = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      hovered = true;
+      restart();
+    };
+    const handlePointerLeave = () => {
+      hovered = false;
       restart();
     };
     const handleContextLost = (event: Event) => {
@@ -233,7 +250,12 @@ export function FluidOrb({
     motionQuery.addEventListener("change", handleMotionChange);
     document.addEventListener("visibilitychange", restart);
     canvas.addEventListener("webglcontextlost", handleContextLost);
-    render(startedAt);
+    if (animation === "hover") {
+      root.addEventListener("pointerenter", handlePointerEnter);
+      root.addEventListener("pointerleave", handlePointerLeave);
+      root.addEventListener("pointercancel", handlePointerLeave);
+    }
+    render(performance.now());
 
     return () => {
       window.cancelAnimationFrame(frame);
@@ -241,12 +263,15 @@ export function FluidOrb({
       motionQuery.removeEventListener("change", handleMotionChange);
       document.removeEventListener("visibilitychange", restart);
       canvas.removeEventListener("webglcontextlost", handleContextLost);
+      root.removeEventListener("pointerenter", handlePointerEnter);
+      root.removeEventListener("pointerleave", handlePointerLeave);
+      root.removeEventListener("pointercancel", handlePointerLeave);
       gl.deleteProgram(program);
       gl.deleteShader(vert);
       gl.deleteShader(frag);
       gl.deleteBuffer(buffer);
     };
-  }, [color, size]);
+  }, [color, size, animation]);
 
   return (
     <div

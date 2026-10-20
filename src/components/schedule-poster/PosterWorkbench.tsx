@@ -128,7 +128,11 @@ export default function PosterWorkbench({ document: doc, onChange, onImport, onS
       const { downloadCanvasImage } = await import("@/schedule-image");
       await Promise.all([400, 500, 600, 700].map(weight => document.fonts.load(`${weight} 16px "Poster Source Han Sans"`, board.textContent ?? "")));
       await document.fonts.ready;
-      await Promise.all(Array.from(board.querySelectorAll("img"), image => image.decode().catch(() => {})));
+      await Promise.all(Array.from(board.querySelectorAll("img"), image => {
+        // Export also needs portraits outside the scroll viewport.
+        image.loading = "eager";
+        return image.decode().catch(() => {});
+      }));
       const canvas = await html2canvas(board, { scale: 1, width: 1920, height: 1080, windowWidth: 1920, windowHeight: 1080, logging: false, useCORS: true, onclone(clone) {
         const poster = clone.querySelector<HTMLElement>("[data-schedule-poster]");
         // Move out of scaled/animated workbench ancestors before rasterizing.
