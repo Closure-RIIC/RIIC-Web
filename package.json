@@ -95,6 +95,7 @@
     "test:workspace": "node --test scripts/workspace-layout.test.mjs"
   },
   "devDependencies": {
+    "@tanstack/router-generator": "1.167.43",
     "@eslint/js": "^10.0.1",
     "@formatjs/icu-messageformat-parser": "^3.5.17",
     "@playwright/test": "^1.62.0",

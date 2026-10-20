@@ -53,6 +53,8 @@ tsconfig.json            根目录工具配置
 
 根命令转交给对应应用 workspace；也可以直接运行 `npm run dev --workspace @riic/arknights`。共同 Vite 启动器使进程工作目录保持仓库根目录，Vite 的应用 root 决定路由和资源路径。开发服务器按应用及端口隔离依赖缓存。
 
+`check:types` 会先生成所属应用的路由类型，因此干净检出后可以直接运行，不需要预先启动开发服务器或保留本地生成文件。
+
 方舟继续通过既有加载器读取根目录 `.env*`，不复制凭据。终末地的环境配置归属自身应用，参见 `apps/endfield/.env.example`；也可由进程环境注入。变更环境变量后需重启对应开发进程。
 
 默认游戏跳转使用本地 5175/5176。使用其他端口时，为方舟设置 `VITE_ENDFIELD_ORIGIN`，为终末地设置 `VITE_ARKNIGHTS_ORIGIN` 和服务端的 `ENDFIELD_ACCOUNT_ORIGIN`。后者必须是固定的可信第一方账号服务地址，不从用户请求选择代理目标。
