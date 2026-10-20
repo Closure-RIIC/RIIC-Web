@@ -20,16 +20,16 @@ test("wish wall reports unauthenticated submissions and keeps the form", async (
   await expect(page.locator("#wish-title")).toHaveValue("测试许愿");
 });
 
-test("settings exposes session management to signed out users", async ({ page }) => {
+test("settings exposes inline account sign-in to signed out users", async ({ page }) => {
   await mockApis(page);
   await mockAnonymousWebsiteSession(page);
   await page.goto("/settings");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
-  await expect(page.getByRole("heading", { name: "登录有效期", exact: true })).toBeVisible();
-  const signIn = page.locator('a[href="/account"]').filter({ hasText: "前往登录" });
-  await expect(signIn).toBeVisible();
-  await signIn.click();
-  await expect(page).toHaveURL(/\/account$/);
+  const account = page.locator("[data-website-account-panel]");
+  await expect(account.getByRole("textbox", { name: "邮箱", exact: true })).toBeVisible();
+  await expect(account.getByLabel("密码", { exact: true })).toBeVisible();
+  await expect(account.getByRole("button", { name: "登录", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/settings$/);
 });
 
 test("session renewal and wish submission enforce real authentication", async ({ request, baseURL }) => {

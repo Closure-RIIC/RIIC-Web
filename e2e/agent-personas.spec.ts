@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockApis } from "./production-readiness.fixture";
+import { openAgentHistory } from "./agent-history";
 
 async function personaControl(page: Page, name: string) {
   const menu = page.getByRole("button", { name: "附件与人格卡", exact: true });
@@ -31,11 +32,13 @@ test("switching personas preserves reply avatars in old and restored conversatio
   await expect(oldReply.locator("[data-agent-speaker-name]")).toHaveText("银灰");
   await expect(oldReply.locator('[data-fur-avatar="silverash"]')).toHaveCount(1);
   await page.reload();
+  await openAgentHistory(page, "新对话问题");
   await expect(oldReply.locator("[data-agent-speaker-name]")).toHaveText("银灰");
   await page.locator("[data-agent-history]").getByRole("link", { name: "旧对话问题", exact: true }).click();
   await expect(oldReply.locator("[data-agent-speaker-name]")).toHaveText("可露希尔");
   await expect(oldReply.locator('[data-fur-avatar="closure"]')).toHaveCount(1);
   await page.reload();
+  await openAgentHistory(page, "旧对话问题");
   await expect(oldReply.locator("[data-agent-speaker-name]")).toHaveText("可露希尔");
 });
 
@@ -134,6 +137,7 @@ for (const mobile of [false, true]) {
     await expect(selector).toBeVisible({ timeout: 30_000 });
     await selector.click();
     const card = page.locator('[data-persona-card="silverash"]');
+    await card.scrollIntoViewIfNeeded();
     await expect(card).toHaveCSS("--dialogue-accent", "#84bfff");
     await expect(card.locator("[data-silverash-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
     await expect(card.locator("img:visible")).toHaveCount(0);

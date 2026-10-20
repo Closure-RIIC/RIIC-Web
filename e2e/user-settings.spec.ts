@@ -165,6 +165,9 @@ for (const { width, locale } of [{ width: 1440, locale: "zh" }, { width: 375, lo
     await expect(header.getByText("Settings Doctor", { exact: true })).toBeVisible();
     await expect(header.getByText("settings@example.test", { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /^(返回基建计算器|Back to calculator)$/ })).toHaveCount(0);
+    const consent = page.locator("[data-cloud-consent-dialog]");
+    await consent.getByRole("button", { name: en ? "Keep local-only mode" : "继续纯本地模式", exact: true }).click();
+    await expect(consent).toHaveCount(0);
     const display = page.locator('[data-settings-group="display"]');
     await display.getByRole("button", { name: en ? "Detailed controls" : "细致调整", exact: true }).click();
     await expect(display.getByRole("combobox", { name: en ? "Overview and list control" : "一图流和列表式控件", exact: true })).toBeVisible();

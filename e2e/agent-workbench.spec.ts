@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockApis } from "./production-readiness.fixture";
 import { accountOrbColor } from "../src/account-orb";
+import { openAgentHistory } from "./agent-history";
 
 const ready = { success: true, data: { enabled: true, provider: "deepseek", model: "test-model", baseURL: "https://example.test/v1" } };
 const reply = [
@@ -50,7 +51,12 @@ for (const width of [1440, 375]) {
     await expect.poll(() => launcher.locator("img").evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
     await expect(page.getByText("博士，这页有什么想问的？")).toBeVisible();
 
+    await page.getByRole("button", { name: "收起悬浮助理", exact: true }).click();
+    await expect(launcher).toHaveCSS("width", "44px");
+    await expect(launcher).toHaveCSS("height", "44px");
+    await expect(page.getByText("博士，这页有什么想问的？")).toHaveCount(0);
     await launcher.click();
+    await expect(page.locator("[data-agent-floating-trigger]")).toHaveCSS("width", width < 640 ? "122px" : "150px");
     const panel = page.locator("[data-agent-floating-panel]");
     await expect(panel).toBeVisible();
     await expect(panel.locator('[data-agent-chat][data-agent-compact="true"]')).toBeVisible();
@@ -198,6 +204,7 @@ test("Persona portraits keep Closure fixed and persist uploaded persona avatars"
   await expect(preview.locator("img")).toHaveAttribute("src", customAvatar!);
   await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
   await page.reload();
+  await openAgentHistory(page, "你好");
   await expect(assistantAvatar.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
   await page.getByRole("button", { name: /人格卡：/ }).click();
   await expect(preview.locator("img")).toHaveAttribute("src", customAvatar!);
@@ -273,6 +280,7 @@ for (const width of [1440, 375]) {
     await mascot.click();
     expect(await mascot.locator("canvas").evaluate((canvas: HTMLCanvasElement) => canvas.toDataURL())).toBe(still);
     await page.reload();
+    await openAgentHistory(page, "你好");
     await expect(mascot).toHaveAttribute("data-fur-ready", "true");
     await expect(mascot).toHaveAttribute("data-fur-motion", "still");
   });
@@ -619,6 +627,8 @@ async function verifyConversationScrolling(page: Page, width: number) {
   expect(composer!.y + composer!.height).toBeLessThanOrEqual(900);
   await page.reload();
   await expect(input).toBeVisible();
+  await expect(page.locator('[data-speaker="assistant"]')).toHaveCount(0);
+  await openAgentHistory(page, "给我一段长回复");
   await expect(page.locator("[data-agent-streaming-text]")).toContainText("第 45 段");
   await expect.poll(() => conversation.evaluate((el) => el.scrollHeight - el.scrollTop - el.clientHeight)).toBeLessThan(80);
   // Late composer layout must keep restored history at the latest message.

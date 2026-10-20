@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockApis } from "./production-readiness.fixture";
+import { openAgentHistory } from "./agent-history";
 
 async function prepare(page: Page, performanceMode: "quality" | "saver" = "quality") {
   // These existing motion regressions exercise continuous high-quality avatars.
@@ -285,6 +286,7 @@ test("Agent saves a reply completed while away and restores it after reload", as
   expect(await page.evaluate(() => (window as typeof window & { agentTestAborts: number }).agentTestAborts)).toBe(0);
   expect(await page.evaluate(() => (window as typeof window & { agentTestRequests: number }).agentTestRequests)).toBe(1);
   await page.reload();
+  await openAgentHistory(page, "后台继续回答");
   await expect(page.getByText("正在生成。后台回答完成。", { exact: true })).toBeVisible();
 });
 
@@ -413,6 +415,7 @@ for (const scenario of [{ width: 1440, reducedMotion: "no-preference" }, { width
       };
     }))).toEqual(["能天使、银灰。\n\n继续说明。", secondText]);
     await page.reload();
+    await openAgentHistory(page, "比较能天使和银灰");
     await expect(mentions).toHaveText(["能天使", "银灰", "能天使", "红云", "红", "阿米娅", "可露希尔", "山", "山", "能天使"]);
     await expect(text.locator("[data-stream-chunk]")).toHaveCount(0);
     await expect(mentions.first().locator("[data-agent-operator-portrait]")).toHaveCSS("animation-name", "none");
@@ -653,6 +656,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
       };
     }))).toBe(1);
     await page.reload();
+    await openAgentHistory(page, "检查我的账号");
     await expect(text).toHaveText("你好，博士。 可以继续安排基建。");
     await expect(text.locator("[data-stream-chunk]")).toHaveCount(0);
     await expect(thinking.getByRole("button")).toHaveAttribute("aria-expanded", "false");
