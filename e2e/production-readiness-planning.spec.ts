@@ -658,6 +658,8 @@ test("plan completion reveals status, metrics, and schedule once without resetti
   await expect(listTab).toHaveAttribute("aria-selected", "true");
   const dormitorySection = page.locator('section[aria-label="宿舍"]');
   await dormitorySection.locator('button[aria-expanded="true"]').click();
+  await page.getByRole("button", { name: "收起悬浮助理", exact: true }).click();
+  await expect(page.locator("[data-agent-floating-trigger]")).toHaveCSS("width", "44px");
   await dormitorySection.getByRole("button", { name: "暂不显示" }).click();
   const restoreHidden = page.getByRole("button").filter({ hasText: "恢复已隐藏" });
   await expect(restoreHidden).toBeVisible();
@@ -1453,7 +1455,7 @@ for (const viewport of [
   { width: 768, height: 900 },
   { width: 1440, height: 900 },
 ]) {
-  test(`Skland and account centers share header geometry and technical cards at ${viewport.width}px`, async ({ page }) => {
+  test(`Skland and settings keep aligned content, compact identity and technical actions at ${viewport.width}px`, async ({ page }) => {
     await mockApis(page, { sklandConfigured: true, sklandSnapshot: authenticatedSklandSnapshot });
     await seedPreferences(page);
 
@@ -1477,10 +1479,7 @@ for (const viewport of [
       await expect(sklandRoot.getByRole("button", { name: label })).toHaveCSS("height", dialogButtonHeight);
       await expect(sklandRoot.getByRole("button", { name: label })).toHaveCSS("border-radius", "22px");
     }
-    const sklandGeometry = await Promise.all([
-      sklandHeader.boundingBox(),
-      sklandLogout.boundingBox(),
-    ]);
+    const sklandGeometry = await sklandHeader.boundingBox();
 
     await navigateToPrimaryPage(page, {
       name: "账号管理",
@@ -1488,26 +1487,19 @@ for (const viewport of [
       root: "[data-account-management]",
     }, viewport.width < 768);
     const accountRoot = page.locator("[data-account-management]");
-    await waitForOwnAnimations(page.locator('[data-primary-page="account"]'));
-    const accountHeader = accountRoot.locator("header").first();
-    const accountLogout = accountRoot.locator("[data-account-logout]");
-    await expect(accountLogout).toBeVisible();
-    const accountGeometry = await Promise.all([
-      accountHeader.boundingBox(),
-      accountLogout.boundingBox(),
-    ]);
+    await waitForOwnAnimations(page.locator('[data-primary-page="settings"]'));
+    const accountHeader = accountRoot.locator("[data-settings-header]");
+    await expect(accountHeader.locator("[data-website-account-avatar]")).toBeVisible();
+    await expect(accountRoot.locator("[data-account-logout]")).toHaveCount(0);
+    const accountGeometry = await accountHeader.boundingBox();
+    expect(accountGeometry!.x).toBeCloseTo(sklandGeometry!.x, 0);
+    expect(accountGeometry!.width).toBeCloseTo(sklandGeometry!.width, 0);
+    const identity = await accountHeader.locator("[data-website-account-panel]").boundingBox();
+    expect(identity!.width).toBeLessThanOrEqual(256);
+    expect(identity!.height).toBeLessThanOrEqual(64);
 
-    expect(accountGeometry[0]?.y).toBeCloseTo(sklandGeometry[0]?.y ?? 0, 0);
-    expect(accountGeometry[0]?.height).toBeCloseTo(sklandGeometry[0]?.height ?? 0, 0);
-    expect(accountGeometry[1]?.y).toBeCloseTo(sklandGeometry[1]?.y ?? 0, 0);
-    expect(accountGeometry[1]?.height).toBeCloseTo(sklandGeometry[1]?.height ?? 0, 0);
-    expect((accountGeometry[1]?.x ?? 0) + (accountGeometry[1]?.width ?? 0))
-      .toBeCloseTo((sklandGeometry[1]?.x ?? 0) + (sklandGeometry[1]?.width ?? 0), 0);
-
-    const actionCards = accountRoot.locator("[data-account-action-cards] [data-infra-technical-card]");
-    await expect(actionCards).toHaveCount(2);
-    await expect(actionCards.nth(0).getByRole("heading", { name: "登录设备" })).toBeVisible();
-    await expect(actionCards.nth(1).getByRole("heading", { name: "永久注销账号" })).toBeVisible();
+    await expect(accountRoot.locator('[data-settings-group="security"]').getByRole("heading", { name: "登录与安全" })).toBeVisible();
+    await expect(accountRoot.getByRole("heading", { name: "永久注销账号" })).toBeVisible();
     for (const label of ["退出全部设备", "永久注销账号"]) {
       await expect(accountRoot.getByRole("button", { name: label })).toHaveCSS("height", dialogButtonHeight);
       await expect(accountRoot.getByRole("button", { name: label })).toHaveCSS("border-radius", "22px");

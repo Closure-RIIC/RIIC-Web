@@ -1026,7 +1026,12 @@ test("defers a portrait far below the mobile viewport until it approaches view",
     return element.getBoundingClientRect().top;
   })).toBeGreaterThan(viewportHeight * 2);
   await page.waitForTimeout(300);
-  expect(requestedPortraits).toHaveLength(3);
+  // The fixed page frame can keep every schedule row below the initial viewport.
+  // A portrait must load when scrolled into view while the distant one stays deferred.
+  const firstPortrait = page.locator('[data-schedule-view="list"] img[src*="/images/operator-portraits/"]').first();
+  await firstPortrait.scrollIntoViewIfNeeded();
+  await expect.poll(() => firstPortrait.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+  expect(requestedPortraits.length).toBeGreaterThan(0);
   expect(requestedPortraits.some((url) => url.includes("/4237_jcinta.webp?"))).toBe(false);
 
   await deferredPortrait.scrollIntoViewIfNeeded();
@@ -1725,9 +1730,9 @@ for (const viewport of [
     await expect(cloudPanel).not.toContainText("修订 1");
     await expect(cloudPanel).not.toContainText("最多 10 版");
     await expect(cloudPanel).not.toContainText("最近 5 条");
-    const devicesCard = page.locator("[data-infra-technical-card]").filter({ has: page.getByRole("heading", { name: "登录设备" }) });
+    const devicesCard = page.locator('[data-settings-group="security"]');
     const cloudCard = page.locator('[data-slot="cloud-workspace-card"]');
-    const devicesTitle = devicesCard.getByRole("heading", { name: "登录设备" });
+    const devicesTitle = devicesCard.getByRole("heading", { name: "登录与安全" });
     const cloudTitle = cloudCard.getByRole("heading", { name: "账号云端工作区" });
     const restorePlan = cloudCard.getByRole("button", { name: "恢复排班：333 · 本地 MAA" });
     const pinPlan = cloudCard.getByRole("button", { name: "固定排班：333 · 本地 MAA" });

@@ -191,9 +191,10 @@ test("dark and reduced-motion surfaces preserve dimensions and native textarea e
 for (const viewport of [{ width: 390, height: 844 }, { width: 820, height: 1180 }]) {
   test.describe("touch " + viewport.width, () => {
     test.use({ hasTouch: true, viewport });
-    test("keeps native page, horizontal and local scroll viewports", async ({ page }) => {
+    test("keeps native local viewports and the external page scrollbar", async ({ page }) => {
       await addSurfaces(page);
-      await expect(page.locator(".os-scrollbar")).toHaveCount(0);
+      await expect(page.locator("#scroll-fixture .os-scrollbar")).toHaveCount(0);
+      await expect(page.locator("[data-app-page-scrollbar] .os-scrollbar")).toHaveCount(2);
       for (const direction of ["y", "x", "both"]) {
         const surface = page.locator("#scroll-" + direction);
         await surface.evaluate(node => { node.scrollTop = 80; node.scrollLeft = 80; });

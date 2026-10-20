@@ -1121,9 +1121,12 @@ export async function mockAnonymousWebsiteSession(page: Page) {
 
 export async function sidebarNavigation(page: Page, name: string) {
   if (["账号管理", "付费计划", "更新日志"].includes(name)) {
-    if (!await page.locator("[data-sidebar-account-menu]").isVisible()) {
-      await page.locator("[data-sidebar-account-trigger]").click();
+    const trigger = page.locator("[data-sidebar-account-trigger]");
+    if (await trigger.getAttribute("aria-expanded") !== "true") {
+      await trigger.click();
     }
+    await expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await expect(page.locator("[data-sidebar-account-menu]")).toBeVisible();
     if (name === "账号管理") {
       const signIn = page.locator("[data-sidebar-sign-in]");
       if (await signIn.isVisible()) return signIn;

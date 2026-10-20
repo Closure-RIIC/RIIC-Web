@@ -29,6 +29,26 @@
 .launcher:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
 .launcherAvatar { display: block; width: 100%; height: 100%; }
 .launcherAvatar img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
+.minimize {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--muted-foreground);
+  pointer-events: auto;
+}
+.minimize:hover { color: var(--foreground); background: var(--accent); }
+.minimize:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
+.root[data-minimized="true"], .root[data-minimized="true"] .launcher { width: 44px; height: 44px; }
+.root[data-minimized="true"] .launcher { border: 1px solid var(--border); border-radius: 50%; background: var(--card); }
+.root[data-minimized="true"] .status { display: none; }
 .status {
   position: absolute;
   right: 8px;
@@ -123,6 +143,7 @@
 @media (max-width: 639px) {
   .root { right: max(10px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); width: 122px; height: 122px; }
   .launcher { width: 122px; height: 122px; }
+  .minimize { width: 36px; height: 36px; }
   .hint { right: 0; bottom: 128px; max-width: min(190px, calc(100vw - 28px)); padding: 8px 10px; }
   .panel {
     right: max(10px, env(safe-area-inset-right));
