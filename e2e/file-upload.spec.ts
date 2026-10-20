@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { utils, write } from "xlsx";
-import layout243 from "../src/layouts/243.json" with { type: "json" };
+import layout243 from "../apps/arknights/src/layouts/243.json" with { type: "json" };
 import { mockApis, now, planData } from "./production-readiness.fixture";
 
 const operators = [

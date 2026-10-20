@@ -4,11 +4,15 @@ import reactHooks from "eslint-plugin-react-hooks";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", ".output", ".tanstack", "src/routeTree.gen.ts", ".tmp", "server", "src/lib/infra-eval/generated", "src/lib/transitions/ui-generation.js", "public/wasm"] },
+  { ignores: [".worktrees/**", ".alma-snapshots/**", ".gstack/**", "output/**"] },
+  // Pinned, minified upstream code; lint its generator and typed integration.
+  // Geometry and browser motion are checked by the dedicated Dijiang audits.
+  { ignores: ["apps/endfield/src/components/dijiang-turn.mjs"] },
+  { ignores: ["**/dist/**", "**/.output/**", "**/.tanstack/**", "**/routeTree.gen.ts", ".tmp", "server", "apps/arknights/src/lib/infra-eval/generated", "apps/arknights/src/lib/transitions/ui-generation.js", "apps/arknights/public/wasm", "packages/endfield-solver/upstream/**"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["scripts/build-infra-eval-wasm.mjs"],
+    files: ["scripts/build-infra-eval-wasm.mjs", "scripts/test-endfield*.mjs", "scripts/test-game-session-e2e.mjs", "apps/endfield/tests/*.mjs", "packages/endfield-solver/*.mjs"],
     languageOptions: {
       globals: globals.node,
     },

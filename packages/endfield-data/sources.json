@@ -1,0 +1,862 @@
+{
+  "data": {
+    "repository": "https://github.com/rmxlinux/EndfieldData",
+    "revision": "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2",
+    "tables": [
+      "CharacterTable",
+      "CharGrowthTable",
+      "WeaponBasicTable",
+      "ItemTable",
+      "SpaceshipCharSkillTable",
+      "SpaceshipSkillTable",
+      "I18nTextTable_CN",
+      "I18nTextTable_EN"
+    ]
+  },
+  "assets": {
+    "repository": "https://github.com/555me/EndfieldAssets",
+    "revision": "659fa8d40061616433722bdd803ef432e887f89e"
+  },
+  "files": [
+    {
+      "target": "facilities/center.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshiproom/icon_sapceship_room_icon_control_console.png",
+      "bytes": 1779,
+      "sha256": "f51d02efc2a726494fcc836507a174af46ac9f2fa105e8b968a60263979abb67"
+    },
+    {
+      "target": "facilities/grow.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshiproom/icon_sapceship_room_icon_grow_cabin.png",
+      "bytes": 1620,
+      "sha256": "50afcde3db66b8d9726c4658f6ef884c4442b834acb076b45196c6c28f67df7c"
+    },
+    {
+      "target": "facilities/guest.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshiproom/icon_sapceship_room_icon_guest_room_clue.png",
+      "bytes": 785,
+      "sha256": "6cb03fcee0e73f9532ecb4f291a037f9ed615a6c83f6ffc2754c5727d8bdf398"
+    },
+    {
+      "target": "facilities/mfg.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshiproom/icon_sapceship_room_icon_manufacturing_station_limit.png",
+      "bytes": 700,
+      "sha256": "ca6aef21245c3df717d5a46591e533053ea31826671c019ddb4aabd243b39f25"
+    },
+    {
+      "target": "operators/portrait_chr_0002_endminm.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0002_endminm.png",
+      "bytes": 52133,
+      "sha256": "74a4f776b241c3aff0b1a68038824dd88094b416ddfdaf01b7dbd8d431c64a24"
+    },
+    {
+      "target": "operators/portrait_chr_0003_endminf.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0003_endminf.png",
+      "bytes": 52772,
+      "sha256": "5879d9e8eef2ec77a41f0298d0964a9ad9f7c9f80fed28da504ad0abd86c6136"
+    },
+    {
+      "target": "operators/portrait_chr_0004_pelica.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0004_pelica.png",
+      "bytes": 58797,
+      "sha256": "d5013d128e9518ee3f4a9ff79146d534716a0207d6c60dba971ef079e39ea2d9"
+    },
+    {
+      "target": "operators/portrait_chr_0005_chen.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0005_chen.png",
+      "bytes": 56219,
+      "sha256": "8fdddbeed72b5008c4ffb14522d35523f3b98a0232fed1f5f97566e69fdc3ff7"
+    },
+    {
+      "target": "operators/portrait_chr_0006_wolfgd.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0006_wolfgd.png",
+      "bytes": 51131,
+      "sha256": "11101f607e413ad3d23ac3b9c0a8c390006d1e06962a70ff604b27fe030bbc99"
+    },
+    {
+      "target": "operators/portrait_chr_0007_ikut.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0007_ikut.png",
+      "bytes": 53230,
+      "sha256": "c00020a41d88bf656ce0b2e5b27f49a5a8d23ea40a0570349100905f378ac11c"
+    },
+    {
+      "target": "operators/portrait_chr_0009_azrila.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0009_azrila.png",
+      "bytes": 55630,
+      "sha256": "6759d41b47f6864690a6eed52c999e842621a35934f223dc84426861b1920a2e"
+    },
+    {
+      "target": "operators/portrait_chr_0011_seraph.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0011_seraph.png",
+      "bytes": 54889,
+      "sha256": "ce37859cffbaf234cc91a78f7f2f1bbca22b4dcb674812bc945f2fd3aa2a9a24"
+    },
+    {
+      "target": "operators/portrait_chr_0012_avywen.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0012_avywen.png",
+      "bytes": 53495,
+      "sha256": "1019748bf582062ad7f44a91b9c38e1dfe5bf491c0b13d7bbe50cbd0aa12bba2"
+    },
+    {
+      "target": "operators/portrait_chr_0013_aglina.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0013_aglina.png",
+      "bytes": 57702,
+      "sha256": "a3207c871b5a763ec3f714afe76c7b9bfbf186db8217c728262c16cc41896c39"
+    },
+    {
+      "target": "operators/portrait_chr_0014_aurora.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0014_aurora.png",
+      "bytes": 61578,
+      "sha256": "b2b379dfedf6f2cc065c2fd5dde191f92318908e654d7b117bb14db1a0e740d7"
+    },
+    {
+      "target": "operators/portrait_chr_0015_lifeng.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0015_lifeng.png",
+      "bytes": 49036,
+      "sha256": "3a63e07584f124d8151a6fbfcacfa7349f7f6153dfcf9d7bb322f5e86590d386"
+    },
+    {
+      "target": "operators/portrait_chr_0016_laevat.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0016_laevat.png",
+      "bytes": 50486,
+      "sha256": "9de994ac20af87dfc9975db88dceeb22ffd101a0f3d279d1bdc4245b2e6f272f"
+    },
+    {
+      "target": "operators/portrait_chr_0017_yvonne.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0017_yvonne.png",
+      "bytes": 63256,
+      "sha256": "7cf07a8b74908740f12854f00a25ae0e1be01851c7eb4d3eb064bfa1cf5817f3"
+    },
+    {
+      "target": "operators/portrait_chr_0018_dapan.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0018_dapan.png",
+      "bytes": 43317,
+      "sha256": "e8b2f1ba9336deb74934832ca4a7e2eaa9e301c9ae2d32552d20cfab3ce55df1"
+    },
+    {
+      "target": "operators/portrait_chr_0019_karin.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0019_karin.png",
+      "bytes": 55262,
+      "sha256": "2977e49629d54b4e2e5170f09bcc10ef890b8fa0b8622f071e4f07f495947671"
+    },
+    {
+      "target": "operators/portrait_chr_0020_meurs.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0020_meurs.png",
+      "bytes": 44733,
+      "sha256": "4c5195635323c14ddb47f30e182e96572bb6a48bfaee4908e32cb615a0c93ef4"
+    },
+    {
+      "target": "operators/portrait_chr_0021_whiten.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0021_whiten.png",
+      "bytes": 39593,
+      "sha256": "7650c7ba8d9b5373cf41379149c2a63b5601ae9ab54779e50422e977d94431ab"
+    },
+    {
+      "target": "operators/portrait_chr_0022_bounda.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0022_bounda.png",
+      "bytes": 53767,
+      "sha256": "e77287fc74099a04c9562f954391c2c90ac5671f3f1b57970d10de1209242887"
+    },
+    {
+      "target": "operators/portrait_chr_0023_antal.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0023_antal.png",
+      "bytes": 49386,
+      "sha256": "81bc598f4c0ff0516ff7686a19eccdaf7473053e58be097ba95de04539725448"
+    },
+    {
+      "target": "operators/portrait_chr_0024_deepfin.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0024_deepfin.png",
+      "bytes": 58629,
+      "sha256": "6a08ec831eba27a6db65ec7ff90183b444eddd974acf24a024a43c674b4dd2b1"
+    },
+    {
+      "target": "operators/portrait_chr_0025_ardelia.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0025_ardelia.png",
+      "bytes": 61684,
+      "sha256": "242d5cee2b6871db82750d00f7faa48dabe6638b4f37a103952dcad0c25515c8"
+    },
+    {
+      "target": "operators/portrait_chr_0026_lastrite.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0026_lastrite.png",
+      "bytes": 61657,
+      "sha256": "cc2a53efb29142d873c484ef5efee5e8cdeb2ffe51922e3424ddbfb52e85d6f3"
+    },
+    {
+      "target": "operators/portrait_chr_0027_tangtang.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0027_tangtang.png",
+      "bytes": 59412,
+      "sha256": "c5c4c148681643a21276c71246849f72aad74395b619a355822d297b292f8200"
+    },
+    {
+      "target": "operators/portrait_chr_0028_wulfa.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0028_wulfa.png",
+      "bytes": 55833,
+      "sha256": "2e0183559c6f2848e13d6a8939009b6fa5455d1b3a2ef8840456b06a908e3f7d"
+    },
+    {
+      "target": "operators/portrait_chr_0029_pograni.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0029_pograni.png",
+      "bytes": 52508,
+      "sha256": "2d2486b746fa9ed23aacd00510f7bba5b2155b4241a026bb8a00aeff6cde58be"
+    },
+    {
+      "target": "operators/portrait_chr_0030_zhuangfy.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0030_zhuangfy.png",
+      "bytes": 55037,
+      "sha256": "3ce859800cdc2498808d013ee06c6340e5b625c509870e56b4a05d8cbe2637ed"
+    },
+    {
+      "target": "operators/portrait_chr_0031_mifu.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0031_mifu.png",
+      "bytes": 63398,
+      "sha256": "6f7a02317bffd2d500db05437e9ebbcf3d3f7ca35e24db3fa73a05482548b693"
+    },
+    {
+      "target": "operators/portrait_chr_0032_lizhiyan.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0032_lizhiyan.png",
+      "bytes": 62208,
+      "sha256": "baa09d9ff5bb7547302dc91d05ac22ce9e31f83a8c1f8c101caf23f1ce34f822"
+    },
+    {
+      "target": "operators/portrait_chr_0033_camille.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0033_camille.png",
+      "bytes": 48807,
+      "sha256": "dc5320285864b460287a3bdb0775047578fd4b6bb04096938eb271d388077b29"
+    },
+    {
+      "target": "operators/portrait_chr_0034_typhoea.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0034_typhoea.png",
+      "bytes": 59998,
+      "sha256": "9515ae462bf6d53c54bd9dacb6c92aec92cde02b9b3b3b18cef7120711dc0cdd"
+    },
+    {
+      "target": "operators/portrait_chr_0035_liino.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0035_liino.png",
+      "bytes": 62085,
+      "sha256": "fb3eb830c18ba7d524f885453dffc44c2d6dd0dbd60cef5b96c64b0e5f9b6832"
+    },
+    {
+      "target": "operators/portrait_chr_0036_jsspsi.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0036_jsspsi.png",
+      "bytes": 56282,
+      "sha256": "78a1b8f29f702e73f2f272e63e5f6ff39f04357969b141fe38565ecfe7e52a32"
+    },
+    {
+      "target": "operators/portrait_chr_0038_purrche.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/charroundicon/icon_round_chr_0038_purrche.png",
+      "bytes": 44035,
+      "sha256": "eaf9916d428c077e8401c3ed636637da044489434e434d871a0392edba66da73"
+    },
+    {
+      "target": "resources/clues.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipguestroom/icon_guestroom_clue_01.png",
+      "bytes": 118543,
+      "sha256": "cdda9b6d1b4fdf7ad2123670c4605a83f762be5becc5a4a1a01c82aeb33f55ce"
+    },
+    {
+      "target": "resources/crystal.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/item_plant_crylplant_1_1.png",
+      "bytes": 17423,
+      "sha256": "4320f6f8f26cec8c6169b16d2ba78c24404625568c854a78f8b85fcd0cb43c60"
+    },
+    {
+      "target": "resources/fungus.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/item_plant_mushroom_1_1.png",
+      "bytes": 16463,
+      "sha256": "a49e62a31c6838eaad9921fea2af81d59c1de310f548d309d5a27e7d8d2f02a5"
+    },
+    {
+      "target": "resources/growth.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshiproom/icon_sapceship_room_icon_grow_cabin.png",
+      "bytes": 1620,
+      "sha256": "50afcde3db66b8d9726c4658f6ef884c4442b834acb076b45196c6c28f67df7c"
+    },
+    {
+      "target": "resources/mineral.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/item_plant_spcstone_1_1.png",
+      "bytes": 12349,
+      "sha256": "598a4d5cde8da2aa3a66bb5ca2afc57269cfb8018d1ad703014d036643c93e01"
+    },
+    {
+      "target": "resources/operatorExp.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/item_expcard_2_3.png",
+      "bytes": 17388,
+      "sha256": "935aba619e34f64292e54614d63613c44f05ddc5353fee99c6bbb9245ee40c7f"
+    },
+    {
+      "target": "resources/weaponExp.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/item_weapon_expcard_high.png",
+      "bytes": 28150,
+      "sha256": "646a963af23c6a4c6e1efae1bde5352dc85a30e4b4a05cf688096c6f0f25b097"
+    },
+    {
+      "target": "skills/facskill_spaceship_guestroom_clue.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/facskill_spaceship_guestroom_clue.png",
+      "bytes": 2151,
+      "sha256": "79fa3b7116315d580c93e5c8f9340f4848f2afe9b5815d452ac5265a4f9a5983"
+    },
+    {
+      "target": "skills/facskill_spaceship_guestroom_efficiency.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/facskill_spaceship_guestroom_efficiency.png",
+      "bytes": 2389,
+      "sha256": "fad5b79bc77137e399346154f3ad132440a6abc84a24e9031f5126c207eb8e7b"
+    },
+    {
+      "target": "skills/facskill_spaceship_guestroom_power_consume.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/facskill_spaceship_guestroom_power_consume.png",
+      "bytes": 3859,
+      "sha256": "2f21e764348b40314e5bda1870de5741b2cd651f90a5aed3705dcb8dfba12dc3"
+    },
+    {
+      "target": "skills/facskill_spaceship_manufacture_efficiency.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/facskill_spaceship_manufacture_efficiency.png",
+      "bytes": 3582,
+      "sha256": "84363fdad1f3946310e60328f2ea8ff2398caaea8431c3b36de0febb70c01fc4"
+    },
+    {
+      "target": "skills/facskill_spaceship_manufacture_power_consume.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/facskill_spaceship_manufacture_power_consume.png",
+      "bytes": 3722,
+      "sha256": "eb757a53d9dc35197d0cf0a46648ea9854ac1f96c5b442183ef3e7bf42269275"
+    },
+    {
+      "target": "skills/facskill_spaceship_physical_power.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/facskill_spaceship_physical_power.png",
+      "bytes": 3914,
+      "sha256": "292714616a0bc7205f7347644bd24c63fa1e6a0101bf5291ae68deb0694da2a7"
+    },
+    {
+      "target": "skills/facskill_spaceship_plant_flower.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/facskill_spaceship_plant_flower.png",
+      "bytes": 2816,
+      "sha256": "16d70ca721aba0ac1f377c95f1ea919e2cdbe5ba398011da165bf6641773996a"
+    },
+    {
+      "target": "skills/facskill_spaceship_plant_fungus.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/facskill_spaceship_plant_fungus.png",
+      "bytes": 2933,
+      "sha256": "6efdc8cc2fd823b3b0c4fcc5572c1aaa54737da1a0f34d0c07465819622e5cc5"
+    },
+    {
+      "target": "skills/facskill_spaceship_plant_mineral.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/facskill_spaceship_plant_mineral.png",
+      "bytes": 2893,
+      "sha256": "a2e982e11aac89fde229a6c6fd64db52212d491bb114ac84cb5e0e1186956ea6"
+    },
+    {
+      "target": "skills/facskill_spaceship_plant_power_consume.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/facskill_spaceship_plant_power_consume.png",
+      "bytes": 3793,
+      "sha256": "6e08c98a9c239cff2eeb4f2e9dccc6e04d9c5eb2cdf3222acd086c88c528699a"
+    },
+    {
+      "target": "ui/close.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/arts/ui/sprites/common/state/icon_common_close_54.png",
+      "bytes": 733,
+      "sha256": "4f2b4abbcb54405b987ee644b6a32fee71e961751afa55f143c0aa744d0e8364"
+    },
+    {
+      "target": "weapons/wpn_claym_0003.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0003.png",
+      "bytes": 17124,
+      "sha256": "40ca92865600c05ab9c7d2a3b7c63ea4f98ef870be01fe241a38bc9f79a9ce97"
+    },
+    {
+      "target": "weapons/wpn_claym_0004.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0004.png",
+      "bytes": 20782,
+      "sha256": "f87cc61ea0f4ea6c8ade7c0d67b0363f8c79eb1cbf5e538cbf4e4ba688935156"
+    },
+    {
+      "target": "weapons/wpn_claym_0006.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0006.png",
+      "bytes": 21668,
+      "sha256": "b94031113d6e281ead004f79880e29d42967b3cdae8f8cc1dcef7f96b26a0650"
+    },
+    {
+      "target": "weapons/wpn_claym_0007.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0007.png",
+      "bytes": 23036,
+      "sha256": "f6d650ec63129cc8dc1d0e840d3f5513c8c05141c3df748aa9740a4cdd0b1921"
+    },
+    {
+      "target": "weapons/wpn_claym_0008.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0008.png",
+      "bytes": 19729,
+      "sha256": "9a6aba9f8affd380eef1724ceb25f3f71099e6ff1ccfb193f5d3134e05e23c22"
+    },
+    {
+      "target": "weapons/wpn_claym_0009.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0009.png",
+      "bytes": 21500,
+      "sha256": "e044a3c59b928ae914634ff87f691e0237f77774689fd16ee9f43be0846690dc"
+    },
+    {
+      "target": "weapons/wpn_claym_0010.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0010.png",
+      "bytes": 17749,
+      "sha256": "5f53df5e0e951b0779bf22fc8c9f1a1b540887c11fd1cdb16adbc1999b11c47a"
+    },
+    {
+      "target": "weapons/wpn_claym_0011.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0011.png",
+      "bytes": 20087,
+      "sha256": "00bcbeeb1a2133720bf7a6f95d63e300de704d10e4bbd760574f85c90253a528"
+    },
+    {
+      "target": "weapons/wpn_claym_0012.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0012.png",
+      "bytes": 23627,
+      "sha256": "4a158a5043d9ce85e0f77a8270e4a5faad953ddf9af7f7e37d8b4021bfbe37bf"
+    },
+    {
+      "target": "weapons/wpn_claym_0013.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0013.png",
+      "bytes": 17704,
+      "sha256": "4c1d2f5345ceaeb43bc4a1de2b55755ed6da17460e79a9c33d996d9f7df8198c"
+    },
+    {
+      "target": "weapons/wpn_claym_0014.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0014.png",
+      "bytes": 16847,
+      "sha256": "e9ad11c2fd4ae685e21614f7fd14e0decb8d1a8f4eab8e2d87d6ea69371465ca"
+    },
+    {
+      "target": "weapons/wpn_claym_0015.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0015.png",
+      "bytes": 17769,
+      "sha256": "5975d67c82473f254cc3f2944f96cf32ab166a9bb874a8cc382e4b959c270c3a"
+    },
+    {
+      "target": "weapons/wpn_claym_0016.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0016.png",
+      "bytes": 19295,
+      "sha256": "d1986a8d7758f65fd5584cebb176d675332a531c80f8d1f1cb9eb07dd18c8f3b"
+    },
+    {
+      "target": "weapons/wpn_claym_0017.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0017.png",
+      "bytes": 23478,
+      "sha256": "be41f613c5fc64945dbc63a173222d678ed7cfcb44abc74529164e2ff6d7cebc"
+    },
+    {
+      "target": "weapons/wpn_claym_0018.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0018.png",
+      "bytes": 20299,
+      "sha256": "1ba359d14e8672df5684d084016305444769dd8d36e0fdda47dddfaee27300eb"
+    },
+    {
+      "target": "weapons/wpn_claym_0019.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_claym_0019.png",
+      "bytes": 22569,
+      "sha256": "3cd4199573d5cb9840530ca6c2c83246388b4cb92eb8818821e014f6747fb36f"
+    },
+    {
+      "target": "weapons/wpn_funnel_0001.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0001.png",
+      "bytes": 17831,
+      "sha256": "6e559987f9b526ea26dcb4395a3e0981c0a9ba32e2172d2525986688726780e3"
+    },
+    {
+      "target": "weapons/wpn_funnel_0002.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0002.png",
+      "bytes": 14886,
+      "sha256": "37ca9fefe4e81dd17f7c3c38bb3812377151f81ca0f4c1f2c530df61c577b14b"
+    },
+    {
+      "target": "weapons/wpn_funnel_0003.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0003.png",
+      "bytes": 17738,
+      "sha256": "44a7c135e3de9305c1c3ba0ae6e1c97f4fd101fd9c21097132bf2ebae6fe532f"
+    },
+    {
+      "target": "weapons/wpn_funnel_0004.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0004.png",
+      "bytes": 16248,
+      "sha256": "791672eaffe671e7cdefe072bafbe82c1bce992a7930132218f741fc827b549b"
+    },
+    {
+      "target": "weapons/wpn_funnel_0005.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0005.png",
+      "bytes": 16048,
+      "sha256": "2cccf75ae027caaaa82c8408253b2b67d22fd0d889460e9da372737bae42738e"
+    },
+    {
+      "target": "weapons/wpn_funnel_0006.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0006.png",
+      "bytes": 18196,
+      "sha256": "8b9b2a07edd8b5e7272c070a6e8357d673454d583a5e89f9bad9d8b10019c789"
+    },
+    {
+      "target": "weapons/wpn_funnel_0007.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0007.png",
+      "bytes": 16731,
+      "sha256": "a2baa1f2e21b10baf52db9f17eb27e7b7c648ab91401c6788c6ca0ca2cf90d44"
+    },
+    {
+      "target": "weapons/wpn_funnel_0008.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0010.png",
+      "bytes": 16861,
+      "sha256": "ff72744a2470f8007339e750f7e61ae291c246788ab91414ba073aa072a13b71"
+    },
+    {
+      "target": "weapons/wpn_funnel_0009.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0009.png",
+      "bytes": 17065,
+      "sha256": "f369cbfc5f5eba3d73edce83c931910871a7fa55bd56bd5091afefdf918a2dec"
+    },
+    {
+      "target": "weapons/wpn_funnel_0010.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0008.png",
+      "bytes": 15837,
+      "sha256": "2596a34eb12477eb1f559af9eb3c0f159adb4fb849b34c51a3c9e747b620f715"
+    },
+    {
+      "target": "weapons/wpn_funnel_0011.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0011.png",
+      "bytes": 16838,
+      "sha256": "306884fcc10f437f2909ab777b155e64fa65052885fbafd0a00e58480cc23877"
+    },
+    {
+      "target": "weapons/wpn_funnel_0012.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0012.png",
+      "bytes": 14990,
+      "sha256": "ba03633d77469f4a10ba7614a98985e0754bfb3850100b9b63aca1da0b100158"
+    },
+    {
+      "target": "weapons/wpn_funnel_0013.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0013.png",
+      "bytes": 17191,
+      "sha256": "5c05124e55f09e1a3c119c70ea10ed0fc3851bac53fa4cca3814243253ed1dbb"
+    },
+    {
+      "target": "weapons/wpn_funnel_0014.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0014.png",
+      "bytes": 16157,
+      "sha256": "3a062351fa84f9fee5ef489f01a610bcaa669c87164dab8cba1ef8b9bce73cac"
+    },
+    {
+      "target": "weapons/wpn_funnel_0015.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0015.png",
+      "bytes": 17612,
+      "sha256": "79f6cc4c7694424ff0e46e968238ec57b6c479de1c4fd9dc48c6d6afa5eca23b"
+    },
+    {
+      "target": "weapons/wpn_funnel_0016.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0016.png",
+      "bytes": 19261,
+      "sha256": "572e1ab7d39e01719f1f2b200cae0b0569bb514e0b5b02009a5e78069ac9ab89"
+    },
+    {
+      "target": "weapons/wpn_funnel_0017.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0017.png",
+      "bytes": 22070,
+      "sha256": "05e1b2069ab64805f012ad4d200c32ade0740778fbf264b74de7abfeda4dce7d"
+    },
+    {
+      "target": "weapons/wpn_funnel_0018.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0018.png",
+      "bytes": 20799,
+      "sha256": "c8a2aca78cbcdc301fc662519d4893586c2c4aa4e1df602c0e22451b3552ea69"
+    },
+    {
+      "target": "weapons/wpn_funnel_0019.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0019.png",
+      "bytes": 20923,
+      "sha256": "2e1da48add877040a1e20c42d0539c20f8f9edfc1648c4b0dbe08026ee27ea6b"
+    },
+    {
+      "target": "weapons/wpn_funnel_0020.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_funnel_0020.png",
+      "bytes": 18116,
+      "sha256": "ff34b7f088d9c790810d5ba3472cba4e401b1ac7915ae52a162f8861c5e360ef"
+    },
+    {
+      "target": "weapons/wpn_lance_0003.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0003.png",
+      "bytes": 13634,
+      "sha256": "73d456294071935b37bbbff6045a60e68db134ca85bf19b24dc31abcd59085eb"
+    },
+    {
+      "target": "weapons/wpn_lance_0004.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0004.png",
+      "bytes": 13608,
+      "sha256": "cea3a104edba2e2457817ece4bc240c6651ace7ea9d8f21f133e2f6da458e0c7"
+    },
+    {
+      "target": "weapons/wpn_lance_0006.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0006.png",
+      "bytes": 18830,
+      "sha256": "b9d95a65a067652392a4ea9949bf47494f8b6df1022bc2610941dc644ee45fce"
+    },
+    {
+      "target": "weapons/wpn_lance_0007.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0007.png",
+      "bytes": 18522,
+      "sha256": "6472117a6705ccafd7fce875ac866cb82492797cd2adeec94e80516b3afc13d7"
+    },
+    {
+      "target": "weapons/wpn_lance_0008.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0008.png",
+      "bytes": 14948,
+      "sha256": "caa197923e62a096548c4ab2c029a99b510b0eeb4325c96d23a8730dcf6a0ace"
+    },
+    {
+      "target": "weapons/wpn_lance_0009.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0009.png",
+      "bytes": 12596,
+      "sha256": "147dd1ec2fac4cdbf6bdb97c9b3710b17968df179d6970e1ac9d2c25172b7920"
+    },
+    {
+      "target": "weapons/wpn_lance_0010.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0010.png",
+      "bytes": 14775,
+      "sha256": "6746bd1c8db89d25add86ff246cae0c71a7d741177fe89a75b9e6c4ed700e794"
+    },
+    {
+      "target": "weapons/wpn_lance_0011.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0011.png",
+      "bytes": 15793,
+      "sha256": "252378a36587bbc61ba526be2d6e28c5ae394d3eb56e23e94cfa89da63e1d174"
+    },
+    {
+      "target": "weapons/wpn_lance_0012.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0012.png",
+      "bytes": 16280,
+      "sha256": "4c50d72fc478f411cb62d987c9fe3060495fa80a077205433ed3309a884631ba"
+    },
+    {
+      "target": "weapons/wpn_lance_0013.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0013.png",
+      "bytes": 14113,
+      "sha256": "ec0c264f5f969aa1dede90a8edb14a6b836363b8e3279a754754ef26cbf1825d"
+    },
+    {
+      "target": "weapons/wpn_lance_0014.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0014.png",
+      "bytes": 16211,
+      "sha256": "fae80eb6eaf506a725d37fcbb411115f459eef3b4d885d9efd73f6e5f5b20420"
+    },
+    {
+      "target": "weapons/wpn_lance_0015.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0015.png",
+      "bytes": 14718,
+      "sha256": "411048ecfdcb418f35f17510607233f093122c36873c678acb3763ff7dfba53f"
+    },
+    {
+      "target": "weapons/wpn_lance_0016.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_lance_0016.png",
+      "bytes": 13915,
+      "sha256": "7fb15feee80396cfdf3bb39d682e46c809482a268fd245033560b097cd79b854"
+    },
+    {
+      "target": "weapons/wpn_pistol_0001.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0001.png",
+      "bytes": 12400,
+      "sha256": "3d11d302db67302aae60b4f23d085827e354942766ca65e3345894447530d0d2"
+    },
+    {
+      "target": "weapons/wpn_pistol_0002.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0002.png",
+      "bytes": 11281,
+      "sha256": "0803ec415542f0dc4613e3ad4dd90f90a59acfd18a1a257997e8e75f67186e0b"
+    },
+    {
+      "target": "weapons/wpn_pistol_0003.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0003.png",
+      "bytes": 14265,
+      "sha256": "15efe07c6a4aa1419883622e43f8a615c65f91fc95f802a221d3edfe5fb60f4b"
+    },
+    {
+      "target": "weapons/wpn_pistol_0004.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0004.png",
+      "bytes": 14581,
+      "sha256": "c2448bc15ffe6f76367f5c9bcef8c2ccee6b11b80dd6f2e63b954909931d85bb"
+    },
+    {
+      "target": "weapons/wpn_pistol_0005.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0005.png",
+      "bytes": 16202,
+      "sha256": "1f657c0c338bb6dfd5cee27b506175926d989c7d5dffeb4b2807143e859da337"
+    },
+    {
+      "target": "weapons/wpn_pistol_0006.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0006.png",
+      "bytes": 12950,
+      "sha256": "3416661cb5fd726c13796ee10b626301c188e71b4455864f647b40e899903342"
+    },
+    {
+      "target": "weapons/wpn_pistol_0007.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0007.png",
+      "bytes": 15817,
+      "sha256": "e3b92dad579573f42bc87703b401c709d1e9b8a49c05b15090eeb7273b97c238"
+    },
+    {
+      "target": "weapons/wpn_pistol_0008.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0008.png",
+      "bytes": 17225,
+      "sha256": "2bebfcc6d07af213d050803da7103846cf712790511fb4ce98415d2fc8f98865"
+    },
+    {
+      "target": "weapons/wpn_pistol_0009.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0009.png",
+      "bytes": 13347,
+      "sha256": "c50d689be0a3710799fa0cfc72caf8661001a32b31a696fbeef9da1ac5056e9b"
+    },
+    {
+      "target": "weapons/wpn_pistol_0010.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0010.png",
+      "bytes": 16817,
+      "sha256": "7cb04ae5a9ca06c4c504e983b4fc9987632156dc02c852f9332e203cd9297c92"
+    },
+    {
+      "target": "weapons/wpn_pistol_0011.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0011.png",
+      "bytes": 15967,
+      "sha256": "d8aa3718b2f6d1fcb7864cefe48dca6e8997fb8598ee113b08a03c1dcab6c662"
+    },
+    {
+      "target": "weapons/wpn_pistol_0012.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_pistol_0012.png",
+      "bytes": 16139,
+      "sha256": "b206cce541a39d3d6e7d03fa744a4b466a88c46bc4638c8dad5073d98ba978e4"
+    },
+    {
+      "target": "weapons/wpn_sword_0003.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0003.png",
+      "bytes": 15628,
+      "sha256": "fb9ea1e36ac321d38cb4ca49731df351efc6eb5a87cc0fe8432e59c53441e107"
+    },
+    {
+      "target": "weapons/wpn_sword_0005.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0005.png",
+      "bytes": 14623,
+      "sha256": "98e9fc5fc46ec0b18bfb86a5509a3669a24de45af069449a9fadd3ac015344e1"
+    },
+    {
+      "target": "weapons/wpn_sword_0006.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0006.png",
+      "bytes": 17346,
+      "sha256": "b63211d467dfe3ebbda5c6734e2f4f1a80740f5194cb6d16bcd86a54dd96e3d4"
+    },
+    {
+      "target": "weapons/wpn_sword_0007.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0007.png",
+      "bytes": 14025,
+      "sha256": "59726a32566157fb224e2b3622bd0e2429f8760ceea5554badb08b22b482f113"
+    },
+    {
+      "target": "weapons/wpn_sword_0008.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0008.png",
+      "bytes": 15056,
+      "sha256": "431fb6f1a233b1109c21bbf1c1ee34e13c8e84ee2af5e9c2c7b7c71c9efeeee7"
+    },
+    {
+      "target": "weapons/wpn_sword_0009.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0009.png",
+      "bytes": 14054,
+      "sha256": "f0deae2251b6b43d016986b3069176c26d11f972dcbe4192827988c25837726e"
+    },
+    {
+      "target": "weapons/wpn_sword_0010.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0010.png",
+      "bytes": 17621,
+      "sha256": "11e706dcfc6271e5581efe6384aaf873ac82aa9d599d8120b19b46390ef86b98"
+    },
+    {
+      "target": "weapons/wpn_sword_0011.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0011.png",
+      "bytes": 15772,
+      "sha256": "2a85f167f052ce0c5e0ef69c122e58a1fd579695b3a89db38259170d84c5c331"
+    },
+    {
+      "target": "weapons/wpn_sword_0012.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0012.png",
+      "bytes": 18347,
+      "sha256": "76f5ec251a54c0273cd550ed81e0c35347d125decea7e40a78f0b0828349c613"
+    },
+    {
+      "target": "weapons/wpn_sword_0013.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0013.png",
+      "bytes": 16865,
+      "sha256": "a1bd8d8f5c9d4ae734731a5f9d9cff948bfd65e0bc29cabfe589b1b7c56d420c"
+    },
+    {
+      "target": "weapons/wpn_sword_0014.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0014.png",
+      "bytes": 21225,
+      "sha256": "944a746fa673e449ee03c41f586f224a83e9148fc4a32a7343eeb1ca5bf1486a"
+    },
+    {
+      "target": "weapons/wpn_sword_0015.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0015.png",
+      "bytes": 14707,
+      "sha256": "e5ec3d0a39dc6bdece29f82cdb309d4b8753802907b01d2b37cdc1e07920d9f6"
+    },
+    {
+      "target": "weapons/wpn_sword_0016.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0016.png",
+      "bytes": 11594,
+      "sha256": "c55cee9128b19cf957c7b277d7ddbe7c7a4d21f67cd72bee3e8f447ae9a765b5"
+    },
+    {
+      "target": "weapons/wpn_sword_0017.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0017.png",
+      "bytes": 17148,
+      "sha256": "29d3f73d782c3f433d7ca0db38e3151bcb9725f8eb1556e68149a5816b4c5174"
+    },
+    {
+      "target": "weapons/wpn_sword_0018.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0018.png",
+      "bytes": 14645,
+      "sha256": "ab2e4d10860e527df823fa60a2a90b5f0d1ca930ddd7116ef83ba288c5389947"
+    },
+    {
+      "target": "weapons/wpn_sword_0019.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0019.png",
+      "bytes": 14273,
+      "sha256": "358f878c17ef64c2a8c42afd5a22c317748efa4ed5b42ff64c748e77f25839a3"
+    },
+    {
+      "target": "weapons/wpn_sword_0020.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0020.png",
+      "bytes": 13956,
+      "sha256": "0a04fc451582d4a7a9f164f199f826c08bb566bfa3731361382ced0ac0d6ef8c"
+    },
+    {
+      "target": "weapons/wpn_sword_0021_ink.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0021.png",
+      "bytes": 15198,
+      "sha256": "1de740c96503fd31ce2763aa953115d7820dfe2a33c3bbbbd86e1ef69638a64e"
+    },
+    {
+      "target": "weapons/wpn_sword_0021.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0021.png",
+      "bytes": 15198,
+      "sha256": "1de740c96503fd31ce2763aa953115d7820dfe2a33c3bbbbd86e1ef69638a64e"
+    },
+    {
+      "target": "weapons/wpn_sword_0022.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0022.png",
+      "bytes": 14181,
+      "sha256": "979c989aea884c0eb6dfbb093d9dc032132377d84af4149f32603a8b1eaedbb1"
+    },
+    {
+      "target": "weapons/wpn_sword_0023.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0023.png",
+      "bytes": 15990,
+      "sha256": "9094d3f170fe832fdb17df2034b984d81285af4a947ad98c67bdc778e2f59097"
+    },
+    {
+      "target": "weapons/wpn_sword_0024.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0024.png",
+      "bytes": 20891,
+      "sha256": "4ce1c819919ec96b4090947c671a9c90d3dabff11cc525b728125160c10f1953"
+    },
+    {
+      "target": "weapons/wpn_sword_0026.png",
+      "source": "https://raw.githubusercontent.com/555me/EndfieldAssets/659fa8d40061616433722bdd803ef432e887f89e/assets/beyond/dynamicassets/gameplay/ui/sprites/itemicon/wpn_sword_0026.png",
+      "bytes": 17858,
+      "sha256": "07aedbcbdab2d9d321fa42ba6cfaa9028fb94387186021e5e284f4e76b89796f"
+    }
+  ]
+}

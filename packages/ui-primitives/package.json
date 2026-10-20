@@ -1,0 +1,15 @@
+{
+  "name": "@riic/ui-primitives",
+  "private": true,
+  "type": "module",
+  "peerDependencies": {
+    "@base-ui/react": "^1.6.0",
+    "class-variance-authority": "^0.7.1",
+    "react": "^19.2.8",
+    "motion": "^13.0.0",
+    "lucide-react": "^0.475.0",
+    "overlayscrollbars": "^2.16.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.6.0"
+  }
+}

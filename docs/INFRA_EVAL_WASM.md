@@ -35,14 +35,14 @@ npm run wasm:build
 npm run build
 ```
 
-脚本会删除旧的版本化 WASM 文件，复制新胶水文件和 WASM，并重新生成 `public/wasm/infra-eval-manifest.json`。随后 `npm run build` 会把这些静态资源带入发布产物。
+脚本会删除旧的版本化 WASM 文件，复制新胶水文件和 WASM，并重新生成 `apps/arknights/public/wasm/infra-eval-manifest.json`。随后 `npm run build` 会把这些静态资源带入发布产物。
 
 如果需要手动替换已经生成的资源，必须同时替换以下三项：
 
-1. `public/wasm/infra_eval_wasm.js`；
+1. `apps/arknights/public/wasm/infra_eval_wasm.js`；
 2. 新的版本化 `.wasm` 文件；
-3. `public/wasm/infra-eval-manifest.json` 中的 `ruleset` 和 `wasmUrl`。
+3. `apps/arknights/public/wasm/infra-eval-manifest.json` 中的 `ruleset` 和 `wasmUrl`。
 
-只替换 `.wasm` 文件而不更新胶水文件或 manifest，可能出现资源 404、API 不匹配或 `WASM evaluator ruleset mismatch`。`src/lib/infra-eval/manifest.ts` 只保存 manifest 的固定 URL，通常不需要修改。
+只替换 `.wasm` 文件而不更新胶水文件或 manifest，可能出现资源 404、API 不匹配或 `WASM evaluator ruleset mismatch`。`apps/arknights/src/lib/infra-eval/manifest.ts` 只保存 manifest 的固定 URL，通常不需要修改。
 
 构建脚本会从 `ArknightsInfraEval/crates/infra-eval-core/src/evaluator.rs` 读取实际 ruleset，避免前端声明和 WASM 自报版本不一致。

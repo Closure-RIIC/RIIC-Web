@@ -47,7 +47,7 @@ export default defineConfig({
   webServer: {
     command: releaseDirectory
       ? `node scripts/start-standalone.mjs --hostname 127.0.0.1 --port ${webServerPort}`
-      : `npx vite --host 127.0.0.1 --port ${webServerPort}`,
+      : `npm run dev -- --host 127.0.0.1 --port ${webServerPort}`,
     cwd: releaseDirectory,
     url: baseURL,
     reuseExistingServer: !process.env.CI,

@@ -2,32 +2,32 @@
 
 ## Wish-page fonts
 
-The wish page uses Long Cang and ZCOOL QingKe HuangYou from the `zhe-pian-da-di-font-pack` repository. Both are distributed under SIL Open Font License 1.1; license texts are included under `public/fonts/wishes/`.
+The wish page uses Long Cang and ZCOOL QingKe HuangYou from the `zhe-pian-da-di-font-pack` repository. Both are distributed under SIL Open Font License 1.1; license texts are included under `apps/arknights/public/fonts/wishes/`.
 
 ## Wish-page background music
 
-`public/audio/wish-wall-bgm.mp3` is an audio-only extraction of the user-provided Bilibili video [BV1NQuX6DEVx](https://www.bilibili.com/video/BV1NQuX6DEVx/), used as optional background music on the wish page. The original video and audio rights remain with the uploader and other respective rights holders; this project does not claim ownership.
+`apps/arknights/public/audio/wish-wall-bgm.mp3` is an audio-only extraction of the user-provided Bilibili video [BV1NQuX6DEVx](https://www.bilibili.com/video/BV1NQuX6DEVx/), used as optional background music on the wish page. The original video and audio rights remain with the uploader and other respective rights holders; this project does not claim ownership.
 
 ## arkntools data and building-skill assets
 
 Operator metadata, building-skill icons, and the generated presentation catalogs under the following paths come from the public [`arkntools/arknights-toolbox-data`](https://github.com/arkntools/arknights-toolbox-data) repository:
 
-- `public/images/building-skills`
-- `src/generated/arkntools`
+- `apps/arknights/public/images/building-skills`
+- `apps/arknights/src/generated/arkntools`
 
 The repository's updater code is published under the MIT License. Arknights game data, names, and descriptions remain the property of their respective rights holders.
 
 ## ArknightsGameResource portraits
 
-Operator portraits under `public/images/operator-portraits` come from the public [`yuanyan3060/ArknightsGameResource`](https://github.com/yuanyan3060/ArknightsGameResource) repository. Its README identifies the images as Arknights game assets owned by Hypergryph and limits the repository's purpose to learning and exchange. The resource repository carries an [AGPL-3.0 license](https://github.com/yuanyan3060/ArknightsGameResource/blob/main/LICENSE); this frontend copies only the public PNG artifacts and does not execute code from that repository.
+Operator portraits under `apps/arknights/public/images/operator-portraits` come from the public [`yuanyan3060/ArknightsGameResource`](https://github.com/yuanyan3060/ArknightsGameResource) repository. Its README identifies the images as Arknights game assets owned by Hypergryph and limits the repository's purpose to learning and exchange. The resource repository carries an [AGPL-3.0 license](https://github.com/yuanyan3060/ArknightsGameResource/blob/main/LICENSE); this frontend copies only the public PNG artifacts and does not execute code from that repository.
 
-`src/generated/arkntools/source.json` records the exact data and portrait commits and resource counts used by the current checkout. This project does not claim ownership of the game assets.
+`apps/arknights/src/generated/arkntools/source.json` records the exact data and portrait commits and resource counts used by the current checkout. This project does not claim ownership of the game assets.
 
 The frontend consumes only public JSON and PNG artifacts. It does not execute private downloader or unpacking workflows, does not require access to private repositories, and never opens pull requests or writes to either upstream repository.
 
 ## Rainyun partner mark
 
-The Rainyun logo at `public/images/partners/rainyun-logo.png` was provided for this site integration and links only to [Rainyun](https://www.rainyun.com/riic_). The Rainyun name and logo remain the property of their respective rights holder; this project does not claim ownership of the mark. The image is bundled locally, so loading the page does not contact Rainyun before a visitor chooses the link.
+The Rainyun logo at `apps/arknights/public/images/partners/rainyun-logo.png` was provided for this site integration and links only to [Rainyun](https://www.rainyun.com/riic_). The Rainyun name and logo remain the property of their respective rights holder; this project does not claim ownership of the mark. The image is bundled locally, so loading the page does not contact Rainyun before a visitor chooses the link.
 
 ## Site icon
 
@@ -59,9 +59,9 @@ No runtime page or API route fetches data from either upstream. Production build
 
 Numeric UI text uses the Bender Bold font distributed in the public [1001 Fonts Bender package](https://www.1001fonts.com/bender-font.html). The downloaded package identifies the typeface as Bender Bold Version 1.000 (2009), designed by Oleg Zhuravlev and Gladkikh Ivan and distributed by Jovanny Lemonad.
 
-- Font file: `src/app/fonts/Bender-Bold.otf`
+- Font file: `packages/ui-primitives/fonts/Bender-Bold.otf`
 - Font SHA-256: `36DE62CF8B651E3A05D2E93352992FCB684B02EE72109FD7E2A3C134D57AF4F2`
-- License: SIL Open Font License 1.1, preserved verbatim in `src/app/fonts/Bender-OFL.txt`
+- License: SIL Open Font License 1.1, preserved verbatim in `apps/arknights/src/app/fonts/Bender-OFL.txt`
 - License SHA-256: `7F18EC1EBB6B50E3ED0F74B2C61F25B8D7CD69E43F4DE66E991BCFD3C419A8BB`
 
 The font is self-hosted in the Vite build. Runtime pages do not request the font from 1001 Fonts, Hypergryph, or another third-party font CDN.

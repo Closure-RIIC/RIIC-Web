@@ -1,4 +1,4 @@
-import { searchKnowledgeBase, readKnowledgeDoc } from "../src/server/agent/knowledge.ts";
+import { searchKnowledgeBase, readKnowledgeDoc } from "../apps/arknights/src/server/agent/knowledge.ts";
 
 const route = await searchKnowledgeBase("搓玉 源石碎片 无人机折算");
 console.log("== kb_route 搓玉 ==");

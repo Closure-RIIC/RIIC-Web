@@ -6,7 +6,7 @@
 
 本功能经仓库使用者确认拥有复用授权后，移植自 [Rhodes-MoodSOC](https://github.com/ziyanQAQ/Rhodes-MoodSOC/tree/5204c840b7a99fdf79cd3815507894b001132162)，固定提交为 `5204c840b7a99fdf79cd3815507894b001132162`。计算口径遵循该版本的模型约定，包含原项目对挂件、阵营保护、技能叠加和闲置入宿的建模假设，不代表对游戏实测效果的额外保证。
 
-- `src/mood-simulation/catalog.json`：上游技能子句、解锁和替换、阵营与变量规则的确定性导出。
+- `apps/arknights/src/mood-simulation/catalog.json`：上游技能子句、解锁和替换、阵营与变量规则的确定性导出。
 - `rules.ts`：技能条件、变量、消耗/恢复账本。使用独立 Decimal 上下文（28 位、ROUND_HALF_UP）。
 - `engine.ts`：跨班次积分、心情事件、入宿与布局快照；`presentation.ts` 使用事件右侧值查询时间点。
 - `catalog-additions.ts`：独立维护固定上游版本未包含的新干员规则，当前补充克莱门莎、德·托莱多、旅骨。依据游戏数据的技能说明、解锁条件及 buffChar 分组核对；重新生成固定目录不会覆盖补充规则。

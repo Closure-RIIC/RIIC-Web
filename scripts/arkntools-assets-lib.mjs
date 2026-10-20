@@ -33,10 +33,10 @@ export function generateFullOperatorFixture(operators) {
 }
 
 const MANAGED_PATHS = [
-  "public/images/operator-portraits",
-  "public/images/building-skills",
-  "public/images/products",
-  "src/generated/arkntools",
+  "apps/arknights/public/images/operator-portraits",
+  "apps/arknights/public/images/building-skills",
+  "apps/arknights/public/images/products",
+  "apps/arknights/src/generated/arkntools",
   "fixtures/operbox_full_e2.json",
 ];
 

@@ -5,8 +5,8 @@ import { stdout } from "node:process";
 
 import sharp from "sharp";
 
-const sourceDirectory = path.resolve("public/images/building-room-backgrounds");
-const outputDirectory = path.resolve("public/images/building-room-emblems");
+const sourceDirectory = path.resolve("apps/arknights/public/images/building-room-backgrounds");
+const outputDirectory = path.resolve("apps/arknights/public/images/building-room-emblems");
 const sourceAlphaThreshold = 240;
 const backgroundLuminance = 52;
 const foregroundLuminance = 84;

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { mockApis } from "./production-readiness.fixture";
-import { accountOrbColor } from "../src/account-orb";
+import { accountOrbColor } from "../apps/arknights/src/account-orb";
 import { openAgentHistory } from "./agent-history";
 
 const ready = { success: true, data: { enabled: true, provider: "deepseek", model: "test-model", baseURL: "https://example.test/v1" } };
@@ -196,7 +196,7 @@ test("Persona portraits keep Closure fixed and persist uploaded persona avatars"
   await expect(assistantAvatar.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
   await page.getByRole("button", { name: /人格卡：/ }).click();
   await expect(preview.locator("img")).toHaveAttribute("src", "/images/operator-portraits/4228_closur.webp");
-  await avatarInput.setInputFiles("public/images/operator-portraits/4228_closur.webp");
+  await avatarInput.setInputFiles("apps/arknights/public/images/operator-portraits/4228_closur.webp");
   await expect(preview.locator("img")).toHaveAttribute("src", /^data:image\/webp;base64,/);
   const customAvatar = await preview.locator("img").getAttribute("src");
   await avatarInput.setInputFiles({ name: "invalid.svg", mimeType: "image/svg+xml", buffer: Buffer.from("<svg/>") });

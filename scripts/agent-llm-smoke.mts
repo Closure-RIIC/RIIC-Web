@@ -1,7 +1,7 @@
 import { generateText, tool } from "ai";
 import { z } from "zod";
 
-import { getAgentModel } from "../src/server/agent/llm.ts";
+import { getAgentModel } from "../apps/arknights/src/server/agent/llm.ts";
 
 const model = getAgentModel();
 console.log("model resolved, starting basic call...");

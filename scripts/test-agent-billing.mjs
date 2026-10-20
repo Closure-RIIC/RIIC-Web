@@ -22,7 +22,7 @@ try {
   try { await migrate(drizzle({ client }), { migrationsFolder: "drizzle" }); } finally { await client.end(); }
   const code = await new Promise((resolve, reject) => {
     const args = process.argv.includes("--browser") ? ["node_modules/@playwright/test/cli.js","test","--config=playwright.agent-billing.config.ts"]
-      : ["--experimental-transform-types", "--test", "src/server/billing/agent-accounting.integration.test.mjs", "src/server/billing/cdk.integration.test.mjs"];
+      : ["--experimental-transform-types", "--test", "apps/arknights/src/server/billing/agent-accounting.integration.test.mjs", "apps/arknights/src/server/billing/cdk.integration.test.mjs"];
     const child = spawn(process.execPath, args, {
       stdio: "inherit", env: { ...process.env, DATABASE_URL: connectionString, AUTH_INTEGRATION_DATABASE_URL: connectionString },
     }); child.once("error", reject); child.once("exit", resolve);

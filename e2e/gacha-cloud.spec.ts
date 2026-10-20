@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { mockApis, seedPreferences, requestId, authenticatedSklandSnapshot } from "./production-readiness.fixture";
-import { gachaAccountOptions } from "../src/gacha-accounts";
-import type { GachaHistory } from "../src/gacha-history";
+import { gachaAccountOptions } from "../apps/arknights/src/gacha-accounts";
+import type { GachaHistory } from "../apps/arknights/src/gacha-history";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/auth/get-session", (route) => route.fulfill({ json: {
