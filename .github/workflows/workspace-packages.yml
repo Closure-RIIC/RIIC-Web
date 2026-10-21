@@ -45,9 +45,10 @@ jobs:
         run: node scripts/test-platform-runtime.mjs
       - name: Validate shared account lifecycle
         env:
-          DATABASE_URL: postgresql://postgres:platform-test-only@127.0.0.1:5432/riic_platform_test
-          DATABASE_MIGRATION_URL: postgresql://postgres:platform-test-only@127.0.0.1:5432/riic_platform_test
-          AUTH_INTEGRATION_DATABASE_URL: postgresql://postgres:platform-test-only@127.0.0.1:5432/riic_platform_test
+          PGPASSWORD: platform-test-only
+          DATABASE_URL: postgresql://postgres@127.0.0.1:5432/riic_platform_test
+          DATABASE_MIGRATION_URL: postgresql://postgres@127.0.0.1:5432/riic_platform_test
+          AUTH_INTEGRATION_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/riic_platform_test
         run: npm run db:migrate && npm run test:platform:integration
       - name: Stage Endfield and platform artifacts
         env:

@@ -8,7 +8,12 @@ test("platform routing is limited to shared endpoints and explicit destinations"
   assert.equal(isPlatformPath("/api/plan"), false);
   assert.equal(isPlatformPath("/api/admin/users"), false);
   assert.equal(platformOrigin("http://127.0.0.1:5177").port, "5177");
-  for (const value of ["https://user:password@host.test", "https://host.test/path", "http://host.test", "https://host.test?url=other"]) assert.throws(() => platformOrigin(value));
+  for (const field of ["username", "password"] as const) {
+    const destination = new URL("https://host.test");
+    destination[field] = "fixture";
+    assert.throws(() => platformOrigin(destination.href));
+  }
+  for (const value of ["https://host.test/path", "http://host.test", "https://host.test?url=other"]) assert.throws(() => platformOrigin(value));
 });
 
 test("proxy preserves browser origin and replaces spoofed forwarding headers", () => {
