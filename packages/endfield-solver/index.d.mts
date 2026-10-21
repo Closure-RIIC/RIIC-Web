@@ -1,5 +1,5 @@
-﻿export interface SkillTier { name: string; room: string; unlock: number; description: string; effectKey: string; nodeId?: string }
-export interface Operator { name: string; elite: number; skillIds?: string[] }
+export interface SkillTier { name: string; room: string; unlock: number; description: string; effectKey: string; nodeId?: string }
+export interface Operator { name: string; elite: number; latestSpaceshipSkillNodes?: string[] }
 export interface Options {
   mfg: string; levels: { center: number; mfg1: number; mfg2: number; grow: number; guest: number };
   grow: Record<string, number>; priority: string[]; assist: boolean; budget: number; time: number;

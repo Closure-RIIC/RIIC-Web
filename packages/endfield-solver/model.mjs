@@ -74,8 +74,11 @@ export function prepare(input) {
   const cfg = validateOptions(input.options);
   const ops = operators.map(op => {
     const entry = data.byName.get(op.name);
-    // skillIds 是森空岛给出的实际解锁节点；缺省时才按精英化回退（与旧行为一致）。
-    const skills = Array.isArray(op.skillIds) ? skillsAtNodes(entry.skills, op.skillIds) : skillsAtElite(entry.skills, op.elite);
+    // latestSpaceshipSkillNodes 存的是每个槽的最高档（与森空岛同名字段同义）；
+    // 缺省时才按精英化回退。求解器只吃生效的最高档，不需要低档。
+    const skills = Array.isArray(op.latestSpaceshipSkillNodes)
+      ? skillsAtNodes(entry.skills, op.latestSpaceshipSkillNodes)
+      : skillsAtElite(entry.skills, op.elite);
     return { ...op, charId: entry.charId, skills };
   });
   return { ops, cfg };

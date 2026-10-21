@@ -14,8 +14,8 @@ export interface EndfieldRole {
 export interface EndfieldSnapshot {
   game: "endfield";
   role: { roleId: string; name: string; serverName: string; level: number };
-  /** `skillIds` 是 `talent.latestSpaceshipSkillNodes`：玩家实际解锁的基建技能节点。 */
-  characters: { id: string; name: string; elite: number; level: number; skillIds: string[] }[];
+  /** `latestSpaceshipSkillNodes`：玩家实际解锁的基建技能节点（每槽最高档）。 */
+  characters: { id: string; name: string; elite: number; level: number; latestSpaceshipSkillNodes: string[] }[];
   rooms: { id: string; type: number; level: number }[];
   facilitiesComplete?: boolean;
   rosterComplete?: boolean;
@@ -101,9 +101,9 @@ export function normalizeEndfieldSnapshot(input: unknown, now = Date.now()): End
     // 缺失或非法（含非数组）一律视为"没有解锁任何基建技能"，不做精英化推断。
     const talent = object(character.talent);
     const rawNodes = Array.isArray(talent.latestSpaceshipSkillNodes) ? talent.latestSpaceshipSkillNodes : [];
-    const skillIds = [...new Set(rawNodes
+    const latestSpaceshipSkillNodes = [...new Set(rawNodes
       .filter((node): node is string => typeof node === "string" && node.startsWith("spaceship_skill_") && node.length <= 128))];
-    return { id, name, elite: character.evolvePhase, level: character.level, skillIds };
+    return { id, name, elite: character.evolvePhase, level: character.level, latestSpaceshipSkillNodes };
   });
   const rooms: EndfieldSnapshot["rooms"] = [];
   const roomIds = new Map<string, EndfieldSnapshot["rooms"][number]>();
@@ -154,7 +154,7 @@ export function matchEndfieldRoster(snapshot: EndfieldSnapshot, catalog: readonl
     byName.set(operator.name, previous === undefined ? operator
       : previous && !previous.schedulable && !operator.schedulable ? previous : null);
   }
-  const operators: { name: string; elite: number; skillIds: string[] }[] = [];
+  const operators: { name: string; elite: number; latestSpaceshipSkillNodes: string[] }[] = [];
   const unsupported: string[] = [];
   const excluded = new Set<string>();
   const seen = new Set<string>();
@@ -164,7 +164,7 @@ export function matchEndfieldRoster(snapshot: EndfieldSnapshot, catalog: readonl
     if (!known.schedulable) { excluded.add(known.name); continue; }
     if (seen.has(known.name)) throw new EndfieldDataError("名单包含重复干员。");
     seen.add(known.name);
-    operators.push({ name: known.name, elite: character.elite, skillIds: character.skillIds });
+    operators.push({ name: known.name, elite: character.elite, latestSpaceshipSkillNodes: character.latestSpaceshipSkillNodes });
   }
   return { operators, unsupported, excluded: [...excluded] };
 }

@@ -32,7 +32,7 @@ test("detail envelopes normalize only whitelisted fields and match authoritative
   assert.equal(snapshot.fetchedAt, 123);
   assert.equal(JSON.stringify(snapshot).includes("must-not-copy"), false);
   assert.deepEqual(matchEndfieldRoster(snapshot, [{ id: "char-a", name: "标准名" }, { id: "different-id", name: "另一个干员" }]), {
-    operators: [{ name: "标准名", elite: 2, skillIds: [] }], unsupported: ["新干员"], excluded: [],
+    operators: [{ name: "标准名", elite: 2, latestSpaceshipSkillNodes: [] }], unsupported: ["新干员"], excluded: [],
   });
   assert.deepEqual(endfieldFacilityLevels(snapshot), { center: 5, mfg1: 3, mfg2: 3, grow: 3, guest: 3 });
 });
@@ -86,8 +86,8 @@ test("the reported roster uses template IDs instead of instance IDs and recogniz
 
 test("API identifier variants use only unambiguous exact Endfield names; IDs still win", () => {
   const snapshot = normalizeEndfieldSnapshot(detail());
-  snapshot.characters[0] = { id: "api-specific-id", name: catalog[0].name, elite: 3, level: 60, skillIds: [] };
-  assert.deepEqual(matchEndfieldRoster(snapshot, catalog).operators, [{ name: catalog[0].name, elite: 3, skillIds: [] }]);
+  snapshot.characters[0] = { id: "api-specific-id", name: catalog[0].name, elite: 3, level: 60, latestSpaceshipSkillNodes: [] };
+  assert.deepEqual(matchEndfieldRoster(snapshot, catalog).operators, [{ name: catalog[0].name, elite: 3, latestSpaceshipSkillNodes: [] }]);
   assert.deepEqual(matchEndfieldRoster(snapshot, [
     { id: "first", name: catalog[0].name }, { id: "second", name: catalog[0].name },
   ]).operators, [], "Ambiguous names are not guessed");
