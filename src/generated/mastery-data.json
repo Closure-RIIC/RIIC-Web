@@ -1,0 +1,1311 @@
+{
+  "source": {
+    "rules": {
+      "repository": "https://github.com/arkntools/arknights-toolbox-data",
+      "commit": "49595118ce0226c3ac779016f8b0968f8f1b2220"
+    },
+    "branches": {
+      "repository": "https://github.com/Kengxxiao/ArknightsGameData",
+      "commit": "bee3f83c5d60590b5e1cd42b8d09d00ce32ab10d"
+    },
+    "descriptionsHash": "45385fdea4a02975a34c3237fa52f9cab1793aabb769adbb204e0621db7cd18c"
+  },
+  "branches": {
+    "char_002_amiya": "corecaster",
+    "char_003_kalts": "physician",
+    "char_009_12fce": "splashcaster",
+    "char_010_chen": "sword",
+    "char_017_huang": "centurion",
+    "char_101_sora": "bard",
+    "char_1011_lava2": "splashcaster",
+    "char_1012_skadi2": "bard",
+    "char_1013_chen2": "reaperrange",
+    "char_1014_nearl2": "fearless",
+    "char_1015_aglna2": "skywalker",
+    "char_1016_agoat2": "wandermedic",
+    "char_1019_siege2": "artsfghter",
+    "char_102_texas": "pioneer",
+    "char_1020_reed2": "incantationmedic",
+    "char_1021_kroos2": "fastshot",
+    "char_1022_flwr2": "blessing",
+    "char_1023_ghost2": "dollkeeper",
+    "char_1024_hbisc2": "incantationmedic",
+    "char_1026_gvial2": "centurion",
+    "char_1027_greyy2": "bombarder",
+    "char_1028_texas2": "executor",
+    "char_1029_yato2": "executor",
+    "char_103_angel": "fastshot",
+    "char_1030_noirc2": "musha",
+    "char_1031_slent2": "blessing",
+    "char_1032_excu2": "reaper",
+    "char_1033_swire2": "merchant",
+    "char_1034_jesca2": "shotprotector",
+    "char_1035_wisdel": "bombarder",
+    "char_1036_fang2": "charger",
+    "char_1038_whitw2": "funnel",
+    "char_1039_thorn2": "alchemist",
+    "char_1040_blaze2": "primcaster",
+    "char_1041_angel2": "geek",
+    "char_1042_phatm2": "ritualist",
+    "char_1043_leizi2": "librator",
+    "char_1044_hsgma2": "artsprotector",
+    "char_1045_svash2": "counsellor",
+    "char_1046_sbell2": "phalanx",
+    "char_1047_halo2": "slower",
+    "char_1048_orchd2": "closerange",
+    "char_1049_catap2": "mercenary",
+    "char_1050_chen3": "artsfghter",
+    "char_1051_headb2": "hammer",
+    "char_1052_kalts2": "watchman",
+    "char_106_franka": "fearless",
+    "char_107_liskam": "shotprotector",
+    "char_108_silent": "physician",
+    "char_109_fmout": "splashcaster",
+    "char_110_deepcl": "summoner",
+    "char_112_siege": "pioneer",
+    "char_113_cqbw": "aoesniper",
+    "char_115_headbr": "pioneer",
+    "char_117_myrrh": "physician",
+    "char_118_yuki": "aoesniper",
+    "char_120_hibisc": "physician",
+    "char_121_lava": "splashcaster",
+    "char_122_beagle": "protector",
+    "char_123_fang": "pioneer",
+    "char_124_kroos": "fastshot",
+    "char_126_shotst": "fastshot",
+    "char_127_estell": "centurion",
+    "char_128_plosis": "ringhealer",
+    "char_129_bluep": "fastshot",
+    "char_130_doberm": "instructor",
+    "char_131_flameb": "fearless",
+    "char_133_mm": "fastshot",
+    "char_134_ifrit": "blastcaster",
+    "char_135_halo": "chain",
+    "char_136_hsguma": "protector",
+    "char_137_brownb": "fighter",
+    "char_140_whitew": "lord",
+    "char_141_nights": "corecaster",
+    "char_143_ghost": "centurion",
+    "char_144_red": "executor",
+    "char_145_prove": "closerange",
+    "char_147_shining": "physician",
+    "char_148_nearl": "guardian",
+    "char_149_scave": "pioneer",
+    "char_150_snakek": "protector",
+    "char_1502_crosly": "executor",
+    "char_151_myrtle": "bearer",
+    "char_154_morgan": "fearless",
+    "char_155_tiger": "fighter",
+    "char_157_dagda": "fighter",
+    "char_158_milu": "longrange",
+    "char_159_peacok": "fearless",
+    "char_163_hpsts": "unyield",
+    "char_164_nightm": "corecaster",
+    "char_166_skfire": "splashcaster",
+    "char_171_bldsk": "physician",
+    "char_172_svrash": "lord",
+    "char_173_slchan": "hookmaster",
+    "char_174_slbell": "underminer",
+    "char_179_cgbird": "ringhealer",
+    "char_180_amgoat": "corecaster",
+    "char_181_flower": "ringhealer",
+    "char_183_skgoat": "slower",
+    "char_185_frncat": "artsfghter",
+    "char_187_ccheal": "physician",
+    "char_188_helage": "musha",
+    "char_190_clour": "fastshot",
+    "char_192_falco": "charger",
+    "char_193_frostl": "lord",
+    "char_194_leto": "lord",
+    "char_195_glassb": "slower",
+    "char_196_sunbr": "guardian",
+    "char_197_poca": "siegesniper",
+    "char_198_blackd": "pioneer",
+    "char_199_yak": "protector",
+    "char_201_moeshd": "protector",
+    "char_2012_typhon": "siegesniper",
+    "char_2013_cerber": "corecaster",
+    "char_2014_nian": "protector",
+    "char_2015_dusk": "splashcaster",
+    "char_202_demkni": "guardian",
+    "char_2023_ling": "summoner",
+    "char_2024_chyue": "fighter",
+    "char_2025_shu": "guardian",
+    "char_2026_yu": "primprotector",
+    "char_2027_wang": "traper",
+    "char_204_platnm": "fastshot",
+    "char_206_gnosis": "underminer",
+    "char_208_melan": "fearless",
+    "char_209_ardign": "protector",
+    "char_210_stward": "corecaster",
+    "char_211_adnach": "fastshot",
+    "char_212_ansel": "physician",
+    "char_213_mostma": "splashcaster",
+    "char_214_kafka": "executor",
+    "char_215_mantic": "stalker",
+    "char_218_cuttle": "longrange",
+    "char_219_meteo": "aoesniper",
+    "char_220_grani": "charger",
+    "char_222_bpipe": "charger",
+    "char_225_haak": "geek",
+    "char_226_hmau": "guardian",
+    "char_230_savage": "centurion",
+    "char_235_jesica": "fastshot",
+    "char_236_rope": "hookmaster",
+    "char_237_gravel": "executor",
+    "char_240_wyvern": "pioneer",
+    "char_241_panda": "pusher",
+    "char_242_otter": "summoner",
+    "char_243_waaifu": "executor",
+    "char_245_cello": "ritualist",
+    "char_248_mgllan": "summoner",
+    "char_249_mlyss": "tactician",
+    "char_250_phatom": "executor",
+    "char_252_bibeak": "sword",
+    "char_253_greyy": "splashcaster",
+    "char_254_vodfox": "underminer",
+    "char_258_podego": "slower",
+    "char_260_durnar": "artsprotector",
+    "char_261_sddrag": "charger",
+    "char_263_skadi": "fearless",
+    "char_264_f12yin": "fighter",
+    "char_265_sophia": "instructor",
+    "char_271_spikes": "lord",
+    "char_272_strong": "merchant",
+    "char_274_astesi": "artsfghter",
+    "char_275_breeze": "ringhealer",
+    "char_277_sqrrel": "pusher",
+    "char_278_orchid": "slower",
+    "char_279_excu": "reaperrange",
+    "char_281_popka": "centurion",
+    "char_282_catap": "aoesniper",
+    "char_283_midn": "lord",
+    "char_284_spot": "guardian",
+    "char_285_medic2": "physician",
+    "char_286_cast3": "fearless",
+    "char_289_gyuki": "fearless",
+    "char_290_vigna": "charger",
+    "char_291_aglina": "slower",
+    "char_293_thorns": "lord",
+    "char_294_ayer": "lord",
+    "char_297_hamoni": "mystic",
+    "char_298_susuro": "physician",
+    "char_300_phenxi": "aoesniper",
+    "char_301_cutter": "sword",
+    "char_302_glaze": "longrange",
+    "char_304_zebra": "protector",
+    "char_306_leizi": "chain",
+    "char_308_swire": "instructor",
+    "char_311_mudrok": "unyield",
+    "char_322_lmlee": "merchant",
+    "char_325_bison": "protector",
+    "char_326_glacus": "slower",
+    "char_328_cammou": "funnel",
+    "char_332_archet": "fastshot",
+    "char_333_sidero": "artsfghter",
+    "char_336_folivo": "summoner",
+    "char_337_utage": "musha",
+    "char_338_iris": "mystic",
+    "char_340_shwaz": "closerange",
+    "char_341_sntlla": "splashcaster",
+    "char_343_tknogi": "blessing",
+    "char_344_beewax": "phalanx",
+    "char_345_folnic": "physician",
+    "char_346_aosta": "reaperrange",
+    "char_347_jaksel": "fighter",
+    "char_348_ceylon": "healer",
+    "char_349_chiave": "pioneer",
+    "char_350_surtr": "artsfghter",
+    "char_355_ethan": "stalker",
+    "char_356_broca": "centurion",
+    "char_358_lisa": "slower",
+    "char_362_saga": "pioneer",
+    "char_363_toddi": "siegesniper",
+    "char_365_aprl": "fastshot",
+    "char_366_acdrop": "closerange",
+    "char_367_swllow": "fastshot",
+    "char_369_bena": "dollkeeper",
+    "char_373_lionhd": "splashcaster",
+    "char_376_therex": "executor",
+    "char_377_gdglow": "funnel",
+    "char_378_asbest": "artsprotector",
+    "char_379_sesa": "aoesniper",
+    "char_381_bubble": "protector",
+    "char_383_snsant": "hookmaster",
+    "char_385_finlpp": "healer",
+    "char_388_mint": "phalanx",
+    "char_391_rosmon": "bombarder",
+    "char_393_toledo": "underminer",
+    "char_394_hadiya": "mercenary",
+    "char_400_weedy": "pusher",
+    "char_4000_jnight": "fastshot",
+    "char_4004_pudd": "chain",
+    "char_4006_melnte": "closerange",
+    "char_4009_irene": "sword",
+    "char_401_elysm": "bearer",
+    "char_4010_etlchi": "reaper",
+    "char_4011_lessng": "fearless",
+    "char_4013_kjera": "funnel",
+    "char_4014_lunacu": "longrange",
+    "char_4015_spuria": "geek",
+    "char_4016_kazema": "dollkeeper",
+    "char_4017_puzzle": "agent",
+    "char_4019_ncdeer": "blessing",
+    "char_402_tuye": "physician",
+    "char_4023_rfalcn": "pioneer",
+    "char_4025_aprot2": "artsprotector",
+    "char_4026_vulpis": "pioneer",
+    "char_4027_heyak": "corecaster",
+    "char_4031_liesel": "splashcaster",
+    "char_4032_provs": "slower",
+    "char_4036_forcer": "pusher",
+    "char_4037_demetr": "fighter",
+    "char_4039_horn": "fortress",
+    "char_4040_rockr": "funnel",
+    "char_4041_chnut": "wandermedic",
+    "char_4042_lumen": "healer",
+    "char_4043_erato": "siegesniper",
+    "char_4045_heidi": "bard",
+    "char_4046_ebnhlz": "mystic",
+    "char_4047_pianst": "artsprotector",
+    "char_4048_doroth": "traper",
+    "char_405_absin": "corecaster",
+    "char_4051_akkord": "blastcaster",
+    "char_4052_surfer": "agent",
+    "char_4054_malist": "funnel",
+    "char_4055_bgsnow": "closerange",
+    "char_4056_titi": "incantationmedic",
+    "char_4058_pepe": "hammer",
+    "char_4062_totter": "siegesniper",
+    "char_4063_quartz": "crusher",
+    "char_4064_mlynar": "librator",
+    "char_4065_judge": "unyield",
+    "char_4066_highmo": "reaper",
+    "char_4067_lolxh": "lord",
+    "char_4071_peper": "chainhealer",
+    "char_4072_ironmn": "craftsman",
+    "char_4077_palico": "bombarder",
+    "char_4078_bdhkgt": "aoesniper",
+    "char_4079_haini": "underminer",
+    "char_4080_lin": "phalanx",
+    "char_4081_warmy": "primcaster",
+    "char_4082_qiubai": "lord",
+    "char_4083_chimes": "crusher",
+    "char_4087_ines": "agent",
+    "char_4088_hodrer": "crusher",
+    "char_4091_ulika": "bard",
+    "char_4093_frston": "protector",
+    "char_4098_vvana": "artsfghter",
+    "char_4100_caper": "loopshooter",
+    "char_4102_threye": "ritualist",
+    "char_4104_coldst": "hunter",
+    "char_4105_almond": "hookmaster",
+    "char_4106_bryota": "instructor",
+    "char_4107_vrdant": "dollkeeper",
+    "char_4109_baslin": "guardian",
+    "char_411_tomimi": "corecaster",
+    "char_4110_delphn": "mystic",
+    "char_4114_harold": "wandermedic",
+    "char_4116_blkkgt": "sword",
+    "char_4117_ray": "hunter",
+    "char_4119_wanqin": "bearer",
+    "char_4121_zuole": "musha",
+    "char_4122_grabds": "slower",
+    "char_4123_ela": "traper",
+    "char_4124_iana": "dollkeeper",
+    "char_4125_rdoc": "instructor",
+    "char_4126_fuze": "centurion",
+    "char_4130_luton": "unyield",
+    "char_4131_odda": "hammer",
+    "char_4132_ascln": "stalker",
+    "char_4133_logos": "corecaster",
+    "char_4134_cetsyr": "bard",
+    "char_4136_phonor": "ritualist",
+    "char_4137_udflow": "shotprotector",
+    "char_4138_narant": "loopshooter",
+    "char_4139_papyrs": "chainhealer",
+    "char_4140_lasher": "summoner",
+    "char_4141_marcil": "splashcaster",
+    "char_4142_laios": "fearless",
+    "char_4143_sensi": "guardian",
+    "char_4144_chilc": "agent",
+    "char_4145_ulpia": "crusher",
+    "char_4146_nymph": "primcaster",
+    "char_4147_mitm": "tactician",
+    "char_4148_philae": "primprotector",
+    "char_415_flint": "fighter",
+    "char_4151_tinman": "alchemist",
+    "char_4155_talr": "merchant",
+    "char_416_zumama": "duelist",
+    "char_4162_cathy": "craftsman",
+    "char_4163_rosesa": "ringhealer",
+    "char_4164_tecno": "soulcaster",
+    "char_4165_ctrail": "skywalker",
+    "char_4166_varkis": "centurion",
+    "char_4171_wulfen": "traper",
+    "char_4172_xingzh": "blessing",
+    "char_4173_nowell": "healer",
+    "char_4177_brigid": "loopshooter",
+    "char_4178_alanna": "craftsman",
+    "char_4179_monstr": "chainhealer",
+    "char_4182_oblvns": "lord",
+    "char_4183_mortis": "dollkeeper",
+    "char_4184_dolris": "bard",
+    "char_4185_amoris": "hammer",
+    "char_4186_tmoris": "stalker",
+    "char_4187_graceb": "primguard",
+    "char_4188_confes": "pioneer",
+    "char_4191_tippi": "skywalker",
+    "char_4193_lemuen": "longrange",
+    "char_4194_rmixer": "shotprotector",
+    "char_4195_radian": "summoner",
+    "char_4196_reckpr": "physician",
+    "char_4198_christ": "primcaster",
+    "char_4199_makiri": "counsellor",
+    "char_420_flamtl": "pioneer",
+    "char_4202_haruka": "blessing",
+    "char_4203_kichi": "reaperrange",
+    "char_4204_mantra": "primcaster",
+    "char_4207_branch": "unyield",
+    "char_4208_wintim": "agent",
+    "char_421_crow": "reaper",
+    "char_4211_snhunt": "hunter",
+    "char_4212_nasti": "craftsman",
+    "char_4213_skybx": "skybreaker",
+    "char_4214_cairn": "primprotector",
+    "char_4215_buddy": "tactician",
+    "char_4217_makoto": "dollkeeper",
+    "char_4218_aigis": "skybreaker",
+    "char_4219_yukari": "supportiveranger",
+    "char_422_aurora": "duelist",
+    "char_4220_kormr": "sword",
+    "char_4221_ju": "siegesniper",
+    "char_4222_taraxa": "watchman",
+    "char_4223_botany": "ritualist",
+    "char_4224_turdus": "chainhealer",
+    "char_4225_tanya": "primprotector",
+    "char_4226_veen": "mystic",
+    "char_4227_gallus": "corecaster",
+    "char_4228_closur": "tactician",
+    "char_4229_aphris": "blastcaster",
+    "char_423_blemsh": "guardian",
+    "char_4230_mcnist": "shotprotector",
+    "char_4231_clemnt": "primguard",
+    "char_4232_hbound": "alchemist",
+    "char_4234_pedro": "supportiveranger",
+    "char_4235_thumpy": "primprotector",
+    "char_4236_tmslot": "funnel",
+    "char_4237_jcinta": "bearer",
+    "char_426_billro": "phalanx",
+    "char_427_vigil": "tactician",
+    "char_430_fartth": "longrange",
+    "char_431_ashlok": "fortress",
+    "char_433_windft": "craftsman",
+    "char_436_whispr": "healer",
+    "char_437_mizuki": "stalker",
+    "char_440_pinecn": "reaperrange",
+    "char_445_wscoot": "librator",
+    "char_446_aroma": "blastcaster",
+    "char_449_glider": "wandermedic",
+    "char_450_necras": "soulcaster",
+    "char_451_robin": "traper",
+    "char_452_bstalk": "tactician",
+    "char_455_nothin": "merchant",
+    "char_456_ash": "fastshot",
+    "char_457_blitz": "shotprotector",
+    "char_458_rfrost": "traper",
+    "char_459_tachak": "sword",
+    "char_464_cement": "duelist",
+    "char_466_qanik": "corecaster",
+    "char_469_indigo": "mystic",
+    "char_472_pasngr": "chain",
+    "char_473_mberry": "wandermedic",
+    "char_474_glady": "hookmaster",
+    "char_475_akafyu": "musha",
+    "char_476_blkngt": "tactician",
+    "char_478_kirara": "stalker",
+    "char_479_sleach": "bearer",
+    "char_484_robrta": "craftsman",
+    "char_485_pallas": "instructor",
+    "char_486_takila": "librator",
+    "char_487_bobb": "ritualist",
+    "char_488_buildr": "pioneer",
+    "char_489_serum": "blastcaster",
+    "char_491_humus": "reaper",
+    "char_492_quercu": "blessing",
+    "char_493_firwhl": "fortress",
+    "char_494_vendla": "incantationmedic",
+    "char_496_wildmn": "charger",
+    "char_497_ctable": "agent",
+    "char_498_inside": "fastshot",
+    "char_499_kaitou": "primcaster",
+    "char_500_noirc": "protector",
+    "char_501_durin": "corecaster",
+    "char_502_nblade": "pioneer",
+    "char_503_rang": "fastshot"
+  },
+  "environments": {
+    "fireworks": {
+      "label": "人间烟火",
+      "english": "Worldly Plight",
+      "perPoint": 1
+    },
+    "sami": {
+      "label": "萨米干员人数",
+      "english": "Sami operators",
+      "perPoint": 10,
+      "max": 3
+    },
+    "abyssal": {
+      "label": "深海猎人人数",
+      "english": "Abyssal Hunters",
+      "perPoint": 10,
+      "max": 5
+    },
+    "knights": {
+      "label": "骑士人数",
+      "english": "Knights",
+      "perPoint": 5,
+      "max": 8
+    },
+    "defence": {
+      "label": "防守方干员人数",
+      "english": "Defence operators",
+      "perPoint": 10,
+      "max": 4
+    },
+    "attack": {
+      "label": "进攻方干员人数",
+      "english": "Attack operators",
+      "perPoint": 10,
+      "max": 4
+    },
+    "siracusa": {
+      "label": "叙拉古干员人数",
+      "english": "Siracusa operators",
+      "perPoint": 5,
+      "max": 7
+    }
+  },
+  "rules": {
+    "train_cost&profession_140": {
+      "kind": "morale"
+    },
+    "train_cost&profession_320": {
+      "kind": "morale"
+    },
+    "train_cost&profession_340": {
+      "kind": "morale"
+    },
+    "train_cost&profession_350": {
+      "kind": "morale"
+    },
+    "train_cost&profession_360": {
+      "kind": "morale"
+    },
+    "train_cost&profession_380": {
+      "kind": "morale"
+    },
+    "train_spd&level_000": {
+      "kind": "speed",
+      "bonus": 0,
+      "extra": {
+        "stage": 3,
+        "bonus": 70
+      }
+    },
+    "train_spd&profession2_010": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        8
+      ]
+    },
+    "train_spd&profession2_020": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ]
+    },
+    "train_spd&profession2_030": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        3
+      ]
+    },
+    "train_spd&profession2_040": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        2
+      ]
+    },
+    "train_spd&profession2_050": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        6
+      ]
+    },
+    "train_spd&profession2_052": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        6
+      ]
+    },
+    "train_spd&profession2_060": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        5
+      ]
+    },
+    "train_spd&profession2_080": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        7
+      ]
+    },
+    "train_spd&profession2_110": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        8
+      ],
+      "extra": {
+        "stage": 1,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_111": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        8
+      ]
+    },
+    "train_spd&profession2_112": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        8
+      ],
+      "extra": {
+        "stage": 3,
+        "bonus": 50
+      }
+    },
+    "train_spd&profession2_120": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ],
+      "extra": {
+        "stage": 1,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_130": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        3
+      ],
+      "extra": {
+        "stage": 1,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_150": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        6
+      ],
+      "extra": {
+        "stage": 1,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_180": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        7
+      ],
+      "extra": {
+        "stage": 1,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_220": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ],
+      "extra": {
+        "stage": 2,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_230": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        3
+      ],
+      "extra": {
+        "stage": 2,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_240": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        2
+      ],
+      "extra": {
+        "stage": 2,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_250": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        6
+      ],
+      "extra": {
+        "stage": 2,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_270": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        4
+      ],
+      "extra": {
+        "stage": 2,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_320": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ],
+      "extra": {
+        "stage": 3,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_321": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ]
+    },
+    "train_spd&profession2_322": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ],
+      "extra": {
+        "stage": 3,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_440": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        2
+      ],
+      "extra": {
+        "stage": 1,
+        "bonus": 65
+      }
+    },
+    "train_spd&profession2_620": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ],
+      "extra": {
+        "stage": 3,
+        "bonus": 65
+      }
+    },
+    "train_spd&profession2_630": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        2
+      ],
+      "extra": {
+        "stage": 3,
+        "bonus": 45
+      }
+    },
+    "train_spd&profession2_640": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        2
+      ],
+      "extra": {
+        "stage": 3,
+        "bonus": 65
+      }
+    },
+    "train_spd&profession2_650": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        6
+      ],
+      "extra": {
+        "stage": 3,
+        "bonus": 65
+      }
+    },
+    "train_spd&profession2_660": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        5
+      ],
+      "extra": {
+        "stage": 3,
+        "bonus": 65
+      }
+    },
+    "train_spd&profession2_680": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        7
+      ],
+      "extra": {
+        "stage": 3,
+        "bonus": 65
+      }
+    },
+    "train_spd&profession3_130": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        3
+      ]
+    },
+    "train_spd&profession3_131": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        3
+      ],
+      "extra": {
+        "branch": "artsprotector",
+        "bonus": 45
+      }
+    },
+    "train_spd&profession3_140": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        2
+      ],
+      "extra": {
+        "branch": "fastshot",
+        "bonus": 45
+      }
+    },
+    "train_spd&profession3_150": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ]
+    },
+    "train_spd&profession3_151": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ],
+      "extra": {
+        "branch": "fighter",
+        "bonus": 45
+      }
+    },
+    "train_spd&profession3_160": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ]
+    },
+    "train_spd&profession3_161": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ],
+      "extra": {
+        "branch": "lord",
+        "bonus": 45
+      }
+    },
+    "train_spd&profession3_170": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        2
+      ],
+      "extra": {
+        "branch": "siegesniper",
+        "bonus": 45
+      }
+    },
+    "train_spd&profession3_180": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        4
+      ]
+    },
+    "train_spd&profession3_181": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        4
+      ],
+      "extra": {
+        "branch": "wandermedic",
+        "bonus": 45
+      }
+    },
+    "train_spd&profession3_182": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        4
+      ]
+    },
+    "train_spd&profession3_183": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        4
+      ],
+      "extra": {
+        "branch": "chainhealer",
+        "bonus": 45
+      }
+    },
+    "train_spd&profession3_184": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        4
+      ]
+    },
+    "train_spd&profession3_190": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        5
+      ]
+    },
+    "train_spd&profession3_191": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        5
+      ],
+      "extra": {
+        "branch": "supportiveranger",
+        "bonus": 45
+      }
+    },
+    "train_spd&profession_010": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        8
+      ]
+    },
+    "train_spd&profession_011": {
+      "kind": "speed",
+      "bonus": 50,
+      "professions": [
+        8
+      ]
+    },
+    "train_spd&profession_020": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ]
+    },
+    "train_spd&profession_021": {
+      "kind": "speed",
+      "bonus": 50,
+      "professions": [
+        1
+      ]
+    },
+    "train_spd&profession_030": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        3
+      ]
+    },
+    "train_spd&profession_031": {
+      "kind": "speed",
+      "bonus": 50,
+      "professions": [
+        3
+      ]
+    },
+    "train_spd&profession_040": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        2
+      ]
+    },
+    "train_spd&profession_041": {
+      "kind": "speed",
+      "bonus": 50,
+      "professions": [
+        2
+      ]
+    },
+    "train_spd&profession_050": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        6
+      ]
+    },
+    "train_spd&profession_051": {
+      "kind": "speed",
+      "bonus": 50,
+      "professions": [
+        6
+      ]
+    },
+    "train_spd&profession_060": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        5
+      ]
+    },
+    "train_spd&profession_061": {
+      "kind": "speed",
+      "bonus": 50,
+      "professions": [
+        5
+      ]
+    },
+    "train_spd&profession_070": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        4
+      ]
+    },
+    "train_spd&profession_071": {
+      "kind": "speed",
+      "bonus": 50,
+      "professions": [
+        4
+      ]
+    },
+    "train_spd&profession_080": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        7
+      ]
+    },
+    "train_spd&profession_081": {
+      "kind": "speed",
+      "bonus": 50,
+      "professions": [
+        7
+      ]
+    },
+    "train_spd&profession_1020": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1
+      ]
+    },
+    "train_spd&profession_1081": {
+      "kind": "speed",
+      "bonus": 50,
+      "professions": [
+        7
+      ]
+    },
+    "train_spd&profession_110": {
+      "kind": "speed",
+      "bonus": 60,
+      "professions": [
+        8
+      ]
+    },
+    "train_spd&profession_120": {
+      "kind": "speed",
+      "bonus": 60,
+      "professions": [
+        1
+      ]
+    },
+    "train_spd&profession_130": {
+      "kind": "speed",
+      "bonus": 60,
+      "professions": [
+        3
+      ]
+    },
+    "train_spd&profession_140": {
+      "kind": "speed",
+      "bonus": 60,
+      "professions": [
+        2
+      ]
+    },
+    "train_spd&profession_150": {
+      "kind": "speed",
+      "bonus": 60,
+      "professions": [
+        6
+      ]
+    },
+    "train_spd&profession_160": {
+      "kind": "speed",
+      "bonus": 60,
+      "professions": [
+        5
+      ]
+    },
+    "train_spd&profession_170": {
+      "kind": "speed",
+      "bonus": 60,
+      "professions": [
+        4
+      ]
+    },
+    "train_spd&profession_180": {
+      "kind": "speed",
+      "bonus": 60,
+      "professions": [
+        7
+      ]
+    },
+    "train_spd_000": {
+      "kind": "speed",
+      "bonus": 25
+    },
+    "train_spd_0000": {
+      "kind": "speed",
+      "bonus": 25
+    },
+    "train_spd_001": {
+      "kind": "speed",
+      "bonus": 25
+    },
+    "train_spd_002": {
+      "kind": "speed",
+      "bonus": 25
+    },
+    "train_spd_bd&reduceTime_000": {
+      "kind": "unsupported",
+      "reason": "武道 / Martial Arts"
+    },
+    "train_spd_bd_000": {
+      "kind": "environment",
+      "environment": "fireworks",
+      "cap": null
+    },
+    "train_spd_doubleProf2_000": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        7,
+        8
+      ],
+      "extra": {
+        "stage": 2,
+        "bonus": 50
+      }
+    },
+    "train_spd_doubleProf2_001": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        7,
+        8
+      ]
+    },
+    "train_spd_doubleProf3_000": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1,
+        2
+      ]
+    },
+    "train_spd_doubleProf3_100": {
+      "kind": "speed",
+      "bonus": 50,
+      "professions": [
+        1,
+        2
+      ]
+    },
+    "train_spd_doubleProf3_999": {
+      "kind": "speed",
+      "bonus": 45,
+      "professions": [
+        2,
+        4
+      ]
+    },
+    "train_spd_doubleProf_000": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1,
+        2
+      ]
+    },
+    "train_spd_doubleProf_100": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        6,
+        4
+      ]
+    },
+    "train_spd_doubleProf_110": {
+      "kind": "speed",
+      "bonus": 45,
+      "professions": [
+        6,
+        4
+      ]
+    },
+    "train_spd_doubleProf_200": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        6,
+        5
+      ]
+    },
+    "train_spd_doubleProf_201": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        1,
+        5
+      ]
+    },
+    "train_spd_doubleProf_300": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        6,
+        1
+      ]
+    },
+    "train_spd_doubleProf_301": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        6,
+        1
+      ]
+    },
+    "train_spd_doubleProf_310": {
+      "kind": "speed",
+      "bonus": 45,
+      "professions": [
+        6,
+        1
+      ]
+    },
+    "train_spd_power_000": {
+      "kind": "environment",
+      "environment": "sami",
+      "cap": 3
+    },
+    "train_spd_power_down_000": {
+      "kind": "environment",
+      "environment": "abyssal",
+      "cap": 5
+    },
+    "train_spd_reduceTime_000": {
+      "kind": "halve"
+    },
+    "train_spd_reduceTime_001": {
+      "kind": "halve"
+    },
+    "train_spd_tag_000": {
+      "kind": "environment",
+      "environment": "knights",
+      "cap": 5
+    },
+    "train_spd_tag_010": {
+      "kind": "environment",
+      "environment": "knights",
+      "cap": 8
+    },
+    "train_spd_tag_020": {
+      "kind": "environment",
+      "environment": "defence",
+      "cap": 4
+    },
+    "train_spd_tag_030": {
+      "kind": "environment",
+      "environment": "attack",
+      "cap": 4
+    },
+    "train_spd_tag_040": {
+      "kind": "environment",
+      "environment": "siracusa",
+      "cap": 7
+    },
+    "train_spd_tag_1020": {
+      "kind": "environment",
+      "environment": "defence",
+      "cap": 4
+    },
+    "train_spd_tag_1030": {
+      "kind": "environment",
+      "environment": "attack",
+      "cap": 4
+    }
+  }
+}
