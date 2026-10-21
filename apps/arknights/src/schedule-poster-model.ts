@@ -1,12 +1,13 @@
 import { PRESETS, roomKindLabel } from "./blueprint";
 import { createManualScheduleDraft, manualRoomCapacity, manualRoomForShift, reconcileManualScheduleDraft } from "./manual-schedule";
-import { manualLevelFor, maxEliteForRarity } from "./manual-operbox";
-import { OPERATOR_CATALOG } from "./operatorPortraits";
+import { posterOperators } from "./schedule-poster-operators";
 import { PRODUCT_ICON_URLS } from "./product-assets";
 import { manualEditableRooms, type EditableRoom } from "./recycling-room";
 import { createPosterDocument, type SchedulePosterDocument } from "./schedule-poster-document";
 import sampleTeams from "./schedule-poster-sample.json";
-import type { BaseBlueprint, OperBoxEntry } from "./types";
+import type { BaseBlueprint } from "./types";
+
+export { defaultPosterOperator, posterOperators } from "./schedule-poster-operators";
 
 export const ROOM_GROUP: Record<EditableRoom["kind"], string> = { control_center: "control", factory: "manufacture", trade_post: "trading", power_plant: "power", dormitory: "dormitory", office: "hire", meeting_room: "meeting", workshop: "processing", training_room: "training", recycling: "recycling" };
 export function posterRoomTitle(room: EditableRoom, layout: BaseBlueprint): string {
@@ -28,21 +29,6 @@ export function posterProduct(doc: SchedulePosterDocument, room: EditableRoom, i
     return { value: recipe, label: { gold: "赤金", battle_record: "作战记录", originium: "源石碎片", all: "待定配方" }[recipe], icon: { gold: PRODUCT_ICON_URLS.gold, battle_record: PRODUCT_ICON_URLS.experience, originium: PRODUCT_ICON_URLS.shards, all: PRODUCT_ICON_URLS.gold }[recipe] };
   }
   return null;
-}
-export function defaultPosterOperator(name: string): OperBoxEntry | undefined {
-  const operator = OPERATOR_CATALOG.find(operator => operator.name === name);
-  if (!operator) return;
-  const elite = maxEliteForRarity(operator.rarity);
-  return { id: operator.id, name, elite, level: manualLevelFor(operator.rarity, elite), rarity: operator.rarity, own: true, potential: 1 };
-}
-export function posterOperators(doc: SchedulePosterDocument): OperBoxEntry[] {
-  const names = new Set(doc.draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators)).concat(doc.presentation.dormHangerOperators));
-  if (doc.draft.fiammettaEnabled) names.add("菲亚梅塔");
-  return [...names].flatMap(name => {
-    if (!name) return [];
-    const entry = doc.operators.find(operator => operator.name === name) ?? defaultPosterOperator(name);
-    return entry ? [{ ...entry, own: true }] : [];
-  });
 }
 export function createPosterSample(template = "252", count = 3): SchedulePosterDocument {
   const layout = structuredClone(PRESETS.find(preset => preset.label === template)?.layout ?? PRESETS[0]!.layout);

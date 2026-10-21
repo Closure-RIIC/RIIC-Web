@@ -2,7 +2,7 @@
 import { useTranslations, useLocale } from "use-intl";
 
 import { ArrowLeft, Download, Ellipsis, Search, Settings2, Sparkles, Trash2, Upload, X } from "lucide-react";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import type { FactoryRecipe, TradeOrder } from "@/blueprint";
@@ -30,8 +30,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonSuspense } from "@/components/ui/skeleton-swap";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { downloadJson } from "@/download";
-import { createPosterDocument, POSTER_STORAGE_KEY, readPosterFile, type SchedulePosterDocument } from "@/schedule-poster-document";
-import { defaultPosterOperator, posterOperators } from "@/schedule-poster-model";
+import type { SchedulePosterDocument } from "@/schedule-poster-document";
+import { defaultPosterOperator, posterOperators } from "@/schedule-poster-operators";
+import { POSTER_STORAGE_KEY } from "@/schedule-poster-storage";
 import type { PosterTarget } from "@/components/schedule-poster/SchedulePoster";
 import { droneStoragePlanIndex } from "@/drone-plan-mapping";
 import type { ManualPlanResult } from "@/manual-plan-result";
@@ -287,13 +288,15 @@ export function ManualSchedulePage({
     setDraft((current) => setManualRoomProduct(current, layout, request.shiftIndex, request.roomId, request.product));
     onManualProductChangeRequestConsumed?.(request.token);
   }, [layout, manualProductChangeRequest, onManualProductChangeRequestConsumed]);
-  const [posterSettings, setPosterSettings] = useState(() => initialPosterDocument ?? createPosterDocument(layout, undefined, sourceOperbox ?? []));
+  const [posterSettings, setPosterSettings] = useState<SchedulePosterDocument | null>(initialPosterDocument ?? null);
+  const posterInitialization = useRef<Promise<void> | null>(null);
+  const [posterLoadError, setPosterLoadError] = useState("");
   const [view, setView] = useState("edit");
   const [posterVisited, setPosterVisited] = useState(Boolean(initialPosterDocument));
   const [evaluatedKey, setEvaluatedKey] = useState("");
   const [calculationError, setCalculationError] = useState("");
   const assignedNamesKey = JSON.stringify([...new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators)).filter(Boolean))]);
-  const posterOperatorsKey = JSON.stringify(posterSettings.operators);
+  const posterOperatorsKey = JSON.stringify(posterSettings?.operators ?? []);
   const operbox = useMemo(() => {
     const entries = new Map((sourceOperbox ?? []).map(operator => [operator.name, operator]));
     const names = new Set<string>(JSON.parse(assignedNamesKey));
@@ -305,29 +308,60 @@ export function ManualSchedulePage({
     }
     return [...entries.values()];
   }, [sourceOperbox, posterOperatorsKey, assignedNamesKey, draft.fiammettaEnabled]);
-  const evaluationKey = JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, posterSettings.efficiencyMode]);
+  const evaluationKey = JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, posterSettings?.efficiencyMode ?? "native"]);
   const result = evaluatedKey === evaluationKey ? suppliedResult : null;
   const posterDocument = useMemo(() => {
-    const generated = createPosterDocument(layout, draft, operbox);
+    if (!posterSettings) return null;
+    const names = new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators).concat(shift.fiammettaTarget)).filter((name): name is string => Boolean(name)));
+    if (draft.fiammettaEnabled) names.add("菲亚梅塔");
     const hangerNames = new Set(posterSettings.presentation.dormHangerOperators.filter((name): name is string => Boolean(name)));
-    const operators = [...generated.operators, ...posterSettings.operators.filter(operator => hangerNames.has(operator.name) && !generated.operators.some(current => current.name === operator.name))];
+    for (const name of hangerNames) names.add(name);
+    const operators = [...names].flatMap(name => {
+      const operator = operbox.find(entry => entry.name === name) ?? posterSettings.operators.find(entry => entry.name === name) ?? defaultPosterOperator(name);
+      return operator ? [{ ...operator, own: true }] : [];
+    });
     return {
-      ...generated,
+      ...posterSettings,
+      layout,
+      draft,
       operators,
       meta: /^\d{3} [一二两三四1234]班轮换$/.test(posterSettings.meta.title) ? { ...posterSettings.meta, title: `${layout.template} ${draft.shifts.length}班轮换` } : posterSettings.meta,
-      presentation: posterSettings.presentation,
-      efficiencyMode: posterSettings.efficiencyMode,
     };
   }, [layout, draft, operbox, posterSettings]);
+
+  const ensurePosterReady = useCallback(async () => {
+    setPosterVisited(true);
+    if (posterSettings) return;
+    if (!posterInitialization.current) {
+      setPosterLoadError("");
+      posterInitialization.current = (async () => {
+        const { createPosterDocument, readPosterFile } = await import("@/schedule-poster-document");
+        let saved: SchedulePosterDocument | null = null;
+        try {
+          const value = window.localStorage.getItem(POSTER_STORAGE_KEY);
+          if (value) saved = readPosterFile(value);
+        } catch { /* Poster metadata must not prevent manual draft restoration. */ }
+        setPosterSettings(current => current ?? saved ?? createPosterDocument(layout, draft, sourceOperbox ?? []));
+      })().catch(error => {
+        setPosterLoadError(error instanceof Error ? error.message : String(error));
+      }).finally(() => { posterInitialization.current = null; });
+    }
+    await posterInitialization.current;
+  }, [draft, layout, posterSettings, sourceOperbox]);
+
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("tab") === "poster" || initialPosterDocument) { setView("poster"); setPosterVisited(true); }
-    if (!initialPosterDocument) {
-      try {
-        const saved = window.localStorage.getItem(POSTER_STORAGE_KEY);
-        if (saved) setPosterSettings(readPosterFile(saved));
-      } catch { /* Poster metadata must not prevent manual draft restoration. */ }
+    if (initialPosterDocument) {
+      setPosterSettings(initialPosterDocument);
+      setView("poster");
+      setPosterVisited(true);
+    } else if (new URLSearchParams(window.location.search).get("tab") === "poster") {
+      setView("poster");
+      setPosterVisited(true);
     }
   }, [initialPosterDocument]);
+  useEffect(() => {
+    if (view === "poster") void ensurePosterReady();
+  }, [ensurePosterReady, view]);
   const [moodRevision, setMoodRevision] = useState(0);
   const [moodSettingsOpen, setMoodSettingsOpen] = useState(false);
   const [restored, setRestored] = useState(false);
@@ -432,7 +466,7 @@ export function ManualSchedulePage({
   }, [intl, canPersistDraft, draft, en, restored]);
 
   useEffect(() => {
-    if (!restored) return;
+    if (!restored || !posterDocument) return;
     try { window.localStorage.setItem(POSTER_STORAGE_KEY, JSON.stringify(posterDocument)); }
     catch { /* The user can still download the editable document. */ }
   }, [restored, posterDocument]);
@@ -504,7 +538,7 @@ export function ManualSchedulePage({
   const selectedAssignment = picker?.kind === "slot" ? draft.shifts[activeShift]?.rooms[picker.roomId] : undefined;
   const selectedOperator = picker?.kind === "slot"
     ? selectedAssignment?.operators[picker.slotIndex] ?? null
-    : picker?.kind === "poster-hanger" ? posterSettings.presentation.dormHangerOperators[picker.shift] ?? null : null;
+    : picker?.kind === "poster-hanger" ? posterSettings?.presentation.dormHangerOperators[picker.shift] ?? null : null;
   const assignedOperatorNames = useMemo(() => new Set(
     Object.values(draft.shifts[activeShift]?.rooms ?? {}).flatMap((room) => room.operators.filter(Boolean)),
   ), [activeShift, draft.shifts]);
@@ -729,6 +763,7 @@ export function ManualSchedulePage({
       const shift = picker.shift;
       const selected = operator ? ownedOperators.find(entry => entry.name === operator) : undefined;
       setPosterSettings(current => {
+        if (!current) return current;
         const dormHangerOperators = Array.from({ length: current.draft.shifts.length }, (_, index) => current.presentation.dormHangerOperators[index] ?? null);
         dormHangerOperators[shift] = operator;
         const operators = selected
@@ -869,7 +904,7 @@ export function ManualSchedulePage({
   async function calculateSchedule(mode: "native" | "manual") {
     if (evaluationPending) return;
     setCalculationError("");
-    setPosterSettings(current => ({ ...current, efficiencyMode: mode }));
+    setPosterSettings(current => current ? { ...current, efficiencyMode: mode } : current);
     try {
       await (mode === "native" ? onEvaluate : onPaperEvaluate)({ draft, operbox });
       setEvaluatedKey(JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, mode]));
@@ -1123,10 +1158,13 @@ export function ManualSchedulePage({
       {restored && <Suspense fallback={<Skeleton className="mt-8 h-48 w-full" />}>
         <MoodSimulationPanel key={moodRevision} layout={layout} operbox={operbox ?? []} draft={draft}
           renderBoard={renderBoard}
-          view={view} onViewChange={value => { setView(value); if (value === "poster") setPosterVisited(true); }}
-          posterContent={posterVisited ? <Suspense fallback={<Skeleton className="h-64 w-full" />}><PosterWorkbench document={posterDocument}
-            onChange={updatePoster} onImport={importPoster} onSelect={selectPosterSlot}
-            result={result} pending={evaluationPending} onCalculate={calculateSchedule} /></Suspense> : null}
+          view={view} onViewChange={setView}
+          posterContent={posterVisited ? posterSettings && posterDocument
+            ? <Suspense fallback={<Skeleton className="h-64 w-full" />}><PosterWorkbench document={posterDocument}
+              onChange={updatePoster} onImport={importPoster} onSelect={selectPosterSlot}
+              result={result} pending={evaluationPending} onCalculate={calculateSchedule} /></Suspense>
+            : posterLoadError ? <div role="alert" className="space-y-2"><p>{posterLoadError}</p><Button onClick={() => { void ensurePosterReady(); }}>{en ? "Retry" : "重试"}</Button></div>
+              : <Skeleton className="h-64 w-full" /> : null}
           settingsOpen={moodSettingsOpen} onSettingsOpenChange={setMoodSettingsOpen}
           fiammettaEnabled={fiammettaEnabled} onFiammettaEnabledChange={onFiammettaEnabledChange}
           onTargetChange={(shift, target) => setDraft(current => ({
