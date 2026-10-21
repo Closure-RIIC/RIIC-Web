@@ -145,45 +145,80 @@ export function enumerateCenters(ops, cfg) {
   // 同一 (uA,uB) 只保留一组：中枢对设施的唯一作用就是 u(t)；保留"占用这些人机会成本最低"的一组
   // （记录在 README §5.1 A1 的性能优化，别回退）。
   const byU = new Map();
+  let emptyCenter = null;
   for (const a of infos) for (const b of infos) {
     if (intersects(a.mask, b.mask)) continue;
-    const skilled = union(a.mask, b.mask);
-    const needed = (centerSeats - a.idx.length) + (centerSeats - b.idx.length);
-    if (spareSorted.length < needed) continue;
-    const spare = spareSorted;
+    // 中枢放人（决策 R1–R3）：每班人数 = 有效干员数，白板只在"整班没有恢复干员"时补 1 个。
+    // 白板对 u 恒为 0（客户端 addFromCharStation 不含 PSRecoveryRate），补满到工位数只会白占人。
+    const needA = a.idx.length === 0 ? 1 : 0;
+    const needB = b.idx.length === 0 ? 1 : 0;
+    if (needA + needB === 2) {
+      // 两班都空 ⇒ 中枢 0 人：u 恒为 0，时间轴是 12% 平线，hc 无意义（稍后归并成一条）
+      emptyCenter ??= {
+        uA: 0, uB: 0, idxA: [], idxB: [], fillA: [], fillB: [], used: EMPTY, cost: 0,
+        checkA: false, checkB: false,
+      };
+      continue;
+    }
+    if (spareSorted.length < needA + needB) continue;
     const key = `${a.uKey}|${b.uKey}`;
-    const cost = a.cost + b.cost;
+    // 空班那 1 个白板也是机会成本 ⇒ 计入 cost，归并时才能真的挑到最便宜的一组
+    let cost = a.cost + b.cost;
+    const fillA = spareSorted.slice(0, needA);
+    const fillB = spareSorted.slice(needA, needA + needB);
+    for (const i of [...fillA, ...fillB]) cost += skillValueCache[i];
     const prev = byU.get(key);
     if (prev && prev.cost <= cost + EPS) continue;
-    const fillA = spare.slice(0, centerSeats - a.idx.length);
-    const fillB = spare.slice(centerSeats - a.idx.length, needed);
-    let used = skilled;
+    let used = union(a.mask, b.mask);
     for (const i of [...fillA, ...fillB]) used |= 1n << BigInt(i);
     byU.set(key, {
       uA: a.u, uB: b.u,
       idxA: [...a.idx, ...fillA].sort((x, y) => x - y),
       idxB: [...b.idx, ...fillB].sort((x, y) => x - y),
       fillA, fillB, used, cost,
+      checkA: a.idx.length > 0, checkB: b.idx.length > 0,
     });
   }
   let cands = [...byU.values()];
+  if (emptyCenter) cands.push(emptyCenter);
   cands = cands.filter((c) => !cands.some((o) => o !== c
+    // 规格 §6.6 ② 的支配口径：人数不更多 + 两段 u 都不更低。
+    // 注意：这是**模型级近似**（假定中枢占的是谁不影响设施可用性）；
+    // `byU` 已按"机会成本最低"选组，降低但不消除该风险。改成可证的"占用集包含"会让候选涨到 284 条、超出预算。
     && sizeOf(o.used) <= sizeOf(c.used)
     && o.uA >= c.uA - EPS && o.uB >= c.uB - EPS
     && (sizeOf(o.used) < sizeOf(c.used) || o.uA > c.uA + EPS || o.uB > c.uB + EPS)));
 
   const out = [];
   for (const c of cands) {
+    if (!c.checkA && !c.checkB) {
+      // 0 人中枢：没有班次可换，hc 取任意值都等价（12% 平线），只出一条
+      const hc = 12;
+      const timeline = buildTimeline({ hCenter: hc, uA: 0, uB: 0 });
+      const cA = Math.min(1, COST_BASE * hc);
+      const cB = Math.min(1, COST_BASE * (24 - hc));
+      out.push({ ...c, hCenter: hc, timeline, cA, cB,
+        rA: integrateAll(hc, 24, timeline), rB: integrateAll(0, hc, timeline) });
+      continue;
+    }
+    const kept = [];
     for (let hc = 1; hc <= 23; hc += 1) {
       const timeline = buildTimeline({ hCenter: hc, uA: c.uA, uB: c.uB });
       const cA = Math.min(1, COST_BASE * hc);
       const cB = Math.min(1, COST_BASE * (24 - hc));
       const rA = integrateAll(hc, 24, timeline);
       const rB = integrateAll(0, hc, timeline);
-      // 中枢自己也是一个班次，两段都要满足 R ≥ C（主逻辑 §6.6）
-      if (rA < cA - EPS || rB < cB - EPS) continue;
-      out.push({ ...c, hCenter: hc, timeline, cA, cB, rA, rB });
+      // 中枢自己也是一个班次，两段都要满足 R ≥ C（主逻辑 §6.6）。
+      // 没有恢复干员的班（空班/纯白板班）不存在"红脸"，跳过该段的判据（R6）。
+      if ((c.checkA && rA < cA - EPS) || (c.checkB && rB < cB - EPS)) continue;
+      // 逐点支配：同一候选换 hc 时占用的人不变，v(t) 被另一条时间轴逐点覆盖的 hc 不可能更优
+      if (kept.some((k) => timelineCovers(k.timeline, timeline))) continue;
+      for (let k = kept.length - 1; k >= 0; k -= 1) {
+        if (timelineCovers(timeline, kept[k].timeline)) kept.splice(k, 1);
+      }
+      kept.push({ hCenter: hc, timeline, cA, cB, rA, rB });
     }
+    for (const k of kept) out.push({ ...c, ...k });
   }
   return out;
 }
@@ -210,6 +245,19 @@ function integrateAll(t0, t1, timeline) {
     if (b > a) s += (b - a) * g.v;
   }
   return s;
+}
+
+/** a 的 v(t) 是否逐点 ≥ b：同一中枢候选内换 hc 时占用的人相同，被覆盖者的设施价值不可能更高 */
+function timelineCovers(a, b) {
+  let i = 0;
+  let j = 0;
+  while (i < a.length && j < b.length) {
+    const t0 = Math.max(a[i].t0, b[j].t0);
+    const t1 = Math.min(a[i].t1, b[j].t1);
+    if (t1 > t0 + EPS && a[i].v + EPS < b[j].v) return false;
+    if (a[i].t1 < b[j].t1) i += 1; else j += 1;
+  }
+  return true;
 }
 
 function orderedFillers(mask) {
