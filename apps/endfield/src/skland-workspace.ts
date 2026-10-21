@@ -10,6 +10,7 @@ export function sklandRosterSource(ownerKey: string, accountId: string, role: Pi
 export function syncSklandWorkspace(current: Workspace, snapshot: EndfieldSnapshot, source: string, roleId: string) {
   if (snapshot.role.roleId !== roleId) throw new Error("森空岛返回的角色不匹配，请重新同步。 / Skland returned a different character; please retry.");
   const matched = matchEndfieldRoster(snapshot, catalog, nonSchedulableOperators);
+  // parseRoster carries `latestSpaceshipSkillNodes`（每槽最高档）next to `elite`.
   const incoming = matched.operators.length ? parseRoster(matched.operators) : [];
   const sameSource = current.rosterSource === source;
   const partial = snapshot.rosterComplete === false;

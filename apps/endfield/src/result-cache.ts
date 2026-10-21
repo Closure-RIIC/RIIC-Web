@@ -6,7 +6,8 @@ export const RESULT_STORAGE_KEY = "riic:endfield:result:v1";
 export function workspaceKey(workspace: Workspace): string {
   const { options } = workspace;
   return JSON.stringify([
-    workspace.operators.map(op => [op.name, op.elite]),
+    // 技能节点参与 key：改技能要触发保存/重算，缓存也要失效。
+    workspace.operators.map(op => [op.name, op.elite, op.latestSpaceshipSkillNodes ?? null]),
     options.mfg, options.assist, options.budget, options.time, options.priority,
     ["center", "mfg1", "mfg2", "grow", "guest"].map(key => options.levels[key as keyof typeof options.levels]),
     ["晶植", "菌类", "矿物"].map(key => options.grow[key] ?? 0),
