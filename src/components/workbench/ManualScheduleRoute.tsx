@@ -27,7 +27,7 @@ export function ManualScheduleRoute() {
   async function importPoster(document: SchedulePosterDocument) {
     const [{ posterDraftForManual }, { posterOperators }] = await Promise.all([
       import("@/schedule-poster-document"),
-      import("@/schedule-poster-model"),
+      import("@/schedule-poster-operators"),
     ]);
     const operators = posterOperators(document);
     setInitial(posterDraftForManual(document));
@@ -67,6 +67,6 @@ export function ManualScheduleRoute() {
   return <>
     {error ? <p role="alert" className="mb-3 text-sm text-destructive">{error}</p> : null}
     {poster ? <div className="mb-3 flex flex-wrap items-center gap-3 border-y py-2 text-xs text-muted-foreground"><span>作业副本：{poster.meta.title} · 使用作业练度，可在排班编辑中调整；个人干员池保留。</span><Button size="sm" variant="ghost" onClick={() => { window.location.href = "/manual"; }}>返回个人草稿</Button></div> : null}
-    <ManualSchedulePage key={revision} {...manual} {...(poster ? { persistDraft: false, sourceName: "作业练度（非个人干员池）", initialDraft: initial, restorationReady: true, onInitialDraftConsumed: () => setInitial(null) } : {})} initialPosterDocument={poster} onImportPoster={importPoster} />
+    <ManualSchedulePage key={revision} {...manual} {...(poster ? { persistDraft: false, sourceName: "作业练度（非个人干员池）", initialDraft: initial, restorationReady: true, onInitialDraftConsumed: () => setInitial(null) } : {})} initialPosterDocument={poster} onImportPoster={document => { void importPoster(document).catch(error => setError(error instanceof Error ? error.message : "读取作业失败。")); }} />
   </>;
 }
