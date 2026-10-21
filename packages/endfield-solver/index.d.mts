@@ -3,7 +3,7 @@ export interface Options {
   mfg: string; levels: { center: number; mfg1: number; mfg2: number; grow: number; guest: number };
   grow: Record<string, number>; priority: string[]; assist: boolean; budget: number; time: number;
 }
-export interface Workspace { version: 1; operators: Operator[]; options: Options; manual?: Assignment[] }
+export interface Workspace { version: 1; operators: Operator[]; options: Options; manual?: Assignment[]; rosterSource?: string }
 export interface Assignment { key: string; slots: number; hour: number; a: string[]; b: string[] }
 export interface Mood { consumption: number; recovery: number; stable: boolean }
 export type SolverStage = "preparing" | "searching" | "verifying";

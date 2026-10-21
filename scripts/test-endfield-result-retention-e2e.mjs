@@ -31,9 +31,13 @@ try {
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.goto(origin);
-  await page.evaluate(({ key, value }) => globalThis.localStorage.setItem(key, JSON.stringify(value)), { key: STORAGE_KEY, value: workspace });
+  await page.evaluate(({ key, value }) => globalThis.localStorage.setItem(key, JSON.stringify(value)), { key: STORAGE_KEY, value: { ...workspace, operators: [] } });
   await page.reload();
   const board = page.locator("[data-schedule-board]");
+  // Import the real roster before solving; later equivalent syncs must retain the result.
+  await page.getByRole("link", { name: "森空岛同步", exact: true }).click();
+  await page.locator('[data-endfield-skland][aria-busy="false"]').waitFor();
+  await page.getByRole("link", { name: "自动排班", exact: true }).click();
   await page.getByRole("button", { name: "生成排班", exact: true }).click();
   await expect(board).toBeVisible();
   await page.waitForFunction(key => !!globalThis.localStorage.getItem(key), RESULT_STORAGE_KEY);

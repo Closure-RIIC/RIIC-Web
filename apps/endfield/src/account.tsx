@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { parseWebsiteSession, type WebsiteSessionData } from "@shared/shell/account-session";
-import { useWorkspace, WEBSITE_SIGN_OUT_EVENT } from "./state";
+import { useWorkspace, WEBSITE_SIGN_OUT_EVENT, WEBSITE_SESSION_CHANGE_EVENT } from "./state";
 
 export type AccountAction = "sign-out" | "extend" | "revoke" | "delete";
 function useAccountState(initialSession?: WebsiteSessionData | null) {
@@ -21,9 +21,11 @@ function useAccountState(initialSession?: WebsiteSessionData | null) {
       if (!response.ok) throw new Error();
       const next = parseWebsiteSession(await response.json());
       if (current !== revision.current) return;
-      if (owner.current !== next?.user.id) setSklandSnapshot(null);
+      const changedOwner = owner.current !== next?.user.id;
+      if (changedOwner) setSklandSnapshot(null);
       owner.current = next?.user.id;
       setSession(next); setFailed(false);
+      if (changedOwner) window.dispatchEvent(new Event(WEBSITE_SESSION_CHANGE_EVENT));
     } catch {
       if (current === revision.current) { setFailed(true); setSession(null); setSklandSnapshot(null); }
     } finally {

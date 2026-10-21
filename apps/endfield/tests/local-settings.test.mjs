@@ -4,10 +4,10 @@ import { clearEndfieldStorage, readEndfieldColorMode, readEndfieldLocale, DISPLA
 import { STORAGE_KEY } from "../../../packages/endfield-solver/model.mjs";
 import { RESULT_STORAGE_KEY } from "../src/result-cache.ts";
 
-test("Endfield defaults to dark and preserves an explicit light preference", () => {
-  assert.equal(readEndfieldColorMode(null), "dark");
-  assert.equal(readEndfieldColorMode(""), "dark");
-  assert.equal(readEndfieldColorMode("invalid"), "dark");
+test("Endfield defaults to light and preserves an explicit dark preference", () => {
+  assert.equal(readEndfieldColorMode(null), "light");
+  assert.equal(readEndfieldColorMode(""), "light");
+  assert.equal(readEndfieldColorMode("invalid"), "light");
   assert.equal(readEndfieldColorMode("dark"), "dark");
   assert.equal(readEndfieldColorMode("light"), "light");
 });

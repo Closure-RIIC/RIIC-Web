@@ -65,7 +65,8 @@ export function parseWorkspace(text) {
       return { ...template, hour: room.hour, a: crew("a"), b: crew("b") };
     });
   }
-  return { version: 1, operators, options, ...(manual ? { manual } : {}) };
+  if (value.rosterSource !== undefined && (typeof value.rosterSource !== "string" || !value.rosterSource.length || value.rosterSource.length > 2048)) throw new Error("名单来源格式错误");
+  return { version: 1, operators, options, ...(manual ? { manual } : {}), ...(value.rosterSource ? { rosterSource: value.rosterSource } : {}) };
 }
 
 export function prepare(input) {

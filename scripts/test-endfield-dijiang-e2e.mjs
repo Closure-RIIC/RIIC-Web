@@ -32,7 +32,16 @@ try {
   await page.locator('body[data-app-hydrated="true"]').waitFor();
   await page.getByRole("button", { name: "生成排班", exact: true }).click();
   const board = page.locator("[data-schedule-board]"), backdrop = board.locator(".ef-dijiang");
+  const scheduleText = () => board.locator("[data-facility]").allTextContents();
   await expect(board.locator("[data-facility]")).toHaveCount(5);
+  await expect(backdrop).toHaveCount(0);
+  const originalResultText = await scheduleText();
+  await page.locator("[data-sidebar-settings-trigger]").click();
+  const backdropPreference = page.getByRole("checkbox", { name: /显示帝江号背景/ });
+  await expect(backdropPreference).not.toBeChecked();
+  await backdropPreference.check();
+  await page.getByRole("link", { name: "自动排班", exact: true }).click();
+  assert.deepEqual(await scheduleText(), originalResultText, "Enabling the backdrop preserves the schedule");
   await expect(backdrop).toHaveAttribute("data-running", "true");
   await expect(backdrop).toHaveAttribute("aria-hidden", "true");
   assert.equal(await backdrop.locator("button, a, input, [tabindex]").count(), 0);
@@ -69,7 +78,7 @@ try {
   await expect.poll(corePose, {message:"Only the enclosed mineral rotates in 3D"}).not.toEqual(firstCorePose);
   assert.deepEqual(await hull.boundingBox(), firstPosition, "The hull remains stationary");
   await expect(vessel).toHaveCSS("animation-name", "none");
-  const resultText = await board.textContent();
+  const resultText = await scheduleText();
   for (const theme of ["dark", "light"]) {
     await page.evaluate(theme => {
       globalThis.localStorage.setItem("riic-color-mode", theme);
@@ -79,7 +88,7 @@ try {
     await page.screenshot({ path: join(output, `desktop-${theme}.png`) });
     const bounds = await board.boundingBox();
     assert.ok(bounds.y + bounds.height < 900, "The backdrop adds no height to the result board");
-    assert.equal(await board.textContent(), resultText, "Animation/theme changes do not alter result data");
+    assert.deepEqual(await scheduleText(), resultText, "Animation/theme changes do not alter result data");
     assert.ok(await board.locator("[data-facility]").first().evaluate(el => {
       const b = el.getBoundingClientRect();
       return el.contains(globalThis.document.elementFromPoint(b.x + b.width / 2, b.y + b.height / 2));
@@ -127,9 +136,20 @@ try {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.locator("[data-sidebar-settings-trigger]").click();
   await expect(page.locator(".ef-dijiang")).toHaveCount(0);
+  await expect(backdropPreference).toBeChecked();
+  await backdropPreference.uncheck();
+  await page.getByRole("link", { name: "自动排班", exact: true }).click();
+  await expect(backdrop).toHaveCount(0);
+  await page.reload();
+  await page.locator('body[data-app-hydrated="true"]').waitFor();
+  await expect(board.locator("[data-facility]")).toHaveCount(5);
+  await expect(backdrop).toHaveCount(0);
+  assert.deepEqual(await scheduleText(), resultText, "Disabling the backdrop survives reload and preserves the schedule");
+  await page.locator("[data-sidebar-settings-trigger]").click();
+  await backdropPreference.check();
   await page.getByRole("link", { name: "自动排班", exact: true }).click();
   await expect(backdrop).toHaveAttribute("data-running", "true");
-  assert.equal(await board.textContent(), resultText, "Returning to the page restores the same schedule and animation");
+  assert.deepEqual(await scheduleText(), resultText, "Returning to the page restores the same schedule and animation");
   assert.deepEqual(errors, [], "No runtime or hydration errors");
 
   // Inspect the generated geometry at 4× separately from the overlaid result cards.

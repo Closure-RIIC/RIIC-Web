@@ -1,13 +1,12 @@
-import type { CSSProperties } from "react";
 import { Check, Download, TriangleAlert } from "lucide-react";
 import { Dialog } from "@base-ui/react/dialog";
-import { operatorData, workbenchArtwork } from "@shared/endfield-data";
-import { FacilityIcon, OperatorChip, OperatorPortrait, ProductionIcon } from "./GameArtwork";
+import { operatorData } from "@shared/endfield-data";
+import { OperatorChip, OperatorPortrait, ProductionIcon } from "./GameArtwork";
 import { Action, ActionContent, actionClassName, Notice, Section } from "@shared/endfield-ui";
 import type { Result, Mood } from "@shared/endfield-solver/index.mjs";
 import { downloadJson, useWorkspace } from "../state";
 import { DialogFrame } from "./DialogFrame";
-import { DijiangBackdrop } from "./DijiangBackdrop";
+import { categoryLabel, FacilityBoard, FacilityCard } from "./FacilityCard";
 
 const percent = (n: number) => `${(n * 100).toFixed(1)}%`;
 const hour = (n: number) => `${String(n).padStart(2, "0")}:00`;
@@ -30,29 +29,22 @@ export function Results({ result }: { result: Result }) {
         </Dialog.Portal>
       </Dialog.Root>
     </header>
-    {!result.verification.ok ? <Notice error>{result.verification.errors.join("；")}</Notice> : null}
     {result.center ? <>
-      <div className="ef-ship-board" data-schedule-board>
-        <DijiangBackdrop />
+      <FacilityBoard data-schedule-board>
         <FacilityTile kind="center" label={t("总控中枢", "Control center")} level={workspace.options.levels.center} plan={result.center} scores={result.scores}
           bonusA={result.center.recoveryA} bonusB={result.center.recoveryB} />
         {result.rooms.map(room => <FacilityTile key={room.key}
           kind={room.key === "会客室" ? "guest" : room.key === "培养舱" ? "grow" : room.key === "制造舱1" ? "mfg1" : "mfg2"}
           label={t(room.key.replace("1", " Ⅰ").replace("2", " Ⅱ"), room.key === "会客室" ? "Reception" : room.key === "培养舱" ? "Growth chamber" : room.key === "制造舱1" ? "Manufacturing Ⅰ" : "Manufacturing Ⅱ")}
           level={level(room.key)} plan={room} room={room} bonusA={room.bonusA} bonusB={room.bonusB} />)}
-      </div>
+      </FacilityBoard>
       <div className="ef-result-status" role="status">
         {result.verification.ok ? <span><Check size={14} aria-hidden />{t("人员、工位与产出重算校验通过。", "Crew, capacity and output checks passed.")}</span> : null}
         <span>{result.status.searchComplete ? t("搜索完成", "Search complete") : t("当前搜索范围内的候选方案", "Candidate within the search budget")}</span>
         {warnings ? <span className="ef-result-warning"><TriangleAlert size={14} aria-hidden />{t(`${warnings} 项提示，见详细报告`, `${warnings} notes in the full report`)}</span> : null}
       </div>
-    </> : <Notice>{t("本次预算内没有生成方案。请检查干员数量、设施等级或增大搜索预算。", "No plan found within the budget. Check your roster, facility levels or increase the budget.")}</Notice>}
+    </> : null}
   </section>;
-}
-
-function categoryLabel(category: string, t: (zh: string, en: string) => string) {
-  const labels: Record<string, string> = { 线索: "Clues", 干员经验: "Operator EXP", 武器经验: "Weapon EXP", 培养: "Growth" };
-  return t(category, labels[category] ?? category);
 }
 
 function FacilityTile({ kind, label, level, plan, room, scores, bonusA, bonusB }: {
@@ -62,22 +54,11 @@ function FacilityTile({ kind, label, level, plan, room, scores, bonusA, bonusB }
   bonusA: number | null; bonusB: number | null;
 }) {
   const { locale, t } = useWorkspace();
-  const facility = workbenchArtwork.facilities[kind === "mfg1" || kind === "mfg2" ? "mfg" : kind];
-  const levelLabel = t(`设施等级 ${level}`, `Facility level ${level}`);
   const bonusLabel = kind === "center" ? t("恢复加成", "Recovery bonus") : t("整体加成", "Total bonus");
   const bonusDescription = kind === "center"
     ? t("全员在岗时的心情恢复加成，作用于每小时 12% 的基础恢复。", "Full-crew recovery bonus, applied to the base recovery of 12% per hour.")
     : t("全员在岗时，相对基础产速的整体加成，含人数与技能；培养舱按培养位加权。日均产出另计心情与休息。", "Full-crew production bonus over the base rate, including staffing and skills; growth is weighted by plots. Daily output also accounts for morale and rest.");
-  return <article className="ef-facility-tile" data-facility={kind} style={{ "--facility-color": facility.color } as CSSProperties}>
-    <header>
-      <FacilityIcon kind={kind} label={label} /><h3>{label}</h3>
-      <span className="ef-facility-level" role="img" aria-label={levelLabel} title={levelLabel}>
-        {Array.from({ length: level }, (_, index) => <i key={index} aria-hidden />)}
-      </span>
-      {room ? <span className="ef-facility-product" role="img" aria-label={categoryLabel(room.category, t)} title={categoryLabel(room.category, t)}>
-        <ProductionIcon category={room.category} size={kind === "grow" ? 28 : 36} />
-      </span> : null}
-    </header>
+  return <FacilityCard kind={kind} label={label} level={level} category={room?.category}>
     {!room ? <p className="ef-facility-output">{t("全舰心情恢复", "Ship-wide morale recovery")}</p> : null}
     <div className="ef-facility-shifts">
       {(["a", "b"] as const).map((shift, index) => <div className="ef-facility-shift" key={shift}>
@@ -97,7 +78,7 @@ function FacilityTile({ kind, label, level, plan, room, scores, bonusA, bonusB }
       <dl>{Object.entries(scores).map(([key, value]) => <div key={key}><dt><ProductionIcon category={key} size={key === "培养" ? 18 : 22} />{categoryLabel(key, t)}</dt><dd>{value.toFixed(2)}</dd></div>)}</dl>
     </div> : null}
     {kind === "center" ? <p className="ef-facility-note">{t("各设施按各自标注的时间换班。", "Each facility follows its own shift times.")}</p> : room?.assist ? <p className="ef-facility-note">{t("中枢助力", "Central assistance")} · {room.assist.shift} · {room.assist.points} {t("点 / 日", "points/day")}</p> : null}
-  </article>;
+  </FacilityCard>;
 }
 
 function ResultDetails({ result }: { result: Result }) {

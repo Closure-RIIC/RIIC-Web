@@ -18,8 +18,8 @@ export const Route = createRootRoute({
 function Root() {
   const hydrated = useHydrated();
   const initialSession = Route.useLoaderData();
-  return <html lang="zh-CN" className="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
-    <head><script dangerouslySetInnerHTML={{ __html: "try{const dark=localStorage.getItem('riic-color-mode')!=='light';document.documentElement.classList.toggle('dark',dark);document.documentElement.style.colorScheme=dark?'dark':'light'}catch{}" }} /><HeadContent /></head>
+  return <html lang="zh-CN" style={{ colorScheme: "light" }} suppressHydrationWarning>
+    <head><script dangerouslySetInnerHTML={{ __html: "try{const dark=localStorage.getItem('riic-color-mode')==='dark';document.documentElement.classList.toggle('dark',dark);document.documentElement.style.colorScheme=dark?'dark':'light'}catch{}" }} /><HeadContent /></head>
     <body inert={!hydrated} data-app-hydrated={hydrated ? "true" : "false"}><WorkspaceProvider><AccountProvider initialSession={initialSession}><AppShell><Outlet /></AppShell></AccountProvider></WorkspaceProvider><Scripts /></body>
   </html>;
 }

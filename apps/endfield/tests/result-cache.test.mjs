@@ -34,6 +34,7 @@ test("roster, elite stages, facilities, production, priorities and manual change
     next => next.options.budget++,
     next => next.options.time++,
     next => next.manual = [{ key: "中枢", slots: 1, hour: 12, a: [], b: [] }],
+    next => next.rosterSource = "another-source",
   ];
   for (const change of changes) {
     const next = structuredClone(workspace);

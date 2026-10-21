@@ -174,22 +174,60 @@ try {
   assert.equal(Math.round(before.height), Math.round(after.height), "Outer frame must remain fixed");
   await page.getByRole("link", { name: "手动排班", exact: true }).click();
   await page.getByRole("heading", { name: "手动排班", exact: true }).waitFor();
-  const assignmentSelects = page.locator('fieldset [role="combobox"]');
-  // Each room: time + A + B, one seat per shift for this fixture.
-  for (let room = 0; room < 3; room++) {
-    await choose(assignmentSelects.nth(room * 3 + 1), `${workspace.operators[room * 2].name} · E0`);
-    await choose(assignmentSelects.nth(room * 3 + 2), `${workspace.operators[room * 2 + 1].name} · E0`);
+  const manualBoard = page.locator("[data-manual-board]");
+  const manualSlots = manualBoard.locator("[data-manual-slot]");
+  const picker = page.getByRole("dialog", { name: "选择干员", exact: true });
+  const candidate = name => picker.locator(`[data-operator-name="${name}"]`);
+  await expect(manualBoard.locator("[data-facility]")).toHaveCount(3);
+  await expect(manualSlots).toHaveCount(6);
+  for (let slot = 0; slot < 6; slot++) {
+    await manualSlots.nth(slot).click();
+    await expect(picker.locator("[data-operator-name]")).toHaveCount(workspace.operators.length);
+    await candidate(workspace.operators[slot].name).click();
+    await expect(picker).toBeHidden();
+    await expect(manualSlots.nth(slot)).toBeFocused();
   }
-  await assignmentSelects.nth(2).fill(workspace.operators[0].name);
-  assert.equal(await page.getByRole("option", { name: `${workspace.operators[0].name} · E0`, exact: true }).getAttribute("aria-disabled"), "true", "Already assigned operators cannot be selected twice");
-  await assignmentSelects.nth(2).press("Escape");
+  await manualSlots.nth(1).click();
+  await expect(candidate(workspace.operators[0].name)).toBeDisabled();
+  await expect(candidate(workspace.operators[1].name)).toHaveAttribute("aria-pressed", "true");
+  await expect(candidate(workspace.operators[1].name)).toBeEnabled();
+  await page.keyboard.press("Escape");
+  await expect(manualSlots.nth(1)).toBeFocused();
+  // Reuse roster search and filters, without changing ownership or elite stages.
+  await manualSlots.first().click();
+  await picker.getByRole("tablist", { name: "稀有度筛选", exact: true }).getByRole("tab", { name: `${catalog[6].rarity}★`, exact: true }).click();
+  await expect(picker.locator("[data-operator-name]")).toHaveCount(workspace.operators.filter(op => catalog.find(c => c.name === op.name).rarity === catalog[6].rarity).length);
+  await picker.getByRole("button", { name: "清除选择", exact: true }).click();
+  await picker.getByLabel("搜索干员或技能", { exact: true }).fill(workspace.operators[6].name);
+  await expect(picker.locator("[data-operator-name]")).toHaveCount(1);
+  await candidate(workspace.operators[6].name).click();
+  await expect(manualSlots.first()).toContainText(workspace.operators[6].name);
+  await manualSlots.first().click();
+  await picker.getByRole("button", { name: "清空工位", exact: true }).click();
+  await expect(manualSlots.first()).toContainText("选择干员");
+  await manualSlots.first().press("Enter");
+  await expect(candidate(workspace.operators[6].name)).toBeEnabled();
+  await candidate(workspace.operators[0].name).click();
+  await choose(manualBoard.getByRole("combobox", { name: "换班整点", exact: true }).first(), "13:00");
+  await expect(manualBoard.locator('[data-facility="center"] .ef-shift-time').first()).toHaveText("00:00 – 13:00");
   await page.getByRole("button", { name: "评估方案", exact: true }).click();
   await page.getByText("人员、工位与产出重算校验通过。", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "使用当前双班结果", exact: true }).click();
+  await expect(manualSlots.first()).toContainText(workspace.operators[0].name);
+  await page.waitForFunction(key => JSON.parse(globalThis.localStorage.getItem(key)).manual[0].hour === 13, STORAGE_KEY);
   await page.reload();
   await page.locator('body[data-app-hydrated="true"]').waitFor();
-  assert.equal(await page.locator('fieldset [role="combobox"]').nth(1).inputValue(), `${workspace.operators[0].name} · E0`, "Manual draft survives refresh");
+  await expect(manualSlots.first()).toContainText(workspace.operators[0].name);
+  await expect(manualBoard.getByRole("combobox", { name: "换班整点", exact: true }).first()).toHaveValue("13:00");
+  assert.deepEqual(await page.evaluate(key => JSON.parse(globalThis.localStorage.getItem(key)).operators, STORAGE_KEY), workspace.operators, "Assigning operators preserves roster ownership and elite stages");
   // Production settings are shared by manual scheduling and the automatic-page dialog.
+  const facilitiesTrigger = page.getByRole("button", { name: "设施与生产", exact: true });
+  const facilitiesDialog = page.getByRole("dialog", { name: "设施与生产", exact: true });
+  await facilitiesTrigger.click();
   await choose(page.getByRole("combobox", { name: "总控中枢", exact: true }), "Lv.2");
+  await facilitiesDialog.getByRole("button", { name: "完成", exact: true }).click();
+  await expect(manualBoard.locator("[data-facility]")).toHaveCount(4);
+  await expect(manualSlots.first()).toContainText(workspace.operators[0].name);
   await page.getByRole("link", { name: "自动排班", exact: true }).click();
   await productionTrigger.click();
   await expect(productionDialog).toBeVisible();
@@ -213,10 +251,12 @@ try {
   await page.keyboard.press("Escape");
   await expect(productionTrigger).toBeFocused();
   await page.getByRole("link", { name: "手动排班", exact: true }).click();
+  await facilitiesTrigger.click();
   await expect(page.getByRole("combobox", { name: "制造舱布局", exact: true })).toHaveValue("2干员");
   await expect(page.getByRole("combobox", { name: "矿物培养位", exact: true })).toHaveValue("1");
   await choose(page.getByRole("combobox", { name: "总控中枢", exact: true }), "Lv.1");
   await choose(page.getByRole("combobox", { name: "制造舱布局", exact: true }), "1干员1武器");
+  await facilitiesDialog.getByRole("button", { name: "完成", exact: true }).click();
   await page.locator("[data-sidebar-account-trigger]").click();
   await page.getByRole("button", { name: "EN", exact: true }).click();
   await page.getByRole("menuitem", { name: "Toggle theme", exact: true }).click();
@@ -348,6 +388,17 @@ try {
   assert.ok(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), "English contour labels wrap without mobile overflow");
   const copyResult = page.getByRole("button", { name: "Copy current two-shift result", exact: true });
   assert.ok((await copyResult.boundingBox()).width <= 390);
+  await manualSlots.first().click();
+  const englishPicker = page.getByRole("dialog", { name: "Select operator", exact: true });
+  await expect(englishPicker).toBeVisible();
+  const pickerBox = await englishPicker.boundingBox();
+  assert.ok(pickerBox.x >= 0 && pickerBox.y >= 0 && pickerBox.x + pickerBox.width <= 390 && pickerBox.y + pickerBox.height <= 844, "Operator picker fits the English mobile viewport");
+  assert.ok(await englishPicker.evaluate(el => el.scrollWidth <= el.clientWidth && el.querySelector(".ef-dialog-body").scrollWidth <= el.querySelector(".ef-dialog-body").clientWidth), "Operator picker has no horizontal overflow");
+  assert.equal(await englishPicker.evaluate(el => globalThis.getComputedStyle(el).colorScheme), "dark");
+  await englishPicker.getByLabel("Search operators or skills", { exact: true }).fill(catalog[0].enName);
+  await expect(englishPicker.locator("[data-operator-name]")).toHaveCount(1);
+  await englishPicker.getByRole("button", { name: "Close operator selection", exact: true }).click();
+  await expect(manualSlots.first()).toBeFocused();
   await context.addCookies([{ name: "riic-endfield-locale", value: "zh", url: endfield }]);
   // Main application's shared primitives and game switch are exercised without authentication.
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -396,6 +447,7 @@ try {
   await expect(rosterDialog).toBeVisible();
   const closeMask = await rosterDialog.locator(".ef-dialog-close-glyph").evaluate(el => globalThis.getComputedStyle(el).maskImage);
   assert.ok(closeMask.includes("/images/game/ui/close.png"), "Dialogs use the original game close symbol");
+  assert.equal((await rosterDialog.locator(".ef-dialog-close-glyph").boundingBox()).width, 18, "The shared close symbol is smaller");
   await page.keyboard.press("Escape");
   assert.deepEqual(errors, [], "No browser runtime/hydration errors");
   const touch = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
@@ -415,7 +467,7 @@ try {
   await touchSession.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   assert.deepEqual(await touchCards.evaluateAll(elements => elements.map(el => el.dataset.priorityCard)), [...DEFAULT_OPTIONS.priority.slice(1), DEFAULT_OPTIONS.priority[0]], "Touch dragging works across the two-row mobile layout");
   await touch.close();
-  console.log("Passed: compact four-column roster, shared filters, production dialog and priority drag, preserved crew preview, one-screen facility results at 1440×900 and 1366×768, report dialog, real solve, manual evaluation, mobile/touch, English/dark mode and cross-app navigation.");
+  console.log("Passed: compact roster, shared filters, manual facility cards and operator picker (replace/clear/duplicate prevention/focus/persistence), real manual and automatic solves, production dialogs, compact close symbols, mobile/touch, English/dark mode and cross-app navigation.");
   await context.close();
 } finally {
   await browser.close();

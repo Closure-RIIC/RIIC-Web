@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Menu } from "@base-ui/react/menu";
-import { Calculator, SquarePen, Search, Settings, CircleHelp, UserRound, ChevronDown, SunMoon, LogOut, LoaderCircle, CloudDownload } from "lucide-react";
+import { Calculator, SquarePen, Search, Settings, CircleHelp, UserRound, ChevronDown, SunMoon, LogOut, LoaderCircle, Cloud } from "lucide-react";
 import { Sidebar, SidebarProvider, SidebarInset, SidebarHeader, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger, useSidebar } from "@shared/ui-primitives/sidebar";
 import { TooltipProvider } from "@shared/ui-primitives/tooltip";
 import { PageScrollbar } from "@shared/ui-primitives/page-scrollbar";
@@ -71,8 +71,8 @@ function Navigation() {
   const links = [
     { to: "/" as const, label: t("自动排班", "Auto schedule"), icon: Calculator },
     { to: "/manual" as const, label: t("手动排班", "Manual schedule"), icon: SquarePen },
-    { to: "/skland" as const, label: t("森空岛同步", "Skland sync"), icon: CloudDownload },
     { to: "/skills" as const, label: t("技能查询", "Ship skills"), icon: Search },
+    { to: "/skland" as const, label: t("森空岛同步", "Skland sync"), icon: Cloud },
   ];
   return <Sidebar collapsible="icon" mobileWidth="min(17rem, calc(100vw - 3rem))"><div className={nav.sidebar}>
     <SidebarHeader className={nav.header}><GameSwitcher game="endfield" locale={locale} targetOrigin={import.meta.env.VITE_ARKNIGHTS_ORIGIN} /><SidebarTrigger className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground" /></SidebarHeader>

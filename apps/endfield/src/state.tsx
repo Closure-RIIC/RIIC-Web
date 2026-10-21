@@ -6,6 +6,7 @@ import { completeSolverActivity, type SolverActivity, type SolverMessage } from 
 import { RESULT_STORAGE_KEY, encodeResultCache, restoreResultCache, workspaceKey } from "./result-cache";
 
 export const WEBSITE_SIGN_OUT_EVENT = "riic:endfield:sign-out";
+export const WEBSITE_SESSION_CHANGE_EVENT = "riic:endfield:session-change";
 
 function useWorkspaceState() {
   const [workspace, setWorkspace] = useState<Workspace>(() => ({ version: 1, operators: [], options: structuredClone(DEFAULT_OPTIONS) }));
@@ -13,14 +14,14 @@ function useWorkspaceState() {
   const [ready, setReady] = useState(false);
   const [storageError, setStorageError] = useState("");
   const [locale, updateLocale] = useState<"zh" | "en">("zh");
-  const [colorMode, updateColorMode] = useState<"light" | "dark">("dark");
+  const [colorMode, updateColorMode] = useState<"light" | "dark">("light");
   const [showImages, updateShowImages] = useState(true);
+  const [showDijiangBackdrop, updateShowDijiangBackdrop] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [resultStorageError, setResultStorageError] = useState("");
   // Display-only, tab-lifetime data; never written into the solver workspace/storage.
   const [sklandSnapshot, setSklandSnapshot] = useState<EndfieldSnapshot | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
   const [activity, setActivity] = useState<SolverActivity | null>(null);
   const activitySequence = useRef(0);
   const lastAssignments = useRef<Assignment[] | undefined>(undefined);
@@ -42,7 +43,9 @@ function useWorkspaceState() {
     setLocale(readEndfieldLocale(document.cookie));
     try {
       updateColorMode(readEndfieldColorMode(localStorage.getItem("riic-color-mode")));
-      updateShowImages(JSON.parse(localStorage.getItem(DISPLAY_STORAGE_KEY) ?? "{}").showImages !== false);
+      const display = JSON.parse(localStorage.getItem(DISPLAY_STORAGE_KEY) ?? "{}");
+      updateShowImages(display.showImages !== false);
+      updateShowDijiangBackdrop(display.showDijiangBackdrop === true);
     } catch { /* Keep defaults when storage is unavailable. */ }
     setReady(true);
     return () => { worker.current?.terminate(); if (timeout.current) clearTimeout(timeout.current); };
@@ -61,7 +64,9 @@ function useWorkspaceState() {
       updateLocale(readEndfieldLocale(document.cookie));
       try {
         updateColorMode(readEndfieldColorMode(localStorage.getItem("riic-color-mode")));
-        updateShowImages(JSON.parse(localStorage.getItem(DISPLAY_STORAGE_KEY) ?? "{}").showImages !== false);
+        const display = JSON.parse(localStorage.getItem(DISPLAY_STORAGE_KEY) ?? "{}");
+        updateShowImages(display.showImages !== false);
+        updateShowDijiangBackdrop(display.showDijiangBackdrop === true);
       } catch { /* Keep the current appearance if storage is unavailable. */ }
     };
     const onStorage = (event: StorageEvent) => { if (event.key === "riic-color-mode" || event.key === DISPLAY_STORAGE_KEY) restorePreferences(); };
@@ -109,7 +114,7 @@ function useWorkspaceState() {
     stopWorker();
     setActivity(null);
   }, [stopWorker]);
-  function clearResult() { cancel(); setResult(null); setError(""); }
+  function clearResult() { cancel(); setResult(null); }
   function update(next: Workspace | ((current: Workspace) => Workspace)) {
     const current = workspaceRef.current;
     let value = typeof next === "function" ? next(current) : next;
@@ -133,7 +138,7 @@ function useWorkspaceState() {
     catch { setStorageError("无法保存到本机，请导出名单。 / Local storage unavailable; export your roster."); }
   }
   function run(assignments?: Assignment[]) {
-    cancel(); setResult(null); setError("");
+    cancel(); setResult(null);
     lastAssignments.current = assignments ? structuredClone(assignments) : undefined;
     const started: SolverActivity = {
       id: ++activitySequence.current, kind: assignments ? "manual" : "schedule",
@@ -142,7 +147,6 @@ function useWorkspaceState() {
     setActivity(started);
     const fail = (message: string) => {
       stopWorker();
-      setError(message);
       setActivity({ ...started, phase: "error", problem: "worker", error: message, elapsedMs: Date.now() - started.startedAt });
     };
     try {
@@ -181,7 +185,11 @@ function useWorkspaceState() {
   }
   function setShowImages(next: boolean) {
     updateShowImages(next);
-    try { localStorage.setItem(DISPLAY_STORAGE_KEY, JSON.stringify({ showImages: next })); } catch { /* Current tab still works. */ }
+    try { localStorage.setItem(DISPLAY_STORAGE_KEY, JSON.stringify({ showImages: next, showDijiangBackdrop })); } catch { /* Current tab still works. */ }
+  }
+  function setShowDijiangBackdrop(next: boolean) {
+    updateShowDijiangBackdrop(next);
+    try { localStorage.setItem(DISPLAY_STORAGE_KEY, JSON.stringify({ showImages, showDijiangBackdrop: next })); } catch { /* Current tab still works. */ }
   }
   async function clearLocalData() {
     cancel();
@@ -196,7 +204,7 @@ function useWorkspaceState() {
       throw new Error("无法清除全部本地数据，请检查浏览器存储权限。 / Could not clear local data; check browser storage permissions.");
     }
   }
-  return { workspace, update, ready, storageError, resultStorageError, repairStorage, clearLocalData, clearResult, locale, setLocale, colorMode, setColorMode, showImages, setShowImages, result, sklandSnapshot, setSklandSnapshot, busy, error, activity, retrySolve, run, cancel, t: (zh: string, en: string) => locale === "zh" ? zh : en };
+  return { workspace, update, ready, storageError, resultStorageError, repairStorage, clearLocalData, clearResult, locale, setLocale, colorMode, setColorMode, showImages, setShowImages, showDijiangBackdrop, setShowDijiangBackdrop, result, sklandSnapshot, setSklandSnapshot, busy, activity, retrySolve, run, cancel, t: (zh: string, en: string) => locale === "zh" ? zh : en };
 }
 const Context = createContext<ReturnType<typeof useWorkspaceState> | null>(null);
 export function WorkspaceProvider({ children }: { children: ReactNode }) { const value = useWorkspaceState(); return <Context.Provider value={value}>{children}</Context.Provider>; }
