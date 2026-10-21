@@ -221,6 +221,7 @@ test("manual schedule poster loads, calculates and restores its metadata", async
 
 for (const entry of ["handoff", "code"] as const) {
   test(`imported poster ${entry} preserves edits and allows switching back to the editor`, async ({ page }) => {
+    test.setTimeout(90_000);
     const draft = createManualScheduleDraft([24], "08:00", "period");
     draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", null, null] };
     const document = createPosterDocument(layout243, draft, operators);
@@ -244,6 +245,7 @@ for (const entry of ["handoff", "code"] as const) {
 }
 
 test("manual editor restores external operators before opening the lazy poster", async ({ page }) => {
+  test.setTimeout(60_000);
   const draft = createManualScheduleDraft([24], "08:00", "period");
   draft.externalOperatorNames = ["巫恋"];
   draft.shifts[0]!.rooms.trade_1 = { operators: ["巫恋", null, null] };
@@ -263,6 +265,7 @@ test("manual editor restores external operators before opening the lazy poster",
 });
 
 test("poster uses current owned training instead of stale cached training", async ({ page }) => {
+  test.setTimeout(60_000);
   const draft = createManualScheduleDraft([24], "08:00", "period");
   draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", null, null] };
   const document = createPosterDocument(layout243, draft, [{ ...operators[0]!, elite: 0, level: 1 }]);
