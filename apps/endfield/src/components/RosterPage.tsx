@@ -13,7 +13,9 @@ import { SkillFilters } from "./SkillFilters";
 
 const skillCatalog = [...catalog].sort(compareOperatorRelease);
 
-export function RosterPage({ skillsOnly = false, embedded = false }: { skillsOnly?: boolean; embedded?: boolean }) {
+type OperatorPicker = { value: string; unavailable: ReadonlySet<string>; onSelect: (name: string) => void };
+
+export function RosterPage({ skillsOnly = false, embedded = false, picker }: { skillsOnly?: boolean; embedded?: boolean; picker?: OperatorPicker }) {
   const { workspace, update, t, locale, ready, storageError } = useWorkspace();
   const [query, setQuery] = useState("");
   const [onlyOwned, setOnlyOwned] = useState(false);
@@ -22,7 +24,7 @@ export function RosterPage({ skillsOnly = false, embedded = false }: { skillsOnl
   const [profession, setProfession] = useState("all");
   const [tag, setTag] = useState("all");
   const selected = new Map(workspace.operators.map(op => [op.name, op.elite]));
-  const rows = (skillsOnly ? skillCatalog : catalog).filter(op => (!onlyOwned || selected.has(op.name)) && (rarity === "all" || op.rarity === Number(rarity))
+  const rows = (skillsOnly ? skillCatalog : catalog).filter(op => (!(onlyOwned || picker) || selected.has(op.name)) && (rarity === "all" || op.rarity === Number(rarity))
     && (profession === "all" || op.profession === profession)
     && op.skills.some(skill => (room === "all" || skill.room === room) && (tag === "all" || skill.effectKey === tag))
     && `${op.name} ${op.enName} ${op.skills.map(s => `${s.name} ${s.description}`).join(" ")} ${operatorData(op.id)?.skills.map(s => `${s.enName} ${s.enDescription}`).join(" ")}`.toLowerCase().includes(query.trim().toLowerCase()));
@@ -49,13 +51,26 @@ export function RosterPage({ skillsOnly = false, embedded = false }: { skillsOnl
     <Section>
       {!skillsOnly ? <div className="ef-roster-toolbar">
         <div className="ef-roster-filters">
-          <SelectionButton selected={onlyOwned} onSelectedChange={setOnlyOwned}>{t("仅已选", "Selected only")}</SelectionButton>
+          {!picker ? <SelectionButton selected={onlyOwned} onSelectedChange={setOnlyOwned}>{t("仅已选", "Selected only")}</SelectionButton> : null}
           <Button type="button" variant="ghost" size="sm" disabled={rarity === "all" && profession === "all" && room === "all" && tag === "all"}
             onClick={() => { setRarity("all"); setProfession("all"); setRoom("all"); setTag("all"); }}><X aria-hidden />{t("清除选择", "Clear filters")}</Button>
-          <span className="ef-roster-count ef-muted" role="status">{t(`显示 ${rows.length} 名 · 已选 ${selected.size}`, `${rows.length} shown · ${selected.size} selected`)}</span>
+          <span className="ef-roster-count ef-muted" role="status">{picker
+            ? t(`显示 ${rows.length} 名 · 仅已拥有干员`, `${rows.length} shown · Owned operators only`)
+            : t(`显示 ${rows.length} 名 · 已选 ${selected.size}`, `${rows.length} shown · ${selected.size} selected`)}</span>
         </div>
       </div> : null}
       <div className={`ef-roster-grid ${skillsOnly ? "ef-roster-grid--skills" : "ef-roster-grid--compact"}`}>{rows.map(op => {
+        if (picker) {
+          const current = picker.value === op.name;
+          const unavailable = picker.unavailable.has(op.name);
+          return <button key={op.id} type="button" className="ef-roster-card ef-roster-choice" data-operator-id={op.id} data-operator-name={op.name}
+            data-selected={current} aria-pressed={current} disabled={!ready || unavailable} onClick={() => picker.onSelect(op.name)}>
+            <span className="ef-roster-choice-identity"><OperatorPortrait name={op.id} size={48} />
+              <span className="ef-roster-identity"><strong>{locale === "en" ? op.enName : op.name}</strong><span className="ef-roster-rarity">{op.rarity}★ · E{selected.get(op.name)}</span></span>
+            </span>
+            <span className="ef-roster-choice-status">{current ? <Check size={14} aria-hidden /> : null}{current ? t("当前工位", "Current slot") : unavailable ? t("已安排至其他工位", "Assigned elsewhere") : t("选择干员", "Select operator")}</span>
+          </button>;
+        }
         const display = operatorData(op.id);
         const matchingSkills = op.skills.filter(skill => (room === "all" || skill.room === room) && (tag === "all" || skill.effectKey === tag));
         const facilities = Array.from(new Set(matchingSkills.map(skill => skill.room)));

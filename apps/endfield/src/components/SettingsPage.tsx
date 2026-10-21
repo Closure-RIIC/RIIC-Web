@@ -11,7 +11,7 @@ import { useAccount, type AccountAction } from "../account";
 import { ConfirmAction } from "./ConfirmAction";
 
 export function SettingsPage() {
-  const { workspace, update, busy: solving, ready, t, locale, setLocale, colorMode, setColorMode, showImages, setShowImages, storageError, repairStorage, clearLocalData } = useWorkspace();
+  const { workspace, update, busy: solving, ready, t, locale, setLocale, colorMode, setColorMode, showImages, setShowImages, showDijiangBackdrop, setShowDijiangBackdrop, storageError, repairStorage, clearLocalData } = useWorkspace();
   const { session, pending, failed, busy, run, refresh } = useAccount();
   const [origin, setOrigin] = useState<string>();
   const [password, setPassword] = useState("");
@@ -58,6 +58,7 @@ export function SettingsPage() {
           <div className="ef-settings-row"><div><span>{t("语言", "Language")}</span><p>{t("仅切换终末地的显示语言。", "Choose the display language for Endfield.")}</p></div>
             <div className="ef-language" aria-label={t("语言", "Language")}><button type="button" aria-pressed={locale === "zh"} onClick={() => setLocale("zh")}>中文</button><button type="button" aria-pressed={locale === "en"} onClick={() => setLocale("en")}>EN</button></div></div>
           <label className="ef-settings-row" htmlFor="ef-load-images"><div><span>{t("加载干员与武器图片", "Load operator and weapon images")}</span><p>{t("关闭后使用文字占位，同时停用技能图标加载。", "Use text placeholders and skip skill icons when disabled.")}</p></div><input id="ef-load-images" type="checkbox" checked={showImages} onChange={e => setShowImages(e.target.checked)} /></label>
+          <label className="ef-settings-row" htmlFor="ef-show-dijiang"><div><span>{t("显示帝江号背景", "Show Dijiang backdrop")}</span><p>{t("在排班结果后显示帝江号动画。", "Show the animated Dijiang behind scheduling results.")}</p></div><input id="ef-show-dijiang" type="checkbox" checked={showDijiangBackdrop} disabled={!ready} onChange={e => setShowDijiangBackdrop(e.target.checked)} /></label>
         </div></Section>
         <Section title={t("排班搜索", "Scheduling search")}><div data-settings-group="solver" className="ef-settings-fields">
           <p className="ef-settings-description">{t("默认使用 5 秒、20 万节点。只有需要更深入搜索时才提高预算，耗时也会增加。", "Defaults to 5 seconds and 200,000 nodes. Increase these only for a deeper search; it may take longer.")}</p>

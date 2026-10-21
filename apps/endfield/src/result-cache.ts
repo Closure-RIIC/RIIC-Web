@@ -11,6 +11,7 @@ export function workspaceKey(workspace: Workspace): string {
     ["center", "mfg1", "mfg2", "grow", "guest"].map(key => options.levels[key as keyof typeof options.levels]),
     ["晶植", "菌类", "矿物"].map(key => options.grow[key] ?? 0),
     workspace.manual?.map(room => [room.key, room.slots, room.hour, room.a, room.b]) ?? null,
+    workspace.rosterSource ?? null,
   ]);
 }
 

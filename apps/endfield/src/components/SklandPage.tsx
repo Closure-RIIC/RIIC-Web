@@ -1,16 +1,15 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { RefreshCw, LogOut, UserPlus } from "lucide-react";
-import { Action, ActionLink, ActionContent, actionClassName, Notice } from "@shared/endfield-ui";
-import { catalog, nonSchedulableOperators } from "@shared/endfield-solver/model.mjs";
-import { endfieldFacilityLevels, matchEndfieldRoster, type EndfieldRole, type EndfieldSnapshot } from "@shared/endfield-skland/model";
+import { Action, ActionContent, actionClassName, Notice } from "@shared/endfield-ui";
+import { type EndfieldRole, type EndfieldSnapshot } from "@shared/endfield-skland/model";
 import { gameHref } from "@shared/shell/games";
 import { FilterSelect } from "@shared/ui-primitives/filter-select";
 import { sklandApi as api, SklandRequestError } from "../skland-client";
 import { SklandLoginPanel, type EndfieldLogin } from "./SklandLoginPanel";
 import { SklandDataView, SklandProfile } from "./SklandDataView";
-import { useWorkspace, WEBSITE_SIGN_OUT_EVENT } from "../state";
-import { withFacilityLevels } from "../scheduling-options";
+import { useWorkspace, WEBSITE_SIGN_OUT_EVENT, WEBSITE_SESSION_CHANGE_EVENT } from "../state";
+import { sklandRosterSource, syncSklandWorkspace, type SklandSyncStatus } from "../skland-workspace";
 import { DialogFrame } from "./DialogFrame";
 
 type Account = { id: string; label: string; source: string };
@@ -22,7 +21,7 @@ function savedSelection(): { accountId?: string; role?: string; ownerKey?: strin
 }
 
 export function SklandPage() {
-  const { update, t, setSklandSnapshot } = useWorkspace();
+  const { update, ready, t, setSklandSnapshot } = useWorkspace();
   const [origin, setOrigin] = useState<string>();
   const [loginOpen, setLoginOpen] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -30,6 +29,7 @@ export function SklandPage() {
   const [roles, setRoles] = useState<EndfieldRole[]>([]);
   const [selected, setSelected] = useState("");
   const [snapshot, setSnapshot] = useState<EndfieldSnapshot | null>(null);
+  const [syncStatus, setSyncStatus] = useState<SklandSyncStatus | null>(null);
   const [pending, setPending] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState("");
@@ -39,8 +39,8 @@ export function SklandPage() {
   const currentAccount = accounts.find(account => account.id === accountId);
   const loadedRole = roles.find(role => roleKey(role) === selected);
 
-  function clearData() { setSnapshot(null); setSklandSnapshot(null); }
-  function cancel() { controller.current?.abort(); controller.current = null; setPending(false); }
+  function clearData() { setSnapshot(null); setSklandSnapshot(null); setSyncStatus(null); }
+  function cancel() { controller.current?.abort(); controller.current = null; setPending(false); setInitialized(true); }
   async function perform(task: (signal: AbortSignal) => Promise<void>) {
     controller.current?.abort();
     const request = new AbortController();
@@ -53,14 +53,15 @@ export function SklandPage() {
   async function loadSnapshot(id: string, role: EndfieldRole, signal: AbortSignal) {
     const value = await api<{ snapshot: EndfieldSnapshot }>("sync", signal, { accountId: id, roleId: role.roleId, serverId: role.serverId });
     if (signal.aborted) return;
-    matchEndfieldRoster(value.snapshot, catalog, nonSchedulableOperators);
-    setSnapshot(value.snapshot);
-    setSklandSnapshot(value.snapshot);
-    const syncedLevels = endfieldFacilityLevels(value.snapshot);
-    if (syncedLevels) update(current => {
-      const options = withFacilityLevels(current.options, syncedLevels);
-      return options === current.options ? current : { ...current, options };
+    const source = sklandRosterSource(owner.current, id, role);
+    update(current => {
+      const synced = syncSklandWorkspace(current, value.snapshot, source, role.roleId);
+      setSyncStatus(synced.status);
+      // Other scheduling pages must not display equipment from a rejected account.
+      setSklandSnapshot(synced.status.blocked ? null : value.snapshot);
+      return synced.workspace;
     });
+    setSnapshot(value.snapshot);
     try { sessionStorage.setItem(selectionKey, JSON.stringify({ accountId: id, role: roleKey(role), ownerKey: owner.current })); } catch { /* Selection is optional. */ }
   }
   async function installRoles(id: string, next: EndfieldRole[], signal: AbortSignal, preferred?: string) {
@@ -121,20 +122,28 @@ export function SklandPage() {
     setLoginOpen(false); setError(""); setInitialized(true);
     try { sessionStorage.removeItem(selectionKey); } catch { /* Optional selection storage. */ }
   });
+  const accountChanged = useEffectEvent(() => {
+    cancel(); clearData(); owner.current = "";
+    setAccounts([]); setAccountId(""); setRoles([]); setSelected(""); setLoginOpen(false);
+    void perform(signal => restoreAccounts(signal));
+  });
   useEffect(() => {
+    if (!ready) return;
     setOrigin(location.origin);
     restore(false);
     const onFocus = () => restore(true);
     const onPageShow = (event: PageTransitionEvent) => { if (event.persisted) restore(false); };
     const onSignOut = () => signedOut();
+    const onAccountChange = () => accountChanged();
     window.addEventListener("focus", onFocus);
     window.addEventListener("pageshow", onPageShow);
     window.addEventListener(WEBSITE_SIGN_OUT_EVENT, onSignOut);
-    return () => { controller.current?.abort(); window.removeEventListener("focus", onFocus); window.removeEventListener("pageshow", onPageShow); window.removeEventListener(WEBSITE_SIGN_OUT_EVENT, onSignOut); };
-  }, []);
+    window.addEventListener(WEBSITE_SESSION_CHANGE_EVENT, onAccountChange);
+    return () => { controller.current?.abort(); window.removeEventListener("focus", onFocus); window.removeEventListener("pageshow", onPageShow); window.removeEventListener(WEBSITE_SIGN_OUT_EVENT, onSignOut); window.removeEventListener(WEBSITE_SESSION_CHANGE_EVENT, onAccountChange); };
+  }, [ready]);
 
   const loginPanel = <SklandLoginPanel main={main} onAuthenticated={authenticated} onMethodChange={() => { setError(""); }} />;
-  return <div className="ef-page" data-endfield-skland aria-busy={pending}>
+  return <div className={`ef-page${initialized && !accounts.length ? " ef-skland-login" : ""}`} data-endfield-skland aria-busy={pending}>
     <h1 className="sr-only">{t("森空岛同步", "Skland sync")}</h1>
     {accounts.length ? <header className="ef-skland-header">
       <SklandProfile snapshot={snapshot} role={loadedRole} accountLabel={currentAccount?.label} />
@@ -165,15 +174,25 @@ export function SklandPage() {
     </header> : null}
     {error ? <Notice error>{error}</Notice> : null}
     {!initialized ? <p className="ef-muted" role="status">{t("正在恢复森空岛账号…", "Restoring your Skland account…")}</p> : null}
-    {initialized && !accounts.length ? <>
-      <div className="ef-login"><header className="ef-login-copy"><h2>{t("登录森空岛", "Connect to Skland")}</h2><p>{t("登录后自动读取角色数据，已连接的账号会保留在此浏览器。", "Sign in to load your character data. Connected accounts remain in this browser.")}</p></header>{loginPanel}</div>
-      <div className="ef-actions"><Action size="sm" disabled={pending} onClick={() => void perform(signal => restoreAccounts(signal))}>{t("重新读取账号", "Retry accounts")}</Action><ActionLink size="sm" href={`${main}settings`}>{t("登录 RIIC 网站账号", "Sign in to RIIC")}</ActionLink></div>
-    </> : null}
+    {initialized && !accounts.length ? <div className="ef-login"><header className="ef-login-copy"><h2>{t("登录森空岛", "Connect to Skland")}</h2><p>{t("登录后自动读取角色数据，已连接的账号会保留在此浏览器。", "Sign in to load your character data. Connected accounts remain in this browser.")}</p></header>{loginPanel}</div> : null}
     {accounts.length ? <>
       {!pending && !roles.length ? <Notice>{t("这个账号没有可用的终末地角色，可添加其他账号或刷新重试。", "This account has no available Endfield character. Add an account or retry.")}</Notice> : null}
       {!pending && !snapshot && loadedRole ? <Action onClick={() => void perform(signal => loadSnapshot(accountId, loadedRole, signal))}>{t("重新读取数据", "Retry data")}</Action> : null}
     </> : null}
     {pending && initialized ? <p className="ef-muted" role="status">{t("正在读取森空岛数据…", "Reading Skland data…")} <Action size="sm" variant="red" onClick={cancel}>{t("取消", "Cancel")}</Action></p> : null}
+    {syncStatus ? <Notice>
+      <div data-skland-sync-status>
+        <p>{syncStatus.blocked === "partial"
+          ? t("当前角色的干员数据不完整，尚未替换排班名单和设施配置。请在森空岛公开完整干员数据后刷新。", "This character's roster is incomplete. The previous roster and facilities were kept. Make the full roster public in Skland, then refresh.")
+          : syncStatus.blocked === "unsupported"
+            ? t("当前干员均未被排班数据识别，已保留原名单和设施配置。", "None of these operators are recognized by the scheduler. The previous roster and facilities were kept.")
+            : t(`已同步 ${syncStatus.count} 名可排班干员及精英化阶段。`, `Synced ${syncStatus.count} schedulable operators and their elite stages.`)}</p>
+        {syncStatus.partial && !syncStatus.blocked ? <p>{t("本次仅返回部分干员，已保留该角色此前同步的其余名单。", "Only part of the roster was returned. Other operators previously saved for this character were retained.")}</p> : null}
+        {!syncStatus.facilitiesApplied && !syncStatus.blocked ? <p>{t("设施数据不完整，已保留原设施配置，请在排班前确认等级。", "Facility data is incomplete. The previous setup was kept; check facility levels before scheduling.")}</p> : null}
+        {syncStatus.unsupported.length ? <p>{t("暂未支持，未纳入排班：", "Not yet supported; excluded from scheduling: ")}{syncStatus.unsupported.join("、")}</p> : null}
+        {syncStatus.excluded.length ? <p>{t("无基建技能，未纳入排班：", "No ship skills; excluded from scheduling: ")}{syncStatus.excluded.join("、")}</p> : null}
+      </div>
+    </Notice> : null}
     {snapshot ? <SklandDataView key={`${accountId}:${selected}`} snapshot={snapshot} /> : null}
     <Dialog.Root open={accounts.length > 0 && loginOpen} onOpenChange={setLoginOpen}>
       <Dialog.Portal><Dialog.Backdrop className="ef-dialog-backdrop" />

@@ -8,7 +8,7 @@ import { RosterDialogTrigger } from "./RosterDialog";
 import { ProductionDialog } from "./ProductionDialog";
 
 export function SchedulePage() {
-  const { workspace, run, busy, result, error, storageError, resultStorageError, ready, t } = useWorkspace();
+  const { workspace, run, busy, result, storageError, resultStorageError, ready, t } = useWorkspace();
   return <div className="ef-page ef-schedule-page">
     <PageTitle accent="chevrons" title={t("帝江号排班", "Dijiang scheduling")} subtitle={t(`${workspace.operators.length} 名干员 · 总控中枢 Lv.${workspace.options.levels.center}`, `${workspace.operators.length} operators · Control center Lv.${workspace.options.levels.center}`)}
       action={<div className="ef-actions">
@@ -22,10 +22,9 @@ export function SchedulePage() {
     {!result && !busy ? <div className="ef-schedule-empty">
       <div className="ef-ship-outline" aria-hidden><span /><span /><span /><span /><span /></div>
       <h2>{workspace.operators.length ? t("准备下一轮生产", "Ready for the next production cycle") : t("先配置你的干员", "Set up your operators")}</h2>
-      <p>{workspace.operators.length ? t("在生产配置中选择产物与排班目标，生成后在这里查看全舰安排。", "Choose production and priorities in Production setup, then generate your ship-wide schedule.") : t("点击“编辑名单”选择干员；森空岛同步可读取设施等级。", "Use Edit roster to select operators; Skland sync can load facility levels.")}</p>
+      <p>{workspace.operators.length ? t("在生产配置中选择产物与排班目标，生成后在这里查看全舰安排。", "Choose production and priorities in Production setup, then generate your ship-wide schedule.") : t("登录森空岛自动同步干员、精英化阶段和设施等级，也可点击“编辑名单”手动配置。", "Sign in to Skland to sync operators, elite stages and facility levels, or use Edit roster to configure them manually.")}</p>
       <Link to={workspace.operators.length ? "/manual" : "/skland"} className="ef-text-action">{workspace.operators.length ? t("调整设施等级", "Adjust facility levels") : t("前往森空岛同步", "Open Skland sync")}</Link>
     </div> : null}
-    {error ? <Notice error>{error}</Notice> : null}
     {result ? <Results result={result} /> : null}
   </div>;
 }

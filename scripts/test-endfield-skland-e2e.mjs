@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { chromium } from "@playwright/test";
+import { chromium, expect } from "@playwright/test";
 import { catalog, DEFAULT_OPTIONS, STORAGE_KEY } from "../packages/endfield-solver/model.mjs";
 import { normalizeEndfieldSnapshot } from "../packages/endfield-skland/model.ts";
 import { normalizeEndfieldInventory } from "../packages/endfield-skland/inventory.ts";
@@ -45,14 +45,17 @@ snapshot.weapons = normalizeEndfieldWeapons({ code: 0, data: { userGameData: { .
   { weaponId: "wpn_sword_0003", level: 20, breakthroughLevel: 1, refineLevel: 2 },
 ] } } }, role);
 const secondRole = { ...role, roleId: "second-role", nickname: "第二个角色" };
-const secondSnapshot = normalizeEndfieldSnapshot({ ...detail, base: { ...detail.base, roleId: secondRole.roleId, name: secondRole.nickname } });
+const secondSnapshot = normalizeEndfieldSnapshot({ ...detail, base: { ...detail.base, roleId: secondRole.roleId, name: secondRole.nickname },
+  chars: detail.chars.map((char, i) => i < 2 ? { ...char, charData: { ...char.charData, id: catalog[i + 2].id, name: catalog[i + 2].name } } : char) });
 secondSnapshot.inventory = inventory(secondRole, 900);
+const syncedRoster = catalog.slice(0, 2).map((op, i) => ({ name: op.name, elite: i + 1 }));
+const secondRoster = catalog.slice(2, 4).map((op, i) => ({ name: op.name, elite: i + 1 }));
 const browser = await chromium.launch({ headless: true });
 const errors = [], requests = [];
 let accounts = [], delayedSync = null, releaseSync = null, failSync = false, badSnapshot = false, partialSnapshot = false, signedOut = false, failInventory = false;
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  const savedRoster = catalog.slice(-2).map(op => ({ name: op.name, elite: 0 }));
+  const savedRoster = [];
   await context.addInitScript(({ key, workspace }) => {
     if (!globalThis.localStorage.getItem(key)) globalThis.localStorage.setItem(key, JSON.stringify(workspace));
   }, { key: STORAGE_KEY, workspace: { version: 1, operators: savedRoster, options: DEFAULT_OPTIONS } });
@@ -67,14 +70,14 @@ try {
     requests.push({ action, body });
     if (action === "accounts" && signedOut) return route.fulfill({ status: 401, contentType: "application/json", body: JSON.stringify({ success: false, error: { message: "请登录网站账号" } }) });
     if (action === "sync" && failSync) return route.fulfill({ status: 502, contentType: "application/json", body: JSON.stringify({ success: false, error: { message: "模拟同步失败" } }) });
-    const selectedSnapshot = body?.accountId === "fixture-second" ? secondSnapshot : snapshot;
+    const selectedSnapshot = body?.roleId === secondRole.roleId ? secondSnapshot : snapshot;
     if (action === "sync" && delayedSync) await delayedSync;
     if (action === "credential") accounts = [{ id: "fixture-first", label: role.nickname, source: "endfield" }];
     if (action === "qr-status") accounts = [...accounts.filter(a => a.id !== "fixture-second"), { id: "fixture-second", label: secondRole.nickname, source: "endfield" }];
     if (action === "disconnect") accounts = accounts.filter(a => a.id !== body.accountId);
     const data = action === "accounts" ? { accounts, ownerKey: "fixture-owner" }
-      : action === "roles" ? { roles: [body.accountId === "fixture-second" ? secondRole : role] }
-        : action === "sync" ? { snapshot: badSnapshot ? { ...selectedSnapshot, characters: [selectedSnapshot.characters[0], selectedSnapshot.characters[0]] } : partialSnapshot ? { ...selectedSnapshot, rosterComplete: false, weapons: undefined } : failInventory ? { ...selectedSnapshot, inventory: normalizeEndfieldInventory(materialCatalog, undefined, role) } : selectedSnapshot }
+      : action === "roles" ? { roles: body.accountId === "fixture-second" ? [secondRole] : [role, { ...secondRole, isDefault: false }] }
+        : action === "sync" ? { snapshot: badSnapshot ? { ...selectedSnapshot, characters: [selectedSnapshot.characters[0], selectedSnapshot.characters[0]] } : partialSnapshot ? { ...selectedSnapshot, characters: [{ ...selectedSnapshot.characters[0], elite: 4 }], rosterComplete: false, weapons: undefined } : failInventory ? { ...selectedSnapshot, inventory: normalizeEndfieldInventory(materialCatalog, undefined, role) } : selectedSnapshot }
           : action === "credential" ? { accountId: "fixture-first", roles: [role] }
             : action === "qr" ? { scanId: "fixture-scan", scanUrl: "https://example.invalid/qr", expiresInSeconds: 600 }
               : action === "qr-status" ? { status: "authenticated", accountId: "fixture-second", roles: [secondRole] }
@@ -118,7 +121,10 @@ try {
   await page.getByRole("button", { name: "导入并登录", exact: true }).click();
   await profile(role.nickname); await idle();
   assert.equal(await page.locator("[data-skland-login-panel]").count(), 0, "Sign-in automatically loads the dashboard and hides login");
-  assert.deepEqual(await roster(), savedRoster, "Viewing data never replaces the scheduling roster");
+  await expect.poll(roster).toEqual(syncedRoster);
+  await page.locator("[data-skland-sync-status]").getByText(/已同步 2 名/).waitFor();
+  await page.locator("[data-skland-sync-status]").getByText(/暂未支持.*未知测试干员/).waitFor();
+  await page.locator("[data-skland-sync-status]").getByText(/无基建技能.*管理员/).waitFor();
   assert.equal(await page.getByRole("heading", { name: "用于基建排班", exact: true }).count(), 0);
   assert.equal(await page.getByRole("button", { name: "导入排班名单", exact: true }).count(), 0);
   const controls = page.locator(".ef-skland-controls");
@@ -183,13 +189,21 @@ try {
   assert.equal(await page.locator(".ef-data-card").count(), 0);
   await page.getByLabel("搜索武器", { exact: true }).fill("");
   assert.equal(await page.getByRole("checkbox", { name: /同时应用设施等级/ }).count(), 0);
-  assert.deepEqual(await roster(), savedRoster);
+  assert.deepEqual(await roster(), syncedRoster);
   assert.equal(await page.evaluate(key => JSON.parse(globalThis.localStorage.getItem(key)).options.levels.center, STORAGE_KEY), 4);
   assert.equal(await page.evaluate(() => JSON.stringify({ ...globalThis.localStorage, ...globalThis.sessionStorage }).includes("fixture-secret")), false);
 
   await page.reload(); await ready(); await profile(role.nickname); await idle();
   assert.equal(await page.locator("[data-skland-login-panel]").count(), 0, "Refresh restores the saved connection");
-  assert.deepEqual(await roster(), savedRoster);
+  await expect.poll(roster).toEqual(syncedRoster);
+  await page.getByRole("link", { name: "自动排班", exact: true }).click();
+  await expect(page.getByRole("button", { name: "生成排班", exact: true })).toBeEnabled();
+  assert.equal(await page.getByLabel("参与排班的干员", { exact: true }).locator(".ef-operator-chip").count(), 2, "Synced operators are visible on the scheduling page");
+  await page.getByRole("link", { name: "森空岛同步", exact: true }).click(); await idle();
+  await choose("角色与服务器", `${secondRole.nickname} · ${secondRole.serverName}`); await profile(secondRole.nickname); await idle();
+  await expect.poll(roster).toEqual(secondRoster);
+  await choose("角色与服务器", `${role.nickname} · ${role.serverName}`); await profile(role.nickname); await idle();
+  await expect.poll(roster).toEqual(syncedRoster);
   await page.getByRole("button", { name: "添加账号", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "添加森空岛账号" });
   await dialog.waitFor();
@@ -210,6 +224,7 @@ try {
   await dialog.locator(".ef-login-consent input").nth(0).check(); await dialog.locator(".ef-login-consent input").nth(1).check();
   await dialog.getByRole("img", { name: "森空岛登录二维码", exact: true }).waitFor();
   await profile(secondRole.nickname); await idle();
+  await expect.poll(roster).toEqual(secondRoster);
   await page.getByRole("tab", { name: "仓库背包", exact: true }).click();
   assert.equal(await page.locator('[data-material-id="material-0"] [data-material-count]').textContent(), "900");
   await page.getByRole("combobox", { name: "森空岛账号", exact: true }).click();
@@ -219,8 +234,10 @@ try {
   await page.keyboard.press("Escape");
   assert.equal(await page.locator("[data-skland-login-panel]").count(), 0);
   await page.reload(); await ready(); await profile(secondRole.nickname); await idle();
+  await expect.poll(roster).toEqual(secondRoster);
   await choose("森空岛账号", role.nickname);
   await profile(role.nickname); await idle();
+  await expect.poll(roster).toEqual(syncedRoster);
   await page.getByRole("tab", { name: "仓库背包", exact: true }).click();
   assert.equal(await page.locator('[data-material-id="material-0"] [data-material-count]').textContent(), "0");
 
@@ -233,6 +250,7 @@ try {
   const release = releaseSync; delayedSync = null;
   await choose("森空岛账号", secondRole.nickname);
   await profile(secondRole.nickname); release(); await idle();
+  await expect.poll(roster).toEqual(secondRoster);
   assert.equal(await page.locator(".ef-skland-profile h2").textContent(), secondRole.nickname);
   failSync = true;
   await page.getByRole("button", { name: "刷新数据", exact: true }).click(); await idle();
@@ -241,7 +259,7 @@ try {
   failSync = false; badSnapshot = true;
   await page.getByRole("button", { name: "重新读取数据", exact: true }).click(); await idle();
   await page.getByRole("alert").filter({ hasText: "重复干员" }).waitFor();
-  assert.deepEqual(await roster(), savedRoster);
+  assert.deepEqual(await roster(), secondRoster, "Malformed sync cannot overwrite the current account roster");
   badSnapshot = false;
   await page.getByRole("button", { name: "重新读取数据", exact: true }).click(); await profile(secondRole.nickname); await idle();
   failInventory = true;
@@ -259,11 +277,18 @@ try {
   await page.getByText("仅显示森空岛已公开的干员。", { exact: true }).waitFor();
   const operatorsBottom = await page.locator(".ef-data-cards").boundingBox();
   assert.ok((await page.locator(".ef-sync-note").boundingBox()).y >= operatorsBottom.y + operatorsBottom.height, "Operator visibility explanation follows the cards");
-  assert.deepEqual(await roster(), savedRoster, "Partial operator data is viewable but cannot replace the roster");
+  const partialRoster = [{ ...secondRoster[0], elite: 4 }, secondRoster[1]];
+  await expect.poll(roster).toEqual(partialRoster);
+  await page.locator("[data-skland-sync-status]").getByText(/已保留该角色此前同步/).waitFor();
   await page.getByRole("tab", { name: "武器状态", exact: true }).click();
   await page.getByText("完整武器仓库暂未获取，仅显示已公开干员装备的武器。", { exact: true }).waitFor();
   const weaponsBottom = await page.locator(".ef-data-cards").boundingBox();
   assert.ok((await page.locator(".ef-sync-note").boundingBox()).y >= weaponsBottom.y + weaponsBottom.height, "Weapon source explanation follows the cards");
+  const beforeForeignPartial = await page.evaluate(key => JSON.parse(globalThis.localStorage.getItem(key)), STORAGE_KEY);
+  await choose("森空岛账号", role.nickname); await profile(role.nickname); await idle();
+  await page.locator("[data-skland-sync-status]").getByText(/尚未替换排班名单和设施配置/).waitFor();
+  assert.deepEqual(await page.evaluate(key => JSON.parse(globalThis.localStorage.getItem(key)), STORAGE_KEY), beforeForeignPartial, "Another account's partial response cannot mix rosters or facility configuration");
+  await choose("森空岛账号", secondRole.nickname); await profile(secondRole.nickname); await idle();
   partialSnapshot = false;
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -303,7 +328,7 @@ try {
   const releaseAfterLogout = releaseSync; delayedSync = null;
   releaseAfterLogout(); await idle();
   assert.equal(await page.locator("[data-skland-data]").count(), 0, "Website logout clears account data");
-  assert.deepEqual(await roster(), savedRoster, "Website logout preserves the local roster");
+  assert.deepEqual(await roster(), syncedRoster, "Website logout preserves the local roster");
   await page.getByRole("heading", { name: "登录森空岛", exact: true }).waitFor();
   signedOut = false;
   await context.addCookies([{ name: "riic-endfield-locale", value: "en", url: origin }]);
@@ -314,6 +339,6 @@ try {
   await page.getByLabel("Search inventory", { exact: true }).waitFor();
   assert.equal(await page.locator("[data-material-id]").count(), 40);
   assert.deepEqual(errors, []);
-  console.log("Passed: compact profile/selector/action header, icon-only refresh, removed scheduling section, preserved local roster, 40 inventory items, account-isolated data, partial failures, credential/QR dialogs, cancellation, logout, mobile and English. Mock data only.");
+  console.log("Passed: automatic roster/elite sync, scheduling-page visibility, account/role isolation, partial-roster merging, foreign partial protection, 40 inventory items, credential/QR dialogs, cancellation, reload, logout, mobile and English. Mock data only.");
   await context.close();
 } finally { if (releaseSync) releaseSync(); await browser.close(); }

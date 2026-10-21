@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { chromium, expect } from "@playwright/test";
-import { catalog, DEFAULT_OPTIONS, STORAGE_KEY, solve } from "../packages/endfield-solver/index.mjs";
+import { catalog, DEFAULT_OPTIONS, STORAGE_KEY, manualTemplate, solve } from "../packages/endfield-solver/index.mjs";
 
 const origin = process.env.ENDFIELD_E2E_ORIGIN || "http://127.0.0.1:5176";
 if (!["127.0.0.1", "localhost"].includes(new URL(origin).hostname)) throw new Error("Local preview only");
@@ -74,6 +74,7 @@ try {
   await emit({ type: "error", error: "Fixture failure" });
   await expect(live).toHaveAttribute("data-activity-phase", "error");
   await expect(live.getByRole("alert")).toContainText("Fixture failure");
+  await expect(page.locator(".ef-page .ef-notice--error")).toHaveCount(0);
   await live.getByRole("button", { name: "重试", exact: true }).click();
   await expect(live).toHaveAttribute("data-activity-phase", "running");
   await emit({ type: "result", result }, -2);
@@ -81,6 +82,17 @@ try {
   await emit({ type: "result", result: { ...result, center: null, rooms: [], scores: {} } });
   await expect(live).toHaveAttribute("data-activity-phase", "error");
   await expect(live).toHaveAttribute("aria-label", "未找到可用方案");
+  await expect(page.locator(".ef-schedule-result>.ef-notice")).toHaveCount(0);
+
+  await live.getByRole("button", { name: "重试", exact: true }).click();
+  await emit({ type: "result", result: { ...result, verification: { ok: false, errors: ["Invalid crew"] } } });
+  await expect(live).toHaveAttribute("aria-label", "方案校验未通过");
+  await expect(live.getByRole("alert")).toContainText("Invalid crew");
+  await expect(page.locator(".ef-page .ef-notice--error")).toHaveCount(0);
+  await page.getByRole("button", { name: "详细报告", exact: true }).click();
+  const report = page.getByRole("dialog", { name: "排班报告", exact: true });
+  await expect(report.getByRole("alert")).toContainText("Invalid crew");
+  await report.getByRole("button", { name: "完成", exact: true }).click();
 
   await live.getByRole("button", { name: "重试", exact: true }).click();
   await page.getByRole("button", { name: "编辑名单", exact: true }).click();
@@ -97,7 +109,9 @@ try {
   await page.getByRole("button", { name: "评估方案", exact: true }).click();
   const assignments = await page.evaluate(() => globalThis.__solverWorkers.at(-1).request.assignments);
   assert.ok(assignments);
-  await emit({ type: "error", error: "Manual fixture failure" });
+  await emit({ type: "error", error: "「中枢」B 班人数不合法" });
+  await expect(live.getByRole("alert")).toContainText("「中枢」B 班人数不合法");
+  await expect(page.locator(".ef-page .ef-notice--error")).toHaveCount(0);
   await live.getByRole("button", { name: "重试", exact: true }).click();
   assert.deepEqual(await page.evaluate(() => globalThis.__solverWorkers.at(-1).request.assignments), assignments);
   await expect(live).toHaveAttribute("data-activity-kind", "manual");
@@ -121,8 +135,41 @@ try {
   await expect(live).toHaveAttribute("data-activity-phase", "success");
   await live.getByRole("button", { name: "Dismiss solver notification", exact: true }).click();
   await expect(live).toHaveCount(0);
+
+  // Use the real worker to verify an incomplete manual plan, dismissal and recovery.
+  const realContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await realContext.route("**/api/auth/get-session**", route => route.fulfill({ json: null }));
+  await realContext.addCookies([{ name: "riic-endfield-locale", value: "zh", url: origin }]);
+  const manual = manualTemplate(input.options);
+  manual[0].a = [input.operators[0].name];
+  await realContext.addInitScript(({ key, input }) => globalThis.localStorage.setItem(key, JSON.stringify(input)), { key: STORAGE_KEY, input: { ...input, manual } });
+  const realPage = await realContext.newPage();
+  realPage.on("pageerror", error => errors.push(error.message));
+  await realPage.goto(`${origin}/manual`);
+  await realPage.locator('body[data-app-hydrated="true"]').waitFor();
+  const realLive = realPage.locator('[data-slot="live-activity"]');
+  await realPage.getByRole("button", { name: "评估方案", exact: true }).click();
+  await expect(realLive).toHaveAttribute("data-activity-phase", "error");
+  await expect(realLive.getByRole("alert")).toContainText("「中枢」B 班人数不合法");
+  await expect(realPage.locator(".ef-page .ef-notice--error")).toHaveCount(0);
+  await realLive.getByRole("button", { name: "关闭求解提示", exact: true }).click();
+  await expect(realLive).toHaveCount(0);
+  await expect(realPage.getByRole("alert")).toHaveCount(0);
+  await realPage.getByRole("button", { name: "评估方案", exact: true }).click();
+  await expect(realLive.getByRole("alert")).toContainText("「中枢」B 班人数不合法");
+  const slots = realPage.locator("[data-manual-slot]");
+  for (let index = 1; index < 6; index++) {
+    await slots.nth(index).click();
+    await realPage.getByRole("dialog", { name: "选择干员", exact: true }).locator(`[data-operator-name="${input.operators[index].name}"]`).click();
+  }
+  await expect(realLive).toHaveCount(0);
+  await realPage.getByRole("button", { name: "评估方案", exact: true }).click();
+  await expect(realLive).toHaveAttribute("data-activity-phase", "success");
+  await expect(realPage.locator("[data-schedule-board]")).toBeVisible();
+  await expect(realPage.locator(".ef-page .ef-notice--error")).toHaveCount(0);
+  await realContext.close();
   assert.deepEqual(errors, []);
-  console.log("Passed: progress lifecycle, compact/expanded interactions, navigation, dismissal, success timeout, error retry, stale/cancelled work, manual retry and English/dark/mobile/reduced-motion layout.");
+  console.log("Passed: progress lifecycle, dismissal, retry, stale/cancelled work, solver errors shown only in Live Activity, report diagnostics, real manual validation and recovery, English/dark/mobile/reduced-motion layout.");
 } finally {
   await browser.close();
 }
