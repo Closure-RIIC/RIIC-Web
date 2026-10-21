@@ -1,5 +1,5 @@
 import raw from "./data/ship-data.json" with { type: "json" };
-import { loadShipData, skillsAtElite } from "./upstream/ship-data.mjs";
+import { loadShipData, skillsAtElite, skillsAtNodes } from "./upstream/ship-data.mjs";
 import { normalizeConfig, validateRoster } from "./upstream/config.mjs";
 export const SOLVER_REVISION = "455d7f17e06d7bb08ab7cef0f154b72b72455fd4";
 export const STORAGE_KEY = "riic:endfield:workspace:v1";
@@ -10,7 +10,7 @@ export const nonSchedulableOperators = raw.operators.filter(op => !op.shipSkills
 export const catalog = raw.operators.filter(op => op.shipSkills?.length).map(op => ({
   id: op.charId, name: op.name, enName: op.enName, rarity: op.rarity,
   profession: op.professionName,
-  skills: op.shipSkills.map(s => ({ name: s.name, room: s.roomName, unlock: s.unlock ?? 0, description: s.desc.replace(/<[^>]*>/g, ""), effectKey: s.effect?.key ?? "" })),
+  skills: op.shipSkills.map(s => ({ name: s.name, room: s.roomName, unlock: s.unlock ?? 0, description: s.desc.replace(/<[^>]*>/g, ""), effectKey: s.effect?.key ?? "", nodeId: s.skillId ?? "" })),
 }));
 export const DEFAULT_OPTIONS = {
   mfg: "1干员1武器", levels: { center: 5, mfg1: 3, mfg2: 3, grow: 3, guest: 3 },
@@ -72,7 +72,12 @@ export function parseWorkspace(text) {
 export function prepare(input) {
   const operators = parseRoster(input.operators);
   const cfg = validateOptions(input.options);
-  const ops = operators.map(op => ({ ...op, charId: data.byName.get(op.name).charId, skills: skillsAtElite(data.byName.get(op.name).skills, op.elite) }));
+  const ops = operators.map(op => {
+    const entry = data.byName.get(op.name);
+    // skillIds 是森空岛给出的实际解锁节点；缺省时才按精英化回退（与旧行为一致）。
+    const skills = Array.isArray(op.skillIds) ? skillsAtNodes(entry.skills, op.skillIds) : skillsAtElite(entry.skills, op.elite);
+    return { ...op, charId: entry.charId, skills };
+  });
   return { ops, cfg };
 }
 

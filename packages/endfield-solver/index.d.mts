@@ -1,4 +1,5 @@
-export interface Operator { name: string; elite: number }
+﻿export interface SkillTier { name: string; room: string; unlock: number; description: string; effectKey: string; nodeId?: string }
+export interface Operator { name: string; elite: number; skillIds?: string[] }
 export interface Options {
   mfg: string; levels: { center: number; mfg1: number; mfg2: number; grow: number; guest: number };
   grow: Record<string, number>; priority: string[]; assist: boolean; budget: number; time: number;
@@ -18,7 +19,7 @@ export interface Result {
     converged: boolean; days: number; daily: number[]; moodA: Mood | null; moodB: Mood | null; workHours: number | null; restHours: number | null;
     assist: { points: number; shift: string; cycle: string[][] } | null }[];
 }
-export const catalog: { id: string; name: string; enName: string; rarity: number; profession: string; skills: { name: string; room: string; unlock: number; description: string; effectKey: string }[] }[];
+export const catalog: { id: string; name: string; enName: string; rarity: number; profession: string; skills: SkillTier[] }[];
 export const nonSchedulableOperators: { id: string; name: string }[];
 export const SOLVER_REVISION: string;
 export const STORAGE_KEY: string;

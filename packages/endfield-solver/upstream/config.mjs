@@ -147,7 +147,16 @@ export function validateRoster(list, tableNames) {
       throw new ConfigError('roster', `「${name}」的 elite 必须是 0–${MAX_ELITE} 的整数，收到 ${String(entry.elite)}`);
     }
     if (tableNames && !tableNames.has(name)) throw new ConfigError('roster', `技能表里找不到干员「${name}」`);
-    out.push({ name, elite });
+    // 森空岛给出的实际已解锁节点；缺省表示没有账号数据，由 elite 回退。
+    let skillIds;
+    if (entry.skillIds !== undefined) {
+      if (!Array.isArray(entry.skillIds) || entry.skillIds.some((id) => typeof id !== 'string' || !id || id.length > 128)
+        || new Set(entry.skillIds).size !== entry.skillIds.length) {
+        throw new ConfigError('roster', `「${name}」的 skillIds 必须是去重后的节点 ID 字符串数组`);
+      }
+      skillIds = entry.skillIds.slice();
+    }
+    out.push(skillIds === undefined ? { name, elite } : { name, elite, skillIds });
   }
   return out;
 }

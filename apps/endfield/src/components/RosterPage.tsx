@@ -4,6 +4,7 @@ import { catalog, type Operator } from "@shared/endfield-solver/model.mjs";
 import { Action, Notice, PageTitle, Section } from "@shared/endfield-ui";
 import { downloadJson, useWorkspace } from "../state";
 import { compareOperatorRelease, operatorData } from "@shared/endfield-data";
+import { resolvedSkillNodes } from "@shared/endfield-skland/skill-nodes.ts";
 import { SearchInput } from "@shared/ui-primitives/search-input";
 import { FilterSelect } from "@shared/ui-primitives/filter-select";
 import { SelectionButton } from "@shared/ui-primitives/selection-button";
@@ -79,7 +80,11 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
           <div className="ef-skill-variants">{matchingSkills.filter(skill => skill.room === facility).map((skill, i) => {
           const source = display?.skills.find(s => s.name === skill.name && s.unlock === skill.unlock) ?? display?.skills.find(s => s.name === skill.name);
           const unlock = source?.unlock ?? skill.unlock;
-          return <div key={i} className="ef-ship-skill" data-locked={selected.has(op.name) && (selected.get(op.name) ?? 0) < unlock || undefined}>
+          // 有森空岛节点数据时以实际解锁为准；否则才按精英化估算。
+          const owned = workspace.operators.find(item => item.name === op.name);
+          const nodes = owned?.skillIds ? resolvedSkillNodes(op.skills, owned.skillIds, owned.elite) : null;
+          const locked = nodes ? !(skill.nodeId && nodes.includes(skill.nodeId)) : owned ? (owned.elite ?? 0) < unlock : false;
+          return <div key={i} className="ef-ship-skill" data-locked={locked || undefined}>
             <GameArtwork src={source?.icon} name={skill.name} size={36} className="ef-skill-artwork" />
             <div><h4>{locale === "en" ? source?.enName || skill.name : skill.name}<small title={t(`精英化 ${unlock} 解锁`, `Unlocked at elite ${unlock}`)}>E{unlock}</small></h4>
               <p>{locale === "en" ? source?.enDescription || skill.description : skill.description}</p></div>
