@@ -21,7 +21,7 @@ export default defineConfig({
     use: { ...devices["Desktop Chrome"] },
   }],
   webServer: {
-    command: `npx vite --host 127.0.0.1 --port ${webServerPort}`,
+    command: `npm run dev -- --host 127.0.0.1 --port ${webServerPort}`,
     url: baseURL,
     reuseExistingServer: false,
     timeout: 120_000,

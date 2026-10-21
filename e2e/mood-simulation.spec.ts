@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { switchWorkbenchLanguage } from "./workbench-language";
-import layout from "../src/layouts/243.json" with {type:"json"};
+import layout from "../apps/arknights/src/layouts/243.json" with {type:"json"};
 import { mockApis, mockAnonymousWebsiteSession } from "./production-readiness.fixture";
 
 test("manual morale worker, timeline, shared targets and simulation-only settings",async ({page}) => {

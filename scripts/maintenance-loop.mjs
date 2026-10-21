@@ -191,7 +191,7 @@ async function main() {
     return "抽样最近 50 次运行，仅 main/develop CI；最多 100 个开放 issue/PR；按 workflow/branch/event 取最新状态；非全历史扫描";
   });
   collect("deprecation", () => {
-    const files = textCommand("git", ["ls-files", "-z", "src/server"]).split("\0").filter((file) => /\.[cm]?tsx?$/u.test(file) && !file.includes(".test."));
+    const files = textCommand("git", ["ls-files", "-z", "apps/arknights/src/server"]).split("\0").filter((file) => /\.[cm]?tsx?$/u.test(file) && !file.includes(".test."));
     for (const file of files) {
       const content = readFileSync(join(ROOT, file), "utf8");
       const lines = content.split(/\r?\n/u).flatMap((line, index) => /headers\.set\(["']Deprecation["']/u.test(line) ? [index + 1] : []);

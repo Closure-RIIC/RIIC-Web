@@ -18,7 +18,7 @@
 
 旧服务位于 `/opt/arknights-infra-quality` 与 `/opt/arknights-infra-quality-next`。两个旧 runner 均退出 143；源码收到 SIGTERM 返回 143，而 unit 未将其列为成功退出。证据符合“停止被记为失败”，不能据此断言求解器崩溃。历史 journal 和归档不足，停止发起方未知。旧任务和服务未改动。
 
-复用 Check 的摘要和排班提取核心，来源见 `src/server/quality/core/PROVENANCE.md`。不调用旧公开任务接口、不迁移历史、不启用自动候选发现。
+复用 Check 的摘要和排班提取核心，来源见 `apps/arknights/src/server/quality/core/PROVENANCE.md`。不调用旧公开任务接口、不迁移历史、不启用自动候选发现。
 
 本次验证的生产 CLI 在 `/opt/arknights-infra/shared/bin/infra-cli`，SHA256 为 `d5c2e6621079162491886889b902eb51ec83ff6908b9038675aad70cd05a8ba5`，私有 bundle ID 为 `f8326bce2f1a522be7e6d9e35656d054468da598284b99743cd63262b67801bb`。后续发布须核对实际制品。
 

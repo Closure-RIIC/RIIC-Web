@@ -14,7 +14,7 @@
 
 ## 数据维护
 
-来源为项目已使用的 [Arknights Toolbox 数据仓库](https://github.com/arkntools/arknights-toolbox-data)，沿用 `src/generated/arkntools/source.json` 固定的提交。`recruitment.cn > 0` 的干员构成国服公招池；职业、位置、词缀和资深标签共同参与匹配。游戏内容版权归原权利人所有，相关来源说明沿用项目资产归属约定。
+来源为项目已使用的 [Arknights Toolbox 数据仓库](https://github.com/arkntools/arknights-toolbox-data)，沿用 `apps/arknights/src/generated/arkntools/source.json` 固定的提交。`recruitment.cn > 0` 的干员构成国服公招池；职业、位置、词缀和资深标签共同参与匹配。游戏内容版权归原权利人所有，相关来源说明沿用项目资产归属约定。
 
 更新现有干员目录后执行：
 

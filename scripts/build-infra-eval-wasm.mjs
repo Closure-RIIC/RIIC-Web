@@ -8,7 +8,7 @@ const webRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const evalRoot = resolve(webRoot, "..", "ArknightsInfraEval");
 const manifest = join(evalRoot, "Cargo.toml");
 const rawWasm = join(evalRoot, "target", "wasm32-unknown-unknown", "release", "infra_eval_wasm.wasm");
-const generated = join(webRoot, "public", "wasm");
+const generated = join(webRoot, "apps/arknights/public", "wasm");
 const temporary = join(evalRoot, "target", "web-bindgen");
 const evaluatorSource = readFileSync(join(evalRoot, "crates", "infra-eval-core", "src", "evaluator.rs"), "utf8");
 const ruleset = evaluatorSource.match(/const RULESET_VERSION: &str = "([^"]+)"/)?.[1];

@@ -1,0 +1,48 @@
+{
+  "facilities": {
+    "center": {
+      "icon": "/images/game/facilities/center.png",
+      "color": "#1e92ff"
+    },
+    "guest": {
+      "icon": "/images/game/facilities/guest.png",
+      "color": "#9f8bff"
+    },
+    "mfg": {
+      "icon": "/images/game/facilities/mfg.png",
+      "color": "#fadf19"
+    },
+    "grow": {
+      "icon": "/images/game/facilities/grow.png",
+      "color": "#99f320"
+    }
+  },
+  "resources": {
+    "clues": {
+      "icon": "/images/game/resources/clues.png"
+    },
+    "operatorExp": {
+      "icon": "/images/game/resources/operatorExp.png"
+    },
+    "weaponExp": {
+      "icon": "/images/game/resources/weaponExp.png"
+    },
+    "growth": {
+      "icon": "/images/game/resources/growth.png"
+    },
+    "crystal": {
+      "icon": "/images/game/resources/crystal.png"
+    },
+    "fungus": {
+      "icon": "/images/game/resources/fungus.png"
+    },
+    "mineral": {
+      "icon": "/images/game/resources/mineral.png"
+    }
+  },
+  "ui": {
+    "close": {
+      "icon": "/images/game/ui/close.png"
+    }
+  }
+}

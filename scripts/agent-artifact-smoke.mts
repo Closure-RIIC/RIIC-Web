@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import ts from "typescript";
 import { convertToModelMessages, tool } from "ai";
 import { z } from "zod";
-import { agentArtifactFromOutput, consumeAgentArtifactHandoff, isAgentArtifactHandoff, receiveAgentArtifactMessage, requestAgentArtifactOpen } from "../src/agent-artifact-bridge.ts";
+import { agentArtifactFromOutput, consumeAgentArtifactHandoff, isAgentArtifactHandoff, receiveAgentArtifactMessage, requestAgentArtifactOpen } from "../apps/arknights/src/agent-artifact-bridge.ts";
 
 const session = { presetLabel: "243", layout: { rooms: [] }, operbox: [{ name: "test" }], sourceName: "sample", boxSource: "sample", rotationProfile: "abc_12_12_12", fiammettaEnabled: false, result: { maa: { plans: [] }, diagnosticId: "first" }, activeShift: 0 };
 const handoff = { preset: "243", session };
@@ -55,7 +55,7 @@ test("broadcast payload preserves complete session and rejects obsolete or malfo
 });
 
 test("solve tool stops artifact writes and SDK projection excludes full session on subsequent turns", async () => {
-  const source = await readFile(new URL("../src/server/agent/tools.ts", import.meta.url), "utf8");
+  const source = await readFile(new URL("../apps/arknights/src/server/agent/tools.ts", import.meta.url), "utf8");
   assert.doesNotMatch(source, /saveAgentPlanArtifact|planUrl|planArtifactNote/);
   const ast = ts.createSourceFile("tools.ts", source, ts.ScriptTarget.Latest, true);
   let projection = "";
@@ -73,6 +73,6 @@ test("solve tool stops artifact writes and SDK projection excludes full session 
   const converted = await convertToModelMessages([{ id: "test", role: "assistant", parts: [{ type: "tool-solve_schedule", toolCallId: "call", input: {}, state: "output-available", output }] }], { tools });
   assert.doesNotMatch(JSON.stringify(converted), /workbenchSession|operbox|diagnosticId/);
   assert.match(JSON.stringify(converted), /owned/);
-  const route = await readFile(new URL("../src/app/api/agent/chat/route.ts", import.meta.url), "utf8");
+  const route = await readFile(new URL("../apps/arknights/src/app/api/agent/chat/route.ts", import.meta.url), "utf8");
   assert.match(route, /convertToModelMessages\(body.messages, \{ tools \}\)/);
 });

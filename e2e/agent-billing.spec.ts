@@ -34,7 +34,7 @@ test("admin billing, filter policies, role boundaries and automatic Agent select
     await expect(page.getByRole("button",{name:"发布",exact:true})).toBeVisible();await page.getByRole("button",{name:"发布",exact:true}).click();await page.getByRole("button",{name:"确认发布",exact:true}).click();await expect(page.getByRole("dialog")).toHaveCount(0);
     const access=await context.request.get("/api/agent/chat");expect(access.status()).toBe(200);const config=await access.json();expect(config.data.automatic).toBe(true);expect(config.data.models).toEqual([]);
     const rejected=await context.request.post("/api/agent/chat",{headers:{origin:baseURL!},data:{conversationId:randomUUID(),attemptId:randomUUID(),messages:[{id:randomUUID(),role:"user",parts:[{type:"text",text:"RIIC_FILTER_BLOCK_TEST"}]}]}});
-    expect(rejected.status()).toBe(400);expect((await pool.query("SELECT paid_points FROM app.billing_wallet WHERE user_id=$1",[admin])).rows[0].paid_points).toBe(23);
+    expect(rejected.status()).toBe(400);expect((await pool.query("SELECT paid_points FROM app.billing_wallet WHERE user_id=$1",[admin])).rows[0].paid_points).toBe("23.0000");
     await page.setViewportSize({width:375,height:812});await page.goto("/admin/billing");await expect(page.getByRole("heading",{name:"计费管理",exact:true})).toBeVisible();
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
     await context.addCookies([{name:"riic-locale",value:"en",domain:"127.0.0.1",path:"/"}]);await page.reload();await expect(page.getByRole("heading",{name:"Billing",exact:true})).toBeVisible();await expect(page.getByRole("button",{name:"Usage & cost",exact:true})).toBeVisible();

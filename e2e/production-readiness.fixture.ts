@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
-import operatorCatalog from "../src/generated/arkntools/operator-catalog.json" with { type: "json" };
+import { installMockSessionRefresh } from "./mock-session-refresh";
+import operatorCatalog from "../apps/arknights/src/generated/arkntools/operator-catalog.json" with { type: "json" };
 
 const amiyaPortraitCandidate = operatorCatalog.find((operator) => operator.id === "char_002_amiya")?.portrait;
 
@@ -917,6 +918,7 @@ export async function mockApis(
   } = {}
 ) {
   // UI fixtures use the explicit public rollout in playwright.config.ts.
+  await installMockSessionRefresh(page);
   await page.route("**/api/account/feature-access", (route) => route.fulfill({ json: { agent: true, billing: true } }));
   if (options.dismissSolverWarning !== false) {
     // Result tests continue after acknowledging the new solver notice.
@@ -1102,6 +1104,7 @@ export async function mockApis(
 }
 
 export async function openSklandOverview(page: Page) {
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 45_000 });
   // These signed-in fixtures expose Agent history. Wait for its async insertion
   // above the personal navigation so WebKit does not click a moving target.
   await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);

@@ -1,0 +1,13 @@
+{
+  "name": "@riic/shell",
+  "private": true,
+  "type": "module",
+  "peerDependencies": {
+    "react": "^19.2.8",
+    "@base-ui/react": "^1.6.0",
+    "lucide-react": "^0.475.0"
+  },
+  "dependencies": {
+    "@riic/ui-primitives": "*"
+  }
+}

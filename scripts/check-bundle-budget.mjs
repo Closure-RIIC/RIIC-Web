@@ -29,11 +29,11 @@ const MAX_SKLAND_DISABLED_DOCUMENT_INITIAL_GZIP_JS_BYTES = 442_000;
 const MAX_SKLAND_ENABLED_DOCUMENT_INITIAL_GZIP_JS_BYTES = 448_000;
 const MAX_DOCUMENT_INITIAL_JS_FILES = 18;
 const WORKBENCH_ROUTES = ["/", "/manual", "/training", "/mastery", "/recruitment", "/skills", "/skland", "/account"];
-const buildRootUrl = new URL("../.output/public/", import.meta.url);
+const buildRootUrl = new URL("../apps/arknights/.output/public/", import.meta.url);
 const COMPACT_SCHEDULE_MARKER = "data-compact-schedule-view";
 const staticChunksUrl = new URL("assets/", buildRootUrl);
 const stats = await loadRouteBundleStats();
-const buildMetadata = JSON.parse(await readFile(new URL("../.output/riic-build.json", import.meta.url), "utf8"));
+const buildMetadata = JSON.parse(await readFile(new URL("../apps/arknights/.output/riic-build.json", import.meta.url), "utf8"));
 
 assert.ok(Array.isArray(stats), "route bundle stats must be an array; run npm run build first");
 const rootRoute = stats.find((entry) => entry?.route === "/");

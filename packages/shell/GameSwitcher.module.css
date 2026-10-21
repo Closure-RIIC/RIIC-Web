@@ -1,0 +1,15 @@
+.trigger { pointer-events:auto; display:flex; align-items:center; gap:8px; min-width:0; flex:1; height:34px; padding:6px; border-radius:8px; color:var(--sidebar-foreground); font-size:13px; font-weight:600; cursor:pointer; }
+.trigger:hover,.trigger:focus-visible { background:var(--sidebar-accent); }
+.trigger:focus-visible { outline:2px solid var(--ring); outline-offset:2px; }
+.trigger svg { width:17px; height:17px; flex-shrink:0; }
+.trigger span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.trigger .chevron { margin-left:auto; width:12px; color:var(--muted-foreground); }
+.positioner { z-index:90; }
+.popup { width:184px; border:1px solid var(--border); border-radius:12px; padding:5px; background:var(--popover); box-shadow:0 6px 24px #0002; }
+.item { display:flex; align-items:center; gap:8px; min-height:36px; padding:6px 8px; border-radius:7px; color:var(--muted-foreground); font-size:13px; outline:none; cursor:pointer; }
+.item svg { width:16px; height:16px; }
+.item span { flex:1; }
+.item[data-highlighted] { color:var(--sidebar-foreground); background:var(--sidebar-accent); }
+:global([data-collapsible="icon"]) .trigger { flex:none; width:34px; justify-content:center; }
+:global([data-collapsible="icon"]) .trigger span,:global([data-collapsible="icon"]) .trigger .chevron { display:none; }
+@media(max-width:767px) { .trigger,.item { min-height:44px; } }

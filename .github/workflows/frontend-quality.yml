@@ -180,6 +180,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Check both application types
+        run: npm run check:types
+
+      - name: Workspace boundaries and Endfield logic
+        run: npm run test:workspace && npm run test:endfield && npm run test:endfield:skland
+
       - name: Unit tests
         run: npm test
 
@@ -335,6 +341,9 @@ jobs:
           RESEND_API_KEY: ""
           AUTH_EMAIL_FROM: ""
         run: npm run build && npm run worker:build && node --check dist/plan-worker.cjs
+
+      - name: Build independent Endfield application
+        run: npm run build:endfield
 
       - name: Release output checks
         env:

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { lstat, readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
-const output = path.resolve(".output");
+const output = path.resolve("apps/arknights/.output");
 const policy = JSON.parse(await readFile("build-tracing-policy.json", "utf8"));
 const forbidden = [...policy.excludedFiles, ...policy.excludedDirectories.filter((entry) => entry !== "public")];
 let count = 0;

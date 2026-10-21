@@ -6,12 +6,12 @@ import { createTranslator } from "use-intl/core";
 
 const locales = ["zh", "en"];
 const catalogs = Object.fromEntries(locales.map((locale) => {
-  const messages = JSON.parse(fs.readFileSync(`messages/${locale}.json`, "utf8"));
-  for (const file of fs.readdirSync(`messages/helpers/${locale}`)) {
+  const messages = JSON.parse(fs.readFileSync(`apps/arknights/messages/${locale}.json`, "utf8"));
+  for (const file of fs.readdirSync(`apps/arknights/messages/helpers/${locale}`)) {
     if (!file.endsWith(".json")) continue;
     const namespace = file.replace(/\.json$/, "");
     assert.ok(!(namespace in messages), `Duplicate namespace: ${namespace}`);
-    messages[namespace] = JSON.parse(fs.readFileSync(`messages/helpers/${locale}/${file}`, "utf8"));
+    messages[namespace] = JSON.parse(fs.readFileSync(`apps/arknights/messages/helpers/${locale}/${file}`, "utf8"));
   }
   return [locale, messages];
 }));
@@ -60,7 +60,7 @@ for (const locale of locales) {
 }
 
 const records = Object.fromEntries(locales.map((locale) => [
-  locale, JSON.parse(fs.readFileSync(`messages/records/${locale}.json`, "utf8")),
+  locale, JSON.parse(fs.readFileSync(`apps/arknights/messages/records/${locale}.json`, "utf8")),
 ]));
 assert.deepEqual(
   flatten(records.en).map(([key]) => key).sort(),

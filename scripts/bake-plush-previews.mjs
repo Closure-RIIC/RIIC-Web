@@ -11,8 +11,8 @@ import console from "node:console";
 // Render authored default models once; static clients never need a GPU or the 3D bundle.
 const root = process.cwd();
 const bundle = await build({ stdin: {
-  contents: `import { acquireGalleryFurRenderer } from './src/components/agent/fur-avatar-renderer';
-    import { FUR_PRESETS } from './src/components/agent/fur-settings';
+  contents: `import { acquireGalleryFurRenderer } from './apps/arknights/src/components/agent/fur-avatar-renderer';
+    import { FUR_PRESETS } from './apps/arknights/src/components/agent/fur-settings';
     window.bake = async (variant) => {
       const canvas = document.createElement('canvas');
       document.body.replaceChildren(canvas);
@@ -31,7 +31,7 @@ const bundle = await build({ stdin: {
 const server = createServer(async (request, response) => {
   if (request.url === "/bundle.js") { response.setHeader("Content-Type", "text/javascript"); response.end(bundle.outputFiles[0].contents); }
   else if (request.url === "/textures/plush-room-environment.bin.gz") {
-    try { response.end(await readFile(resolve(root, "public/textures/plush-room-environment.bin.gz"))); }
+    try { response.end(await readFile(resolve(root, "apps/arknights/public/textures/plush-room-environment.bin.gz"))); }
     catch { response.statusCode = 404; response.end(); }
   } else { response.setHeader("Content-Type", "text/html"); response.end('<canvas width="512" height="512"></canvas><script src="/bundle.js"></script>'); }
 });
@@ -41,7 +41,7 @@ try {
   browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
   await page.goto(`http://127.0.0.1:${server.address().port}`);
-  const output = resolve(root, "public/images/plush");
+  const output = resolve(root, "apps/arknights/public/images/plush");
   await mkdir(output, { recursive: true });
   for (const variant of ["closure", "silverash", "exusiai", "saileach", "mountain"]) {
     const data = await page.evaluate(variant => globalThis.bake(variant), variant);
