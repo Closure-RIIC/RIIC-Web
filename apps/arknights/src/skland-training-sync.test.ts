@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { refreshSklandTraining, trainingInputKey, trainingSyncDue, type TrainingData, type TrainingInput } from "./skland-training-sync.ts";
-import type { SklandSessionData } from "./types.ts";
+import type { SklandSessionData } from "@riic/arknights-domain/types";
 
 const input: TrainingInput = {
   identity: "website:account:uid",

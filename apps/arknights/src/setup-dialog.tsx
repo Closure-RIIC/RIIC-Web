@@ -29,15 +29,15 @@ import {
 } from "@/manual-schedule";
 import { DEFAULT_MANUAL_SHIFT_START_TIME, MAX_MANUAL_SETUP_SHIFT_COUNT } from "@/manual-schedule-config";
 
-import type { FactoryRecipe, PowerBudget, TradeOrder } from "./blueprint";
+import type { FactoryRecipe, PowerBudget, TradeOrder } from "@riic/arknights-domain/blueprint";
 import { FileUploadDialog } from "@/components/FileUploadDialog";
 import { messageRecord } from "@/i18n/translate";
 import { LayoutEditor, PresetSelector } from "./components";
-import { countOwned } from "./operbox";
+import { countOwned } from "@riic/arknights-domain/operbox";
 import type { SetupStep } from "./onboarding";
-import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, RotationProfile, RoomProduct, SklandScheduleSnapshot } from "./types";
+import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, RotationProfile, RoomProduct, SklandScheduleSnapshot } from "@riic/arknights-domain/types";
 
-import type { MaaIssue } from "./maa-review";
+import type { MaaIssue } from "@riic/arknights-domain/maa-review";
 
 const CLIENT_SKLAND_ENABLED = process.env.APP_CLIENT_SKLAND_ENABLED === "1";
 const ManualOperboxPicker = lazy(() => import("@/components/setup/ManualOperboxPicker").then((module) => ({ default: module.ManualOperboxPicker })));
@@ -196,7 +196,7 @@ export function SetupDialog({
   }, [layout, manualDraft, manualProductShift, mode]);
   async function stageMaaReview(text: string, name: string, signal?: AbortSignal) {
     try {
-      const { inspectMaaProgress, normalizeMaaRarities } = await import("./maa-review");
+      const { inspectMaaProgress, normalizeMaaRarities } = await import("@riic/arknights-domain/maa-review");
       const rows = normalizeMaaRarities(JSON.parse(text));
       if (!Array.isArray(rows)) return false;
       const issues = inspectMaaProgress(rows);

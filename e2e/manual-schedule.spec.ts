@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { switchWorkbenchLanguage } from "./workbench-language";
 import { expect, test, type Page } from "@playwright/test";
 import type { ManualScheduleDraft } from "../apps/arknights/src/manual-schedule";
-import layout243 from "../apps/arknights/src/layouts/243.json" with { type: "json" };
+import layout243 from "@riic/arknights-domain/layouts/243.json" with { type: "json" };
 import { mockAnonymousWebsiteSession, mockApis, now, planData } from "./production-readiness.fixture";
 
 const operators = [

@@ -88,8 +88,8 @@ import type {
   SklandSessionData,
   SklandScheduleSnapshot,
   SklandStatusSnapshot,
-} from "@/types";
-import { deriveSklandBindingState } from "@/skland-binding-state";
+} from "@riic/arknights-domain/types";
+import { deriveSklandBindingState } from "@riic/arknights-domain/skland-binding-state";
 
 const ROOM_LABELS: Record<SklandInfrastructureRoom["group"], string> = {
   control: "控制中枢",

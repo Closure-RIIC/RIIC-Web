@@ -1,6 +1,6 @@
-import { createRequestId, enforceRateLimit, failureResponse, PublicApiError, successResponse } from "@/server/api-contract";
-import { requireWebsiteReviewer } from "@/server/auth/authorization";
-import { readDiagnostics } from "@/server/request-diagnostics";
+import { createRequestId, enforceRateLimit, failureResponse, PublicApiError, successResponse } from "@riic/platform-server/api-contract";
+import { requireWebsiteReviewer } from "@riic/platform-server/auth/authorization";
+import { readDiagnostics } from "@riic/platform-server/request-diagnostics";
 
 
 export async function GET(request: Request) {

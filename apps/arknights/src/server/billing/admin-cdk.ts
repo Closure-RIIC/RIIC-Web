@@ -1,8 +1,8 @@
 import "@tanstack/react-start/server-only";
 
 import { and, desc, eq, ilike, or, sql } from "drizzle-orm";
-import { getDatabase } from "@/server/db";
-import { billingCdk } from "@/server/db/schema";
+import { getDatabase } from "@riic/platform-server/db";
+import { billingCdk } from "@riic/platform-server/db/schema";
 import { CdkValidationError, hashCdk, parseAdminCdkInput, parseCdkRevocation, randomCdk } from "./cdk";
 
 /** Grants new promotional points; unlike user gift codes, no wallet is debited. */

@@ -4,8 +4,8 @@ import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import { Pool } from "pg";
 
-import { legacyFeedbackSummary, legacyPlanRunSummary } from "../apps/arknights/src/server/business-backfill.ts";
-import { BUSINESS_DATA_TTL_MS } from "../apps/arknights/src/server/business-config.ts";
+import { legacyFeedbackSummary, legacyPlanRunSummary } from "@riic/platform-server/business-backfill";
+import { BUSINESS_DATA_TTL_MS } from "@riic/platform-server/business-config";
 
 loadEnvConfig(process.cwd());
 

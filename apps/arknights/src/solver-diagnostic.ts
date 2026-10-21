@@ -1,5 +1,5 @@
 import { localize as localize_solver_diagnostic } from "./i18n/helpers/solver_diagnostic.ts";
-import type { DisplayError } from "./types.ts";
+import type { DisplayError } from "@riic/arknights-domain/types";
 
 export interface SolverDiagnostic { title: string; suggestion: string }
 

@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { installMockSessionRefresh } from "./mock-session-refresh";
-import operatorCatalog from "../apps/arknights/src/generated/arkntools/operator-catalog.json" with { type: "json" };
+import operatorCatalog from "@riic/arknights-domain/generated/arkntools/operator-catalog.json" with { type: "json" };
 
 const amiyaPortraitCandidate = operatorCatalog.find((operator) => operator.id === "char_002_amiya")?.portrait;
 

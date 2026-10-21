@@ -12,7 +12,7 @@ import type {
   TrainingAdviceState,
   TrainingAdviceTarget,
   TrainingCombination,
-} from "@/types";
+} from "@riic/arknights-domain/types";
 
 export function trainingProductLabel(product?: TrainingAdviceProduct, en = false): string {
   return product ? (messageRecord(en, "components_training_advice_presentation_labels"))[product] : (localize_components_training_advice_presentation.text(en, "general"));

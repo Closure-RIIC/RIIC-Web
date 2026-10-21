@@ -1,4 +1,4 @@
-import type { BaseBlueprint, OperBoxEntry } from "../types.ts";
+import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
 import type { ManualScheduleDraft } from "../manual-schedule.ts";
 
 export interface FiammettaRule {

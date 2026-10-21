@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { DEFAULT_LOCALE, isAppLocale, resolveLocale } from "./config.ts";
+import { DEFAULT_LOCALE, isAppLocale, resolveLocale } from "@riic/arknights-domain/i18n/config";
 import { createGameCatalogStore } from "./game-data-client.ts";
 import type { EnglishCatalog } from "./game-catalog.ts";
 

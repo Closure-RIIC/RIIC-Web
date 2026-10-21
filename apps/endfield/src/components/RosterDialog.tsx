@@ -2,7 +2,7 @@ import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useM
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Dialog } from "@base-ui/react/dialog";
 import { Download } from "lucide-react";
-import { Action, ActionContent, actionClassName } from "@shared/endfield-ui";
+import { Action, ActionContent, actionClassName } from "@riic/endfield-ui";
 import { downloadJson, useWorkspace } from "../state";
 import { DialogFrame } from "./DialogFrame";
 

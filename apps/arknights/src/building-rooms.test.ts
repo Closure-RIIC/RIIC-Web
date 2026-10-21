@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import pinyinNames from "./generated/arkntools/operator-pinyin.json" with { type: "json" };
+import pinyinNames from "@riic/arknights-domain/generated/arkntools/operator-pinyin.json" with { type: "json" };
 
 import {
   BUILDING_ROOM_LABELS,

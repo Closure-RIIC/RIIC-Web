@@ -29,8 +29,8 @@ import components_ui_live_activity from "./helpers/zh/components_ui_live_activit
 import components_UpgradeSimulationDialog from "./helpers/zh/components_UpgradeSimulationDialog.json" with { type: "json" };
 import ImportGuide from "./helpers/zh/ImportGuide.json" with { type: "json" };
 import mastery_presentation from "./helpers/zh/mastery_presentation.json" with { type: "json" };
-import RotationLabels from "./helpers/zh/RotationLabels.json" with { type: "json" };
-import rotation_settings from "./helpers/zh/rotation_settings.json" with { type: "json" };
+import RotationLabels from "@riic/arknights-domain/messages/helpers/zh/RotationLabels.json" with { type: "json" };
+import rotation_settings from "@riic/arknights-domain/messages/helpers/zh/rotation_settings.json" with { type: "json" };
 import setup_dialog from "./helpers/zh/setup_dialog.json" with { type: "json" };
 import skland_status_metrics from "./helpers/zh/skland_status_metrics.json" with { type: "json" };
 import solver_diagnostic from "./helpers/zh/solver_diagnostic.json" with { type: "json" };

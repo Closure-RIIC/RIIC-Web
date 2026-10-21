@@ -35,7 +35,7 @@ test("chat API separates automatic gateway routing from direct model selection",
       },
       createUIMessageStreamResponse: () => Response.json({ mode: "direct" }),
     }],
-    [new URL("../api-contract.ts", import.meta.url), {
+    [new URL("../../../../../packages/platform-server/src/api-contract.ts", import.meta.url), {
       PublicApiError,
       createRequestId: () => "chat-model-test",
       assertSameOrigin: () => { if (!sameOrigin) throw new PublicApiError("AIC-AUTH-2002"); },

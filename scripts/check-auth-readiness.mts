@@ -1,8 +1,8 @@
 import { loadEnvConfig } from "./load-env.mjs";
 import { Pool } from "pg";
 
-import { requireAuthBaseUrl, requireAuthSecret } from "../apps/arknights/src/server/auth/config.ts";
-import { requireAuthEmailConfig } from "../apps/arknights/src/server/auth/email-config.ts";
+import { requireAuthBaseUrl, requireAuthSecret } from "@riic/platform-server/auth/config";
+import { requireAuthEmailConfig } from "@riic/platform-server/auth/email-config";
 
 
 loadEnvConfig(process.cwd());

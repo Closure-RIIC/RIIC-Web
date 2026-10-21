@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { endfieldFacilityLevels, endfieldRolesFromBinding, matchEndfieldRoster, normalizeEndfieldSnapshot } from "./model.ts";
-import { catalog, nonSchedulableOperators, validateOptions, DEFAULT_OPTIONS, parseRoster } from "../endfield-solver/model.mjs";
+import { catalog, nonSchedulableOperators, validateOptions, DEFAULT_OPTIONS, parseRoster } from "@riic/endfield-solver/model.mjs";
 
 const detail = () => ({
   base: { roleId: "role-a", name: "测试管理员", charNum: 2, serverName: "官服", level: 30 },

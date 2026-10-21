@@ -16,8 +16,8 @@ import { InfraTechnicalCard, InfraTechnicalHeading } from "@/components/InfraTec
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { Button } from "@/components/ui/button";
 import { formatScaledAmount } from "@/resource-scale-display";
-import type { SklandInventoryData } from "@/types";
-import type { GameReportRecord } from "@/game-report";
+import type { SklandInventoryData } from "@riic/arknights-domain/types";
+import type { GameReportRecord } from "@riic/arknights-domain/game-report";
 import { useWorkbench } from "@/workbench-context";
 import { buildAccountHealthContext } from "@/agent-page-context";
 

@@ -19,5 +19,6 @@ const child = spawn(process.execPath, [
   `apps/${app}`, "--config", `apps/${app}/vite.config.ts`, ...args,
 ], { cwd: root, stdio: "inherit", windowsHide: true });
 child.on("error", error => { process.stderr.write(`${error.message}\n`); process.exitCode = 1; });
-child.on("exit", code => { process.exitCode = code ?? 1; });
+child.on("exit", code => { process.exitCode = code ?? 1; if (process.connected) process.disconnect(); });
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => child.kill(signal));
+process.on("message", message => { if (message === "riic:stop") child.kill("SIGTERM"); });

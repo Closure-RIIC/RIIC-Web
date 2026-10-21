@@ -1,5 +1,7 @@
 @import "tailwindcss" source("./");
 @import "tw-animate-css";
+@import "@riic/endfield-ui/theme.css";
+@import "@riic/endfield-ui/action.css";
 @import "../../../packages/shell/tokens.css";
 @import "../../../packages/shell/frame.css";
 @source "../../../packages/ui-primitives";

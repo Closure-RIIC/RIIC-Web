@@ -206,7 +206,7 @@ test("the plan worker centrally dispatches an eight-task pipeline across four is
   const [workerRuntime, planTask, infra] = await Promise.all([
     readRepoFile("scripts/plan-worker-runtime.mts"),
     readRepoFile("apps/arknights/src/server/plan-task.ts"),
-    readRepoFile("apps/arknights/src/server/infra.ts"),
+    readRepoFile("packages/platform-server/src/infra.ts"),
   ]);
 
   assert.match(planTask, /PLAN_TASK_WORKER_CONCURRENCY = 4/);
@@ -246,7 +246,7 @@ test("database migrations build queue indexes online after additive schema chang
   const [migration, migrateScript, schema] = await Promise.all([
     readRepoFile("drizzle/0012_public_cardiac.sql"),
     readRepoFile("scripts/migrate-db.mts"),
-    readRepoFile("apps/arknights/src/server/db/schema.ts"),
+    readRepoFile("packages/platform-server/src/db/schema.ts"),
   ]);
 
   assert.doesNotMatch(migration, /(?:DROP|CREATE) INDEX/);
@@ -266,7 +266,7 @@ test("database migrations build queue indexes online after additive schema chang
 });
 
 test("Nitro owns graceful shutdown while systemd accepts its signal exit statuses", async () => {
-  const processCleanup = await readRepoFile("apps/arknights/src/server/process-cleanup.ts");
+  const processCleanup = await readRepoFile("packages/platform-server/src/process-cleanup.ts");
   const systemdDropIn = await readRepoFile("deploy/node-graceful-exit.conf");
   const systemdGuide = await readRepoFile("deploy/SYSTEMD.md");
 
@@ -641,21 +641,21 @@ test("mastery, gacha UP data and the full fixture follow every managed-resource 
   assert.equal((workflow.match(/-f operator_data_base_sha="\$\{\{ steps\.merge\.outputs\.base_sha \}\}"/g) ?? []).length, 2);
   const guards = workflow.match(/apps\/arknights\/public\/images\/operator-portraits\/\*\|[^\n]+;;/g) ?? [];
   assert.equal(guards.length, 4);
-  for (const guard of guards) assert.match(guard, /\|apps\/arknights\/src\/generated\/mastery-data\.json\|apps\/arknights\/src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
+  for (const guard of guards) assert.match(guard, /\|apps\/arknights\/src\/generated\/mastery-data\.json\|packages\/arknights-domain\/src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
   const regularFileChecks = workflow.match(/git ls-files -s --[^\n]+/g) ?? [];
   assert.equal(regularFileChecks.length, 3);
   for (const check of regularFileChecks) {
     assert.ok(check.includes("apps/arknights/src/generated/mastery-data.json"));
-    assert.ok(check.includes("apps/arknights/src/generated/gacha-up.json"));
+    assert.ok(check.includes("packages/arknights-domain/src/generated/gacha-up.json"));
     assert.ok(check.includes("fixtures/operbox_full_e2.json"));
   }
-  assert.match(workflow, /git restore --source[^\n]+[\s\S]*?apps\/arknights\/src\/generated\/arkntools \\\n\s+apps\/arknights\/src\/generated\/mastery-data\.json/);
+  assert.match(workflow, /git restore --source[^\n]+[\s\S]*?packages\/arknights-domain\/src\/generated\/arkntools \\\n\s+apps\/arknights\/src\/generated\/mastery-data\.json/);
   const generateStep = workflow.slice(workflow.indexOf("      - name: Generate and validate assets"), workflow.indexOf("      - name: Run pre-PR quality gates"));
   assert.ok(generateStep.indexOf("npm run assets:gacha-up") > generateStep.indexOf("npm run assets:sync:arkntools"));
-  assert.match(workflow, /git status --porcelain --[^\n]*apps\/arknights\/src\/generated\/gacha-up\.json/);
-  assert.match(workflow, /git add --[^\n]*apps\/arknights\/src\/generated\/gacha-up\.json/);
-  assert.match(workflow, /apps\/arknights\/src\/generated\/gacha-up\.json \\\n\s+fixtures\/operbox_full_e2\.json/);
-  assert.match(workflow, /git show HEAD:apps\/arknights\/src\/generated\/gacha-up\.json/);
+  assert.match(workflow, /git status --porcelain --[^\n]*packages\/arknights-domain\/src\/generated\/gacha-up\.json/);
+  assert.match(workflow, /git add --[^\n]*packages\/arknights-domain\/src\/generated\/gacha-up\.json/);
+  assert.match(workflow, /packages\/arknights-domain\/src\/generated\/gacha-up\.json \\\n\s+fixtures\/operbox_full_e2\.json/);
+  assert.match(workflow, /git show HEAD:packages\/arknights-domain\/src\/generated\/gacha-up\.json/);
   assert.match(workflow, /--before-gacha-up "\$RUNNER_TEMP\/gacha-up-before\.json"/);
 });
 

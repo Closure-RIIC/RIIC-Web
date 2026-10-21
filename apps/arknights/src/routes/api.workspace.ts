@@ -1,6 +1,6 @@
 import { fallbackApiMethod } from "@/server/api-methods";
 import { createFileRoute } from "@tanstack/react-router";
-import * as api from "@/app/api/workspace/route";
+import * as api from "@riic/platform-server/http/workspace/route";
 export const Route = createFileRoute("/api/workspace")({ server: { handlers: {
     ANY: ({ request }) => fallbackApiMethod(request, ["GET","PUT","DELETE"]),
     GET: ({ request }) => api.GET(request),

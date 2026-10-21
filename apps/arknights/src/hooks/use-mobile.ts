@@ -1,1 +1,1 @@
-export * from "../../../../packages/ui-primitives/use-mobile";
+export * from "@riic/ui-primitives/use-mobile";

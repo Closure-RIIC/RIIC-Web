@@ -13,12 +13,12 @@ import {
   factoryRecipeFor,
   maxRoomLevel,
   tradeOrderFor,
-} from "@/blueprint";
+} from "@riic/arknights-domain/blueprint";
 import { AnimatedNumber, AnimatedText } from "@/components/AnimatedText";
 import { LevelDiamonds, OperatorSlot, roomVisualFor } from "@/components";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { presentRoomEfficiency } from "@/efficiency";
+import { presentRoomEfficiency } from "@riic/arknights-domain/efficiency";
 import {
   COMPACT_CARD_CLASS,
   COMPACT_COLUMN_CLASS,
@@ -35,7 +35,7 @@ import {
   roomGridTone,
 } from "@/schedule-view-presentation";
 import type { RoomRow } from "@/schedule";
-import type { BaseBlueprint, MaaPlan, RoomProduct } from "@/types";
+import type { BaseBlueprint, MaaPlan, RoomProduct } from "@riic/arknights-domain/types";
 import type { ShiftDirection } from "@/motion";
 import { localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
@@ -65,8 +65,8 @@ export interface CompactScheduleViewProps {
   onDroneTargetChange?: (row: RoomRow) => void;
   onManualSkillEfficiencyChange?: (row: RoomRow, value: number | null) => void;
   roomProducts?: ReadonlyMap<string, RoomProduct>;
-  onFactoryRecipeChange?: (roomId: string, recipe: import("@/blueprint").FactoryRecipe) => void;
-  onTradeOrderChange?: (roomId: string, order: import("@/blueprint").TradeOrder) => void;
+  onFactoryRecipeChange?: (roomId: string, recipe: import("@riic/arknights-domain/blueprint").FactoryRecipe) => void;
+  onTradeOrderChange?: (roomId: string, order: import("@riic/arknights-domain/blueprint").TradeOrder) => void;
   compactProductControls?: boolean;
 }
 
@@ -186,8 +186,8 @@ function CompactRoomCard({
   onDroneTargetChange?: (row: RoomRow) => void;
   onManualSkillEfficiencyChange?: (row: RoomRow, value: number | null) => void;
   roomProducts?: ReadonlyMap<string, RoomProduct>;
-  onFactoryRecipeChange?: (roomId: string, recipe: import("@/blueprint").FactoryRecipe) => void;
-  onTradeOrderChange?: (roomId: string, order: import("@/blueprint").TradeOrder) => void;
+  onFactoryRecipeChange?: (roomId: string, recipe: import("@riic/arknights-domain/blueprint").FactoryRecipe) => void;
+  onTradeOrderChange?: (roomId: string, order: import("@riic/arknights-domain/blueprint").TradeOrder) => void;
   compactProductControls?: boolean;
 }) {
   const intl = useTranslations();
@@ -254,7 +254,7 @@ function CompactRoomCard({
               iconUrl={iconUrl}
               options={[{ value: "gold", label: en ? "LMD Order" : intl("components_CompactScheduleView.lmdOrder"), iconUrl: PRODUCT_ICON_URLS.lmdOrders }, { value: "originium", label: en ? "Originium Order" : intl("components_CompactScheduleView.originiumOrder"), iconUrl: PRODUCT_ICON_URLS.orundum }]}
               ariaLabel={`${localizedRoomTitle(row.title, row.group, locale, gameCatalog)}${intl("components.label")}${intl("components.orders")}`}
-              onChange={(next) => onTradeOrderChange(row.roomId, next as import("@/blueprint").TradeOrder)}
+              onChange={(next) => onTradeOrderChange(row.roomId, next as import("@riic/arknights-domain/blueprint").TradeOrder)}
             />
           ) : (
             <div data-compact-product-badge title={label} className="flex size-7 shrink-0 items-center justify-center">
@@ -273,7 +273,7 @@ function CompactRoomCard({
               iconUrl={iconUrl}
               options={[{ value: "gold", label: en ? "Pure Gold" : intl("components_CompactScheduleView.pureGold"), iconUrl: PRODUCT_ICON_URLS.gold }, { value: "battle_record", label: en ? "Battle Records" : intl("components_CompactScheduleView.battleRecord"), iconUrl: PRODUCT_ICON_URLS.experience }, { value: "originium", label: en ? "Originium Shards" : intl("components_CompactScheduleView.originiumShard"), iconUrl: PRODUCT_ICON_URLS.shards }]}
               ariaLabel={`${localizedRoomTitle(row.title, row.group, locale, gameCatalog)}${intl("components.label")}${intl("components.recipe")}`}
-              onChange={(next) => onFactoryRecipeChange(row.roomId, next as import("@/blueprint").FactoryRecipe)}
+              onChange={(next) => onFactoryRecipeChange(row.roomId, next as import("@riic/arknights-domain/blueprint").FactoryRecipe)}
             />
           ) : (
             <div data-compact-product-badge title={label} className="flex size-7 shrink-0 items-center justify-center">

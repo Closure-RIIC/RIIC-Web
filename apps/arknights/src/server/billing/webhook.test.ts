@@ -14,7 +14,7 @@ test("payment callback uses only verified provider data and rejects forged payme
   let verified: AfdianOrder | null = null;
   const writes: unknown[] = [];
   let queries = 0;
-  await t.mock.module(new URL("../api-contract.ts", import.meta.url), { namedExports: {
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/api-contract.ts", import.meta.url), { namedExports: {
     PublicApiError: class extends Error {}, createRequestId: () => "test",
     readJsonBody: (request: Request) => request.json(),
     failureResponse: () => Response.json({}, { status: 403 }),

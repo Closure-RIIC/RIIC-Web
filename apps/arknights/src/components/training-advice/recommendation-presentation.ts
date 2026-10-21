@@ -1,5 +1,5 @@
 import { localize } from "../../i18n/helpers/components_RecommendationCard.ts";
-import type { OperBoxEntry, UserProfileAction } from "../../types.ts";
+import type { OperBoxEntry, UserProfileAction } from "@riic/arknights-domain/types";
 import { legacyTrainingTarget } from "./skill-selection.ts";
 
 function eliteLabel(elite: number | undefined, en: boolean): string | undefined {

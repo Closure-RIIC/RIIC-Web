@@ -6,7 +6,7 @@ import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import type { ReleaseNote } from "@/releases/types";
+import type { ReleaseNote } from "@riic/arknights-domain/releases/types";
 import { ReleaseNotes } from "./ReleaseNotes";
 
 export function ReleaseDialog({ open, onOpenChange, release: latestRelease, showHistoryLink = true }: {

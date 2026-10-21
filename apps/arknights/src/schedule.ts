@@ -1,6 +1,6 @@
 import type { BuildingSkillPresentation } from "./operatorPortraits";
 import { maaRoomAutofill } from "./schedule-autofill.ts";
-import type { BaseBlueprint, BlueprintRoom, MaaOperatorSlot, MaaPlan, MaaRoom, MaaRooms, RoomEfficiency, RoomKind, RotationShift, TrainingRoomShift } from "./types.ts";
+import type { BaseBlueprint, BlueprintRoom, MaaOperatorSlot, MaaPlan, MaaRoom, MaaRooms, RoomEfficiency, RoomKind, RotationShift, TrainingRoomShift } from "@riic/arknights-domain/types";
 
 export type RoomGroup = keyof MaaRooms | "training" | "recycling";
 

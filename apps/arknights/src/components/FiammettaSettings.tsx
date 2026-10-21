@@ -3,7 +3,7 @@ import { useTranslations } from "use-intl";
 
 import { Check } from "lucide-react";
 
-import type { OperBoxEntry, RotationProfile } from "@/types";
+import type { OperBoxEntry, RotationProfile } from "@riic/arknights-domain/types";
 
 type FiammettaSettingsProps = {
   enabled: boolean;

@@ -10,7 +10,7 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { StatusMark, type StatusMarkStatus } from "@/components/ui/status-mark";
 import { cn } from "@/lib/utils";
 import { MOTION_EASE_OUT } from "@/motion";
-import type { DisplayError, MaaJson } from "@/types";
+import type { DisplayError, MaaJson } from "@riic/arknights-domain/types";
 import { solverDiagnosticFor } from "@/solver-diagnostic";
 
 const SURFACE = { duration: 0.38, ease: MOTION_EASE_OUT } as const;

@@ -1,7 +1,7 @@
-import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "@/server/api-contract";
-import { requireWebsiteSession } from "@/server/auth/authorization";
+import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "@riic/platform-server/api-contract";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
 import { fetchGachaHistory, gachaSession, publicGachaError } from "@/server/gacha-history";
-import { assertSklandFeatureEnabled } from "@/server/skland/http";
+import { assertSklandFeatureEnabled } from "@riic/platform-server/skland/http";
 import { clearGachaArchive, readGachaArchive, saveGachaArchive } from "@/server/gacha-archive";
 import { validateGachaImport } from "@/server/gacha-archive-validation";
 

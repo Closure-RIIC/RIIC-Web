@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { compareShifts, countShiftPlacementAdjustments } from "./skland.ts";
-import type { MaaJson, SklandScheduleInfrastructure } from "./types.ts";
+import type { MaaJson, SklandScheduleInfrastructure } from "@riic/arknights-domain/types";
 
 const infrastructure: SklandScheduleInfrastructure = {
   storeTs: null, layoutLabel: "243", layoutSuggestion: null, layoutWarning: null,

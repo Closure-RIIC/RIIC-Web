@@ -1,1 +1,1 @@
-export * from "../../../../../packages/ui-primitives/sidebar";
+export * from "@riic/ui-primitives/sidebar";

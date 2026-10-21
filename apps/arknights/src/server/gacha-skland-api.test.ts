@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { register, registerHooks } from "node:module";
 import test from "node:test";
-import { TERMS_VERSION, PRIVACY_VERSION } from "../../../../packages/platform/legal-policy.ts";
+import { TERMS_VERSION, PRIVACY_VERSION } from "@riic/platform/legal-policy";
 
 register("../../../../scripts/ts-path-loader.mjs", import.meta.url);
 const hook = registerHooks({ resolve(specifier, context, nextResolve) {
@@ -15,7 +15,7 @@ test("Skland reuse requires consent and an owned login, and returns only public 
   let existing = false;
   let exchanges = 0;
   const owners: string[] = [];
-  await context.mock.module(new URL("./api-contract.ts", import.meta.url), { namedExports: {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/api-contract.ts", import.meta.url), { namedExports: {
     assertSameOrigin: (request: Request) => { if (request.headers.get("origin") !== "https://riic.test") throw new Error("origin"); },
     createRequestId: () => "test-id", enforceRateLimit: () => {}, requestClientIp: () => "127.0.0.1",
     readJsonBody: (request: Request) => request.json(),
@@ -23,10 +23,10 @@ test("Skland reuse requires consent and an owned login, and returns only public 
     failureResponse: () => Response.json({ success: false }, { status: 400 }),
     successResponse: (data: unknown) => Response.json({ success: true, data }),
   } });
-  await context.mock.module(new URL("./auth/authorization.ts", import.meta.url), { namedExports: {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/auth/authorization.ts", import.meta.url), { namedExports: {
     requireWebsiteSession: async () => { if (!authenticated) throw new Error("login"); return { user: { id: "verified-owner" } }; },
   } });
-  await context.mock.module(new URL("./skland/http.ts", import.meta.url), { namedExports: {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/skland/http.ts", import.meta.url), { namedExports: {
     assertSklandFeatureEnabled: () => {},
     readSklandAccountStore: async (owner: string) => { owners.push(owner); return { accounts: connected ? [
       { accountId: "second", session: { selectedUid: "10002", cred: "second-cred" }, roles: [{ uid: "10002" }] },

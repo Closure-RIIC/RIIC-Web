@@ -2,7 +2,7 @@ import "@tanstack/react-start/server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { Decimal } from "decimal.js";
 import type { PoolClient } from "pg";
-import { getDatabasePool } from "../db/index.ts";
+import { getDatabasePool } from "@riic/platform-server/db";
 import { DEFAULT_FILTER_POLICY, parseFilterPolicy, type FilterPolicy } from "../agent/filter-policy.ts";
 import { budgetPoints, defaultRatePolicy, parseRatePolicy, priceModelCall, tokenPoints, type MeasuredUsage, type RatePolicy } from "./rate-policy.ts";
 import { sumPoints, validPoints } from "./points.ts";

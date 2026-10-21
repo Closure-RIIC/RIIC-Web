@@ -1,6 +1,6 @@
 import { inflateRawSync } from "node:zlib";
-import { QUALITY_CASE_LIMIT, QUALITY_TOTAL_LIMIT } from "../../quality.ts";
-import { REPRODUCTION_FILE_LIMIT, readReproductionPackage, type ReproductionSettings } from "../../reproduction-package.ts";
+import { QUALITY_CASE_LIMIT, QUALITY_TOTAL_LIMIT } from "@riic/arknights-domain/quality";
+import { REPRODUCTION_FILE_LIMIT, readReproductionPackage, type ReproductionSettings } from "@riic/arknights-domain/reproduction-package";
 
 export type ImportFile = { name: string; data: Uint8Array };
 function crc32(data: Uint8Array) {

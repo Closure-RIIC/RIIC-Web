@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { PublicApiError } from "../api-contract.ts";
+import { PublicApiError } from "@riic/platform-server/api-contract";
 import { readArtifact, writeArtifact, removeArtifacts } from "./storage.ts";
 import { createDraft } from "./service.ts";
 import type { previewImports } from "./import.ts";

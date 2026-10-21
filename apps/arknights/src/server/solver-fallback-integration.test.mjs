@@ -24,7 +24,7 @@ test("runPlan keeps both attempts, validates fallback output, and leaves input r
     await rm(root,{recursive:true,force:true});
   });
   context.mock.method(console,"info",()=>{});context.mock.method(console,"error",()=>{});
-  const {InfraCliServeClient}=await import("./serve-client.ts");
+  const {InfraCliServeClient}=await import("@riic/platform-server/serve-client");
   let primaryFails=true;let fallbackFails=false;let malformedFallback=false;let incompleteMaa=false;let oldProfile=false;
   const calls=[];
   const valid=()=>({schema_version:3,
@@ -49,7 +49,7 @@ test("runPlan keeps both attempts, validates fallback output, and leaves input r
     }
     return {request,response,stdout:JSON.stringify(response),stderr:""};
   });
-  const {runPlan,stopInfraServeClients}=await import("./infra.ts");
+  const {runPlan,stopInfraServeClients}=await import("@riic/platform-server/infra");
   context.after(()=>stopInfraServeClients("test complete"));
   const body=()=>({layout:{template:"243",rooms:[],scenario:{}},operbox:[{id:"char_001_amiya",name:"阿米娅",elite:2,level:80,rarity:5,potential:1,own:true}],rotation:"abc_12_6_6",fiammettaEnable:false});
   const recovered=await runPlan(body(),{deferArtifacts:true});

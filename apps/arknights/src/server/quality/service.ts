@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { readdir, stat } from "node:fs/promises";
 import { and, eq, gt, inArray, desc, lte } from "drizzle-orm";
-import { getDatabase } from "../db/index.ts";
-import { feedback, qualityDraft, qualityBatch, qualityCase, qualityAttempt, qualityBundle } from "../db/schema.ts";
-import { PublicApiError } from "../api-contract.ts";
-import { parseReproductionPackage, reproductionInputKey, type ReproductionPackage } from "../../reproduction-package.ts";
-import { QUALITY_CASE_LIMIT, QUALITY_TOTAL_LIMIT, type QualitySource } from "../../quality.ts";
+import { getDatabase } from "@riic/platform-server/db";
+import { feedback, qualityDraft, qualityBatch, qualityCase, qualityAttempt, qualityBundle } from "@riic/platform-server/db/schema";
+import { PublicApiError } from "@riic/platform-server/api-contract";
+import { parseReproductionPackage, reproductionInputKey, type ReproductionPackage } from "@riic/arknights-domain/reproduction-package";
+import { QUALITY_CASE_LIMIT, QUALITY_TOTAL_LIMIT, type QualitySource } from "@riic/arknights-domain/quality";
 import { hash, readArtifact, writeArtifact, removeArtifacts, qualityPath, ensurePrivateDirectory } from "./storage.ts";
 
 const ttl = 30 * 24 * 60 * 60_000;
@@ -141,7 +141,7 @@ export async function cleanupQuality() {
     try { await assertSources(cases.flatMap((item) => item.sources), batch.expiresAt); } catch (error) { if (error instanceof PublicApiError && error.code === "AIC-DATA-8004") expired = true; else throw error; }
     if (expired) { await removeArtifacts("batches", batch.id); await db.delete(qualityBatch).where(eq(qualityBatch.id, batch.id)); }
   }
-  const { feedbackLink } = await import("../db/schema.ts");
+  const { feedbackLink } = await import("@riic/platform-server/db/schema");
   await db.delete(feedbackLink).where(lte(feedbackLink.expiresAt, new Date()));
   await ensurePrivateDirectory("imports");
   for (const id of await readdir(qualityPath("imports"))) {

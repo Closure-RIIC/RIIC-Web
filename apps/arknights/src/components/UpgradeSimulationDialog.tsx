@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import type { MaaRoom, OperBoxEntry, PublicPlanData } from "@/types";
+import type { MaaRoom, OperBoxEntry, PublicPlanData } from "@riic/arknights-domain/types";
 import { hasOperboxEliteStateChange } from "@/upgrade-simulation";
 
 type Metric = "trade" | "manufacture" | "power";

@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import type { AdminSessionData, AdminUserAction, AdminUserData } from "@/types";
+import type { AdminSessionData, AdminUserAction, AdminUserData } from "@riic/arknights-domain/types";
 
 const CLIENT_SKLAND_ENABLED = process.env.APP_CLIENT_SKLAND_ENABLED === "1";
 

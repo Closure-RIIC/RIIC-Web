@@ -2,13 +2,13 @@ import "@tanstack/react-start/server-only";
 
 import { randomUUID } from "node:crypto";
 import { createClient, STORAGE_DID_KEY, type Client } from "skland-kit";
-import type { GachaHistory, GachaRecord } from "@/gacha-history";
-import { mergeGachaRecords, parseGachaRecord } from "@/gacha-history";
-import { DeviceIdCache } from "./skland/device-id-cache";
-import { PublicApiError } from "./api-contract";
-import { recentSklandOAuth } from "./skland/recent-oauth";
-import type { SklandSessionPayload } from "./skland/session";
-import { classifySklandUpstreamError } from "./skland/upstream-error";
+import type { GachaHistory, GachaRecord } from "@riic/arknights-domain/gacha-history";
+import { mergeGachaRecords, parseGachaRecord } from "@riic/arknights-domain/gacha-history";
+import { DeviceIdCache } from "@riic/platform-server/skland/device-id-cache";
+import { PublicApiError } from "@riic/platform-server/api-contract";
+import { recentSklandOAuth } from "@riic/platform-server/skland/recent-oauth";
+import type { SklandSessionPayload } from "@riic/platform-server/skland/session";
+import { classifySklandUpstreamError } from "@riic/platform-server/skland/upstream-error";
 
 const BINDING_ORIGIN = "https://binding-api-account-prod.hypergryph.com";
 const GAME_ORIGIN = "https://ak.hypergryph.com";

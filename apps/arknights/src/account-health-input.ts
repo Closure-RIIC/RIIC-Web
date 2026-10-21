@@ -1,8 +1,8 @@
 import { trainingCost } from "./inventory-estimates.ts";
 import { estimateHeadhuntPulls } from "./headhunt-estimate.ts";
-import { manualLevelFor } from "./manual-operbox.ts";
+import { manualLevelFor } from "@riic/arknights-domain/manual-operbox";
 import { HEALTH_DEMAND_FIELDS, normalizeHealthDemand, type HealthDemand, type HealthDemandField } from "./account-health-demand.ts";
-import type { SklandInventoryItem, SklandOperatorStatus } from "./types.ts";
+import type { SklandInventoryItem, SklandOperatorStatus } from "@riic/arknights-domain/types";
 
 export type TrainingOperator = Pick<SklandOperatorStatus, "id" | "rarity" | "elite" | "level"> &
   Partial<Pick<SklandOperatorStatus, "modules">> & { own?: boolean };

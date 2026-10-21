@@ -1,15 +1,15 @@
 import "@tanstack/react-start/server-only";
 
-import type { AdminSolverMetricsData } from "@/types";
+import type { AdminSolverMetricsData } from "@riic/arknights-domain/types";
 import {
   createRequestId,
   failureResponse,
   PublicApiError,
   successResponse,
-} from "./api-contract";
-import { requireWebsiteReviewer } from "./auth/authorization";
-import { isBusinessDatabaseReadEnabled } from "./business-config";
-import { queryAdminSolverMetrics } from "./business-records";
+} from "@riic/platform-server/api-contract";
+import { requireWebsiteReviewer } from "@riic/platform-server/auth/authorization";
+import { isBusinessDatabaseReadEnabled } from "@riic/platform-server/business-config";
+import { queryAdminSolverMetrics } from "@riic/platform-server/business-records";
 
 const ROUTE = "/api/admin/solver-metrics";
 

@@ -5,9 +5,9 @@ import { inspectMasteryTarget, resolveAgentOperator } from "./operator-tools.ts"
 import { masteryInstructions } from "../../mastery-presentation.ts";
 import { calculateRecruitment, RECRUITMENT_TAGS, RECRUITMENT_SOURCE } from "../../recruitment.ts";
 import type { MasteryEnvironmentObservation } from "./mastery-environment.ts";
-import type { OperBoxEntry, SklandInventoryItem, SklandOperatorStatus } from "../../types.ts";
+import type { OperBoxEntry, SklandInventoryItem, SklandOperatorStatus } from "@riic/arknights-domain/types";
 import { OPERATOR_CATALOG } from "../../operatorPortraits.ts";
-import { manualLevelFor, maxEliteForRarity } from "../../manual-operbox.ts";
+import { manualLevelFor, maxEliteForRarity } from "@riic/arknights-domain/manual-operbox";
 import { calculateTrainingPlan, defaultTrainingGoal, type TrainingPlannerData } from "../../training-planner.ts";
 import trainingPlannerDataJson from "../../generated/training-planner-data.json" with { type: "json" };
 

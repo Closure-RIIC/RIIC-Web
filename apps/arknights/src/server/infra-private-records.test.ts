@@ -5,13 +5,13 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import type { BaseBlueprint } from "../types.ts";
+import type { BaseBlueprint } from "@riic/arknights-domain/types";
 import {
   isLegacySklandRunDirectoryName,
   isPrivateStorageChild,
   isSafePrivateStorageRoot,
-} from "./private-storage.ts";
-import { REQUIRED_RUNTIME_DATA_FILES, resolveRuntimeDataDir } from "./runtime-data.ts";
+} from "@riic/platform-server/private-storage";
+import { REQUIRED_RUNTIME_DATA_FILES, resolveRuntimeDataDir } from "@riic/platform-server/runtime-data";
 
 register("../../../../scripts/ts-path-loader.mjs", import.meta.url);
 
@@ -235,8 +235,8 @@ test("Skland owned-data deletion removes only matching runs and feedback without
     else process.env.BETA_BUSINESS_DB_ENABLED = previousBusinessDbEnabled;
   });
 
-  const { deleteFeedbackArtifacts, deletePlanRunArtifacts, deleteSklandOwnedData, maintainPrivateRecords, readFeedbackReproduction, readPlanReproduction, runPlan, saveFeedback, savePlanFailureArtifact, stopInfraServeClients } = await import("./infra.ts");
-  const { assertPlanArtifactStorageReady } = await import("./infra.ts");
+  const { deleteFeedbackArtifacts, deletePlanRunArtifacts, deleteSklandOwnedData, maintainPrivateRecords, readFeedbackReproduction, readPlanReproduction, runPlan, saveFeedback, savePlanFailureArtifact, stopInfraServeClients } = await import("@riic/platform-server/infra");
+  const { assertPlanArtifactStorageReady } = await import("@riic/platform-server/infra");
   await assertPlanArtifactStorageReady();
   assert.equal((await readdir(runsRoot)).some((name) => name.startsWith(".worker-storage-probe-")), false);
   delete process.env.BETA_STORAGE_DIR;

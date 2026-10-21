@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import { computePlan, submitPlanTask, syncSklandTraining, toDisplayError } from "@/api";
 import { usePlanTask } from "./use-plan-task";
-import { effectiveFiammettaSetting } from "@/plan-presentation";
+import { effectiveFiammettaSetting } from "@riic/arknights-domain/plan-presentation";
 import { refreshSklandTraining, trainingInputKey, trainingSyncDue, type TrainingData, type TrainingInput } from "@/skland-training-sync";
-import type { SklandSessionData } from "@/types";
+import type { SklandSessionData } from "@riic/arknights-domain/types";
 
 export type SklandTrainingSyncOptions = TrainingInput & {
   enabled: boolean;

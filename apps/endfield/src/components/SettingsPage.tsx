@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Download, Eye, EyeOff, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
-import { Action, ActionLink, Notice, PageTitle, Section } from "@shared/endfield-ui";
-import { FilterSelect } from "@shared/ui-primitives/filter-select";
-import { FluidOrb } from "@shared/ui-primitives/fluid-orb";
-import { accountOrbColor } from "@shared/shell/account-orb";
-import { gameHref } from "@shared/shell/games";
-import { DEFAULT_OPTIONS, STORAGE_KEY } from "@shared/endfield-solver/model.mjs";
+import { Action, ActionLink, Notice, PageTitle, Section } from "@riic/endfield-ui";
+import { FilterSelect } from "@riic/ui-primitives/filter-select";
+import { FluidOrb } from "@riic/ui-primitives/fluid-orb";
+import { accountOrbColor } from "@riic/shell/account-orb";
+import { gameHref } from "@riic/shell/games";
+import { DEFAULT_OPTIONS, STORAGE_KEY } from "@riic/endfield-solver/model.mjs";
 import { useWorkspace, downloadJson } from "../state";
 import { useAccount, type AccountAction } from "../account";
 import { ConfirmAction } from "./ConfirmAction";

@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from "use-intl";
 
 import { localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
-import type { MaaPlan } from "@/types";
+import type { MaaPlan } from "@riic/arknights-domain/types";
 import { DroneIcon } from "@/components/DroneIcon";
 
 export function DroneTargetChip({ drones }: { drones?: MaaPlan["drones"] }) {

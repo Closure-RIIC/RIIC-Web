@@ -1,6 +1,5 @@
 import { useId, type ReactNode } from "react";
-import { FilterSelect, type FilterSelectProps } from "../ui-primitives/filter-select";
-import "./theme.css";
+import { FilterSelect, type FilterSelectProps } from "@riic/ui-primitives/filter-select";
 export { Action, ActionLink, ActionContent, actionClassName, type ActionProps, type ActionLinkProps, type ActionVariant, type ActionSize } from "./action";
 export function Field({ label, hint, leading, ...props }: FilterSelectProps & { label: string; hint?: string; leading?: ReactNode }) {
   const id = useId();

@@ -11,7 +11,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import type { AdminSolverMetricsData } from "@/types";
+import type { AdminSolverMetricsData } from "@riic/arknights-domain/types";
 import { useLocale } from "use-intl";
 
 function chartConfig(en: boolean): ChartConfig { return {

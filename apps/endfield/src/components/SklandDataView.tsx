@@ -1,13 +1,13 @@
 import { useState, type ReactNode } from "react";
-import { Section } from "@shared/endfield-ui";
-import { detailLabels, type DetailRecord, type DetailValue } from "@shared/endfield-skland/details";
-import type { EndfieldRole, EndfieldSnapshot } from "@shared/endfield-skland/model";
+import { Section } from "@riic/endfield-ui";
+import { detailLabels, type DetailRecord, type DetailValue } from "@riic/endfield-skland/details";
+import type { EndfieldRole, EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { useWorkspace } from "../state";
 import { SklandInventory } from "./SklandInventory";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@shared/ui-primitives/tabs";
-import { SearchInput } from "@shared/ui-primitives/search-input";
-import { quantity } from "@shared/endfield-skland/presentation";
-import { operatorData, weaponData } from "@shared/endfield-data";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@riic/ui-primitives/tabs";
+import { SearchInput } from "@riic/ui-primitives/search-input";
+import { quantity } from "@riic/endfield-skland/presentation";
+import { operatorData, weaponData } from "@riic/endfield-data";
 import { GameArtwork, OperatorPortrait } from "./GameArtwork";
 
 const record = (value: DetailValue | undefined): DetailRecord => value && typeof value === "object" && !Array.isArray(value) ? value : {};

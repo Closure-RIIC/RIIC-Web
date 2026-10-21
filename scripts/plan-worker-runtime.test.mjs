@@ -12,7 +12,7 @@ const {
   runPlanWorkerDispatcher,
   waitForPlanExecutionUpdates,
 } = await import("./plan-worker-runtime.mts");
-const { toPublicPlanData } = await import("../apps/arknights/src/server/public-plan.ts");
+const { toPublicPlanData } = await import("@riic/platform-server/public-plan");
 
 function claimedTask(id = "11111111-1111-4111-8111-111111111111") {
   const now = new Date("2026-09-02T00:00:00.000Z");

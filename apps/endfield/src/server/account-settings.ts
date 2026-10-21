@@ -1,4 +1,4 @@
-import { accountOrigin } from "./account-origin.ts";
+import { accountHeaders, accountOrigin } from "./account-origin.ts";
 
 const paths = {
   extend: "/api/account/session/extend",
@@ -46,7 +46,7 @@ export async function accountSettings(request: Request, action: string) {
       method: "POST", redirect: "error", signal: AbortSignal.timeout(10000),
       // Session extension specifically requires an empty request body.
       body: action === "extend" ? undefined : JSON.stringify(action === "delete" ? { password, callbackURL: origin.origin } : {}),
-      headers: { cookie: cookies.join("; "), origin: origin.origin, "content-type": "application/json", accept: "application/json" },
+      headers: accountHeaders(request, { cookie: cookies.join("; "), origin: origin.origin, "content-type": "application/json", accept: "application/json" }),
     });
     const value = await upstream.json();
     if (!upstream.ok) return failure(upstream.status >= 500 ? 502 : upstream.status, value?.code === "INVALID_PASSWORD" ? "INVALID_PASSWORD" : "REQUEST_FAILED");

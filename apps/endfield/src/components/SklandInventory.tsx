@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Notice, Section } from "@shared/endfield-ui";
-import type { EndfieldInventory, EndfieldMaterialGroup } from "@shared/endfield-skland/inventory";
+import { Notice, Section } from "@riic/endfield-ui";
+import type { EndfieldInventory, EndfieldMaterialGroup } from "@riic/endfield-skland/inventory";
 import { useWorkspace } from "../state";
-import { SearchInput } from "@shared/ui-primitives/search-input";
-import { FilterSelect } from "@shared/ui-primitives/filter-select";
+import { SearchInput } from "@riic/ui-primitives/search-input";
+import { FilterSelect } from "@riic/ui-primitives/filter-select";
 
 export function SklandInventory({ inventory }: { inventory?: EndfieldInventory }) {
   const { t, locale } = useWorkspace();

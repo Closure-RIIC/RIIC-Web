@@ -1,0 +1,10 @@
+{
+  "name": "@riic/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./account-session": "./account-session.ts",
+    "./api": "./api.ts"
+  }
+}

@@ -1,6 +1,6 @@
 import { localize as localize_Common } from "./helpers/Common.ts";
 import type { EnglishCatalog } from "./game-catalog";
-import type { AppLocale } from "./config";
+import type { AppLocale } from "@riic/arknights-domain/i18n/config";
 
 // Game text is data: keep upstream records and manual overrides out of UI messages.
 let request: Promise<EnglishCatalog> | null = null;

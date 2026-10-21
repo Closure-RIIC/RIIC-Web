@@ -1,6 +1,6 @@
 import dataJson from "./generated/mastery-data.json" with { type: "json" };
-import catalogJson from "./generated/arkntools/operator-catalog.json" with { type: "json" };
-import type { OperBoxEntry } from "./types.ts";
+import catalogJson from "@riic/arknights-domain/generated/arkntools/operator-catalog.json" with { type: "json" };
+import type { OperBoxEntry } from "@riic/arknights-domain/types";
 
 export type MasteryLevel = 1 | 2 | 3;
 type Rule = { kind: "speed"; bonus: number; professions?: number[]; extra?: { stage?: number; branch?: string; bonus: number } }

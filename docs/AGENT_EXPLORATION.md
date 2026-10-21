@@ -77,7 +77,7 @@
 | `preview_solve_defaults` | 账号、排班历史与场景默认配置 | 排班前预览实际采用的配置 |
 | `diagnose_account` | `readSklandAccountStore` + `loadStatusSnapshot` + `listSavedPlans` | 森空岛绑定/玩家信息/干员池练度统计/当前基建/最近排班 |
 | `solve_schedule` | `buildBlueprint`/`updateFactoryRecipe` + `runPlan`/`getSampleOperbox` + `toPublicPlanData` | 真实求解：布局预设、box 来源、换班节奏、制造站配方（搓玉配 originium）；返回排班、日产出、练卡建议 |
-| `query_skills` | `apps/arknights/src/generated/arkntools/building-skill-catalog.json` | 干员名/id、技能名/关键词/标签查询，复用网页技能原文及解锁练度 |
+| `query_skills` | `packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json` | 干员名/id、技能名/关键词/标签查询，复用网页技能原文及解锁练度 |
 | `kb_route` | `RIIC-knowledge/index/标题清单.md` | 关键词→候选文档路径（2-gram 匹配扩大召回） |
 | `kb_read` | `RIIC-knowledge/docs/**` | 读正文，仅限知识库目录内 .md |
 

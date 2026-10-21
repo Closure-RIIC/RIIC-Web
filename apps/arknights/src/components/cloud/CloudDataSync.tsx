@@ -8,8 +8,8 @@ import { cloudSyncPreferenceKey, type CloudSyncStatus as SyncPhase } from "@/clo
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { PRIVACY_VERSION, TERMS_VERSION } from "@/legal-policy";
-import type { CloudWorkspaceData } from "@/types";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@riic/arknights-domain/legal-policy";
+import type { CloudWorkspaceData } from "@riic/arknights-domain/types";
 import { DataConsentDialog } from "./DataConsentDialog";
 
 export function CloudDataSync(props: {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { chromium, expect } from "@playwright/test";
-import { catalog, DEFAULT_OPTIONS, STORAGE_KEY } from "../packages/endfield-solver/model.mjs";
+import { catalog, DEFAULT_OPTIONS, STORAGE_KEY } from "@riic/endfield-solver/model.mjs";
 
 const endfield = process.env.ENDFIELD_E2E_ORIGIN || "http://127.0.0.1:5176";
 const arknights = process.env.ARKNIGHTS_E2E_ORIGIN || "http://127.0.0.1:5175";
@@ -89,7 +89,7 @@ try {
   const rosterBoxes = await rosterDialog.locator(".ef-roster-card").evaluateAll(elements => elements.slice(0, 5).map(el => {
     const box = el.getBoundingClientRect(); return { top: box.top, height: box.height };
   }));
-  assert.ok(rosterBoxes.slice(0, 4).every(box => box.top === rosterBoxes[0].top && box.height < 150), "Desktop roster shows four compact cards per row");
+  assert.ok(rosterBoxes.slice(0, 4).every(box => box.top === rosterBoxes[0].top && box.height < 150), `Desktop roster shows four compact cards per row: ${JSON.stringify(rosterBoxes)}`);
   assert.ok(rosterBoxes[4].top > rosterBoxes[0].top);
   assert.ok((await rosterDialog.locator(".ef-dialog-header").boundingBox()).height <= 48, "Dialog title bar is compact");
   await page.waitForFunction(() => [...globalThis.document.querySelectorAll(".ef-roster-card header img")].filter(img => {
@@ -208,6 +208,8 @@ try {
   await manualSlots.first().press("Enter");
   await expect(candidate(workspace.operators[6].name)).toBeEnabled();
   await candidate(workspace.operators[0].name).click();
+  await expect(picker).toBeHidden();
+  await expect(manualSlots.first()).toBeFocused();
   await choose(manualBoard.getByRole("combobox", { name: "换班整点", exact: true }).first(), "13:00");
   await expect(manualBoard.locator('[data-facility="center"] .ef-shift-time').first()).toHaveText("00:00 – 13:00");
   await page.getByRole("button", { name: "评估方案", exact: true }).click();
@@ -305,7 +307,16 @@ try {
       await allRarities.focus(); await page.keyboard.press("ArrowRight"); await page.keyboard.press("Enter");
       const focusedTab = rarityTabs.getByRole("tab", { name: "6★", exact: true });
       assert.equal(await focusedTab.getAttribute("aria-selected"), "true");
-      const focusStyle = await focusedTab.evaluate(el => ({ outline: globalThis.getComputedStyle(el).outlineColor, ring: globalThis.getComputedStyle(el).getPropertyValue("--ring").trim(), shadow: globalThis.getComputedStyle(el).boxShadow, visible: el.matches(":focus-visible") }));
+      const focusStyle = await focusedTab.evaluate(el => {
+        // Compare resolved colors: production CSS may serialize percentages differently.
+        const probe = globalThis.document.createElement("span");
+        probe.style.color = "var(--ring)";
+        el.append(probe);
+        const ring = globalThis.getComputedStyle(probe).color;
+        probe.remove();
+        const style = globalThis.getComputedStyle(el);
+        return { outline: style.outlineColor, ring, shadow: style.boxShadow, visible: el.matches(":focus-visible") };
+      });
       assert.ok(focusStyle.visible && focusStyle.shadow !== "none", "Keyboard focus stays visible");
       assert.equal(focusStyle.outline, focusStyle.ring, "Focus uses the shared neutral color without the brown override");
       await clearFilters.click();

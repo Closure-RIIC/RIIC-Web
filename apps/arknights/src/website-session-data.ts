@@ -1,5 +1,5 @@
-import { parseWebsiteSession, type WebsiteSessionData } from "../../../packages/shell/account-session.ts";
-export { parseWebsiteSession, type WebsiteSessionData } from "../../../packages/shell/account-session.ts";
+import { parseWebsiteSession, type WebsiteSessionData } from "@riic/contracts/account-session";
+export { parseWebsiteSession, type WebsiteSessionData } from "@riic/contracts/account-session";
 
 type WebsiteSessionFetch = (
   input: string,

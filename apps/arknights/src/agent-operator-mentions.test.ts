@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import catalogue from "./generated/arkntools/operator-catalog.json" with { type: "json" };
+import catalogue from "@riic/arknights-domain/generated/arkntools/operator-catalog.json" with { type: "json" };
 import { findOperatorMentions, MAX_OPERATOR_PORTRAITS } from "./agent-operator-mentions.ts";
 import { prepareAgentMarkdown, type InlineToken, type MarkdownNode } from "./agent-markdown.ts";
 

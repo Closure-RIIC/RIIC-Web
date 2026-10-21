@@ -1,12 +1,12 @@
-import { PRESETS, roomKindLabel } from "./blueprint";
+import { PRESETS, roomKindLabel } from "@riic/arknights-domain/blueprint";
 import { createManualScheduleDraft, manualRoomCapacity, manualRoomForShift, reconcileManualScheduleDraft } from "./manual-schedule";
-import { manualLevelFor, maxEliteForRarity } from "./manual-operbox";
+import { manualLevelFor, maxEliteForRarity } from "@riic/arknights-domain/manual-operbox";
 import { OPERATOR_CATALOG } from "./operatorPortraits";
 import { PRODUCT_ICON_URLS } from "./product-assets";
 import { manualEditableRooms, type EditableRoom } from "./recycling-room";
 import { createPosterDocument, type SchedulePosterDocument } from "./schedule-poster-document";
 import sampleTeams from "./schedule-poster-sample.json";
-import type { BaseBlueprint, OperBoxEntry } from "./types";
+import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
 
 export const ROOM_GROUP: Record<EditableRoom["kind"], string> = { control_center: "control", factory: "manufacture", trade_post: "trading", power_plant: "power", dormitory: "dormitory", office: "hire", meeting_room: "meeting", workshop: "processing", training_room: "training", recycling: "recycling" };
 export function posterRoomTitle(room: EditableRoom, layout: BaseBlueprint): string {

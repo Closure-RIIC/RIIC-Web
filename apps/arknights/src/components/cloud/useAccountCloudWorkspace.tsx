@@ -2,9 +2,9 @@
 
 import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } from "react";
 
-import { PRESETS } from "@/blueprint";
+import { PRESETS } from "@riic/arknights-domain/blueprint";
 import type { CloudSyncStatus } from "@/cloud-sync";
-import { normalizeOperboxEntries } from "@/operbox-normalization";
+import { normalizeOperboxEntries } from "@riic/arknights-domain/operbox-normalization";
 import type {
   BaseBlueprint,
   BoxSource,
@@ -13,7 +13,7 @@ import type {
   PresetDef,
   PublicPlanData,
   RotationProfile,
-} from "@/types";
+} from "@riic/arknights-domain/types";
 import { CloudDataSync } from "./CloudDataSync";
 
 export interface AccountCloudWorkspaceInput {

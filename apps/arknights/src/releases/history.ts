@@ -1,5 +1,5 @@
 import { latestRelease } from "./latest.ts";
-import type { ReleaseNote } from "./types.ts";
+import type { ReleaseNote } from "@riic/arknights-domain/releases/types";
 
 // Historical bootstrap fixture for migration 0015 and tests, not a runtime fallback.
 // Manage future releases in /admin/changelog.

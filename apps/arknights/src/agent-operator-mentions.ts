@@ -1,4 +1,4 @@
-import catalogue from "./generated/arkntools/operator-catalog.json" with { type: "json" };
+import catalogue from "@riic/arknights-domain/generated/arkntools/operator-catalog.json" with { type: "json" };
 
 export const MAX_OPERATOR_PORTRAITS = 128;
 export interface OperatorMention { start: number; end: number; id: string; name: string; portrait: string }

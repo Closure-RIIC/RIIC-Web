@@ -5,7 +5,7 @@ import type {
   SklandStatusSnapshot,
   SklandTradingOrder,
   SklandTradingRoom,
-} from "./types.ts";
+} from "@riic/arknights-domain/types";
 
 export type SklandMetricTone = "blue" | "green" | "amber" | "orange";
 export type SklandMetricVisual = "rest" | "trading" | "manufacture" | "clue";

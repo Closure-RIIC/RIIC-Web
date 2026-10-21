@@ -7,7 +7,7 @@ import type {
   RoomEfficiency,
   RotationJson,
   RotationShift,
-} from "./types.ts";
+} from "@riic/arknights-domain/types";
 
 export type DailyProductionUnavailableReason =
   | "missing-room-data"

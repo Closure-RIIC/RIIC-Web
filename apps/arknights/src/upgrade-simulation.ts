@@ -1,4 +1,4 @@
-import type { BoxSource, OperBoxEntry } from "./types";
+import type { BoxSource, OperBoxEntry } from "@riic/arknights-domain/types";
 
 export function upgradeSimulationBoxSource(source: BoxSource): "skland" | "maa" {
   return source === "skland" ? "skland" : "maa";

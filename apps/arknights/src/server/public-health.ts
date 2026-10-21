@@ -1,8 +1,8 @@
-import { getHealth } from "./infra";
-import { areRateLimitsEnabled, isDebugToolsEnabled } from "./api-contract";
-import { isSklandFeatureEnabled } from "../deployment";
-import type { PublicHealthData } from "../types";
-import { isPlanTaskQueueEnabled } from "./business-config";
+import { getHealth } from "@riic/platform-server/infra";
+import { areRateLimitsEnabled, isDebugToolsEnabled } from "@riic/platform-server/api-contract";
+import { isSklandFeatureEnabled } from "@riic/arknights-domain/deployment";
+import type { PublicHealthData } from "@riic/arknights-domain/types";
+import { isPlanTaskQueueEnabled } from "@riic/platform-server/business-config";
 import { getPlanWorkerHealth } from "./plan-task";
 
 /** Always probes live dependencies; deployment checks must not use a cached result. */

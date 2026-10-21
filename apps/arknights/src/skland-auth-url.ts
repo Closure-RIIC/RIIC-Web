@@ -1,1 +1,1 @@
-export * from "../../../packages/platform/skland-auth-url.ts";
+export * from "@riic/platform/skland-auth-url";

@@ -1,0 +1,21 @@
+[Unit]
+Description=RIIC shared platform API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=riic-platform
+Group=riic-platform
+WorkingDirectory=/srv/riic-platform/current
+EnvironmentFile=/etc/riic/platform.env
+ExecStart=/usr/bin/node /srv/riic-platform/current/runtime/server.mjs
+Restart=on-failure
+RestartSec=3
+TimeoutStopSec=75
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

@@ -5,7 +5,7 @@ import { ArrowLeft, Download, Ellipsis, Search, Settings2, Sparkles, Trash2, Upl
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-import type { FactoryRecipe, TradeOrder } from "@/blueprint";
+import type { FactoryRecipe, TradeOrder } from "@riic/arknights-domain/blueprint";
 import { filterOperators, ROOM_SKILL_TAGS, type BuildingRoomPrefix } from "@/building-rooms";
 import { OperatorSlot, ScheduleBoard, ShiftTabs } from "@/components";
 import { FiammettaTargetChip } from "@/components/FiammettaTargetChip";
@@ -33,13 +33,13 @@ import { downloadJson } from "@/download";
 import { createPosterDocument, POSTER_STORAGE_KEY, readPosterFile, type SchedulePosterDocument } from "@/schedule-poster-document";
 import { defaultPosterOperator, posterOperators } from "@/schedule-poster-model";
 import type { PosterTarget } from "@/components/schedule-poster/SchedulePoster";
-import { droneStoragePlanIndex } from "@/drone-plan-mapping";
+import { droneStoragePlanIndex } from "@riic/arknights-domain/drone-plan-mapping";
 import type { ManualPlanResult } from "@/manual-plan-result";
 import { buildManualScheduleContext, type AgentPageContext } from "@/agent-page-context";
 import { loadManualEvaluationCache } from "@/manual-evaluation-cache";
 import { localizedOperatorName, localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
-import { prepareMaaForExport } from "@/maa-safety";
+import { prepareMaaForExport } from "@riic/arknights-domain/maa-safety";
 import { maaToMowerPlan, mowerPlanToMaa } from "@/mower-plan";
 import {
   assignManualOperator,
@@ -72,7 +72,7 @@ import { BUILDING_SKILL_CATALOG, OPERATOR_CATALOG, operatorPortraitFor, operator
 import { addOperatorPresentations } from "@/schedule-presentation";
 import { planToRows, type RoomRow } from "@/schedule";
 import { manualEditableRooms, withRecyclingRoom } from "@/recycling-room";
-import type { BaseBlueprint, MaaJson, MaaOperatorSlot, MaaRoom, OperBoxEntry } from "@/types";
+import type { BaseBlueprint, MaaJson, MaaOperatorSlot, MaaRoom, OperBoxEntry } from "@riic/arknights-domain/types";
 import { DEFAULT_MANUAL_SHIFT_START_TIME } from "@/manual-schedule-config";
 
 const ScrollArea = lazy(() => import("@/components/ui/scroll-area").then((module) => ({ default: module.ScrollArea })));
@@ -130,7 +130,7 @@ export interface ManualSchedulePageProps {
   onFiammettaEnabledChange: (enabled: boolean) => void;
   onOpenSetup: () => void;
   onDraftChange?: (draft: ManualScheduleDraft) => void;
-  manualProductChangeRequest?: { shiftIndex: number; roomId: string; product: import("@/types").RoomProduct; token: number } | null;
+  manualProductChangeRequest?: { shiftIndex: number; roomId: string; product: import("@riic/arknights-domain/types").RoomProduct; token: number } | null;
   onManualProductChangeRequestConsumed?: (token: number) => void;
   strictMaaOperatorOrder: boolean;
   allowReplacementOperatorSort: boolean;
@@ -811,7 +811,7 @@ export function ManualSchedulePage({
     setDraft((current) => setManualRoomSkillEfficiency(current, layout, activeShift, row.roomId, value));
   }
 
-  function setRoomProduct(roomId: string, product: import("@/types").RoomProduct) {
+  function setRoomProduct(roomId: string, product: import("@riic/arknights-domain/types").RoomProduct) {
     setDraft((current) => setManualRoomProduct(current, layout, activeShift, roomId, product));
   }
 

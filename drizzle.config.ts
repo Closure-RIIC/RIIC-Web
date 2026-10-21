@@ -5,7 +5,7 @@ if (!url) throw new Error("DATABASE_MIGRATION_URL is required to run migrations.
 
 export default defineConfig({
   dialect: "postgresql",
-  schema: "./apps/arknights/src/server/db/schema.ts",
+  schema: "./packages/platform-server/src/db/schema.ts",
   out: "./drizzle",
   dbCredentials: { url },
   strict: true,

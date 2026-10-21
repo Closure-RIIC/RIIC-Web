@@ -2,7 +2,7 @@ import { manualRoomCapacity, manualRoomForShift, type ManualScheduleDraft } from
 import { resolveManualManufactureRoom, resolveManualPowerRoom, resolveManualTradeRoom } from "./manual-room-efficiency-resolvers.ts";
 import { resolveGoldEquivalentEfficiency, type SpecialTradeAnchor } from "./manual-trade-special-rules.ts";
 import type { CrossFacilityEfficiencyByShift } from "./manual-schedule-native-evaluator.ts";
-import type { BaseBlueprint, MaaJson, OperBoxEntry, RotationJson, RotationRoomLine, RotationShift } from "./types.ts";
+import type { BaseBlueprint, MaaJson, OperBoxEntry, RotationJson, RotationRoomLine, RotationShift } from "@riic/arknights-domain/types";
 
 type Facility = "manufacture" | "trade" | "power";
 type Recipe = "all" | "gold" | "battle_record" | "originium";

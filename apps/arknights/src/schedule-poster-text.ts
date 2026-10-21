@@ -1,6 +1,6 @@
 import { manualRoomCapacity, type ManualScheduleDraft } from "./manual-schedule.ts";
 import { manualEditableRooms, type EditableRoom } from "./recycling-room.ts";
-import type { BaseBlueprint } from "./types.ts";
+import type { BaseBlueprint } from "@riic/arknights-domain/types";
 
 const labels: Record<EditableRoom["kind"], string> = {
   control_center: "中枢", trade_post: "贸易站", factory: "制造站", power_plant: "发电站",

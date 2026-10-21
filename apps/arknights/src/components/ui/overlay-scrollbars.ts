@@ -1,1 +1,1 @@
-export * from "../../../../../packages/ui-primitives/overlay-scrollbars";
+export * from "@riic/ui-primitives/overlay-scrollbars";

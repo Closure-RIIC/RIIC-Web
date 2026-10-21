@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { scheduleIssueTriggerId } from "@/components";
 import type { RoomRow } from "@/schedule";
-import type { FeedbackKind } from "@/types";
+import type { FeedbackKind } from "@riic/arknights-domain/types";
 
 const PLAN_RESULT_PRIMARY_TRIGGER_SELECTOR = "[data-plan-primary-details-trigger]";
 

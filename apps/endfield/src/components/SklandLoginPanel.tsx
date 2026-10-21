@@ -1,11 +1,11 @@
 import { lazy, Suspense, useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { Check, Clipboard, ExternalLink, KeyRound, LoaderCircle, RefreshCw, ScanLine, ShieldCheck, TriangleAlert } from "lucide-react";
-import { Action, ActionLink, Notice } from "@shared/endfield-ui";
-import type { EndfieldRole } from "@shared/endfield-skland/model";
-import { PRIVACY_VERSION, TERMS_VERSION } from "../../../../packages/platform/legal-policy";
-import { buildSklandAppOpenUrl } from "../../../../packages/platform/skland-auth-url";
-import { nextSklandQrPollDelay } from "../../../../packages/platform/skland-qr-polling";
+import { Action, ActionLink, Notice } from "@riic/endfield-ui";
+import type { EndfieldRole } from "@riic/endfield-skland/model";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@riic/platform/legal-policy";
+import { buildSklandAppOpenUrl } from "@riic/platform/skland-auth-url";
+import { nextSklandQrPollDelay } from "@riic/platform/skland-qr-polling";
 import { sklandApi, SklandRequestError } from "../skland-client";
 import { useWorkspace } from "../state";
 

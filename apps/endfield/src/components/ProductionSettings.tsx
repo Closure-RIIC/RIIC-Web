@@ -1,4 +1,4 @@
-import { Field } from "@shared/endfield-ui";
+import { Field } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
 import { ProductionIcon } from "./GameArtwork";
 

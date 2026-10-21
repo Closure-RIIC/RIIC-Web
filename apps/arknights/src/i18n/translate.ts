@@ -1,5 +1,5 @@
 import { createTranslator } from "use-intl/core";
-import type { AppLocale } from "./config.ts";
+import type { AppLocale } from "@riic/arknights-domain/i18n/config";
 import zhRecords from "../../messages/records/zh.json" with { type: "json" };
 import enRecords from "../../messages/records/en.json" with { type: "json" };
 

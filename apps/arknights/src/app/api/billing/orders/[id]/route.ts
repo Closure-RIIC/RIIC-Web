@@ -1,4 +1,4 @@
-import { assertSameOrigin, enforceRateLimit, createRequestId, failureResponse, successResponse, PublicApiError } from "@/server/api-contract";
+import { assertSameOrigin, enforceRateLimit, createRequestId, failureResponse, successResponse, PublicApiError } from "@riic/platform-server/api-contract";
 import { requireFeatureSession } from "@/server/auth/feature-access";
 import { getOrder, getWallet, hidePendingOrder } from "@/server/billing/service";
 

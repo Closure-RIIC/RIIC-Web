@@ -4,7 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { useTranslations } from "use-intl";
 import type { ReactNode } from "react";
 import { LanguageSwitch } from "@/i18n/client";
-import { FilingLinks } from "../../../../../packages/shell/FilingLinks";
+import { FilingLinks } from "@riic/shell/FilingLinks";
 
 /** Shared public-document shell: help and release notes don't load the calculator. */
 export function InfoPageLayout({ title, href, contentId, children, floatingControls }: {

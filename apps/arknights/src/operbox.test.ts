@@ -3,8 +3,8 @@ import test from "node:test";
 
 import * as XLSX from "xlsx";
 
-import { assertOperbox, readOperboxFile, readOperboxText } from "./operbox.ts";
-import { inspectMaaProgress, normalizeMaaRarities } from "./maa-review.ts";
+import { assertOperbox, readOperboxFile, readOperboxText } from "@riic/arknights-domain/operbox";
+import { inspectMaaProgress, normalizeMaaRarities } from "@riic/arknights-domain/maa-review";
 import { computePlan, putCloudWorkspace, submitPlanTask } from "./api.ts";
 
 const entry = {

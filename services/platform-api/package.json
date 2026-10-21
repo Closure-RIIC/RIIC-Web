@@ -1,0 +1,14 @@
+{
+  "name": "@riic/platform-api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node ../../scripts/build-platform.mjs",
+    "dev": "node ../../scripts/build-platform.mjs --serve",
+    "start": "node dist/server.mjs",
+    "check:types": "tsc --noEmit"
+  },
+  "dependencies": { "@riic/platform-server": "*" },
+  "devDependencies": { "@types/node": "^22.20.1", "typescript": "^5.9.3" }
+}

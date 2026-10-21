@@ -1,4 +1,4 @@
-import type { CloudWorkspacePutRequest } from "./types.ts";
+import type { CloudWorkspacePutRequest } from "@riic/arknights-domain/types";
 
 export const CLOUD_SYNC_METADATA_PREFIX = "arknights-infra-cloud-sync-v1";
 

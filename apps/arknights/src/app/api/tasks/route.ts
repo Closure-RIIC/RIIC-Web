@@ -1,7 +1,7 @@
-import { validateLayoutJson } from "@/layout-validation";
-import { assertOperbox } from "@/operbox";
-import { normalizePersistedPlanData } from "@/persistence";
-import { isRotationProfile } from "@/rotation-settings";
+import { validateLayoutJson } from "@riic/arknights-domain/layout-validation";
+import { assertOperbox } from "@riic/arknights-domain/operbox";
+import { normalizePersistedPlanData } from "@riic/arknights-domain/persistence";
+import { isRotationProfile } from "@riic/arknights-domain/rotation-settings";
 import {
   assertFiammettaEnableCompatible,
   assertPlanCollectionLimits,
@@ -15,28 +15,28 @@ import {
   readJsonBody,
   requestClientIp,
   successResponse,
-} from "@/server/api-contract";
-import { websiteSession as readWebsiteSession } from "@/server/auth";
-import { requireWebsiteSession } from "@/server/auth/authorization";
+} from "@riic/platform-server/api-contract";
+import { websiteSession as readWebsiteSession } from "@riic/platform-server/auth";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
 import {
   isAccountCloudSyncEnabled,
   isPlanTaskQueueEnabled,
   planCacheHmacKey,
   workspaceMasterKeys,
-} from "@/server/business-config";
-import { recordPlanRunBestEffort } from "@/server/business-records";
-import { accountDataConsent } from "@/server/data-consent";
-import { getCachedPlanCacheSolverIdentity, getSampleOperbox } from "@/server/infra";
+} from "@riic/platform-server/business-config";
+import { recordPlanRunBestEffort } from "@riic/platform-server/business-records";
+import { accountDataConsent } from "@riic/platform-server/data-consent";
+import { getCachedPlanCacheSolverIdentity, getSampleOperbox } from "@riic/platform-server/infra";
 import {
   evictPlanCacheKeys,
   lookupPlanCache,
   recordPlanCacheReferenceBestEffort,
-} from "@/server/plan-cache";
+} from "@riic/platform-server/plan-cache";
 import { planAccessMode } from "@/server/plan-access";
-import { publicPlanSha256, resolveSavedPlanCalculationContext } from "@/server/plan-result-binding";
-import { safeDisplayName } from "@/server/public-plan";
-import { activeSklandAccount, readSklandAccountStore } from "@/server/skland/http";
-import { sklandDataOwnerTag } from "@/server/skland/session";
+import { publicPlanSha256, resolveSavedPlanCalculationContext } from "@riic/platform-server/plan-result-binding";
+import { safeDisplayName } from "@riic/platform-server/public-plan";
+import { activeSklandAccount, readSklandAccountStore } from "@riic/platform-server/skland/http";
+import { sklandDataOwnerTag } from "@riic/platform-server/skland/session";
 import {
   createPlanTask,
   currentPlanTaskEtaSeconds,
@@ -44,9 +44,9 @@ import {
   planSelectionPoolSize,
   planTaskIpHmac,
 } from "@/server/plan-task";
-import { planOperboxContentHmac } from "@/server/workspace-crypto";
-import { validateSavedPlanCalculationContext } from "@/server/workspace-payload";
-import type { BaseBlueprint, OperBoxEntry, RotationProfile } from "@/types";
+import { planOperboxContentHmac } from "@riic/platform-server/workspace-crypto";
+import { validateSavedPlanCalculationContext } from "@riic/platform-server/workspace-payload";
+import type { BaseBlueprint, OperBoxEntry, RotationProfile } from "@riic/arknights-domain/types";
 
 
 type SubmitBody = {
