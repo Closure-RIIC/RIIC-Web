@@ -28,8 +28,13 @@ export function verifyPlan({ ops, cfg, plan }) {
   if (!c || !Number.isInteger(c.hCenter) || c.hCenter < 1 || c.hCenter > 23) {
     errors.push('中枢换班时刻必须是 1–23 的整点');
   } else {
-    if (c.idxA.length !== cfg.centerSlots || c.idxB.length !== cfg.centerSlots) {
-      errors.push(`中枢每班必须占满 ${cfg.centerSlots} 个工位（白板也计入）`);
+    const nA = c.idxA.length;
+    const nB = c.idxB.length;
+    if (nA > cfg.centerSlots || nB > cfg.centerSlots) {
+      errors.push(`中枢每班最多 ${cfg.centerSlots} 个工位`);
+    }
+    if ((nA === 0) !== (nB === 0)) {
+      errors.push('中枢要么两班都有人，要么两班都空（一队空、一队有人不是合法排班）');
     }
     addPeople(maskFrom(c.idxA), '中枢/A');
     addPeople(maskFrom(c.idxB), '中枢/B');
@@ -43,8 +48,9 @@ export function verifyPlan({ ops, cfg, plan }) {
     const cB = Math.min(1, COST_BASE * (24 - c.hCenter));
     const rA = integrate(c.hCenter, 24, expectedTimeline);
     const rB = integrate(0, c.hCenter, expectedTimeline);
-    if (rA < cA - VERIFY_TOL) errors.push(`中枢 A 段不满足 R ≥ C（R=${rA.toFixed(6)} C=${cA.toFixed(6)}）`);
-    if (rB < cB - VERIFY_TOL) errors.push(`中枢 B 段不满足 R ≥ C（R=${rB.toFixed(6)} C=${cB.toFixed(6)}）`);
+    // 只检查"有恢复干员的班"：纯白板班的红脸不影响任何产出（u=0），与求解器口径一致（R6）
+    if (uA > 0 && rA < cA - VERIFY_TOL) errors.push(`中枢 A 段不满足 R ≥ C（R=${rA.toFixed(6)} C=${cA.toFixed(6)}）`);
+    if (uB > 0 && rB < cB - VERIFY_TOL) errors.push(`中枢 B 段不满足 R ≥ C（R=${rB.toFixed(6)} C=${cB.toFixed(6)}）`);
     if (Math.abs(c.cA - cA) > STRUCT_TOL || Math.abs(c.cB - cB) > STRUCT_TOL
       || Math.abs(c.rA - rA) > STRUCT_TOL || Math.abs(c.rB - rB) > STRUCT_TOL) {
       errors.push('中枢 C/R 与独立重算不一致');

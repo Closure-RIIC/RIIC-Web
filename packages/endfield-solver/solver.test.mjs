@@ -120,3 +120,31 @@ test("growth bonuses are weighted by occupied plots without treating plot count 
   assert.ok(Math.abs(minerals.bonusA - 0.82) < 1e-9);
   assert.ok(Math.abs(minerals.bonusB - 0.82) < 1e-9);
 });
+
+test("center staffs only recovery operators and keeps the baseline production", () => {
+  const result = solve({
+    operators: catalog.map(op => ({ name: op.name, elite: 4 })),
+    options: { ...DEFAULT_OPTIONS },
+  });
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  const centerPeople = result.center.a.length + result.center.b.length;
+  assert.ok(centerPeople < 6, `center must not pad every shift to the slot count (got ${centerPeople})`);
+  assert.ok(Math.abs(result.scores["线索"] - 95.04) < 1e-9);
+  assert.ok(Math.abs(result.scores["干员经验"] - 99.22) < 1e-9);
+  assert.ok(Math.abs(result.scores["武器经验"] - 97.02) < 1e-9);
+  assert.ok(Math.abs(result.scores["培养"] - 775.7951219512195) < 1e-6);
+});
+
+test("a roster without center recovery skills leaves the center unmanned", () => {
+  const recovery = new Set(catalog
+    .filter(op => op.skills.some(s => s.room === "总控中枢" && s.effectKey === "MoodRecoveryAll"))
+    .map(op => op.name));
+  const roster = catalog
+    .filter(op => !recovery.has(op.name))
+    .slice(0, 8)
+    .map(op => ({ name: op.name, elite: 4 }));
+  const result = solve({ operators: roster, options: { ...DEFAULT_OPTIONS } });
+  assert.equal(result.center.a.length + result.center.b.length, 0);
+  assert.equal(result.center.recoveryA, 0);
+  assert.equal(result.center.recoveryB, 0);
+});
