@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
 import { switchWorkbenchLanguage } from "./workbench-language";
 import { expect, test, type Page } from "@playwright/test";
-import type { ManualScheduleDraft } from "../apps/arknights/src/manual-schedule";
+import { createManualScheduleDraft, type ManualScheduleDraft } from "../apps/arknights/src/manual-schedule";
+import { createPosterDocument } from "../apps/arknights/src/schedule-poster-document";
 import layout243 from "../apps/arknights/src/layouts/243.json" with { type: "json" };
 import { mockAnonymousWebsiteSession, mockApis, now, planData } from "./production-readiness.fixture";
 
@@ -216,6 +217,65 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await expect(page.getByText("Something went wrong!", { exact: true })).toHaveCount(0);
   await expect(workbench.getByRole("alert")).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+for (const entry of ["handoff", "code"] as const) {
+  test(`imported poster ${entry} preserves edits and allows switching back to the editor`, async ({ page }) => {
+    const draft = createManualScheduleDraft([24], "08:00", "period");
+    draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", null, null] };
+    const document = createPosterDocument(layout243, draft, operators);
+    document.meta.title = "导入的作业";
+    if (entry === "handoff") {
+      await page.addInitScript(doc => sessionStorage.setItem("riic.schedule-poster.handoff.v1.manual", JSON.stringify(doc)), document);
+    } else {
+      await page.route("**/api/schedule-posters?code=abcdef123456", route => route.fulfill({ json: { document } }));
+    }
+    await page.goto(entry === "handoff" ? "/manual" : "/manual?tab=poster&code=abcdef123456");
+    const workbench = page.locator("[data-poster-workbench]");
+    await expect(workbench.getByLabel("作业名称", { exact: true })).toHaveValue("导入的作业", { timeout: 30_000 });
+    await workbench.getByLabel("作业名称", { exact: true }).fill("修改后的作业");
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).meta.title)).toBe("修改后的作业");
+    await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
+    await expect(page.locator("[data-manual-editor-board]")).toBeVisible();
+    await page.getByRole("tab", { name: "作业图", exact: true }).click();
+    await expect(workbench.getByLabel("作业名称", { exact: true })).toHaveValue("修改后的作业");
+    if (entry === "handoff") expect(await page.evaluate(() => sessionStorage.getItem("riic.schedule-poster.handoff.v1.manual"))).toBeNull();
+  });
+}
+
+test("manual editor restores external operators before opening the lazy poster", async ({ page }) => {
+  const draft = createManualScheduleDraft([24], "08:00", "period");
+  draft.externalOperatorNames = ["巫恋"];
+  draft.shifts[0]!.rooms.trade_1 = { operators: ["巫恋", null, null] };
+  await page.addInitScript(value => localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify(value)), draft);
+  const posterRequests: string[] = [];
+  page.on("request", request => {
+    if (/schedule-poster-(document|model)[-.]/.test(request.url())) posterRequests.push(request.url());
+  });
+  await page.goto("/manual");
+  const operator = page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"] [data-operator-identity="巫恋"]');
+  await expect(operator).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByText("作业示例练度（非个人持有）：巫恋。", { exact: false })).toBeVisible();
+  expect(posterRequests).toEqual([]);
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  await expect(page.locator("[data-poster-workbench]")).toBeVisible({ timeout: 30_000 });
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).operators.find((entry: { name: string }) => entry.name === "巫恋")?.elite)).toBe(2);
+});
+
+test("poster uses current owned training instead of stale cached training", async ({ page }) => {
+  const draft = createManualScheduleDraft([24], "08:00", "period");
+  draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", null, null] };
+  const document = createPosterDocument(layout243, draft, [{ ...operators[0]!, elite: 0, level: 1 }]);
+  await page.addInitScript(({ draft, document }) => {
+    localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify(draft));
+    localStorage.setItem("riic.schedule-poster.v1", JSON.stringify(document));
+  }, { draft, document });
+  await page.goto("/manual?tab=poster");
+  await expect(page.locator("[data-poster-workbench]")).toBeVisible({ timeout: 30_000 });
+  await expect.poll(() => page.evaluate(() => {
+    const operator = JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).operators.find((entry: { name: string }) => entry.name === "阿米娅");
+    return { elite: operator?.elite, level: operator?.level };
+  })).toEqual({ elite: 2, level: 80 });
 });
 
 test("sidebar resumes an existing manual draft without invoking the solver and keeps editing scoped to manual", async ({ page }) => {
