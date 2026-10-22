@@ -1,9 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
-import { mockApis, seedV4Session, scheduleVisualPlanData } from "./production-readiness.fixture";
+import { mockApis, mockSignedInWebsiteSession, seedV4Session, scheduleVisualPlanData } from "./production-readiness.fixture";
 
 test("settings persist and control language, schedule controls and MAA export", async ({ page }) => {
   await mockApis(page);
+  await mockSignedInWebsiteSession(page);
   await seedV4Session(page);
   await page.goto("/settings");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
