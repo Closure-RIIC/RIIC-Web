@@ -1,6 +1,7 @@
 "use client";
 import { INTERNAL_ANSWER_MARKERS } from "@/agent-answer";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
+import { WorkbenchCard } from "@/components/workbench/WorkbenchCard";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -772,9 +773,8 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
               <div className={personaStyles.cards}>
               {[null, ...builtinPersonas, ...(uploadedPersona ? [uploadedPersona] : [])].map((persona) => {
                 const selected = (persona?.id ?? null) === (activePersona?.id ?? null);
-                return <section key={persona?.id ?? "default"} className={`${billingStyles.card} ${billingStyles.product} ${personaStyles.preview} ${!persona ? personaStyles.closure : persona.kind === "builtin" ? BUILTIN_PERSONA_THEMES[persona.theme] : ""}`} aria-label={selected ? "当前人格卡预览" : `${persona?.name ?? "可露希尔"}人格卡`} data-persona-card={persona?.id ?? "default"} data-selected={selected ? "true" : undefined} data-persona-theme={persona?.kind === "builtin" ? persona.theme : undefined} data-persona-avatar-settings={selected ? "" : undefined}>
+                return <WorkbenchCard key={persona?.id ?? "default"} glass className={`${billingStyles.product} ${personaStyles.preview} ${!persona ? personaStyles.closure : persona.kind === "builtin" ? BUILTIN_PERSONA_THEMES[persona.theme] : ""}`} aria-label={selected ? "当前人格卡预览" : `${persona?.name ?? "可露希尔"}人格卡`} data-persona-card={persona?.id ?? "default"} data-selected={selected ? "true" : undefined} data-persona-theme={persona?.kind === "builtin" ? persona.theme : undefined} data-persona-avatar-settings={selected ? "" : undefined}>
                 <button type="button" className={personaStyles.cardSelect} disabled={avatarSaving || busy} aria-pressed={selected} aria-label={persona ? `使用${persona.name}` : "可露希尔 · 使用网站服务端当前配置的人格卡"} onClick={() => { if (!selected) selectPersona(persona); }} />
-                <span aria-hidden="true" className={dialogueStyles.decoration} />
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-medium text-muted-foreground">人格卡</p>
                   <span className={`${billingStyles.productBadge} shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium`}>{persona?.kind === "builtin" ? "预设人格" : persona ? "本地人格" : "默认人格"}</span>
@@ -797,10 +797,9 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
                 </div> : <div>
                   <p className={billingStyles.caption}>{persona?.caption ?? "使用网站服务端当前配置的人格卡"}</p>
                 </div>}
-              </section>;
+              </WorkbenchCard>;
               })}
-              {!uploadedPersona ? <section className={`${billingStyles.card} ${billingStyles.product} ${personaStyles.preview}`} aria-label="导入人格卡">
-                <span aria-hidden="true" className={dialogueStyles.decoration} />
+              {!uploadedPersona ? <WorkbenchCard glass className={`${billingStyles.product} ${personaStyles.preview}`} aria-label="导入人格卡">
                 <div>
                   <Upload className="mb-5 size-6 text-muted-foreground" aria-hidden="true" />
                   <h3 className="text-lg font-semibold">添加你的人格卡</h3>
@@ -810,7 +809,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
                   <p className={billingStyles.caption}>Markdown / TXT / JSON，最大 36 KB<br />保存在当前浏览器</p>
                   <Button type="button" variant="outline" className={`${billingStyles.pill} mt-3 w-full`} disabled={avatarSaving} onClick={() => personaInputRef.current?.click()}><Upload className="size-4" aria-hidden="true" />上传人格卡</Button>
                 </div>
-              </section> : null}
+              </WorkbenchCard> : null}
               </div>
               {uploadedPersona ? <input ref={personaAvatarInputRef} aria-label="上传人格卡头像" type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={avatarSaving} onChange={(event) => { const file = event.target.files?.[0]; if (file) void importPersonaAvatar(file); event.currentTarget.value = ""; }} /> : null}
               <input ref={personaInputRef} aria-label="上传人格卡文件" type="file" accept=".md,.markdown,.txt,.json,text/markdown,text/plain,application/json" className="hidden" disabled={avatarSaving} onChange={(event) => { const file = event.target.files?.[0]; if (file) void importPersona(file); event.currentTarget.value = ""; }} />

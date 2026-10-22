@@ -781,6 +781,9 @@ html.schedule-layout-return::view-transition-new(.schedule-room-entering) {
 
 
 :root { --workbench-dock-height: 34px; }
+@media (max-width: 767px) {
+  :root { --workbench-dock-height: 44px; }
+}
 
 /* Keep the bottom actions outside the page frame and its scrollbar. */
 [data-workbench-shell][data-workbench-docked] [data-slot="sidebar-inset"] {

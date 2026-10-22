@@ -43,6 +43,10 @@
   .dock { right: max(10px, env(safe-area-inset-right)); }
 }
 
+@media (max-width: 767px) {
+  .button { min-width: 44px; height: 44px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .button { transition: none; }
 }

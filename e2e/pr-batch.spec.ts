@@ -20,12 +20,14 @@ test("wish wall reports unauthenticated submissions and keeps the form", async (
   await expect(page.locator("#wish-title")).toHaveValue("测试许愿");
 });
 
-test("settings exposes inline account sign-in to signed out users", async ({ page }) => {
+test("settings opens account sign-in in a dialog for signed out users", async ({ page }) => {
   await mockApis(page);
   await mockAnonymousWebsiteSession(page);
   await page.goto("/settings");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
-  const account = page.locator("[data-website-account-panel]");
+  await expect(page.locator("[data-website-account-panel]")).toHaveCount(0);
+  await page.locator("[data-website-account-sign-in-prompt]").getByRole("button", { name: "登录", exact: true }).click();
+  const account = page.getByRole("dialog", { name: "登录网站账号", exact: true }).locator("[data-website-account-panel]");
   await expect(account.getByRole("textbox", { name: "邮箱", exact: true })).toBeVisible();
   await expect(account.getByLabel("密码", { exact: true })).toBeVisible();
   await expect(account.getByRole("button", { name: "登录", exact: true })).toBeVisible();

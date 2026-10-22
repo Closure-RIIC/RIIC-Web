@@ -247,7 +247,7 @@ export function LiveActivity({ activity: planActivity, trainingSync, onRetry, on
           data-activity-view={expanded ? "expanded" : "compact"}
           data-training-sync={training ? "" : undefined}
           className={cn(
-            "fixed top-[max(0.75rem,env(safe-area-inset-top))] left-1/2 z-[80] -translate-x-1/2 overflow-hidden rounded-[11px] border text-sm outline-none",
+            "fixed top-[max(0.75rem,env(safe-area-inset-top))] max-md:top-[calc(3.75rem+env(safe-area-inset-top))] left-1/2 z-[80] max-md:z-40 -translate-x-1/2 overflow-hidden rounded-[11px] border text-sm outline-none",
             "bg-card text-card-foreground shadow-[var(--shadow-border)] focus-visible:ring-2 focus-visible:ring-ring",
             activity.phase === "error" ? "border-destructive/40" : "border-border",
           )}
