@@ -1,0 +1,81 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { applyScheduleText, scheduleDraftToText } from "./schedule-poster-text.ts";
+import { createManualScheduleDraft, reconcileManualScheduleDraft } from "./manual-schedule.ts";
+import { evaluateManualSchedule } from "./manual-schedule-evaluator.ts";
+import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
+const layout = JSON.parse(readFileSync(new URL("../../../packages/arknights-domain/src/layouts/252.json", import.meta.url), "utf8")) as BaseBlueprint;
+const names = new Set(["能天使", "德克萨斯", "拉普兰德", "银灰", "杜宾", "菲亚梅塔"]);
+const empty = () => reconcileManualScheduleDraft(createManualScheduleDraft([8, 8, 8]), layout);
+test("bulk text applies teams, percentages, shift products, drone destinations and Fiammetta atomically", () => {
+  const result = applyScheduleText("贸易站1：能天使、德克萨斯 @90% #龙门币 | = | 拉普兰德 @0% #合成玉\n训练室：_、杜宾 | = | =\n无人机：贸易站1 | 制造站1 | -\n菲亚梅塔：能天使 | 德克萨斯 | 拉普兰德", layout, empty(), names);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.draft.shifts[0]!.rooms.trade_1?.operators, ["能天使", "德克萨斯"]);
+  assert.equal(result.draft.shifts[1]!.rooms.trade_1?.manualSkillEfficiencyPct, 90);
+  assert.equal(result.draft.shifts[2]!.rooms.trade_1?.manualSkillEfficiencyPct, 0);
+  assert.deepEqual(result.draft.shifts[2]!.rooms.trade_1?.product, {trade:{order:"originium"}});
+  assert.deepEqual(result.draft.shifts[0]!.rooms.training_room?.operators, [null,"杜宾"]);
+  assert.equal(result.draft.shifts[1]!.droneTargetRoomId, "manu_1");
+  assert.equal(result.draft.fiammettaEnabled, true);
+  assert.equal(result.draft.shifts[2]!.fiammettaTarget, "拉普兰德");
+});
+test("bulk trade assignments feed operator levels, manual efficiency and gold-order equivalence into evaluation", () => {
+  const box: OperBoxEntry[] = [
+    { id: "char_254_vodfox", name: "巫恋", elite: 2, level: 80, own: true, potential: 1, rarity: 5 },
+    { id: "char_486_takila", name: "龙舌兰", elite: 2, level: 80, own: true, potential: 1, rarity: 5 },
+    { id: "char_252_bibeak", name: "柏喙", elite: 2, level: 80, own: true, potential: 1, rarity: 5 },
+  ];
+  const draft = empty();
+  const parsed = applyScheduleText("贸易站1：巫恋、龙舌兰、柏喙 @0% #龙门币 | - | -", layout, draft, new Set([...names, "巫恋", "龙舌兰", "柏喙"]));
+  assert.deepEqual(parsed.errors, []);
+  const evaluation = evaluateManualSchedule({ draft: parsed.draft, layout, operbox: box });
+  const room = evaluation.roomsByShift[0]?.find(item => item.roomId === "trade_1");
+  assert.ok(room);
+  assert.equal(room.skillEfficiency, 0);
+  assert.equal(room.specialTradeAnchor?.label, "巫恋 E2 + 龙舌兰 E2 + β裁缝");
+  assert.equal(room.tradeEquivalentEfficiency, 0.26);
+  assert.equal(room.goldEquivalentEfficiency, 0.252);
+});
+test("bulk patches preserve omitted facilities and allow moving an operator between changed rows", () => {
+  const draft = empty();
+  draft.shifts[0]!.rooms.trade_1 = { operators: ["能天使"] };
+  draft.shifts[0]!.rooms.dorm_4 = { operators: ["银灰"], autofill: false };
+  const result = applyScheduleText("贸易站1：- | - | -\n贸易站2：能天使 @45.5% | - | -", layout, draft, names);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.draft.shifts[0]!.rooms.dorm_4, draft.shifts[0]!.rooms.dorm_4);
+  assert.deepEqual(draft.shifts[0]!.rooms.trade_1?.operators, ["能天使"]);
+});
+test("invalid text never changes the draft and gives line-specific feedback", () => {
+  const draft = empty();
+  const cases = [
+    "贸易站1：不存在 | - | -",
+    "贸易站1：能天使 | -",
+    "贸易站1：能天使 | - | -\n贸易站2：能天使 | - | -",
+    "贸易站2：能天使、德克萨斯、拉普兰德 | - | -",
+    "贸易站2：- #合成玉 | - | -",
+    "训练室：杜宾 @90% | - | -",
+    "无人机：宿舍1 | - | -",
+    "菲亚梅塔：银灰 | - | -",
+    "贸易站1：= | - | -",
+    "贸易站1：- @10001% | - | -",
+  ];
+  for (const text of cases) {
+    const result = applyScheduleText(text, layout, draft, names);
+    assert.ok(result.errors.length, text);
+    assert.strictEqual(result.draft, draft);
+    assert.match(result.errors[0]!, /^第 /);
+  }
+});
+test("generated templates retain positions, manual efficiency and dormant room data when edited", () => {
+  for (const count of [1,2,3,4]) {
+    const draft = reconcileManualScheduleDraft(createManualScheduleDraft(Array.from({length:count}, () => 24/count)),layout);
+    draft.shifts[0]!.rooms.training_room = {operators:[null,"杜宾"]};
+    draft.shifts[0]!.rooms.trade_1 = {operators:["能天使"],manualSkillEfficiencyPct:125.5, product:{trade:{order:"originium"}}};
+    const text = scheduleDraftToText(layout,draft);
+    const result = applyScheduleText(text,layout,draft,names);
+    assert.deepEqual(result.errors,[]);
+    assert.deepEqual(result.draft.shifts[0]!.rooms.training_room,draft.shifts[0]!.rooms.training_room);
+    assert.deepEqual(result.draft.shifts[0]!.rooms.trade_1,draft.shifts[0]!.rooms.trade_1);
+  }
+});

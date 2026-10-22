@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import { mockAnonymousWebsiteSession, mockApis, planData, requestId, seedV4Session } from "./production-readiness.fixture";
-import type { MaaJson } from "../src/types";
+import type { MaaJson } from "@riic/arknights-domain/types";
 
 for (const source of ["generated", "restored"] as const) {
   test(`${source} calculator exports normalize every dorm to autofill`, async ({ page }) => {

@@ -72,13 +72,14 @@ function isForbiddenPath(filePath) {
   const baseName = normalized.split("/").at(-1) ?? normalized;
   const isEnvironmentFile = /(^|\/)\.env(?:\.|$)/u.test(normalized)
     && normalized !== ".env.example"
+    && !/^(?:apps|services)\/[^/]+\/\.env\.example$/u.test(normalized)
     && normalized !== "deploy/postgres/example.env";
 
   return (
     baseName === "AGENTS.md" ||
     baseName === "AGENTS.override.md" ||
     /^bin\/infra-cli(?:\.exe)?$/iu.test(normalized) ||
-    /^public\/videos\/help\/.*\.(?:mp4|webm|mov)$/iu.test(normalized) ||
+    /^(?:apps\/[^/]+\/)?public\/videos\/help\/.*\.(?:mp4|webm|mov)$/iu.test(normalized) ||
     PRIVATE_HELPER_PATHS.has(normalized) ||
     PRIVATE_DOCUMENT_PATHS.has(normalized) ||
     /(^|\/)docs\/(?:internal|superpowers)(?:\/|$)/iu.test(normalized) ||

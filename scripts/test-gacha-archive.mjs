@@ -27,8 +27,8 @@ try {
   finally { await client.end(); }
   const status = await new Promise((resolve, reject) => {
     const child = spawn(process.execPath, ["--test", "--experimental-strip-types", "--experimental-test-module-mocks", "--import", "./scripts/register-hooks.mjs",
-      "src/server/gacha-archive.integration.test.mjs", "src/server/gacha-archive-api.test.ts", "src/server/gacha-archive-validation.test.ts",
-      "src/server/gacha-skland-api.test.ts", "src/server/gacha-skland-authorization.test.ts"], {
+      "apps/arknights/src/server/gacha-archive.integration.test.mjs", "apps/arknights/src/server/gacha-archive-api.test.ts", "apps/arknights/src/server/gacha-archive-validation.test.ts",
+      "apps/arknights/src/server/gacha-skland-api.test.ts", "apps/arknights/src/server/gacha-skland-authorization.test.ts"], {
       stdio: "inherit", env: { ...process.env, DATABASE_URL: isolatedUrl, AUTH_INTEGRATION_DATABASE_URL: isolatedUrl },
     });
     child.once("error", reject);

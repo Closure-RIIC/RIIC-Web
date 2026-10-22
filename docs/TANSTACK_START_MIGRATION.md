@@ -1,3 +1,5 @@
+> 目录更新：两站现已迁入 `apps/arknights` / `apps/endfield`。当前命令与产物路径见 [双应用工作区](./WORKSPACES.md)；下文记录当时的框架迁移。
+
 # TanStack Start migration — production baseline
 
 ## Scope and provenance

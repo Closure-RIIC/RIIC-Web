@@ -25,7 +25,7 @@
 
 ## 发现二：资源同步被时间边界测试阻塞
 
-[资源同步运行 38512022520](https://github.com/KnightCodeSquareMatrix/RIIC-Web/actions/runs/38512022520) 的 `Generate and validate assets` 成功，`Run pre-PR quality gates` 失败，发布阶段跳过。失败测试为 `src/server/gacha-archive-validation.test.ts` 的 legacy import 校验，错误是 `Missing expected exception`。
+[资源同步运行 38512022520](https://github.com/KnightCodeSquareMatrix/RIIC-Web/actions/runs/38512022520) 的 `Generate and validate assets` 成功，`Run pre-PR quality gates` 失败，发布阶段跳过。失败测试为 `apps/arknights/src/server/gacha-archive-validation.test.ts` 的 legacy import 校验，错误是 `Missing expected exception`。
 
 本地精确基线运行同一非 UI 测试：1 失败、1 通过，重现 CI 症状。调查发现测试构造 `Date.now() + 86400001`，生产解析器拒绝大于自身 `Date.now() + 86400000` 的值。两个 Date.now 之间只要经过 1 ms，原先在边界外的样本就可能落回允许范围。因此本轮证据指向测试时间竞态，不能因测试名称包含 ownership 就称其为权限漏洞。
 
@@ -48,11 +48,11 @@ node --test --experimental-strip-types --import ./.tmp/freeze-gacha-test-clock.m
 
 显式 Deprecation 标记出现在：
 
-- `src/server/admin-records-api.ts`
-- `src/server/admin-users-api.ts`
-- `src/server/skland/account-data-api.ts`
-- `src/server/skland/accounts-api.ts`
-- `src/server/skland/status-api.ts`
+- `apps/arknights/src/server/admin-records-api.ts`
+- `apps/arknights/src/server/admin-users-api.ts`
+- `packages/platform-server/src/skland/account-data-api.ts`
+- `packages/platform-server/src/skland/accounts-api.ts`
+- `packages/platform-server/src/skland/status-api.ts`
 
 这是 136 个服务端文件范围内的标记清单。没有访问流量与外部客户端迁移证据，删除条件不成立。下一轮一次选一个接口核对新旧路由和消费者；本轮没有引入“零引用即删除”的自动化。
 

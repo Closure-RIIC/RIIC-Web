@@ -117,13 +117,15 @@ test("batched deployment inspections make one SSH call and fail closed on invali
 
 test("TanStack Start commands use Vite", async () => {
   const packageJson = JSON.parse(await readRepoFile("package.json"));
-  assert.equal(packageJson.scripts.build, "vite build && tsc --noEmit");
-  assert.match(packageJson.scripts.dev, /vite/);
-  assert.equal(packageJson.dependencies.next, undefined);
-  assert.equal(packageJson.dependencies["next-intl"], undefined);
-  assert.ok(packageJson.dependencies["@tanstack/react-start"]);
+  const app = JSON.parse(await readRepoFile("apps/arknights/package.json"));
+  assert.equal(packageJson.scripts.build, "npm run build --workspace @riic/arknights");
+  assert.equal(packageJson.scripts.dev, "npm run dev --workspace @riic/arknights --");
+  assert.match(app.scripts.build, /run-vite.mjs arknights build && tsc --noEmit/);
+  assert.equal(app.dependencies.next, undefined);
+  assert.equal(app.dependencies["next-intl"], undefined);
+  assert.ok(app.dependencies["@tanstack/react-start"]);
   for (const config of ["playwright.config.ts", "playwright.production.config.ts"]) {
-    assert.match(await readRepoFile(config), /npx vite --host/);
+    assert.match(await readRepoFile(config), /npm run dev -- --host/);
   }
 });
 
@@ -175,13 +177,14 @@ test("standalone startup resolves the solver and fixtures from its runtime, rega
 
 test("production builds prepare a solver-free standalone runtime with static assets", async () => {
   const packageJson = JSON.parse(await readRepoFile("package.json"));
-  const config = await readRepoFile("vite.config.ts");
+  const config = await readRepoFile("apps/arknights/vite.config.ts");
   const prepare = await readRepoFile("scripts/prepare-standalone.mjs");
   const start = await readRepoFile("scripts/start-standalone.mjs");
   const stage = await readRepoFile("scripts/stage-standalone-release.mjs");
   assert.match(config, /preset: "node-server"/);
   assert.match(config, /APP_CLIENT_BUILD_ID: environment.APP_BUILD_ID/);
-  assert.equal(packageJson.scripts.postbuild, "node scripts/prepare-standalone.mjs");
+  const app = JSON.parse(await readRepoFile("apps/arknights/package.json"));
+  assert.equal(app.scripts.postbuild, "node ../../scripts/prepare-standalone.mjs");
   assert.equal(packageJson.scripts.start, "node scripts/start-standalone.mjs");
   assert.equal(packageJson.scripts["release:stage"], "node scripts/stage-standalone-release.mjs");
   for (const entry of ["bin/infra-cli", "bin/infra-cli.exe", ".env", ".env.production", ".env.local", ".env.production.local"]) assert.ok(prepare.includes('"' + entry + '"'));
@@ -192,7 +195,7 @@ test("production builds prepare a solver-free standalone runtime with static ass
   assert.match(prepare, /bundle: true, platform: "node"/);
   assert.match(start, /ARKNIGHTS_INFRA_HOSTNAME \|\| "0.0.0.0"/);
   assert.match(start, /process.env.PORT = String\(numericPort\)/);
-  assert.match(start, /\.output\/server\/index.mjs/);
+  assert.match(start, /new URL\("server\/index.mjs", runtimeUrl\)/);
   assert.match(stage, /kind: "riic-web-tanstack-start"/);
   assert.match(stage, /standalone release root must not contain/);
   assert.match(stage, /dereference: true/);
@@ -202,8 +205,8 @@ test("production builds prepare a solver-free standalone runtime with static ass
 test("the plan worker centrally dispatches an eight-task pipeline across four isolated solver lanes", async () => {
   const [workerRuntime, planTask, infra] = await Promise.all([
     readRepoFile("scripts/plan-worker-runtime.mts"),
-    readRepoFile("src/server/plan-task.ts"),
-    readRepoFile("src/server/infra.ts"),
+    readRepoFile("apps/arknights/src/server/plan-task.ts"),
+    readRepoFile("packages/platform-server/src/infra.ts"),
   ]);
 
   assert.match(planTask, /PLAN_TASK_WORKER_CONCURRENCY = 4/);
@@ -243,7 +246,7 @@ test("database migrations build queue indexes online after additive schema chang
   const [migration, migrateScript, schema] = await Promise.all([
     readRepoFile("drizzle/0012_public_cardiac.sql"),
     readRepoFile("scripts/migrate-db.mts"),
-    readRepoFile("src/server/db/schema.ts"),
+    readRepoFile("packages/platform-server/src/db/schema.ts"),
   ]);
 
   assert.doesNotMatch(migration, /(?:DROP|CREATE) INDEX/);
@@ -263,7 +266,7 @@ test("database migrations build queue indexes online after additive schema chang
 });
 
 test("Nitro owns graceful shutdown while systemd accepts its signal exit statuses", async () => {
-  const processCleanup = await readRepoFile("src/server/process-cleanup.ts");
+  const processCleanup = await readRepoFile("packages/platform-server/src/process-cleanup.ts");
   const systemdDropIn = await readRepoFile("deploy/node-graceful-exit.conf");
   const systemdGuide = await readRepoFile("deploy/SYSTEMD.md");
 
@@ -302,10 +305,10 @@ test("CI enforces route and document preload JavaScript budgets after building",
 });
 
 test("Start and Nitro preserve compression and private document caching", async () => {
-  const config = await readRepoFile("vite.config.ts");
-  const server = await readRepoFile("src/server.ts");
-  const policy = await readRepoFile("src/server/http-cache-policy.ts");
-  const root = await readRepoFile("src/routes/__root.tsx");
+  const config = await readRepoFile("apps/arknights/vite.config.ts");
+  const server = await readRepoFile("apps/arknights/src/server.ts");
+  const policy = await readRepoFile("apps/arknights/src/server/http-cache-policy.ts");
+  const root = await readRepoFile("apps/arknights/src/routes/__root.tsx");
   const verify = await readRepoFile("scripts/verify-public-compression.mjs");
   assert.match(config, /compressPublicAssets: true/);
   assert.match(server, /new CompressionStream\("gzip"\)/);
@@ -636,23 +639,23 @@ test("mastery, gacha UP data and the full fixture follow every managed-resource 
   assert.match(workflow, /\/item\/AP_BASE\.png/);
   assert.equal((workflow.match(/echo "base_sha=\$remote_base_sha" >> "\$GITHUB_OUTPUT"/g) ?? []).length, 2);
   assert.equal((workflow.match(/-f operator_data_base_sha="\$\{\{ steps\.merge\.outputs\.base_sha \}\}"/g) ?? []).length, 2);
-  const guards = workflow.match(/public\/images\/operator-portraits\/\*\|[^\n]+;;/g) ?? [];
+  const guards = workflow.match(/apps\/arknights\/public\/images\/operator-portraits\/\*\|[^\n]+;;/g) ?? [];
   assert.equal(guards.length, 4);
-  for (const guard of guards) assert.match(guard, /\|src\/generated\/mastery-data\.json\|src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
+  for (const guard of guards) assert.match(guard, /\|apps\/arknights\/src\/generated\/mastery-data\.json\|packages\/arknights-domain\/src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
   const regularFileChecks = workflow.match(/git ls-files -s --[^\n]+/g) ?? [];
   assert.equal(regularFileChecks.length, 3);
   for (const check of regularFileChecks) {
-    assert.ok(check.includes("src/generated/mastery-data.json"));
-    assert.ok(check.includes("src/generated/gacha-up.json"));
+    assert.ok(check.includes("apps/arknights/src/generated/mastery-data.json"));
+    assert.ok(check.includes("packages/arknights-domain/src/generated/gacha-up.json"));
     assert.ok(check.includes("fixtures/operbox_full_e2.json"));
   }
-  assert.match(workflow, /git restore --source[^\n]+[\s\S]*?src\/generated\/arkntools \\\n\s+src\/generated\/mastery-data\.json/);
+  assert.match(workflow, /git restore --source[^\n]+[\s\S]*?packages\/arknights-domain\/src\/generated\/arkntools \\\n\s+apps\/arknights\/src\/generated\/mastery-data\.json/);
   const generateStep = workflow.slice(workflow.indexOf("      - name: Generate and validate assets"), workflow.indexOf("      - name: Run pre-PR quality gates"));
   assert.ok(generateStep.indexOf("npm run assets:gacha-up") > generateStep.indexOf("npm run assets:sync:arkntools"));
-  assert.match(workflow, /git status --porcelain --[^\n]*src\/generated\/gacha-up\.json/);
-  assert.match(workflow, /git add --[^\n]*src\/generated\/gacha-up\.json/);
-  assert.match(workflow, /src\/generated\/gacha-up\.json \\\n\s+fixtures\/operbox_full_e2\.json/);
-  assert.match(workflow, /git show HEAD:src\/generated\/gacha-up\.json/);
+  assert.match(workflow, /git status --porcelain --[^\n]*packages\/arknights-domain\/src\/generated\/gacha-up\.json/);
+  assert.match(workflow, /git add --[^\n]*packages\/arknights-domain\/src\/generated\/gacha-up\.json/);
+  assert.match(workflow, /packages\/arknights-domain\/src\/generated\/gacha-up\.json \\\n\s+fixtures\/operbox_full_e2\.json/);
+  assert.match(workflow, /git show HEAD:packages\/arknights-domain\/src\/generated\/gacha-up\.json/);
   assert.match(workflow, /--before-gacha-up "\$RUNNER_TEMP\/gacha-up-before\.json"/);
 });
 
@@ -672,11 +675,11 @@ test("CI browser jobs use the matching pinned Playwright image without runtime a
 });
 
 test("production injects the client feature flag at every browser boundary", async () => {
-  const nextConfig = await readRepoFile("vite.config.ts");
-  const app = await readRepoFile("src/App.tsx");
-  const sklandPage = await readRepoFile("src/app/(workbench)/skland/page.tsx");
-  const developmentSklandCenter = await readRepoFile("src/components/pages/DevelopmentSklandStatusCenter.tsx");
-  const setupDialog = await readRepoFile("src/setup-dialog.tsx");
+  const nextConfig = await readRepoFile("apps/arknights/vite.config.ts");
+  const app = await readRepoFile("apps/arknights/src/App.tsx");
+  const sklandPage = await readRepoFile("apps/arknights/src/app/(workbench)/skland/page.tsx");
+  const developmentSklandCenter = await readRepoFile("apps/arknights/src/components/pages/DevelopmentSklandStatusCenter.tsx");
+  const setupDialog = await readRepoFile("apps/arknights/src/setup-dialog.tsx");
   const workflow = await readRepoFile(".github/workflows/frontend-quality.yml");
 
   assert.match(nextConfig, /APP_CLIENT_SKLAND_ENABLED: sklandEnabled \? "1" : "0"/);
@@ -694,21 +697,21 @@ test("production injects the client feature flag at every browser boundary", asy
 });
 
 test("workbench views use intent-only code preloading under one persistent layout", async () => {
-  const layout = await readRepoFile("src/app/(workbench)/layout.tsx");
-  const app = await readRepoFile("src/App.tsx");
-  const sidebar = await readRepoFile("src/components/layout/AppSidebar.tsx");
-  const routeMap = await readRepoFile("src/workbench-routes.ts");
+  const layout = await readRepoFile("apps/arknights/src/app/(workbench)/layout.tsx");
+  const app = await readRepoFile("apps/arknights/src/App.tsx");
+  const sidebar = await readRepoFile("apps/arknights/src/components/layout/AppSidebar.tsx");
+  const routeMap = await readRepoFile("apps/arknights/src/workbench-routes.ts");
   const pages = await Promise.all([
-    "src/app/(workbench)/page.tsx",
-    "src/app/(workbench)/training/page.tsx",
-    "src/app/(workbench)/skills/page.tsx",
-    "src/app/(workbench)/skland/page.tsx",
-    "src/app/(workbench)/account/page.tsx",
+    "apps/arknights/src/app/(workbench)/page.tsx",
+    "apps/arknights/src/app/(workbench)/training/page.tsx",
+    "apps/arknights/src/app/(workbench)/skills/page.tsx",
+    "apps/arknights/src/app/(workbench)/skland/page.tsx",
+    "apps/arknights/src/app/(workbench)/account/page.tsx",
   ].map(readRepoFile));
   const loadingPages = await Promise.all([
-    "src/app/(workbench)/training/loading.tsx",
-    "src/app/(workbench)/skills/loading.tsx",
-    "src/app/(workbench)/account/loading.tsx",
+    "apps/arknights/src/app/(workbench)/training/loading.tsx",
+    "apps/arknights/src/app/(workbench)/skills/loading.tsx",
+    "apps/arknights/src/app/(workbench)/account/loading.tsx",
   ].map(readRepoFile));
 
   assert.match(layout, /import WorkbenchApp from "@\/App"/);
@@ -725,8 +728,8 @@ test("workbench views use intent-only code preloading under one persistent layou
   assert.match(sidebar, /data-primary-navigation-prefetch="intent-code"/);
   assert.match(sidebar, /preload=\{false\}/);
   assert.doesNotMatch(app, /router\.prefetch/);
-  assert.match(await readRepoFile("src/navigation.ts"), /router\.loadRouteChunk\(route\)/);
-  assert.doesNotMatch(await readRepoFile("src/navigation.ts"), /router\.preloadRoute/);
+  assert.match(await readRepoFile("apps/arknights/src/navigation.ts"), /router\.loadRouteChunk\(route\)/);
+  assert.doesNotMatch(await readRepoFile("apps/arknights/src/navigation.ts"), /router\.preloadRoute/);
   assert.doesNotMatch(app, /betaRequested|showBetaPanels|DebugActions|IssuePanel/);
   assert.doesNotMatch(routeMap, /\?beta|betaRequested/);
   assert.doesNotMatch(sidebar, /\?beta|betaRequested/);
@@ -734,16 +737,16 @@ test("workbench views use intent-only code preloading under one persistent layou
 
 test("Skland entries check the shared build feature gate and documents remain uncached", async () => {
   for (const page of ["skland", "inventory", "gacha"]) {
-    assert.match(await readRepoFile(`src/routes/_workbench.${page}.tsx`), /beforeLoad:[\s\S]+process\.env\.APP_CLIENT_SKLAND_ENABLED !== "1"[\s\S]+throw notFound/);
+    assert.match(await readRepoFile(`apps/arknights/src/routes/_workbench.${page}.tsx`), /beforeLoad:[\s\S]+process\.env\.APP_CLIENT_SKLAND_ENABLED !== "1"[\s\S]+throw notFound/);
   }
-  assert.match(await readRepoFile("src/server.ts"), /DOCUMENT_CACHE_CONTROL/);
-  assert.doesNotMatch(await readRepoFile("vite.config.ts"), /prerender:\s*true/);
+  assert.match(await readRepoFile("apps/arknights/src/server.ts"), /DOCUMENT_CACHE_CONTROL/);
+  assert.doesNotMatch(await readRepoFile("apps/arknights/vite.config.ts"), /prerender:\s*true/);
 });
 
 test("the critical calculator board stays initial while the compact view loads on demand", async () => {
-  const calculator = await readRepoFile("src/components/pages/InfraCalculator.tsx");
-  const calculatorRoute = await readRepoFile("src/components/workbench/CalculatorRoute.tsx");
-  const app = await readRepoFile("src/App.tsx");
+  const calculator = await readRepoFile("apps/arknights/src/components/pages/InfraCalculator.tsx");
+  const calculatorRoute = await readRepoFile("apps/arknights/src/components/workbench/CalculatorRoute.tsx");
+  const app = await readRepoFile("apps/arknights/src/App.tsx");
 
   assert.match(calculator, /import \{ ScheduleBoard, ShiftTabs \} from "@\/components"/);
   assert.doesNotMatch(calculator, /const (?:ScheduleBoard|ShiftTabs) = lazy\(/);
@@ -751,7 +754,7 @@ test("the critical calculator board stays initial while the compact view loads o
   assert.doesNotMatch(calculator, /<Suspense fallback=\{<DeferredResultLoading \/>\}><ScheduleBoard/);
   assert.match(calculatorRoute, /import \{ InfraCalculator \} from "@\/components\/pages\/InfraCalculator"/);
   assert.doesNotMatch(app, /PageScrollbar/);
-  const components = await readRepoFile("src/components.tsx");
+  const components = await readRepoFile("apps/arknights/src/components.tsx");
   assert.match(components, /useState<ScheduleViewMode \| null>\(null\)/);
   assert.match(components, /useState<boolean \| null>\(null\)/);
   assert.match(components, /window\.matchMedia\("\(min-width: 1024px\)"\)/);
@@ -764,10 +767,10 @@ test("the critical calculator board stays initial while the compact view loads o
 });
 
 test("heavy account, operator, and scrollbar modules stay behind runtime boundaries", async () => {
-  const app = await readRepoFile("src/App.tsx");
-  const schedule = await readRepoFile("src/schedule.ts");
-  const components = await readRepoFile("src/components.tsx");
-  const scrollbar = await readRepoFile("src/components/ui/page-scrollbar.tsx");
+  const app = await readRepoFile("apps/arknights/src/App.tsx");
+  const schedule = await readRepoFile("apps/arknights/src/schedule.ts");
+  const components = await readRepoFile("apps/arknights/src/components.tsx");
+  const scrollbar = await readRepoFile("packages/ui-primitives/page-scrollbar.tsx");
 
   assert.match(app, /useWebsiteSession/);
   assert.doesNotMatch(app, /authClient\.useSession/);
@@ -781,13 +784,13 @@ test("heavy account, operator, and scrollbar modules stay behind runtime boundar
 });
 
 test("versioned product assets receive immutable cache headers", async () => {
-  const { assetCacheControl } = await import("../src/server/http-cache-policy.ts");
+  const { assetCacheControl } = await import("../apps/arknights/src/server/http-cache-policy.ts");
   assert.equal(assetCacheControl(new URL("https://test.invalid/images/products/item.png?v=123-abcdef123456")), "public, max-age=31536000, immutable");
   assert.equal(assetCacheControl(new URL("https://test.invalid/images/products/item.png")), "public, max-age=0");
 });
 
 test("building skill immutable cache headers require an asset version", async () => {
-  const { assetCacheControl } = await import("../src/server/http-cache-policy.ts");
+  const { assetCacheControl } = await import("../apps/arknights/src/server/http-cache-policy.ts");
   assert.equal(assetCacheControl(new URL("https://test.invalid/images/building-skills/item.png?v=123-abcdef123456")), "public, max-age=31536000, immutable");
   for (const suffix of ["", "?v=123", "?v=bad-abcdef123456"]) assert.equal(assetCacheControl(new URL("https://test.invalid/images/building-skills/item.png" + suffix)), "public, max-age=0");
 });

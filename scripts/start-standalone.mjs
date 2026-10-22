@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import process from "node:process";
 import { fileURLToPath, URL } from "node:url";
 import { loadEnvConfig } from "./load-env.mjs";
 
 process.env.NODE_ENV ??= "production";
-const runtimeDirectory = fileURLToPath(new URL("../.output", import.meta.url));
+// Source checkout and staged release have deliberate, separate layouts.
+// Select by the workspace manifest, never by a possibly stale root build.
+const sourceCheckout = existsSync(new URL("../apps/arknights/package.json", import.meta.url));
+const runtimeUrl = new URL(sourceCheckout ? "../apps/arknights/.output/" : "../.output/", import.meta.url);
+const runtimeDirectory = fileURLToPath(runtimeUrl).replace(/[\\/]$/, "");
 loadEnvConfig(runtimeDirectory, false);
 
 const args = process.argv.slice(2);
@@ -39,4 +44,4 @@ process.env.PORT = String(numericPort);
 // The solver, fixtures and sealed runtime files are relative to .output.
 // Nitro does not change cwd automatically like Next's standalone server did.
 process.chdir(runtimeDirectory);
-await import(new URL("../.output/server/index.mjs", import.meta.url).href);
+await import(new URL("server/index.mjs", runtimeUrl).href);

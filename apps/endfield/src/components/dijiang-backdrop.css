@@ -1,0 +1,76 @@
+/* Anatomy geometry palette, scoped to the decorative ship. MIT © 2026 Ryan;
+   the full upstream notice is embedded in dijiang-artwork.svg. */
+.ef-dijiang {
+  --anatomy-paper:#d9dcde; --anatomy-top:#f5f6f6;
+  --anatomy-shade-0:#aeb5bb; --anatomy-shade-1:#bec4c8;
+  --anatomy-shade-2:#ccd1d4; --anatomy-shade-3:#dde0e2;
+  --anatomy-hi:#626b72; --anatomy-mid:#78838c;
+  --anatomy-lo:#929ba2; --anatomy-faint:#a8afb4;
+  --anatomy-dot:#68747e; --dijiang-accent:#a08a43;
+  position:absolute; z-index:0; inset-inline:0; top:50%; translate:0 -50%;
+  aspect-ratio:1120 / 580; max-height:100%; pointer-events:none; user-select:none;
+  opacity:.32;
+}
+.dark .ef-dijiang {
+  --anatomy-paper:#24292d; --anatomy-top:#353c42;
+  --anatomy-shade-0:#12171b; --anatomy-shade-1:#1a2025;
+  --anatomy-shade-2:#252c32; --anatomy-shade-3:#2c343b;
+  --anatomy-hi:#89969e; --anatomy-mid:#626f78;
+  --anatomy-lo:#48555e; --anatomy-faint:#3c484f;
+  --anatomy-dot:#a2adb4; --dijiang-accent:#d0b35f;
+  opacity:.42;
+}
+.ef-dijiang-vessel {
+  width:100%; height:100%;
+  transform:translateX(7.5%) scale(.9); transform-origin:50% 50%;
+}
+.ef-dijiang svg { display:block; width:100%; height:100%; overflow:visible; }
+.ef-dijiang .iso-fill { fill:var(--anatomy-paper); stroke:none; }
+.ef-dijiang .iso-top { fill:var(--anatomy-top); stroke:none; }
+.ef-dijiang .iso-shade { stroke:none; }
+.ef-dijiang .iso-shade[data-shade="0"] { fill:var(--anatomy-shade-0); }
+.ef-dijiang .iso-shade[data-shade="1"] { fill:var(--anatomy-shade-1); }
+.ef-dijiang .iso-shade[data-shade="2"] { fill:var(--anatomy-shade-2); }
+.ef-dijiang .iso-shade[data-shade="3"] { fill:var(--anatomy-shade-3); }
+.ef-dijiang .iso-line { fill:none; stroke:var(--anatomy-lo); stroke-width:.65; stroke-linecap:round; stroke-linejoin:round; }
+.ef-dijiang .iso-line[data-tone="mid"] { stroke:var(--anatomy-mid); }
+.ef-dijiang .iso-line[data-tone="faint"] { stroke:var(--anatomy-faint); }
+.ef-dijiang .iso-dots { fill:var(--anatomy-dot); opacity:.65; }
+.ef-dijiang-inset { fill:var(--anatomy-shade-0); stroke:none; }
+.ef-dijiang-panel { fill:var(--anatomy-top); stroke:none; opacity:.3; }
+.ef-dijiang-crystal { fill:var(--anatomy-shade-3); stroke:var(--anatomy-shade-1); stroke-width:.45; }
+.ef-dijiang [data-dijiang-part*=".armor."] {
+  --anatomy-top:#f5f6f6; --anatomy-shade-0:#b7bdc3; --anatomy-shade-1:#c4cacf;
+  --anatomy-shade-2:#d1d6da; --anatomy-shade-3:#e2e5e7;
+}
+.dark .ef-dijiang [data-dijiang-part*=".armor."] {
+  --anatomy-top:#515a62; --anatomy-shade-0:#252d34; --anatomy-shade-1:#323b43;
+  --anatomy-shade-2:#3d4750; --anatomy-shade-3:#48535c;
+}
+.ef-dijiang [data-dijiang-core] {
+  --anatomy-paper:#777c82; --anatomy-top:#82888e;
+  --anatomy-shade-0:#3a4148; --anatomy-shade-1:#48525b;
+  --anatomy-shade-2:#59626b; --anatomy-shade-3:#6c747d;
+}
+.dark .ef-dijiang [data-dijiang-core] {
+  --anatomy-paper:#0d1014; --anatomy-top:#151b21;
+  --anatomy-shade-0:#080b0f; --anatomy-shade-1:#0c1015;
+  --anatomy-shade-2:#10161b; --anatomy-shade-3:#171c23;
+}
+.ef-dijiang-status {
+  fill:var(--dijiang-accent); stroke:none; opacity:.12;
+  animation:ef-dijiang-signal 5s cubic-bezier(.4,0,.2,1) infinite;
+  animation-delay:var(--dijiang-phase);
+  animation-play-state:paused;
+}
+.ef-dijiang[data-running="true"] .ef-dijiang-status { animation-play-state:running; }
+@keyframes ef-dijiang-signal {
+  0%, 55%, 100% { opacity:.12; }
+  22% { opacity:1; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .ef-dijiang .ef-dijiang-status { animation:none; }
+}
+@media (forced-colors:active) {
+  .ef-dijiang { display:none; }
+}

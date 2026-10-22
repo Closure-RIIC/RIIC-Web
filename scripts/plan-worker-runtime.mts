@@ -1,12 +1,12 @@
-import { normalizePersistedPlanData } from "../src/persistence.ts";
-import { PublicApiError } from "../src/server/api-contract.ts";
-import { diagnosticText } from "../src/server/diagnostic-text.ts";
-import { makeDiagnostic, persistDiagnostic } from "../src/server/request-diagnostics.ts";
+import { normalizePersistedPlanData } from "@riic/arknights-domain/persistence";
+import { PublicApiError } from "@riic/platform-server/api-contract";
+import { diagnosticText } from "@riic/platform-server/diagnostic-text";
+import { makeDiagnostic, persistDiagnostic } from "@riic/platform-server/request-diagnostics";
 import {
   recordPlanRunBestEffort,
   updatePlanRunExecutionBestEffort,
-} from "../src/server/business-records.ts";
-import { getDatabase } from "../src/server/db/index.ts";
+} from "@riic/platform-server/business-records";
+import { getDatabase } from "@riic/platform-server/db";
 import {
   assertPlanArtifactStorageReady,
   describePlanArtifact,
@@ -18,7 +18,7 @@ import {
   stopInfraServeClients,
   waitForPlanArtifactFinalizers,
   warmPlanServeLane,
-} from "../src/server/infra.ts";
+} from "@riic/platform-server/infra";
 import {
   completePlanCache,
   evictPlanCacheKeys,
@@ -26,8 +26,8 @@ import {
   releasePlanCacheLease,
   resolvePlanCache,
   type PlanCacheResolution,
-} from "../src/server/plan-cache.ts";
-import { publicPlanSha256, resolveSavedPlanCalculationContext } from "../src/server/plan-result-binding.ts";
+} from "@riic/platform-server/plan-cache";
+import { publicPlanSha256, resolveSavedPlanCalculationContext } from "@riic/platform-server/plan-result-binding";
 import {
   claimNextPlanTask,
   cleanupExpiredPlanTasks,
@@ -39,8 +39,8 @@ import {
   recoverStaleRunningTasks,
   PLAN_TASK_WORKER_CONCURRENCY,
   type ClaimedPlanTask,
-} from "../src/server/plan-task.ts";
-import { toPublicPlanData } from "../src/server/public-plan.ts";
+} from "../apps/arknights/src/server/plan-task.ts";
+import { toPublicPlanData } from "@riic/platform-server/public-plan";
 
 const HEARTBEAT_INTERVAL_MS = 5_000;
 const CLEANUP_INTERVAL_MS = 60_000;

@@ -21,22 +21,22 @@ const CI_ONLY_SCRIPTS = new Set([
 ]);
 
 const OPERATOR_DATA_FILES = new Set([
-  "src/generated/arkntools/operator-catalog.json",
-  "src/generated/arkntools/operator-pinyin.json",
-  "src/generated/arkntools/operator-rarities.json",
-  "src/generated/arkntools/building-skill-catalog.json",
-  "src/generated/arkntools/term-catalog.json",
-  "src/generated/arkntools/source.json",
-  "src/generated/mastery-data.json",
-  "src/generated/gacha-up.json",
+  "packages/arknights-domain/src/generated/arkntools/operator-catalog.json",
+  "packages/arknights-domain/src/generated/arkntools/operator-pinyin.json",
+  "packages/arknights-domain/src/generated/arkntools/operator-rarities.json",
+  "packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json",
+  "packages/arknights-domain/src/generated/arkntools/term-catalog.json",
+  "packages/arknights-domain/src/generated/arkntools/source.json",
+  "apps/arknights/src/generated/mastery-data.json",
+  "packages/arknights-domain/src/generated/gacha-up.json",
   "fixtures/operbox_full_e2.json",
 ]);
 
 function isOperatorData(filePath) {
   return OPERATOR_DATA_FILES.has(filePath)
-    || /^public\/images\/operator-portraits\/[A-Za-z0-9_&]+\.webp$/.test(filePath)
-    || /^public\/images\/building-skills\/[A-Za-z0-9_&]+\.png$/.test(filePath)
-    || /^public\/images\/products\/[A-Za-z0-9_&]+\.webp$/.test(filePath);
+    || /^apps\/arknights\/public\/images\/operator-portraits\/[A-Za-z0-9_&]+\.webp$/.test(filePath)
+    || /^apps\/arknights\/public\/images\/building-skills\/[A-Za-z0-9_&]+\.png$/.test(filePath)
+    || /^apps\/arknights\/public\/images\/products\/[A-Za-z0-9_&]+\.webp$/.test(filePath);
 }
 
 function normalizePath(filePath) {

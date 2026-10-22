@@ -13,6 +13,7 @@ test("inventory failure still allows manual estimates and ignores unscoped balan
   await page.addInitScript(() => localStorage.setItem("aic-skland-inventory-manual-resources-v1", JSON.stringify({ "4002": "99999" })));
   await page.goto("/inventory");
   const originium = page.getByRole("textbox", { name: "填写至纯源石数量", exact: true });
+  await expect(originium).toBeVisible({ timeout: 45_000 });
   await expect(originium).toBeEmpty();
   await originium.fill("10");
   await page.getByRole("textbox", { name: "填写合成玉数量", exact: true }).fill("600");
@@ -21,10 +22,14 @@ test("inventory failure still allows manual estimates and ignores unscoped balan
   await page.getByRole("button", { name: "资源估算", exact: true }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("42", { exact: true })).toBeVisible();
-  await dialog.getByRole("combobox", { name: "目标星级" }).selectOption("3");
-  await expect(dialog.getByRole("combobox", { name: "目标精英阶段" })).toHaveValue("1");
-  await expect(dialog.getByRole("combobox", { name: "目标等级" })).toHaveValue("55");
-  await expect(dialog.getByRole("option", { name: "精2", exact: true })).toHaveCount(0);
+  await dialog.getByRole("combobox", { name: "目标星级" }).click();
+  await page.getByRole("option", { name: "3★", exact: true }).click();
+  await expect(dialog.getByRole("combobox", { name: "目标精英阶段" })).toHaveValue("精1");
+  await expect(dialog.getByRole("combobox", { name: "目标等级" })).toHaveValue("55级");
+  await dialog.getByRole("combobox", { name: "目标精英阶段" }).click();
+  await expect(page.getByRole("option", { name: "精1", exact: true })).toBeVisible();
+  await expect(page.getByRole("option", { name: "精2", exact: true })).toHaveCount(0);
+  await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
   await page.reload();
   await expect(originium).toHaveValue("10");

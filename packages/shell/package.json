@@ -1,0 +1,28 @@
+{
+  "name": "@riic/shell",
+  "private": true,
+  "type": "module",
+  "peerDependencies": {
+    "react": "^19.2.8",
+    "@base-ui/react": "^1.6.0",
+    "lucide-react": "^0.475.0"
+  },
+  "dependencies": {
+    "@riic/ui-primitives": "*"
+  },
+  "version": "0.0.0",
+  "exports": {
+    "./account-orb": "./account-orb.ts",
+    "./AppSidebar.module.css": "./AppSidebar.module.css",
+    "./FilingLinks": "./FilingLinks.tsx",
+    "./frame.css": "./frame.css",
+    "./games": "./games.ts",
+    "./GameSwitcher": "./GameSwitcher.tsx",
+    "./GameSwitcher.module.css": "./GameSwitcher.module.css",
+    "./SidebarAccountMenu.module.css": "./SidebarAccountMenu.module.css",
+    "./tokens.css": "./tokens.css"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ]
+}

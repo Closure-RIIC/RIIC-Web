@@ -1,0 +1,45 @@
+{
+  "name": "@riic/ui-primitives",
+  "private": true,
+  "type": "module",
+  "peerDependencies": {
+    "@base-ui/react": "^1.6.0",
+    "class-variance-authority": "^0.7.1",
+    "react": "^19.2.8",
+    "motion": "^13.0.0",
+    "lucide-react": "^0.475.0",
+    "overlayscrollbars": "^2.16.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.6.0"
+  },
+  "version": "0.0.0",
+  "exports": {
+    "./button": "./button.tsx",
+    "./combobox": "./combobox.tsx",
+    "./filter-row": "./filter-row.tsx",
+    "./filter-select": "./filter-select.tsx",
+    "./fluid-orb": "./fluid-orb.tsx",
+    "./fonts/Bender-Bold.otf": "./fonts/Bender-Bold.otf",
+    "./input": "./input.tsx",
+    "./input-group": "./input-group.tsx",
+    "./motion": "./motion.ts",
+    "./overlay-scrollbars": "./overlay-scrollbars.ts",
+    "./page-scrollbar": "./page-scrollbar.tsx",
+    "./search-input": "./search-input.tsx",
+    "./selection-button": "./selection-button.tsx",
+    "./separator": "./separator.tsx",
+    "./sheet": "./sheet.tsx",
+    "./sidebar": "./sidebar.tsx",
+    "./skeleton": "./skeleton.tsx",
+    "./status-mark": "./status-mark.tsx",
+    "./status-mark.css": "./status-mark.css",
+    "./tabs": "./tabs.tsx",
+    "./textarea": "./textarea.tsx",
+    "./tooltip": "./tooltip.tsx",
+    "./use-mobile": "./use-mobile.ts",
+    "./utils": "./utils.ts"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ]
+}

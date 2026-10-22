@@ -1,0 +1,15 @@
+{
+  "name": "@riic/platform",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "exports": {
+    "./client": "./client.ts",
+    "./legal-policy": "./legal-policy.ts",
+    "./skland-auth-url": "./skland-auth-url.ts",
+    "./skland-qr-polling": "./skland-qr-polling.ts"
+  },
+  "dependencies": {
+    "@riic/contracts": "*"
+  }
+}

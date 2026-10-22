@@ -1,0 +1,101 @@
+:root {
+  --app-content-gutter: 0.75rem;
+  --app-content-track-max: 1600px;
+  --app-shell-background: color-mix(in oklab, var(--sidebar) 70%, var(--muted));
+  --app-page-background: var(--background);
+}
+
+.dark {
+  --app-shell-background: var(--background);
+  --app-page-background: color-mix(in oklab, var(--background) 40%, var(--sidebar));
+}
+
+@media (min-width: 640px) {
+  :root {
+    --app-content-gutter: clamp(1.75rem, 10vw, 12rem);
+  }
+}
+
+@media (min-width: 900px) {
+  :root {
+    --app-content-gutter: max(1.25rem, calc(clamp(1.75rem, 10vw, 12rem) - 5rem));
+  }
+}
+
+.app-content-track {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  max-width: var(--app-content-track-max);
+  margin-inline: auto;
+  padding-inline-start: max(var(--app-content-gutter), env(safe-area-inset-left));
+  padding-inline-end: max(var(--app-content-gutter), env(safe-area-inset-right));
+}
+
+[data-workbench-shell] {
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--app-shell-background);
+}
+
+[data-workbench-shell] [data-slot="sidebar-container"][data-side="left"] {
+  border-right: 0;
+}
+
+[data-workbench-shell] [data-slot="sidebar-inset"] {
+  --app-content-gutter: 0.5rem;
+  min-height: 0;
+  margin: 0.25rem;
+  border-radius: 1rem;
+  background: var(--app-page-background);
+  outline: 1px solid color-mix(in oklab, var(--border) 65%, transparent);
+  outline-offset: -1px;
+  /* The frame stays fixed while its inner viewport owns page scrolling. */
+  overflow: clip;
+}
+
+[data-app-scroll-area] {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  border-radius: inherit;
+}
+
+[data-app-scroll-area] > :is([data-app-topbar], [data-app-content], .workbench-footer) {
+  flex-shrink: 0;
+}
+
+[data-app-page-scrollbar] {
+  position: fixed;
+  z-index: 40;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 8px;
+  pointer-events: none;
+}
+
+[data-app-page-scrollbar] .os-scrollbar-vertical {
+  top: 0;
+  right: 0;
+  height: 100%;
+  pointer-events: auto;
+}
+
+@media (min-width: 768px) {
+  [data-workbench-shell] [data-slot="sidebar-inset"] {
+    --app-content-gutter: 1rem;
+    margin: 0.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  [data-workbench-shell] [data-slot="sidebar-inset"] {
+    --app-content-gutter: 1.5rem;
+  }
+}

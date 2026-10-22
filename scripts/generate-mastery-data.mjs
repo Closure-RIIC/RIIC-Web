@@ -5,10 +5,10 @@ import process from "node:process";
 import { masteryRules, environments } from "./mastery-rule-definitions.mjs";
 
 const read = async (file) => JSON.parse(await readFile(file, "utf8"));
-const catalog = await read("src/generated/arkntools/operator-catalog.json");
-const skills = await read("src/generated/arkntools/building-skill-catalog.json");
-const source = await read("src/generated/arkntools/source.json");
-const output = "src/generated/mastery-data.json";
+const catalog = await read("packages/arknights-domain/src/generated/arkntools/operator-catalog.json");
+const skills = await read("packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json");
+const source = await read("packages/arknights-domain/src/generated/arkntools/source.json");
+const output = "apps/arknights/src/generated/mastery-data.json";
 const check = process.argv.includes("--check");
 const trainingIds = Object.keys(skills).filter((id) => id.startsWith("train_")).sort();
 for (const id of trainingIds) if (!masteryRules[id]) throw new Error(`Unclassified training skill: ${id}`);

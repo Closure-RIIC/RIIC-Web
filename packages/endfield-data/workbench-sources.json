@@ -1,0 +1,20 @@
+{
+  "facilities": {
+    "center": { "source": "dynamicassets/gameplay/ui/sprites/spaceship/spaceshiproom/icon_sapceship_room_icon_control_console.png", "color": "#1e92ff" },
+    "guest": { "source": "dynamicassets/gameplay/ui/sprites/spaceship/spaceshiproom/icon_sapceship_room_icon_guest_room_clue.png", "color": "#9f8bff" },
+    "mfg": { "source": "dynamicassets/gameplay/ui/sprites/spaceship/spaceshiproom/icon_sapceship_room_icon_manufacturing_station_limit.png", "color": "#fadf19" },
+    "grow": { "source": "dynamicassets/gameplay/ui/sprites/spaceship/spaceshiproom/icon_sapceship_room_icon_grow_cabin.png", "color": "#99f320" }
+  },
+  "resources": {
+    "clues": { "source": "dynamicassets/gameplay/ui/sprites/spaceship/spaceshipguestroom/icon_guestroom_clue_01.png" },
+    "operatorExp": { "itemId": "item_expcard_stage1_high" },
+    "weaponExp": { "itemId": "item_weapon_expcard_high" },
+    "growth": { "source": "dynamicassets/gameplay/ui/sprites/spaceship/spaceshiproom/icon_sapceship_room_icon_grow_cabin.png" },
+    "crystal": { "itemId": "item_plant_crylplant_1_1" },
+    "fungus": { "itemId": "item_plant_mushroom_1_1" },
+    "mineral": { "itemId": "item_plant_spcstone_1_1" }
+  },
+  "ui": {
+    "close": { "source": "arts/ui/sprites/common/state/icon_common_close_54.png" }
+  }
+}

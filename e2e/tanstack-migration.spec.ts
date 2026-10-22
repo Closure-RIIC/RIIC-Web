@@ -72,7 +72,7 @@ test("production assets retain compression and version-aware cache headers", asy
   expect(["br", "gzip"]).toContain(verification.scriptEncoding);
   const asset = await request.get(verification.scriptUrl);
   expect(asset.headers()["cache-control"]).toContain("immutable");
-  const portrait = (await readdir("public/images/operator-portraits")).find(name => name.endsWith(".webp"));
+  const portrait = (await readdir("apps/arknights/public/images/operator-portraits")).find(name => name.endsWith(".webp"));
   expect(portrait).toBeTruthy();
   const pathname = "/images/operator-portraits/" + encodeURIComponent(portrait!);
   const unversioned = await request.get(pathname);

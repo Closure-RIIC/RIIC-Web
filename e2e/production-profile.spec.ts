@@ -1,15 +1,18 @@
 import { expect, test } from "@playwright/test";
 import { sidebarNavigation } from "./production-readiness.fixture";
+import { installMockSessionRefresh } from "./mock-session-refresh";
 
 test("admin beta denies direct pages and APIs without exposing either navigation entry", async ({ page, request }) => {
   test.setTimeout(90_000);
   await page.addInitScript(() => localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", "1"));
   // A forged browser session/role must not grant a server-side capability.
+  await installMockSessionRefresh(page);
   await page.route("**/api/auth/get-session", (route) => route.fulfill({ json: {
     user: { id: "ordinary-user", name: "Member", email: "member@example.test", role: "admin" },
     session: { expiresAt: "2099-01-01T00:00:00Z" },
   } }));
   await page.goto("/");
+  await expect(page.locator("[data-sidebar-account-name]")).toHaveText("Member");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
   await page.locator("[data-sidebar-account-trigger]").click();
   await expect(page.locator('[data-primary-navigation-page="agent"], [data-primary-navigation-page="billing"], [data-agent-history], [data-agent-floating-widget]')).toHaveCount(0);

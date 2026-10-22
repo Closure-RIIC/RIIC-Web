@@ -55,11 +55,14 @@ docs/PRODUCTION_RELEASE_RUNBOOK.md
 docs/UPDATE_SOLVER.md
 
 # Tutorial videos are hosted outside GitHub and the application release.
-/public/videos/help/*.mp4
-/public/videos/help/*.webm
-/public/videos/help/*.mov
+/apps/arknights/public/videos/help/*.mp4
+/apps/arknights/public/videos/help/*.webm
+/apps/arknights/public/videos/help/*.mov
 
 # Temporary files and generated local artifacts
+.alma-snapshots/
+.worktrees/
+.agent-card-test-*/
 .tmp/
 output/
 fixtures/*.xlsx
@@ -73,5 +76,5 @@ Thumbs.db
 .output/
 .tanstack/
 dist/
-src/routeTree.gen.ts
+apps/*/src/routeTree.gen.ts
 .tmp/

@@ -3,7 +3,7 @@ import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { env, stdout } from "node:process";
 
-const buildRoot = path.resolve(".output");
+const buildRoot = path.resolve("apps/arknights/.output");
 const clientRoot = path.join(buildRoot, "public", "assets");
 
 const forbiddenMarkers = [

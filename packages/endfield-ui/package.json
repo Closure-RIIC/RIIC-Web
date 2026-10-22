@@ -1,0 +1,22 @@
+{
+  "name": "@riic/endfield-ui",
+  "private": true,
+  "type": "module",
+  "peerDependencies": {
+    "react": "^19.2.8"
+  },
+  "version": "0.0.0",
+  "exports": {
+    ".": "./index.tsx",
+    "./action": "./action.tsx",
+    "./action.css": "./action.css",
+    "./contour-texture.svg": "./contour-texture.svg",
+    "./theme.css": "./theme.css"
+  },
+  "dependencies": {
+    "@riic/ui-primitives": "*"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ]
+}

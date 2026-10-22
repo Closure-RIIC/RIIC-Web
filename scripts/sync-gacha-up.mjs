@@ -14,7 +14,7 @@ if (!calendarResponse.ok) throw new Error(`Gacha calendar source returned ${cale
 const calendar = await calendarResponse.json();
 if (!Array.isArray(calendar.gachaPoolClient) || calendar.gachaPoolClient.length < 300) throw new Error("Gacha calendar source has an incomplete pool list");
 
-const operators = JSON.parse(await readFile(new URL("../src/generated/arkntools/operator-catalog.json", import.meta.url), "utf8"));
+const operators = JSON.parse(await readFile(new URL("../packages/arknights-domain/src/generated/arkntools/operator-catalog.json", import.meta.url), "utf8"));
 const names = new Map(operators.map((operator) => [operator.id, operator.name]));
 const pools = new Map();
 for (const pool of data.gachaPoolClient) {
@@ -42,5 +42,5 @@ const sorted = Object.fromEntries([...pools].sort(([a], [b]) => a.localeCompare(
 const lines = Object.entries(sorted).map(([id, up], index, entries) =>
   `  ${JSON.stringify(id)}: ${JSON.stringify(up)}${index + 1 < entries.length ? "," : ""}`
 );
-await writeFile(new URL("../src/generated/gacha-up.json", import.meta.url), `{\n${lines.join("\n")}\n}\n`);
+await writeFile(new URL("../packages/arknights-domain/src/generated/gacha-up.json", import.meta.url), `{\n${lines.join("\n")}\n}\n`);
 console.log(`Saved UP information and opening dates for ${pools.size} pools from ${source} and ${calendarSource}`);

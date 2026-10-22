@@ -1,0 +1,14 @@
+{
+  "name": "@riic/endfield-skland",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./details": "./details.ts",
+    "./inventory": "./inventory.ts",
+    "./model": "./model.ts",
+    "./presentation": "./presentation.ts",
+    "./skill-nodes": "./skill-nodes.ts",
+    "./weapons": "./weapons.ts"
+  }
+}

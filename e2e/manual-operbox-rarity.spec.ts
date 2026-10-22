@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import roster from "../fixtures/operbox_full_e2.json" with { type: "json" };
-import { SESSION_KEY_V5, type PersistedSessionV5 } from "../src/persistence";
+import { SESSION_KEY_V5, type PersistedSessionV5 } from "@riic/arknights-domain/persistence";
 import { gotoStable, mockApis, planData, requestId, seedV4Session } from "./production-readiness.fixture";
 
 const ownedBox = roster.filter((operator) => ["阿米娅", "银灰"].includes(operator.name))

@@ -6,7 +6,7 @@ const port = process.argv[2] ?? "5174";
 if (!/^\d+$/.test(port) || Number(port) < 1024 || Number(port) > 65535) {
   throw new Error("Choose a local port between 1024 and 65535.");
 }
-const child = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", port], {
+const child = spawn(process.execPath, ["scripts/run-vite.mjs", "arknights", "dev", "--host", "127.0.0.1", "--port", port], {
   stdio: "inherit",
   env: {
     ...process.env,

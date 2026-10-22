@@ -6,7 +6,7 @@
 - 前端仓库：[KnightCodeSquareMatrix/RIIC-Web](https://github.com/KnightCodeSquareMatrix/RIIC-Web)
 - 问题反馈：[GitHub Issues](https://github.com/KnightCodeSquareMatrix/RIIC-Web/issues)
 
-本仓库只包含 TanStack Start 应用、API 边界和协议适配，不包含排班搜索算法、干员技能数据逻辑或求解器源码。
+本仓库包含明日方舟、终末地两个 TanStack Start 应用、共享组件与公共平台后端。方舟排班通过独立的私有 `infra-cli` 服务求解；终末地的求解适配与固定版本上游位于 `packages/endfield-solver`，在浏览器 Worker 中运行。
 
 框架切换、验证结果与部署目录升级见 [TanStack Start 迁移记录](docs/TANSTACK_START_MIGRATION.md)。
 
@@ -50,7 +50,7 @@
 - `skland-kit`，仅用于可选的森空岛扫码或凭证导入授权
 - 外部长驻进程 `infra-cli serve`；生产排班 Worker 用中央调度器驱动四个相互隔离的求解通道，每通道保留两个有界任务槽
 
-页面和 `/api/*` 由同一个 TanStack Start 服务提供，不需要单独启动 Express 或 Vite 服务。
+页面由各自的 TanStack Start 服务提供。账号、森空岛和云工作区可由独立平台提供；未配置平台地址时，方舟保留进程内兼容入口。`npm run dev:full` 可同时启动两站和平台，运行配置见 [双应用工作区](./docs/WORKSPACES.md)。
 
 ## 本地运行
 
@@ -84,7 +84,7 @@ chmod +x bin/infra-cli
 
 如需单独指定求解器数据目录，可设置 `ARKNIGHTS_INFRA_DATA_DIR`。启动应用后访问 `/api/health`，成功信封中的 `data.plannerReady: true` 表示排班服务可用。
 
-排班结果必须经过 [`src/server/public-plan.ts`](./src/server/public-plan.ts) 的白名单映射。不要把求解器的命令、路径、标准输出、标准错误或内部诊断对象直接返回给浏览器。
+排班结果必须经过 [`packages/platform-server/src/public-plan.ts`](./packages/platform-server/src/public-plan.ts) 的白名单映射。不要把求解器的命令、路径、标准输出、标准错误或内部诊断对象直接返回给浏览器。
 
 ## 可选服务
 
@@ -122,30 +122,36 @@ cp .env.example .env.local
 - 运行记录、反馈、云工作区和分析数据各有独立的最小化与保留策略。
 - 提交 Issue 时不要附带 MAA Box、Cookie、令牌、数据库连接串、真实用户信息或服务端日志。
 
-公开的数据范围见 [森空岛数据能力矩阵](./docs/SKLAND_DATA_CAPABILITIES.md)，页面中的服务条款与隐私政策位于 [`src/app/terms`](./src/app/terms) 和 [`src/app/privacy`](./src/app/privacy)。
+公开的数据范围见 [森空岛数据能力矩阵](./docs/SKLAND_DATA_CAPABILITIES.md)，页面中的服务条款与隐私政策位于 [`apps/arknights/src/app/terms`](./apps/arknights/src/app/terms) 和 [`apps/arknights/src/app/privacy`](./apps/arknights/src/app/privacy)。
 
 ## 项目结构
 
 | 路径 | 内容 |
 | --- | --- |
-| `src/app` | App Router 页面与 API route handlers |
-| `src/components` | 页面、布局和业务组件 |
-| `src/components/ui` | 通用 UI primitives |
-| `src/server` | API 契约、求解器客户端、认证与持久化边界 |
-| `src/layouts` | 基建布局预设 |
+| `apps/arknights/src/routes` | 明日方舟 TanStack Start 路由与 API 入口 |
+| `apps/arknights/src/app` | 现有页面与 API handler 实现 |
+| `apps/arknights/src/components` | 页面、布局和业务组件 |
+| `apps/arknights/src/components/ui` | 通用 UI primitives |
+| `apps/arknights/src/server` | API 契约、求解器客户端、认证与持久化边界 |
+| `apps/arknights/src/layouts` | 基建布局预设 |
+| `apps/endfield` | 终末地独立应用、路由、主题和静态资源 |
+| `packages` | 共享组件、平台客户端与后端、公共契约和游戏逻辑 |
+| `services/platform-api` | 可独立构建、运行和发布的公共账号与数据服务 |
 | `drizzle` | 数据库 schema 迁移 |
-| `messages` | use-intl 中英文界面消息、结构化展示记录与翻译维护说明 |
-| `public` | 静态图片与第三方素材快照 |
+| `apps/arknights/messages` | use-intl 中英文界面消息、结构化展示记录与翻译维护说明 |
+| `apps/arknights/public` | 方舟静态图片与第三方素材快照 |
 | `scripts` | 构建、公开测试、资源同步和仓库卫生检查 |
 
 求解器协议与公共 DTO 的说明见 [Frontend Serve Guide](./docs/FRONTEND_SERVE_GUIDE.md)。
+
+两站开发命令、独立构建产物和发布目录说明见 [双应用工作区](./docs/WORKSPACES.md)。
 
 ## 文档索引
 
 - 使用与数据：[键盘和移动端操作](./docs/keyboard-shortcuts.md)、[专精规划](./docs/MASTERY_PLANNER.md)、[预计日产物计算逻辑](./docs/计算逻辑.md)、[森空岛数据能力矩阵](./docs/SKLAND_DATA_CAPABILITIES.md)
 - 求解器与协议：[Frontend Serve Guide](./docs/FRONTEND_SERVE_GUIDE.md)、[`final_efficiency` 接入口径](./docs/TRADE_PRODUCTION_CONTRACT_GAP.md)、[本地求解器目录](./bin/README.md)
 - 部署与仓库管理：[PostgreSQL 部署模板](./deploy/postgres/README.md)、[systemd runtime settings](./deploy/SYSTEMD.md)、[公开仓库管理清单](./docs/REPOSITORY_ADMIN_CHECKLIST.md)
-- 贡献与发布：[参与贡献](./CONTRIBUTING.md)、[网站翻译维护](./messages/README.md)、[公开仓库迁移说明](./MIGRATION.md)、[Changelog](./CHANGELOG.md)、[Contributors](./CONTRIBUTORS.md)
+- 贡献与发布：[参与贡献](./CONTRIBUTING.md)、[网站翻译维护](./apps/arknights/messages/README.md)、[公开仓库迁移说明](./MIGRATION.md)、[Changelog](./CHANGELOG.md)、[Contributors](./CONTRIBUTORS.md)
 - 安全与权利：[安全政策](./SECURITY.md)、[第三方素材来源](./THIRD_PARTY_ASSETS.md)、[许可证](./LICENSE.md)
 - 代码代理说明：[AGENTS.md](./AGENTS.md)、[CLAUDE.md](./CLAUDE.md)
 
@@ -157,7 +163,7 @@ npm run audit:security
 npm run build
 ```
 
-`npm run check` 会执行公开仓库卫生检查、生成资源与国际化校验、ESLint、单元测试、API 契约测试和排班对比测试；翻译目录也可单独运行 `npm run check:i18n`。浏览器测试可分别通过 `npm run test:e2e`、`npm run test:e2e:production-profile` 和 `npm run test:e2e:webkit` 运行。`npm run build` 会准备不含求解器的 `.output` 运行目录，并补齐 `public` 与 `public/assets`；生产启动脚本会使用这一目录。涉及数据库 schema 的改动，应先设置 `DATABASE_MIGRATION_URL`，再执行：
+`npm run check` 会执行公开仓库卫生检查、生成资源与国际化校验、ESLint、单元测试、API 契约测试和排班对比测试；翻译目录也可单独运行 `npm run check:i18n`。浏览器测试可分别通过 `npm run test:e2e`、`npm run test:e2e:production-profile` 和 `npm run test:e2e:webkit` 运行。`npm run build` 会准备不含求解器的 `apps/arknights/.output` 运行目录，并补齐其中的 `public` 与 `public/assets`；生产启动脚本会使用这一目录。`npm run build:all` 构建两站。涉及数据库 schema 的改动，应先设置 `DATABASE_MIGRATION_URL`，再执行：
 
 ```bash
 npm run db:generate
