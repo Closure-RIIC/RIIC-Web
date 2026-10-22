@@ -40,6 +40,9 @@ export function selectedEndfieldDetails(input: Record<string, unknown>): DetailR
     chars: Array.isArray(input.chars) ? input.chars.map(value => {
       const char = pick(value, ["id", "charData", "level", "evolvePhase", "potentialLevel", "ownTs", "weapon", "bodyEquip", "armEquip", "firstAccessory", "secondAccessory", "userSkills"]);
       char.charData = pick(char.charData, ["id", "name", "rarity", "profession", "property", "avatarSqUrl", "avatarRtUrl"]);
+      // Only the actually unlocked ship-skill nodes; the other talent lists are not needed.
+      const latestSpaceshipSkillNodes = record(record(value).talent).latestSpaceshipSkillNodes;
+      char.talent = { latestSpaceshipSkillNodes: Array.isArray(latestSpaceshipSkillNodes) ? latestSpaceshipSkillNodes : [] };
       return char;
     }) : [],
   };
