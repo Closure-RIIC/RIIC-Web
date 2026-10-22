@@ -1,4 +1,4 @@
-import type { PublicPlanData } from "./types.ts";
+import type { PublicPlanData } from "@riic/arknights-domain/types";
 
 export function withDefaultDormAutofill(result: PublicPlanData): PublicPlanData {
   const next = structuredClone(result);

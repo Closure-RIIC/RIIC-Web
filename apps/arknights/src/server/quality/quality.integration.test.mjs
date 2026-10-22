@@ -13,8 +13,8 @@ if (!process.env.AUTH_INTEGRATION_DATABASE_URL || !["/riic_quality_test", "/arkn
 process.env.DATABASE_URL = process.env.AUTH_INTEGRATION_DATABASE_URL;
 const root = await mkdtemp(path.join(tmpdir(), "riic-quality-test-"));
 process.env.ADMIN_QUALITY_STORAGE_DIR = root;
-const { getDatabase, getDatabasePool } = await import("../db/index.ts");
-const schema = await import("../db/schema.ts");
+const { getDatabase, getDatabasePool } = await import("@riic/platform-server/db");
+const schema = await import("@riic/platform-server/db/schema");
 const service = await import("./service.ts");
 const { runQualityWorker } = await import("./worker.ts");
 const { writeArtifact } = await import("./storage.ts");

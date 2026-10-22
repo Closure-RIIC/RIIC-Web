@@ -72,7 +72,7 @@ function isForbiddenPath(filePath) {
   const baseName = normalized.split("/").at(-1) ?? normalized;
   const isEnvironmentFile = /(^|\/)\.env(?:\.|$)/u.test(normalized)
     && normalized !== ".env.example"
-    && !/^apps\/[^/]+\/\.env\.example$/u.test(normalized)
+    && !/^(?:apps|services)\/[^/]+\/\.env\.example$/u.test(normalized)
     && normalized !== "deploy/postgres/example.env";
 
   return (

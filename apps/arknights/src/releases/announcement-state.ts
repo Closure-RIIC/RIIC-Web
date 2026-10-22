@@ -1,4 +1,4 @@
-import type { ReleaseEnvironment } from "./types.ts";
+import type { ReleaseEnvironment } from "@riic/arknights-domain/releases/types";
 
 export const RELEASE_SEEN_KEY = "riic-release-seen-v1";
 export const RELEASE_SEEN_EVENT = "riic-release-seen";

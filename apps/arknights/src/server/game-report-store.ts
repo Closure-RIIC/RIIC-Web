@@ -3,10 +3,10 @@ import "@tanstack/react-start/server-only";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
 
-import { parseGameReportDays, type GameReportRecord, type GameReportSource } from "../game-report.ts";
-import { getDatabase } from "./db";
-import { gameReport } from "./db/schema";
-import { activeSklandAccount, readSklandAccountStore } from "./skland/http";
+import { parseGameReportDays, type GameReportRecord, type GameReportSource } from "@riic/arknights-domain/game-report";
+import { getDatabase } from "@riic/platform-server/db";
+import { gameReport } from "@riic/platform-server/db/schema";
+import { activeSklandAccount, readSklandAccountStore } from "@riic/platform-server/skland/http";
 
 async function reportRoleKey(userId: string): Promise<string> {
   const account = activeSklandAccount(await readSklandAccountStore(userId));

@@ -3,7 +3,7 @@ import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
 import type { ReactNode } from "react";
-import { SearchInput } from "../../../../../packages/ui-primitives/search-input";
+import { SearchInput } from "@riic/ui-primitives/search-input";
 import { LoadMore } from "@/components/ui/load-more";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { localizedOperatorName } from "@/i18n/game-data";

@@ -1,6 +1,6 @@
 import { Dialog } from "@base-ui/react/dialog";
 import { SlidersHorizontal } from "lucide-react";
-import { ActionContent, actionClassName, Section } from "@shared/endfield-ui";
+import { ActionContent, actionClassName, Section } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
 import { DialogFrame } from "./DialogFrame";
 import { ProductionSettings } from "./ProductionSettings";

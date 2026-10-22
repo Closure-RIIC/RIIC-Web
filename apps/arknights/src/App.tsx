@@ -67,7 +67,7 @@ import {
   updateFactoryRecipe,
   updateRoomLevel,
   updateTradeOrder,
-} from "./blueprint";
+} from "@riic/arknights-domain/blueprint";
 import {
   ONBOARDING_COMPLETED_VALUE,
   ONBOARDING_DISMISSED_VALUE,
@@ -75,11 +75,11 @@ import {
   resolveOnboardingPreference,
   type OnboardingPreference,
 } from "./onboarding";
-import { normalizeOperboxEntries } from "./operbox-normalization";
-import { droneStoragePlanIndex } from "./drone-plan-mapping";
+import { normalizeOperboxEntries } from "@riic/arknights-domain/operbox-normalization";
+import { droneStoragePlanIndex } from "@riic/arknights-domain/drone-plan-mapping";
 import { AGENT_BROADCAST_CHANNEL, consumeAgentArtifactHandoff, isAgentArtifactHandoff, receiveAgentArtifactMessage, type AgentArtifactHandoff } from "./agent-artifact-bridge";
 import { sameAgentPageContext, type AgentPageContext } from "./agent-page-context-shared";
-import { prepareMaaForExport } from "./maa-safety";
+import { prepareMaaForExport } from "@riic/arknights-domain/maa-safety";
 import { upgradeSimulationBoxSource } from "./upgrade-simulation";
 import {
   DEFAULT_MANUAL_SHIFT_DURATIONS,
@@ -91,18 +91,18 @@ import { type ManualScheduleDraft, type ManualScheduleMode } from "./manual-sche
 import type { ManualPlanResult } from "./manual-plan-result";
 import { clearManualEvaluationCache, persistManualEvaluationCache } from "./manual-evaluation-cache";
 import { DEFAULT_USER_SETTINGS, loadUserSettings, persistUserSettings, USER_SETTINGS_CHANGED_EVENT, type UserSettings } from "./user-settings";
-import { effectiveFiammettaSetting, resolvePlanPresentationLayout } from "./plan-presentation";
+import { effectiveFiammettaSetting, resolvePlanPresentationLayout } from "@riic/arknights-domain/plan-presentation";
 import {
   applyLocalLayoutPatch,
   clearLocalProductData,
   loadPersistedSession,
   persistSession,
   RESULT_CLEAR_WARNING_DISMISSED_KEY,
-} from "./persistence";
+} from "@riic/arknights-domain/persistence";
 import type { RoomRow } from "./schedule";
-import { DEFAULT_ROTATION_PROFILE, isRotationProfile, rotationDurations } from "./rotation-settings";
+import { DEFAULT_ROTATION_PROFILE, isRotationProfile, rotationDurations } from "@riic/arknights-domain/rotation-settings";
 import { MOTION_DURATION } from "./motion";
-import { emptySklandBindingSummary } from "./skland-binding-state";
+import { emptySklandBindingSummary } from "@riic/arknights-domain/skland-binding-state";
 import { createSklandRestoreGuard } from "./skland-restore-guard";
 import {
   BaseBlueprint,
@@ -124,7 +124,7 @@ import {
   SklandSessionData,
   SklandScheduleSnapshot,
   SklandStatusSnapshot,
-} from "./types";
+} from "@riic/arknights-domain/types";
 
 const CLIENT_SKLAND_ENABLED = process.env.APP_CLIENT_SKLAND_ENABLED === "1";
 const CLIENT_ACCOUNT_CLOUD_SYNC_ENABLED = process.env.APP_CLIENT_ACCOUNT_CLOUD_SYNC_ENABLED === "1";
@@ -1056,7 +1056,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   async function handleFile(file: File, signal?: AbortSignal): Promise<void> {
     try {
-      const { readOperboxFile } = await import("./operbox");
+      const { readOperboxFile } = await import("@riic/arknights-domain/operbox");
       const entries = await readOperboxFile(file);
       signal?.throwIfAborted();
       setOperbox(entries);
@@ -1116,7 +1116,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   async function handleMaaPaste(): Promise<boolean> {
     setInputError(null);
     try {
-      const { readOperboxText } = await import("./operbox");
+      const { readOperboxText } = await import("@riic/arknights-domain/operbox");
       const entries = await readOperboxText(maaPaste);
       setOperbox(entries);
       setFileName(intl("App.pastedArknightsOperboxExportJson"));

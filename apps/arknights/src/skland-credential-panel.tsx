@@ -19,7 +19,7 @@ import {
   currentSklandPolicyConsent,
   SklandPolicyConsent,
 } from "@/skland-policy-consent";
-import type { SklandSessionData } from "@/types";
+import type { SklandSessionData } from "@riic/arknights-domain/types";
 
 const SKLAND_CREDENTIAL_COPY_COMMAND = "copy(localStorage.getItem('SK_OAUTH_CRED_KEY')+','+localStorage.getItem('SK_TOKEN_CACHE_KEY')),console.log('已复制到粘贴板，回到网页粘贴')";
 

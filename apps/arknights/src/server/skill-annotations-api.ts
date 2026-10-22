@@ -13,7 +13,7 @@ import type {
   AdminSkillAnnotationMutationData,
   SkillAnnotationData,
   SkillAnnotationListData,
-} from "@/types";
+} from "@riic/arknights-domain/types";
 import {
   assertEmptyBody,
   assertSameOrigin,
@@ -24,11 +24,11 @@ import {
   readJsonBody,
   requestClientIp,
   successResponse,
-} from "./api-contract";
-import { requireWebsiteAdmin } from "./auth/authorization";
-import { getDatabase } from "./db";
-import { skillAnnotation } from "./db/schema";
-import { appDeploymentEnvironment } from "../deployment.ts";
+} from "@riic/platform-server/api-contract";
+import { requireWebsiteAdmin } from "@riic/platform-server/auth/authorization";
+import { getDatabase } from "@riic/platform-server/db";
+import { skillAnnotation } from "@riic/platform-server/db/schema";
+import { appDeploymentEnvironment } from "@riic/arknights-domain/deployment";
 import { cachePublicResponse, createPublicDataCache } from "./public-data-cache.ts";
 
 const publicAnnotations = createPublicDataCache<string, SkillAnnotationData[]>();

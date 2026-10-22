@@ -35,7 +35,7 @@ import type {
   AdminSkillAnnotationData,
   AdminSkillAnnotationListData,
   AdminSkillAnnotationMutationData,
-} from "@/types";
+} from "@riic/arknights-domain/types";
 
 type EditorState = {
   mode: "create" | "edit";

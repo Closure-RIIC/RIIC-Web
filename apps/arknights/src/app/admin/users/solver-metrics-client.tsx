@@ -11,8 +11,8 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonSwap, SkeletonRouteBoundary, SkeletonRouteFallback } from "@/components/ui/skeleton-swap";
-import { ADMIN_SOLVER_METRICS_REFRESH_INTERVAL_SECONDS } from "@/solver-metrics-config";
-import type { AdminSolverMetricsData } from "@/types";
+import { ADMIN_SOLVER_METRICS_REFRESH_INTERVAL_SECONDS } from "@riic/arknights-domain/solver-metrics-config";
+import type { AdminSolverMetricsData } from "@riic/arknights-domain/types";
 
 function MetricsChartLoading() {
   const intl = useTranslations();

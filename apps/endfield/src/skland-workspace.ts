@@ -1,5 +1,5 @@
-import { catalog, nonSchedulableOperators, parseRoster, type Workspace } from "../../../packages/endfield-solver/model.mjs";
-import { endfieldFacilityLevels, matchEndfieldRoster, type EndfieldRole, type EndfieldSnapshot } from "../../../packages/endfield-skland/model.ts";
+import { catalog, nonSchedulableOperators, parseRoster, type Workspace } from "@riic/endfield-solver/model.mjs";
+import { endfieldFacilityLevels, matchEndfieldRoster, type EndfieldRole, type EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { withFacilityLevels } from "./scheduling-options.ts";
 
 /** Non-secret identity only. A partial response may only extend its own saved roster. */

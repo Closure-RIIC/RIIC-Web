@@ -13,11 +13,11 @@ import {
   trainingReasonLabel,
   trainingScaleLabel,
 } from "./presentation.ts";
-import type { TrainingCombination, TrainingRecommendation } from "@/types";
-import { parseTrainingAdviceReport } from "../../training-advice-contract.ts";
+import type { TrainingCombination, TrainingRecommendation } from "@riic/arknights-domain/types";
+import { parseTrainingAdviceReport } from "@riic/arknights-domain/training-advice-contract";
 import { legacyTrainingTarget, trainingAdviceSkillSummary } from "./skill-selection.ts";
 import { recommendationCurrentState, recommendationMessage } from "./recommendation-presentation.ts";
-import type { OperBoxEntry, UserProfileAction } from "../../types.ts";
+import type { OperBoxEntry, UserProfileAction } from "@riic/arknights-domain/types";
 
 const target = { kind: "explicit" as const, elite: 1, level: 30 };
 

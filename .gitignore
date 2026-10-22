@@ -60,6 +60,9 @@ docs/UPDATE_SOLVER.md
 /apps/arknights/public/videos/help/*.mov
 
 # Temporary files and generated local artifacts
+.alma-snapshots/
+.worktrees/
+.agent-card-test-*/
 .tmp/
 output/
 fixtures/*.xlsx

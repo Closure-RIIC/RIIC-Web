@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { analyzeGachaHistory, gachaLuck, gachaPoolKind, gachaStatistics, nextSixStarProbability } from "./gacha-analytics.ts";
-import type { GachaRecord } from "./gacha-history.ts";
+import type { GachaRecord } from "@riic/arknights-domain/gacha-history";
 
 function draw(poolId: string, stars: number, timestamp: number, charName = "芬", pos = 0): GachaRecord {
   return { id: `${poolId}:${timestamp}:${pos}`, category: "normal", poolId, poolName: poolId, charId: charName,

@@ -1,6 +1,6 @@
 import type { DailyProductionAmount, DailyProductionEstimate } from "./daily-production.ts";
 import { PRODUCT_ICON_URLS } from "./product-assets.ts";
-import type { RotationJson } from "./types.ts";
+import type { RotationJson } from "@riic/arknights-domain/types";
 
 type SolverDailyProduction = NonNullable<RotationJson["daily"]["production"]>;
 const DAILY_GOLD_VALUE = 5_000;

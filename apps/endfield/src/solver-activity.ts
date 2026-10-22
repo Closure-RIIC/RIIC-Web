@@ -1,4 +1,4 @@
-import type { Assignment, Result, SolverProgress, SolverStage, Workspace } from "@shared/endfield-solver/index.mjs";
+import type { Assignment, Result, SolverProgress, SolverStage, Workspace } from "@riic/endfield-solver/index.mjs";
 
 export type SolverRequest = { input: Workspace; assignments?: Assignment[] };
 export type SolverMessage =

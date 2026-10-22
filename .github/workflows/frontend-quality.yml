@@ -184,7 +184,7 @@ jobs:
         run: npm run check:types
 
       - name: Workspace boundaries and Endfield logic
-        run: npm run test:workspace && npm run test:endfield && npm run test:endfield:skland
+        run: npm run test:workspace && npm run test:platform && npm run test:endfield && npm run test:endfield:skland
 
       - name: Unit tests
         run: npm test
@@ -343,7 +343,7 @@ jobs:
         run: npm run build && npm run worker:build && node --check dist/plan-worker.cjs
 
       - name: Build independent Endfield application
-        run: npm run build:endfield
+        run: npm run build:endfield && npm run build:platform
 
       - name: Release output checks
         env:

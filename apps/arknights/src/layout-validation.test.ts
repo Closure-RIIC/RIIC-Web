@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { normalizeProductForLevel } from "./factory-recipes.ts";
-import { validateLayoutJson } from "./layout-validation.ts";
+import { normalizeProductForLevel } from "@riic/arknights-domain/factory-recipes";
+import { validateLayoutJson } from "@riic/arknights-domain/layout-validation";
 import { manualEditableRooms } from "./recycling-room.ts";
-import type { BaseBlueprint } from "./types.ts";
+import type { BaseBlueprint } from "@riic/arknights-domain/types";
 
 function validLayout() {
   return {
@@ -59,7 +59,7 @@ test("rejects unknown kinds, duplicate IDs, and padded IDs", () => {
 
 test("every preset stays solver-compatible and adds exactly one recycling editor", () => {
   for (const preset of ["153", "243", "252", "333", "342"]) {
-    const layout: BaseBlueprint = JSON.parse(readFileSync(new URL(`./layouts/${preset}.json`, import.meta.url), "utf8"));
+    const layout: BaseBlueprint = JSON.parse(readFileSync(new URL(`../../../packages/arknights-domain/src/layouts/${preset}.json`, import.meta.url), "utf8"));
     assert.deepEqual(validateLayoutJson(layout), [], preset);
     const rooms = manualEditableRooms(layout);
     assert.equal(new Set(rooms.map(room => room.id)).size, rooms.length, preset);
@@ -68,7 +68,7 @@ test("every preset stays solver-compatible and adds exactly one recycling editor
 });
 
 test("342 preset keeps the intended power-safe room levels", () => {
-  const layout = JSON.parse(readFileSync(new URL("./layouts/342.json", import.meta.url), "utf8"));
+  const layout = JSON.parse(readFileSync(new URL("../../../packages/arknights-domain/src/layouts/342.json", import.meta.url), "utf8"));
   const levels = Object.fromEntries(layout.rooms.map((room: { id: string; level: number }) => [room.id, room.level]));
 
   assert.equal(levels.trade_2, 2);

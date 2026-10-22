@@ -1,5 +1,5 @@
-import { requireWebsiteAdmin } from "@/server/auth/authorization";
-import { assertSameOrigin, createRequestId, failureResponse, readJsonBody, successResponse } from "@/server/api-contract";
+import { requireWebsiteAdmin } from "@riic/platform-server/auth/authorization";
+import { assertSameOrigin, createRequestId, failureResponse, readJsonBody, successResponse } from "@riic/platform-server/api-contract";
 import { getDonationSetting, saveDonationSetting } from "@/server/site-settings";
 
 

@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { createManualScheduleDraft, manualRoomCapacity, reconcileManualScheduleDraft, type ManualScheduleDraft } from "./manual-schedule.ts";
 import { manualEditableRooms } from "./recycling-room.ts";
-import { validateLayoutJson } from "./layout-validation.ts";
-import type { BaseBlueprint, OperBoxEntry } from "./types.ts";
+import { validateLayoutJson } from "@riic/arknights-domain/layout-validation";
+import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
 
 export { POSTER_STORAGE_KEY, POSTER_HANDOFF_KEY } from "./schedule-poster-storage.ts";
 export const POSTER_MAX_BYTES = 256 * 1024;

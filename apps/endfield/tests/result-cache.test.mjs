@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { catalog, DEFAULT_OPTIONS, solve, parseWorkspace } from "../../../packages/endfield-solver/index.mjs";
+import { catalog, DEFAULT_OPTIONS, solve, parseWorkspace } from "@riic/endfield-solver/index.mjs";
 import { encodeResultCache, restoreResultCache, workspaceKey } from "../src/result-cache.ts";
 
 const workspace = {

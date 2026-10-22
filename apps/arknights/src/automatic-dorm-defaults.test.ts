@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { withDefaultDormAutofill } from "./automatic-dorm-defaults.ts";
-import { prepareMaaForExport } from "./maa-safety.ts";
-import type { PublicPlanData } from "./types.ts";
+import { prepareMaaForExport } from "@riic/arknights-domain/maa-safety";
+import type { PublicPlanData } from "@riic/arknights-domain/types";
 
 test("new results enable every dorm in every shift without mutating solver data", () => {
   const source = { maa: { plans: [0, 1].map(() => ({ rooms: {

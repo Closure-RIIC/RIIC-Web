@@ -1,4 +1,4 @@
-import { parseGachaRecord, type GachaRecord } from "../gacha-history.ts";
+import { parseGachaRecord, type GachaRecord } from "@riic/arknights-domain/gacha-history";
 
 // A pull keeps its identity even if a later official response corrects its name.
 export function gachaDrawKey(record: GachaRecord): string {

@@ -20,7 +20,7 @@ const [characters, uniequips, building, itemsTable, operatorCatalog, itemCatalog
   read(inputPaths.uniequipTable),
   read(inputPaths.buildingData),
   read(inputPaths.itemTable),
-  read("apps/arknights/src/generated/arkntools/operator-catalog.json"),
+  read("packages/arknights-domain/src/generated/arkntools/operator-catalog.json"),
   read("apps/arknights/src/generated/item-catalog.json"),
 ]);
 

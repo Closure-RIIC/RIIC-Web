@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs";
 import { D, ledger, operator, type World } from "./rules.ts";
 import { detailAt, pointAt, segmentAt, simulate, prepare } from "./engine.ts";
 import { defaultMoodSettings, type MoodSimulationInput } from "./types.ts";
-import type { RoomKind } from "../types.ts";
+import type { RoomKind } from "@riic/arknights-domain/types";
 type FixtureRoom = { type: string; level: number; operators: {name: string; elite: number; level: number; mood: number}[] };
 type TrajectoryFixture = {shifts: {type: string;level: number;operators: string[]}[][];cycles: number;idle: boolean;target: string;points: {time: number;moods: Record<string,number>}[];layouts:{time:number;rooms:Record<string,string[]>}[]};
 const fixtures = JSON.parse(readFileSync(new URL("./reference-fixtures.json",import.meta.url),"utf8")) as {

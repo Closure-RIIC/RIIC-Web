@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
-import layout252 from '../apps/arknights/src/layouts/252.json' with { type: 'json' };
-import layout243 from '../apps/arknights/src/layouts/243.json' with { type: 'json' };
-import { SESSION_KEY_V5 } from '../apps/arknights/src/persistence';
+import layout252 from '@riic/arknights-domain/layouts/252.json' with { type: 'json' };
+import layout243 from '@riic/arknights-domain/layouts/243.json' with { type: 'json' };
+import { SESSION_KEY_V5 } from '@riic/arknights-domain/persistence';
 import { openAgentHistory } from './agent-history';
 import { authenticatedSklandSnapshot, mockApis, planData, seedV4Session } from './production-readiness.fixture';
 

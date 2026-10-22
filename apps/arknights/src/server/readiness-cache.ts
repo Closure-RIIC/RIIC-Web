@@ -1,4 +1,4 @@
-import type { PublicHealthData } from "../types.ts";
+import type { PublicHealthData } from "@riic/arknights-domain/types";
 
 /** One entry per process, including an in-flight probe. Never an HTTP/shared cache. */
 export function createReadinessCache(

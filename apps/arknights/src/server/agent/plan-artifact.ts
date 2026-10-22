@@ -3,10 +3,10 @@ import "@tanstack/react-start/server-only";
 import { randomUUID } from "node:crypto";
 import { and, eq, lt } from "drizzle-orm";
 
-import { toPublicPlanData } from "../public-plan.ts";
-import { getDatabase } from "../db/index.ts";
-import { agentPlanArtifact } from "../db/schema.ts";
-import type { MaaRoom } from "../../types.ts";
+import { toPublicPlanData } from "@riic/platform-server/public-plan";
+import { getDatabase } from "@riic/platform-server/db";
+import { agentPlanArtifact } from "@riic/platform-server/db/schema";
+import type { MaaRoom } from "@riic/arknights-domain/types";
 
 export interface AgentPlanShiftRoom {
   room: string;

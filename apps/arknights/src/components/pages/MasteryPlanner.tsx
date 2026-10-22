@@ -18,8 +18,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody } from "@/components/ui/dialog";
 import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
-import catalog from "@/generated/arkntools/operator-catalog.json";
-import type { OperBoxEntry } from "@/types";
+import catalog from "@riic/arknights-domain/generated/arkntools/operator-catalog.json";
+import type { OperBoxEntry } from "@riic/arknights-domain/types";
 
 const TargetPicker = lazy(() => import("@/components/mastery/MasteryTargetPicker").then((m) => ({default:m.MasteryTargetPicker})));
 const TrainerSkillTooltip = lazy(() => import("@/components/OperatorSkillTooltip").then((m) => ({ default: m.OperatorSkillTooltip })));

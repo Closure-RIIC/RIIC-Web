@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { createHash } from "node:crypto";
 import { URL } from "node:url";
-import { catalog } from "../endfield-solver/model.mjs";
+import { catalog } from "@riic/endfield-solver/model.mjs";
 const data = JSON.parse(await readFile(new URL("./catalog.json", import.meta.url)));
 const sources = JSON.parse(await readFile(new URL("./sources.json", import.meta.url)));
 const workbench = JSON.parse(await readFile(new URL("./workbench.json", import.meta.url)));

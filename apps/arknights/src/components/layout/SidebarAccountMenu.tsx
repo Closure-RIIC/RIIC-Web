@@ -16,7 +16,7 @@ import { useLanguageSwitch } from "@/i18n/client";
 import { authClient } from "@/lib/auth-client";
 import { useWebsiteSession } from "@/website-session";
 import { workbenchHref, type AppPage } from "@/workbench-routes";
-import styles from "../../../../../packages/shell/SidebarAccountMenu.module.css";
+import styles from "@riic/shell/SidebarAccountMenu.module.css";
 
 export function SidebarAccountMenu({ page, onPageChange, onSessionChanged }: {
   page: AppPage;

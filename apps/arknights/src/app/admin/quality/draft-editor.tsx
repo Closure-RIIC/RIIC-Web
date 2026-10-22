@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ManualOperboxPicker } from "@/components/setup/ManualOperboxPicker";
 import { RotationSettings } from "@/components/RotationSettings";
-import { PRESETS, maxRoomLevel, updateRoomLevel, updateFactoryRecipe, updateTradeOrder, factoryRecipeFor, tradeOrderFor } from "@/blueprint";
-import { rotationDescription } from "@/rotation-settings";
-import { reproductionInputKey, type ReproductionPackage } from "@/reproduction-package";
-import type { QualityDraftData } from "@/quality";
+import { PRESETS, maxRoomLevel, updateRoomLevel, updateFactoryRecipe, updateTradeOrder, factoryRecipeFor, tradeOrderFor } from "@riic/arknights-domain/blueprint";
+import { rotationDescription } from "@riic/arknights-domain/rotation-settings";
+import { reproductionInputKey, type ReproductionPackage } from "@riic/arknights-domain/reproduction-package";
+import type { QualityDraftData } from "@riic/arknights-domain/quality";
 import { Check, Choice, download, Panel, useWorkbenchText } from "./workbench-ui";
 
 export function DraftEditor({ draft, input, setInput, busy, onSave }: { draft: QualityDraftData; input: ReproductionPackage; setInput: (input: ReproductionPackage) => void; busy: boolean; onSave: () => void }) {

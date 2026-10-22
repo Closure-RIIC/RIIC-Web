@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
-import type { QualityVersion } from "@/quality";
+import type { QualityVersion } from "@riic/arknights-domain/quality";
 
 export function useWorkbenchText() {
   const en = useLocale() === "en";

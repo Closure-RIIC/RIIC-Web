@@ -13,12 +13,12 @@ import { SkillRoomTagBar } from "@/components/skill-query/SkillRoomTagBar";
 import { SkillFilterRow } from "@/components/skill-query/SkillFilterRow";
 import { OperatorRarityFilter, OperatorProfessionFilter } from "@/components/operators/OperatorPickerParts";
 import { Button } from "@/components/ui/button";
-import { SearchInput } from "../../../../../packages/ui-primitives/search-input";
+import { SearchInput } from "@riic/ui-primitives/search-input";
 import { LoadMore } from "@/components/ui/load-more";
 import { BUILDING_SKILL_CATALOG, OPERATOR_CATALOG } from "@/operatorPortraits";
 import { useGameCatalog } from "@/i18n/game-data-client";
 import { indexSkillAnnotations } from "@/skill-annotations";
-import type { ApiResponse, SkillAnnotationListData } from "@/types";
+import type { ApiResponse, SkillAnnotationListData } from "@riic/arknights-domain/types";
 import { DEFAULT_USER_SETTINGS, loadUserSettings } from "@/user-settings";
 
 export const SKILL_QUERY_PAGE_SIZE = 10;
@@ -29,7 +29,7 @@ export function SkillQuery() {
   const [pinyinNames, setPinyinNames] = useState<Readonly<Record<string, readonly string[]>>>();
   useEffect(() => {
     let active = true;
-    void import("@/generated/arkntools/operator-pinyin.json").then((module) => {
+    void import("@riic/arknights-domain/generated/arkntools/operator-pinyin.json").then((module) => {
       if (active) setPinyinNames(module.default);
     });
     return () => { active = false; };

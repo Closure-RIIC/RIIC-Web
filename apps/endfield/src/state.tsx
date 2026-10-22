@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { DEFAULT_OPTIONS, STORAGE_KEY, manualTemplate, parseWorkspace, type Assignment, type Result, type Workspace } from "@shared/endfield-solver/model.mjs";
-import type { EndfieldSnapshot } from "@shared/endfield-skland/model";
+import { DEFAULT_OPTIONS, STORAGE_KEY, manualTemplate, parseWorkspace, type Assignment, type Result, type Workspace } from "@riic/endfield-solver/model.mjs";
+import type { EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { ENDFIELD_LOCALE_COOKIE, DISPLAY_STORAGE_KEY, readEndfieldColorMode, readEndfieldLocale, clearEndfieldStorage } from "./local-settings";
 import { completeSolverActivity, type SolverActivity, type SolverMessage } from "./solver-activity";
 import { RESULT_STORAGE_KEY, encodeResultCache, restoreResultCache, workspaceKey } from "./result-cache";

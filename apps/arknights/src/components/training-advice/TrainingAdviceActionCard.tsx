@@ -13,7 +13,7 @@ import type {
   OperBoxEntry,
   TrainingNewbieItem,
   TrainingRecommendation,
-} from "@/types";
+} from "@riic/arknights-domain/types";
 import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 

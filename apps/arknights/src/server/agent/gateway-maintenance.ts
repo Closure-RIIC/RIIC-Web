@@ -2,7 +2,7 @@ import "@tanstack/react-start/server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { getDatabasePool } from "../db/index.ts";
+import { getDatabasePool } from "@riic/platform-server/db";
 import { activeAgentPolicies, agentSessionId, recoverAgentRuns } from "../billing/agent-accounting.ts";
 import { gatewayFilterOptions } from "./filter-policy.ts";
 import { gatewaySettings } from "./gateway-config.ts";

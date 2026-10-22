@@ -2,12 +2,12 @@ import "@tanstack/react-start/server-only";
 
 import { eq } from "drizzle-orm";
 import { canAccessFeature, featureAccessMode, type RestrictedFeature, type FeatureAccess } from "@/feature-access";
-import { PublicApiError } from "@/server/api-contract";
-import { getDatabase } from "@/server/db";
-import { user } from "@/server/db/schema";
-import { websiteSession } from ".";
-import { websiteAdminAccess } from "./admin-access";
-import { requireWebsiteSession } from "./authorization";
+import { PublicApiError } from "@riic/platform-server/api-contract";
+import { getDatabase } from "@riic/platform-server/db";
+import { user } from "@riic/platform-server/db/schema";
+import { websiteSession } from "@riic/platform-server/auth";
+import { websiteAdminAccess } from "@riic/platform-server/auth/admin-access";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
 
 async function currentAccount(userId: string) {
   const [record] = await getDatabase().select({ role: user.role, banned: user.banned }).from(user).where(eq(user.id, userId)).limit(1);

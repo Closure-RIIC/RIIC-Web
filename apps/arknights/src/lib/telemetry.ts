@@ -5,7 +5,7 @@ import {
   TELEMETRY_SESSION_STORAGE_KEY,
   type TelemetryInput,
   type TelemetryType,
-} from "@/telemetry-contract";
+} from "@riic/arknights-domain/telemetry-contract";
 import { createTelemetryQueue } from "./telemetry-queue";
 
 const TELEMETRY_ENDPOINT = "/api/telemetry";

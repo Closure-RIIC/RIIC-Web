@@ -12,7 +12,7 @@ process.once("exit", () => hook.deregister());
 
 test("report API stores three integer days and permits blank metrics", async (context) => {
   const writes: unknown[] = [];
-  await context.mock.module(new URL("./api-contract.ts", import.meta.url), { namedExports: {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/api-contract.ts", import.meta.url), { namedExports: {
     assertEmptyBody: async () => {},
     assertSameOrigin: () => {},
     createRequestId: () => "request-id",
@@ -23,7 +23,7 @@ test("report API stores three integer days and permits blank metrics", async (co
     requestClientIp: () => "127.0.0.1",
     successResponse: (data: unknown) => Response.json({ success: true, data }),
   } });
-  await context.mock.module(new URL("./auth/authorization.ts", import.meta.url), { namedExports: {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/auth/authorization.ts", import.meta.url), { namedExports: {
     requireWebsiteSession: async () => ({ user: { id: "verified-user" } }),
   } });
   await context.mock.module(new URL("./game-report-store.ts", import.meta.url), { namedExports: {

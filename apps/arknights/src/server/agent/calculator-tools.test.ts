@@ -8,7 +8,7 @@ import { z } from "zod";
 import roster from "../../../../../fixtures/operbox_full_e2.json" with { type: "json" };
 import { buildCalculatorTools, type AgentOperatorPool } from "./calculator-tools.ts";
 import { observeMasteryEnvironment } from "./mastery-environment.ts";
-import type { SklandStatusSnapshot } from "../../types.ts";
+import type { SklandStatusSnapshot } from "@riic/arknights-domain/types";
 import { calculateMastery } from "../../mastery.ts";
 import { calculateRecruitment, RECRUITMENT_TAGS } from "../../recruitment.ts";
 import { OPERATOR_CATALOG } from "../../operatorPortraits.ts";

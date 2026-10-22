@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { OperBoxEntry } from "./types.ts";
+import type { OperBoxEntry } from "@riic/arknights-domain/types";
 import { hasOperboxEliteStateChange, upgradeSimulationBoxSource } from "./upgrade-simulation.ts";
 
 function operator(overrides: Partial<OperBoxEntry> = {}): OperBoxEntry {

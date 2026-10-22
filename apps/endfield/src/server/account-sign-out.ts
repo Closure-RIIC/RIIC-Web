@@ -1,4 +1,4 @@
-import { accountOrigin } from "./account-origin.ts";
+import { accountHeaders, accountOrigin } from "./account-origin.ts";
 
 const authCookie = /^(?:__Secure-|__Host-)?better-auth\.[^=]+=/;
 const headers = { "Cache-Control": "private, no-store", Vary: "Cookie" };
@@ -16,7 +16,7 @@ export async function signOutAccount(request: Request) {
   try {
     const upstream = await fetch(new URL("/api/auth/sign-out", origin), {
       method: "POST", body: "{}", redirect: "error", signal: AbortSignal.timeout(10000),
-      headers: { cookie: cookies, origin: origin.origin, "content-type": "application/json", accept: "application/json" },
+      headers: accountHeaders(request, { cookie: cookies, origin: origin.origin, "content-type": "application/json", accept: "application/json" }),
     });
     if (!upstream.ok || (await upstream.json())?.success !== true) throw new Error("Sign-out failed");
     const response = Response.json({ success: true }, { headers });

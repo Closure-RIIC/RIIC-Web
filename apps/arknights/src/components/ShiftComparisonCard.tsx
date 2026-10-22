@@ -10,7 +10,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion";
 import { roomLightAccentFor } from "@/room-visuals";
-import type { ShiftAdjustment, ShiftAdjustmentIssue, ShiftComparison } from "@/types";
+import type { ShiftAdjustment, ShiftAdjustmentIssue, ShiftComparison } from "@riic/arknights-domain/types";
 import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 

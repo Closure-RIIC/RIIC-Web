@@ -6,10 +6,10 @@ registerHooks({ resolve(specifier, context, next) { return specifier === "server
 test("billing APIs reject guests, reviewers and cross-origin writes before accessing accounts", async t => {
   let role="guest";let originAllowed=true;const calls:string[]=[];
   class PublicApiError extends Error {} class BillingAdminError extends Error {}
-  await t.mock.module(new URL("../api-contract.ts",import.meta.url),{namedExports:{PublicApiError,createRequestId:()=>"test",
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/api-contract.ts",import.meta.url),{namedExports:{PublicApiError,createRequestId:()=>"test",
     assertSameOrigin:()=>{calls.push("origin");if(!originAllowed)throw new Error("origin denied");},enforceRateLimit:()=>{calls.push("rate");},readJsonBody:(r:Request)=>r.json(),
     successResponse:(data:unknown)=>Response.json({data}),failureResponse:()=>Response.json({error:"denied"},{status:403})}});
-  await t.mock.module(new URL("../auth/authorization.ts",import.meta.url),{namedExports:{requireWebsiteAdmin:async()=>{calls.push("auth");if(role!=="admin")throw new Error("denied");return {session:{user:{id:"real-admin"}}};}}});
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/auth/authorization.ts",import.meta.url),{namedExports:{requireWebsiteAdmin:async()=>{calls.push("auth");if(role!=="admin")throw new Error("denied");return {session:{user:{id:"real-admin"}}};}}});
   await t.mock.module(new URL("./admin.ts",import.meta.url),{namedExports:{BillingAdminError,billingRange:()=>({from:new Date(),to:new Date()}),
     billingOverview:()=>{calls.push("read");return{};},listBilling:()=>{calls.push("read");return{};},billingRunDetail:()=>({}),getAgentPolicies:()=>({}),
     adjustBilling:(actor:string)=>{assert.equal(actor,"real-admin");calls.push("write");return{};},changeAgentPolicy:()=>({}),resolveBillingReview:()=>({}),testAgentFilter:()=>({})}});

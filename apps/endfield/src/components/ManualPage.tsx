@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { Plus, SlidersHorizontal } from "lucide-react";
-import { operatorData } from "@shared/endfield-data";
-import { manualTemplate, type Assignment } from "@shared/endfield-solver/model.mjs";
-import { Action, ActionContent, actionClassName, Field, Notice, PageTitle } from "@shared/endfield-ui";
+import { operatorData } from "@riic/endfield-data";
+import { manualTemplate, type Assignment } from "@riic/endfield-solver/model.mjs";
+import { Action, ActionContent, actionClassName, Field, Notice, PageTitle } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
 import { Results } from "./Results";
 import { OperatorPortrait, EquippedWeapon } from "./GameArtwork";

@@ -1,6 +1,6 @@
 import { useTranslations } from "use-intl";
 
-import { LEGAL_OFFICIAL_ACCOUNT_URL } from "@/legal-policy";
+import { LEGAL_OFFICIAL_ACCOUNT_URL } from "@riic/arknights-domain/legal-policy";
 
 export function LegalUpdates({ document }: { document: "terms" | "privacy" }) {
   const t = useTranslations("legal_updates");

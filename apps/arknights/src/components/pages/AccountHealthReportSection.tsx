@@ -8,7 +8,7 @@ import { FileUploadDialog } from "@/components/FileUploadDialog";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { GAME_REPORT_KEYS, gameReportAverage, parseGameReportDays, type GameReportRecord, type GameReportSource } from "@/game-report";
+import { GAME_REPORT_KEYS, gameReportAverage, parseGameReportDays, type GameReportRecord, type GameReportSource } from "@riic/arknights-domain/game-report";
 import { recognizeReport } from "@/report-recognition/recognize";
 import { RECOGNITION_CONFIDENT_DISTANCE, type ReportMetricKey } from "@/report-recognition/types";
 

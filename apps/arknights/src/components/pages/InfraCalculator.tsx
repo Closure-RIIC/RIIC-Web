@@ -21,7 +21,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlanResultSummarySkeleton } from "@/components/PlanResultSummarySkeleton";
 import { ScheduleRunButton } from "@/components/ScheduleRunButton";
 
-import type { FactoryRecipe, TradeOrder } from "@/blueprint";
+import type { FactoryRecipe, TradeOrder } from "@riic/arknights-domain/blueprint";
 import { cn } from "@/lib/utils";
 import type { ShiftDirection } from "@/motion";
 import { onboardingStepStatuses, shouldShowAnonymousSampleTrial } from "@/onboarding";
@@ -35,7 +35,7 @@ import type {
   OperBoxEntry,
   PublicPlanData,
   ShiftComparison,
-} from "@/types";
+} from "@riic/arknights-domain/types";
 
 const PlanResultSummary = lazy(() => import("@/components/PlanResultSummary").then((module) => ({ default: module.PlanResultSummary })));
 const PlanSupportSummary = lazy(() => import("@/components/PlanSupportSummary").then((module) => ({ default: module.PlanSupportSummary })));

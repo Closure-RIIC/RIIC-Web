@@ -7,7 +7,7 @@ import {
   PRIVACY_VERSION,
   TERMS_VERSION,
   type SklandPolicyConsentRequest,
-} from "@/legal-policy";
+} from "@riic/arknights-domain/legal-policy";
 
 export function currentSklandPolicyConsent(): SklandPolicyConsentRequest {
   return {

@@ -3,10 +3,10 @@ import "@tanstack/react-start/server-only";
 import { tool } from "ai";
 import { z } from "zod";
 
-import { loadStatusSnapshot, loadInventorySnapshot } from "@/server/skland/adapter";
-import { activeSklandAccount, readSklandAccountStore } from "@/server/skland/http";
-import { getMaaOperboxSnapshot } from "@/server/workspace";
-import { getSampleOperbox } from "@/server/infra";
+import { loadStatusSnapshot, loadInventorySnapshot } from "@riic/platform-server/skland/adapter";
+import { activeSklandAccount, readSklandAccountStore } from "@riic/platform-server/skland/http";
+import { getMaaOperboxSnapshot } from "@riic/platform-server/workspace";
+import { getSampleOperbox } from "@riic/platform-server/infra";
 import { latestGameReport } from "@/server/game-report-store";
 import type { HealthDailyReport, TrainingOperator } from "@/account-health-input";
 import {

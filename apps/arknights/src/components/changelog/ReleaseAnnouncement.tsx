@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { isBrowserReleaseUnread, markBrowserReleaseSeen, RELEASE_SEEN_EVENT, releaseSeenKey } from "@/releases/announcement-state";
-import type { ReleaseDraft, ReleaseEnvironment } from "@/releases/types";
+import type { ReleaseDraft, ReleaseEnvironment } from "@riic/arknights-domain/releases/types";
 import { useReleaseFeed } from "@/releases/use-release-feed";
 import { ReleaseDialog } from "./ReleaseDialog";
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { chromium, expect } from "@playwright/test";
-import { catalog, DEFAULT_OPTIONS, STORAGE_KEY, manualTemplate, solve } from "../packages/endfield-solver/index.mjs";
+import { catalog, DEFAULT_OPTIONS, STORAGE_KEY, manualTemplate, solve } from "@riic/endfield-solver/index.mjs";
 
 const origin = process.env.ENDFIELD_E2E_ORIGIN || "http://127.0.0.1:5176";
 if (!["127.0.0.1", "localhost"].includes(new URL(origin).hostname)) throw new Error("Local preview only");

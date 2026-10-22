@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { gameHref } from "@shared/shell/games";
-import { FilingLinks } from "../../../../packages/shell/FilingLinks";
+import { gameHref } from "@riic/shell/games";
+import { FilingLinks } from "@riic/shell/FilingLinks";
 import { useWorkspace } from "../state";
 
 export function SiteFooter() {

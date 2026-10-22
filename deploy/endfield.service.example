@@ -1,0 +1,20 @@
+[Unit]
+Description=RIIC Endfield application
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=riic-endfield
+Group=riic-endfield
+WorkingDirectory=/srv/riic-endfield/current
+EnvironmentFile=/etc/riic/endfield.env
+ExecStart=/usr/bin/node /srv/riic-endfield/current/runtime/server/index.mjs
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target

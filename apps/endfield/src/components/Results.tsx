@@ -1,9 +1,9 @@
 import { Check, Download, TriangleAlert } from "lucide-react";
 import { Dialog } from "@base-ui/react/dialog";
-import { operatorData } from "@shared/endfield-data";
+import { operatorData } from "@riic/endfield-data";
 import { OperatorChip, OperatorPortrait, ProductionIcon } from "./GameArtwork";
-import { Action, ActionContent, actionClassName, Notice, Section } from "@shared/endfield-ui";
-import type { Result, Mood } from "@shared/endfield-solver/index.mjs";
+import { Action, ActionContent, actionClassName, Notice, Section } from "@riic/endfield-ui";
+import type { Result, Mood } from "@riic/endfield-solver/index.mjs";
 import { downloadJson, useWorkspace } from "../state";
 import { DialogFrame } from "./DialogFrame";
 import { categoryLabel, FacilityBoard, FacilityCard } from "./FacilityCard";

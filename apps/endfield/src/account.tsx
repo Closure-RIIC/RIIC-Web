@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { parseWebsiteSession, type WebsiteSessionData } from "@shared/shell/account-session";
+import { parseWebsiteSession, type WebsiteSessionData } from "@riic/contracts/account-session";
 import { useWorkspace, WEBSITE_SIGN_OUT_EVENT, WEBSITE_SESSION_CHANGE_EVENT } from "./state";
 
 export type AccountAction = "sign-out" | "extend" | "revoke" | "delete";

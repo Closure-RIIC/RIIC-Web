@@ -7,7 +7,7 @@ import { LogIn, UserRound } from "lucide-react";
 import type { SklandStatusProps } from "@/components/pages/SklandStatus";
 import { StatusCenterLoading, StatusCenterPage } from "@/components/pages/StatusCenterShell";
 import { Button } from "@/components/ui/button";
-import type { SklandBindingSummary } from "@/types";
+import type { SklandBindingSummary } from "@riic/arknights-domain/types";
 
 const SklandStatus = lazy(() => import("@/components/pages/SklandStatus").then((module) => ({ default: module.SklandStatus })));
 

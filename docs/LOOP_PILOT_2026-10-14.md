@@ -50,9 +50,9 @@ node --test --experimental-strip-types --import ./.tmp/freeze-gacha-test-clock.m
 
 - `apps/arknights/src/server/admin-records-api.ts`
 - `apps/arknights/src/server/admin-users-api.ts`
-- `apps/arknights/src/server/skland/account-data-api.ts`
-- `apps/arknights/src/server/skland/accounts-api.ts`
-- `apps/arknights/src/server/skland/status-api.ts`
+- `packages/platform-server/src/skland/account-data-api.ts`
+- `packages/platform-server/src/skland/accounts-api.ts`
+- `packages/platform-server/src/skland/status-api.ts`
 
 这是 136 个服务端文件范围内的标记清单。没有访问流量与外部客户端迁移证据，删除条件不成立。下一轮一次选一个接口核对新旧路由和消费者；本轮没有引入“零引用即删除”的自动化。
 

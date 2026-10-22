@@ -1,4 +1,4 @@
-import { STORAGE_KEY } from "../../../packages/endfield-solver/model.mjs";
+import { STORAGE_KEY } from "@riic/endfield-solver/model.mjs";
 import { RESULT_STORAGE_KEY } from "./result-cache.ts";
 
 export const ENDFIELD_LOCALE_COOKIE = "riic-endfield-locale";

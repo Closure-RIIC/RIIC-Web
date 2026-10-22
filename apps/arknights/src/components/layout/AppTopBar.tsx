@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { RemoteAvatar } from "@/components/ui/remote-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import type { SklandAccountSummary, SklandStatusSnapshot } from "@/types";
+import type { SklandAccountSummary, SklandStatusSnapshot } from "@riic/arknights-domain/types";
 
 const CLIENT_SKLAND_ENABLED = process.env.APP_CLIENT_SKLAND_ENABLED === "1";
 

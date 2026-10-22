@@ -10,9 +10,9 @@ import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 import { eligibleMasteryTargets, MASTERY_UNSUPPORTED_TARGET_IDS } from "@/mastery";
 import { PROFESSION_LABELS, PROFESSION_LABELS_ENGLISH } from "@/operator-presentation";
-import catalog from "@/generated/arkntools/operator-catalog.json";
+import catalog from "@riic/arknights-domain/generated/arkntools/operator-catalog.json";
 import { cn } from "@/lib/utils";
-import type { OperBoxEntry } from "@/types";
+import type { OperBoxEntry } from "@riic/arknights-domain/types";
 
 const byId = new Map(catalog.map((o) => [o.id,o]));
 const unsupportedIds = new Set<string>(MASTERY_UNSUPPORTED_TARGET_IDS);

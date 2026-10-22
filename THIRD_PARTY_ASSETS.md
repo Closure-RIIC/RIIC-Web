@@ -13,7 +13,7 @@ The wish page uses Long Cang and ZCOOL QingKe HuangYou from the `zhe-pian-da-di-
 Operator metadata, building-skill icons, and the generated presentation catalogs under the following paths come from the public [`arkntools/arknights-toolbox-data`](https://github.com/arkntools/arknights-toolbox-data) repository:
 
 - `apps/arknights/public/images/building-skills`
-- `apps/arknights/src/generated/arkntools`
+- `packages/arknights-domain/src/generated/arkntools`
 
 The repository's updater code is published under the MIT License. Arknights game data, names, and descriptions remain the property of their respective rights holders.
 
@@ -21,7 +21,7 @@ The repository's updater code is published under the MIT License. Arknights game
 
 Operator portraits under `apps/arknights/public/images/operator-portraits` come from the public [`yuanyan3060/ArknightsGameResource`](https://github.com/yuanyan3060/ArknightsGameResource) repository. Its README identifies the images as Arknights game assets owned by Hypergryph and limits the repository's purpose to learning and exchange. The resource repository carries an [AGPL-3.0 license](https://github.com/yuanyan3060/ArknightsGameResource/blob/main/LICENSE); this frontend copies only the public PNG artifacts and does not execute code from that repository.
 
-`apps/arknights/src/generated/arkntools/source.json` records the exact data and portrait commits and resource counts used by the current checkout. This project does not claim ownership of the game assets.
+`packages/arknights-domain/src/generated/arkntools/source.json` records the exact data and portrait commits and resource counts used by the current checkout. This project does not claim ownership of the game assets.
 
 The frontend consumes only public JSON and PNG artifacts. It does not execute private downloader or unpacking workflows, does not require access to private repositories, and never opens pull requests or writes to either upstream repository.
 

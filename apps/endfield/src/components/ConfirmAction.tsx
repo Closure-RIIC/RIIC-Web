@@ -1,6 +1,6 @@
 import { useRef, useState, type ComponentProps } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import { Action, ActionContent, actionClassName } from "@shared/endfield-ui";
+import { Action, ActionContent, actionClassName } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
 import { DialogFrame } from "./DialogFrame";
 

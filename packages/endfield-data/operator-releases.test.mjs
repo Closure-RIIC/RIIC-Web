@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { URL } from "node:url";
-import { catalog } from "../endfield-solver/model.mjs";
+import { catalog } from "@riic/endfield-solver/model.mjs";
 import { compareOperatorRelease, operatorReleases } from "./operator-releases.ts";
 
 test("release metadata covers every displayed operator exactly once", async () => {

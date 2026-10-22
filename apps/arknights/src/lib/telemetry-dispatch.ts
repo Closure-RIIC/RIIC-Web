@@ -1,4 +1,4 @@
-import type { TelemetryInput } from "@/telemetry-contract";
+import type { TelemetryInput } from "@riic/arknights-domain/telemetry-contract";
 
 /** Keep telemetry implementation out of the initial application bundle. */
 export function trackTelemetry(input: TelemetryInput, flush = false): void {

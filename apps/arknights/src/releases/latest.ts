@@ -1,4 +1,4 @@
-import type { ReleaseNote } from "./types.ts";
+import type { ReleaseNote } from "@riic/arknights-domain/releases/types";
 
 // Latest release at migration 0015's bootstrap. Kept as an immutable test fixture.
 // Runtime content comes from the database; manage future releases in /admin/changelog.

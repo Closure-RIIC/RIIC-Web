@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { indexSkillAnnotations, skillAnnotationKey } from "./skill-annotations.ts";
-import type { SkillAnnotationData } from "./types.ts";
+import type { SkillAnnotationData } from "@riic/arknights-domain/types";
 
 test("skill annotations are scoped to both operator and skill", () => {
   const annotations: SkillAnnotationData[] = [

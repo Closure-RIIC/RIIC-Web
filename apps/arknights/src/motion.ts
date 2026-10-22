@@ -1,1 +1,1 @@
-export * from "../../../packages/ui-primitives/motion.ts";
+export * from "@riic/ui-primitives/motion";

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { clearEndfieldStorage, readEndfieldColorMode, readEndfieldLocale, DISPLAY_STORAGE_KEY } from "../src/local-settings.ts";
-import { STORAGE_KEY } from "../../../packages/endfield-solver/model.mjs";
+import { STORAGE_KEY } from "@riic/endfield-solver/model.mjs";
 import { RESULT_STORAGE_KEY } from "../src/result-cache.ts";
 
 test("Endfield defaults to light and preserves an explicit dark preference", () => {

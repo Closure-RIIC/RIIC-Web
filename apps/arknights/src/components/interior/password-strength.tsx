@@ -10,7 +10,7 @@ import { messageRecord } from "@/i18n/translate";
 import { useEffect, useMemo, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
-import { evaluatePasswordStrength } from "@/password-strength";
+import { evaluatePasswordStrength } from "@riic/arknights-domain/password-strength";
 
 const CELL = { type: "spring", stiffness: 520, damping: 34, mass: 0.45 } as const;
 const CROSSFADE = { type: "spring", stiffness: 260, damping: 34, mass: 0.8 } as const;

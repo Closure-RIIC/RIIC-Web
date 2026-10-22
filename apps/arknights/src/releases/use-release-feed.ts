@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { ApiResponse } from "../types";
-import type { ReleaseFeed } from "./types";
+import type { ApiResponse } from "@riic/arknights-domain/types";
+import type { ReleaseFeed } from "@riic/arknights-domain/releases/types";
 
 export function useReleaseFeed(announcementOnly = false) {
   const [feed, setFeed] = useState<ReleaseFeed | null>(null);

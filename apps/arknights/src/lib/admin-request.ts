@@ -1,4 +1,4 @@
-import type { ApiResponse } from "@/types";
+import type { ApiResponse } from "@riic/arknights-domain/types";
 
 export async function requestAdminData<T>(url: string, init: RequestInit | undefined, fallback: string, request: typeof fetch = fetch): Promise<T> {
   const headers = new Headers(init?.headers);

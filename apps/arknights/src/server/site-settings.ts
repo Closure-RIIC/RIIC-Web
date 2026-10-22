@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
-import { getDatabase } from "@/server/db";
-import { siteSetting } from "@/server/db/schema";
+import { getDatabase } from "@riic/platform-server/db";
+import { siteSetting } from "@riic/platform-server/db/schema";
 
 const DONATION_KEY = "wishes.donation";
 export type DonationSetting = { enabled: boolean; imageUrl: string | null };

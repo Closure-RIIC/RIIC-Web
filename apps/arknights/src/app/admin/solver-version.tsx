@@ -3,7 +3,7 @@ import { useTranslations } from "use-intl";
 
 import { ChevronDown } from "lucide-react";
 
-import type { SolverPingFingerprint } from "@/types";
+import type { SolverPingFingerprint } from "@riic/arknights-domain/types";
 
 function FingerprintValue({ value, dataAttribute, unavailable }: { value: string | number | null; dataAttribute?: string; unavailable: string }) {
   return (

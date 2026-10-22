@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { useLocale, useTranslations } from "use-intl";
-import type { ReleaseNote } from "@/releases/types";
+import type { ReleaseNote } from "@riic/arknights-domain/releases/types";
 
 const SECTION_KEYS = { added: "new", improved: "improved", fixed: "fixed" } as const;
 

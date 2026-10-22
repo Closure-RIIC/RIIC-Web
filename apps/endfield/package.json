@@ -24,7 +24,9 @@
     "@riic/endfield-ui": "*",
     "@riic/endfield-solver": "*",
     "@riic/endfield-skland": "*",
-    "@riic/endfield-data": "*"
+    "@riic/endfield-data": "*",
+    "@riic/contracts": "*",
+    "@riic/platform-server": "*"
   },
   "devDependencies": {
     "vite": "^8.0.0",

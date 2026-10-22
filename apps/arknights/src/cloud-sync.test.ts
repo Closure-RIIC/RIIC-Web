@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { cloudSyncMetadataKey, cloudSyncPreferenceKey, cloudWorkspaceFingerprint, readCloudSyncMetadata, writeCloudSyncMetadata } from "./cloud-sync.ts";
-import type { CloudWorkspacePutRequest } from "./types.ts";
+import type { CloudWorkspacePutRequest } from "@riic/arknights-domain/types";
 import type { TestContext } from "node:test";
 import { CloudSyncSession, type CloudSyncStatus, type CloudUpload } from "./cloud-sync-session.ts";
-import type { CloudWorkspaceData } from "./types.ts";
+import type { CloudWorkspaceData } from "@riic/arknights-domain/types";
 
 const request = {
   state: {

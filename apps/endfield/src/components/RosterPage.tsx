@@ -1,16 +1,16 @@
 import { Fragment, useState } from "react";
 import { Download, Check, Plus, X } from "lucide-react";
-import { catalog, type Operator } from "@shared/endfield-solver/model.mjs";
-import { Action, Notice, PageTitle, Section } from "@shared/endfield-ui";
+import { catalog, type Operator } from "@riic/endfield-solver/model.mjs";
+import { Action, Notice, PageTitle, Section } from "@riic/endfield-ui";
 import { downloadJson, useWorkspace } from "../state";
-import { compareOperatorRelease, operatorData } from "@shared/endfield-data";
-import { parseSkillNodeId, reconcileSkillNodes, requiredElite, toggleSkillNode, unlockedSkillNodes } from "@shared/endfield-skland/skill-nodes.ts";
-import { FilterSelect } from "@shared/ui-primitives/filter-select";
-import { SelectionButton } from "@shared/ui-primitives/selection-button";
-import { Button } from "@shared/ui-primitives/button";
+import { compareOperatorRelease, operatorData } from "@riic/endfield-data";
+import { SearchInput } from "@riic/ui-primitives/search-input";
+import { parseSkillNodeId, reconcileSkillNodes, requiredElite, toggleSkillNode, unlockedSkillNodes } from "@riic/endfield-skland/skill-nodes";
+import { FilterSelect } from "@riic/ui-primitives/filter-select";
+import { SelectionButton } from "@riic/ui-primitives/selection-button";
+import { Button } from "@riic/ui-primitives/button";
 import { GameArtwork, OperatorPortrait } from "./GameArtwork";
 import { SkillFilters } from "./SkillFilters";
-import { SearchInput } from "@shared/ui-primitives/search-input";
 
 const skillCatalog = [...catalog].sort(compareOperatorRelease);
 

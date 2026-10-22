@@ -41,7 +41,7 @@ test("pending plan envelopes resume into finalized private artifacts", async (co
     PRIVATE_RECORD_TTL_MS,
     resumePendingPlanArtifactFinalizations,
     waitForPlanArtifactFinalizers,
-  } = await import("./infra.ts");
+  } = await import("@riic/platform-server/infra");
 
   assert.equal(PRIVATE_RECORD_TTL_MS, 30 * 24 * 60 * 60 * 1000);
 

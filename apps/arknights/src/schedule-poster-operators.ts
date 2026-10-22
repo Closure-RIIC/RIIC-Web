@@ -1,7 +1,7 @@
-import { manualLevelFor, maxEliteForRarity } from "./manual-operbox.ts";
+import { manualLevelFor, maxEliteForRarity } from "@riic/arknights-domain/manual-operbox";
 import { OPERATOR_CATALOG } from "./operatorPortraits.ts";
 import type { SchedulePosterDocument } from "./schedule-poster-document.ts";
-import type { OperBoxEntry } from "./types.ts";
+import type { OperBoxEntry } from "@riic/arknights-domain/types";
 
 /** Keep manual scheduling defaults independent of poster validation and sample data. */
 export function defaultPosterOperator(name: string): OperBoxEntry | undefined {

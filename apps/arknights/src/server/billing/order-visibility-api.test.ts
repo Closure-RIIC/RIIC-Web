@@ -8,7 +8,7 @@ test("pending order deletion checks origin, authentication, rate limit and owner
   const calls: string[] = [];
   let allowed = true, authenticated = true, pending = true;
   class PublicApiError extends Error {}
-  await t.mock.module(new URL("../api-contract.ts", import.meta.url), { namedExports: {
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/api-contract.ts", import.meta.url), { namedExports: {
     PublicApiError, createRequestId: () => "test",
     assertSameOrigin: () => { calls.push("origin"); if (!allowed) throw new Error("origin"); },
     enforceRateLimit: () => { calls.push("rate"); },

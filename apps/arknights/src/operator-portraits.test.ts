@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import test from "node:test";
 
-import sourceManifest from "./generated/arkntools/source.json" with { type: "json" };
+import sourceManifest from "@riic/arknights-domain/generated/arkntools/source.json" with { type: "json" };
 import {
   BUILDING_SKILL_CATALOG,
   OPERATOR_CATALOG,

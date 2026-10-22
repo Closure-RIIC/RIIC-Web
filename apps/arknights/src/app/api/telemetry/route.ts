@@ -7,12 +7,12 @@ import {
   readJsonBody,
   requestClientIp,
   successResponse,
-} from "@/server/api-contract";
-import { requireWebsiteSession } from "@/server/auth/authorization";
-import { getDatabase } from "@/server/db";
-import { telemetryEvent } from "@/server/db/schema";
-import { activeSklandAccount, readSklandAccountStore } from "@/server/skland/http";
-import { sklandDataOwnerTag } from "@/server/skland/session";
+} from "@riic/platform-server/api-contract";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
+import { getDatabase } from "@riic/platform-server/db";
+import { telemetryEvent } from "@riic/platform-server/db/schema";
+import { activeSklandAccount, readSklandAccountStore } from "@riic/platform-server/skland/http";
+import { sklandDataOwnerTag } from "@riic/platform-server/skland/session";
 import {
   MAX_TELEMETRY_EVENTS_PER_REQUEST,
   telemetryEventValues,

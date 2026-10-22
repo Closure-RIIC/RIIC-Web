@@ -1,6 +1,6 @@
-import { getSampleOperbox } from "@/server/infra";
-import { createRequestId, failureResponse, successResponse } from "@/server/api-contract";
-import type { OperBoxEntry, SampleOperboxData } from "@/types";
+import { getSampleOperbox } from "@riic/platform-server/infra";
+import { createRequestId, failureResponse, successResponse } from "@riic/platform-server/api-contract";
+import type { OperBoxEntry, SampleOperboxData } from "@riic/arknights-domain/types";
 
 
 export async function GET() {

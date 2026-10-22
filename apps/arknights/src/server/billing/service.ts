@@ -5,8 +5,8 @@ import { Decimal } from "decimal.js";
 import { and, desc, eq, gt, isNull, ne, or, sql } from "drizzle-orm";
 import { PENDING_ORDER_VISIBLE_MS } from "@/billing-order-visibility";
 
-import { getDatabase } from "@/server/db";
-import { agentUsage, billingCdk, billingLedger, billingOrder, billingWallet } from "@/server/db/schema";
+import { getDatabase } from "@riic/platform-server/db";
+import { agentUsage, billingCdk, billingLedger, billingOrder, billingWallet } from "@riic/platform-server/db/schema";
 import { afdianCheckoutUrl, billingProduct, billingTestProductEnabled, POINT_VALUE_RMB, type BillingProduct } from "./config";
 import { cdkAvailability, hashCdk, randomCdk, validCdk } from "./cdk";
 import { roundPoints, sumPoints } from "./points.ts";

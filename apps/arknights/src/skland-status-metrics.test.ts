@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { deriveSklandBuildingMetrics, sklandTradingOrderRewardLabel } from "./skland-status-metrics.ts";
-import type { SklandStatusSnapshot, SklandTradingOrder } from "./types.ts";
+import type { SklandStatusSnapshot, SklandTradingOrder } from "@riic/arknights-domain/types";
 
 function snapshot(): SklandStatusSnapshot {
   const now = Date.parse("2026-08-02T00:00:00+08:00") / 1000;

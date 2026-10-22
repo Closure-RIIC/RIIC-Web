@@ -32,7 +32,7 @@ function productUnit(unit: string, en: boolean) {
 import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion";
 import { formatPlanDuration } from "@/rotation-presentation";
 import { countShiftPlacementAdjustments } from "@/skland";
-import type { BaseBlueprint, MaaJson, RotationJson, ShiftComparison, UserProfile } from "@/types";
+import type { BaseBlueprint, MaaJson, RotationJson, ShiftComparison, UserProfile } from "@riic/arknights-domain/types";
 
 type DetailSection = "efficiency" | "comparison";
 

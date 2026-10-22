@@ -1,1 +1,1 @@
-export { FilterRow as SkillFilterRow } from "../../../../../packages/ui-primitives/filter-row";
+export { FilterRow as SkillFilterRow } from "@riic/ui-primitives/filter-row";

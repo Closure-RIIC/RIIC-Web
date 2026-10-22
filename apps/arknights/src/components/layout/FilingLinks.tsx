@@ -1,1 +1,1 @@
-export { FilingLinks } from "../../../../../packages/shell/FilingLinks";
+export { FilingLinks } from "@riic/shell/FilingLinks";

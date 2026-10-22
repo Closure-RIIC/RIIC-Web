@@ -1,4 +1,4 @@
-import { accountOrigin } from "./account-origin.ts";
+import { accountHeaders, accountOrigin } from "./account-origin.ts";
 
 const allowedCookies = /^(?:(?:__Secure-|__Host-)?better-auth\.[^=]+|skland_accounts_v3|skland_account_v3_[A-Za-z0-9_-]+|skland_endfield_v1|skland_endfield_account_v1_[A-Za-z0-9_-]+)=/;
 const writableCookies = /^(?:skland_account_v3_[A-Za-z0-9_-]+|skland_endfield_v1|skland_endfield_account_v1_[A-Za-z0-9_-]+)=/;
@@ -44,7 +44,7 @@ export async function forwardEndfieldSkland(request: Request, action: string) {
     const upstream = await fetch(new URL(`/api/endfield/skland/${action}`, origin), {
       method: request.method, body, redirect: "error",
       signal: AbortSignal.any([request.signal, AbortSignal.timeout(65000)]),
-      headers: { cookie, accept: "application/json", ...(body !== undefined ? { "content-type": "application/json", origin: origin.origin } : {}) },
+      headers: accountHeaders(request, { cookie, accept: "application/json", ...(body !== undefined ? { "content-type": "application/json", origin: origin.origin } : {}) }),
     });
     const response = new Response(upstream.body, { status: upstream.status, headers: { ...headers, "Content-Type": "application/json" } });
     for (const value of upstream.headers.getSetCookie()) {

@@ -1,5 +1,5 @@
-import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, successResponse } from "@/server/api-contract";
-import { requireWebsiteAdmin } from "@/server/auth/authorization";
+import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, successResponse } from "@riic/platform-server/api-contract";
+import { requireWebsiteAdmin } from "@riic/platform-server/auth/authorization";
 import { issueAdminCdks, listAdminCdks, revokeAdminCdks } from "@/server/billing/admin-cdk";
 import { CdkValidationError } from "@/server/billing/cdk";
 

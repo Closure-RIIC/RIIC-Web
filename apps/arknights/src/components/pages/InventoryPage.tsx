@@ -1,5 +1,5 @@
 "use client";
-import { FilterSelect } from "../../../../../packages/ui-primitives/filter-select";
+import { FilterSelect } from "@riic/ui-primitives/filter-select";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -9,7 +9,7 @@ import { Link } from "@tanstack/react-router";
 import { useWorkbench } from "@/workbench-context";
 import { trainingCost } from "@/inventory-estimates";
 import { estimateHeadhuntPulls, HEADHUNTING_STEPS, yellowCertificateExchange } from "@/headhunt-estimate";
-import { manualLevelFor, maxEliteForRarity } from "@/manual-operbox";
+import { manualLevelFor, maxEliteForRarity } from "@riic/arknights-domain/manual-operbox";
 import { getSklandInventory } from "@/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from "@/
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import itemCatalog from "@/generated/item-catalog.json";
 import { useLocale } from "use-intl";
-import type { DisplayError, SklandInventoryData } from "@/types";
+import type { DisplayError, SklandInventoryData } from "@riic/arknights-domain/types";
 
 const catalog: Record<string, { name?: string; icon?: string }> = {
   ...itemCatalog,

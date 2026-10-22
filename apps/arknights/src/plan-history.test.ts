@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { parsePlanHistory } from "./plan-history.ts";
-import { SESSION_TTL_MS } from "./persistence.ts";
+import { SESSION_TTL_MS } from "@riic/arknights-domain/persistence";
 
 const now = Date.parse("2026-08-16T00:00:00.000Z");
 const validResult = {
