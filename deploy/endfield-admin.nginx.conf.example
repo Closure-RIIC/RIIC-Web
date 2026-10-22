@@ -1,0 +1,37 @@
+# Include in the HTTPS server for endfield.riic.autos, after configuring TLS.
+# Keep the application bound to loopback. Protect assets as well as page/API requests.
+location = /_endfield_access {
+    internal;
+    proxy_pass http://127.0.0.1:4175/api/platform/endfield-access;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    proxy_set_header Host riic.autos;
+    proxy_set_header X-Forwarded-Host riic.autos;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_set_header Cookie $http_cookie;
+    proxy_cache off;
+}
+
+location @endfield_not_found {
+    default_type text/plain;
+    add_header Cache-Control "private, no-store" always;
+    add_header Vary Cookie always;
+    return 404 "Not Found";
+}
+
+location / {
+    auth_request /_endfield_access;
+    error_page 401 403 500 502 503 504 = @endfield_not_found;
+    proxy_pass http://127.0.0.1:4176;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For "";
+    proxy_set_header CF-Connecting-IP "";
+    proxy_set_header Connection "";
+    proxy_cache off;
+    add_header Cache-Control "private, no-store" always;
+    add_header Vary Cookie always;
+}

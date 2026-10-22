@@ -417,8 +417,8 @@ try {
   await page.locator('[data-workbench-hydrated="true"]').waitFor({ timeout: 60000 });
   await page.locator("[data-game-switcher]").click();
   const toEndfield = page.getByRole("menuitem", { name: "终末地", exact: true });
-  assert.equal(await toEndfield.getAttribute("href"), `${endfield}/`);
-  await toEndfield.click();
+  await expect(toEndfield).toHaveCount(0);
+  await page.goto(`${endfield}/`);
   await page.waitForURL(`${endfield}/`);
   await page.getByRole("heading", { name: "帝江号排班", exact: true }).waitFor();
   // Roster edits still stop obsolete work after removing the dedicated cancel button.

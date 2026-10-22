@@ -43,6 +43,8 @@ jobs:
         run: npm run build:all
       - name: Validate isolated platform runtime
         run: node scripts/test-platform-runtime.mjs
+      - name: Validate private Endfield runtime
+        run: node scripts/test-endfield-access.mjs
       - name: Validate shared account lifecycle
         env:
           PGPASSWORD: platform-test-only

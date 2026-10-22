@@ -127,7 +127,8 @@ try {
   await page.locator('body[data-app-hydrated="true"]').waitFor();
   await expect(avatar).toHaveCount(0);
   await page.locator("[data-game-switcher]").click();
-  await page.getByRole("menuitem", { name: "终末地", exact: true }).click();
+  await expect(page.getByRole("menuitem", { name: "终末地", exact: true })).toHaveCount(0);
+  await page.goto(`${endfield}/`);
   await page.waitForURL(`${endfield}/`);
   await page.locator('body[data-app-hydrated="true"]').waitFor();
   await expect(avatar).toHaveCount(0);
