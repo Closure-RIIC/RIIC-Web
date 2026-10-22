@@ -60,7 +60,7 @@ test("production profile exposes explicitly enabled Skland while preserving secu
   const accountDialog = page.getByRole("dialog", { name: "登录网站账号" });
   await expect(accountDialog).toBeVisible();
   await expect(accountDialog.locator("[data-website-account-panel]")).toBeVisible();
-  await accountDialog.getByRole("button", { name: "Close" }).click();
+  await accountDialog.getByRole("button", { name: "关闭", exact: true }).click();
   await page.getByRole("button", { name: "基建计算器", exact: true }).click();
 
   await page.getByRole("button", { name: "配置Box与布局" }).first().click();
