@@ -62,7 +62,7 @@ for (const width of [1440, 375]) {
     await expect(page.locator("[data-agent-floating-surface]")).toHaveCount(0);
     await expect(dock).toHaveAttribute("aria-expanded", "false");
     await expect(dock).toHaveText("助理");
-    await expect(dock).toHaveCSS("height", "26px");
+    await expect(dock).toHaveCSS("height", width < 768 ? "44px" : "26px");
     await expect(dock).toHaveCSS("border-radius", "999px");
     await expect(dock).toHaveCSS("gap", "3px");
     await expect(dock).toBeFocused();
@@ -81,7 +81,7 @@ for (const width of [1440, 375]) {
     const shortcuts = page.getByRole("button", { name: "查看快捷键", exact: true });
     await expect(shortcuts).toHaveCount(1);
     await expect(shortcuts).toHaveText("");
-    await expect(shortcuts).toHaveCSS("height", "26px");
+    await expect(shortcuts).toHaveCSS("height", width < 768 ? "44px" : "26px");
     await expect(shortcuts).toHaveCSS("border-radius", "999px");
     const shortcutBounds = await shortcuts.boundingBox();
     expect(shortcutBounds!.x + shortcutBounds!.width).toBeLessThan(dockBounds!.x);

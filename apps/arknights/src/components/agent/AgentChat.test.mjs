@@ -54,7 +54,7 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
           export const AGENT_BROADCAST_CHANNEL="test";
           export const requestAgentArtifactOpen=()=>{};
           export const agentArtifactFromOutput=(output)=>output?.workbenchSession ? {session:output.workbenchSession,preset:"243"} : null;
-          ${["PlanArtifactView", "MarkdownMessage", "WorkbenchPageHeading", "FluidOrb", "PersonaAvatar", "AgentCreditBalance", "AgentConversationScrollArea", "ChatBubble", "ChatPanel", "LoadingState", "PromptBar", "StreamingText", "ThinkingState", "Button", "Dialog", "DialogBody", "DialogContent", "DialogDescription", "DialogFooter", "DialogHeader", "DialogTitle"].map((name) => `export const ${name}=({children})=>children ?? null;`).join("\n")}
+          ${["PlanArtifactView", "MarkdownMessage", "WorkbenchPageHeading", "WorkbenchCard", "FluidOrb", "PersonaAvatar", "AgentCreditBalance", "AgentConversationScrollArea", "ChatBubble", "ChatPanel", "LoadingState", "PromptBar", "StreamingText", "ThinkingState", "Button", "Dialog", "DialogBody", "DialogContent", "DialogDescription", "DialogFooter", "DialogHeader", "DialogTitle"].map((name) => `export const ${name}=({children})=>children ?? null;`).join("\n")}
         ` }));
       } }] });
     const { AgentToolCard, formatEnvironmentSummary } = await import(pathToFileURL(outfile).href);
