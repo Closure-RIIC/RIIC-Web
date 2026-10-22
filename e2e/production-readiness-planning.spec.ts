@@ -659,7 +659,9 @@ test("plan completion reveals status, metrics, and schedule once without resetti
   const dormitorySection = page.locator('section[aria-label="宿舍"]');
   await dormitorySection.locator('button[aria-expanded="true"]').click();
   await page.getByRole("button", { name: "收起悬浮助理", exact: true }).click();
-  await expect(page.locator("[data-agent-floating-trigger]")).toHaveCSS("width", "44px");
+  await expect(page.locator("[data-agent-dock-trigger]")).toBeVisible();
+  await expect(page.locator("[data-agent-dock-trigger]")).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator("[data-agent-floating-surface]")).toHaveCount(0);
   await dormitorySection.getByRole("button", { name: "暂不显示" }).click();
   const restoreHidden = page.getByRole("button").filter({ hasText: "恢复已隐藏" });
   await expect(restoreHidden).toBeVisible();

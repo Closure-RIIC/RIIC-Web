@@ -16,7 +16,12 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     const initialFrame = await frame.boundingBox();
     expect(initialFrame).not.toBeNull();
     expect(initialFrame!.y).toBe(gap);
-    expect(initialFrame!.height).toBe(viewport.height - gap * 2);
+    const dockHeight = viewport.width < 768 ? 44 : 34;
+    expect(initialFrame!.height).toBe(viewport.height - gap - dockHeight);
+    const dock = await page.locator("[data-workbench-dock]").boundingBox();
+    expect(dock).not.toBeNull();
+    expect(initialFrame!.y + initialFrame!.height).toBe(dock!.y);
+    expect(dock!.y + dock!.height).toBe(viewport.height);
 
     const distance = await scroll.evaluate(element => Math.min(500, element.scrollHeight - element.clientHeight));
     expect(distance).toBeGreaterThan(100);

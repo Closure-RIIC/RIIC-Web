@@ -16,7 +16,7 @@ for (const width of [1440, 390]) {
     const portraitGate = new Promise<void>(resolve => { releasePortrait = resolve; });
     let releasePresentations!: () => void;
     const presentationGate = new Promise<void>(resolve => { releasePresentations = resolve; });
-    await page.route("**/src/schedule-presentation.ts*", async route => {
+    await page.route(/\/(?:src\/schedule-presentation\.ts|assets\/schedule-presentation-[^/]+\.js)(?:\?.*)?$/, async route => {
       await presentationGate;
       await route.continue();
     });

@@ -625,14 +625,12 @@ test("website login lazy-loads its UI without probing the shared session again",
     await expect(loadingDialog).toBeVisible();
     const box = await loadingDialog.boundingBox();
     expect(box).not.toBeNull();
-    if (viewport.width < 768) {
-      // The shared loading dialog uses the same mobile sheet as the loaded UI.
-      expect(Math.abs(box!.width - viewport.width)).toBeLessThan(1);
-      expect(Math.abs(box!.height - viewport.height)).toBeLessThan(1);
-    } else {
-      expect(box?.width ?? 0).toBeLessThanOrEqual(viewport.width - 16);
-      expect(box?.height ?? 0).toBeLessThanOrEqual(viewport.height - 16);
-    }
+    // Loading and loaded authentication share the compact, inset dialog surface.
+    expect(box!.width).toBeCloseTo(Math.min(460, viewport.width - 24), 0);
+    expect(box!.height).toBeLessThanOrEqual(viewport.height - 24);
+    expect(box!.x).toBeGreaterThanOrEqual(12);
+    expect(box!.y).toBeGreaterThanOrEqual(12);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height - 12);
   }
 
   releaseChunks?.();
@@ -1448,17 +1446,19 @@ for (const viewport of [
     await expect(accountNavigation).toHaveAttribute("data-sidebar-sign-in", "true");
     await accountNavigation.click();
     await expect(page.locator("[data-account-management]")).toHaveCount(0);
-    const accountDialog = page.getByRole("dialog", { name: "登录网站账号" });
+    const accountDialog = page.locator("[data-website-account-dialog]");
     await expect(accountDialog).toBeVisible();
     const accountPanel = accountDialog.locator("[data-website-account-panel]");
     await expect(accountPanel.locator("[data-wizard-steps]")).toHaveCount(0);
     await accountPanel.getByRole("button", { name: "忘记密码" }).click();
-    await expect(accountPanel.getByRole("button", { name: /第 1 步，共 2 步：确认邮箱/ })).toHaveAttribute("aria-current", "step");
+    await expect(accountDialog).toHaveAccessibleName("找回密码");
+    await expect(accountPanel.getByRole("textbox", { name: "邮箱", exact: true })).toBeVisible();
+    await expect(accountPanel.getByRole("button", { name: "发送重置邮件", exact: true })).toBeVisible();
     await accountPanel.getByRole("button", { name: "返回登录" }).click();
     await expect(accountPanel.locator("[data-wizard-steps]")).toHaveCount(0);
     await accountPanel.getByRole("button", { name: "创建账号" }).click();
     await expect(accountPanel.locator("[data-wizard-steps]")).toHaveCount(0);
-    await expect(accountPanel.getByRole("heading", { name: "创建网站账号" })).toBeVisible();
+    await expect(accountDialog).toHaveAccessibleName("创建网站账号");
     await expect(accountPanel.getByRole("link", { name: "服务条款", exact: true })).toHaveAttribute("href", "/terms");
     await expect(accountPanel.getByRole("link", { name: "隐私政策", exact: true })).toHaveAttribute("href", "/privacy");
     await expect(accountPanel.getByText("2–20 个字符，可使用中文、英文字母、数字、空格、下划线和短横线。", { exact: true })).toBeVisible();
@@ -1494,7 +1494,7 @@ for (const viewport of [
       await accountPanel.getByRole("textbox", { name: `邮箱验证码第 ${index + 1} 位，共 6 位` }).fill(digit);
     }
     await accountPanel.getByRole("button", { name: "验证邮箱", exact: true }).click();
-    await expect(accountPanel.getByText("邮箱验证完成", { exact: true })).toBeVisible();
+    await expect(accountDialog).toHaveAccessibleName("邮箱验证完成");
     await expect(accountPanel.getByText("邮箱验证完成，现在可以登录网站账号。")).toBeVisible();
   });
 }

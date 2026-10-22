@@ -1113,6 +1113,14 @@ export async function openSklandOverview(page: Page) {
   await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCount(0);
 }
 
+export async function mockSignedInWebsiteSession(page: Page) {
+  await installMockSessionRefresh(page);
+  await page.route("**/api/auth/get-session", route => route.fulfill({ json: {
+    user: { id: "test-user", name: "Test user", email: "test@example.test", emailVerified: true },
+    session: { id: "test-session", userId: "test-user", expiresAt: "2099-01-01T00:00:00Z" },
+  } }));
+}
+
 export async function mockAnonymousWebsiteSession(page: Page) {
   await page.unroute("**/api/auth/get-session");
   await page.route("**/api/auth/get-session", (route) => route.fulfill({

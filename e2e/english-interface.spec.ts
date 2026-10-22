@@ -19,7 +19,7 @@ test("English mode keeps the calculator and account entry copy in English", asyn
   await page.getByRole("button", { name: "Configure Box and layout" }).click();
   const accountDialog = page.locator("[data-website-account-dialog]");
   await expect(accountDialog).toBeVisible();
-  await expect(accountDialog).toHaveAccessibleName("Website account sign-in");
-  await expect(accountDialog.getByRole("heading", { name: "Sign in", exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(accountDialog).toHaveAccessibleName("Sign in");
+  await expect(accountDialog.locator("[data-website-account-panel]").getByRole("heading", { name: "Sign in", exact: true })).toBeVisible({ timeout: 30_000 });
   await expect(accountDialog.getByRole("button", { name: "Show password" })).toBeVisible();
 });
