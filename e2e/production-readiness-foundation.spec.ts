@@ -1194,6 +1194,8 @@ test("two-shift output drives product estimates, room formulas, and profile deta
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
 
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   const shiftTabs = page.getByRole("tab", { name: /第 \d 班 · 12h/ });
   await expect(shiftTabs).toHaveCount(2);
   await expect(page.locator("[data-shift-tabs]")).toHaveCSS("overflow-y", "hidden");
@@ -1212,7 +1214,7 @@ test("two-shift output drives product estimates, room formulas, and profile deta
   await expect(dailyProducts.locator('[data-daily-product-group="lmd"] [data-daily-product]').nth(1)).toHaveAttribute("data-daily-product", "gold");
   await expect(dailyProducts.locator('[data-daily-product-group="orundum"] [data-daily-product]').nth(0)).toHaveAttribute("data-daily-product", "orundum");
   await expect(dailyProducts.locator('[data-daily-product-group="orundum"] [data-daily-product]').nth(1)).toHaveAttribute("data-daily-product", "shards");
-  await expect(dailyProducts.locator('[data-daily-product="lmd-orders"]')).toContainText(/龙门币.*34,254.*龙门币/s);
+  await expect(dailyProducts.locator('[data-daily-product="lmd-orders"]')).toContainText(/净龙门币.*-42,546.*龙门币/s);
   // 53,000 / 500 manufactured gold plus 10 gold from daily acquisition.
   await expect(dailyProducts.locator('[data-daily-product="gold"]')).toContainText(/赤金.*116.*枚/s);
   await expect(dailyProducts.locator('[data-daily-product="experience"]')).toContainText(/经验.*22,400.*经验/s);
@@ -1275,7 +1277,7 @@ test("two-shift output drives product estimates, room formulas, and profile deta
   await expect(detailsSheet.locator('[data-production-group="orundum"] [data-production-detail]').nth(1)).toHaveAttribute("data-production-detail", "shards");
   await expect(detailsSheet.locator('[data-production-detail="shards"]')).toContainText("制造环节");
   await expect(detailsSheet.locator('[data-production-detail="experience"]')).toContainText(/22,400.*估算自然制造.*估算无人机0 经验/s);
-  await expect(detailsSheet.locator('[data-production-detail="lmd-orders"]')).toContainText(/34,254.*估算自然订单.*估算无人机订单0 龙门币/s);
+  await expect(detailsSheet.locator('[data-production-detail="lmd-orders"]')).toContainText(/-42,546.*估算自然订单34,254 龙门币.*估算无人机订单0 龙门币.*碎片制造消耗-76,800 龙门币.*净收益-42,546 龙门币/s);
   await expect(detailsSheet.locator('[data-production-detail="gold"]')).toContainText(/116.*估算自然制造106 枚.*估算无人机制造0 枚.*日常获取10 枚/s);
   await expect(detailsSheet.locator('[data-production-detail="orundum"]')).toContainText(/360.*估算碎片阶段可供480 合成玉.*估算订单阶段可交付360 合成玉/s);
   await expect(detailsSheet.locator('[data-production-detail="shards"]')).toContainText(/48.*估算自然制造.*估算无人机/s);
