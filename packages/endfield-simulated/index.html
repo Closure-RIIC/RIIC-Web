@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+  <title>步进模拟 · 帝江号</title>
+  <script>
+    window.__DIJIANG_DISABLE_EGG__ = true;
+    window.DijiangAccount = { getCurrentConfig: () => ({}), applyConfig: () => false };
+  </script>
+  <script src="/vendor/html2canvas.min.js"></script>
+  <link rel="stylesheet" href="/assets/css/01-base.css?v=2026101208">
+  <link rel="stylesheet" href="/assets/css/02-layout.css?v=2026101208">
+  <link rel="stylesheet" href="/assets/css/03-components.css?v=2026101208">
+  <link rel="stylesheet" href="/assets/css/09-responsive.css?v=2026101208">
+  <link rel="stylesheet" href="/assets/css/10-pet.css?v=2026101208">
+  <link rel="stylesheet" href="/assets/css/13-sidebar.css?v=2026101208">
+  <link rel="stylesheet" href="/assets/css/14-page-common.css?v=2026101208">
+  <link rel="stylesheet" href="/manual/step/step.css?v=2026101208">
+</head>
+<body>
+
+<header class="app-header">
+  <button class="hamburger" id="toggleSidebarBtn">☰</button>
+  <h1>⏱️ 步进模拟 · 帝江号</h1>
+  <div class="header-right">
+    <a href="/manual/" class="header-cloud-btn" style="text-decoration:none;">← 返回手动排班</a>
+  </div>
+</header>
+
+<aside id="sidebar">
+  <div class="sidebar-header">
+    <span>🏭 帝江号</span>
+    <button class="sidebar-close" id="closeSidebarBtn">‹</button>
+  </div>
+  <nav class="sidebar-nav">
+    <a href="/" class="sidebar-link"><span class="sidebar-link-icon">📋</span><span class="sidebar-link-text"><span class="sidebar-link-title">自动排班</span><span class="sidebar-link-desc">一键生成最优排班</span></span></a>
+    <a href="/manual/" class="sidebar-link"><span class="sidebar-link-icon">✋</span><span class="sidebar-link-text"><span class="sidebar-link-title">手动排班</span><span class="sidebar-link-desc">自由拖拽调整</span></span></a>
+    <a href="/manual/step/" class="sidebar-link is-active"><span class="sidebar-link-icon">⏱️</span><span class="sidebar-link-text"><span class="sidebar-link-title">步进模拟</span><span class="sidebar-link-desc">观察心情与产出</span></span></a>
+    <a href="/development/" class="sidebar-link"><span class="sidebar-link-icon">🔬</span><span class="sidebar-link-text"><span class="sidebar-link-title">提升建议</span></span></a>
+  </nav>
+  <div class="sidebar-spacer"></div>
+  <nav class="sidebar-nav sidebar-nav-bottom">
+    <a href="/agentpackage/" class="sidebar-link"><span class="sidebar-link-icon">👥</span><span class="sidebar-link-text"><span class="sidebar-link-title">干员库</span></span></a>
+    <a href="/log/" class="sidebar-link"><span class="sidebar-link-icon">📰</span><span class="sidebar-link-text"><span class="sidebar-link-title">更新日志</span></span></a>
+    <a href="/help/" class="sidebar-link"><span class="sidebar-link-icon">❓</span><span class="sidebar-link-text"><span class="sidebar-link-title">关于和帮助</span></span></a>
+  </nav>
+</aside>
+
+<main id="mainContent" class="step-main">
+
+  <section class="step-panel" id="setupPanel">
+    <div class="step-panel-header">
+      <h2>① 排班设置</h2>
+      <div class="panel-actions">
+        <button id="importFromManualBtn" class="step-btn-secondary">📥 从手动排班导入</button>
+        <button id="collapseAllBtn" class="step-btn-secondary">全部收起</button>
+      </div>
+    </div>
+    <div id="roomConfigArea" class="room-config-area">
+      <div class="rooms-placeholder">加载中…</div>
+    </div>
+  </section>
+
+  <!-- ★ 心情恢复助力面板（支持按天独立配置） -->
+  <section class="step-panel">
+    <div class="step-panel-header">
+      <h2>⚡ 心情恢复助力</h2>
+    </div>
+    <div class="step-boost-settings">
+      <label class="boost-count-label">
+        每天可用次数：
+        <select id="dailyBoostCount">
+          <option value="0">0 次</option>
+          <option value="1">1 次</option>
+          <option value="2" selected>2 次</option>
+        </select>
+      </label>
+      <span class="boost-hint">（每次助力使目标心情 +30%，不超 100%；可分别设置第 1~5 天，仅可选已排班干员）</span>
+      <div class="boost-day-tabs" id="boostDayTabs"></div>
+      <div id="boostConfigList" class="boost-config-list"></div>
+    </div>
+  </section>
+
+  <section class="step-panel">
+    <div class="step-controls">
+      <label>曲线采样
+        <select id="sampleSec">
+          <option value="10">10 秒</option>
+          <option value="30">30 秒</option>
+          <option value="60" selected>1 分钟</option>
+          <option value="300">5 分钟</option>
+          <option value="900">15 分钟</option>
+        </select>
+      </label>
+      <label>时长
+        <select id="maxHours">
+          <option value="24" selected>24 h</option>
+          <option value="48">48 h</option>
+          <option value="72">72 h</option>
+          <option value="96">96 h</option>
+        </select>
+      </label>
+      <label>起点
+        <input type="number" id="startHour" min="0" max="23" value="8" style="width:56px;"> 时
+      </label>
+      <label>播放速度
+        <select id="speedSel">
+          <option value="1">1×（实时）</option>
+          <option value="10">10×</option>
+          <option value="100" selected>100×</option>
+          <option value="1000">1000×</option>
+        </select>
+      </label>
+      <button id="startBtn" class="step-btn-primary">▶ 开始</button>
+      <button id="pauseBtn" disabled>⏸ 暂停</button>
+      <button id="resetBtn">⏹ 重置</button>
+      <button id="fastBtn">⏭ 快进到结束</button>
+    </div>
+  </section>
+
+  <section class="step-panel">
+    <div class="timeline-bar">
+      <div class="timeline-fill" id="timelineFill"></div>
+      <div class="timeline-cursor" id="timelineCursor" style="left:0"></div>
+    </div>
+    <div class="timeline-info"><span id="timeInfo">尚未开始</span></div>
+  </section>
+
+  <section class="step-panel">
+    <div class="step-panel-header"><h2>② 各舱心情曲线 &amp; 产率</h2></div>
+    <div id="moodCharts" class="mood-charts-grid">
+      <div class="chart-placeholder">点击「开始」后绘制</div>
+    </div>
+  </section>
+
+  <section class="step-panel">
+    <div class="step-panel-header"><h2>③ 舱室实时状态</h2></div>
+    <div id="roomsGrid" class="rooms-grid"><div class="rooms-placeholder">尚未开始</div></div>
+  </section>
+
+  <section class="step-panel">
+    <div class="step-panel-header">
+      <h2>④ 事件日志</h2>
+      <button class="step-btn-secondary" id="logClearBtn">清空</button>
+    </div>
+    <div id="logList" class="log-list"><div class="log-empty">暂无事件</div></div>
+  </section>
+
+  <section class="step-panel">
+    <div class="step-panel-header"><h2>⑤ 最终统计</h2></div>
+    <div id="statsArea" class="stats-area"><div class="stats-placeholder">尚未开始</div></div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="footer-author">网页素材来源于森空岛wiki | 网页作者：B站 @courison</div>
+    <div class="footer-beian">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener">粤ICP备2026127433号-1</a>
+      <span class="footer-sep">|</span>
+      <a href="https://beian.mps.gov.cn/#/query/webSearch?code=44195202000492" target="_blank" rel="noopener">
+        <img src="/assets/images/record.png" alt="公安备案" class="beian-icon">粤公网安备44195202000492号
+      </a>
+    </div>
+  </footer>
+</main>
+
+<div class="modal-overlay" id="opPickerOverlay">
+  <div class="picker-modal">
+    <div class="picker-header">
+      <h2 id="opPickerTitle">选择干员</h2>
+      <button class="close-btn" id="opPickerCloseBtn">✕</button>
+    </div>
+    <div class="picker-filter-bar">
+      <div class="picker-filter-group">
+        <label>星级</label>
+        <select id="opStarFilter">
+          <option value="all">全部</option>
+          <option value="六星">六星</option>
+          <option value="五星">五星</option>
+          <option value="四星">四星</option>
+        </select>
+      </div>
+      <div class="picker-filter-group">
+        <label>属性</label>
+        <select id="opAttrFilter">
+          <option value="all">全部</option>
+          <option value="灼热">灼热</option>
+          <option value="电磁">电磁</option>
+          <option value="寒冷">寒冷</option>
+          <option value="自然">自然</option>
+          <option value="物理">物理</option>
+        </select>
+      </div>
+      <div class="picker-filter-actions">
+        <button id="opClearBtn">移除当前</button>
+      </div>
+    </div>
+    <div class="picker-grid" id="opPickerGrid"></div>
+  </div>
+</div>
+
+<script src="/assets/js/modules/pet.js?v=2026101208"></script>
+<script src="/assets/js/modules/page-pet.js?v=2026101208"></script>
+<script src="/assets/js/modules/sidebar.js?v=2026101208"></script>
+<script src="/manual/step/step.js?v=2026101208"></script>
+</body>
+</html>
