@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { register } from "node:module";
 import test from "node:test";
-import type { SklandSessionPayload } from "./session.ts";
+import type { SklandSessionPayload } from "@riic/platform-server/skland/session";
 
 register("../../../../../scripts/ts-path-loader.mjs", import.meta.url);
 
 test("inventory stays with the selected role, preserves zeroes, and never consults shared Mower data", async (context) => {
-  await context.mock.module(new URL("./layout-suggestion.ts", import.meta.url), { namedExports: {
+  await context.mock.module(new URL("../../../../../packages/platform-server/src/skland/layout-suggestion.ts", import.meta.url), { namedExports: {
     sklandLayoutSuggestion: () => null,
   } });
   await context.mock.module("skland-kit", { namedExports: {
@@ -26,7 +26,7 @@ test("inventory stays with the selected role, preserves zeroes, and never consul
     assert.equal(new URL(url).searchParams.get("uid"), "selected-role");
     return Response.json({ code: 0, data: { items } });
   });
-  const { loadInventorySnapshot } = await import("./adapter.ts");
+  const { loadInventorySnapshot } = await import("@riic/platform-server/skland/adapter");
   const session = {
     version: 3, cred: "test-cred", token: "test-token", dId: "test-device",
     userId: "skland-user", selectedUid: "selected-role", refreshedAt: Date.now(),

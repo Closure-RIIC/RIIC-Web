@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { register } from "node:module";
 import test from "node:test";
-import { PRIVACY_VERSION, TERMS_VERSION } from "../../../../../packages/platform/legal-policy.ts";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@riic/platform/legal-policy";
 register("../../../../../scripts/ts-path-loader.mjs", import.meta.url);
 
 test("QR identity exchange is owner-scoped, deduplicated, retryable after abort and game-independent", async context => {
@@ -23,9 +23,9 @@ test("QR identity exchange is owner-scoped, deduplicated, retryable after abort 
     createClient: () => client, STORAGE_CREDENTIAL_KEY: "cred", STORAGE_DID_KEY: "did",
     STORAGE_OAUTH_TOKEN_KEY: "token", STORAGE_USER_ID_KEY: "uid",
   } });
-  await context.mock.module(new URL("./operator-snapshot-store.ts", import.meta.url), { namedExports: { persistOperatorSnapshot: async () => { throw new Error("Must not read or persist Arknights data"); } } });
-  await context.mock.module(new URL("./layout-suggestion.ts", import.meta.url), { namedExports: { sklandLayoutSuggestion: () => { throw new Error("Must not evaluate Arknights layout"); } } });
-  const { startScan, pollSklandIdentity, pollScan, consumeScan } = await import("./adapter.ts");
+  await context.mock.module(new URL("../../../../../packages/platform-server/src/skland/operator-snapshot-store.ts", import.meta.url), { namedExports: { persistOperatorSnapshot: async () => { throw new Error("Must not read or persist Arknights data"); } } });
+  await context.mock.module(new URL("../../../../../packages/platform-server/src/skland/layout-suggestion.ts", import.meta.url), { namedExports: { sklandLayoutSuggestion: () => { throw new Error("Must not evaluate Arknights layout"); } } });
+  const { startScan, pollSklandIdentity, pollScan, consumeScan } = await import("@riic/platform-server/skland/adapter");
   await startScan("endfield:owner", "fixture", { termsAccepted: true, privacyAccepted: true, termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION });
   assert.equal((await pollSklandIdentity("scan-fixture", "other")).status, "expired");
   assert.equal((await pollScan("scan-fixture", "owner")).response.status, "expired", "Arknights cannot consume Endfield scan");

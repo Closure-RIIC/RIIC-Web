@@ -13,7 +13,7 @@ registerHooks({ resolve(specifier, context, next) {
 const databaseUrl = process.env.AUTH_INTEGRATION_DATABASE_URL;
 if (!databaseUrl || !new URL(databaseUrl).pathname.endsWith("_test")) throw new Error("An explicitly isolated *_test database is required.");
 process.env.DATABASE_URL = databaseUrl;
-const { getDatabasePool } = await import("../db/index.ts");
+const { getDatabasePool } = await import("@riic/platform-server/db");
 const { issueAdminCdks, listAdminCdks, revokeAdminCdks } = await import("./admin-cdk.ts");
 const { getWallet, redeemGiftCdk } = await import("./service.ts");
 const { hashCdk, randomCdk } = await import("./cdk.ts");

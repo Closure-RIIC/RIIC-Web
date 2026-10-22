@@ -9,7 +9,7 @@ import type {
   OperBoxEntry,
   RoomKind,
   TrainingRoomShift,
-} from "./types.ts";
+} from "@riic/arknights-domain/types";
 import {
   DEFAULT_MANUAL_SHIFT_DURATIONS,
   DEFAULT_MANUAL_SHIFT_START_TIME,
@@ -17,8 +17,8 @@ import {
   MAX_MANUAL_SHIFT_COUNT,
   MIN_MANUAL_SHIFT_COUNT,
 } from "./manual-schedule-config.ts";
-import { factoryRecipeFromMaaProduct, normalizeProductForLevel } from "./factory-recipes.ts";
-import { droneTargetShiftIndex } from "./drone-plan-mapping.ts";
+import { factoryRecipeFromMaaProduct, normalizeProductForLevel } from "@riic/arknights-domain/factory-recipes";
+import { droneTargetShiftIndex } from "@riic/arknights-domain/drone-plan-mapping";
 import { manualEditableRooms, type EditableRoom } from "./recycling-room.ts";
 
 export {

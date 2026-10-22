@@ -9,7 +9,7 @@ import {
   shiftTabLabel,
   shiftTeamSummary,
 } from "./rotation-presentation.ts";
-import type { RotationShift } from "./types.ts";
+import type { RotationShift } from "@riic/arknights-domain/types";
 
 const shift: RotationShift = {
   index: 0,

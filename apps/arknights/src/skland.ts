@@ -1,4 +1,4 @@
-import type { MaaJson, MaaOperatorSlot, MaaRoom, MaaRooms, SklandInfrastructureGroup, SklandScheduleInfrastructure, ShiftComparison } from "./types";
+import type { MaaJson, MaaOperatorSlot, MaaRoom, MaaRooms, SklandInfrastructureGroup, SklandScheduleInfrastructure, ShiftComparison } from "@riic/arknights-domain/types";
 
 const SKLAND_TO_MAA: Partial<Record<SklandInfrastructureGroup, string>> = {
   control: "control",

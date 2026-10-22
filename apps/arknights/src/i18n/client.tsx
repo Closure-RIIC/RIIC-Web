@@ -4,7 +4,7 @@ import "@/legacy-browser-polyfills";
 import { useEffect, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "@/navigation";
 import { IntlProvider, useLocale, useMessages, useTranslations } from "use-intl";
-import { isAppLocale, LEGACY_LOCALE_STORAGE, LOCALE_COOKIE, type AppLocale } from "./config";
+import { isAppLocale, LEGACY_LOCALE_STORAGE, LOCALE_COOKIE, type AppLocale } from "@riic/arknights-domain/i18n/config";
 import { DEFAULT_USER_SETTINGS, loadUserSettings, USER_SETTINGS_CHANGED_EVENT, type UserSettings } from "@/user-settings";
 
 function saveLocale(locale: AppLocale) {

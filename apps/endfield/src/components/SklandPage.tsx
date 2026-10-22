@@ -1,10 +1,10 @@
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { RefreshCw, LogOut, UserPlus } from "lucide-react";
-import { Action, ActionContent, actionClassName, Notice } from "@shared/endfield-ui";
-import { type EndfieldRole, type EndfieldSnapshot } from "@shared/endfield-skland/model";
-import { gameHref } from "@shared/shell/games";
-import { FilterSelect } from "@shared/ui-primitives/filter-select";
+import { Action, ActionContent, actionClassName, Notice } from "@riic/endfield-ui";
+import { type EndfieldRole, type EndfieldSnapshot } from "@riic/endfield-skland/model";
+import { gameHref } from "@riic/shell/games";
+import { FilterSelect } from "@riic/ui-primitives/filter-select";
 import { sklandApi as api, SklandRequestError } from "../skland-client";
 import { SklandLoginPanel, type EndfieldLogin } from "./SklandLoginPanel";
 import { SklandDataView, SklandProfile } from "./SklandDataView";

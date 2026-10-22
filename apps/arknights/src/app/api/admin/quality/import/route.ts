@@ -1,9 +1,9 @@
-import { requireWebsiteReviewer } from "@/server/auth/authorization";
-import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, requestClientIp, successResponse } from "@/server/api-contract";
+import { requireWebsiteReviewer } from "@riic/platform-server/auth/authorization";
+import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, requestClientIp, successResponse } from "@riic/platform-server/api-contract";
 import { previewImports } from "@/server/quality/import";
 import { stageImport } from "@/server/quality/import-preview";
-import { QUALITY_TOTAL_LIMIT } from "@/quality";
-import type { ReproductionSettings } from "@/reproduction-package";
+import { QUALITY_TOTAL_LIMIT } from "@riic/arknights-domain/quality";
+import type { ReproductionSettings } from "@riic/arknights-domain/reproduction-package";
 export async function POST(request: Request) {
   const requestId = createRequestId(), startedAt = performance.now();
   let response: Response;

@@ -1,5 +1,7 @@
 # 终末地按钮
 
+在应用样式入口先导入 `@riic/endfield-ui/theme.css` 和 `@riic/endfield-ui/action.css`，再定义应用自己的样式。组件入口不隐式加载全局 CSS，避免懒加载组件改变样式覆盖顺序。
+
 `Action` 的视觉来自用户提供的 uriyoo-2.0 `ContourButton`：
 `app/_components/home-story/ContourButton.tsx` 与 `app/globals.css`。
 保留双层胶囊、等高线纹理、短横线、图标圆钮和按压反馈，适配当前 React / TanStack 应用。
@@ -16,7 +18,7 @@
 红色面板比来源略深，以保证小号白字可读。
 
 ```tsx
-import { Action, ActionLink } from "@shared/endfield-ui";
+import { Action, ActionLink } from "@riic/endfield-ui";
 
 <Action variant="yellow" icon={<Play />} onClick={run}>生成排班</Action>
 <Action size="sm" variant="dark" icon={<Download />}>导出结果</Action>
@@ -34,7 +36,7 @@ import { Action, ActionLink } from "@shared/endfield-ui";
 TanStack `Link`、`Dialog.Close` 等已有控件直接组合共享样式和内部内容，以保留其导航、焦点和弹窗行为：
 
 ```tsx
-import { ActionContent, actionClassName } from "@shared/endfield-ui";
+import { ActionContent, actionClassName } from "@riic/endfield-ui";
 
 <Link to="/roster" className={actionClassName({ variant: "yellow", size: "sm" })}>
   <ActionContent icon={<Users />}>配置干员</ActionContent>

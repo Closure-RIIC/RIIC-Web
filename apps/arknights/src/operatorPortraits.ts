@@ -1,7 +1,7 @@
-import buildingSkillCatalogJson from "./generated/arkntools/building-skill-catalog.json" with { type: "json" };
+import buildingSkillCatalogJson from "@riic/arknights-domain/generated/arkntools/building-skill-catalog.json" with { type: "json" };
 import { operatorFor, type OperatorAssetRecord, type OperatorBuildingSkillRef } from "./operator-catalog.ts";
 export { OPERATOR_CATALOG, type OperatorAssetRecord, type OperatorBuildingSkillRef } from "./operator-catalog.ts";
-import sourceManifest from "./generated/arkntools/source.json" with { type: "json" };
+import sourceManifest from "@riic/arknights-domain/generated/arkntools/source.json" with { type: "json" };
 import { richTextPlainText } from "./components/skill-query/rich-text.ts";
 import { operatorProfessionPresentationForCode } from "./operator-presentation.ts";
 

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { RECYCLING_ROOM, RECYCLING_ROOM_ID, recyclingRoom, withRecyclingRoom } from "./recycling-room.ts";
 import { assignManualOperator, clearManualRoom, createManualScheduleDraft, findManualOperatorConflict, loadManualScheduleDraft, manualRoomCapacity, manualScheduleToMaa, persistManualScheduleDraft, reconcileManualScheduleDraft } from "./manual-schedule.ts";
-import type { BaseBlueprint } from "./types.ts";
+import type { BaseBlueprint } from "@riic/arknights-domain/types";
 
 const layout: BaseBlueprint = { template: "test", drone_cap: 200, scenario: {}, rooms: [
   { id: "control", kind: "control_center", level: 5 },

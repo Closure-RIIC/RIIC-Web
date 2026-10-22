@@ -1,4 +1,4 @@
-import { QUALITY_TIMEOUT_MS } from "../../quality.ts";
+import { QUALITY_TIMEOUT_MS } from "@riic/arknights-domain/quality";
 
 /** Deadline covers transport retries as well as solver work. Always reap the child. */
 export async function boundedExecution<T>(run: () => Promise<T>, stop: () => Promise<void>, options: { timeoutMs: number; cancelled: () => Promise<boolean>; pollMs?: number }) {

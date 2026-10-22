@@ -21,7 +21,7 @@ import type {
   TrainingRecommendation,
   UserProfile,
   UserProfileAction,
-} from "@/types";
+} from "@riic/arknights-domain/types";
 import type { TrainingPlannerHandoff } from "@/training-planner-store";
 import { trainingPlannerTargetFromAdvice } from "@/training-planner-handoff";
 

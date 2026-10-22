@@ -24,7 +24,7 @@ import {
   currentSklandPolicyConsent,
   SklandPolicyConsent,
 } from "@/skland-policy-consent";
-import type { SklandSessionData } from "@/types";
+import type { SklandSessionData } from "@riic/arknights-domain/types";
 
 // The encoder is only needed after the user requests a login QR code.
 const LazyQrCode = lazy(() => import("qrcode.react").then((module) => ({ default: module.QRCodeSVG })));

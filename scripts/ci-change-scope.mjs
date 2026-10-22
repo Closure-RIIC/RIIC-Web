@@ -21,14 +21,14 @@ const CI_ONLY_SCRIPTS = new Set([
 ]);
 
 const OPERATOR_DATA_FILES = new Set([
-  "apps/arknights/src/generated/arkntools/operator-catalog.json",
-  "apps/arknights/src/generated/arkntools/operator-pinyin.json",
-  "apps/arknights/src/generated/arkntools/operator-rarities.json",
-  "apps/arknights/src/generated/arkntools/building-skill-catalog.json",
-  "apps/arknights/src/generated/arkntools/term-catalog.json",
-  "apps/arknights/src/generated/arkntools/source.json",
+  "packages/arknights-domain/src/generated/arkntools/operator-catalog.json",
+  "packages/arknights-domain/src/generated/arkntools/operator-pinyin.json",
+  "packages/arknights-domain/src/generated/arkntools/operator-rarities.json",
+  "packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json",
+  "packages/arknights-domain/src/generated/arkntools/term-catalog.json",
+  "packages/arknights-domain/src/generated/arkntools/source.json",
   "apps/arknights/src/generated/mastery-data.json",
-  "apps/arknights/src/generated/gacha-up.json",
+  "packages/arknights-domain/src/generated/gacha-up.json",
   "fixtures/operbox_full_e2.json",
 ]);
 

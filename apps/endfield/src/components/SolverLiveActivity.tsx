@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useIsPresent, useReducedMotion } from "motion/react";
-import { StatusMark } from "../../../../packages/ui-primitives/status-mark";
-import { MOTION_EASE_OUT } from "@shared/ui-primitives/motion";
+import { StatusMark } from "@riic/ui-primitives/status-mark";
+import { MOTION_EASE_OUT } from "@riic/ui-primitives/motion";
 import type { SolverActivity } from "../solver-activity";
 import { useWorkspace } from "../state";
 

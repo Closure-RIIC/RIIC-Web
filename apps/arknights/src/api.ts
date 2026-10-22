@@ -22,9 +22,9 @@ import type {
   SklandSessionData,
   SklandStatusData,
   SklandInventoryData,
-} from "./types";
-import type { SklandPolicyConsentRequest } from "../../../packages/platform/legal-policy";
-import type { GameReportRecord, GameReportSource } from "./game-report";
+} from "@riic/arknights-domain/types";
+import type { SklandPolicyConsentRequest } from "@riic/platform/legal-policy";
+import type { GameReportRecord, GameReportSource } from "@riic/arknights-domain/game-report";
 
 const SKLAND_API_PREFIX = process.env.APP_CLIENT_SKLAND_API_PREFIX ?? "";
 
@@ -140,7 +140,7 @@ type PlanRequestOptions = {
 
 async function operboxPreflightError(value: unknown, code: "AIC-BOX-1101" | "AIC-DATA-8003"): Promise<ApiClientError | null> {
   // Keep progression data out of the cold-start API bundle; load it only for uploads.
-  const { assertOperbox } = await import("./operbox.ts");
+  const { assertOperbox } = await import("@riic/arknights-domain/operbox");
   try {
     assertOperbox(value);
     return null;

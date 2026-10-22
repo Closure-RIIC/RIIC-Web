@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import { chromium, expect } from "@playwright/test";
-import { catalog, DEFAULT_OPTIONS, STORAGE_KEY } from "../packages/endfield-solver/model.mjs";
-import { normalizeEndfieldSnapshot } from "../packages/endfield-skland/model.ts";
-import { normalizeEndfieldInventory } from "../packages/endfield-skland/inventory.ts";
-import { normalizeEndfieldWeapons } from "../packages/endfield-skland/weapons.ts";
+import { catalog, DEFAULT_OPTIONS, STORAGE_KEY } from "@riic/endfield-solver/model.mjs";
+import { normalizeEndfieldSnapshot } from "@riic/endfield-skland/model";
+import { normalizeEndfieldInventory } from "@riic/endfield-skland/inventory";
+import { normalizeEndfieldWeapons } from "@riic/endfield-skland/weapons";
 
 const origin = process.env.ENDFIELD_E2E_ORIGIN || "http://127.0.0.1:5176";
 if (!["127.0.0.1", "localhost"].includes(new URL(origin).hostname)) throw new Error("Local-only test");

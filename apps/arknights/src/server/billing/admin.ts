@@ -1,7 +1,7 @@
 import "@tanstack/react-start/server-only";
 import { createHash, randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
-import { getDatabasePool } from "../db/index.ts";
+import { getDatabasePool } from "@riic/platform-server/db";
 import { compileFilterPolicy, parseFilterPolicy } from "../agent/filter-policy.ts";
 import { activeAgentPolicies, billingTransaction } from "./agent-accounting.ts";
 import { parseRatePolicy } from "./rate-policy.ts";

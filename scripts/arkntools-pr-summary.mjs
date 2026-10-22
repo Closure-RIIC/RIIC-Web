@@ -40,7 +40,7 @@ function list(values) {
 
 const options = parseArguments(process.argv.slice(2));
 const root = process.cwd();
-const generatedRoot = path.join(root, "apps/arknights/src/generated/arkntools");
+const generatedRoot = path.join(root, "packages/arknights-domain/src/generated/arkntools");
 const [beforeOperators, beforeSkills, operators, skills, source] = await Promise.all([
   json(options.beforeOperators, []),
   json(options.beforeSkills, {}),
@@ -57,7 +57,7 @@ const beforeSkillIds = new Set(Object.keys(beforeSkills));
 const afterSkillIds = new Set(Object.keys(skills));
 const [beforeGachaUp, gachaUp] = await Promise.all([
   json(options.beforeGachaUp, {}),
-  json(path.join(root, "apps/arknights/src/generated/gacha-up.json"), {}),
+  json(path.join(root, "packages/arknights-domain/src/generated/gacha-up.json"), {}),
 ]);
 const addedPools = Object.keys(gachaUp).filter((id) => !Object.hasOwn(beforeGachaUp, id));
 const changedPools = Object.keys(gachaUp).filter((id) => Object.hasOwn(beforeGachaUp, id)

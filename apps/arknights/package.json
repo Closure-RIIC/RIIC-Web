@@ -65,7 +65,10 @@
     "@riic/shell": "*",
     "@riic/ui-primitives": "*",
     "@riic/platform": "*",
-    "@riic/endfield-skland": "*"
+    "@riic/endfield-skland": "*",
+    "@riic/arknights-domain": "*",
+    "@riic/platform-server": "*",
+    "@riic/contracts": "*"
   },
   "devDependencies": {
     "vite": "^8.0.0",

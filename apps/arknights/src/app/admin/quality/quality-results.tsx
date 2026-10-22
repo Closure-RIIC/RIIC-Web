@@ -8,9 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CompactScheduleView } from "@/components/CompactScheduleView";
 import { planToRows } from "@/schedule";
-import type { QualityBatchData, QualityVersion } from "@/quality";
-import type { ReproductionPackage } from "@/reproduction-package";
-import type { MaaJson, RotationJson } from "@/types";
+import type { QualityBatchData, QualityVersion } from "@riic/arknights-domain/quality";
+import type { ReproductionPackage } from "@riic/arknights-domain/reproduction-package";
+import type { MaaJson, RotationJson } from "@riic/arknights-domain/types";
 import { Choice, dateText, download, Panel, Status, statusText, useWorkbenchText, versionText } from "./workbench-ui";
 
 export function BatchDetails({ batch, busy, onAction, onResult }: { batch: QualityBatchData; busy: boolean; onAction: (action: "cancel" | "retry") => void; onResult: (attempt: string, name: string) => void }) {

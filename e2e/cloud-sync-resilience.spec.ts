@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { PRIVACY_VERSION, TERMS_VERSION } from "../packages/platform/legal-policy";
-import { SESSION_KEY_V5 } from "../apps/arknights/src/persistence";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@riic/platform/legal-policy";
+import { SESSION_KEY_V5 } from "@riic/arknights-domain/persistence";
 import { cloudSyncPreferenceKey } from "../apps/arknights/src/cloud-sync";
 import { mockApis, planData, requestId, seedV4Session } from "./production-readiness.fixture";
 

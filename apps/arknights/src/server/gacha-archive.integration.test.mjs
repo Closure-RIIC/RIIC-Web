@@ -4,8 +4,8 @@ import test from "node:test";
 import process from "node:process";
 import { URL } from "node:url";
 import { eq } from "drizzle-orm";
-import { getDatabase, getDatabasePool } from "./db/index.ts";
-import { user, gachaDraw, gachaArchive } from "./db/schema.ts";
+import { getDatabase, getDatabasePool } from "@riic/platform-server/db";
+import { user, gachaDraw, gachaArchive } from "@riic/platform-server/db/schema";
 
 const url = new URL(process.env.AUTH_INTEGRATION_DATABASE_URL ?? "http://invalid");
 if (!/^\/riic_gacha_test_[a-f0-9]{32}$/.test(url.pathname) || process.env.DATABASE_URL !== url.toString()) throw new Error("Use scripts/test-gacha-archive.mjs to create an isolated database.");

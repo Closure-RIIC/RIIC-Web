@@ -10,7 +10,7 @@ import { PasswordInput } from "@/components/auth/password-input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
-import { evaluatePasswordStrength, isStrongPassword } from "@/password-strength";
+import { evaluatePasswordStrength, isStrongPassword } from "@riic/arknights-domain/password-strength";
 import { LanguageSwitch } from "@/i18n/client";
 
 function ResetPasswordStrength({ value, id }: { value: string; id: string }) {

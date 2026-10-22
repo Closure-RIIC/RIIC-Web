@@ -1,4 +1,4 @@
-import { SOLVER_REVISION, type Result, type Workspace } from "../../../packages/endfield-solver/model.mjs";
+import { SOLVER_REVISION, type Result, type Workspace } from "@riic/endfield-solver/model.mjs";
 
 export const RESULT_STORAGE_KEY = "riic:endfield:result:v1";
 

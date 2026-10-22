@@ -2,7 +2,7 @@ import { estimateDailyProduction } from "./daily-production.ts";
 import { dailyProductionGroups, type DailyProductionGroup } from "./daily-production-presentation.ts";
 import type { ManualPlanResult } from "./manual-plan-result.ts";
 import { PRODUCT_ICON_URLS } from "./product-assets.ts";
-import type { BaseBlueprint, MaaJson, RotationJson } from "./types.ts";
+import type { BaseBlueprint, MaaJson, RotationJson } from "@riic/arknights-domain/types";
 
 export type ProductionPresentationSource = "solver" | "estimate" | "pending";
 

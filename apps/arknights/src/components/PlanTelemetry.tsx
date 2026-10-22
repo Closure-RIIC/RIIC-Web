@@ -1,13 +1,13 @@
 import { useTranslations, useLocale } from "use-intl";
 import { motion, useReducedMotion } from "motion/react";
 import { AnimatedNumber, AnimatedText } from "./AnimatedText";
-import { localize as rotationText } from "../i18n/helpers/RotationLabels.ts";
-import { manufacturePoolReady, profileEfficiency } from "../efficiency";
+import { localize as rotationText } from "@riic/arknights-domain/i18n/helpers/RotationLabels";
+import { manufacturePoolReady, profileEfficiency } from "@riic/arknights-domain/efficiency";
 import { relativeMetricDelta, rotationMetricValue, shiftTeamSummary, type RotationMetricKind } from "../rotation-presentation";
-import { DEFAULT_ROTATION_PROFILE } from "../rotation-settings";
+import { DEFAULT_ROTATION_PROFILE } from "@riic/arknights-domain/rotation-settings";
 import { MOTION_DURATION, MOTION_EASE_OUT } from "../motion";
 import { cn } from "../lib/utils";
-import type { UserProfile, RotationJson, BaseBlueprint } from "../types";
+import type { UserProfile, RotationJson, BaseBlueprint } from "@riic/arknights-domain/types";
 
 function compactNumber(value: number, digits = 1): string {
   if (!Number.isFinite(value)) return "—";

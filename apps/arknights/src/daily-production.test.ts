@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { estimateDailyProduction } from "./daily-production.ts";
-import type { BaseBlueprint, MaaJson, RotationJson, RotationRoomLine } from "./types.ts";
+import type { BaseBlueprint, MaaJson, RotationJson, RotationRoomLine } from "@riic/arknights-domain/types";
 
 function fixture({
   tradeLevels = [1, 2, 3],

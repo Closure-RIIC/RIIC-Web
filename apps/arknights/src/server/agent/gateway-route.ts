@@ -1,5 +1,5 @@
 import "@tanstack/react-start/server-only";
-import { getDatabasePool } from "../db/index.ts";
+import { getDatabasePool } from "@riic/platform-server/db";
 import { gatewaySettings } from "./gateway-config.ts";
 
 export async function recordGatewayRoute(input: { callId: string; runId: string; sessionId: string; startedAt: number; model?: string }) {

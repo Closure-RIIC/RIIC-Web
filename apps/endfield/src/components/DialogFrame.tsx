@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode, Ref } from "react";
 import { Dialog } from "@base-ui/react/dialog";
-import { workbenchArtwork } from "@shared/endfield-data";
+import { workbenchArtwork } from "@riic/endfield-data";
 
 type Props = Omit<ComponentProps<typeof Dialog.Popup>, "title" | "children"> & {
   title: string;

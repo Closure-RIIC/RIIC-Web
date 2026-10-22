@@ -1,1 +1,1 @@
-export * from "../../../../../packages/ui-primitives/separator";
+export * from "@riic/ui-primitives/separator";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "use-intl";
-import { SelectionButton } from "../../../../../packages/ui-primitives/selection-button";
+import { SelectionButton } from "@riic/ui-primitives/selection-button";
 
 export function OwnedOperatorFilter({ value, onChange }: {
   value: boolean;

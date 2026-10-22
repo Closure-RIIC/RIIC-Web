@@ -7,7 +7,7 @@ import type {
   AdminUserAction,
   AdminUsersData,
   AdminUserUpdateData,
-} from "@/types";
+} from "@riic/arknights-domain/types";
 import {
   assertEmptyBody,
   assertSameOrigin,
@@ -18,7 +18,7 @@ import {
   readJsonBody,
   requestClientIp,
   successResponse,
-} from "./api-contract";
+} from "@riic/platform-server/api-contract";
 import {
   canChangeWebsiteAdminRole,
   canModerateWebsiteUser,
@@ -27,13 +27,13 @@ import {
   WEBSITE_REVIEWER_ROLE,
   WEBSITE_USER_ROLE,
   websiteAdminAccess,
-} from "./auth/admin-access";
+} from "@riic/platform-server/auth/admin-access";
 import { toAdminSessionData, toAdminUserData } from "./auth/admin-dto";
-import { requireWebsiteAdmin } from "./auth/authorization";
-import { configuredAdminIds } from "./auth/config";
-import { getDatabase } from "./db";
-import { billingWallet, session, user } from "./db/schema";
-import { sklandBindingSummariesByUserIds } from "./skland/bindings";
+import { requireWebsiteAdmin } from "@riic/platform-server/auth/authorization";
+import { configuredAdminIds } from "@riic/platform-server/auth/config";
+import { getDatabase } from "@riic/platform-server/db";
+import { billingWallet, session, user } from "@riic/platform-server/db/schema";
+import { sklandBindingSummariesByUserIds } from "@riic/platform-server/skland/bindings";
 
 type AdminUserRoute =
   | "/api/admin/users"

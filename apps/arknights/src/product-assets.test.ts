@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import sourceManifest from "./generated/arkntools/source.json" with { type: "json" };
+import sourceManifest from "@riic/arknights-domain/generated/arkntools/source.json" with { type: "json" };
 import { ALL_PRODUCT_ICON_URLS, PRODUCT_ICON_URLS } from "./product-assets.ts";
 
 test("builds deterministic versioned product URLs from each managed upstream source", () => {

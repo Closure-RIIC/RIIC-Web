@@ -1,6 +1,6 @@
-import type { AdminFeedbackRecordData, AdminSkillAnnotationData, AdminSolverMetricsData, AdminUserData } from "@/types";
-import type { AdminRelease, ReleaseDraft } from "@/releases/types";
-import type { DiagnosticReport } from "@/diagnostics";
+import type { AdminFeedbackRecordData, AdminSkillAnnotationData, AdminSolverMetricsData, AdminUserData } from "@riic/arknights-domain/types";
+import type { AdminRelease, ReleaseDraft } from "@riic/arknights-domain/releases/types";
+import type { DiagnosticReport } from "@riic/arknights-domain/diagnostics";
 import type { AdminFetch } from "../admin/admin-context";
 
 /** Browser-local sample transport. Never falls back to a network request. */

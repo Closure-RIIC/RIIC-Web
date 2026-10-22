@@ -1,9 +1,9 @@
 import { evaluateNativeSchedule, type NativeEvalRequestV1, type NativeEvalResponseV1 } from "./lib/infra-eval/client.ts";
 import { manualRoomCapacity, manualLayoutForShift, manualRoomForShift, type ManualScheduleDraft } from "./manual-schedule.ts";
-import { normalizeOperboxEntries } from "./operbox-normalization.ts";
+import { normalizeOperboxEntries } from "@riic/arknights-domain/operbox-normalization";
 import { resolveManualSpecialTradeOutput } from "./manual-trade-special-rules.ts";
 import type { ManualEvaluationWarning, ManualRoomEvaluation, ManualScheduleEvaluation } from "./manual-schedule-evaluator.ts";
-import type { BaseBlueprint, OperBoxEntry, RotationRoomLine, RotationShift } from "./types.ts";
+import type { BaseBlueprint, OperBoxEntry, RotationRoomLine, RotationShift } from "@riic/arknights-domain/types";
 
 function rounded(value: number): number {
   return Math.round(value * 1_000) / 1_000;

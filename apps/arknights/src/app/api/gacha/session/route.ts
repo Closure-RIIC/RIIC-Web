@@ -1,8 +1,8 @@
-import { setResponseCookie } from "@/server/response-cookies";
-import { assertSameOrigin, createRequestId, failureResponse, successResponse } from "@/server/api-contract";
-import { requireWebsiteSession } from "@/server/auth/authorization";
+import { setResponseCookie } from "@riic/platform-server/response-cookies";
+import { assertSameOrigin, createRequestId, failureResponse, successResponse } from "@riic/platform-server/api-contract";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
 import { gachaCookieName, gachaSession, publicGachaRoles, revokeGachaSession } from "@/server/gacha-history";
-import { assertSklandFeatureEnabled, readSklandAccountStore, sklandAccountSummaries } from "@/server/skland/http";
+import { assertSklandFeatureEnabled, readSklandAccountStore, sklandAccountSummaries } from "@riic/platform-server/skland/http";
 import { listGachaArchives } from "@/server/gacha-archive";
 import { gachaAccountOptions } from "@/gacha-accounts";
 

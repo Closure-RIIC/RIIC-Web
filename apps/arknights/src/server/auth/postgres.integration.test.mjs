@@ -12,11 +12,11 @@ import { admin, emailOTP } from "better-auth/plugins";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
-import * as schema from "../db/schema.ts";
-import { summarizeSklandBindings } from "../../skland-binding-state.ts";
-import { websiteAccountNameDatabaseHooks } from "./account-name-hooks.ts";
-import { websiteAdminAccess } from "./admin-access.ts";
-import { passwordStrengthHook } from "./password-strength-hook.ts";
+import * as schema from "@riic/platform-server/db/schema";
+import { summarizeSklandBindings } from "@riic/arknights-domain/skland-binding-state";
+import { websiteAccountNameDatabaseHooks } from "@riic/platform-server/auth/account-name-hooks";
+import { websiteAdminAccess } from "@riic/platform-server/auth/admin-access";
+import { passwordStrengthHook } from "@riic/platform-server/auth/password-strength-hook";
 
 const databaseUrl = process.env.AUTH_INTEGRATION_DATABASE_URL?.trim();
 if (!databaseUrl) throw new Error("AUTH_INTEGRATION_DATABASE_URL is required for the PostgreSQL authentication integration test.");

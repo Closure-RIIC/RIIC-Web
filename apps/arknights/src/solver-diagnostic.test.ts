@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { ApiClientError, computePlan, getHealth } from "./api.ts";
 import { formatSolverDiagnostic, solverDiagnosticFor } from "./solver-diagnostic.ts";
-import type { BaseBlueprint } from "./types.ts";
+import type { BaseBlueprint } from "@riic/arknights-domain/types";
 
 test("maps common solver failures to actionable guidance", () => {
   assert.match(solverDiagnosticFor({ code: "AIC-LAYOUT-1201", message: "布局无效", retryable: false }).suggestion, /设施等级/);

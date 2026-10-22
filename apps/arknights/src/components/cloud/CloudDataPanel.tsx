@@ -18,8 +18,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { HoldToConfirm } from "@/components/ui/hold-to-confirm";
 import { InfraTechnicalCard, InfraTechnicalHeading } from "@/components/InfraTechnicalCard";
-import { PRIVACY_VERSION, TERMS_VERSION } from "@/legal-policy";
-import type { AccountDataConsentData, CloudWorkspaceData, SavedPlanData } from "@/types";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@riic/arknights-domain/legal-policy";
+import type { AccountDataConsentData, CloudWorkspaceData, SavedPlanData } from "@riic/arknights-domain/types";
 
 const CLOUD_PRIMARY_BUTTON_CLASS = "w-full bg-white text-[#272a2b] hover:bg-white/90 sm:w-auto";
 const CLOUD_PLAN_BUTTON_CLASS = "min-h-11 px-3 text-white/78 hover:bg-white/10 hover:text-white";

@@ -12,7 +12,7 @@ import type { RecruitmentCalculatorProps } from "@/components/pages/RecruitmentC
 import type { UserSettings } from "@/user-settings";
 import type { AccountHealthRawInput } from "@/account-health-input";
 import type { AgentPageContext } from "@/agent-page-context";
-import type { OperBoxEntry, SklandOperatorStatus } from "@/types";
+import type { OperBoxEntry, SklandOperatorStatus } from "@riic/arknights-domain/types";
 
 export interface WorkbenchContextValue {
   inventory: { identityKey: string; pending: boolean };

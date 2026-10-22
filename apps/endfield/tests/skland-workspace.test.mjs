@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { catalog, nonSchedulableOperators, DEFAULT_OPTIONS, manualTemplate, parseWorkspace } from "../../../packages/endfield-solver/model.mjs";
+import { catalog, nonSchedulableOperators, DEFAULT_OPTIONS, manualTemplate, parseWorkspace } from "@riic/endfield-solver/model.mjs";
 import { sklandRosterSource, syncSklandWorkspace } from "../src/skland-workspace.ts";
 import { workspaceKey } from "../src/result-cache.ts";
 

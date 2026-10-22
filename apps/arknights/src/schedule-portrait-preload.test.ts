@@ -7,7 +7,7 @@ import {
   scheduleIdleTask,
   shouldPreloadPortraits,
 } from "./schedule-portrait-preload.ts";
-import type { MaaJson } from "./types.ts";
+import type { MaaJson } from "@riic/arknights-domain/types";
 
 test("empty facilities without an operators array do not break portrait preloading", () => {
   const maa = { title: "test", plans: [

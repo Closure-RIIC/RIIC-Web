@@ -1,6 +1,1 @@
-import { handleLegacyGetSklandStatus } from "@/server/skland/status-api";
-
-
-export async function GET(request: Request) {
-  return handleLegacyGetSklandStatus(request);
-}
+export { GET } from "@riic/platform-server/http/skland/status/route";

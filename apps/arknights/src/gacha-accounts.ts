@@ -1,4 +1,4 @@
-import type { SklandAccountSummary } from "./types.ts";
+import type { SklandAccountSummary } from "@riic/arknights-domain/types";
 
 export type GachaAccount = Pick<SklandAccountSummary, "accountId" | "selectedUid" | "roles">;
 export type GachaSessionData = {

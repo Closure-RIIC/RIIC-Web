@@ -1,5 +1,5 @@
-import poolData from "./generated/gacha-up.json" with { type: "json" };
-import type { GachaRecord } from "./gacha-history.ts";
+import poolData from "@riic/arknights-domain/generated/gacha-up.json" with { type: "json" };
+import type { GachaRecord } from "@riic/arknights-domain/gacha-history";
 
 type PoolMetadata = { six: string[]; five: string[]; ruleType?: string; openTime?: number; endTime?: number };
 const metadata = poolData as Record<string, PoolMetadata>;

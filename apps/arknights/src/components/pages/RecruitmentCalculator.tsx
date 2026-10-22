@@ -9,12 +9,12 @@ import { InfraTechnicalCard } from "@/components/InfraTechnicalCard";
 import { Tabs, TabsList, TabsTrigger, tabsListVariants } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { PROFESSION_LABELS, PROFESSION_LABELS_ENGLISH } from "@/operator-presentation";
-import catalog from "@/generated/arkntools/operator-catalog.json";
+import catalog from "@riic/arknights-domain/generated/arkntools/operator-catalog.json";
 import { cn } from "@/lib/utils";
 import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 import { calculateRecruitment, RECRUITMENT_TAGS, RECRUITMENT_TAG_GROUPS, RECRUITMENT_SOURCE } from "@/recruitment";
-import type { OperBoxEntry } from "@/types";
+import type { OperBoxEntry } from "@riic/arknights-domain/types";
 
 export interface RecruitmentCalculatorProps {
   operbox: OperBoxEntry[] | null;

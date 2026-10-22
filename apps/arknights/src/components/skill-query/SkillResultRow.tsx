@@ -21,7 +21,7 @@ import {
   type OperatorBuildingSkillRef,
 } from "@/operatorPortraits";
 import { skillAnnotationKey } from "@/skill-annotations";
-import type { SkillAnnotationData } from "@/types";
+import type { SkillAnnotationData } from "@riic/arknights-domain/types";
 import { localizedBuildingSkill, localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 

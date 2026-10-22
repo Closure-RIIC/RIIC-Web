@@ -1,5 +1,5 @@
 import { cloudSyncPreferenceKey, cloudWorkspaceFingerprint, readCloudSyncMetadata, writeCloudSyncMetadata, type CloudSyncMetadata, type CloudSyncStatus as SyncPhase } from "./cloud-sync.ts";
-import type { AccountDataConsentData, CloudWorkspaceData, CloudWorkspacePutRequest } from "./types.ts";
+import type { AccountDataConsentData, CloudWorkspaceData, CloudWorkspacePutRequest } from "@riic/arknights-domain/types";
 
 export type CloudUpload = Exclude<CloudWorkspacePutRequest, { restoreRevisionId: string }>;
 export type CloudSyncStatus = {

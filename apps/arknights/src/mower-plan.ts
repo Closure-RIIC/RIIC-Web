@@ -1,4 +1,4 @@
-import type { MaaJson, MaaRoom, MaaRooms } from "./types.ts";
+import type { MaaJson, MaaRoom, MaaRooms } from "@riic/arknights-domain/types";
 
 export interface MowerPlanEntry {
   agent: string;

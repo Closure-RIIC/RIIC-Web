@@ -1,5 +1,5 @@
-import { requireWebsiteReviewer } from "@/server/auth/authorization";
-import { assertSameOrigin, createRequestId, failureResponse, PublicApiError, readJsonBody, successResponse } from "@/server/api-contract";
+import { requireWebsiteReviewer } from "@riic/platform-server/auth/authorization";
+import { assertSameOrigin, createRequestId, failureResponse, PublicApiError, readJsonBody, successResponse } from "@riic/platform-server/api-contract";
 import { listWishes, updateWish, type WishStatus } from "@/server/wishes";
 
 

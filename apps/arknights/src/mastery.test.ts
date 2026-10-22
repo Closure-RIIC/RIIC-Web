@@ -3,7 +3,7 @@ import test from "node:test";
 import roster from "../../../fixtures/operbox_full_e2.json" with { type: "json" };
 import { calculateMastery, eligibleMasteryTargets, masteryTrainers, availableMasteryEnvironments, unlockedMasterySkills, solveMastery, formatMasteryTime, type MasteryInput, type MasteryTrainer } from "./mastery.ts";
 import { masteryInstructions, masteryClipboard } from "./mastery-presentation.ts";
-import type { OperBoxEntry } from "./types.ts";
+import type { OperBoxEntry } from "@riic/arknights-domain/types";
 
 function box(...names: string[]): OperBoxEntry[] {
   return names.map((name) => {

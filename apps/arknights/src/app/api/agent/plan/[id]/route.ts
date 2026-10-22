@@ -1,4 +1,4 @@
-import { createRequestId, failureResponse, successResponse } from "@/server/api-contract";
+import { createRequestId, failureResponse, successResponse } from "@riic/platform-server/api-contract";
 import { requireFeatureSession } from "@/server/auth/feature-access";
 import { getAgentPlanArtifact } from "@/server/agent/plan-artifact";
 

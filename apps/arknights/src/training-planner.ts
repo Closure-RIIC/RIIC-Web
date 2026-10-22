@@ -1,5 +1,5 @@
 import { trainingCost } from "./inventory-estimates.ts";
-import { manualLevelFor, maxEliteForRarity } from "./manual-operbox.ts";
+import { manualLevelFor, maxEliteForRarity } from "@riic/arknights-domain/manual-operbox";
 
 export type TrainingCostItem = { id: string; count: number };
 export type TrainingPlannerRecipe = {

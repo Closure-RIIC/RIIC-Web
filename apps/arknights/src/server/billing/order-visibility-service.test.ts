@@ -9,7 +9,7 @@ test("database predicates filter before limiting and hide only the owner's pendi
   const dialect = new PgDialect();
   let query: { sql: string; params: unknown[] } | undefined;
   const record = (condition: Parameters<typeof dialect.sqlToQuery>[0]) => { query = dialect.sqlToQuery(condition); };
-  await t.mock.module(new URL("../db/index.ts", import.meta.url), { namedExports: { getDatabase: () => ({
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/db/index.ts", import.meta.url), { namedExports: { getDatabase: () => ({
     select: () => ({ from: () => ({ where: (condition: Parameters<typeof record>[0]) => {
       record(condition); return { orderBy: () => ({ limit: async () => [] }) };
     } }) }),

@@ -1,6 +1,6 @@
 "use client";
 import { localize as localize_ImportGuide } from "../../../i18n/helpers/ImportGuide.ts";
-import type { AppLocale } from "@/i18n/config";
+import type { AppLocale } from "@riic/arknights-domain/i18n/config";
 
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";

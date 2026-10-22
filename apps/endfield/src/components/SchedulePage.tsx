@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Play, Users } from "lucide-react";
-import { Action, ActionContent, actionClassName, Notice, PageTitle } from "@shared/endfield-ui";
+import { Action, ActionContent, actionClassName, Notice, PageTitle } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
 import { Results } from "./Results";
 import { OperatorChip } from "./GameArtwork";

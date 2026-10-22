@@ -1,13 +1,13 @@
 import "@tanstack/react-start/server-only";
 
-import type { AdminFeedbackFacility, AdminFeedbackStatus } from "@/types";
+import type { AdminFeedbackFacility, AdminFeedbackStatus } from "@riic/arknights-domain/types";
 import {
   isAdminFeedbackStatus,
   normalizeAdminFeedbackStatus,
   legacyAdminFeedbackStatus,
   toAdminFeedbackRecordData,
   toAdminPlanRunRecordData,
-} from "./admin-record-dto";
+} from "@riic/platform-server/admin-record-dto";
 import {
   assertSameOrigin,
   createRequestId,
@@ -17,9 +17,9 @@ import {
   readJsonBody,
   requestClientIp,
   successResponse,
-} from "./api-contract";
-import { requireWebsiteReviewer } from "./auth/authorization";
-import { isBusinessDatabaseReadEnabled } from "./business-config";
+} from "@riic/platform-server/api-contract";
+import { requireWebsiteReviewer } from "@riic/platform-server/auth/authorization";
+import { isBusinessDatabaseReadEnabled } from "@riic/platform-server/business-config";
 import {
   deleteFeedbackRecords,
   findFeedbackRecord,
@@ -28,8 +28,8 @@ import {
   queryBusinessRecords,
   updateFeedbackRecord,
   updateFeedbackRecords,
-} from "./business-records";
-import { deleteFeedbackArtifacts, readFeedbackReproduction, readPlanReproduction } from "./infra";
+} from "@riic/platform-server/business-records";
+import { deleteFeedbackArtifacts, readFeedbackReproduction, readPlanReproduction } from "@riic/platform-server/infra";
 
 type AdminRecordKind = "runs" | "feedback";
 type AdminRecordRoute =

@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageSwitch } from "@/i18n/client";
 import { DOC_ARTICLES, DOC_GROUPS, docText, findDoc, searchDocs } from "@/docs/content";
-import sidebarStyles from "../../../../../packages/shell/AppSidebar.module.css";
+import sidebarStyles from "@riic/shell/AppSidebar.module.css";
 import styles from "./DocsLayout.module.css";
 
 function DocsNavigation({ slug, onSearch }: { slug: string; onSearch: () => void }) {

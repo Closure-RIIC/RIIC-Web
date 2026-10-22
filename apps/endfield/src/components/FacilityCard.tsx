@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ComponentProps, type CSSProperties, type ReactNode } from "react";
-import { workbenchArtwork } from "@shared/endfield-data";
+import { workbenchArtwork } from "@riic/endfield-data";
 import { useWorkspace } from "../state";
 import { FacilityIcon, ProductionIcon } from "./GameArtwork";
 

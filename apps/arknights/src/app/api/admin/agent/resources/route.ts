@@ -1,6 +1,6 @@
-import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, successResponse } from "@/server/api-contract";
-import { requireWebsiteAdmin } from "@/server/auth/authorization";
-import { getDatabasePool } from "@/server/db";
+import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, successResponse } from "@riic/platform-server/api-contract";
+import { requireWebsiteAdmin } from "@riic/platform-server/auth/authorization";
+import { getDatabasePool } from "@riic/platform-server/db";
 import { BillingAdminError, changeAgentPolicy } from "@/server/billing/admin";
 import { importAgentResources } from "@/server/agent/resources";
 import { RESOURCE_PAYLOAD_LIMIT } from "@/server/agent/resource-policy";

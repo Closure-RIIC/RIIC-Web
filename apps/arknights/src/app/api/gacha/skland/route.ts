@@ -1,9 +1,9 @@
-import { setResponseCookie } from "@/server/response-cookies";
-import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "@/server/api-contract";
-import { requireWebsiteSession } from "@/server/auth/authorization";
+import { setResponseCookie } from "@riic/platform-server/response-cookies";
+import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "@riic/platform-server/api-contract";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
 import { authorizeGachaFromSkland, gachaCookieName, gachaSession, publicGachaError, publicGachaRoles } from "@/server/gacha-history";
-import { activeSklandAccount, assertSklandFeatureEnabled, readSklandAccountStore } from "@/server/skland/http";
-import { isCurrentPolicyConsent } from "@/legal-policy";
+import { activeSklandAccount, assertSklandFeatureEnabled, readSklandAccountStore } from "@riic/platform-server/skland/http";
+import { isCurrentPolicyConsent } from "@riic/arknights-domain/legal-policy";
 
 
 export async function POST(request: Request) {

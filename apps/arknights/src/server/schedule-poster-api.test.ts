@@ -6,10 +6,10 @@ import os from "node:os";
 import path from "node:path";
 import { createManualScheduleDraft } from "../manual-schedule.ts";
 import { createPosterDocument } from "../schedule-poster-document.ts";
-import type { BaseBlueprint } from "../types.ts";
+import type { BaseBlueprint } from "@riic/arknights-domain/types";
 import { createSchedulePoster, getSchedulePoster } from "./schedule-poster-api.ts";
 
-const layoutJson = JSON.parse(readFileSync(new URL("../layouts/252.json", import.meta.url), "utf8")) as BaseBlueprint;
+const layoutJson = JSON.parse(readFileSync(new URL("../../../../packages/arknights-domain/src/layouts/252.json", import.meta.url), "utf8")) as BaseBlueprint;
 
 test("Nitro poster API validates and persists a share document outside the release tree", async () => {
   const storage = await mkdtemp(path.join(os.tmpdir(), "riic-poster-api-"));

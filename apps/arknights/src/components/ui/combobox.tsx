@@ -1,3 +1,3 @@
 "use client";
 
-export * from "../../../../../packages/ui-primitives/combobox";
+export * from "@riic/ui-primitives/combobox";

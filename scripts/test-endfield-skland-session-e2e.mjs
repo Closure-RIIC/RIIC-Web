@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { chromium, expect } from "@playwright/test";
-import { catalog, STORAGE_KEY } from "../packages/endfield-solver/model.mjs";
+import { catalog, STORAGE_KEY } from "@riic/endfield-solver/model.mjs";
 
 const origin = process.env.ENDFIELD_E2E_ORIGIN || "http://127.0.0.1:5176";
 if (!["127.0.0.1", "localhost"].includes(new URL(origin).hostname)) throw new Error("Local-only test");

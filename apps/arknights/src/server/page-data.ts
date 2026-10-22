@@ -8,21 +8,21 @@ export const getPublicPageConfig = createServerFn({ method: "GET" }).handler(asy
 });
 
 export const getReviewerAccess = createServerFn({ method: "GET" }).handler(async () => {
-  const { requireWebsiteReviewer } = await import("./auth/authorization");
+  const { requireWebsiteReviewer } = await import("@riic/platform-server/auth/authorization");
   try { const access = await requireWebsiteReviewer(getRequest()); return { isAdmin: access.isAdmin, name: access.session.user.name }; }
   catch { throw notFound(); }
 });
 
 export const getAdminAccess = createServerFn({ method: "GET" }).handler(async () => {
-  const { requireWebsiteAdmin } = await import("./auth/authorization");
+  const { requireWebsiteAdmin } = await import("@riic/platform-server/auth/authorization");
   try { await requireWebsiteAdmin(getRequest()); return { isAdmin: true }; }
   catch { throw notFound(); }
 });
 
 export const getAdminHealth = createServerFn({ method: "GET" }).handler(async () => {
-  const { requireWebsiteReviewer } = await import("./auth/authorization");
+  const { requireWebsiteReviewer } = await import("@riic/platform-server/auth/authorization");
   try { await requireWebsiteReviewer(getRequest()); } catch { throw notFound(); }
-  const { getHealth } = await import("./infra");
+  const { getHealth } = await import("@riic/platform-server/infra");
   const health = await getHealth();
   return { plannerReady: Boolean(health.ok && health.cliReady), solverFingerprint: health.serve?.fingerprint ?? null };
 });

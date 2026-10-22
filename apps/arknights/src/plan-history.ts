@@ -1,6 +1,6 @@
-import { normalizePersistedPlanData, SESSION_TTL_MS } from "./persistence.ts";
-import { DEFAULT_ROTATION_PROFILE } from "./rotation-settings.ts";
-import type { PublicPlanData } from "./types.ts";
+import { normalizePersistedPlanData, SESSION_TTL_MS } from "@riic/arknights-domain/persistence";
+import { DEFAULT_ROTATION_PROFILE } from "@riic/arknights-domain/rotation-settings";
+import type { PublicPlanData } from "@riic/arknights-domain/types";
 
 export const PLAN_HISTORY_KEY = "arknights-infra-plan-history-v1";
 

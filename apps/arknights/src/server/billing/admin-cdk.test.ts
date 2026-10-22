@@ -12,7 +12,7 @@ test("admin issuance writes one atomic batch of hashes with stable retry keys an
   type Row = { id: string; issuerUserId: string; codeHash: string; points: number };
   const inserts: Row[][] = [];
   let failure: unknown;
-  await t.mock.module(new URL("../db/index.ts", import.meta.url), { namedExports: { getDatabase: () => ({
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/db/index.ts", import.meta.url), { namedExports: { getDatabase: () => ({
     insert: () => ({ values: async (rows: Row[]) => { if (failure) throw failure; inserts.push(rows); } }),
   }) } });
   const { issueAdminCdks } = await import("./admin-cdk.ts");

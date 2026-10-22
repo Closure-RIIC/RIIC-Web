@@ -1,1 +1,1 @@
-export * from "../../../packages/shell/account-orb.ts";
+export * from "@riic/shell/account-orb";

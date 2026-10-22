@@ -209,16 +209,6 @@ export function requiredElite(skills: readonly SkillTierLike[], nodes: readonly 
   return required;
 }
 
-/** 某槽可用的最高档（用于降档时确认存在更低一档） */
-function slotCeiling(skills: readonly SkillTierLike[], slot: number): number {
-  let max = 0;
-  for (const skill of skills) {
-    const parsed = parseSkillNodeId(skillNodeId(skill));
-    if (parsed?.slot === slot) max = Math.max(max, parsed.level);
-  }
-  return max;
-}
-
 /** 取某槽某一档的节点 ID（找不到时退回同槽最高档） */
 function slotNodeId(skills: readonly SkillTierLike[], slot: number, level: number): string {
   const exact = skills.find((skill) => {

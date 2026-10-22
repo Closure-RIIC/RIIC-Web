@@ -9,7 +9,7 @@ register("../../../../scripts/ts-path-loader.mjs", import.meta.url);
 const url = process.env.AUTH_INTEGRATION_DATABASE_URL;
 if (!url || !new URL(url).pathname.endsWith("_test")) throw new Error("Isolated *_test database required");
 process.env.DATABASE_URL = url;
-const { getDatabasePool } = await import("./db/index.ts");
+const { getDatabasePool } = await import("@riic/platform-server/db");
 const { createWish, listPublicWishes, updateWish } = await import("./wishes.ts");
 const { getDonationSetting, saveDonationSetting } = await import("./site-settings.ts");
 

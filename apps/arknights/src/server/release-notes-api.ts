@@ -1,11 +1,11 @@
 import "@tanstack/react-start/server-only";
-import { appDeploymentEnvironment } from "../deployment.ts";
+import { appDeploymentEnvironment } from "@riic/arknights-domain/deployment";
 import { parseReleaseDraft, parseReleaseMutation, RELEASE_LIMITS, ReleaseValidationError } from "../releases/validation.ts";
-import { requireWebsiteAdmin } from "./auth/authorization";
-import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "./api-contract";
+import { requireWebsiteAdmin } from "@riic/platform-server/auth/authorization";
+import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "@riic/platform-server/api-contract";
 import { createRelease, listAdminReleases, listPublishedReleases, mutateRelease, ReleaseConflictError, ReleaseNotFoundError } from "./release-notes.ts";
 import { cachePublicResponse, createPublicDataCache } from "./public-data-cache.ts";
-import type { ReleaseDraft, ReleaseEnvironment } from "../releases/types.ts";
+import type { ReleaseDraft, ReleaseEnvironment } from "@riic/arknights-domain/releases/types";
 
 const publishedReleases = createPublicDataCache<ReleaseEnvironment, ReleaseDraft[]>();
 

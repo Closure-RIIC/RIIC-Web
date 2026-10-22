@@ -1,4 +1,4 @@
-import type { MaaJson, MaaOperatorSlot, MaaPlan } from "./types.ts";
+import type { MaaJson, MaaOperatorSlot, MaaPlan } from "@riic/arknights-domain/types";
 
 const PRELOAD_CONCURRENCY = 2;
 const IDLE_TIMEOUT_MS = 1_500;

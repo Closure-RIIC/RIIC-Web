@@ -10,7 +10,7 @@ import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } 
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { downloadJson } from "@/download";
 import { manualScheduleToMaa, resizeManualScheduleDraft, type ManualScheduleDraft } from "@/manual-schedule";
-import { prepareMaaForExport } from "@/maa-safety";
+import { prepareMaaForExport } from "@riic/arknights-domain/maa-safety";
 import { OPERATOR_CATALOG } from "@/operatorPortraits";
 import { manualEditableRooms } from "@/recycling-room";
 import { posterDataOnly, POSTER_MAX_BYTES, readPosterFile, type SchedulePosterDocument } from "@/schedule-poster-document";

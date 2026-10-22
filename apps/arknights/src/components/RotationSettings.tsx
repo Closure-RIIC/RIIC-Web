@@ -1,5 +1,5 @@
 "use client";
-import { localize as rotationText } from "../i18n/helpers/RotationLabels.ts";
+import { localize as rotationText } from "@riic/arknights-domain/i18n/helpers/RotationLabels";
 
 import { useTranslations, useLocale } from "use-intl";
 
@@ -17,8 +17,8 @@ import { Label } from "@/components/ui/label";
 
 import {
   ROTATION_OPTIONS,
-} from "../rotation-settings";
-import type { RotationProfile } from "../types";
+} from "@riic/arknights-domain/rotation-settings";
+import type { RotationProfile } from "@riic/arknights-domain/types";
 
 type RotationSettingsProps = {
   value: RotationProfile;

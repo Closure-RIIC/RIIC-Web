@@ -1,6 +1,6 @@
-import { manualLevelFor, maxEliteForRarity } from "./manual-operbox.ts";
+import { manualLevelFor, maxEliteForRarity } from "@riic/arknights-domain/manual-operbox";
 import type { TrainingPlannerHandoff } from "./training-planner-store.ts";
-import type { TrainingAdviceTarget } from "./types.ts";
+import type { TrainingAdviceTarget } from "@riic/arknights-domain/types";
 
 export function trainingPlannerTargetFromAdvice(
   operator: { id: string; rarity: number } | undefined,

@@ -4,8 +4,8 @@ import { readFileSync } from "node:fs";
 import { applyScheduleText, scheduleDraftToText } from "./schedule-poster-text.ts";
 import { createManualScheduleDraft, reconcileManualScheduleDraft } from "./manual-schedule.ts";
 import { evaluateManualSchedule } from "./manual-schedule-evaluator.ts";
-import type { BaseBlueprint, OperBoxEntry } from "./types.ts";
-const layout = JSON.parse(readFileSync(new URL("./layouts/252.json", import.meta.url), "utf8")) as BaseBlueprint;
+import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
+const layout = JSON.parse(readFileSync(new URL("../../../packages/arknights-domain/src/layouts/252.json", import.meta.url), "utf8")) as BaseBlueprint;
 const names = new Set(["能天使", "德克萨斯", "拉普兰德", "银灰", "杜宾", "菲亚梅塔"]);
 const empty = () => reconcileManualScheduleDraft(createManualScheduleDraft([8, 8, 8]), layout);
 test("bulk text applies teams, percentages, shift products, drone destinations and Fiammetta atomically", () => {

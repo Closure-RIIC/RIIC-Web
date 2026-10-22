@@ -26,7 +26,7 @@ const PORTRAITS_SHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 test("full operator fixture covers the generated operator catalog", async () => {
   const projectRoot = path.resolve(import.meta.dirname, "..");
   const [catalog, fullFixture] = await Promise.all([
-    readFile(path.join(projectRoot, "apps/arknights/src/generated/arkntools/operator-catalog.json"), "utf8").then(JSON.parse),
+    readFile(path.join(projectRoot, "packages/arknights-domain/src/generated/arkntools/operator-catalog.json"), "utf8").then(JSON.parse),
     readFile(path.join(projectRoot, "fixtures/operbox_full_e2.json"), "utf8").then(JSON.parse),
   ]);
   const fixtureIds = new Set(fullFixture.map((operator) => operator.id));
@@ -63,7 +63,7 @@ test("skips only alternate Amiya forms with or without building records, retaini
       await writeFile(buildingPath, JSON.stringify(building));
     }
     await generateAssets(options);
-    const catalog = JSON.parse(await readFile(path.join(options.outputRoot, "apps/arknights/src/generated/arkntools/operator-catalog.json"), "utf8"));
+    const catalog = JSON.parse(await readFile(path.join(options.outputRoot, "packages/arknights-domain/src/generated/arkntools/operator-catalog.json"), "utf8"));
     assert.deepEqual(catalog.map(({ id }) => id), ["char_002_amiya"]);
   }
   characters["999_unexpected"] = characters["002_amiya"];
@@ -84,10 +84,10 @@ test("missing primary portraits use pinned toolbox assets, while corrupt primary
   const options = { sourceRoot: source, sourceSha: SOURCE_SHA, portraitsRoot: path.join(source, "portraits"), portraitsSha: PORTRAITS_SHA, outputRoot: path.join(root, "output") };
   const { manifest } = await generateAssets(options);
   assert.deepEqual(manifest.portraitsFallback, { repository: ARKNTOOLS_REPOSITORY, commit: SOURCE_SHA, directory: "assets/img/avatar", operators: ["char_001_alpha"] });
-  const catalog = JSON.parse(await readFile(path.join(options.outputRoot, "apps/arknights/src/generated/arkntools/operator-catalog.json"), "utf8"));
+  const catalog = JSON.parse(await readFile(path.join(options.outputRoot, "packages/arknights-domain/src/generated/arkntools/operator-catalog.json"), "utf8"));
   assert.ok(catalog[0].portrait.endsWith(SOURCE_SHA.slice(0, 12)));
   assert.ok(catalog[1].portrait.endsWith(PORTRAITS_SHA.slice(0, 12)));
-  const manifestPath = path.join(options.outputRoot, "apps/arknights/src/generated/arkntools/source.json");
+  const manifestPath = path.join(options.outputRoot, "packages/arknights-domain/src/generated/arkntools/source.json");
   manifest.portraitsFallback.operators.push("char_999_unknown");
   await writeFile(manifestPath, JSON.stringify(manifest));
   await assert.rejects(checkGeneratedAssets(options.outputRoot), /备用头像来源包含未知干员/);
@@ -260,14 +260,14 @@ test("generates deterministic catalogs and normalizes the known 35px icon input"
     ["drone", "game-resource"],
   ]);
   assert.equal(manifest.source.repository, ARKNTOOLS_REPOSITORY);
-  const operators = JSON.parse(await readFile(path.join(first, "apps/arknights/src/generated/arkntools/operator-catalog.json"), "utf8"));
+  const operators = JSON.parse(await readFile(path.join(first, "packages/arknights-domain/src/generated/arkntools/operator-catalog.json"), "utf8"));
   assert.equal(operators[0].portrait, `/images/operator-portraits/001_alpha.webp?v=${GENERATED_VERSION}-${PORTRAITS_SHA.slice(0, 12)}`);
   assert.equal(operators[0].order, 0);
   assert.equal(operators[1].order, 1);
   assert.deepEqual(operators[0].buildingSkills[0], { index: 1, id: "skill_alpha", elite: 0, level: 1 });
   assert.deepEqual(operators[1].buildingSkills[0], { index: 1, id: "skill_beta", elite: 2, level: 1 });
 
-  const skills = JSON.parse(await readFile(path.join(first, "apps/arknights/src/generated/arkntools/building-skill-catalog.json"), "utf8"));
+  const skills = JSON.parse(await readFile(path.join(first, "packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json"), "utf8"));
   assert.equal(skills.skill_alpha.descriptionRich, "进驻时，生产力<@cc.vup>+10%</>。");
   assert.equal("description" in skills.skill_alpha, false);
   assert.equal("room" in skills.skill_alpha, false);
@@ -275,15 +275,15 @@ test("generates deterministic catalogs and normalizes the known 35px icon input"
   assert.deepEqual(skills.skill_alpha.tags, ["贵金属"]);
   assert.deepEqual(skills.skill_beta.tags, ["单体恢复", "自身恢复"]);
 
-  const terms = JSON.parse(await readFile(path.join(first, "apps/arknights/src/generated/arkntools/term-catalog.json"), "utf8"));
+  const terms = JSON.parse(await readFile(path.join(first, "packages/arknights-domain/src/generated/arkntools/term-catalog.json"), "utf8"));
   assert.deepEqual(terms.cc_test, { id: "cc_test", name: "测试词条", desc: "<$cc.x><@cc.rem>红松骑士团</></>", descText: "红松骑士团" });
 
   const relativeFiles = [
-    "apps/arknights/src/generated/arkntools/operator-catalog.json",
-    "apps/arknights/src/generated/arkntools/operator-pinyin.json",
-    "apps/arknights/src/generated/arkntools/building-skill-catalog.json",
-    "apps/arknights/src/generated/arkntools/term-catalog.json",
-    "apps/arknights/src/generated/arkntools/source.json",
+    "packages/arknights-domain/src/generated/arkntools/operator-catalog.json",
+    "packages/arknights-domain/src/generated/arkntools/operator-pinyin.json",
+    "packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json",
+    "packages/arknights-domain/src/generated/arkntools/term-catalog.json",
+    "packages/arknights-domain/src/generated/arkntools/source.json",
     "apps/arknights/public/images/building-skills/icon_shared.png",
     "apps/arknights/public/images/operator-portraits/001_alpha.webp",
     "apps/arknights/public/images/products/lmd_orders.webp",

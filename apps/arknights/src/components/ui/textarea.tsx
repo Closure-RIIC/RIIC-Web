@@ -1,1 +1,1 @@
-export * from "../../../../../packages/ui-primitives/textarea";
+export * from "@riic/ui-primitives/textarea";

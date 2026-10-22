@@ -1,5 +1,5 @@
-import { requireWebsiteSession } from "@/server/auth/authorization";
-import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "@/server/api-contract";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
+import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "@riic/platform-server/api-contract";
 import { createWish, listPublicWishes } from "@/server/wishes";
 import { getDonationSetting } from "@/server/site-settings";
 import { parseWishInput } from "@/wish-validation";

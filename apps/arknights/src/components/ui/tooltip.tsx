@@ -1,1 +1,1 @@
-export * from "../../../../../packages/ui-primitives/tooltip";
+export * from "@riic/ui-primitives/tooltip";

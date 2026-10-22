@@ -1,6 +1,6 @@
-import { assertSameOrigin, createRequestId, failureResponse, successResponse, PublicApiError } from "@/server/api-contract";
+import { assertSameOrigin, createRequestId, failureResponse, successResponse, PublicApiError } from "@riic/platform-server/api-contract";
 import { requireFeatureSession } from "@/server/auth/feature-access";
-import { requireWebsiteAdmin } from "@/server/auth/authorization";
+import { requireWebsiteAdmin } from "@riic/platform-server/auth/authorization";
 import { BillingError, fulfillBillingOrder, getOrder } from "@/server/billing/service";
 
 

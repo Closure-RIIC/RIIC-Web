@@ -4,8 +4,8 @@ import { isSupportedMasteryTarget, normalizeMasteryBox } from "../../mastery.ts"
 import { BUILDING_SKILL_CATALOG, OPERATOR_CATALOG, operatorBuildingSkillList } from "../../operatorPortraits.ts";
 import { operatorMatchesQuery } from "../../building-rooms.ts";
 import type { AgentOperatorPool } from "./calculator-tools.ts";
-import englishNames from "../../generated/operator-english-names.json" with { type: "json" };
-import pinyinNames from "../../generated/arkntools/operator-pinyin.json" with { type: "json" };
+import englishNames from "@riic/arknights-domain/generated/operator-english-names.json" with { type: "json" };
+import pinyinNames from "@riic/arknights-domain/generated/arkntools/operator-pinyin.json" with { type: "json" };
 
 type OperatorAliases = Record<string, { targets?: string[] }>;
 

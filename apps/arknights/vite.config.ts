@@ -6,7 +6,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
-import { isSklandFeatureEnabled } from "./src/deployment.ts";
+import { isSklandFeatureEnabled } from "@riic/arknights-domain/deployment";
 import { assetCacheControl } from "./src/server/http-cache-policy.ts";
 
 const appRoot = fileURLToPath(new URL(".", import.meta.url));

@@ -3,9 +3,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createPosterDocument, readPosterFile, posterDataOnly, posterDraftForManual } from "./schedule-poster-document.ts";
 import { assignManualOperator, createManualScheduleDraft, createManualScheduleDraftFromCalculator, manualScheduleToMaa, reconcileManualScheduleDraft, loadManualScheduleDraft } from "./manual-schedule.ts";
-import type { BaseBlueprint } from "./types.ts";
+import type { BaseBlueprint } from "@riic/arknights-domain/types";
 
-const layout = JSON.parse(readFileSync(new URL("./layouts/252.json", import.meta.url), "utf8")) as BaseBlueprint;
+const layout = JSON.parse(readFileSync(new URL("../../../packages/arknights-domain/src/layouts/252.json", import.meta.url), "utf8")) as BaseBlueprint;
 test("editable work file preserves shift products, efficiency, training roles and dormant facilities", () => {
   const draft = createManualScheduleDraft([8, 8, 8]);
   draft.shifts[0]!.rooms.trade_1 = { operators: ["巫恋", "卡夫卡", "龙舌兰"], manualSkillEfficiencyPct: 125 };

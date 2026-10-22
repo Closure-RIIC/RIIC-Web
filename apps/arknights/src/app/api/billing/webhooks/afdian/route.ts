@@ -1,4 +1,4 @@
-import { createRequestId, failureResponse, readJsonBody, PublicApiError } from "@/server/api-contract";
+import { createRequestId, failureResponse, readJsonBody, PublicApiError } from "@riic/platform-server/api-contract";
 import { findAfdianOrderByOutTradeNo } from "@/server/billing/afdian";
 import { fulfillBillingOrder } from "@/server/billing/service";
 

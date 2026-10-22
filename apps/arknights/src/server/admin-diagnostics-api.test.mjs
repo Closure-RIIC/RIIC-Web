@@ -13,14 +13,14 @@ const hook=registerHooks({resolve(specifier,context,next){
 process.once("exit",()=>hook.deregister());
 
 test("diagnostic endpoint authorizes before reading, bounds time ranges and disables caching",async context=>{
-  const {PublicApiError}=await import("./api-contract.ts");
+  const {PublicApiError}=await import("@riic/platform-server/api-contract");
   let authenticated=false;
   const reads=[];
-  await context.mock.module(new URL("./auth/authorization.ts",import.meta.url),{namedExports:{
+  await context.mock.module(new URL("../../../../packages/platform-server/src/auth/authorization.ts",import.meta.url),{namedExports:{
     requireWebsiteReviewer:async()=>{if(!authenticated)throw new PublicApiError("AIC-AUTH-2008");return {session:{user:{id:"test-admin"}}};},
   }});
-  const diagnostics=await import("./request-diagnostics.ts");
-  await context.mock.module(new URL("./request-diagnostics.ts",import.meta.url),{namedExports:{
+  const diagnostics=await import("@riic/platform-server/request-diagnostics");
+  await context.mock.module(new URL("../../../../packages/platform-server/src/request-diagnostics.ts",import.meta.url),{namedExports:{
     ...diagnostics,readDiagnostics:async hours=>{reads.push(hours);return {total:0,groups:[],recent:[]};},
   }});
   const {GET}=await import("../app/api/admin/diagnostics/route.ts");

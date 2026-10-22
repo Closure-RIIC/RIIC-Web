@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { gachaAccountOptions } from "../apps/arknights/src/gacha-accounts";
-import type { GachaHistory } from "../apps/arknights/src/gacha-history";
-import { TERMS_VERSION, PRIVACY_VERSION } from "../packages/platform/legal-policy";
+import type { GachaHistory } from "@riic/arknights-domain/gacha-history";
+import { TERMS_VERSION, PRIVACY_VERSION } from "@riic/platform/legal-policy";
 import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, waitForContentReady, waitForOwnAnimations, planData, sampleData, authenticatedSklandSnapshot, productionHeavySklandSnapshot, primarySklandAccount, mockApis, openSklandOverview, seedPreferences, seedV4Session } from "./production-readiness.fixture";
 
 async function mockGachaSession(page: Page, roles: Array<{ uid: string; nickname: string }> = [], authorized = true) {

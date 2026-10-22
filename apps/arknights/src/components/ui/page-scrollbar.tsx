@@ -1,1 +1,1 @@
-export * from "../../../../../packages/ui-primitives/page-scrollbar";
+export * from "@riic/ui-primitives/page-scrollbar";

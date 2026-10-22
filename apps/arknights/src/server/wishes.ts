@@ -1,7 +1,7 @@
 import { count, desc, eq, sql } from "drizzle-orm";
-import { getDatabase } from "@/server/db";
-import { user, wish } from "@/server/db/schema";
-import { PublicApiError } from "@/server/api-contract";
+import { getDatabase } from "@riic/platform-server/db";
+import { user, wish } from "@riic/platform-server/db/schema";
+import { PublicApiError } from "@riic/platform-server/api-contract";
 
 export type WishStatus = "pending" | "approved" | "rejected" | "hidden";
 

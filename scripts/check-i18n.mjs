@@ -7,11 +7,13 @@ import { createTranslator } from "use-intl/core";
 const locales = ["zh", "en"];
 const catalogs = Object.fromEntries(locales.map((locale) => {
   const messages = JSON.parse(fs.readFileSync(`apps/arknights/messages/${locale}.json`, "utf8"));
-  for (const file of fs.readdirSync(`apps/arknights/messages/helpers/${locale}`)) {
+  for (const directory of [`apps/arknights/messages/helpers/${locale}`, `packages/arknights-domain/messages/helpers/${locale}`]) {
+  for (const file of fs.readdirSync(directory)) {
     if (!file.endsWith(".json")) continue;
     const namespace = file.replace(/\.json$/, "");
     assert.ok(!(namespace in messages), `Duplicate namespace: ${namespace}`);
-    messages[namespace] = JSON.parse(fs.readFileSync(`apps/arknights/messages/helpers/${locale}/${file}`, "utf8"));
+    messages[namespace] = JSON.parse(fs.readFileSync(`${directory}/${file}`, "utf8"));
+  }
   }
   return [locale, messages];
 }));

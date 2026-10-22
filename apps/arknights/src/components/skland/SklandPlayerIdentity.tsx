@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { RemoteAvatar } from "@/components/ui/remote-avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { localize } from "@/i18n/helpers/components_pages_SklandStatus";
-import type { SklandPlayer } from "@/types";
+import type { SklandPlayer } from "@riic/arknights-domain/types";
 
 export type SklandPlayerIdentityData = Pick<SklandPlayer, "uid" | "nickname" | "level" | "channelName" | "avatarUrl">;
 

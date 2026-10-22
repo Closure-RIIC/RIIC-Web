@@ -1,3 +1,3 @@
 "use client";
 
-export * from "../../../../../packages/ui-primitives/input-group";
+export * from "@riic/ui-primitives/input-group";

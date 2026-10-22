@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
-import type { ReleaseDraft, ReleaseSection, ReleaseText } from "@/releases/types";
+import type { ReleaseDraft, ReleaseSection, ReleaseText } from "@riic/arknights-domain/releases/types";
 import { RELEASE_KINDS, RELEASE_LIMITS } from "@/releases/validation";
 
 const SECTION_KEYS = { added: "sectionNew", improved: "sectionImproved", fixed: "sectionFixed" } as const;

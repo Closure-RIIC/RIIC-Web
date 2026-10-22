@@ -1,6 +1,6 @@
-import { catalog } from "@shared/endfield-solver/model.mjs";
-import { FilterRow } from "@shared/ui-primitives/filter-row";
-import { Tabs, TabsList, TabsTrigger } from "@shared/ui-primitives/tabs";
+import { catalog } from "@riic/endfield-solver/model.mjs";
+import { FilterRow } from "@riic/ui-primitives/filter-row";
+import { Tabs, TabsList, TabsTrigger } from "@riic/ui-primitives/tabs";
 import { useWorkspace } from "../state";
 
 const professions: Record<string, string> = { 先锋: "Vanguard", 近卫: "Guard", 突击: "Striker", 重装: "Defender", 术师: "Caster", 辅助: "Support" };

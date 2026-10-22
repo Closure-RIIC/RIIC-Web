@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "use-intl";
-import type { SklandAccountSummary } from "@/types";
+import type { SklandAccountSummary } from "@riic/arknights-domain/types";
 import { Combobox, ComboboxCollection, ComboboxContent, ComboboxEmpty, ComboboxGroup, ComboboxInput, ComboboxItem, ComboboxLabel, ComboboxList, ComboboxSeparator } from "@/components/ui/combobox";
 
 /** Shared grouped account / role selector for status and persisted headhunting history. */

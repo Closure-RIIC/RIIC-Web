@@ -1,11 +1,11 @@
-import { PRESETS, roomKindLabel } from "./blueprint";
+import { PRESETS, roomKindLabel } from "@riic/arknights-domain/blueprint";
 import { createManualScheduleDraft, manualRoomCapacity, manualRoomForShift, reconcileManualScheduleDraft } from "./manual-schedule";
 import { posterOperators } from "./schedule-poster-operators";
 import { PRODUCT_ICON_URLS } from "./product-assets";
 import { manualEditableRooms, type EditableRoom } from "./recycling-room";
 import { createPosterDocument, type SchedulePosterDocument } from "./schedule-poster-document";
 import sampleTeams from "./schedule-poster-sample.json";
-import type { BaseBlueprint } from "./types";
+import type { BaseBlueprint } from "@riic/arknights-domain/types";
 
 export { defaultPosterOperator, posterOperators } from "./schedule-poster-operators";
 

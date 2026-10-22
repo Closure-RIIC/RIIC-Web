@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { presentRoomEfficiency } from "./efficiency.ts";
+import { presentRoomEfficiency } from "@riic/arknights-domain/efficiency";
 import { planToRows } from "./schedule.ts";
-import type { BaseBlueprint, MaaPlan, RotationShift, TrainingRoomShift } from "./types.ts";
+import type { BaseBlueprint, MaaPlan, RotationShift, TrainingRoomShift } from "@riic/arknights-domain/types";
 
 const layout: BaseBlueprint = {
   template: "243",

@@ -8,7 +8,7 @@ import {
   remainingSklandQrPollDelay,
   SKLAND_QR_MAX_BACKOFF_MS,
   SKLAND_QR_POLL_INTERVAL_MS,
-} from "../../../packages/platform/skland-qr-polling.ts";
+} from "@riic/platform/skland-qr-polling";
 
 const now = 1_000_000;
 const expiresAt = now + 10 * 60_000;

@@ -1,7 +1,7 @@
 import type { RoomRow } from "./schedule.ts";
 import { planToRows } from "./schedule.ts";
 import { manualScheduleToMaa, type ManualScheduleDraft } from "./manual-schedule.ts";
-import type { BaseBlueprint, PublicPlanData } from "./types.ts";
+import type { BaseBlueprint, PublicPlanData } from "@riic/arknights-domain/types";
 import type { AccountHealthInput } from "./account-health-input.ts";
 import type { HealthAdviceReport } from "./account-health-advice.ts";
 import type { TrainingGoal, TrainingPlannerData, TrainingPlannerResult } from "./training-planner.ts";
