@@ -295,7 +295,7 @@ test("CI enforces route and document preload JavaScript budgets after building",
   assert.match(budgetCheck, /MAX_SECONDARY_ROUTE_INITIAL_JS_BYTES = 1_672_000/);
   assert.match(budgetCheck, /MAX_MANUAL_ROUTE_INITIAL_JS_BYTES = 1_692_000/);
   assert.match(budgetCheck, /MAX_DOCUMENT_INITIAL_JS_FILES = 18/);
-  assert.match(budgetCheck, /WORKBENCH_ROUTES = \["\/", "\/manual", "\/training", "\/mastery", "\/recruitment", "\/skills", "\/skland", "\/account"\]/);
+  assert.match(budgetCheck, /WORKBENCH_ROUTES = \["\/", "\/manual", "\/training", "\/mastery", "\/recruitment", "\/skills", "\/skland", "\/settings"\]/);
   assert.match(budgetCheck, /firstLoadUncompressedJsBytes/);
   assert.match(budgetCheck, /\.output\/public/);
   assert.match(budgetCheck, /await renderBuildDocument\(\)/);

@@ -825,8 +825,11 @@ test("password reset rejects a link without a token before making a request", as
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ status: true }) });
   });
   await page.goto("/account/reset-password");
-  await expect(page.getByText("重置链接无效或缺少令牌，请重新申请密码重置邮件。")).toBeVisible();
-  await expect(page.getByRole("button", { name: "确认重置" })).toBeDisabled();
+  const dialog = page.getByRole("dialog", { name: "重置密码", exact: true });
+  await expect(dialog.getByRole("alert")).toHaveText("重置链接已失效或已被使用，请重新发送重置邮件。");
+  await expect(dialog.getByRole("button", { name: "确认重置" })).toHaveCount(0);
+  await dialog.getByRole("button", { name: "重新发送重置邮件", exact: true }).click();
+  await expect(page.getByRole("dialog").getByRole("button", { name: "发送重置邮件", exact: true })).toBeVisible();
   expect(resetRequests).toBe(0);
 });
 
@@ -872,8 +875,8 @@ test("password reset requires matching password confirmation before making a req
   await expect(page.getByText("两次输入的密码不一致。", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "确认重置" }).click();
   await expect.poll(() => resetRequests).toBe(1);
-  await expect(page.getByText("密码已重置，原有登录状态已失效，请点击“返回登录”重新登录。", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "返回登录", exact: true }).click();
+  await expect(page.getByText("密码已重置，原有登录状态已失效。请使用新密码登录。", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "使用新密码登录", exact: true }).click();
   await expect(page.getByLabel("邮箱", { exact: true })).toBeVisible();
 });
 
