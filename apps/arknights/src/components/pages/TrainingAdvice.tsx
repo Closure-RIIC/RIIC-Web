@@ -1,6 +1,7 @@
 import { localize as localize_components_pages_TrainingAdvice } from "../../i18n/helpers/components_pages_TrainingAdvice.ts";
 import { useTranslations, useLocale } from "use-intl";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
+import { TrainingSyncButton, type TrainingSyncControl } from "@/components/workbench/TrainingSyncButton";
 import { messageRecord } from "@/i18n/translate";
 import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Calculator, CircleAlert, ChevronDown, GraduationCap, X } from "lucide-react";
@@ -44,17 +45,7 @@ export type TrainingAdviceProps = {
   profile?: UserProfile | null;
   trainingAdvice?: TrainingAdviceReport | null;
   requiresAccount?: boolean;
-  sync?: {
-    busy: boolean;
-    disabled: boolean;
-    retryIn: number;
-    syncedAt: number | null;
-    error: string | null;
-    stale: boolean;
-    resume: (() => void) | null;
-    resumeDisabled: boolean;
-    refresh: () => void;
-  };
+  sync?: TrainingSyncControl;
   onOpenCalculator: () => void;
   onOpenTrainingPlanner?: (targets: TrainingPlannerHandoff) => void;
 };
@@ -263,31 +254,13 @@ export function TrainingAdvice({
 
   return (
     <div className="flex w-full flex-col gap-5 pt-5" data-training-page>
-      {sync ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-black/10 bg-white/60 p-3 text-sm" data-training-sync>
-          <div className="min-w-0" role="status" aria-live="polite">
-            <p>{sync.busy
-              ? intl("components_pages_TrainingAdvice.syncing")
-              : sync.syncedAt
-                ? intl("components_pages_TrainingAdvice.lastSynced", { time: new Date(sync.syncedAt).toLocaleString(locale) })
-                : intl("components_pages_TrainingAdvice.autoSync")}</p>
-            {sync.error || sync.stale ? <p className="mt-1 text-amber-800">{sync.error ?? intl("components_pages_TrainingAdvice.syncStale")}</p> : null}
-          </div>
-          <Button type="button" variant="outline" size="sm"
-            disabled={sync.resume ? sync.resumeDisabled : sync.busy || sync.disabled || sync.retryIn > 0}
-            onClick={sync.resume ?? sync.refresh}>
-            {sync.resume ? intl("components_pages_TrainingAdvice.resumeSync")
-              : sync.retryIn > 0 ? intl("components_pages_TrainingAdvice.syncCooldown", { seconds: sync.retryIn })
-                : intl("components_pages_TrainingAdvice.syncNow")}
-          </Button>
-        </div>
-      ) : null}
       <section className="min-w-0" aria-label={intl("components_pages_TrainingAdvice.trainingAdviceOverview")}>
         <div className="mb-2 flex min-w-0 items-center gap-2.5">
           <WorkbenchPageHeading page="training">{intl("components_pages_TrainingAdvice.trainingAdvice")}</WorkbenchPageHeading>
           <span className="font-number text-xs text-muted-foreground">
             {advice ? recommendations.length : actions.length}
           </span>
+          {sync ? <TrainingSyncButton sync={sync} className="ml-auto" /> : null}
         </div>
         <InfraTechnicalCard group="manufacture" dataSlot="training-summary" showEmblem={false}>
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(28rem,0.8fr)] lg:items-end">

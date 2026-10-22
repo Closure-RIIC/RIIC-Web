@@ -434,7 +434,7 @@ jobs:
           - project: chromium-plush
             shard: 2/2
     container:
-      image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:c091b21d9fae78c76e85cd4356431e9b018402f172a214fc7d7a5e9a7e29d8ac
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
       options: --user 1001
     env:
       DATABASE_URL: postgresql://arknights_e2e:e2e-test-only@postgres:5432/arknights_auth_test
@@ -499,7 +499,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     container:
-      image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:c091b21d9fae78c76e85cd4356431e9b018402f172a214fc7d7a5e9a7e29d8ac
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
       options: --user 1001
     env:
       DATABASE_URL: postgresql://arknights_e2e:e2e-test-only@postgres:5432/arknights_auth_test
@@ -558,7 +558,7 @@ jobs:
       matrix:
         shard: [1/4, 2/4, 3/4, 4/4]
     container:
-      image: mcr.microsoft.com/playwright:v1.62.1-noble@sha256:c091b21d9fae78c76e85cd4356431e9b018402f172a214fc7d7a5e9a7e29d8ac
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
       options: --user 1001
     env:
       DATABASE_URL: postgresql://arknights_e2e:e2e-test-only@postgres:5432/arknights_auth_test

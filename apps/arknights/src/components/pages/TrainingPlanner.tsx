@@ -7,7 +7,10 @@ import { Check, ChevronDown, PackageOpen, Plus, RefreshCw, Search, Trash2, X } f
 import { getSklandInventory } from "@/api";
 import { OperatorIdentity, OperatorProfessionFilter, OperatorRarityFilter, OperatorRosterGrid, OperatorSearch, OPERATOR_PAGE_SIZE } from "@/components/operators/OperatorPickerParts";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
+import { WorkbenchCard } from "@/components/workbench/WorkbenchCard";
+import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { Button } from "@/components/ui/button";
+import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,6 +25,7 @@ import { buildTrainingPlannerContext } from "@/agent-page-context";
 import { loadTrainingGoals, loadTrainingInventory, saveTrainingGoals, saveTrainingInventory, takeTrainingPlannerHandoff } from "@/training-planner-store";
 import plannerDataJson from "@/generated/training-planner-data.json" with { type: "json" };
 import { cn } from "@/lib/utils";
+import { workbenchPageAccent } from "@/workbench-accent";
 
 const plannerData = plannerDataJson as TrainingPlannerData;
 const OPERATOR_BY_ID = new Map(OPERATOR_CATALOG.map((operator) => [operator.id, operator]));
@@ -51,7 +55,6 @@ const MATERIAL_IDS = (() => {
     .sort((left, right) => (plannerData.items[right]?.rarity ?? 0) - (plannerData.items[left]?.rarity ?? 0)
       || (plannerData.items[left]?.name ?? left).localeCompare(plannerData.items[right]?.name ?? right, "zh-CN"));
 })();
-const FIELD_CLASS = "h-9 border-input bg-background px-2 text-sm";
 const numberText = (value: number) => value.toLocaleString("zh-CN");
 const EMPTY_GOALS: TrainingGoal[] = [];
 const EMPTY_INVENTORY: Record<string, number> = {};
@@ -103,12 +106,25 @@ function mergeHandoff(
 }
 
 function selectElement(label: string, value: number, onChange: (value: number) => void, options: number[], disabled = false) {
-  return <label className="grid min-w-0 gap-1 text-[11px] text-muted-foreground">
+  return <div className="grid min-w-0 gap-1 text-[11px] text-muted-foreground">
     <span>{label}</span>
-    <select className={cn(FIELD_CLASS, "w-full")} value={value} disabled={disabled} onChange={(event) => onChange(Number(event.target.value))} aria-label={label}>
-      {options.map((option) => <option key={option} value={option}>{option}</option>)}
-    </select>
-  </label>;
+    <Combobox<number>
+      items={options}
+      filteredItems={options}
+      value={value}
+      inputValue={String(value)}
+      itemToStringValue={String}
+      disabled={disabled}
+      onValueChange={(next) => { if (next !== null) onChange(next); }}
+    >
+      <ComboboxInput aria-label={label} readOnly disabled={disabled} className="h-9 w-full min-w-0 bg-background text-foreground max-sm:min-h-11" />
+      <ComboboxContent align="start">
+        <ComboboxList>
+          {(option: number) => <ComboboxItem key={option} value={option}>{option}</ComboboxItem>}
+        </ComboboxList>
+      </ComboboxContent>
+    </Combobox>
+  </div>;
 }
 
 function inventoryLabel(itemId: string, t: ReturnType<typeof useTranslations>) {
@@ -329,12 +345,12 @@ export function TrainingPlanner() {
           <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{t("description")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" onClick={() => { setPickerTab(currentRoster.length ? "box" : "all"); setPickerOpen(true); }}>
-            <Plus className="size-4" />{t("addOperator")}
-          </Button>
-          <Button type="button" variant="outline" onClick={() => void refreshInventory()} disabled={inventoryLoading}>
-            <RefreshCw className={cn("size-4", inventoryLoading && "animate-spin")} />{t("refreshInventory")}
-          </Button>
+          <SetupActionButton type="button" variant="outline" className="!min-w-0 max-w-full max-md:px-3" onClick={() => { setPickerTab(currentRoster.length ? "box" : "all"); setPickerOpen(true); }}>
+            <Plus />{t("addOperator")}
+          </SetupActionButton>
+          <SetupActionButton type="button" variant="outline" className="!min-w-0 max-w-full max-md:px-3" onClick={() => void refreshInventory()} disabled={inventoryLoading}>
+            <RefreshCw className={cn(inventoryLoading && "animate-spin")} />{t("refreshInventory")}
+          </SetupActionButton>
         </div>
       </header>
 
@@ -348,11 +364,11 @@ export function TrainingPlanner() {
               </div>
               {goals.length ? <Button type="button" variant="ghost" size="sm" onClick={() => updateGoals(() => [])}><Trash2 className="size-4" />{t("clearGoals")}</Button> : null}
             </div>
-            {!goals.length ? <div className="grid min-h-40 place-content-center border border-dashed border-border px-5 text-center text-sm text-muted-foreground">
+            {!goals.length ? <WorkbenchCard glass accent={workbenchPageAccent("training-planner")} className="grid min-h-40 place-content-center text-center text-sm text-muted-foreground" data-training-empty>
               <PackageOpen className="mx-auto mb-3 size-6 opacity-60" aria-hidden="true" />
               <p>{t("noTargets")}</p>
               <Button type="button" variant="outline" className="mx-auto mt-4" onClick={() => { setPickerTab(currentRoster.length ? "box" : "all"); setPickerOpen(true); }}><Plus className="size-4" />{t("addOperator")}</Button>
-            </div> : <div className="grid min-w-0 gap-3">
+            </WorkbenchCard> : <div className="grid min-w-0 gap-3">
               {goals.map((goal) => {
                 const operator = OPERATOR_BY_ID.get(goal.operatorId);
                 const costs = plannerData.operators[goal.operatorId];

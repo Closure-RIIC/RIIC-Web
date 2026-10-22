@@ -23,6 +23,6 @@ export default defineConfig({
     apply: "serve",
     config(config) { return { cacheDir: `node_modules/.vite/dev-${config.server?.port ?? 5176}` }; },
   }, tailwindcss(), tanstackStart(), nitro({ preset: "node-server", compressPublicAssets: true,
-    routeRules: { "/assets/**": { headers: { "Cache-Control": "public, max-age=31536000, immutable" } } },
+    plugins: [fileURLToPath(new URL("./src/server/admin-gate-plugin.ts", import.meta.url))],
   }), react()],
 });

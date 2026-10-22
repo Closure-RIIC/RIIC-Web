@@ -195,7 +195,7 @@
   "components_layout_AppSidebar_labels": {
     "schedulingGroup": "Base Scheduling",
     "progressionGroup": "Progression Planning",
-    "skillsGroup": "Skill Search",
+    "skillsGroup": "Skill Wiki",
     "personalGroup": "My Characters",
     "calculator": "Infrastructure Calculator",
     "manual": "Manual Scheduling",
@@ -203,7 +203,7 @@
     "trainingPlanner": "Training Calculator",
     "mastery": "Mastery Planner",
     "recruitment": "Recruitment",
-    "skills": "Skill Search",
+    "skills": "Skill Wiki",
     "skland": "Skland Sync",
     "gacha": "Gacha Analysis",
     "accountMenu": "Account menu",

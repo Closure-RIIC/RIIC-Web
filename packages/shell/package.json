@@ -3,12 +3,16 @@
   "private": true,
   "type": "module",
   "peerDependencies": {
-    "react": "^19.2.8",
-    "@base-ui/react": "^1.6.0",
-    "lucide-react": "^0.475.0"
+    "react": "^19.3.1",
+    "@base-ui/react": "^1.9.0",
+    "lucide-react": "^1.61.0",
+    "motion": "^14.6.0",
+    "use-intl": "^4.14.9",
+    "better-auth": "^1.7.12"
   },
   "dependencies": {
-    "@riic/ui-primitives": "*"
+    "@riic/ui-primitives": "*",
+    "@riic/arknights-domain": "*"
   },
   "version": "0.0.0",
   "exports": {
@@ -20,7 +24,19 @@
     "./GameSwitcher": "./GameSwitcher.tsx",
     "./GameSwitcher.module.css": "./GameSwitcher.module.css",
     "./SidebarAccountMenu.module.css": "./SidebarAccountMenu.module.css",
-    "./tokens.css": "./tokens.css"
+    "./tokens.css": "./tokens.css",
+    "./SidebarAccountMenu": "./SidebarAccountMenu.tsx",
+    "./useAccountFeatureAccess": "./useAccountFeatureAccess.ts",
+    "./account-sign-in": "./account-sign-in.ts",
+    "./account-activity": "./account-activity.ts",
+    "./WebsiteAuthDialog": "./auth/WebsiteAuthDialog.tsx",
+    "./auth/messages": "./auth/messages.ts",
+    "./auth/client": "./auth/client.ts",
+    "./auth/password-confirmation": "./auth/password-confirmation.ts",
+    "./auth/password-input": "./auth/password-input.tsx",
+    "./auth/otp-input": "./auth/otp-input.tsx",
+    "./auth/password-strength": "./auth/password-strength.tsx",
+    "./auth/wizard-steps": "./auth/wizard-steps.tsx"
   },
   "sideEffects": [
     "**/*.css"

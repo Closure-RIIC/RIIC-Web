@@ -21,7 +21,7 @@ export function DialogFrame({ title, description, closeLabel, closeRef, children
         <span className="ef-dialog-close-glyph" style={{ maskImage: `url("${workbenchArtwork.ui.close.icon}")` }} aria-hidden="true" />
       </Dialog.Close>
     </header>
-    <div className={`ef-dialog-body ${bodyClassName}`}>
+    <div className={`ef-dialog-body ${bodyClassName}`} data-yeye-scroll="auto">
       {description ? <Dialog.Description className="ef-dialog-description">{description}</Dialog.Description> : null}
       {children}
     </div>

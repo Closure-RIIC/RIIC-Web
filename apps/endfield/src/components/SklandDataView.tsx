@@ -4,7 +4,7 @@ import { detailLabels, type DetailRecord, type DetailValue } from "@riic/endfiel
 import type { EndfieldRole, EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { useWorkspace } from "../state";
 import { SklandInventory } from "./SklandInventory";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@riic/ui-primitives/tabs";
+import { Tabs, CompactTabsList, TabsTrigger, TabsContent } from "@riic/ui-primitives/tabs";
 import { SearchInput } from "@riic/ui-primitives/search-input";
 import { quantity } from "@riic/endfield-skland/presentation";
 import { operatorData, weaponData } from "@riic/endfield-data";
@@ -125,9 +125,9 @@ export function SklandDataView({ snapshot }: { snapshot: EndfieldSnapshot }) {
   const roomNames: Record<string, string> = { "0": t("总控中枢", "Control center"), "1": t("制造舱", "Manufacturing"), "2": t("培养舱", "Growth"), "3": t("会客室", "Reception"), "5": t("会客室线索", "Reception clues") };
   return <div data-skland-data>
     <Tabs defaultValue="overview" className="ef-sync-tabs">
-      <TabsList aria-label={t("森空岛数据分类", "Skland data categories")} className="max-w-full justify-start overflow-x-auto">
+      <CompactTabsList aria-label={t("森空岛数据分类", "Skland data categories")}>
         {[["overview", t("状态总览", "Overview")], ["operators", t("干员状态", "Operators")], ["weapons", t("武器状态", "Weapons")], ["inventory", t("仓库背包", "Inventory")], ["ship", t("帝江号", "Dijiang")]].map(([id, title]) => <TabsTrigger key={id} value={id}>{title}</TabsTrigger>)}
-      </TabsList>
+      </CompactTabsList>
       <TabsContent value="overview">
         <div className="ef-status-grid">
           <StatusCard title={t("理智", "Sanity")} current={currentSanity} max={maxSanity}

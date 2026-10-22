@@ -33,6 +33,7 @@ async function mockWorkbench(page: Page, performanceMode: "quality" | "static" =
 
 for (const width of [1440, 375]) {
   test(`Floating assistant shares a read-only workbench snapshot at ${width}px`, async ({ page }) => {
+    test.setTimeout(90_000);
     await mockWorkbench(page);
     await page.setViewportSize({ width, height: 900 });
     let sentPageContext: unknown;
@@ -43,6 +44,7 @@ for (const width of [1440, 375]) {
     });
 
     await page.goto("/");
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 45_000 });
     await page.getByRole("button", { name: "暂时跳过引导" }).click();
     await expect(page.locator("[data-plan-board]")).toBeVisible();
     const launcher = page.getByRole("button", { name: "打开可露希尔助理" });
@@ -51,15 +53,81 @@ for (const width of [1440, 375]) {
     await expect.poll(() => launcher.locator("img").evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
     await expect(page.getByText("博士，这页有什么想问的？")).toBeVisible();
 
-    await page.getByRole("button", { name: "收起悬浮助理", exact: true }).click();
-    await expect(launcher).toHaveCSS("width", "44px");
-    await expect(launcher).toHaveCSS("height", "44px");
+    const dock = page.locator("[data-agent-dock-trigger]");
+    await expect(dock).toBeVisible();
+    await expect(dock).toHaveAttribute("aria-expanded", "true");
+    const initialDockBounds = await dock.boundingBox();
+    const initialFrame = await page.locator('[data-slot="sidebar-inset"]').boundingBox();
+    await dock.click();
+    await expect(page.locator("[data-agent-floating-surface]")).toHaveCount(0);
+    await expect(dock).toHaveAttribute("aria-expanded", "false");
+    await expect(dock).toHaveText("助理");
+    await expect(dock).toHaveCSS("height", "26px");
+    await expect(dock).toHaveCSS("border-radius", "999px");
+    await expect(dock).toHaveCSS("gap", "3px");
+    await expect(dock).toBeFocused();
+    await expect(dock.locator("img")).toHaveCount(0);
+    await expect(dock.locator('[aria-hidden="true"]')).toHaveCSS("mask-mode", "luminance");
+    const pointer = await page.request.get("/images/agent/prts-cursor.png");
+    expect(pointer.ok()).toBe(true);
+    expect(pointer.headers()["content-type"]).toContain("image/png");
+    const frame = await page.locator('[data-slot="sidebar-inset"]').boundingBox();
+    const dockBounds = await dock.boundingBox();
+    expect(dockBounds).toEqual(initialDockBounds);
+    expect(frame).toEqual(initialFrame);
+    expect(frame!.y + frame!.height).toBeLessThanOrEqual(dockBounds!.y);
+    expect(dockBounds!.y + dockBounds!.height).toBeLessThanOrEqual(900);
+    expect(dockBounds!.x + dockBounds!.width).toBeLessThanOrEqual(width);
+    const shortcuts = page.getByRole("button", { name: "查看快捷键", exact: true });
+    await expect(shortcuts).toHaveCount(1);
+    await expect(shortcuts).toHaveText("");
+    await expect(shortcuts).toHaveCSS("height", "26px");
+    await expect(shortcuts).toHaveCSS("border-radius", "999px");
+    const shortcutBounds = await shortcuts.boundingBox();
+    expect(shortcutBounds!.x + shortcutBounds!.width).toBeLessThan(dockBounds!.x);
+    expect(shortcutBounds!.y).toBe(dockBounds!.y);
+    await shortcuts.click();
+    await expect(page.getByRole("dialog")).toContainText("快捷键");
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(shortcuts).toBeFocused();
     await expect(page.getByText("博士，这页有什么想问的？")).toHaveCount(0);
-    await launcher.click();
-    await expect(page.locator("[data-agent-floating-trigger]")).toHaveCSS("width", width < 640 ? "122px" : "150px");
+    await dock.click();
+    await expect(dock).toBeVisible();
+    await expect(dock).toHaveAttribute("aria-expanded", "true");
+    expect(await dock.boundingBox()).toEqual(dockBounds);
+    expect(await shortcuts.boundingBox()).toEqual(shortcutBounds);
+    expect(await page.locator('[data-slot="sidebar-inset"]').boundingBox()).toEqual(frame);
+    const floatingTrigger = page.locator("[data-agent-floating-trigger]");
+    await expect(floatingTrigger).toHaveAttribute("aria-expanded", "true");
+    await expect(floatingTrigger.locator("img")).toBeVisible();
+    await expect(floatingTrigger.locator("img")).toHaveAttribute("src", "/icon.png");
     const panel = page.locator("[data-agent-floating-panel]");
     await expect(panel).toBeVisible();
     await expect(panel.locator('[data-agent-chat][data-agent-compact="true"]')).toBeVisible();
+    const headerAvatar = panel.locator("[data-agent-header-avatar]");
+    await expect(headerAvatar).toHaveCSS("overflow", "visible");
+    const headerMascot = headerAvatar.locator("[data-closure-fur-avatar]");
+    await expect(headerMascot).toHaveAttribute("data-fur-ready", "true", { timeout: 15_000 });
+    const wings = await headerMascot.locator("canvas").evaluate((canvas: HTMLCanvasElement) => {
+      const pixels = canvas.getContext("2d")!.getImageData(0, 0, canvas.width, canvas.height).data;
+      const image = canvas.getBoundingClientRect();
+      const ring = canvas.closest("[data-agent-header-avatar]")!.getBoundingClientRect();
+      let left = 0, right = 0;
+      for (let index = 0; index < pixels.length; index += 4) {
+        if (pixels[index + 3] < 180) continue;
+        const x = image.left + ((index / 4) % canvas.width) / canvas.width * image.width;
+        if (x < ring.left) left++;
+        if (x > ring.right) right++;
+      }
+      return { left, right };
+    });
+    expect(wings.left).toBeGreaterThan(0);
+    expect(wings.right).toBeGreaterThan(0);
+    await panel.getByRole("button", { name: "附件与人格卡", exact: true }).click();
+    await expect(page.getByRole("button", { name: "添加附件", exact: true })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(panel.getByRole("button", { name: "人格卡：可露希尔", exact: true })).toBeVisible();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(page.locator("[data-app-content]")).not.toHaveAttribute("inert", "");
     await expect(panel.getByRole("heading", { name: "自动排班", exact: true })).toBeVisible();
@@ -73,6 +141,28 @@ for (const width of [1440, 375]) {
     expect(panelBounds!.y).toBeGreaterThanOrEqual(0);
     expect(panelBounds!.x + panelBounds!.width).toBeLessThanOrEqual(width);
     expect(panelBounds!.y + panelBounds!.height).toBeLessThanOrEqual(900);
+    const mascotBounds = await floatingTrigger.boundingBox();
+    expect(mascotBounds!.width).toBe(width < 640 ? 96 : 120);
+    expect(mascotBounds!.height).toBe(width < 640 ? 96 : 120);
+    expect(panelBounds!.y + panelBounds!.height).toBeLessThanOrEqual(mascotBounds!.y);
+    expect(mascotBounds!.y + mascotBounds!.height).toBeLessThanOrEqual(dockBounds!.y);
+
+    await dock.click();
+    await expect(panel).toHaveCount(0);
+    await expect(dock).toBeVisible();
+    await expect(dock).toBeFocused();
+    await expect(dock).toHaveAttribute("aria-expanded", "false");
+    expect(await dock.boundingBox()).toEqual(dockBounds);
+    await expect(floatingTrigger.locator("img")).toHaveCount(0);
+    await dock.click();
+    await expect(panel).toBeVisible();
+    await expect(floatingTrigger.locator("img")).toBeVisible();
+    await page.getByRole("button", { name: "收起悬浮助理", exact: true }).click();
+    await expect(panel).toHaveCount(0);
+    await expect(dock).toBeFocused();
+    await expect(dock).toHaveAttribute("aria-expanded", "false");
+    await dock.click();
+    await expect(panel).toBeVisible();
 
     const shareToggle = page.getByRole("checkbox", { name: "随消息共享当前页面摘要" });
     await expect(shareToggle).toBeChecked();
@@ -94,6 +184,7 @@ for (const width of [1440, 375]) {
     if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
     await page.getByRole("button", { name: "账号体检", exact: true }).click();
     await expect(page).toHaveURL(/\/account-health$/);
+    await expect(shortcuts).toHaveCount(0);
     await expect(panel).toBeVisible();
     await input.fill("解释当前体检结果");
     await expect(panel.getByRole("button", { name: "发送", exact: true })).toBeEnabled();
@@ -102,6 +193,45 @@ for (const width of [1440, 375]) {
 
     await panel.getByRole("button", { name: "收起助理", exact: true }).click();
     await expect(panel).toHaveCount(0);
+    await expect(floatingTrigger.locator("img")).toBeVisible();
+    await expect(floatingTrigger).toBeFocused();
+    await expect(dock).toBeVisible();
+    await expect(dock).toHaveAttribute("aria-expanded", "true");
+    await page.getByRole("button", { name: "收起悬浮助理", exact: true }).click();
+    await expect(dock).toBeVisible();
+    await expect(dock).toHaveAttribute("aria-expanded", "false");
+
+    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
+    await page.locator('[data-primary-navigation-page="agent"]').click();
+    await expect(page).toHaveURL(/\/agent$/);
+    await expect(dock).toHaveCount(0);
+    await expect(page.locator("[data-workbench-shell]")).not.toHaveAttribute("data-agent-docked", "true");
+    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
+    await page.locator('[data-primary-navigation-page="account-health"]').click();
+    await expect(page).toHaveURL(/\/account-health$/);
+    await expect(dock).toBeVisible();
+    await expect(page.locator("[data-workbench-shell]")).toHaveAttribute("data-agent-docked", "true");
+  });
+}
+
+for (const reason of ["permission", "preference"] as const) {
+  test(`Calculator shortcuts remain available without the assistant: ${reason}`, async ({ page }) => {
+    test.setTimeout(90_000);
+    await mockWorkbench(page, "static");
+    await page.setViewportSize({ width: reason === "permission" ? 1440 : 375, height: 900 });
+    await page.route("**/api/account/feature-access", route => route.fulfill({ json: { agent: reason !== "permission", billing: true } }));
+    if (reason === "preference") await page.addInitScript(() => localStorage.setItem("riic-web-user-settings", JSON.stringify({ showFloatingAgent: false })));
+    await page.goto("/");
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 45_000 });
+    await expect(page.locator("[data-agent-floating-widget]")).toHaveCount(0);
+    const shortcuts = page.locator("[data-workbench-shortcuts]");
+    await expect(shortcuts).toBeVisible();
+    await expect(page.locator("[data-workbench-shell]")).toHaveAttribute("data-workbench-docked", "true");
+    await shortcuts.click();
+    await expect(page.getByRole("dialog")).toContainText("快捷键");
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(shortcuts).toBeFocused();
   });
 }
 
@@ -129,9 +259,13 @@ test("Restricted accounts cannot see the floating assistant or trigger its avail
   await expect.poll(() => chatReads).toBeGreaterThan(0);
   await page.locator("[data-agent-floating-trigger]").click();
   await expect(page.locator("[data-agent-floating-panel]")).toBeVisible();
+  await page.locator("[data-agent-floating-trigger]").click();
+  await page.getByRole("button", { name: "收起悬浮助理", exact: true }).click();
+  await expect(page.locator("[data-workbench-shell]")).toHaveAttribute("data-agent-docked", "true");
   allowed = false;
   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(page.locator("[data-agent-floating-widget]")).toHaveCount(0);
+  await expect(page.locator("[data-workbench-shell]")).not.toHaveAttribute("data-agent-docked", "true");
 });
 
 test("Floating assistant sends credit-required accounts to billing plans", async ({ page }) => {

@@ -15,7 +15,7 @@ export function GameSwitcher({ game, locale = "zh", targetOrigin }: { game: Game
     </Menu.Trigger>
     <Menu.Portal><Menu.Positioner side="bottom" align="start" sideOffset={6} collisionPadding={8} className={styles.positioner}>
       <Menu.Popup className={styles.popup}>
-        {(["arknights", "endfield"] as const).map(id => <Menu.LinkItem key={id} className={styles.item}
+        {(["arknights"] as const).map(id => <Menu.LinkItem key={id} className={styles.item}
           render={<a href={gameHref(id, origin, id === game ? undefined : targetOrigin)} aria-current={id === game ? "true" : undefined} />}
           onClick={event => { if (id === game) event.preventDefault(); }}>
           {id === "arknights" ? <Triangle aria-hidden="true" /> : <Hexagon aria-hidden="true" />}

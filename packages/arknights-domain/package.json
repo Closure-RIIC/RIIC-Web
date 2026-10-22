@@ -67,8 +67,8 @@
   },
   "dependencies": {
     "@riic/platform": "*",
-    "react": "^19.2.8",
-    "use-intl": "^4.14.2",
+    "react": "^19.3.1",
+    "use-intl": "^4.14.9",
     "xlsx": "https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz"
   }
 }

@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
 import { LanguageSwitch } from "@/i18n/client";
 import { FilingLinks } from "@riic/shell/FilingLinks";
 
-/** Shared public-document shell: help and release notes don't load the calculator. */
+/** Shared public-document shell for help and legal pages. */
 export function InfoPageLayout({ title, href, contentId, children, floatingControls }: {
   title: string;
   href: string;

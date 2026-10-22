@@ -3,6 +3,7 @@ import { DEFAULT_OPTIONS, STORAGE_KEY, manualTemplate, parseWorkspace, type Assi
 import type { EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { ENDFIELD_LOCALE_COOKIE, DISPLAY_STORAGE_KEY, readEndfieldColorMode, readEndfieldLocale, clearEndfieldStorage } from "./local-settings";
 import { completeSolverActivity, type SolverActivity, type SolverMessage } from "./solver-activity";
+import type { SklandSyncActivity, SklandSyncStatus } from "./skland-workspace";
 import { RESULT_STORAGE_KEY, encodeResultCache, restoreResultCache, workspaceKey } from "./result-cache";
 
 export const WEBSITE_SIGN_OUT_EVENT = "riic:endfield:sign-out";
@@ -23,11 +24,22 @@ function useWorkspaceState() {
   const [sklandSnapshot, setSklandSnapshot] = useState<EndfieldSnapshot | null>(null);
   const [busy, setBusy] = useState(false);
   const [activity, setActivity] = useState<SolverActivity | null>(null);
+  const [sklandSyncActivity, setSklandSyncActivity] = useState<SklandSyncActivity | null>(null);
   const activitySequence = useRef(0);
   const lastAssignments = useRef<Assignment[] | undefined>(undefined);
   const worker = useRef<Worker | null>(null);
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipSave = useRef(false);
+  useEffect(() => {
+    const clear = () => { setSklandSyncActivity(null); setSklandSnapshot(null); };
+    window.addEventListener(WEBSITE_SIGN_OUT_EVENT, clear);
+    window.addEventListener(WEBSITE_SESSION_CHANGE_EVENT, clear);
+    return () => { window.removeEventListener(WEBSITE_SIGN_OUT_EVENT, clear); window.removeEventListener(WEBSITE_SESSION_CHANGE_EVENT, clear); };
+  }, []);
+  function reportSklandSync(status: SklandSyncStatus) {
+    const warning = status.blocked || status.partial || !status.facilitiesApplied || status.unsupported.length || status.excluded.length;
+    setSklandSyncActivity({ id: ++activitySequence.current, kind: "skland", phase: warning ? "warning" : "success", status });
+  }
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -204,7 +216,7 @@ function useWorkspaceState() {
       throw new Error("无法清除全部本地数据，请检查浏览器存储权限。 / Could not clear local data; check browser storage permissions.");
     }
   }
-  return { workspace, update, ready, storageError, resultStorageError, repairStorage, clearLocalData, clearResult, locale, setLocale, colorMode, setColorMode, showImages, setShowImages, showDijiangBackdrop, setShowDijiangBackdrop, result, sklandSnapshot, setSklandSnapshot, busy, activity, retrySolve, run, cancel, t: (zh: string, en: string) => locale === "zh" ? zh : en };
+  return { workspace, update, ready, storageError, resultStorageError, repairStorage, clearLocalData, clearResult, locale, setLocale, colorMode, setColorMode, showImages, setShowImages, showDijiangBackdrop, setShowDijiangBackdrop, result, sklandSnapshot, setSklandSnapshot, sklandSyncActivity, reportSklandSync, setSklandSyncActivity, busy, activity, retrySolve, run, cancel, t: (zh: string, en: string) => locale === "zh" ? zh : en };
 }
 const Context = createContext<ReturnType<typeof useWorkspaceState> | null>(null);
 export function WorkspaceProvider({ children }: { children: ReactNode }) { const value = useWorkspaceState(); return <Context.Provider value={value}>{children}</Context.Provider>; }

@@ -26,6 +26,7 @@ function useAccountState(initialSession?: WebsiteSessionData | null) {
       owner.current = next?.user.id;
       setSession(next); setFailed(false);
       if (changedOwner) window.dispatchEvent(new Event(WEBSITE_SESSION_CHANGE_EVENT));
+      return next;
     } catch {
       if (current === revision.current) { setFailed(true); setSession(null); setSklandSnapshot(null); }
     } finally {

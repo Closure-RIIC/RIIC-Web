@@ -89,6 +89,10 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
   )
 }
 
+function CompactTabsList({ className, ...props }: Parameters<typeof TabsList>[0]) {
+  return <TabsList {...props} data-compact-tabs data-yeye-scroll={undefined} className={cn("max-w-full flex-wrap justify-start", className)} />
+}
+
 function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   return (
     <TabsPrimitive.Panel
@@ -99,4 +103,4 @@ function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   )
 }
 
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants }
+export { Tabs, TabsList, CompactTabsList, TabsTrigger, TabsContent, tabsListVariants }

@@ -17,6 +17,7 @@
     "./auth/email": "./src/auth/email.ts",
     "./auth/email-config": "./src/auth/email-config.ts",
     "./auth/email-transport": "./src/auth/email-transport.ts",
+    "./auth/endfield-access": "./src/auth/endfield-access.ts",
     "./auth/local-test-account": "./src/auth/local-test-account.ts",
     "./auth/native-route-policy": "./src/auth/native-route-policy.ts",
     "./auth/password-strength-hook": "./src/auth/password-strength-hook.ts",
@@ -102,17 +103,17 @@
     "./workspace-payload": "./src/workspace-payload.ts"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "^1.6.29",
+    "@better-auth/drizzle-adapter": "^1.7.12",
     "@riic/arknights-domain": "*",
     "@riic/contracts": "*",
     "@riic/endfield-skland": "*",
     "@riic/platform": "*",
-    "@tanstack/react-start": "1.169.1",
-    "better-auth": "^1.6.29",
-    "cookie": "^1.0.2",
-    "drizzle-orm": "^0.45.2",
-    "pg": "^8.23.0",
-    "resend": "^6.20.0",
+    "@tanstack/react-start": "1.169.4",
+    "better-auth": "^1.7.12",
+    "cookie": "^2.0.1",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1",
+    "resend": "^6.34.1",
     "skland-kit": "0.3.5"
   }
 }

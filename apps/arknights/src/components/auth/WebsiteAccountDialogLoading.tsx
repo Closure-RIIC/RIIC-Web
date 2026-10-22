@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations } from "use-intl";
+import { useLocale, useTranslations } from "use-intl";
 
 import { LoaderCircle } from "lucide-react";
 
@@ -15,6 +15,8 @@ interface WebsiteAccountDialogLoadingProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+export const websiteAuthDialogClassName = "!flex flex-col !top-[var(--auth-viewport-center,50%)] max-h-[calc(var(--auth-viewport-height,100dvh)-24px-env(safe-area-inset-top)-env(safe-area-inset-bottom))] !w-[min(460px,calc(100vw-24px))] !max-w-[min(460px,calc(100vw-24px))] min-w-0 overflow-hidden";
 
 export function WebsiteAccountLoadingStatus() {
   const intl = useTranslations();
@@ -44,6 +46,7 @@ export function WebsiteAccountDialogLoading({
   onOpenChange,
 }: WebsiteAccountDialogLoadingProps) {
   const intl = useTranslations();
+  const locale = useLocale();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -52,7 +55,8 @@ export function WebsiteAccountDialogLoading({
         data-website-account-dialog-loading
         aria-busy="true"
         finalFocus={false}
-        className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] min-w-0 overflow-x-hidden overflow-y-auto max-md:inset-0 max-md:h-dvh max-md:max-h-none max-md:!w-screen max-md:!max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:!rounded-none md:!top-1/2 md:!left-1/2 md:!-translate-x-1/2 md:!-translate-y-1/2 md:w-full md:max-w-[min(880px,calc(100vw-2rem))]"
+        closeLabel={locale === "en" ? "Close" : "关闭"}
+        className={websiteAuthDialogClassName}
       >
         <DialogHeader className="sr-only">
           <DialogTitle>{intl("components_auth_WebsiteAccountDialogLoading.websiteAccountSignIn")}</DialogTitle>

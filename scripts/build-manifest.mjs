@@ -20,7 +20,8 @@ export async function loadRouteBundleStats() {
     keys.forEach(visit);
     return [...new Set([...seen].map((key) => manifest[key].file).filter((file) => file.endsWith(".js")))];
   }
-  const pages = ["/", "/manual", "/training", "/mastery", "/recruitment", "/skills", "/skland", "/account"];
+  // Account bookmarks redirect to settings, where the sign-in dialog is hosted.
+  const pages = ["/", "/manual", "/training", "/mastery", "/recruitment", "/skills", "/skland", "/settings"];
   const stats = [];
   for (const route of pages) {
     const name = route === "/" ? "index" : route.slice(1);

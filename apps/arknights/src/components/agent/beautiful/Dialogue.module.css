@@ -12,18 +12,6 @@
 .headerSlot { flex-shrink: 0; }
 .header { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .headerActions { display: flex; flex-shrink: 0; align-items: center; gap: 12px; }
-.compactChat { height: 100%; gap: 0; padding: 8px; }
-.compactHeaderSlot { display: block; flex: 0 0 auto; }
-.compactHeader { display: flex; min-width: 0; min-height: 44px; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); padding: 0 0 8px; }
-.compactAvatar { width: 32px; height: 32px; flex: 0 0 auto; overflow: hidden; border-radius: 50%; }
-.compactTitle { min-width: 0; flex: 1; font-size: 13px; font-weight: 600; line-height: 18px; }
-.compactShare { display: flex; min-height: 36px; flex: 0 0 auto; align-items: center; gap: 5px; color: var(--muted-foreground); font-size: 10px; white-space: nowrap; }
-.compactShare input { accent-color: var(--primary); }
-.compactConversation { --conversation-edge: 10px; width: 100%; margin: 0; }
-.compactConversation > [data-slot="scroll-area-viewport"] { padding: 8px 4px; }
-.compactChat :global([data-agent-composer]) { padding: 8px 0 0; }
-.compactChat :global([data-agent-prompt-bar]) { gap: 6px; border-radius: 12px 4px 12px 12px; padding: 8px; }
-.compactChat .promptInput { height: 56px; min-height: 44px; font-size: 14px; line-height: 21px; }
 .modeTrigger { display: flex; align-items: center; justify-content: space-between; gap: 4px; height: 44px; width: 170px; min-width: 0; padding: 4px 10px; border: 1px solid var(--border); border-radius: 12px; background: var(--background); }
 .modeTrigger:hover { background: var(--muted); }
 .modeTrigger:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
@@ -169,12 +157,6 @@
   .promptControls, .promptTools { display: contents; }
   .promptTools > button { grid-column: 1; grid-row: 1; }
   .sendButton { grid-column: 3; grid-row: 1; width: 44px; height: 44px; }
-  .compactChat { gap: 0; padding: 6px; }
-  .compactHeader { min-height: 42px; gap: 6px; padding-bottom: 6px; }
-  .compactShare { gap: 3px; font-size: 9px; }
-  .compactConversation { --conversation-edge: 6px; }
-  .compactConversation > [data-slot="scroll-area-viewport"] { padding: 6px 2px; }
-  .compactChat .promptInput { height: 44px; min-height: 44px; padding: 8px 2px; font-size: 16px; line-height: 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -192,4 +174,55 @@
   .bubble::before { left: -12px; width: 16px; height: 20px; }
   .row[data-speaker="user"] .bubble::before { right: -12px; }
   .name { font-size: 14px; margin-bottom: 6px; }
+}
+
+/* The floating surface follows Beautiful UI's compact Chat and Prompt Bar. */
+.theme.compactChat { --dialogue-avatar-size: 28px; --dialogue-avatar-gap: 10px; height: 100%; gap: 0; padding: 0; }
+.compactHeaderSlot { display: block; flex: 0 0 auto; }
+.compactHeader { display: flex; min-width: 0; min-height: 60px; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.compactAvatar { --dialogue-avatar-size: 32px; flex: 0 0 auto; border-width: 2px; }
+.compactTitle { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; line-height: 20px; }
+.compactHeaderActions { display: flex; flex-shrink: 0; align-items: center; gap: 2px; }
+.compactHeaderAction { width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; color: var(--muted-foreground); }
+.compactContextBar { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 8px; min-height: 36px; padding: 0 14px; border-bottom: 1px solid color-mix(in oklab, var(--border) 65%, transparent); background: color-mix(in oklab, var(--muted) 30%, transparent); }
+.compactContextLabel { display: inline-flex; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 11px; }
+.compactShare { display: flex; min-height: 36px; flex: 0 0 auto; align-items: center; gap: 6px; color: var(--muted-foreground); font-size: 11px; white-space: nowrap; cursor: pointer; }
+.compactShare input { accent-color: var(--dialogue-accent); }
+.compactShare:has(input:disabled) { cursor: default; opacity: .6; }
+.compactConversation { --conversation-edge: 10px; width: 100%; margin: 0; }
+.compactConversation > [data-slot="scroll-area-viewport"] { gap: 20px; padding: 18px 14px; }
+.compactWelcome { display: grid; align-content: start; gap: 16px; margin-block: auto; padding-block: 8px; }
+.compactWelcome h2 { font-size: 18px; line-height: 26px; }
+.compactWelcome > p { font-size: 13px; line-height: 22px; }
+.compactContextCard { display: grid; gap: 5px; overflow-wrap: anywhere; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in oklab, var(--muted) 40%, transparent); color: var(--muted-foreground); font-size: 12px; line-height: 20px; }
+.compactContextCardTitle { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; color: var(--foreground); font-weight: 500; }
+.compactContextCardTitle svg { flex-shrink: 0; }
+.compactChat .row { gap: var(--dialogue-avatar-gap); }
+.compactChat .row .avatar { border-width: 2px; }
+.compactChat .bubble { max-width: calc(100% - var(--dialogue-avatar-size) - var(--dialogue-avatar-gap)); padding: 1px 0; border-radius: 0; background: transparent; box-shadow: none; }
+.compactChat .row[data-speaker="user"] .bubble { padding: 9px 12px; border-radius: 14px 14px 4px 14px; background: color-mix(in oklab, var(--muted) 80%, var(--card)); }
+.compactChat .name { margin-bottom: 4px; color: var(--foreground); font-size: 12px; font-weight: 600; line-height: 18px; }
+.compactChat .row[data-speaker="user"] .name { color: var(--muted-foreground); font-size: 11px; font-weight: 500; }
+.compactChat .body { gap: 8px; font-size: 13px; line-height: 1.7; }
+.compactChat :global(.agent-markdown) { font-size: 13px; line-height: 1.7; }
+.compactChat .decoration, .compactChat .signal, .compactChat .bubble::before { display: none; }
+.compactChat .promptDecoration { border-bottom-right-radius: 14px; }
+.compactChat .activity { margin-left: calc(var(--dialogue-avatar-size) + var(--dialogue-avatar-gap)); }
+.compactChat :global([data-agent-tool]) > :is(button, span) { border-color: color-mix(in oklab, var(--border) 75%, transparent); border-radius: 8px; background: color-mix(in oklab, var(--muted) 35%, transparent); }
+.compactChat :global([data-agent-composer]) { padding: 8px 10px 10px; }
+.compactChat :global([data-agent-prompt-bar]) { display: flex; gap: 6px; padding: 8px; border: 1px solid var(--border); border-radius: 14px; background: color-mix(in oklab, var(--muted) 55%, var(--card)); box-shadow: 0 1px 3px color-mix(in oklab, var(--foreground) 4%, transparent); }
+.compactChat .promptInput { height: 44px; min-height: 44px; max-height: min(160px, 25dvh); padding: 4px; font-size: 14px; line-height: 22px; }
+.compactChat .promptControls { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.compactChat .promptTools { display: flex; min-width: 0; flex-wrap: nowrap; align-items: center; gap: 2px; }
+.compactPersonaButton { max-width: 180px; height: 32px; gap: 4px; padding-inline: 8px; border-radius: 8px; color: var(--muted-foreground); font-size: 12px; font-weight: 400; }
+.compactChat .sendButton { width: 34px; height: 34px; flex-shrink: 0; border-radius: 50%; }
+
+@media (max-width: 767px) {
+  .compactHeader { min-height: 62px; gap: 8px; padding: 10px 12px; }
+  .compactHeaderAction { width: 40px; height: 40px; }
+  .compactContextBar { padding-inline: 12px; }
+  .compactConversation > [data-slot="scroll-area-viewport"] { padding: 14px 12px; }
+  .compactChat .promptInput { font-size: 16px; line-height: 24px; }
+  .compactChat .promptTools > button, .compactChat .sendButton { min-width: 40px; height: 40px; }
+  .compactPersonaButton { max-width: 160px; }
 }

@@ -42,6 +42,9 @@ async function dispatch(request: Request): Promise<Response> {
     return Response.json(parseWebsiteSession(await websiteSession(request)));
   }
   const endfield = /^\/api\/endfield\/skland\/([a-z-]+)$/.exec(url.pathname);
+  if (url.pathname === "/api/platform/endfield-access") {
+    return (await import("./auth/endfield-access")).endfieldAccessResponse(request);
+  }
   if (endfield) return (await import("./skland/endfield-api")).handleEndfieldSkland(request, endfield[1]);
   const account = /^\/api\/skland\/accounts\/([A-Za-z0-9_-]{1,128})$/.exec(url.pathname);
   const load = url.pathname.startsWith("/api/auth/") ? () => import("./http/auth/[...all]/route")

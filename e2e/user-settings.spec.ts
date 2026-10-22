@@ -144,6 +144,7 @@ for (const { width, locale } of [{ width: 1440, locale: "zh" }, { width: 375, lo
     await page.setViewportSize({ width, height: 900 });
     let expiresAt = new Date(Date.now() + 86_400_000).toISOString();
     let extensions = 0;
+    let rejectExtension = true;
     await page.route("**/api/auth/get-session", route => route.fulfill({ json: {
       user: { id: "settings-user", name: "Settings Doctor", email: "settings@example.test" },
       session: { expiresAt },
@@ -153,6 +154,7 @@ for (const { width, locale } of [{ width: 1440, locale: "zh" }, { width: 375, lo
     } }));
     await page.route("**/api/account/session/extend", route => {
       expect(route.request().method()).toBe("POST");
+      if (rejectExtension) return route.fulfill({ status: 503, json: { error: { message: "Session renewal unavailable" } } });
       extensions += 1;
       expiresAt = new Date(Date.parse(expiresAt) + 30 * 86_400_000).toISOString();
       return route.fulfill({ json: { data: { expiresAt } } });
@@ -206,8 +208,16 @@ for (const { width, locale } of [{ width: 1440, locale: "zh" }, { width: 375, lo
     await security.getByRole("button", { name: en ? "View and extend" : "查看与延长", exact: true }).click();
     const lifetime = page.getByRole("dialog", { name: en ? "Manage session lifetime" : "管理登录有效期", exact: true });
     await lifetime.getByRole("button", { name: en ? "Extend 30 days" : "延长 30 天", exact: true }).click();
-    await expect(lifetime.getByText(en ? "This device's session has been extended by 30 days." : "当前设备的登录有效期已延长 30 天。", { exact: true })).toBeVisible();
-    await lifetime.locator('[data-slot="dialog-footer"]').getByRole("button", { name: en ? "Close" : "关闭", exact: true }).click();
+    await expect(lifetime.getByRole("alert")).toContainText("Session renewal unavailable");
+    const activity = page.locator('[data-slot="live-activity"][data-activity-kind="account"]');
+    await expect(activity).toHaveCount(0);
+    expect(extensions).toBe(0);
+    rejectExtension = false;
+    await lifetime.getByRole("button", { name: en ? "Extend 30 days" : "延长 30 天", exact: true }).click();
+    await expect(lifetime).toHaveCount(0);
+    await expect(activity).toContainText(en ? "This device's session has been extended by 30 days." : "当前设备的登录有效期已延长 30 天。");
+    await activity.getByRole("button", { name: en ? "Dismiss notification" : "关闭提示", exact: true }).click();
+    await expect(activity).toHaveCount(0);
     await expect(security.getByText(/^(到期时间：|Expires:)/)).not.toHaveText(oldExpiry!);
     expect(extensions).toBe(1);
     const data = page.locator('[data-settings-group="data"]');

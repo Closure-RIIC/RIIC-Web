@@ -4,6 +4,17 @@ import { mockAnonymousWebsiteSession, mockApis, seedPreferences } from "./produc
 const user = { id: "sidebar-user", name: "测试博士的很长很长很长很长很长的昵称", email: "sidebar@example.test" };
 const session = { user, session: { expiresAt: "2099-01-01T00:00:00Z" } };
 
+test("legacy account links open a dialog over settings instead of a login page", async ({ page }) => {
+  await mockAnonymousWebsiteSession(page);
+  await mockApis(page);
+  await page.goto("/account");
+  await expect(page.getByRole("dialog", { name: "登录网站账号", exact: true })).toBeVisible({ timeout: 30000 });
+  await expect(page).toHaveURL(/\/settings$/);
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator("[data-user-settings-page]")).toBeVisible();
+});
+
 async function prepare(page: Page) {
   await mockApis(page);
   await seedPreferences(page);
@@ -52,6 +63,21 @@ for (const width of [1440, 375]) {
     await page.keyboard.press("Escape");
     await expect(menu).toHaveCount(0);
     await expect(trigger).toBeFocused();
+    const shell = await page.locator("[data-workbench-shell]").elementHandle();
+    await trigger.click();
+    await menu.getByRole("menuitem", { name: "更新日志", exact: true }).click();
+    await expect(page).toHaveURL(/\/changelog$/);
+    const changelog = page.locator('[data-app-scroll-area="changelog"] [data-changelog-page]');
+    await expect(changelog.getByRole("heading", { name: "更新日志", exact: true })).toBeVisible();
+    await expect(changelog).toContainText("暂时没有已发布的更新。");
+    expect(await shell!.evaluate(node => node.isConnected)).toBe(true);
+    await expect(page.locator('[data-primary-navigation-page="calculator"][aria-current="page"]')).toHaveCount(0);
+    if (width < 768) {
+      await expect(page.getByRole("dialog", { name: "Sidebar" })).toHaveCount(0);
+      await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    } else {
+      await expect(footer).toBeVisible();
+    }
     await footer.getByRole("button", { name: "设置", exact: true }).click();
     await expect(page).toHaveURL(/\/settings$/);
     if (width < 768) await expect(page.getByRole("dialog", { name: "Sidebar" })).toHaveCount(0);
@@ -109,6 +135,7 @@ test("collapsed footer stays keyboard accessible and hides restricted payment pl
   await page.keyboard.press("Enter");
   const menu = page.locator("[data-sidebar-account-menu]");
   await expect(menu.getByRole("menuitem")).toHaveText(["Changelog", "Sign out"]);
+  await expect(page.locator('[data-primary-navigation-page="billing"]')).toHaveCount(0);
   await page.keyboard.press("Home");
   await expect(menu.getByRole("menuitemradio", { name: "中文", exact: true })).toBeFocused();
   await page.keyboard.press("ArrowDown");
@@ -123,14 +150,14 @@ test("collapsed footer stays keyboard accessible and hides restricted payment pl
   await expect(footer.getByRole("link", { name: "Docs", exact: true })).toBeVisible();
 });
 
-test("anonymous footer opens login without leaving the current page and restores focus", async ({ page }) => {
+test("anonymous footer opens login directly without a menu and restores focus", async ({ page }) => {
   await prepare(page);
   await mockAnonymousWebsiteSession(page);
   await page.goto("/account-health");
   const trigger = page.locator("[data-sidebar-account-trigger]");
   await expect(trigger).toContainText("未登录");
   await trigger.click();
-  await page.getByRole("menuitem", { name: "登录网站账号", exact: true }).click();
+  await expect(page.locator("[data-sidebar-account-menu]")).toHaveCount(0);
   const dialog = page.getByRole("dialog", { name: "登录网站账号", exact: true });
   await expect(dialog).toBeVisible();
   await expect(page).toHaveURL(/\/account-health$/);

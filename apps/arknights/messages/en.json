@@ -94,7 +94,7 @@
     "mastery": "Mastery Planner",
     "trainingPlanner": "Training Calculator",
     "recruitment": "Recruitment",
-    "skills": "Skill Reference",
+    "skills": "Skill Wiki",
     "skland": "Skland Sync",
     "gacha": "Gacha Analysis",
     "training": "Training Advice",
@@ -581,7 +581,7 @@
     "restoringWebsiteAccount": "Restoring website account"
   },
   "components_pages_SkillQuery": {
-    "skillSearch": "Skill Search",
+    "skillSearch": "Skill Wiki",
     "operators": "operators",
     "clearFilters": "Clear filters",
     "searchOperatorSkillNameOrEffect": "Search operator, skill name, or effect",
@@ -648,7 +648,7 @@
   },
   "components_workbench_WorkbenchRouteSkeleton": {
     "loadingTrainingAdvice": "Loading training advice",
-    "loadingSkillReference": "Loading skill reference",
+    "loadingSkillReference": "Loading Skill Wiki",
     "loadingStatusCenter": "Loading status center"
   },
   "app_account_reset_password_reset_client": {

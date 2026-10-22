@@ -1,17 +1,19 @@
 "use client";
-import { localize as authText } from "../../../i18n/helpers/AuthValidation.ts";
+import { authText, authFeedbackText, authFlowText, messageRecord } from "./messages";
 import { useTranslations, useLocale } from "use-intl";
-import { messageRecord } from "@/i18n/translate";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { CheckCircle2 } from "lucide-react";
+import { authFailure, type AuthFailure } from "./auth-feedback";
+import { useAuthRequest } from "./use-auth-request";
+import styles from "./AuthForm.module.css";
+import { AuthAction } from "./AuthAction";
 
-import { passwordConfirmationError } from "@/components/auth/password-confirmation";
-import { PasswordInput } from "@/components/auth/password-input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { authClient } from "@/lib/auth-client";
+import { passwordConfirmationError } from "./password-confirmation";
+import { PasswordInput } from "./password-input";
+import { Label } from "@riic/ui-primitives/label";
+import { authClient } from "./client";
 import { evaluatePasswordStrength, isStrongPassword } from "@riic/arknights-domain/password-strength";
-import { LanguageSwitch } from "@/i18n/client";
 
 function ResetPasswordStrength({ value, id }: { value: string; id: string }) {
   const intl = useTranslations();
@@ -56,7 +58,14 @@ function ResetPasswordStrength({ value, id }: { value: string; id: string }) {
   );
 }
 
-export function ResetPassword() {
+export function ResetPasswordForm({ token, onSignIn, onForgotPassword, active = true, hideHeading = false, onTitleChange }: {
+  token: string;
+  onSignIn: () => void;
+  onForgotPassword: () => void;
+  active?: boolean;
+  hideHeading?: boolean;
+  onTitleChange?: (title: string) => void;
+}) {
   const intl = useTranslations();
   const locale = useLocale();
   const en = locale === "en";
@@ -64,19 +73,18 @@ export function ResetPassword() {
   const [passwordStrengthError, setPasswordStrengthError] = useState<string | null>(null);
   const [confirmPassword, setConfirmPassword] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState<AuthFailure | null>(token ? null : "expiredReset");
+  const request = useAuthRequest(active);
+  const { busy } = request;
+  const title = success ? authFlowText.text(en, "resetComplete") : intl("app_account_reset_password_reset_client.resetPassword");
+  useEffect(() => { onTitleChange?.(title); }, [onTitleChange, title]);
 
-  useEffect(() => {
-    const resetToken = new URLSearchParams(location.search).get("token")?.trim() ?? "";
-    setToken(resetToken);
-    if (!resetToken) setMessage(intl("app_account_reset_password_reset_client.theResetLinkIsInvalidOrMissingAToken"));
-  }, [intl, en]);
-
-  async function resetPassword() {
+  async function resetPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (success) return;
     if (!token) {
-      setMessage(intl("app_account_reset_password_reset_client.theResetLinkIsInvalidOrMissingAToken"));
+      setError("expiredReset");
       return;
     }
     if (!isStrongPassword(password)) {
@@ -90,18 +98,44 @@ export function ResetPassword() {
       return;
     }
     setConfirmPasswordError(null);
-    setBusy(true);
-    setMessage(null);
-    const result = await authClient.resetPassword({ newPassword: password, token });
-    setMessage(result.error?.message ?? (intl("app_account_reset_password_reset_client.passwordResetExistingSessionsHaveBeenRevokedReturnTo")));
-    setBusy(false);
+    const id = request.begin();
+    if (id === null) return;
+    setError(null);
+    try {
+      const result = await authClient.resetPassword({ newPassword: password, token });
+      if (!request.isCurrent(id)) return;
+      if (result.error) throw result.error;
+      setPassword("");
+      setConfirmPassword("");
+      setSuccess(true);
+    } catch (caught) {
+      if (request.isCurrent(id)) setError(authFailure(caught));
+    } finally { request.finish(id); }
   }
 
+  if (success || error === "expiredReset") return (
+    <div className={styles.panel} data-password-reset-form>
+      {!hideHeading ? <header className={styles.header}><h2 className={styles.title}>{title}</h2></header> : null}
+      <div className={`${styles.fields} ${styles.outcome}`} data-yeye-scroll="auto">
+        {success ? <CheckCircle2 className="size-8 text-emerald-600" aria-hidden="true" /> : null}
+        <p role={success ? "status" : "alert"} className={success ? styles.status : styles.error}>
+          {success ? intl("app_account_reset_password_reset_client.passwordResetExistingSessionsHaveBeenRevokedReturnTo") : authFeedbackText.text(en, "expiredReset")}
+        </p>
+      </div>
+      <div className={styles.actions} data-auth-actions>
+        {!success ? <AuthAction type="button" secondary onClick={onSignIn}>{intl("components_auth_WebsiteAccountPanel.backToSignIn")}</AuthAction> : null}
+        <AuthAction type="button" onClick={success ? onSignIn : onForgotPassword}>{authFlowText.text(en, success ? "signInWithNewPassword" : "requestNewReset")}</AuthAction>
+      </div>
+    </div>
+  );
+
   return (
-    <main className="mx-auto grid min-h-dvh max-w-md place-content-center gap-4 p-5">
-      <div className="flex items-center justify-between gap-4"><a href="/" className="inline-flex min-h-11 items-center text-sm underline underline-offset-4">{intl("app_account_reset_password_reset_client.backToScheduler")}</a><LanguageSwitch /></div>
-      <h1 className="text-2xl font-semibold">{intl("app_account_reset_password_reset_client.resetPassword")}</h1>
-      <p className="text-sm leading-6 text-muted-foreground">{intl("app_account_reset_password_reset_client.theNewPasswordMustContain8128CharactersAnd")}</p>
+    <form className={styles.panel} data-password-reset-form onSubmit={resetPassword} aria-busy={busy}>
+      <header className={styles.header}>
+        {!hideHeading ? <h2 className={styles.title}>{title}</h2> : null}
+        <p className={styles.description}>{intl("app_account_reset_password_reset_client.theNewPasswordMustContain8128CharactersAnd")}</p>
+      </header>
+      <div className={styles.fields} data-yeye-scroll="auto">
       <div className="grid gap-1.5">
         <Label htmlFor="reset-password">{intl("app_account_reset_password_reset_client.newPassword")}</Label>
         <PasswordInput
@@ -109,6 +143,8 @@ export function ResetPassword() {
           minLength={8}
           maxLength={128}
           value={password}
+          disabled={busy}
+          required
           onChange={(event) => {
             const nextPassword = event.target.value;
             setPassword(nextPassword);
@@ -143,6 +179,8 @@ export function ResetPassword() {
           minLength={8}
           maxLength={128}
           value={confirmPassword}
+          disabled={busy}
+          required
           onChange={(event) => {
             const nextConfirmation = event.target.value;
             setConfirmPassword(nextConfirmation);
@@ -169,14 +207,17 @@ export function ResetPassword() {
           {confirmPasswordError ?? (intl("app_account_reset_password_reset_client.enterTheNewPasswordAgain2"))}
         </p>
       </div>
-      <Button
-        type="button"
+      {error ? <p role="alert" className={styles.error}>{authFeedbackText.text(en, error)}</p> : null}
+      </div>
+      <div className={styles.actions} data-auth-actions>
+      <AuthAction type="button" secondary onClick={onSignIn}>{intl("components_auth_WebsiteAccountPanel.backToSignIn")}</AuthAction>
+      <AuthAction
+        type="submit"
         disabled={busy || !token || password.length < 8 || confirmPassword.length < 8}
-        onClick={() => void resetPassword()}
       >
         {busy ? (intl("app_account_reset_password_reset_client.resetting")) : (intl("app_account_reset_password_reset_client.resetPassword2"))}
-      </Button>
-      {message ? <p role="status" className="text-sm text-muted-foreground">{message}</p> : null}
-    </main>
+      </AuthAction>
+      </div>
+    </form>
   );
 }

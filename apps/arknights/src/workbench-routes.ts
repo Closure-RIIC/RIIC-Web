@@ -1,4 +1,4 @@
-export type AppPage = "calculator" | "manual" | "mower" | "training" | "training-planner" | "mastery" | "recruitment" | "inventory" | "gacha" | "skill-query" | "skland" | "account" | "account-health" | "settings" | "billing" | "agent";
+export type AppPage = "calculator" | "manual" | "mower" | "training" | "training-planner" | "mastery" | "recruitment" | "inventory" | "gacha" | "skill-query" | "skland" | "account" | "account-health" | "settings" | "billing" | "agent" | "changelog";
 
 export const SKLAND_TABS = ["overview", "inventory", "infrastructure"] as const;
 export type SklandTab = typeof SKLAND_TABS[number];
@@ -36,6 +36,7 @@ export const WORKBENCH_PAGE_PATHS: Record<AppPage, string> = {
   agent: "/agent",
   "account-health": "/account-health",
   settings: "/settings",
+  changelog: "/changelog",
 };
 
 export function workbenchPageFromPathname(pathname: string): AppPage {
@@ -54,6 +55,7 @@ export function workbenchPageFromPathname(pathname: string): AppPage {
   if (pathname === WORKBENCH_PAGE_PATHS.agent) return "agent";
   if (pathname === WORKBENCH_PAGE_PATHS["account-health"]) return "account-health";
   if (pathname === WORKBENCH_PAGE_PATHS.settings) return "settings";
+  if (pathname === WORKBENCH_PAGE_PATHS.changelog) return "changelog";
   return "calculator";
 }
 
