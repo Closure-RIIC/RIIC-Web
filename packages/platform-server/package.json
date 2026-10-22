@@ -17,6 +17,7 @@
     "./auth/email": "./src/auth/email.ts",
     "./auth/email-config": "./src/auth/email-config.ts",
     "./auth/email-transport": "./src/auth/email-transport.ts",
+    "./auth/endfield-access": "./src/auth/endfield-access.ts",
     "./auth/local-test-account": "./src/auth/local-test-account.ts",
     "./auth/native-route-policy": "./src/auth/native-route-policy.ts",
     "./auth/password-strength-hook": "./src/auth/password-strength-hook.ts",

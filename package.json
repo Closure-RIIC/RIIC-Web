@@ -98,7 +98,7 @@
     "check:arknights": "npm run check:types --workspace @riic/arknights",
     "test:workspace": "node --test scripts/workspace-layout.test.mjs",
     "test:platform:integration": "node scripts/test-platform-auth.mjs",
-    "test:platform": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test packages/contracts/*.test.ts packages/platform/*.test.ts packages/platform-server/src/request-context.test.ts packages/platform-server/src/response-cookies.test.ts packages/platform-server/src/snapshot-cache.test.ts packages/platform-server/src/proxy.test.ts packages/platform-server/src/auth/shared-session.test.ts",
+    "test:platform": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test packages/contracts/*.test.ts packages/platform/*.test.ts packages/platform-server/src/request-context.test.ts packages/platform-server/src/response-cookies.test.ts packages/platform-server/src/snapshot-cache.test.ts packages/platform-server/src/proxy.test.ts packages/platform-server/src/auth/shared-session.test.ts && node --experimental-strip-types --experimental-test-module-mocks --test packages/platform-server/src/auth/endfield-access.test.ts",
     "release:stage:app": "node scripts/stage-app-release.mjs"
   },
   "devDependencies": {
