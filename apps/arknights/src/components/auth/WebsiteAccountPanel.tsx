@@ -21,7 +21,7 @@ import {
   WEBSITE_ACCOUNT_NAME_MAX_LENGTH,
   WEBSITE_ACCOUNT_NAME_MIN_LENGTH,
   validateWebsiteAccountName,
-} from "@/account-name";
+} from "@riic/arknights-domain/account-name";
 import { accountOrbColor } from "@/account-orb";
 import { cloudSyncMetadataKey } from "@/cloud-sync";
 import type { CloudSyncStatus } from "@/cloud-sync";
@@ -46,11 +46,11 @@ import { FluidOrb } from "@/components/ui/fluid-orb";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
-import { PRIVACY_VERSION, TERMS_VERSION } from "@/legal-policy";
-import { isStrongPassword } from "@/password-strength";
-import { clearLocalProductData } from "@/persistence";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@riic/arknights-domain/legal-policy";
+import { isStrongPassword } from "@riic/arknights-domain/password-strength";
+import { clearLocalProductData } from "@riic/arknights-domain/persistence";
 import { CloudDataPanel } from "@/components/cloud/CloudDataPanel";
-import type { CloudWorkspaceData, SavedPlanData } from "@/types";
+import type { CloudWorkspaceData, SavedPlanData } from "@riic/arknights-domain/types";
 import { useWebsiteSession } from "@/website-session";
 
 type AuthMode = "signin" | "signup" | "forgot";

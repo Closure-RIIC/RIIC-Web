@@ -2,7 +2,7 @@ import "@tanstack/react-start/server-only";
 import { createHash } from "node:crypto";
 import { readFile, readdir, realpath, stat } from "node:fs/promises";
 import path from "node:path";
-import { getDatabasePool } from "../db/index.ts";
+import { getDatabasePool } from "@riic/platform-server/db";
 import { agentKnowledgeDir } from "./config.ts";
 import { loadAgentSkillManifest, loadKnowledgePolicy, readAgentSkill } from "./knowledge-policy.ts";
 import { readBuiltinAgentPersona } from "./persona-catalog.ts";

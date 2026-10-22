@@ -1,0 +1,19 @@
+# Include inside each trusted HTTPS application's existing server block.
+# Keep the existing TLS and real-client-IP configuration at that ingress.
+location ~ ^/api/(?:auth/|platform/|endfield/skland/|workspace$|account/data-consent$|account/session/extend$) {
+    proxy_pass http://127.0.0.1:5177;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For "";
+    proxy_set_header CF-Connecting-IP "";
+    proxy_set_header Connection "";
+    proxy_read_timeout 70s;
+    client_max_body_size 3m;
+    proxy_cache off;
+}
+# Arknights /api/skland/* can also target the platform directly. Endfield's
+# /api/skland/* is a compatibility adapter to /api/endfield/skland/*; keep it
+# on the Endfield application until its browser paths have been migrated.

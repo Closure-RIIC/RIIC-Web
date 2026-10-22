@@ -13,7 +13,7 @@ import {
   planTaskCancellationDecision,
   runPlanTaskPollAttempt,
 } from "@/plan-task-cancellation";
-import type { PublicPlanData } from "@/types";
+import type { PublicPlanData } from "@riic/arknights-domain/types";
 
 const STORAGE_KEY = "aic-plan-task-v1";
 const MANUAL_QUERY_INTERVAL_MS = 1_000;

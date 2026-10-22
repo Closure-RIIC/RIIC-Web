@@ -1,7 +1,7 @@
-import { saveFeedback } from "@/server/infra";
-import { websiteSession as readWebsiteSession } from "@/server/auth";
-import { activeSklandAccount, readSklandAccountStore } from "@/server/skland/http";
-import { sklandDataOwnerTag } from "@/server/skland/session";
+import { saveFeedback } from "@riic/platform-server/infra";
+import { websiteSession as readWebsiteSession } from "@riic/platform-server/auth";
+import { activeSklandAccount, readSklandAccountStore } from "@riic/platform-server/skland/http";
+import { sklandDataOwnerTag } from "@riic/platform-server/skland/session";
 import {
   assertSameOrigin,
   createRequestId,
@@ -11,7 +11,7 @@ import {
   requestClientIp,
   successResponse,
   validateFeedbackRequest,
-} from "@/server/api-contract";
+} from "@riic/platform-server/api-contract";
 
 
 export async function POST(request: Request) {

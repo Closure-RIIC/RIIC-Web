@@ -1,5 +1,5 @@
-import type { AdminSessionData, AdminUserData } from "../../types.ts";
-import { websiteAdminAccess } from "./admin-access.ts";
+import type { AdminSessionData, AdminUserData } from "@riic/arknights-domain/types";
+import { websiteAdminAccess } from "@riic/platform-server/auth/admin-access";
 import { sumPoints } from "../billing/points.ts";
 
 type AdminUserRecord = {

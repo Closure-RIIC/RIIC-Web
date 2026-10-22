@@ -30,18 +30,18 @@ test("database roles guard all Agent/billing APIs before reads, writes or model 
   const effect = async () => { effects++; return { totalPoints: 10 }; };
   class ApiError extends Error { code: string; constructor(code: string) { super(code); this.code = code; } }
   const statusFor = (code: string) => code === "AIC-AUTH-2008" ? 401 : code === "AIC-AUTH-2007" ? 404 : 403;
-  await t.mock.module(new URL("../api-contract.ts", import.meta.url), { namedExports: {
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/api-contract.ts", import.meta.url), { namedExports: {
     PublicApiError: ApiError, assertSameOrigin: () => {}, createRequestId: () => "test",
     enforceRateLimit: () => {},
     readJsonBody: (request: Request) => request.json(),
     failureResponse: (error: ApiError) => Response.json({ code: error.code }, { status: statusFor(error.code) }),
     successResponse: (data: unknown) => Response.json({ data }),
   } });
-  await t.mock.module(new URL("./index.ts", import.meta.url), { namedExports: { websiteSession: async () => session } });
-  await t.mock.module(new URL("../db/index.ts", import.meta.url), { namedExports: { getDatabase: () => ({
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/auth/index.ts", import.meta.url), { namedExports: { websiteSession: async () => session } });
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/db/index.ts", import.meta.url), { namedExports: { getDatabase: () => ({
     select: () => ({ from: () => ({ where: () => ({ limit: async () => record ? [record] : [] }) }) }),
   }), getDatabasePool: () => { effects++; throw new Error("Denied requests must not open the accounting pool"); } } });
-  await t.mock.module(new URL("../db/schema.ts", import.meta.url), { namedExports: { user: { id: "id", role: "role", banned: "banned" } } });
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/db/schema.ts", import.meta.url), { namedExports: { user: { id: "id", role: "role", banned: "banned" } } });
   await t.mock.module(new URL("../billing/service.ts", import.meta.url), { namedExports: {
     BillingError: class extends Error {}, createBillingOrder: effect, getWallet: effect,
     listBillingProducts: () => [], listLedger: effect, listOrders: effect, listUsage: effect,

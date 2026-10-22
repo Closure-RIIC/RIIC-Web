@@ -1,7 +1,7 @@
-import { describePlanArtifact, getPlanCacheSolverIdentity, runPlan } from "@/server/infra";
-import { validateLayoutJson } from "@/layout-validation";
-import { assertOperbox } from "@/operbox";
-import { normalizePersistedPlanData } from "@/persistence";
+import { describePlanArtifact, getPlanCacheSolverIdentity, runPlan } from "@riic/platform-server/infra";
+import { validateLayoutJson } from "@riic/arknights-domain/layout-validation";
+import { assertOperbox } from "@riic/arknights-domain/operbox";
+import { normalizePersistedPlanData } from "@riic/arknights-domain/persistence";
 import {
   acquireAnonymousSamplePlanSlot,
   acquirePlanSlot,
@@ -16,23 +16,23 @@ import {
   readJsonBody,
   requestClientIp,
   successResponse,
-} from "@/server/api-contract";
-import { safeDisplayName, toPublicPlanData } from "@/server/public-plan";
-import { isRotationProfile } from "@/rotation-settings";
-import type { BaseBlueprint, OperBoxEntry, PublicPlanData, RotationProfile, SavedPlanCalculationContext } from "@/types";
-import { activeSklandAccount, readSklandAccountStore } from "@/server/skland/http";
-import { sklandDataOwnerTag } from "@/server/skland/session";
-import { websiteSession as readWebsiteSession } from "@/server/auth";
-import { requireWebsiteSession } from "@/server/auth/authorization";
-import { localTestSession } from "@/server/auth/local-test-account";
+} from "@riic/platform-server/api-contract";
+import { safeDisplayName, toPublicPlanData } from "@riic/platform-server/public-plan";
+import { isRotationProfile } from "@riic/arknights-domain/rotation-settings";
+import type { BaseBlueprint, OperBoxEntry, PublicPlanData, RotationProfile, SavedPlanCalculationContext } from "@riic/arknights-domain/types";
+import { activeSklandAccount, readSklandAccountStore } from "@riic/platform-server/skland/http";
+import { sklandDataOwnerTag } from "@riic/platform-server/skland/session";
+import { websiteSession as readWebsiteSession } from "@riic/platform-server/auth";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
+import { localTestSession } from "@riic/platform-server/auth/local-test-account";
 import { planAccessMode } from "@/server/plan-access";
-import { recordPlanRunBestEffort } from "@/server/business-records";
-import { isAccountCloudSyncEnabled, isPlanTaskQueueEnabled, workspaceMasterKeys } from "@/server/business-config";
-import { accountDataConsent } from "@/server/data-consent";
-import { publicPlanSha256, resolveSavedPlanCalculationContext } from "@/server/plan-result-binding";
-import { validateSavedPlanCalculationContext } from "@/server/workspace-payload";
-import { planOperboxContentHmac } from "@/server/workspace-crypto";
-import type { AppErrorCode, PlanApiResponse } from "@/types";
+import { recordPlanRunBestEffort } from "@riic/platform-server/business-records";
+import { isAccountCloudSyncEnabled, isPlanTaskQueueEnabled, workspaceMasterKeys } from "@riic/platform-server/business-config";
+import { accountDataConsent } from "@riic/platform-server/data-consent";
+import { publicPlanSha256, resolveSavedPlanCalculationContext } from "@riic/platform-server/plan-result-binding";
+import { validateSavedPlanCalculationContext } from "@riic/platform-server/workspace-payload";
+import { planOperboxContentHmac } from "@riic/platform-server/workspace-crypto";
+import type { AppErrorCode, PlanApiResponse } from "@riic/arknights-domain/types";
 import {
   completePlanCache,
   evictPlanCacheKeys,
@@ -40,7 +40,7 @@ import {
   releasePlanCacheLease,
   resolvePlanCache,
   type PlanCacheResolution,
-} from "@/server/plan-cache";
+} from "@riic/platform-server/plan-cache";
 
 
 export async function POST(request: Request) {
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
       throw new PublicApiError("AIC-PLAN-3001");
     }
     if (accessMode === "trusted-sample") {
-      const sample = await (await import("@/server/infra")).getSampleOperbox();
+      const sample = await (await import("@riic/platform-server/infra")).getSampleOperbox();
       body.operbox = sample.operbox as OperBoxEntry[];
       body.sourceName = "243 全精二示例";
       const optionalSession = localTestSession(request) ?? await readWebsiteSession(request).catch(() => null);

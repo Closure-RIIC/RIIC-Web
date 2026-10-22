@@ -1,5 +1,5 @@
-import { parseWebsiteSession } from "../../../../packages/shell/account-session.ts";
-import { accountOrigin } from "./account-origin.ts";
+import { parseWebsiteSession } from "@riic/contracts/account-session";
+import { accountHeaders, accountOrigin } from "./account-origin.ts";
 
 /** Read-only bridge to the existing account service. No second auth database. */
 export async function readAccountSession(request: Request) {
@@ -15,7 +15,7 @@ export async function readAccountSession(request: Request) {
   if (!cookies) return Response.json(null, { headers });
   try {
     const upstream = await fetch(new URL("/api/auth/get-session?disableCookieCache=true&disableRefresh=true", origin), {
-      headers: { cookie: cookies, accept: "application/json" }, signal: AbortSignal.timeout(5000), redirect: "error",
+      headers: accountHeaders(request, { cookie: cookies, accept: "application/json" }), signal: AbortSignal.any([request.signal, AbortSignal.timeout(5000)]), redirect: "error",
     });
     if (!upstream.ok) throw new Error();
     const value = await upstream.json();

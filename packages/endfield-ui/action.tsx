@@ -1,5 +1,4 @@
 import type { ComponentPropsWithRef, ReactNode } from "react";
-import "./action.css";
 
 export type ActionVariant = "dark" | "yellow" | "red" | "white";
 export type ActionSize = "default" | "sm";

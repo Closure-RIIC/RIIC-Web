@@ -2,7 +2,7 @@ import { loadEnvConfig } from "./load-env.mjs";
 async function main() {
   loadEnvConfig(process.cwd());
   const { maintainAgentGateway, recordGatewayMaintenanceFailure } = await import("../apps/arknights/src/server/agent/gateway-maintenance.ts");
-  const { getDatabasePool } = await import("../apps/arknights/src/server/db/index.ts");
+  const { getDatabasePool } = await import("@riic/platform-server/db");
   const { recoverAgentRuns } = await import("../apps/arknights/src/server/billing/agent-accounting.ts");
   let stopped = false;
   process.once("SIGTERM", () => { stopped = true; }); process.once("SIGINT", () => { stopped = true; });

@@ -9,9 +9,9 @@ import {
   readJsonBody,
   requestClientIp,
   successResponse,
-} from "./api-contract";
-import { requireWebsiteSession } from "./auth/authorization";
-import { deleteSavedPlan, listSavedPlans, updateSavedPlan } from "./workspace";
+} from "@riic/platform-server/api-contract";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
+import { deleteSavedPlan, listSavedPlans, updateSavedPlan } from "@riic/platform-server/workspace";
 
 export type SavedPlanRoute =
   | "/api/account/saved-plans"

@@ -20,7 +20,7 @@ import { createMowerEditorDocument, MOWER_EDITOR_STORAGE_KEY, MOWER_FIXED_ROOMS,
 import type { MowerFacility } from "@/mower-plan";
 import { OPERATOR_CATALOG, operatorPresentationFor } from "@/operatorPortraits";
 import type { RoomRow } from "@/schedule";
-import type { OperBoxEntry } from "@/types";
+import type { OperBoxEntry } from "@riic/arknights-domain/types";
 
 const FIELD_CLASS = "h-9 border-border bg-background";
 const SELECT_CLASS = "h-9 min-w-0 border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";

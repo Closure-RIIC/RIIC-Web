@@ -63,6 +63,12 @@ export function normalizeShipSkills(shipSkills) {
     rec.value = value;
     rec.tier = s.postfix;
     rec.unlock = Number.isFinite(Number(s.unlock)) ? Number(s.unlock) : 0;
+    // 节点 ID 与森空岛 `talent.latestSpaceshipSkillNodes` 同一格式，按精确节点取技能时用它。
+    if (s.skillId) {
+      rec.nodeId = s.skillId;
+      rec.slot = Number.isFinite(Number(s.slot)) ? Number(s.slot) : null;
+      rec.level = Number.isFinite(Number(s.level)) ? Number(s.level) : null;
+    }
     const key = `${rec.room}|${rec.kind}|${rec.cat || ''}|${rec.unlock}`;
     const prev = bag.get(key);
     if (!prev || rec.value > prev.value) bag.set(key, rec);
@@ -74,6 +80,16 @@ export function normalizeShipSkills(shipSkills) {
 /** 按精英化阶段过滤技能档：`unlock ≤ elite` 的档位可用（同一 (room,kind,cat) 取最高档由调用方再挑） */
 export function skillsAtElite(skills, elite) {
   return (skills || []).filter((s) => (Number.isFinite(s.unlock) ? s.unlock : 0) <= elite);
+}
+
+/**
+ * 按森空岛的节点 ID 精确取技能档：`spaceship_skill_<charId>_<slot>_<level>`。
+ * 这是账号数据给出的**实际已解锁**档位，与精英化无关；找不到的节点静默跳过。
+ */
+export function skillsAtNodes(skills, nodeIds) {
+  if (!Array.isArray(nodeIds) || !nodeIds.length) return [];
+  const wanted = new Set(nodeIds);
+  return (skills || []).filter((s) => s.nodeId && wanted.has(s.nodeId));
 }
 
 /**

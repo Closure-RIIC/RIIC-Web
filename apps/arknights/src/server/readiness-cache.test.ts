@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createReadinessCache } from "./readiness-cache.ts";
-import type { PublicHealthData } from "../types.ts";
+import type { PublicHealthData } from "@riic/arknights-domain/types";
 
 const healthy: PublicHealthData = {
   status: "ready", plannerReady: true,

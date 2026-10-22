@@ -1,4 +1,4 @@
-import type { SkillAnnotationData } from "./types.ts";
+import type { SkillAnnotationData } from "@riic/arknights-domain/types";
 
 export const SKILL_ANNOTATION_MAX_LENGTH = 1000;
 

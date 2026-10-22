@@ -13,12 +13,12 @@ import {
 import { Check, RotateCcw } from "lucide-react";
 
 import fullOperboxJson from "../../../../../fixtures/operbox_full_e2.json" with { type: "json" };
-import operatorCatalogJson from "../../generated/arkntools/operator-catalog.json" with { type: "json" };
+import operatorCatalogJson from "@riic/arknights-domain/generated/arkntools/operator-catalog.json" with { type: "json" };
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OperatorSkillTooltip } from "@/components/OperatorSkillTooltip";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
-import type { AppLocale } from "@/i18n/config";
+import type { AppLocale } from "@riic/arknights-domain/i18n/config";
 import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 import { cn } from "@/lib/utils";
@@ -28,10 +28,10 @@ import {
   manualStageForEntry,
   maxEliteForRarity,
   type ManualOperboxStage,
-} from "@/manual-operbox";
+} from "@riic/arknights-domain/manual-operbox";
 import { OperatorIdentity, OperatorSearch, OperatorRarityFilter, OperatorProfessionFilter, OperatorRosterGrid, OPERATOR_PAGE_SIZE } from "@/components/operators/OperatorPickerParts";
 import { OwnedOperatorFilter } from "@/components/operators/OwnedOperatorFilter";
-import type { OperBoxEntry } from "@/types";
+import type { OperBoxEntry } from "@riic/arknights-domain/types";
 
 const PAGE_SIZE = OPERATOR_PAGE_SIZE;
 

@@ -1,4 +1,4 @@
-import { evaluateManual, solve, type SolverProgress } from "@shared/endfield-solver/index.mjs";
+import { evaluateManual, solve, type SolverProgress } from "@riic/endfield-solver/index.mjs";
 import type { SolverMessage, SolverRequest } from "./solver-activity";
 
 const send = (message: SolverMessage) => self.postMessage(message);

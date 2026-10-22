@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildSklandAppOpenUrl } from "../../../packages/platform/skland-auth-url.ts";
+import { buildSklandAppOpenUrl } from "@riic/platform/skland-auth-url";
 
 test("builds the official universal link for opening the Skland app", () => {
   assert.equal(

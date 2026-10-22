@@ -4,8 +4,8 @@ import {
   failureResponse,
   PublicApiError,
   successResponse,
-} from "@/server/api-contract";
-import { requireWebsiteSession } from "@/server/auth/authorization";
+} from "@riic/platform-server/api-contract";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
 import {
   cancelPlanTask,
   currentPlanTaskEtaSeconds,

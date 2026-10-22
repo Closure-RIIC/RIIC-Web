@@ -1,4 +1,4 @@
-import sourceManifestJson from "./generated/arkntools/source.json" with { type: "json" };
+import sourceManifestJson from "@riic/arknights-domain/generated/arkntools/source.json" with { type: "json" };
 
 type ProductAssetId = "lmd_orders" | "gold" | "experience" | "originium_shard" | "orundum" | "drone";
 type ProductAssetSource = "arkntools" | "game-resource";

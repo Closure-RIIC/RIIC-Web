@@ -1,6 +1,6 @@
-import { normalizeOperboxEntries } from "./operbox-normalization.ts";
-import { effectiveFiammettaSetting } from "./plan-presentation.ts";
-import type { BaseBlueprint, OperBoxEntry, PublicPlanData, RotationProfile, SklandSessionData } from "./types.ts";
+import { normalizeOperboxEntries } from "@riic/arknights-domain/operbox-normalization";
+import { effectiveFiammettaSetting } from "@riic/arknights-domain/plan-presentation";
+import type { BaseBlueprint, OperBoxEntry, PublicPlanData, RotationProfile, SklandSessionData } from "@riic/arknights-domain/types";
 
 export const SKLAND_TRAINING_INTERVAL_MS = 5 * 60_000;
 export const SKLAND_TRAINING_MANUAL_INTERVAL_MS = 30_000;

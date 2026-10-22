@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { chromium, expect } from "@playwright/test";
-import { catalog, DEFAULT_OPTIONS, STORAGE_KEY } from "../packages/endfield-solver/model.mjs";
+import { catalog, DEFAULT_OPTIONS, STORAGE_KEY } from "@riic/endfield-solver/model.mjs";
 import { RESULT_STORAGE_KEY } from "../apps/endfield/src/result-cache.ts";
 
 const origin = process.env.ENDFIELD_E2E_ORIGIN || "http://127.0.0.1:5176";

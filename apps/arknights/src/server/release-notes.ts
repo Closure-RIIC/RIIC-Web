@@ -1,9 +1,9 @@
 import "@tanstack/react-start/server-only";
 import { randomUUID } from "node:crypto";
 import { and, desc, eq, isNotNull } from "drizzle-orm";
-import { getDatabase } from "./db/index.ts";
-import { releaseNote } from "./db/schema.ts";
-import type { AdminRelease, ReleaseDraft, ReleaseEnvironment } from "../releases/types.ts";
+import { getDatabase } from "@riic/platform-server/db";
+import { releaseNote } from "@riic/platform-server/db/schema";
+import type { AdminRelease, ReleaseDraft, ReleaseEnvironment } from "@riic/arknights-domain/releases/types";
 import { assertReleasePublishable, compareReleaseVersions, ReleaseValidationError } from "../releases/validation.ts";
 
 export class ReleaseConflictError extends Error {}

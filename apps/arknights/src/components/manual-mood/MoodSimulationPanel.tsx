@@ -24,7 +24,7 @@ import { useGameCatalog } from "@/i18n/game-data-client";
 import { moodSummary, pointAt, segmentAt, shiftMoodSummaries } from "@/mood-simulation/presentation";
 import { MOOD_STORAGE_KEY, pruneSettings, readSettings } from "@/mood-simulation/settings";
 import { defaultMoodSettings, type MoodSettings, type MoodSimulationInput, type MoodSimulationResult, type MoodRate, type MoodWorkerResponse } from "@/mood-simulation/types";
-import type { BaseBlueprint, OperBoxEntry } from "@/types";
+import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
 
 function MoodSelect({label,value,options,onChange,className="w-44"}: {
   label:string;value:string;options:{value:string;label:string}[];onChange:(value:string) => void;className?:string;

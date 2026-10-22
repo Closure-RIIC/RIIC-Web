@@ -1,7 +1,7 @@
-import terms from "../../generated/arkntools/term-catalog.json" with { type: "json" };
-import catalog from "../../generated/arkntools/operator-catalog.json" with { type: "json" };
+import terms from "@riic/arknights-domain/generated/arkntools/term-catalog.json" with { type: "json" };
+import catalog from "@riic/arknights-domain/generated/arkntools/operator-catalog.json" with { type: "json" };
 import { MASTERY_ENVIRONMENTS } from "../../mastery.ts";
-import type { SklandStatusSnapshot } from "../../types.ts";
+import type { SklandStatusSnapshot } from "@riic/arknights-domain/types";
 
 const MEMBERS = { sami: "cc_g_sm", abyssal: "cc_g_abyssal", knights: "cc_tag_knight", defence: "cc_g_Defence", attack: "cc_g_Attack", siracusa: "cc_g_siracusa" } as const;
 export const ENVIRONMENT_WARNING = "自动读取状态可能存在误差或延迟，如果环境加成变动，记得跟我说哦。";

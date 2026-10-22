@@ -32,7 +32,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { rotationDescription } from "@/rotation-settings";
+import { rotationDescription } from "@riic/arknights-domain/rotation-settings";
 import type {
   AdminFeedbackDeleteData,
   AdminFeedbackDetailData,
@@ -44,7 +44,7 @@ import type {
   AdminPlanRunListData,
   AdminPlanRunRecordData,
   AdminReproductionData,
-} from "@/types";
+} from "@riic/arknights-domain/types";
 import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 import { RelatedFeedback } from "./related-feedback";

@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { register, registerHooks } from "node:module";
 import test from "node:test";
-import { PRIVACY_VERSION, TERMS_VERSION } from "../../../../packages/platform/legal-policy.ts";
-import { createSklandStoredAccount, sealOwnedSklandAccount, unsealOwnedSklandAccount, websiteUserOwnerTag } from "./skland/session.ts";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@riic/platform/legal-policy";
+import { createSklandStoredAccount, sealOwnedSklandAccount, unsealOwnedSklandAccount, websiteUserOwnerTag } from "@riic/platform-server/skland/session";
 
 register("../../../../scripts/ts-path-loader.mjs", import.meta.url);
 const hook = registerHooks({ resolve(specifier, context, nextResolve) {
@@ -14,7 +14,7 @@ test("restored Skland authorization works after one hour without a memory cache 
   let expired = false;
   let networkError = false;
   let grants = 0;
-  await context.mock.module(new URL("./api-contract.ts", import.meta.url), { namedExports: {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/api-contract.ts", import.meta.url), { namedExports: {
     PublicApiError: class extends Error {
       constructor(code: string, options?: { message?: string }) { super(options?.message ?? code); }
     },

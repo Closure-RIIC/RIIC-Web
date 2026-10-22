@@ -1,4 +1,4 @@
-import { Field, Section } from "@shared/endfield-ui";
+import { Field, Section } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
 import { ProductionSettings } from "./ProductionSettings";
 

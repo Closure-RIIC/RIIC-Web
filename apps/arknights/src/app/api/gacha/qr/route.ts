@@ -1,8 +1,8 @@
-import { assertSameOrigin, createRequestId, enforceRateLimit, PublicApiError, readJsonBody, requestClientIp, successResponse, failureResponse } from "@/server/api-contract";
-import { requireWebsiteSession } from "@/server/auth/authorization";
+import { assertSameOrigin, createRequestId, enforceRateLimit, PublicApiError, readJsonBody, requestClientIp, successResponse, failureResponse } from "@riic/platform-server/api-contract";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
 import { publicGachaError, startGachaScan } from "@/server/gacha-history";
-import { isCurrentPolicyConsent } from "@/legal-policy";
-import { assertSklandFeatureEnabled } from "@/server/skland/http";
+import { isCurrentPolicyConsent } from "@riic/arknights-domain/legal-policy";
+import { assertSklandFeatureEnabled } from "@riic/platform-server/skland/http";
 
 
 export async function POST(request: Request) {

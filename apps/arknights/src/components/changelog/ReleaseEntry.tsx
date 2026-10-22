@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { useLocale, useTranslations } from "use-intl";
-import type { ReleaseNote } from "@/releases/types";
+import type { ReleaseNote } from "@riic/arknights-domain/releases/types";
 import { ReleaseNotes } from "./ReleaseNotes";
 
 /** The same version entry is rendered publicly and in the administrator's preview. */

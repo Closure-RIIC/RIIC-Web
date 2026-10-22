@@ -2,7 +2,7 @@ import {
   operatorBuildingSkillList,
   type BuildingSkillPresentation,
 } from "../../operatorPortraits.ts";
-import type { TrainingAdviceState, TrainingAdviceTarget } from "../../types.ts";
+import type { TrainingAdviceState, TrainingAdviceTarget } from "@riic/arknights-domain/types";
 
 type SkillLevel = Pick<TrainingAdviceState, "elite" | "level">;
 

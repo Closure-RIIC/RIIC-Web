@@ -1,9 +1,14 @@
 import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
 import { DOCUMENT_CACHE_CONTROL } from "./server/http-cache-policy";
+import { withPlatformRequest } from "@riic/platform-server/request-context";
+import { forwardPlatformRequest, isPlatformPath } from "@riic/platform-server/proxy";
 
 export default createServerEntry({
   async fetch(request, options) {
-    const response = await handler.fetch(request, options);
+    if (process.env.PLATFORM_API_ORIGIN && isPlatformPath(new URL(request.url).pathname)) {
+      return forwardPlatformRequest(request);
+    }
+    const response = await withPlatformRequest(request, () => handler.fetch(request, options));
     if (response.headers.get("content-type")?.includes("text/html")) {
       response.headers.set("Cache-Control", DOCUMENT_CACHE_CONTROL);
       const acceptsGzip = (request.headers.get("accept-encoding") ?? "").split(",").some((part) => {

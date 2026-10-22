@@ -1,5 +1,5 @@
 import type { PlanTaskPollData, PlanTaskStatus } from "./api.ts";
-import type { PublicPlanData } from "./types.ts";
+import type { PublicPlanData } from "@riic/arknights-domain/types";
 
 const RUNNING_POLL_MS = 1_000;
 const NEAR_QUEUE_POLL_MS = 2_000;

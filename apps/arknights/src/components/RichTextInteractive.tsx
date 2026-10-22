@@ -6,7 +6,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { RichTextStatic } from "@/components/RichTextStatic";
 import { parseRichText, type RichTextNode } from "@/components/skill-query/rich-text";
 import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import termCatalogJson from "@/generated/arkntools/term-catalog.json" with { type: "json" };
+import termCatalogJson from "@riic/arknights-domain/generated/arkntools/term-catalog.json" with { type: "json" };
 
 type TermRecord = { id: string; name: string; desc: string; descText: string };
 const TERM_CATALOG = termCatalogJson as Record<string, TermRecord>;

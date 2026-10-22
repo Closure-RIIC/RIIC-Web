@@ -14,7 +14,7 @@ import { AppMotionProvider } from "@/components/MotionProvider";
 import { ReleaseDialog } from "@/components/changelog/ReleaseDialog";
 import { ReleaseEntry } from "@/components/changelog/ReleaseEntry";
 import { useAdminRequest } from "../admin-context";
-import type { AdminRelease, AdminReleaseList, ReleaseDraft } from "@/releases/types";
+import type { AdminRelease, AdminReleaseList, ReleaseDraft } from "@riic/arknights-domain/releases/types";
 import { parseReleaseDraft } from "@/releases/validation";
 import { ReleaseEditor } from "./release-editor";
 

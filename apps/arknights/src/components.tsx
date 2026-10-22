@@ -64,13 +64,13 @@ import {
   productLabel,
   roomKindLabel,
   tradeOrderFor,
-} from "./blueprint";
-import { presentRoomEfficiency, RoomEfficiencyPresentation } from "./efficiency";
+} from "@riic/arknights-domain/blueprint";
+import { presentRoomEfficiency, RoomEfficiencyPresentation } from "@riic/arknights-domain/efficiency";
 import {
   shiftTabLabel,
   shiftTeamSummary,
 } from "./rotation-presentation";
-import { DEFAULT_ROTATION_PROFILE } from "./rotation-settings";
+import { DEFAULT_ROTATION_PROFILE } from "@riic/arknights-domain/rotation-settings";
 import { RoomRow } from "./schedule";
 import { recyclingRoom, withRecyclingRoom, type RecyclingRoom } from "./recycling-room";
 import { RecyclingRoomNotice } from "./components/RecyclingRoomNotice";
@@ -101,7 +101,7 @@ import {
   PresetDef,
   RotationJson,
   RoomProduct,
-} from "./types";
+} from "@riic/arknights-domain/types";
 
 const OperatorSkillTooltip = lazy(() => import("@/components/OperatorSkillTooltip").then((module) => ({
   default: module.OperatorSkillTooltip,

@@ -157,9 +157,29 @@
 .ef-roster-identity p { display:flex; align-items:center; flex-wrap:wrap; gap:6px; margin-top:5px; color:var(--ef-muted); font-size:11px; }
 .ef-roster-rarity { color:var(--ef-ink); font-variant-numeric:tabular-nums; }
 .ef-roster-stage { flex-shrink:0; border-radius:6px; padding:4px 6px; font-size:11px; color:var(--ef-muted); background:var(--muted); }
-.ef-roster-controls { display:grid; gap:10px; margin-top:14px; }
-.ef-roster-elite { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; color:var(--ef-muted); }
-.ef-roster-elite>[data-slot=input-group] { width:96px; }
+/* 修改模式：左侧「精英化 / 下拉」上下排列，右侧四节点图，整体垂直居中 */
+.ef-roster-controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; margin-top:12px; }
+.ef-roster-elite { display:flex; flex-direction:column; align-items:flex-start; gap:3px; flex:0 0 auto; font-size:11px; line-height:1.2; color:var(--ef-muted); }
+.ef-roster-elite>label { white-space:nowrap; }
+/* FilterSelect 的输入框自带 flex:1 和边框；这里只要一个窄的定宽选择器 */
+.ef-roster-elite-select { width:56px; flex:0 0 auto; }
+.ef-roster-elite-select [data-filter-select] { width:56px; min-width:0; height:26px; padding-inline:6px; font-size:12px; }
+.ef-roster-elite-select [data-slot="input-group"] { width:56px; min-width:0; height:26px; }
+/* 四节点解锁图：上排 1_1→1_2，下排 2_1→2_2 整体右移；连接线自动撑满剩余宽度 */
+.ef-skill-nodes { display:grid; gap:4px; flex:1 1 auto; min-width:0; }
+.ef-skill-node-row { display:flex; align-items:center; gap:4px; }
+.ef-skill-node-row[data-row="1"] { margin-left:14px; }
+.ef-skill-node { display:inline-flex; flex-direction:column; align-items:center; gap:2px; padding:1px; border:1px solid var(--ef-line); border-radius:6px; background:color-mix(in oklab,var(--ef-ink) 4%,transparent); cursor:pointer; opacity:.45; transition:opacity .15s ease,border-color .15s ease,box-shadow .15s ease; }
+.ef-skill-node .ef-artwork { border-radius:3px; background:#343638; padding:1px; }
+.ef-skill-node small { font-size:8px; line-height:1; color:var(--ef-muted); font-variant-numeric:tabular-nums; }
+.ef-skill-node[data-active=true] { opacity:1; border-color:color-mix(in oklab,var(--ef-accent) 55%,var(--ef-line)); box-shadow:0 0 0 1px color-mix(in oklab,var(--ef-accent) 30%,transparent); }
+.ef-skill-node:not(:disabled):hover { opacity:1; }
+.ef-skill-node:focus-visible { outline:2px solid var(--ef-ink); outline-offset:2px; }
+.ef-skill-node:disabled { cursor:not-allowed; }
+.ef-skill-node-link { position:relative; flex:1 1 12px; min-width:12px; max-width:56px; height:2px; border-radius:2px; background:var(--ef-line); opacity:.5; }
+.ef-skill-node-link[data-active=true] { opacity:1; background:color-mix(in oklab,var(--ef-accent) 60%,var(--ef-line)); }
+.ef-skill-node-link::after { content:""; position:absolute; right:-2px; top:50%; translate:0 -50%; border-left:5px solid currentColor; border-block:3.5px solid transparent; color:var(--ef-line); }
+.ef-skill-node-link[data-active=true]::after { color:color-mix(in oklab,var(--ef-accent) 60%,var(--ef-line)); }
 .ef-roster-skills { margin-top:8px; }
 .ef-roster-skills>summary { display:flex; justify-content:space-between; align-items:center; gap:8px; font-size:12px; color:var(--ef-muted); min-height:36px; }
 .ef-roster-skills>summary>span::after { content:" ＋"; }

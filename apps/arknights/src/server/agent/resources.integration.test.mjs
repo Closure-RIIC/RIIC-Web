@@ -9,7 +9,7 @@ registerHooks({ resolve(specifier, context, next) { return specifier === "server
 const url = process.env.AUTH_INTEGRATION_DATABASE_URL;
 if (!url || !new URL(url).pathname.endsWith("_test")) throw new Error("Isolated *_test database required");
 process.env.DATABASE_URL = url;
-const { getDatabasePool } = await import("../db/index.ts");
+const { getDatabasePool } = await import("@riic/platform-server/db");
 const { changeAgentPolicy } = await import("../billing/admin.ts");
 const { activeAgentResources } = await import("./resources.ts");
 const { readKnowledgeDoc } = await import("./knowledge.ts");

@@ -147,7 +147,25 @@ export function validateRoster(list, tableNames) {
       throw new ConfigError('roster', `「${name}」的 elite 必须是 0–${MAX_ELITE} 的整数，收到 ${String(entry.elite)}`);
     }
     if (tableNames && !tableNames.has(name)) throw new ConfigError('roster', `技能表里找不到干员「${name}」`);
-    out.push({ name, elite });
+    // 森空岛同步/手动解锁写入的 `latestSpaceshipSkillNodes`：每个技能槽只存最高档。
+    // 缺省表示没有账号数据，由 elite 回退。同一槽出现多个节点时收敛为最高档（旧存档兼容）。
+    let nodes;
+    if (entry.latestSpaceshipSkillNodes !== undefined) {
+      const list = entry.latestSpaceshipSkillNodes;
+      if (!Array.isArray(list) || list.some((id) => typeof id !== 'string' || !id || id.length > 128)) {
+        throw new ConfigError('roster', `「${name}」的 latestSpaceshipSkillNodes 必须是节点 ID 字符串数组`);
+      }
+      const top = new Map();
+      for (const id of list) {
+        const match = /^spaceship_skill_.+_(\d+)_(\d+)$/.exec(id);
+        if (!match) throw new ConfigError('roster', `「${name}」的节点「${id}」不是基建技能节点`);
+        const slot = Number(match[1]);
+        const level = Number(match[2]);
+        if (!top.has(slot) || Number(match[2]) > top.get(slot).level) top.set(slot, { id, level });
+      }
+      nodes = [...top.values()].sort((a, b) => a.id.localeCompare(b.id)).map((item) => item.id);
+    }
+    out.push(nodes === undefined ? { name, elite } : { name, elite, latestSpaceshipSkillNodes: nodes });
   }
   return out;
 }

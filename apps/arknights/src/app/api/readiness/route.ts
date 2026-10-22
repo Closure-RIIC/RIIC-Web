@@ -1,4 +1,4 @@
-import { createRequestId, failureResponse, healthHttpStatus, successResponse } from "@/server/api-contract";
+import { createRequestId, failureResponse, healthHttpStatus, successResponse } from "@riic/platform-server/api-contract";
 import { probePublicHealth } from "@/server/public-health";
 import { createReadinessCache } from "@/server/readiness-cache";
 

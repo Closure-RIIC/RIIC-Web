@@ -1,10 +1,10 @@
 import "@tanstack/react-start/server-only";
 import { and, eq, sql } from "drizzle-orm";
-import { getDatabase } from "./db/index.ts";
-import { gachaArchive, gachaDraw } from "./db/schema.ts";
-import { PublicApiError } from "./api-contract";
+import { getDatabase } from "@riic/platform-server/db";
+import { gachaArchive, gachaDraw } from "@riic/platform-server/db/schema";
+import { PublicApiError } from "@riic/platform-server/api-contract";
 import { gachaDrawKey } from "./gacha-archive-validation.ts";
-import type { GachaHistory } from "../gacha-history.ts";
+import type { GachaHistory } from "@riic/arknights-domain/gacha-history";
 
 export async function listGachaArchives(owner: string) {
   return getDatabase().select({ uid: gachaArchive.uid, nickname: gachaArchive.nickname })

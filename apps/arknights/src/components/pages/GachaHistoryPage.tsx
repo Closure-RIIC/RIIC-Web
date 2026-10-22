@@ -14,7 +14,7 @@ import { SummaryMetric } from "@/components/ui/summary-metric";
 import { PRODUCT_ICON_URLS } from "@/product-assets";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { SklandPolicyConsent, currentSklandPolicyConsent } from "@/skland-policy-consent";
-import { groupGachaPools, groupGachaSixStarIntervals, visibleGachaIntervalKeys, type GachaHistory, type GachaRecord, type GachaSixStarInterval } from "@/gacha-history";
+import { groupGachaPools, groupGachaSixStarIntervals, visibleGachaIntervalKeys, type GachaHistory, type GachaRecord, type GachaSixStarInterval } from "@riic/arknights-domain/gacha-history";
 import { workbenchPageAccent } from "@/workbench-accent";
 import styles from "./GachaHistoryPage.module.css";
 import titleManifest from "@/generated/gacha-titles.json";

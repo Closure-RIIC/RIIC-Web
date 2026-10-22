@@ -1,5 +1,7 @@
 @import "tailwindcss" source("./");
 @import "tw-animate-css";
+@import "@riic/endfield-ui/theme.css";
+@import "@riic/endfield-ui/action.css";
 @import "../../../packages/shell/tokens.css";
 @import "../../../packages/shell/frame.css";
 @source "../../../packages/ui-primitives";
@@ -251,7 +253,7 @@
 .ef-roster-grid--compact .ef-roster-identity h3 { font-size:13px; }
 .ef-roster-grid--compact .ef-roster-identity p { margin-top:2px; }
 .ef-roster-grid--compact .ef-roster-controls { margin-top:8px; }
-.ef-roster-grid--compact .ef-roster-elite>[data-slot=input-group] { width:80px; }
+.ef-roster-grid--compact .ef-roster-elite>[data-filter-select] { width:88px; max-width:88px; }
 .ef-roster-editor .ef-roster-toolbar { margin-bottom:12px; }
 .ef-roster-editor .ef-roster-filters { gap:8px; }
 .ef-roster-choice { text-align:left; color:var(--ef-ink); }

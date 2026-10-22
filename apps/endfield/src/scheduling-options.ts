@@ -1,4 +1,4 @@
-import type { Options } from "@shared/endfield-solver/model.mjs";
+import type { Options } from "@riic/endfield-solver/model.mjs";
 
 /** Preserve production choices; only reduce plot counts when capacity shrinks. */
 export function withFacilityLevels(options: Options, levels: Options["levels"]): Options {

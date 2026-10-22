@@ -22,5 +22,7 @@ export default defineConfig({
     name: "endfield-development-dependency-cache",
     apply: "serve",
     config(config) { return { cacheDir: `node_modules/.vite/dev-${config.server?.port ?? 5176}` }; },
-  }, tailwindcss(), tanstackStart(), nitro({ preset: "node-server" }), react()],
+  }, tailwindcss(), tanstackStart(), nitro({ preset: "node-server", compressPublicAssets: true,
+    routeRules: { "/assets/**": { headers: { "Cache-Control": "public, max-age=31536000, immutable" } } },
+  }), react()],
 });

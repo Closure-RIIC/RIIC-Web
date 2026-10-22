@@ -1,8 +1,8 @@
 import "@tanstack/react-start/server-only";
 
-import { assertEmptyBody, assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "./api-contract";
-import { requireWebsiteSession } from "./auth/authorization";
-import { parseGameReportDays } from "../game-report.ts";
+import { assertEmptyBody, assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, requestClientIp, successResponse } from "@riic/platform-server/api-contract";
+import { requireWebsiteSession } from "@riic/platform-server/auth/authorization";
+import { parseGameReportDays } from "@riic/arknights-domain/game-report";
 import { latestGameReport, saveGameReport } from "./game-report-store";
 
 const ROUTE = "/api/account/game-report";

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createCalculatorProductionPresentation, createManualProductionPresentation } from "./production-summary-adapters.ts";
-import type { BaseBlueprint, MaaJson, RotationJson } from "./types.ts";
+import type { BaseBlueprint, MaaJson, RotationJson } from "@riic/arknights-domain/types";
 
 const layout: BaseBlueprint = {
   template: "243",

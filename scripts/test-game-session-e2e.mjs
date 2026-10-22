@@ -59,7 +59,7 @@ try {
     await page.locator('body[data-app-hydrated="true"]').waitFor();
     await name.waitFor();
     await settle();
-    assert.equal(requests, 0, "A successful SSR bootstrap must not repeat get-session on mount");
+    assert.equal(requests, 0, `${origin}: a successful SSR bootstrap must not repeat get-session on mount`);
 
     session = fixture();
     await focus();

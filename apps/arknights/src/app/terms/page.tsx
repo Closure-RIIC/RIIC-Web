@@ -3,7 +3,7 @@ import { Route as RootRoute } from "@/routes/__root";
 import { LegalDocument } from "@/components/legal/LegalDocument";
 import { LegalUpdates } from "@/components/legal/LegalUpdates";
 
-import { LEGAL_EFFECTIVE_DATE } from "@/legal-policy";
+import { LEGAL_EFFECTIVE_DATE } from "@riic/arknights-domain/legal-policy";
 
 export default function TermsPage() {
   const t = useTranslations("app_terms_page");

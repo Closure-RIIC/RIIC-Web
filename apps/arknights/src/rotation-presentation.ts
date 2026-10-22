@@ -1,4 +1,4 @@
-import type { RotationProfile, RotationShift } from "./types.ts";
+import type { RotationProfile, RotationShift } from "@riic/arknights-domain/types";
 
 export function formatPlanDuration(durationMs: number): string {
   const safeDurationMs = Number.isFinite(durationMs) ? Math.max(0, durationMs) : 0;

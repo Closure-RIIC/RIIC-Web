@@ -5,7 +5,7 @@ import { SolverVersion } from "./solver-version";
 import { DiagnosticsPanel } from "./diagnostics-panel";
 
 
-export default function AdminPage({ plannerReady, solverFingerprint }: { plannerReady: boolean; solverFingerprint: import("@/types").SolverPingFingerprint | null }) {
+export default function AdminPage({ plannerReady, solverFingerprint }: { plannerReady: boolean; solverFingerprint: import("@riic/arknights-domain/types").SolverPingFingerprint | null }) {
 
   return (
     <main id="admin-content" className={adminPageClass}>

@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from "react";
-import { operatorData, weaponData, workbenchArtwork } from "@shared/endfield-data";
+import { operatorData, weaponData, workbenchArtwork } from "@riic/endfield-data";
 import { useWorkspace } from "../state";
-import { record, text } from "@shared/endfield-skland/presentation";
+import { record, text } from "@riic/endfield-skland/presentation";
 
 export function GameArtwork({ src, name, className = "", size = 48, style }: { src?: string; name: string; className?: string; size?: number; style?: CSSProperties }) {
   const { showImages, ready } = useWorkspace();

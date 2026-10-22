@@ -6,7 +6,7 @@ import { PRODUCT_ICON_URLS } from "@/product-assets";
 import { Switch } from "@/components/ui/switch";
 import { localizedOperatorName, localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
-import type { MaaPlan } from "@/types";
+import type { MaaPlan } from "@riic/arknights-domain/types";
 
 export function PlanSupportSummary({ drones, target, portrait, automatic, onAutomaticChange, onChooseFacility, automaticDisabled = false }: {
   drones?: MaaPlan["drones"];

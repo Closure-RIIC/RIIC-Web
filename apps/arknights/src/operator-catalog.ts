@@ -1,4 +1,4 @@
-import operatorCatalogJson from "./generated/arkntools/operator-catalog.json" with { type: "json" };
+import operatorCatalogJson from "@riic/arknights-domain/generated/arkntools/operator-catalog.json" with { type: "json" };
 
 export interface OperatorBuildingSkillRef {
   index: number;

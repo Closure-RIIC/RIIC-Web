@@ -15,7 +15,7 @@ test("admin code endpoints require administrator access, origin checks and rate 
   let invalidInput = false;
   const calls: string[] = [];
   class PublicApiError extends Error {}
-  await t.mock.module(new URL("../api-contract.ts", import.meta.url), { namedExports: {
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/api-contract.ts", import.meta.url), { namedExports: {
     PublicApiError,
     createRequestId: () => "request-id",
     assertSameOrigin: () => { calls.push("origin"); if (!originAllowed) throw new Error("origin denied"); },
@@ -24,7 +24,7 @@ test("admin code endpoints require administrator access, origin checks and rate 
     successResponse: (data: unknown, requestId: string, status = 200) => Response.json({ success: true, data, requestId }, { status }),
     failureResponse: (error: Error) => Response.json({ error: error.message }, { status: error instanceof PublicApiError ? 400 : 403 }),
   } });
-  await t.mock.module(new URL("../auth/authorization.ts", import.meta.url), { namedExports: {
+  await t.mock.module(new URL("../../../../../packages/platform-server/src/auth/authorization.ts", import.meta.url), { namedExports: {
     requireWebsiteAdmin: async () => { calls.push("auth"); if (role !== "admin") throw new Error("access denied"); return { session: { user: { id: "authenticated-admin" } } }; },
   } });
   await t.mock.module(new URL("./admin-cdk.ts", import.meta.url), { namedExports: {

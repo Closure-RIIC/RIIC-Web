@@ -3,7 +3,7 @@ import { createHmac, randomUUID } from "node:crypto";
 import { and, count, eq, gt, gte, inArray, lt, or, sql } from "drizzle-orm";
 import type { Notification, PoolClient } from "pg";
 
-import type { BaseBlueprint, OperBoxEntry, PublicPlanData, SavedPlanCalculationContext } from "@/types";
+import type { BaseBlueprint, OperBoxEntry, PublicPlanData, SavedPlanCalculationContext } from "@riic/arknights-domain/types";
 
 import {
   MAX_CONCURRENT_AUTHENTICATED_PLAN_ADMISSIONS,
@@ -14,15 +14,15 @@ import {
   PLAN_START_WINDOW_MS,
   PublicApiError,
   type PlanAccountAdmissionClass,
-} from "./api-contract.ts";
-import { workspaceMasterKeys } from "./business-config.ts";
-import { getDatabase, getDatabasePool } from "./db/index.ts";
-import { planTask, planWorkerHeartbeat } from "./db/schema.ts";
+} from "@riic/platform-server/api-contract";
+import { workspaceMasterKeys } from "@riic/platform-server/business-config";
+import { getDatabase, getDatabasePool } from "@riic/platform-server/db";
+import { planTask, planWorkerHeartbeat } from "@riic/platform-server/db/schema";
 import {
   decryptPlanTaskPayload,
   encryptPlanTaskPayload,
   type PlanTaskEnvelope,
-} from "./workspace-crypto.ts";
+} from "@riic/platform-server/workspace-crypto";
 
 export type PlanTaskStatus = "buffered" | "pending" | "running" | "done" | "failed" | "cancelled";
 

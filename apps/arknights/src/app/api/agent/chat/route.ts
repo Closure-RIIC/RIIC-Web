@@ -1,7 +1,7 @@
 import { convertToModelMessages, createUIMessageStreamResponse, stepCountIs, streamText, type UIMessage } from "ai";
 import { appendFile } from "node:fs/promises";
 
-import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, successResponse } from "@/server/api-contract";
+import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, successResponse } from "@riic/platform-server/api-contract";
 import { requireFeatureSession } from "@/server/auth/feature-access";
 import { createAgentUsage, finalizeAgentUsage, getWallet } from "@/server/billing/service";
 import { agentLlmSettings, agentModelChoices } from "@/server/agent/config";

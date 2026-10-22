@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { parseTrainingAdviceReport } from "../training-advice-contract.ts";
+import { parseTrainingAdviceReport } from "@riic/arknights-domain/training-advice-contract";
 
 function completeReport() {
   return {

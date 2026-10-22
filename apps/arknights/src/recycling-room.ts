@@ -1,4 +1,4 @@
-import type { BaseBlueprint, BlueprintRoom } from "./types.ts";
+import type { BaseBlueprint, BlueprintRoom } from "@riic/arknights-domain/types";
 import type { RoomRow } from "./schedule.ts";
 
 export const RECYCLING_ROOM_ID = "recycling_station";

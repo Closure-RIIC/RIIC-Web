@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { Button } from "@/components/ui/button";
-import { DIAGNOSTIC_CATEGORIES, type DiagnosticReport } from "@/diagnostics";
+import { DIAGNOSTIC_CATEGORIES, type DiagnosticReport } from "@riic/arknights-domain/diagnostics";
 import { useAdminRequest } from "./admin-context";
 
 export function DiagnosticsPanel() {

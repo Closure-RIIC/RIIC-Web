@@ -1,4 +1,4 @@
-import { PageTitle, Section } from "@shared/endfield-ui";
+import { PageTitle, Section } from "@riic/endfield-ui";
 import { Link } from "@tanstack/react-router";
 import { useWorkspace } from "../state";
 import { RosterDialogTrigger } from "./RosterDialog";

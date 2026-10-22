@@ -1,6 +1,1 @@
-import { handleRefreshSklandStatus } from "@/server/skland/status-api";
-
-
-export async function POST(request: Request) {
-  return handleRefreshSklandStatus(request, "/api/skland/status/refresh");
-}
+export { POST } from "@riic/platform-server/http/skland/status/refresh/route";

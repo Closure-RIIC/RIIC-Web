@@ -15,17 +15,17 @@ test("archive APIs isolate owners and require verified role authorization for wr
   let reads = 0;
   const record = { id: "legacy", category: "normal", poolId: "p", poolName: "Pool", charId: "char", charName: "One", stars: 6, isNew: false, timestamp: Date.now() - 1000, pos: 0 };
   const history = { uid: "10001", nickname: "verified", records: [record], warnings: [], fetchedAt: new Date().toISOString() };
-  await context.mock.module(new URL("./api-contract.ts", import.meta.url), { namedExports: {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/api-contract.ts", import.meta.url), { namedExports: {
     assertSameOrigin: (request: Request) => { if (request.headers.get("origin") !== "https://riic.test") throw new Error("origin"); },
     createRequestId: () => "test", enforceRateLimit: () => {}, requestClientIp: () => "127.0.0.1",
     readJsonBody: (request: Request) => request.json(), PublicApiError: class extends Error {},
     successResponse: (data: unknown) => Response.json({ success: true, data }),
     failureResponse: () => Response.json({ success: false }, { status: 400 }),
   } });
-  await context.mock.module(new URL("./auth/authorization.ts", import.meta.url), { namedExports: {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/auth/authorization.ts", import.meta.url), { namedExports: {
     requireWebsiteSession: async () => { if (!signedIn) throw new Error("login"); return { user: { id: "owner" } }; },
   } });
-  await context.mock.module(new URL("./skland/http.ts", import.meta.url), { namedExports: { assertSklandFeatureEnabled: () => {} } });
+  await context.mock.module(new URL("../../../../packages/platform-server/src/skland/http.ts", import.meta.url), { namedExports: { assertSklandFeatureEnabled: () => {} } });
   await context.mock.module(new URL("./gacha-history.ts", import.meta.url), { namedExports: {
     gachaSession: (_request: Request, owner: string) => { assert.equal(owner, "owner"); return authorized ? { owner, roles: [{ uid: "10001", nickname: "verified" }] } : null; },
     fetchGachaHistory: async () => history, publicGachaError: (error: unknown) => error,

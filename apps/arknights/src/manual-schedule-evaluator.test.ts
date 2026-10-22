@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { evaluateManualSchedule } from "./manual-schedule-evaluator.ts";
 import { createManualScheduleDraft } from "./manual-schedule.ts";
-import type { BaseBlueprint, OperBoxEntry } from "./types.ts";
+import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
 
 const layout: BaseBlueprint = {
   template: "243",

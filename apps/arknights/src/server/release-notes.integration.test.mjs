@@ -21,8 +21,8 @@ process.env.BETTER_AUTH_URL = "http://127.0.0.1:5194";
 process.env.BETTER_AUTH_SECRET = "release-integration-secret-not-for-production-only";
 process.env.BETTER_AUTH_ADMIN_USER_IDS = "";
 process.env.BETA_PUBLIC_ORIGIN = "http://127.0.0.1:5194";
-const { getDatabasePool } = await import("./db/index.ts");
-const { getAuth } = await import("./auth/index.ts");
+const { getDatabasePool } = await import("@riic/platform-server/db");
+const { getAuth } = await import("@riic/platform-server/auth");
 const { handleAdminReleases, handleAdminReleaseMutation, handlePublicReleases } = await import("./release-notes-api.ts");
 const { createRelease, listPublishedReleases, mutateRelease, ReleaseConflictError } = await import("./release-notes.ts");
 

@@ -1,7 +1,7 @@
 import { MOWER_FIXED_ROOMS, MOWER_PRODUCTION_KEYS } from "./mower-editor.ts";
 import type { MowerFacility } from "./mower-plan.ts";
 import type { RoomGroup, RoomRow } from "./schedule.ts";
-import type { BaseBlueprint, RoomKind, RoomProduct } from "./types.ts";
+import type { BaseBlueprint, RoomKind, RoomProduct } from "@riic/arknights-domain/types";
 
 const fixedGroups: Record<string, RoomGroup> = {
   central: "control", meeting: "meeting", factory: "processing", contact: "hire", train: "training", recycle: "recycling",

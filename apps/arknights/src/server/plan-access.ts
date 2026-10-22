@@ -1,4 +1,4 @@
-import { PublicApiError } from "./api-contract.ts";
+import { PublicApiError } from "@riic/platform-server/api-contract";
 
 export type PlanAccessMode = "trusted-sample" | "authenticated";
 

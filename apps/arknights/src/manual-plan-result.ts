@@ -1,9 +1,9 @@
 import { estimateDailyProduction } from "./daily-production.ts";
-import { droneProductionForSelectedMaaTargets, equivalentGoldForRotation } from "./drone-production-core.ts";
+import { droneProductionForSelectedMaaTargets, equivalentGoldForRotation } from "@riic/arknights-domain/drone-production-core";
 import { manualScheduleToMaa, type ManualScheduleDraft } from "./manual-schedule.ts";
 import { evaluateManualSchedule, type ManualEvaluationWarning, type ManualRoomEvaluation } from "./manual-schedule-evaluator.ts";
 import { evaluateCrossFacilityEfficiency, evaluateManualScheduleWithNativeEngine } from "./manual-schedule-native-evaluator.ts";
-import type { BaseBlueprint, MaaJson, OperBoxEntry, RotationJson } from "./types.ts";
+import type { BaseBlueprint, MaaJson, OperBoxEntry, RotationJson } from "@riic/arknights-domain/types";
 
 export type ManualPlanResult = {
   kind: "manual";

@@ -12,7 +12,7 @@ import {
   operatorProfessionPresentation,
 } from "@/operatorPortraits";
 import { cn } from "@/lib/utils";
-import type { TrainingCombination, TrainingAdviceMember } from "@/types";
+import type { TrainingCombination, TrainingAdviceMember } from "@riic/arknights-domain/types";
 import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 

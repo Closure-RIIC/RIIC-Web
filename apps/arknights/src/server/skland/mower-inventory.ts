@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import type { SklandInventoryItem } from "@/types";
+import type { SklandInventoryItem } from "@riic/arknights-domain/types";
 
 type MowerItemRecord = Record<string, unknown>;
 

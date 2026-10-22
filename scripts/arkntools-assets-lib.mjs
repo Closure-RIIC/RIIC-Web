@@ -36,7 +36,7 @@ const MANAGED_PATHS = [
   "apps/arknights/public/images/operator-portraits",
   "apps/arknights/public/images/building-skills",
   "apps/arknights/public/images/products",
-  "apps/arknights/src/generated/arkntools",
+  "packages/arknights-domain/src/generated/arkntools",
   "fixtures/operbox_full_e2.json",
 ];
 

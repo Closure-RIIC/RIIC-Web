@@ -3,8 +3,8 @@
 import { lazy, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { SchedulePosterDocument } from "@/schedule-poster-document";
 import type { ManualScheduleDraft } from "@/manual-schedule";
+import type { SchedulePosterDocument } from "@/schedule-poster-document";
 import { POSTER_HANDOFF_KEY } from "@/schedule-poster-storage";
 import { DEFAULT_MANUAL_SHIFT_START_TIME } from "@/manual-schedule-config";
 import { useWorkbench } from "@/workbench-context";
@@ -26,12 +26,14 @@ export function ManualScheduleRoute() {
   useEffect(() => { callbacks.current = manual; }, [manual]);
   async function importPoster(document: SchedulePosterDocument) {
     const [{ posterDraftForManual }, { posterOperators }] = await Promise.all([
-      import("@/schedule-poster-document"), import("@/schedule-poster-model"),
+      import("@/schedule-poster-document"),
+      import("@/schedule-poster-operators"),
     ]);
+    const operators = posterOperators(document);
     setInitial(posterDraftForManual(document));
-    setPoster({ ...document, operators: posterOperators(document) }); setRevision(value => value + 1);
+    setPoster({ ...document, operators }); setRevision(value => value + 1);
     const shared = callbacks.current;
-    shared.onPosterWorkingBoxChange?.(posterOperators(document));
+    shared.onPosterWorkingBoxChange?.(operators);
     shared.onImportedLayoutChange(document.layout);
     shared.onShiftDurationsChange(document.draft.shifts.map(shift => shift.durationHours));
     shared.onShiftStartTimeChange(document.draft.startTime || DEFAULT_MANUAL_SHIFT_START_TIME);
@@ -44,19 +46,17 @@ export function ManualScheduleRoute() {
     async function restore() {
       try {
         const code = new URLSearchParams(window.location.search).get("code");
+        const handoffKey = `${POSTER_HANDOFF_KEY}.manual`;
+        const handoff = code ? null : window.sessionStorage.getItem(handoffKey);
+        if (!code && !handoff) { setReady(true); return; }
+        const { readPosterFile } = await import("@/schedule-poster-document");
         if (code) {
           if (!/^[a-f0-9]{12}$/.test(code)) throw new Error("作业码格式不正确。");
           const response = await fetch(`/api/schedule-posters?code=${code}`);
           const payload = await response.json(); if (!response.ok) throw new Error(payload.error);
-          const { readPosterFile } = await import("@/schedule-poster-document");
           await importPoster(readPosterFile(JSON.stringify(payload.document)));
         } else {
-          const value = window.sessionStorage.getItem(`${POSTER_HANDOFF_KEY}.manual`);
-          if (value) {
-            const { readPosterFile } = await import("@/schedule-poster-document");
-            await importPoster(readPosterFile(value));
-            window.sessionStorage.removeItem(`${POSTER_HANDOFF_KEY}.manual`);
-          }
+          if (handoff) { await importPoster(readPosterFile(handoff)); window.sessionStorage.removeItem(handoffKey); }
         }
       } catch (e) { setError(e instanceof Error ? e.message : "读取作业失败。"); }
       finally { setReady(true); }

@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { trainingCost } from "../apps/arknights/src/inventory-estimates.ts";
-import { manualLevelFor } from "../apps/arknights/src/manual-operbox.ts";
+import { manualLevelFor } from "@riic/arknights-domain/manual-operbox";
 
 type Operator = { id: string; own: boolean; rarity: number; elite: number; level: number };
 type Box = { operators: Operator[]; e2: Operator[] };

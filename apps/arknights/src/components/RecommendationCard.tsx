@@ -10,7 +10,7 @@ import { InfraTechnicalCard } from "@/components/InfraTechnicalCard";
 import { cn } from "@/lib/utils";
 import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion";
 import { operatorPortraitFor, operatorProfessionFor } from "@/operatorPortraits";
-import type { OperBoxEntry, UserProfileAction } from "@/types";
+import type { OperBoxEntry, UserProfileAction } from "@riic/arknights-domain/types";
 import { legacyTrainingTarget, trainingAdviceSkillSummary } from "@/components/training-advice/skill-selection";
 import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";

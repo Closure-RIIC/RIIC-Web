@@ -1,1 +1,1 @@
-export * from "../../../../../packages/ui-primitives/fluid-orb";
+export * from "@riic/ui-primitives/fluid-orb";

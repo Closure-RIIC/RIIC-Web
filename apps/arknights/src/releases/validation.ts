@@ -1,4 +1,4 @@
-import type { ReleaseDraft, ReleaseSection, ReleaseText } from "./types.ts";
+import type { ReleaseDraft, ReleaseSection, ReleaseText } from "@riic/arknights-domain/releases/types";
 
 export const RELEASE_KINDS = ["added", "improved", "fixed"] as const;
 export const RELEASE_LIMITS = { title: 120, item: 500, itemsPerSection: 12, bodyBytes: 128 * 1024 } as const;

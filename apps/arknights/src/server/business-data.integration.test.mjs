@@ -11,13 +11,13 @@ import { URL } from "node:url";
 import { Pool } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 
-import { buildAdminSolverTrendQuery } from "./admin-solver-metrics-trend.ts";
-import * as schema from "./db/schema.ts";
+import { buildAdminSolverTrendQuery } from "@riic/platform-server/admin-solver-metrics-trend";
+import * as schema from "@riic/platform-server/db/schema";
 import {
   decryptOperboxSnapshot,
   encryptOperboxSnapshot,
   encryptPlanTaskPayload,
-} from "./workspace-crypto.ts";
+} from "@riic/platform-server/workspace-crypto";
 
 const databaseUrl = process.env.AUTH_INTEGRATION_DATABASE_URL?.trim();
 if (!databaseUrl) throw new Error("AUTH_INTEGRATION_DATABASE_URL is required for the business-data integration test.");
@@ -78,16 +78,16 @@ const {
   updateFeedbackRecords,
   findFeedbackRecord,
   updatePlanRunArtifactBestEffort,
-} = await import("./business-records.ts");
-const { getDatabase } = await import("./db/index.ts");
+} = await import("@riic/platform-server/business-records");
+const { getDatabase } = await import("@riic/platform-server/db");
 const {
   createPlanCacheKey, resolvePlanCache, lookupPlanCache, completePlanCache,
   releasePlanCacheLease, recordPlanCacheReferenceBestEffort, evictSklandPlanCaches,
-} = await import("./plan-cache.ts");
+} = await import("@riic/platform-server/plan-cache");
 const {
   resumePendingPlanArtifactFinalizations,
   waitForPlanArtifactFinalizers,
-} = await import("./infra.ts");
+} = await import("@riic/platform-server/infra");
 
 test.after(async () => {
   await getDatabase().$client.end().catch(() => undefined);

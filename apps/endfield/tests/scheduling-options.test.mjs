@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { DEFAULT_OPTIONS, validateOptions } from "../../../packages/endfield-solver/model.mjs";
+import { DEFAULT_OPTIONS, validateOptions } from "@riic/endfield-solver/model.mjs";
 import { movePriority, withFacilityLevels } from "../src/scheduling-options.ts";
 
 test("facility sync preserves production choices and budgets while respecting new capacity", () => {

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { chromium, expect } from "@playwright/test";
-import { DEFAULT_OPTIONS, STORAGE_KEY, catalog } from "../packages/endfield-solver/model.mjs";
+import { DEFAULT_OPTIONS, STORAGE_KEY, catalog } from "@riic/endfield-solver/model.mjs";
 
 const arknights = process.env.ARKNIGHTS_E2E_ORIGIN || "http://127.0.0.1:5175";
 const endfield = process.env.ENDFIELD_E2E_ORIGIN || "http://127.0.0.1:5176";

@@ -12,15 +12,15 @@ test("public release handlers cache only published DTOs, invalidate mutations an
   });
   context.after(() => marker.deregister());
   let environment = "local";
-  await context.mock.module(new URL("../deployment.ts", import.meta.url), {
+  await context.mock.module(new URL("../../../../packages/arknights-domain/src/deployment.ts", import.meta.url), {
     namedExports: { appDeploymentEnvironment: () => environment },
   });
-  await context.mock.module(new URL("./auth/authorization.ts", import.meta.url), {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/auth/authorization.ts", import.meta.url), {
     namedExports: { requireWebsiteAdmin: async () => ({ session: { user: { id: "admin" } } }) },
   });
   let rateLimited = false;
   let limits = 0;
-  await context.mock.module(new URL("./api-contract.ts", import.meta.url), {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/api-contract.ts", import.meta.url), {
     namedExports: {
       assertSameOrigin: () => {}, createRequestId: () => "request", requestClientIp: () => "test",
       enforceRateLimit: () => { limits++; if (rateLimited) throw new Error("rate limited"); },
@@ -78,17 +78,17 @@ test("skill annotation handlers cache sanitized data and invalidate create, upda
     },
   });
   context.after(() => marker.deregister());
-  await context.mock.module(new URL("../deployment.ts", import.meta.url), {
+  await context.mock.module(new URL("../../../../packages/arknights-domain/src/deployment.ts", import.meta.url), {
     namedExports: { appDeploymentEnvironment: () => "local" },
   });
   await context.mock.module(new URL("../operatorPortraits.ts", import.meta.url), {
     namedExports: { OPERATOR_CATALOG: [{ id: "operator", buildingSkills: [{ id: "skill" }] }] },
   });
-  await context.mock.module(new URL("./auth/authorization.ts", import.meta.url), {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/auth/authorization.ts", import.meta.url), {
     namedExports: { requireWebsiteAdmin: async () => ({ session: { user: { id: "admin" } } }) },
   });
   let limited = false;
-  await context.mock.module(new URL("./api-contract.ts", import.meta.url), {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/api-contract.ts", import.meta.url), {
     namedExports: {
       assertEmptyBody: async () => {}, assertSameOrigin: () => {}, createRequestId: () => "request",
       requestClientIp: () => "test", enforceRateLimit: () => { if (limited) throw new Error("limit"); },
@@ -97,7 +97,7 @@ test("skill annotation handlers cache sanitized data and invalidate create, upda
       PublicApiError: class extends Error {}, readJsonBody: (request: Request) => request.json(),
     },
   });
-  await context.mock.module(new URL("./db/schema.ts", import.meta.url), {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/db/schema.ts", import.meta.url), {
     namedExports: { skillAnnotation: { id: "id", operatorId: "operatorId", skillId: "skillId", updatedAt: "updatedAt" } },
   });
   let reads = 0;
@@ -113,7 +113,7 @@ test("skill annotation handlers cache sanitized data and invalidate create, upda
     update: () => ({ set: (fields: Partial<typeof record>) => ({ where: () => ({ returning: async () => { record = { ...record, ...fields }; return [{ ...record }]; } }) }) }),
     delete: () => ({ where: () => ({ returning: async () => { deleted = true; return [{ id: record.id }]; } }) }),
   };
-  await context.mock.module(new URL("./db/index.ts", import.meta.url), { namedExports: { getDatabase: () => db } });
+  await context.mock.module(new URL("../../../../packages/platform-server/src/db/index.ts", import.meta.url), { namedExports: { getDatabase: () => db } });
   const api = await import("./skill-annotations-api.ts");
   const request = (method = "GET", body?: unknown) => new Request("https://example.test/api/skill-annotations", {
     method, ...(body === undefined ? {} : { body: JSON.stringify(body) }),

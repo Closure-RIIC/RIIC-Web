@@ -2,10 +2,10 @@ import { randomUUID } from "node:crypto";
 import { readFile, readdir, lstat, copyFile, chmod, rename, unlink, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { eq } from "drizzle-orm";
-import { getDatabase } from "../db/index.ts";
-import { qualityBundle } from "../db/schema.ts";
-import { InfraCliServeClient } from "../serve-client.ts";
-import { inspectPlanComputeCapability } from "../plan-protocol.ts";
+import { getDatabase } from "@riic/platform-server/db";
+import { qualityBundle } from "@riic/platform-server/db/schema";
+import { InfraCliServeClient } from "@riic/platform-server/serve-client";
+import { inspectPlanComputeCapability } from "@riic/platform-server/plan-protocol";
 import { ensurePrivateDirectory, hash, qualityPath, readArtifact, writeArtifact } from "./storage.ts";
 
 type Manifest = { id: string; executableSha256: string; files: Record<string, string>; embeddedData: boolean };
