@@ -1,1 +1,1 @@
-export { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants } from "@riic/ui-primitives/tabs";
+export { Tabs, TabsList, CompactTabsList, TabsTrigger, TabsContent, tabsListVariants } from "@riic/ui-primitives/tabs";

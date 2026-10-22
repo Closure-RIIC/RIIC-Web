@@ -1,8 +1,13 @@
-import { withPageScrollbars } from "@/components/ui/page-scrollbar-boundary";
-import { createFileRoute } from "@tanstack/react-router";
-import Page from "@/app/account/reset-password/page";
-import { pageHead } from "@/i18n/metadata";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+
 export const Route = createFileRoute("/account_/reset-password")({
-  head: ({ matches }) => pageHead(matches, "account_reset_password"),
-  component: withPageScrollbars(Page),
+  beforeLoad: ({ location }) => {
+    const previous = new URLSearchParams(location.searchStr);
+    const next = new URLSearchParams({ auth: "reset-password" });
+    for (const key of ["token", "error"]) {
+      const value = previous.get(key);
+      if (value) next.set(key, value);
+    }
+    throw redirect({ href: `/?${next}`, replace: true });
+  },
 });

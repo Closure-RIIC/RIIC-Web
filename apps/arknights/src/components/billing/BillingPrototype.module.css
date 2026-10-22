@@ -1,13 +1,4 @@
 .page { --dialogue-accent: #ffd800; --billing-highlight: #7c3aed; }
-.card {
-  position: relative;
-  isolation: isolate;
-  min-width: 0;
-  padding: 24px;
-  border-radius: 22px;
-  background: var(--muted);
-  box-shadow: 0 6px 18px rgb(69 55 21 / .055), 0 1px 3px rgb(69 55 21 / .04);
-}
 .wallet { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); align-items: center; gap: 32px; }
 .walletDetails { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin: 0; padding-left: 32px; border-left: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent); }
 .walletDetails > div { min-width: 0; }
@@ -71,7 +62,6 @@
   .activity { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 639px) {
-  .card { padding: 18px; border-radius: 16px; }
   .wallet { grid-template-columns: minmax(0, 1fr); gap: 20px; }
   .walletDetails { gap: 16px; padding: 20px 0 0; border-left: 0; border-top: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent); }
   .balance { font-size: 28px; }

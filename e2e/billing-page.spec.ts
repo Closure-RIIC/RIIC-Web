@@ -44,7 +44,7 @@ test("pending orders expire and can be removed while paid history remains", asyn
 });
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
-  test(`payment plans require sidebar login and resume navigation at ${viewport.width}px`, async ({ page }) => {
+  test(`sidebar login preserves the page before navigating to payment plans at ${viewport.width}px`, async ({ page }) => {
     let authenticated = false;
     const user = { id: "billing-user", name: "测试用户", email: "billing@example.test", emailVerified: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
     await page.route("**/api/auth/get-session", route => route.fulfill({ json: authenticated ? {
@@ -69,11 +69,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     await page.goto("/account-health");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     if (viewport.width < 768) await page.locator("[data-app-topbar]").getByRole("button", { name: "Toggle Sidebar" }).click();
-    await sidebarNavigation(page, "付费计划");
     const accountItem = page.locator("[data-sidebar-sign-in]");
-    await expect(accountItem.locator("xpath=following-sibling::*[1]")).toContainText("付费计划");
     const navigation = page.getByRole("menuitem", { name: "付费计划", exact: true });
-    await (await sidebarNavigation(page, "付费计划")).click();
+    await accountItem.click();
+    await expect(page.locator("[data-sidebar-account-menu]")).toHaveCount(0);
     const loginDialog = page.getByRole("dialog", { name: "登录网站账号", exact: true });
     await expect(loginDialog).toBeVisible();
     await expect(page).toHaveURL(/\/account-health$/);
@@ -83,12 +82,16 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     await expect(loginDialog).toHaveCount(0);
     await expect(page).toHaveURL(/\/account-health$/);
     if (viewport.width < 768) await page.locator("[data-app-topbar]").getByRole("button", { name: "Toggle Sidebar" }).click();
-    await (await sidebarNavigation(page, "付费计划")).click();
+    await accountItem.click();
     await loginDialog.getByRole("textbox", { name: "邮箱", exact: true }).fill(user.email);
     await loginDialog.getByLabel("密码", { exact: true }).fill("secure-password-1");
     await loginDialog.getByRole("button", { name: "登录", exact: true }).click();
-    await expect(page).toHaveURL(/\/billing$/);
     await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page).toHaveURL(/\/account-health$/);
+    expect(billingRequests).toBe(0);
+    if (viewport.width < 768) await page.locator("[data-app-topbar]").getByRole("button", { name: "Toggle Sidebar" }).click();
+    await (await sidebarNavigation(page, "付费计划")).click();
+    await expect(page).toHaveURL(/\/billing$/);
     await expect(page.getByRole("heading", { name: "付费计划", exact: true })).toBeVisible();
     await expect(page.locator("[data-billing-prototype]")).toBeVisible();
     await expect(page.getByRole("heading", { name: "10 元积分包" })).toBeVisible();
@@ -121,7 +124,9 @@ test("payment plans provide an account login entry when signed out", async ({ pa
   await page.goto("/billing");
   await expect(page.getByRole("heading", { name: "付费计划", exact: true })).toBeVisible();
   await expect(page.getByText("请先登录网站账号。", { exact: true })).toBeVisible();
-  await expect(page.getByRole("link", { name: "前往账号管理登录" })).toHaveAttribute("href", "/account");
+  await page.getByRole("button", { name: "登录网站账号", exact: true }).last().click();
+  await expect(page.getByRole("dialog", { name: "登录网站账号", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/billing$/);
 });
 
 for (const width of [1440, 375]) {

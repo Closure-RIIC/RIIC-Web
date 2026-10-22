@@ -1,0 +1,30 @@
+{
+  "components_auth_WebsiteAccountPanel_labels": {
+    "signin": {
+      "title": "登录网站账号",
+      "description": "继续使用受账号保护的数据导入与排班功能。"
+    },
+    "signup": {
+      "title": "创建网站账号",
+      "description": "填写账号信息后，我们会向邮箱发送 6 位验证码。"
+    },
+    "forgot": {
+      "title": "找回密码",
+      "description": "输入注册邮箱，我们会发送一封 1 小时内有效的重置邮件。"
+    }
+  },
+  "components_interior_password_strength_labels": [
+    "尚未输入",
+    "较弱",
+    "一般",
+    "良好",
+    "强"
+  ],
+  "app_account_reset_password_reset_client_labels": [
+    "尚未输入",
+    "较弱",
+    "一般",
+    "良好",
+    "强"
+  ]
+}

@@ -15,7 +15,7 @@ test("cookie locale renders on the server, while switching preserves filters and
   const response = await page.goto("/skills");
   const html = await response!.text();
   expect(html).toContain('lang="en"');
-  await expect(page).toHaveTitle("Skill Reference · Closure Infrastructure Terminal");
+  await expect(page).toHaveTitle("Skill Wiki · Closure Infrastructure Terminal");
   const rows = page.locator("[data-skill-filter-row]");
   await expect(rows).toHaveCount(4);
   await expect(rows.nth(3)).toContainText("Choose a facility first");
@@ -24,7 +24,7 @@ test("cookie locale renders on the server, while switching preserves filters and
   await page.getByRole("textbox", { name: "Search operator, skill name, or effect" }).fill("银灰");
   await switchWorkbenchLanguage(page, "zh");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
-  await expect(page).toHaveTitle("技能查询 · 可露希尔基建终端");
+  await expect(page).toHaveTitle("技能Wiki · 可露希尔基建终端");
   await expect(rows.nth(0).getByRole("tab", { name: "6 星干员" })).toHaveAttribute("aria-selected", "true");
   await expect(rows.nth(1).getByRole("tab", { name: "近卫", exact: true })).toHaveAttribute("aria-selected", "true");
   const search = page.getByRole("textbox", { name: "搜索干员名称/技能名称/技能效果" });

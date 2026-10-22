@@ -2,7 +2,7 @@
 import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
 
-import { ArrowUpRight, Code2, Database, Github, HeartHandshake, Image as ImageIcon, MessageSquareText, UsersRound, type LucideIcon } from "lucide-react";
+import { ArrowUpRight, Code2, Database, HeartHandshake, Image as ImageIcon, MessageSquareText, UsersRound, type LucideIcon } from "lucide-react";
 
 import { InfoPageLayout } from "@/components/layout/InfoPageLayout";
 
@@ -22,7 +22,7 @@ const sources: LinkCardItem[] = [
 ];
 
 const contributionCards: LinkCardItem[] = [
-  { title: "RIIC-Web", zh: messageRecord("zh", "app_about_page_content4").value as [string, string[]], en: messageRecord("en", "app_about_page_content4").value as [string, string[]], href: "https://github.com/KnightCodeSquareMatrix/RIIC-Web", icon: Github },
+  { title: "RIIC-Web", zh: messageRecord("zh", "app_about_page_content4").value as [string, string[]], en: messageRecord("en", "app_about_page_content4").value as [string, string[]], href: "https://github.com/KnightCodeSquareMatrix/RIIC-Web", icon: Code2 },
   { title: "", titleKey: "contribute", zh: messageRecord("zh", "app_about_page_content5").value as [string, string[]], en: messageRecord("en", "app_about_page_content5").value as [string, string[]], href: "https://github.com/KnightCodeSquareMatrix/RIIC-Web/issues", icon: MessageSquareText },
 ];
 

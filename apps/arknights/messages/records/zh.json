@@ -195,7 +195,7 @@
   "components_layout_AppSidebar_labels": {
     "schedulingGroup": "基建排班",
     "progressionGroup": "养成规划",
-    "skillsGroup": "技能查询",
+    "skillsGroup": "技能Wiki",
     "personalGroup": "我的角色",
     "calculator": "基建计算器",
     "manual": "手动排班",
@@ -203,7 +203,7 @@
     "trainingPlanner": "养成计算",
     "mastery": "专精规划",
     "recruitment": "公招计算",
-    "skills": "技能查询",
+    "skills": "技能Wiki",
     "skland": "森空岛同步",
     "gacha": "抽卡分析",
     "accountMenu": "账号菜单",

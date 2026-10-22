@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Chat, useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, convertFileListToFileUIParts, type FileUIPart, type UIMessage } from "ai";
-import { ArrowDown, ArrowUpRight, Bot, FileText, Paperclip, Plus, RotateCcw, Settings2, Upload, X } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Bot, ChevronDown, FileText, Paperclip, Plus, RotateCcw, Settings2, Upload, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useLocale, useTranslations } from "use-intl";
 
@@ -17,6 +17,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { AgentComposerMenu } from "./AgentComposerMenu";
 import { FluidOrb } from "@/components/ui/fluid-orb";
 import { accountOrbColor } from "@/account-orb";
+import { requestAccountSignIn } from "@riic/shell/account-sign-in";
 import { AgentConversationScrollArea } from "./AgentConversationScrollArea";
 import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChatBubble, ChatPanel, LoadingState, PromptBar, StreamingText, ThinkingState, ToolChip } from "./beautiful/ChatPrimitives";
@@ -600,14 +601,12 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     <section className={`${dialogueStyles.theme} ${dialogueStyles.chat} ${personaTheme} ${compact ? dialogueStyles.compactChat : ""}`} data-agent-chat data-agent-compact={compact ? "true" : undefined} data-agent-persona={activePersona?.id ?? "default"}>
       <div className={compact ? dialogueStyles.compactHeaderSlot : dialogueStyles.headerSlot} data-agent-header-slot data-hidden={headerHidden} inert={headerHidden}>
       {compact ? <header className={dialogueStyles.compactHeader} data-agent-header>
-        <div className={dialogueStyles.compactAvatar}><PersonaAvatar name={personaName} src={activePersona?.kind === "upload" ? activePersona.avatarUrl : undefined} mascot={activePersona?.kind === "builtin" ? activePersona.avatar : undefined} size={32} active={busy} /></div>
+        <div className={`${dialogueStyles.avatar} ${dialogueStyles.compactAvatar}`} aria-hidden="true" data-agent-header-avatar><PersonaAvatar name={personaName} src={activePersona?.kind === "upload" ? activePersona.avatarUrl : undefined} mascot={activePersona?.kind === "builtin" ? activePersona.avatar : undefined} size={32} active={busy} /></div>
         <p className={dialogueStyles.compactTitle}>{personaName}</p>
-        {onSharePageContextChange ? <label className={dialogueStyles.compactShare}>
-          <input type="checkbox" checked={Boolean(sharePageContext && pageContext)} disabled={!pageContext} aria-label={en ? "Include current page context" : "随消息共享当前页面摘要"} onChange={(event) => onSharePageContextChange(event.currentTarget.checked)} />
-          <span>{en ? "Page context" : "共享本页"}</span>
-        </label> : null}
-        <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0" aria-label={en ? "New conversation" : "新对话"} title={en ? "New conversation" : "新对话"} disabled={busy || messages.length === 0} onClick={() => { runtime.flush(); historyStore.startNew(); }}><Plus className="size-4" aria-hidden="true" /></Button>
-        <Button type="button" variant="ghost" size="icon" className="size-9 shrink-0" aria-label={en ? "Close assistant" : "收起助理"} title={en ? "Close assistant" : "收起助理"} onClick={onClose}><X className="size-4" aria-hidden="true" /></Button>
+        <div className={dialogueStyles.compactHeaderActions}>
+        <Button type="button" variant="ghost" size="icon" className={dialogueStyles.compactHeaderAction} aria-label={en ? "New conversation" : "新对话"} title={en ? "New conversation" : "新对话"} disabled={busy || messages.length === 0} onClick={() => { runtime.flush(); historyStore.startNew(); }}><Plus className="size-4" aria-hidden="true" /></Button>
+        <Button type="button" variant="ghost" size="icon" className={dialogueStyles.compactHeaderAction} aria-label={en ? "Close assistant" : "收起助理"} title={en ? "Close assistant" : "收起助理"} onClick={onClose}><X className="size-4" aria-hidden="true" /></Button>
+        </div>
       </header> : <header className={dialogueStyles.header} data-agent-header>
         <SidebarTrigger className="size-11 shrink-0 md:hidden" />
         <div className="min-w-0 flex-1">
@@ -632,6 +631,13 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
         </div>
       </header>}
       </div>
+      {compact && onSharePageContextChange ? <div className={dialogueStyles.compactContextBar}>
+        <span className={dialogueStyles.compactContextLabel}><FileText size={13} aria-hidden="true" />{en ? "Page context" : "页面摘要"}</span>
+        <label className={dialogueStyles.compactShare}>
+          <input type="checkbox" checked={Boolean(sharePageContext && pageContext)} disabled={!pageContext} aria-label={en ? "Include current page context" : "随消息共享当前页面摘要"} onChange={(event) => onSharePageContextChange(event.currentTarget.checked)} />
+          <span>{en ? "Share with assistant" : "共享本页"}</span>
+        </label>
+      </div> : null}
 
       {historyError ? <p role="alert" className="text-xs text-destructive">{en ? "Chat history could not be saved in this browser. Keep this page open and check available storage." : "浏览器暂时无法保存对话历史，请暂勿关闭页面，并检查可用存储空间。"}</p> : null}
       {agentStatus === "ready" && personaUnavailable ? <p role="alert" className="text-xs text-destructive">{en ? "This persona is unavailable. Choose another persona to continue." : "所选人格卡暂不可用，请在输入框下方选择其他人格卡。"}</p> : null}
@@ -667,15 +673,15 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
             }}
             attachments={attachments.length ? <div className="flex flex-wrap gap-2 p-1">{attachments.map((file, index) => <AttachmentPreview key={`${file.filename}-${index}`} file={file} onRemove={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))} />)}</div> : undefined}
             toolbar={<>
-              <AgentComposerMenu en={en} personaName={activePersona?.name ?? (en ? "Closure" : "可露希尔")} onAttach={() => fileInputRef.current?.click()} onPersona={() => setPersonaOpen(true)} attachmentCount={attachments.length}>
+              <AgentComposerMenu compact={compact} en={en} personaName={activePersona?.name ?? (en ? "Closure" : "可露希尔")} onAttach={() => fileInputRef.current?.click()} onPersona={() => setPersonaOpen(true)} attachmentCount={attachments.length}>
                 {attachments.map((file, index) => <AttachmentPreview key={`${file.filename}-${index}`} file={file} onRemove={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))} />)}
               </AgentComposerMenu>
               <input ref={fileInputRef} type="file" aria-label={en ? "Attach files" : "上传附件"} multiple accept="image/*,.md,.markdown,.txt,.json,.pdf,.csv,.xlsx" className="hidden" onChange={(event) => { void addFiles(event.target.files); event.currentTarget.value = ""; }} />
-              <Button type="button" variant="ghost" size="icon" className="hidden md:inline-flex size-9 rounded-lg text-muted-foreground" aria-label={en ? "Add attachment" : "添加附件"} title={en ? "Add attachment" : "添加附件"} onClick={() => fileInputRef.current?.click()}><Paperclip className="size-4" aria-hidden="true" /></Button>
-              <Button type="button" variant="ghost" size="sm" disabled={busy} className="hidden md:inline-flex max-w-40 rounded-lg text-xs text-muted-foreground" onClick={() => setPersonaOpen(true)}><Settings2 className="size-3.5 shrink-0" aria-hidden="true" /><span className="truncate">{en ? "Persona" : "人格卡"}：{personaName}</span></Button>
+              {!compact ? <Button type="button" variant="ghost" size="icon" className="hidden md:inline-flex size-9 rounded-lg text-muted-foreground" aria-label={en ? "Add attachment" : "添加附件"} title={en ? "Add attachment" : "添加附件"} onClick={() => fileInputRef.current?.click()}><Paperclip className="size-4" aria-hidden="true" /></Button> : null}
+              <Button type="button" variant="ghost" size="sm" disabled={busy} className={compact ? dialogueStyles.compactPersonaButton : "hidden md:inline-flex max-w-40 rounded-lg text-xs text-muted-foreground"} aria-label={compact ? `${en ? "Persona" : "人格卡"}：${personaName}` : undefined} onClick={() => setPersonaOpen(true)}>{compact ? null : <Settings2 className="size-3.5 shrink-0" aria-hidden="true" />}<span className="truncate">{compact ? personaName : `${en ? "Persona" : "人格卡"}：${personaName}`}</span>{compact ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}</Button>
             </>}
           />
-          {uploadError ? <p role="alert" className="mt-2 px-1 text-xs text-destructive">{uploadError}</p> : <p className="mt-2 hidden flex-wrap justify-between gap-1 px-1 text-[10px] text-muted-foreground md:flex"><span>{en ? "Up to 4 attachments · 8 MB each" : "最多 4 个附件 · 单个 ≤ 8 MB"}</span><span>{en ? "Enter to send · Shift + Enter for a new line" : "Enter 发送 · Shift + Enter 换行"}</span></p>}
+          {uploadError ? <p role="alert" className="mt-2 px-1 text-xs text-destructive">{uploadError}</p> : !compact ? <p className="mt-2 hidden flex-wrap justify-between gap-1 px-1 text-[10px] text-muted-foreground md:flex"><span>{en ? "Up to 4 attachments · 8 MB each" : "最多 4 个附件 · 单个 ≤ 8 MB"}</span><span>{en ? "Enter to send · Shift + Enter for a new line" : "Enter 发送 · Shift + Enter 换行"}</span></p> : null}
         </> : null}
       >
         <AgentConversationScrollArea floating={compact} onScrollbarPointerDown={onScrollbarPointerDown} className={`${compact ? dialogueStyles.compactConversation : dialogueStyles.conversation} min-h-0 flex-1 bg-transparent`} viewportClassName={`flex min-w-0 flex-col gap-6 overscroll-contain py-3 md:gap-10 md:py-8 ${compact ? "gap-4 py-2 md:gap-5 md:py-2" : ""}`} viewportProps={{ ref: conversationRef,
@@ -689,17 +695,17 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
           {agentStatus === "loading" ? <div className={dialogueStyles.activity}><LoadingState label={en ? "Connecting to Closure…" : "正在连接可露希尔…"} /></div> : null}
           {agentStatus === "unconfigured" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><Bot className="size-6 text-muted-foreground" aria-hidden="true" /><h2 className="font-medium">{en ? "Assistant is not available yet" : "助理暂未就绪"}</h2><p className="text-muted-foreground">{en ? "The model connection needs to be configured. Please try again later." : "大模型连接尚未配置，请稍后重试。"}</p></div> : null}
           {agentStatus === "unavailable" ? <div role="alert" className="my-auto grid justify-items-start gap-3 text-sm"><h2 className="font-medium">{en ? "Could not connect to the assistant" : "暂时无法连接助理"}</h2><p className="text-muted-foreground">{en ? "Please refresh the page and try again." : "请刷新页面后重试。"}</p></div> : null}
-          {agentStatus === "unauthenticated" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><Bot className="size-6 text-muted-foreground" aria-hidden="true" /><h2 className="font-medium">{en ? "Sign in to meet Closure" : "登录后，与可露希尔开始对话"}</h2><p className="text-muted-foreground">{en ? "Use your website account to access the assistant." : "使用网站账号登录，即可让助理帮你诊断账号、规划基建。"}</p><Button nativeButton={false} render={<Link to="/account" />} size="sm" className="h-9 rounded-full px-4">{en ? "Sign in" : "前往账号管理登录"}</Button></div> : null}
+          {agentStatus === "unauthenticated" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><Bot className="size-6 text-muted-foreground" aria-hidden="true" /><h2 className="font-medium">{en ? "Sign in to meet Closure" : "登录后，与可露希尔开始对话"}</h2><p className="text-muted-foreground">{en ? "Use your website account to access the assistant." : "使用网站账号登录，即可让助理帮你诊断账号、规划基建。"}</p><Button onClick={event => requestAccountSignIn(event.currentTarget)} size="sm" className="h-9 rounded-full px-4">{en ? "Sign in" : "登录网站账号"}</Button></div> : null}
           {agentStatus === "payment_required" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><h2 className="font-medium">{en ? "Add credits to get started" : "补充积分，开始对话"}</h2><p className="text-muted-foreground">{en ? "You need at least 1 credit to use the assistant." : "当前账号需至少有 1 积分才能使用助理。"}</p>{billingAllowed ? <Button nativeButton={false} render={<Link to="/billing" />} size="sm" className={billingStyles.pill}>{en ? "View payment plans" : "查看付费计划"}</Button> : null}</div> : null}
 
-          {messages.length === 0 && agentStatus === "ready" ? <div className="my-auto grid gap-5 py-4 sm:py-8" data-agent-welcome>
+          {messages.length === 0 && agentStatus === "ready" ? <div className={compact ? dialogueStyles.compactWelcome : "my-auto grid gap-5 py-4 sm:py-8"} data-agent-welcome>
             {compact ? <>
               <div className="grid gap-1">
                 <p className="text-xs font-medium text-muted-foreground">{en ? "Page guide" : "当前页面导览"}</p>
                 <h2 className="text-xl font-medium tracking-tight">{pageContext?.title ?? (en ? "Current page" : "当前页面")}</h2>
               </div>
-              {pageContext && sharePageContext ? <div className="grid gap-1 border-l-2 border-primary/40 pl-3 text-xs leading-5 text-muted-foreground" data-agent-page-guide>
-                <p className="font-medium text-foreground">{en ? "Page summary is shared" : "已共享本页摘要"}</p>
+              {pageContext && sharePageContext ? <div className={dialogueStyles.compactContextCard} data-agent-page-guide>
+                <p className={dialogueStyles.compactContextCardTitle}><FileText size={13} aria-hidden="true" />{en ? "Page summary is shared" : "已共享本页摘要"}</p>
                 {pageGuideLines.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}
               </div> : <p className="text-sm leading-6 text-muted-foreground" data-agent-page-guide>{!sharePageContext ? (en ? "Page sharing is off. Only your message will be sent." : "已关闭本页共享，只发送你输入的消息。") : (en ? "The page summary is unavailable. You can still ask a question about what you see." : "当前页面摘要暂不可用，你仍可以直接提问。")}</p>}
               <p className="text-sm leading-6 text-muted-foreground">{en ? "Ask about the current shift, room assignments or production output." : "可以直接问我当前班次、设施安排或产出为什么这样。"}</p>

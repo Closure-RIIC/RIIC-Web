@@ -70,3 +70,14 @@ assert.deepEqual(
   "Structured presentation keys must match",
 );
 log(`Validated ${flattened.zh.length} message keys and structured presentation records in both locales.`);
+
+const authCatalogs = Object.fromEntries(locales.map(locale => [locale, JSON.parse(fs.readFileSync(`packages/shell/auth/${locale}.json`, "utf8"))]));
+const authRecords = Object.fromEntries(locales.map(locale => [locale, JSON.parse(fs.readFileSync(`packages/shell/auth/${locale}-records.json`, "utf8"))]));
+for (const catalogs of [authCatalogs, authRecords]) {
+  assert.deepEqual(flatten(catalogs.en).map(([key]) => key).sort(), flatten(catalogs.zh).map(([key]) => key).sort(), "Shared account locale keys must match");
+}
+for (const locale of locales) {
+  const translate = createTranslator({ locale, messages: authCatalogs[locale], onError(error) { throw error; } });
+  for (const [key, message] of flatten(authCatalogs[locale])) translate.rich(key, sampleValues(parse(message)));
+}
+log("Validated shared account dialog messages in both locales.");

@@ -3,6 +3,7 @@ import { Download, Check, Plus, X } from "lucide-react";
 import { catalog, type Operator } from "@riic/endfield-solver/model.mjs";
 import { Action, Notice, PageTitle, Section } from "@riic/endfield-ui";
 import { downloadJson, useWorkspace } from "../state";
+import { pageLabels } from "../page-labels";
 import { compareOperatorRelease, operatorData } from "@riic/endfield-data";
 import { SearchInput } from "@riic/ui-primitives/search-input";
 import { parseSkillNodeId, reconcileSkillNodes, requiredElite, toggleSkillNode, unlockedSkillNodes } from "@riic/endfield-skland/skill-nodes";
@@ -11,6 +12,7 @@ import { SelectionButton } from "@riic/ui-primitives/selection-button";
 import { Button } from "@riic/ui-primitives/button";
 import { GameArtwork, OperatorPortrait } from "./GameArtwork";
 import { SkillFilters } from "./SkillFilters";
+import { ManualOperatorChoice } from "./ManualOperatorChoice";
 
 const skillCatalog = [...catalog].sort(compareOperatorRelease);
 
@@ -150,7 +152,7 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
   }
 
   return <div className={embedded ? "ef-roster-editor" : "ef-page"}>
-    {!embedded ? <PageTitle title={skillsOnly ? t("帝江号技能", "Ship skills") : t("我的干员", "My operators")} subtitle={skillsOnly ? t("查询干员技能与精英化解锁阶段。", "Browse ship skills and their elite-stage requirements.") : t("只勾选你已拥有的干员，并设置实际精英化阶段。", "Select the operators you own and set their actual elite stages.")}
+    {!embedded ? <PageTitle title={skillsOnly ? t(...pageLabels["/skills"]) : t("我的干员", "My operators")} subtitle={skillsOnly ? t("查询干员技能与精英化解锁阶段。", "Browse ship skills and their elite-stage requirements.") : t("只勾选你已拥有的干员，并设置实际精英化阶段。", "Select the operators you own and set their actual elite stages.")}
       meta={skillsOnly ? <span className="ef-muted" aria-live="polite">{t(`${rows.length} 名干员`, `${rows.length} operators`)}</span> : undefined}
       action={!skillsOnly ? <Action variant="dark" icon={<Download />} disabled={!ready} onClick={() => downloadJson("endfield-roster.json", { operators: workspace.operators })}>{t("导出名单", "Export roster")}</Action>
         : <Button type="button" variant="ghost" size="sm" disabled={rarity === "all" && profession === "all" && room === "all" && tag === "all"}
@@ -172,17 +174,12 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
             : t(`显示 ${rows.length} 名 · 已选 ${selected.size}`, `${rows.length} shown · ${selected.size} selected`)}</span>
         </div>
       </div> : null}
-      <div className={`ef-roster-grid ${skillsOnly ? "ef-roster-grid--skills" : "ef-roster-grid--compact"}`}>{rows.map(op => {
+      <div className={picker ? "ef-manual-picker-grid" : `ef-roster-grid ${skillsOnly ? "ef-roster-grid--skills" : "ef-roster-grid--compact"}`}>{rows.map(op => {
         if (picker) {
           const current = picker.value === op.name;
           const unavailable = picker.unavailable.has(op.name);
-          return <button key={op.id} type="button" className="ef-roster-card ef-roster-choice" data-operator-id={op.id} data-operator-name={op.name}
-            data-selected={current} aria-pressed={current} disabled={!ready || unavailable} onClick={() => picker.onSelect(op.name)}>
-            <span className="ef-roster-choice-identity"><OperatorPortrait name={op.id} size={48} />
-              <span className="ef-roster-identity"><strong>{locale === "en" ? op.enName : op.name}</strong><span className="ef-roster-rarity">{op.rarity}★ · E{selected.get(op.name)}</span></span>
-            </span>
-            <span className="ef-roster-choice-status">{current ? <Check size={14} aria-hidden /> : null}{current ? t("当前工位", "Current slot") : unavailable ? t("已安排至其他工位", "Assigned elsewhere") : t("选择干员", "Select operator")}</span>
-          </button>;
+          return <ManualOperatorChoice key={op.id} operator={op} owned={workspace.operators.find(item => item.name === op.name)!}
+            selected={current} unavailable={unavailable} onSelect={() => picker.onSelect(op.name)} />;
         }
         const display = operatorData(op.id);
         const ownedOperator = workspace.operators.find(item => item.name === op.name);

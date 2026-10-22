@@ -1,0 +1,30 @@
+{
+  "components_auth_WebsiteAccountPanel_labels": {
+    "signin": {
+      "title": "Sign in",
+      "description": "Continue with protected data import and scheduling."
+    },
+    "signup": {
+      "title": "Create account",
+      "description": "Enter your details and we will email a 6-digit code."
+    },
+    "forgot": {
+      "title": "Reset password",
+      "description": "Enter your email to receive a reset link valid for one hour."
+    }
+  },
+  "components_interior_password_strength_labels": [
+    "Not entered",
+    "Weak",
+    "Fair",
+    "Good",
+    "Strong"
+  ],
+  "app_account_reset_password_reset_client_labels": [
+    "Not entered",
+    "Weak",
+    "Fair",
+    "Good",
+    "Strong"
+  ]
+}

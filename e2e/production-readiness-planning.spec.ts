@@ -858,8 +858,8 @@ test("live activity survives navigation and calculator search occupies the relea
   const activity = page.locator('[data-slot="live-activity"]');
   await expect(activity).toHaveAttribute("data-activity-phase", "running");
 
-  await page.getByRole("button", { name: "技能查询" }).click();
-  await expect(page.getByRole("heading", { name: "技能查询" })).toBeVisible();
+  await page.getByRole("button", { name: "技能Wiki" }).click();
+  await expect(page.getByRole("heading", { name: "技能Wiki" })).toBeVisible();
   await expect(activity).toHaveAttribute("data-activity-phase", "running");
   releasePlan();
   await expect(activity).toHaveAttribute("data-activity-phase", "success");
@@ -1427,7 +1427,7 @@ test("the initial onboarding is full-screen while other primary pages keep one c
 
     for (const destination of [
       { name: "练卡建议", pageKey: "training", root: "[data-training-page]" },
-      { name: "技能查询", pageKey: "skill-query", root: "[data-skill-query-page]" },
+      { name: "技能Wiki", pageKey: "skill-query", root: "[data-skill-query-page]" },
       { name: "森空岛同步", pageKey: "skland", root: "[data-skland-page]" },
       { name: "账号管理", pageKey: "settings", root: "[data-account-management]" },
     ]) {

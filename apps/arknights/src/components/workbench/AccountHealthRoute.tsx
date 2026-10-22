@@ -1,5 +1,6 @@
 "use client";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
+import { WorkbenchCard } from "@/components/workbench/WorkbenchCard";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Activity, ArrowLeft, ClipboardCheck, PackageOpen, RefreshCw, Settings2, UsersRound } from "lucide-react";
@@ -20,12 +21,12 @@ import type { SklandInventoryData } from "@riic/arknights-domain/types";
 import type { GameReportRecord } from "@riic/arknights-domain/game-report";
 import { useWorkbench } from "@/workbench-context";
 import { buildAccountHealthContext } from "@/agent-page-context";
+import { workbenchPageAccent } from "@/workbench-accent";
 
 const fmt = (value: number) => value.toLocaleString("zh-CN");
 const ratio = (value: number | null) => value === null ? "—" : `${value.toFixed(2)} : 1`;
 const MANUAL_STORAGE_KEY = "aic-skland-inventory-manual-resources-v1";
 const GOLD_BAR_VALUE = 500;
-const MODULE_CARD = "min-w-0 rounded-[4px] border border-border bg-card p-3 md:p-6";
 
 export function AccountHealthRoute() {
   const { inventory } = useWorkbench();
@@ -121,7 +122,7 @@ function AccountHealthContent({ identityKey }: { identityKey: string }) {
     </header>
 
     <div className="grid min-w-0 gap-3 md:gap-5 lg:grid-cols-2" data-account-health-input-status>
-      <section className={MODULE_CARD} aria-labelledby="health-stock-heading">
+      <WorkbenchCard glass accent={workbenchPageAccent("account-health")} aria-labelledby="health-stock-heading">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 id="health-stock-heading" className="flex items-center gap-2 text-sm font-semibold"><PackageOpen className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />{en ? "Resource snapshot" : "资源库存"}</h2>
@@ -147,15 +148,15 @@ function AccountHealthContent({ identityKey }: { identityKey: string }) {
             : training?.representativeLmdToExperience != null ? (en ? "Balanced" : "钱书匹配") : "—"} emphasis={gap !== null} />
         </dl>
           : <div className="mt-4 border-t border-border pt-4 text-sm leading-6 text-muted-foreground"><p role={error ? "alert" : "status"}>{loading ? (en ? "Loading inventory…" : "正在读取库存…") : error ?? (en ? "Connect a Skland role to read inventory." : "绑定森空岛角色后可读取库存。")}</p></div>}
-      </section>
+      </WorkbenchCard>
 
-      <section className={MODULE_CARD} aria-labelledby="health-training-heading">
+      <WorkbenchCard glass accent={workbenchPageAccent("account-health")} aria-labelledby="health-training-heading">
         <h2 id="health-training-heading" className="flex items-center gap-2 text-sm font-semibold"><UsersRound className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />{en ? "Development profile" : "培养画像"}</h2>
         {training ? <><p className="mt-2 text-xs leading-5 text-muted-foreground">{source} · {en ? `${e2} E2 operators, ${modules} modules opened` : `精二 ${e2} 人，已开启模组 ${modules} 个`}</p>
           <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-border pt-4 text-sm"><Metric label={en ? "Including modules" : "含模组钱书比"} value={ratio(training.representativeLmdToExperience)} emphasis={training.representativeLmdToExperience != null} /><Metric label={en ? "Level cost LMD / EXP" : "等级消耗钱书比"} value={ratio(training.levelOnlyLmdToExperience)} /></dl>
           <p className="mt-4 text-xs text-muted-foreground">{!training.usableForPersonalAssessment ? (en ? "Sample data is excluded from personal ratios." : "示例干员池不用于个人需求比。") : e2 < 3 ? (en ? "At least 3 E2 operators are needed for a ratio." : "需要至少 3 名精二干员才能估算需求比。") : !training.moduleDataComplete ? (en ? "Module data is incomplete; the module ratio is unavailable." : "模组数据不完整，暂不计算含模组比例。") : (en ? "Learned from every promoted operator's actual cost." : "按全部精二干员的实际消耗逐人累计。")}</p>
         </> : <p className="mt-4 text-sm text-muted-foreground">{en ? "Import an operator Box or sync Skland to view your development profile." : "导入干员 Box 或同步森空岛后可查看培养画像。"}</p>}
-      </section>
+      </WorkbenchCard>
     </div>
 
     <AccountHealthReportSection en={en} authenticated={account.authenticated} onRecordChange={setReport} />

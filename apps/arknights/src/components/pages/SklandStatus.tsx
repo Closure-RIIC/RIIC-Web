@@ -56,7 +56,7 @@ const InventoryPage = lazy(() => import("@/components/pages/InventoryPage"));
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonRouteFallback } from "@/components/ui/skeleton-swap";
 import { HoldToConfirm } from "@/components/ui/hold-to-confirm";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, CompactTabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LevelDiamonds, OperatorSlot, roomVisualFor } from "@/components";
 import {
   InfraTechnicalCard as OverviewTechnicalCard,
@@ -1613,11 +1613,11 @@ export function SklandStatus({
       <Tabs value={selectedTab}>
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3" data-skland-view-header>
           <div className="min-w-0 max-w-full pb-1">
-            <TabsList data-yeye-scroll={undefined} className="max-w-full flex-wrap" data-skland-view-tabs>
+            <CompactTabsList data-skland-view-tabs>
               <TabsTrigger value="overview" nativeButton={false} render={<Link to={sklandTabHref("overview")} resetScroll={false} />}>{intl("components_pages_SklandStatus.overview")}</TabsTrigger>
               <TabsTrigger value="inventory" nativeButton={false} render={<Link to={sklandTabHref("inventory")} resetScroll={false} />}>{en ? "Backpack" : "背包"}</TabsTrigger>
               <TabsTrigger value="infrastructure" nativeButton={false} render={<Link to={sklandTabHref("infrastructure")} resetScroll={false} />}>{intl("components_pages_SklandStatus.infrastructure")}</TabsTrigger>
-            </TabsList>
+            </CompactTabsList>
           </div>
           <LayoutSyncControl
             snapshot={snapshot}

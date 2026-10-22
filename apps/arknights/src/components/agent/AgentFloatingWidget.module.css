@@ -1,10 +1,22 @@
 .root {
+  --agent-mascot-size: 120px;
+  --agent-edge-gap: 20px;
+  --agent-floating-bottom: calc(max(var(--agent-edge-gap), env(safe-area-inset-bottom)) + var(--workbench-dock-height));
+  --agent-panel-bottom: calc(var(--agent-floating-bottom) + var(--agent-mascot-size) + 8px);
+  position: relative;
+  display: inline-flex;
+  width: max-content;
+  height: 26px;
+  pointer-events: none;
+}
+
+.floating {
   position: fixed;
   z-index: 45;
-  right: max(20px, env(safe-area-inset-right));
-  bottom: max(20px, env(safe-area-inset-bottom));
-  width: 150px;
-  height: 150px;
+  right: max(var(--agent-edge-gap), env(safe-area-inset-right));
+  bottom: var(--agent-floating-bottom);
+  width: var(--agent-mascot-size);
+  height: var(--agent-mascot-size);
   pointer-events: none;
 }
 
@@ -13,8 +25,8 @@
   right: 0;
   bottom: 0;
   display: grid;
-  width: 150px;
-  height: 150px;
+  width: var(--agent-mascot-size);
+  height: var(--agent-mascot-size);
   place-items: center;
   overflow: visible;
   border: 0;
@@ -46,9 +58,6 @@
 }
 .minimize:hover { color: var(--foreground); background: var(--accent); }
 .minimize:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
-.root[data-minimized="true"], .root[data-minimized="true"] .launcher { width: 44px; height: 44px; }
-.root[data-minimized="true"] .launcher { border: 1px solid var(--border); border-radius: 50%; background: var(--card); }
-.root[data-minimized="true"] .status { display: none; }
 .status {
   position: absolute;
   right: 8px;
@@ -63,7 +72,7 @@
 .hint {
   position: absolute;
   right: 0;
-  bottom: 154px;
+  bottom: calc(var(--agent-mascot-size) + 8px);
   width: max-content;
   max-width: min(208px, calc(100vw - 32px));
   border: 1px solid var(--border);
@@ -94,18 +103,18 @@
   position: fixed;
   z-index: 46;
   pointer-events: auto;
-  right: max(20px, env(safe-area-inset-right));
-  bottom: calc(max(20px, env(safe-area-inset-bottom)) + 158px);
+  right: max(var(--agent-edge-gap), env(safe-area-inset-right));
+  bottom: var(--agent-panel-bottom);
   display: flex;
   width: min(440px, calc(100vw - 32px));
-  height: min(620px, calc(100dvh - 198px));
-  min-height: min(320px, calc(100dvh - 198px));
+  height: min(620px, calc(100dvh - var(--agent-panel-bottom) - 20px));
+  min-height: min(320px, calc(100dvh - var(--agent-panel-bottom) - 20px));
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--background);
-  box-shadow: 0 14px 48px rgb(0 0 0 / .24), 0 2px 8px rgb(0 0 0 / .1);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: 0 18px 52px rgb(0 0 0 / .16), 0 2px 8px rgb(0 0 0 / .06);
 }
 
 .empty {
@@ -138,20 +147,24 @@
 .locked img { width: 72px; height: 72px; object-fit: contain; }
 .locked strong { color: var(--foreground); font-size: 16px; }
 .locked p { max-width: 250px; margin: 0; }
-.locked a { color: var(--primary); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.locked a, .locked button { color: var(--primary); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 
 @media (max-width: 639px) {
-  .root { right: max(10px, env(safe-area-inset-right)); bottom: max(10px, env(safe-area-inset-bottom)); width: 122px; height: 122px; }
-  .launcher { width: 122px; height: 122px; }
+  .root { --agent-mascot-size: 96px; --agent-edge-gap: 10px; }
   .minimize { width: 36px; height: 36px; }
-  .hint { right: 0; bottom: 128px; max-width: min(190px, calc(100vw - 28px)); padding: 8px 10px; }
+  .hint { right: 0; max-width: min(190px, calc(100vw - 28px)); padding: 8px 10px; }
   .panel {
-    right: max(10px, env(safe-area-inset-right));
-    bottom: calc(max(10px, env(safe-area-inset-bottom)) + 128px);
     width: calc(100vw - 20px);
-    height: min(620px, calc(100dvh - 156px));
-    min-height: min(320px, calc(100dvh - 156px));
   }
+}
+
+.prtsCursor {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  background: var(--foreground);
+  mask: url("/images/agent/prts-cursor.png") center / contain no-repeat;
+  mask-mode: luminance;
 }
 
 @media (prefers-reduced-motion: reduce) {

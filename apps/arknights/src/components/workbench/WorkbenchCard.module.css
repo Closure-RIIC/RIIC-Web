@@ -1,0 +1,13 @@
+.card {
+  position: relative;
+  isolation: isolate;
+  min-width: 0;
+  padding: 24px;
+  border-radius: 22px;
+  background: var(--muted);
+  box-shadow: 0 6px 18px rgb(69 55 21 / .055), 0 1px 3px rgb(69 55 21 / .04);
+}
+
+@media (max-width: 639px) {
+  .card { padding: 18px; border-radius: 16px; }
+}

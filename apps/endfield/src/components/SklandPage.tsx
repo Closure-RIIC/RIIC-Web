@@ -9,7 +9,7 @@ import { sklandApi as api, SklandRequestError } from "../skland-client";
 import { SklandLoginPanel, type EndfieldLogin } from "./SklandLoginPanel";
 import { SklandDataView, SklandProfile } from "./SklandDataView";
 import { useWorkspace, WEBSITE_SIGN_OUT_EVENT, WEBSITE_SESSION_CHANGE_EVENT } from "../state";
-import { sklandRosterSource, syncSklandWorkspace, type SklandSyncStatus } from "../skland-workspace";
+import { sklandRosterSource, syncSklandWorkspace } from "../skland-workspace";
 import { DialogFrame } from "./DialogFrame";
 
 type Account = { id: string; label: string; source: string };
@@ -21,7 +21,7 @@ function savedSelection(): { accountId?: string; role?: string; ownerKey?: strin
 }
 
 export function SklandPage() {
-  const { update, ready, t, setSklandSnapshot } = useWorkspace();
+  const { update, ready, t, setSklandSnapshot, reportSklandSync, setSklandSyncActivity } = useWorkspace();
   const [origin, setOrigin] = useState<string>();
   const [loginOpen, setLoginOpen] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -29,7 +29,6 @@ export function SklandPage() {
   const [roles, setRoles] = useState<EndfieldRole[]>([]);
   const [selected, setSelected] = useState("");
   const [snapshot, setSnapshot] = useState<EndfieldSnapshot | null>(null);
-  const [syncStatus, setSyncStatus] = useState<SklandSyncStatus | null>(null);
   const [pending, setPending] = useState(true);
   const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState("");
@@ -39,7 +38,7 @@ export function SklandPage() {
   const currentAccount = accounts.find(account => account.id === accountId);
   const loadedRole = roles.find(role => roleKey(role) === selected);
 
-  function clearData() { setSnapshot(null); setSklandSnapshot(null); setSyncStatus(null); }
+  function clearData() { setSnapshot(null); setSklandSnapshot(null); setSklandSyncActivity(null); }
   function cancel() { controller.current?.abort(); controller.current = null; setPending(false); setInitialized(true); }
   async function perform(task: (signal: AbortSignal) => Promise<void>) {
     controller.current?.abort();
@@ -56,7 +55,7 @@ export function SklandPage() {
     const source = sklandRosterSource(owner.current, id, role);
     update(current => {
       const synced = syncSklandWorkspace(current, value.snapshot, source, role.roleId);
-      setSyncStatus(synced.status);
+      reportSklandSync(synced.status);
       // Other scheduling pages must not display equipment from a rejected account.
       setSklandSnapshot(synced.status.blocked ? null : value.snapshot);
       return synced.workspace;
@@ -180,19 +179,6 @@ export function SklandPage() {
       {!pending && !snapshot && loadedRole ? <Action onClick={() => void perform(signal => loadSnapshot(accountId, loadedRole, signal))}>{t("重新读取数据", "Retry data")}</Action> : null}
     </> : null}
     {pending && initialized ? <p className="ef-muted" role="status">{t("正在读取森空岛数据…", "Reading Skland data…")} <Action size="sm" variant="red" onClick={cancel}>{t("取消", "Cancel")}</Action></p> : null}
-    {syncStatus ? <Notice>
-      <div data-skland-sync-status>
-        <p>{syncStatus.blocked === "partial"
-          ? t("当前角色的干员数据不完整，尚未替换排班名单和设施配置。请在森空岛公开完整干员数据后刷新。", "This character's roster is incomplete. The previous roster and facilities were kept. Make the full roster public in Skland, then refresh.")
-          : syncStatus.blocked === "unsupported"
-            ? t("当前干员均未被排班数据识别，已保留原名单和设施配置。", "None of these operators are recognized by the scheduler. The previous roster and facilities were kept.")
-            : t(`已同步 ${syncStatus.count} 名可排班干员及精英化阶段。`, `Synced ${syncStatus.count} schedulable operators and their elite stages.`)}</p>
-        {syncStatus.partial && !syncStatus.blocked ? <p>{t("本次仅返回部分干员，已保留该角色此前同步的其余名单。", "Only part of the roster was returned. Other operators previously saved for this character were retained.")}</p> : null}
-        {!syncStatus.facilitiesApplied && !syncStatus.blocked ? <p>{t("设施数据不完整，已保留原设施配置，请在排班前确认等级。", "Facility data is incomplete. The previous setup was kept; check facility levels before scheduling.")}</p> : null}
-        {syncStatus.unsupported.length ? <p>{t("暂未支持，未纳入排班：", "Not yet supported; excluded from scheduling: ")}{syncStatus.unsupported.join("、")}</p> : null}
-        {syncStatus.excluded.length ? <p>{t("无基建技能，未纳入排班：", "No ship skills; excluded from scheduling: ")}{syncStatus.excluded.join("、")}</p> : null}
-      </div>
-    </Notice> : null}
     {snapshot ? <SklandDataView key={`${accountId}:${selected}`} snapshot={snapshot} /> : null}
     <Dialog.Root open={accounts.length > 0 && loginOpen} onOpenChange={setLoginOpen}>
       <Dialog.Portal><Dialog.Backdrop className="ef-dialog-backdrop" />

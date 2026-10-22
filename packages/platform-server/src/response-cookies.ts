@@ -1,5 +1,6 @@
-import { serialize } from "cookie";
+import { stringifySetCookie, type SerializeOptions } from "cookie";
 
-export function setResponseCookie(response: Response, name: string, value: string, options: Parameters<typeof serialize>[2]) {
-  response.headers.append("Set-Cookie", serialize(name, value, options));
+export function setResponseCookie(response: Response, name: string, value: string, options: SerializeOptions = {}) {
+  const { encode, ...attributes } = options;
+  response.headers.append("Set-Cookie", stringifySetCookie({ ...attributes, name, value }, { encode }));
 }

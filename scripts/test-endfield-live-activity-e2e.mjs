@@ -56,7 +56,7 @@ try {
   await expect(live).toHaveAttribute("data-activity-view", "compact");
   await live.focus(); await live.press("Enter");
   await expect(live).toHaveAttribute("data-activity-view", "expanded");
-  await page.getByRole("link", { name: "技能查询", exact: true }).click();
+  await page.getByRole("link", { name: "技能Wiki", exact: true }).click();
   await expect(live).toHaveAttribute("data-activity-phase", "running");
   await live.focus();
   await live.getByRole("button", { name: "关闭求解提示", exact: true }).click();

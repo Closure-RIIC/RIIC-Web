@@ -3,7 +3,7 @@ import { localize as localize_components_pages_InfraCalculator } from "../../i18
 
 import { useTranslations, useLocale } from "use-intl";
 
-import { ArrowRight, Download, Ellipsis, FlaskConical, Keyboard, Loader2, PencilLine, Play, RefreshCw, Search, Settings2, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, Download, Ellipsis, FlaskConical, Loader2, PencilLine, Play, RefreshCw, Search, Settings2, SlidersHorizontal, X } from "lucide-react";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { ScheduleBoard, ShiftTabs } from "@/components";
@@ -39,7 +39,6 @@ import type {
 
 const PlanResultSummary = lazy(() => import("@/components/PlanResultSummary").then((module) => ({ default: module.PlanResultSummary })));
 const PlanSupportSummary = lazy(() => import("@/components/PlanSupportSummary").then((module) => ({ default: module.PlanSupportSummary })));
-const ShortcutGuideDialog = lazy(() => import("@/components").then((module) => ({ default: module.ShortcutGuideDialog })));
 const UpgradeSimulationDialog = lazy(() => import("@/components/UpgradeSimulationDialog").then((module) => ({ default: module.UpgradeSimulationDialog })));
 const DroneTargetPicker = lazy(() => import("@/components/DroneTargetPicker").then(module => ({ default: module.DroneTargetPicker })));
 const ScheduleImageExportAction = lazy(() => import("@/components/ScheduleImageExportAction").then(module => ({ default: module.ScheduleImageExportAction })));
@@ -391,7 +390,6 @@ export function InfraCalculator(props: InfraCalculatorProps) {
       level: entry.level,
     }]),
   ), [operbox]);
-  const [shortcutGuideOpen, setShortcutGuideOpen] = useState(false);
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false);
   const [planActionsOpen, setPlanActionsOpen] = useState(false);
   const [operatorQuery, setOperatorQuery] = useState("");
@@ -548,17 +546,6 @@ export function InfraCalculator(props: InfraCalculatorProps) {
           </button>
         ) : null}
       </label>
-      <Button
-        type="button"
-        size="icon-lg"
-        variant="outline"
-        className="hidden size-9 md:inline-flex"
-        aria-label={intl("components_pages_InfraCalculator.keyboardShortcuts")}
-        title={intl("components_pages_InfraCalculator.keyboardShortcuts")}
-        onClick={() => setShortcutGuideOpen(true)}
-      >
-        <Keyboard />
-      </Button>
     </div>
   );
 
@@ -607,9 +594,6 @@ export function InfraCalculator(props: InfraCalculatorProps) {
                   <div className="absolute left-0 top-[calc(100%+0.35rem)] z-30 grid w-[min(18rem,calc(100vw-1.5rem))] gap-2 border border-border bg-background p-2 shadow-lg">
                     <Button type="button" variant="ghost" className="h-11 justify-start" onClick={onOpenSetup}>
                       <Settings2 />{intl("components_pages_InfraCalculator.configureBoxBase")}
-                    </Button>
-                    <Button type="button" variant="ghost" className="h-11 justify-start" onClick={() => setShortcutGuideOpen(true)}>
-                      <Keyboard />{intl("components_pages_InfraCalculator.keyboardShortcuts")}
                     </Button>
                   </div>
                 </details>
@@ -797,7 +781,6 @@ export function InfraCalculator(props: InfraCalculatorProps) {
       ) : null}
       {planActionsOpen && <Suspense fallback={null}><PlanActionsDialog hasBox={!!operbox} showProgression={showProgressionRecalculate} showManual={showManualScheduleEdit} visibleVariantLabel={visibleVariantLabel} onOpenChange={setPlanActionsOpen} onProgression={openProgressionAction} onManual={openManualAction} /></Suspense>}
       <Suspense fallback={null}>
-        <ShortcutGuideDialog open={shortcutGuideOpen} onOpenChange={setShortcutGuideOpen} />
         <Dialog open={cancelConfirmOpen} onOpenChange={setCancelConfirmOpen}>
           <DialogContent className="gap-5 max-sm:px-4 sm:max-w-sm sm:p-6">
             <DialogHeader className="gap-1.5 px-1 sm:px-2">

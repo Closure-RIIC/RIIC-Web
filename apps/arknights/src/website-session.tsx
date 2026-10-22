@@ -21,7 +21,7 @@ export { parseWebsiteSession, type WebsiteSessionData } from "@/website-session-
 interface WebsiteSessionContextValue {
   data: WebsiteSessionData | null;
   isPending: boolean;
-  refetch: () => Promise<void>;
+  refetch: () => Promise<WebsiteSessionData | null>;
 }
 
 const WebsiteSessionContext = createContext<WebsiteSessionContextValue | null>(null);
@@ -33,16 +33,17 @@ export function WebsiteSessionProvider({ children, initialSession }: {
   // invalidations cannot restore a previous account after sign-out.
   const [bootstrap] = useState(() => initialSession);
   const [data, setData] = useState<WebsiteSessionData | null>(() => initialSession ?? null);
+  // Pending only covers initial resolution; background refreshes keep consumers mounted.
   const [isPending, setIsPending] = useState(initialSession === undefined);
   const activeRequest = useRef<Promise<WebsiteSessionData | null> | null>(null);
   const refetch = useCallback(async () => {
-    setIsPending(true);
     const request = requestWebsiteSession();
     activeRequest.current = request;
     const next = await request;
-    if (activeRequest.current !== request) return;
+    if (activeRequest.current !== request) return activeRequest.current;
     setData(next);
     setIsPending(false);
+    return next;
   }, []);
 
   useEffect(() => {

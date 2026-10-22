@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Download, Eye, EyeOff, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
-import { Action, ActionLink, Notice, PageTitle, Section } from "@riic/endfield-ui";
+import { Action, Notice, PageTitle, Section } from "@riic/endfield-ui";
+import { requestAccountSignIn } from "@riic/shell/account-sign-in";
+import { reportAccountActivity } from "@riic/shell/account-activity";
 import { FilterSelect } from "@riic/ui-primitives/filter-select";
 import { FluidOrb } from "@riic/ui-primitives/fluid-orb";
 import { accountOrbColor } from "@riic/shell/account-orb";
-import { gameHref } from "@riic/shell/games";
 import { DEFAULT_OPTIONS, STORAGE_KEY } from "@riic/endfield-solver/model.mjs";
 import { useWorkspace, downloadJson } from "../state";
 import { useAccount, type AccountAction } from "../account";
@@ -13,23 +14,22 @@ import { ConfirmAction } from "./ConfirmAction";
 export function SettingsPage() {
   const { workspace, update, busy: solving, ready, t, locale, setLocale, colorMode, setColorMode, showImages, setShowImages, showDijiangBackdrop, setShowDijiangBackdrop, storageError, repairStorage, clearLocalData } = useWorkspace();
   const { session, pending, failed, busy, run, refresh } = useAccount();
-  const [origin, setOrigin] = useState<string>();
   const [password, setPassword] = useState("");
   const [revealPassword, setRevealPassword] = useState(false);
   const [deleteLocal, setDeleteLocal] = useState(true);
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [clearing, setClearing] = useState(false);
-  useEffect(() => setOrigin(location.origin), []);
-  const main = gameHref("arknights", origin, import.meta.env.VITE_ARKNIGHTS_ORIGIN);
   const expiryDate = session ? new Date(session.session.expiresAt) : null;
   const expiry = expiryDate && Number.isFinite(expiryDate.getTime()) ? new Intl.DateTimeFormat(locale === "en" ? "en-US" : "zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(expiryDate) : "—";
   const disabled = busy !== null || pending || clearing;
   async function manage(action: AccountAction) {
-    setMessage(""); setError("");
+    setError("");
     try {
       await run(action, action === "delete" ? password : undefined);
-      setMessage(action === "extend" ? t("登录有效期已续期 30 天。", "Session extended for 30 days.") : action === "revoke" ? t("已退出所有设备。", "Signed out on all devices.") : t("账号已删除。", "Account deleted."));
+      reportAccountActivity({
+        title: t("登录与安全", "Sign-in and security"),
+        description: action === "extend" ? t("登录有效期已续期 30 天。", "Session extended for 30 days.") : action === "revoke" ? t("已退出所有设备。", "Signed out on all devices.") : t("账号已删除。", "Account deleted."),
+      });
       if (action === "delete" && deleteLocal) await clearLocalData();
     } catch (cause) {
       setError(cause instanceof Error && cause.message === "INVALID_PASSWORD" ? t("当前密码不正确。", "The current password is incorrect.")
@@ -49,7 +49,6 @@ export function SettingsPage() {
         <div><strong title={session.user.name}>{session.user.name}</strong><span title={session.user.email}>{session.user.email}</span></div>
       </div> : undefined} />
     {error ? <Notice error>{error}</Notice> : null}
-    {message ? <Notice>{message}</Notice> : null}
     <div className="ef-settings-grid">
       <div>
         <Section title={t("界面与显示", "Appearance")}><div data-settings-group="display" className="ef-settings-fields">
@@ -101,7 +100,7 @@ export function SettingsPage() {
             </div>
           </> : <>
             <p className="ef-settings-description">{failed ? t("账号服务暂不可用，请重试。", "Account service unavailable. Please retry.") : t("登录同一个 RIIC 账号，即可在两款游戏中使用账号功能。", "Use the same RIIC account for both games.")}</p>
-            <div className="ef-actions"><ActionLink size="sm" variant="dark" href={`${main}account`}>{t("登录 / 注册", "Sign in / Register")}</ActionLink><Action size="sm" disabled={disabled} onClick={() => void refresh()}>{t("刷新登录状态", "Refresh sign-in status")}</Action></div>
+            <div className="ef-actions"><Action size="sm" variant="dark" onClick={event => requestAccountSignIn(event.currentTarget)}>{t("登录 / 注册", "Sign in / Register")}</Action><Action size="sm" disabled={disabled} onClick={() => void refresh()}>{t("刷新登录状态", "Refresh sign-in status")}</Action></div>
           </>}
         </div></Section>
         {session ? <Section title={t("注销账号", "Delete account")}><div data-settings-group="delete-account">

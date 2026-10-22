@@ -1,5 +1,9 @@
 # Third-party asset sources
 
+## Shared account form controls
+
+The OTP input and password-strength controls in `packages/shell/auth/` retain their Interior component attribution (copyright 2026 ozzy) and MIT license in `packages/shell/auth/LICENSE`. The original Arknights import paths re-export these shared controls.
+
 ## Wish-page fonts
 
 The wish page uses Long Cang and ZCOOL QingKe HuangYou from the `zhe-pian-da-di-font-pack` repository. Both are distributed under SIL Open Font License 1.1; license texts are included under `apps/arknights/public/fonts/wishes/`.
@@ -28,6 +32,17 @@ The frontend consumes only public JSON and PNG artifacts. It does not execute pr
 ## Rainyun partner mark
 
 The Rainyun logo at `apps/arknights/public/images/partners/rainyun-logo.png` was provided for this site integration and links only to [Rainyun](https://www.rainyun.com/riic_). The Rainyun name and logo remain the property of their respective rights holder; this project does not claim ownership of the mark. The image is bundled locally, so loading the page does not contact Rainyun before a visitor chooses the link.
+
+## PRTS assistant pointer
+
+`apps/arknights/public/images/agent/prts-cursor.png` is a static frame of the fan-made PRTS hand cursor from [Montag178/arknights_cursor](https://github.com/Montag178/arknights_cursor/blob/38e08a598088d444f0194ea732dd829069d14895/hand.gif), pinned to commit `38e08a598088d444f0194ea732dd829069d14895`. It is a recreation, not an official game extraction.
+
+- Source GIF SHA-256: `5cd252265810f88c8df83c2b6e06e74d98964eb62694e749a3bd412cc67f4669`
+- PNG SHA-256: `b26198cc9051beb0e4f1865322f42bb5344ab92f5192ab504fa7c3133db41849`
+- Conversion: Sharp 0.35.5, GIF page 0, trim transparent margins, resize into a transparent 96 x 96 square with `fit: "contain"`, encode as PNG.
+- Upstream license: Unlicense, preserved in `apps/arknights/public/images/agent/PRTS-CURSOR-LICENSE.txt`.
+- The minimized assistant uses its luminance as a CSS mask to follow the current theme. The PNG is served locally; no upstream request is made at runtime.
+- Arknights artwork remains the property of Hypergryph and its respective rights holders. This project does not claim ownership of the artwork.
 
 ## Site icon
 

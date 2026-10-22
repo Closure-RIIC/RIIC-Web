@@ -1,0 +1,83 @@
+.os-scrollbar.os-theme-yeye {
+  --os-size: 8px;
+  --os-padding-perpendicular: 0;
+  --os-padding-axis: 2px;
+  --os-track-border-radius: 999px;
+  --os-track-bg: transparent;
+  --os-track-bg-hover: transparent;
+  --os-track-bg-active: transparent;
+  --os-track-border: none;
+  --os-track-border-hover: none;
+  --os-track-border-active: none;
+  --os-handle-border-radius: 999px;
+  --os-handle-bg: rgb(148 163 184 / 0.5);
+  --os-handle-bg-hover: rgb(148 163 184 / 0.64);
+  --os-handle-bg-active: rgb(100 116 139 / 0.7);
+  --os-handle-border: none;
+  --os-handle-border-hover: none;
+  --os-handle-border-active: none;
+  --os-handle-min-size: 36px;
+  --os-handle-perpendicular-size: 4px;
+  --os-handle-perpendicular-size-hover: 4px;
+  --os-handle-perpendicular-size-active: 4px;
+  --os-handle-interactive-area-offset: 4px;
+}
+
+.os-theme-yeye .os-scrollbar-track {
+  background: transparent !important;
+}
+
+/* The library defaults to z-index: 99999. Page decoration must stay below
+   modal backdrops (z-50), so dragging it cannot bypass background scroll locks. */
+body > .os-theme-yeye {
+  z-index: 40;
+}
+
+@layer base {
+  :where([data-yeye-scroll]) {
+    position: relative;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .os-theme-yeye,
+  .os-theme-yeye .os-scrollbar-handle {
+    transition: none !important;
+  }
+}
+
+:is(.yeye-scrollbar, textarea) {
+  scrollbar-color: rgb(148 163 184 / 0.64) transparent;
+  scrollbar-width: thin;
+}
+
+:is(.yeye-scrollbar, textarea)::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:is(.yeye-scrollbar, textarea)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:is(.yeye-scrollbar, textarea)::-webkit-scrollbar-thumb {
+  min-height: 36px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgb(148 163 184 / 0.5);
+  background-clip: content-box;
+}
+
+:is(.yeye-scrollbar, textarea)::-webkit-scrollbar-thumb:hover {
+  background: rgb(148 163 184 / 0.64);
+  background-clip: content-box;
+}
+
+:is(.yeye-scrollbar, textarea)::-webkit-scrollbar-thumb:active {
+  background: rgb(100 116 139 / 0.7);
+  background-clip: content-box;
+}
+
+:is(.yeye-scrollbar, textarea)::-webkit-scrollbar-corner {
+  background: transparent;
+}

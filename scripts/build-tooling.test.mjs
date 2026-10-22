@@ -706,18 +706,18 @@ test("workbench views use intent-only code preloading under one persistent layou
     "apps/arknights/src/app/(workbench)/training/page.tsx",
     "apps/arknights/src/app/(workbench)/skills/page.tsx",
     "apps/arknights/src/app/(workbench)/skland/page.tsx",
-    "apps/arknights/src/app/(workbench)/account/page.tsx",
+    "apps/arknights/src/app/(workbench)/settings/page.tsx",
   ].map(readRepoFile));
   const loadingPages = await Promise.all([
     "apps/arknights/src/app/(workbench)/training/loading.tsx",
     "apps/arknights/src/app/(workbench)/skills/loading.tsx",
-    "apps/arknights/src/app/(workbench)/account/loading.tsx",
   ].map(readRepoFile));
 
   assert.match(layout, /import WorkbenchApp from "@\/App"/);
   assert.match(layout, /<WorkbenchApp>\{children\}<\/WorkbenchApp>/);
   assert.ok(pages.every((page) => !page.includes("dynamic(")));
   assert.ok(loadingPages.every((loadingPage) => loadingPage.includes("RouteSkeleton")));
+  assert.match(await readRepoFile("apps/arknights/src/routes/_workbench.account.tsx"), /redirect\(\{ href: "\/settings\?auth=signin"/);
   assert.doesNotMatch(app, /components\/pages\/(?:InfraCalculator|TrainingAdvice|SkillQuery|AccountStatusCenter|DevelopmentSklandStatusCenter)/);
   assert.match(routeMap, /training: "\/training"/);
   assert.match(routeMap, /"skill-query": "\/skills"/);

@@ -1,0 +1,48 @@
+.dock {
+  position: fixed;
+  z-index: 45;
+  right: max(20px, env(safe-area-inset-right));
+  bottom: env(safe-area-inset-bottom, 0px);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: var(--workbench-dock-height);
+  pointer-events: none;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 26px;
+  padding: 0 7px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: color 120ms ease, background-color 120ms ease;
+}
+
+.iconButton { width: 26px; padding: 0; }
+.button:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
+
+@media (hover: hover) and (pointer: fine) {
+  .button:hover {
+    background: color-mix(in oklab, var(--foreground) 8%, transparent);
+    color: var(--foreground);
+  }
+}
+
+@media (max-width: 639px) {
+  .dock { right: max(10px, env(safe-area-inset-right)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button { transition: none; }
+}

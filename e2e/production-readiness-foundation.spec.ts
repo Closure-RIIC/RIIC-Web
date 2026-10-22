@@ -457,7 +457,7 @@ test("primary pages load their route modules and navigate on the first click", a
 
   const destinations = [
     { name: "练卡建议", href: "/training", root: "[data-training-page]" },
-    { name: "技能查询", href: "/skills", root: "[data-skill-query-page]" },
+    { name: "技能Wiki", href: "/skills", root: "[data-skill-query-page]" },
     { name: "森空岛同步", href: "/skland", root: "[data-skland-page]" },
     { name: "账号管理", href: "/settings", root: "[data-account-management]" },
   ];
@@ -653,7 +653,7 @@ test("website login lazy-loads its UI without probing the shared session again",
   expect(sessionRequests).toBe(1);
 });
 
-test("website login opens account management after the gated navigation dialog", async ({ page }) => {
+test("website login stays on the current page and account management remains in settings", async ({ page }) => {
   let authenticated = false;
   await page.unroute("**/api/auth/get-session");
   await page.route("**/api/auth/get-session", (route) => route.fulfill({
@@ -678,7 +678,9 @@ test("website login opens account management after the gated navigation dialog",
   await accountPanel.getByRole("button", { name: "登录", exact: true }).click();
 
   await expect(page.getByRole("dialog", { name: "登录网站账号" })).toHaveCount(0);
-  await expect(page).toHaveURL(/\/account$/);
+  await expect(page).toHaveURL(/\/$/);
+  await page.locator("[data-sidebar-settings-trigger]").click();
+  await expect(page).toHaveURL(/\/settings$/);
   await expect(page.locator("[data-account-management]")).toBeVisible();
   await expect(page.locator("[data-account-management]").getByText("signed-in@example.test", { exact: true })).toBeVisible();
   const websiteAvatar = page.locator("[data-website-account-avatar]");
@@ -689,8 +691,8 @@ test("website login opens account management after the gated navigation dialog",
   await expect(websiteAvatar.locator("[data-fluid-orb-fallback]")).toHaveCSS("opacity", "0");
   await expect(websiteAvatar).not.toContainText("新");
   const websiteAvatarBox = await websiteAvatar.boundingBox();
-  expect(websiteAvatarBox?.width).toBeCloseTo(56, 0);
-  expect(websiteAvatarBox?.height).toBeCloseTo(56, 0);
+  expect(websiteAvatarBox?.width).toBeCloseTo(32, 0);
+  expect(websiteAvatarBox?.height).toBeCloseTo(32, 0);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(websiteAvatar).toHaveAttribute("data-fluid-orb-motion", /^(still|fallback)$/);
 });
@@ -841,7 +843,9 @@ test("password reset requires matching password confirmation before making a req
   });
   await page.goto("/account/reset-password?token=valid-reset-token");
 
-  // The form is server rendered; confirm its controls are hydrated before typing.
+  // The legacy link opens a modal and removes the token from the address bar.
+  await expect(page.getByRole("dialog", { name: "重置密码", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
   await page.getByRole("button", { name: "显示新密码" }).click();
   await expect(page.getByLabel("新密码", { exact: true })).toHaveAttribute("type", "text");
   await page.getByRole("button", { name: "隐藏新密码" }).click();
@@ -868,7 +872,9 @@ test("password reset requires matching password confirmation before making a req
   await expect(page.getByText("两次输入的密码不一致。", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "确认重置" }).click();
   await expect.poll(() => resetRequests).toBe(1);
-  await expect(page.getByText("密码已重置，旧 Session 已撤销，请返回首页登录。", { exact: true })).toBeVisible();
+  await expect(page.getByText("密码已重置，原有登录状态已失效，请点击“返回登录”重新登录。", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "返回登录", exact: true }).click();
+  await expect(page.getByLabel("邮箱", { exact: true })).toBeVisible();
 });
 
 test("anonymous MAA data cannot drive planning or training advice", async ({ page }) => {
@@ -950,6 +956,8 @@ test("serves versioned WebP portraits with immutable caching only when versioned
 });
 
 test("prefetches only the adjacent shift portrait during browser idle time", async ({ page }) => {
+  test.setTimeout(60_000);
+  await mockAnonymousWebsiteSession(page);
   await mockApis(page);
   await seedV4Session(page, adjacentPortraitPlanData);
   await page.addInitScript(() => {
@@ -971,6 +979,7 @@ test("prefetches only the adjacent shift portrait during browser idle time", asy
     }
   });
   await page.goto("/");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 45_000 });
   await expect(page.locator("[data-plan-board]")).toHaveAttribute("data-plan-revision", diagnosticId);
 
   await expect.poll(() => requestedPortraits.some((url) => url.includes("/003_kalts.webp?"))).toBe(true);
@@ -1431,7 +1440,7 @@ for (const viewport of [
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     if (viewport.width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
     const accountNavigation = await sidebarNavigation(page, "账号管理");
-    await expect(accountNavigation).toHaveAttribute("href", "/account");
+    await expect(accountNavigation).toHaveAttribute("data-sidebar-sign-in", "true");
     await accountNavigation.click();
     await expect(page.locator("[data-account-management]")).toHaveCount(0);
     const accountDialog = page.getByRole("dialog", { name: "登录网站账号" });

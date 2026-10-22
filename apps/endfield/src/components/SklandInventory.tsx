@@ -3,7 +3,7 @@ import { Notice, Section } from "@riic/endfield-ui";
 import type { EndfieldInventory, EndfieldMaterialGroup } from "@riic/endfield-skland/inventory";
 import { useWorkspace } from "../state";
 import { SearchInput } from "@riic/ui-primitives/search-input";
-import { FilterSelect } from "@riic/ui-primitives/filter-select";
+import { Tabs, TabsList, TabsTrigger } from "@riic/ui-primitives/tabs";
 
 export function SklandInventory({ inventory }: { inventory?: EndfieldInventory }) {
   const { t, locale } = useWorkspace();
@@ -32,8 +32,12 @@ export function SklandInventory({ inventory }: { inventory?: EndfieldInventory }
   return <Section>
     {items.length ? <>
       <div className="ef-inventory-filters">
-        <FilterSelect aria-label={t("物品分类", "Item category")} value={group} onValueChange={setGroup} emptyText={t("没有匹配分类", "No matching categories")}
-          options={[{ value: "all", label: t("全部物品", "All items") }, ...groups.filter(([id]) => items.some(item => item.group === id)).map(([value, label]) => ({ value, label }))]} />
+        <Tabs value={group} onValueChange={setGroup} data-yeye-scroll="auto" className="max-w-full overflow-x-auto py-1">
+          <TabsList aria-label={t("物品分类", "Item category")}>
+            <TabsTrigger value="all">{t("全部物品", "All items")}</TabsTrigger>
+            {groups.filter(([id]) => items.some(item => item.group === id)).map(([id, label]) => <TabsTrigger key={id} value={id}>{label}</TabsTrigger>)}
+          </TabsList>
+        </Tabs>
         <span className="ef-muted" role="status">{t(`显示 ${filtered.length} / ${items.length} 种`, `Showing ${filtered.length} / ${items.length} items`)}</span>
       </div>
       <SearchInput containerClassName="ef-sync-search" label={t("搜索仓库物品", "Search inventory")} placeholder={t("搜索物品名称或 ID", "Search by item name or ID")}
