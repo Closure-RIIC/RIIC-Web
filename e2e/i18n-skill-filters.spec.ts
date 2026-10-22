@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { switchWorkbenchLanguage } from "./workbench-language";
+import { installMockSessionRefresh } from "./mock-session-refresh";
 test.setTimeout(90_000);
 
 test.beforeEach(async ({ page }) => {
@@ -11,11 +12,20 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("cookie locale renders on the server, while switching preserves filters and search", async ({ page, context, baseURL }) => {
+  // The account language menu is available to signed-in users; anonymous clicks open sign-in.
+  await installMockSessionRefresh(page);
+  await page.route("**/api/auth/get-session", route => route.fulfill({ json: {
+    user: { id: "language-test-user", name: "Language test", email: "language@example.test" },
+    session: { expiresAt: "2099-01-01T00:00:00Z" },
+  } }));
+  await page.route("**/api/account/data-consent", route => route.fulfill({ json: {
+    success: true, data: { current: false, cloudSyncEnabled: false },
+  } }));
   await context.addCookies([{ name: "riic-locale", value: "en", url: baseURL! }]);
   const response = await page.goto("/skills");
   const html = await response!.text();
   expect(html).toContain('lang="en"');
-  await expect(page).toHaveTitle("Skill Reference · Closure Infrastructure Terminal");
+  await expect(page).toHaveTitle("Skill Wiki · Closure Infrastructure Terminal");
   const rows = page.locator("[data-skill-filter-row]");
   await expect(rows).toHaveCount(4);
   await expect(rows.nth(3)).toContainText("Choose a facility first");
@@ -24,7 +34,7 @@ test("cookie locale renders on the server, while switching preserves filters and
   await page.getByRole("textbox", { name: "Search operator, skill name, or effect" }).fill("银灰");
   await switchWorkbenchLanguage(page, "zh");
   await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
-  await expect(page).toHaveTitle("技能查询 · 可露希尔基建终端");
+  await expect(page).toHaveTitle("技能Wiki · 可露希尔基建终端");
   await expect(rows.nth(0).getByRole("tab", { name: "6 星干员" })).toHaveAttribute("aria-selected", "true");
   await expect(rows.nth(1).getByRole("tab", { name: "近卫", exact: true })).toHaveAttribute("aria-selected", "true");
   const search = page.getByRole("textbox", { name: "搜索干员名称/技能名称/技能效果" });
@@ -48,6 +58,27 @@ test("mobile has four bounded rows and room changes clear the tag", async ({ pag
   await expect(rows.nth(3)).toContainText("该房间暂无技能标签");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
+
+for (const locale of ["zh", "en"] as const) {
+  test(`${locale} mobile skill details load on demand and close normally`, async ({ page, context, baseURL }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await context.addCookies([{ name: "riic-locale", value: locale, url: baseURL! }]);
+    const errors: string[] = [];
+    page.on("pageerror", error => errors.push(error.message));
+    await page.goto("/skills");
+    const skill = page.getByRole("button", { name: locale === "en" ? /^View skill S/ : /^查看技能 S/ }).first();
+    await expect(skill).toBeVisible();
+    await skill.click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole("heading")).not.toHaveText("");
+    await expect(dialog.locator("p").first()).not.toHaveText("");
+    await dialog.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(skill).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+}
 
 test("legacy preference migrates once; an existing cookie takes precedence", async ({ page, context, baseURL }) => {
   await page.addInitScript(() => localStorage.setItem("infra-demo-locale", "en"));
@@ -89,20 +120,16 @@ for (const locale of ["zh", "en"] as const) {
       if (/MISSING_MESSAGE|INVALID_MESSAGE|FORMATTING_ERROR/.test(message.text())) errors.push(message.text());
     });
     const titles = locale === "en"
-      ? ["About", "Documentation", "Your first import", "Common questions", "Privacy Policy", "Terms of Service", "Account", "Changelog"]
-      : ["关于我们", "使用文档", "首次导入", "常见问题总览", "隐私政策", "服务条款", "账号", "更新日志"];
-    const routes = ["/about", "/help", "/help/import-operators", "/help/owned-operators", "/privacy", "/terms", "/account", "/changelog"];
+      ? ["About", "Documentation", "Your first import", "Common questions", "Privacy Policy", "Terms of Service", "Settings", "Changelog"]
+      : ["关于我们", "使用文档", "首次导入", "常见问题总览", "隐私政策", "服务条款", "设置", "更新日志"];
+    const routes = ["/about", "/help", "/help/import-operators", "/help/owned-operators", "/privacy", "/terms", "/settings", "/changelog"];
     for (const [index, route] of routes.entries()) {
-      const announcement = route === "/account"
-        ? page.waitForResponse(response => new URL(response.url()).pathname === "/api/releases" && new URL(response.url()).searchParams.get("mode") === "announcement")
-        : null;
       const response = await page.goto(route);
       await expect(page.locator('body')).toHaveAttribute('data-app-hydrated', 'true');
       expect(response?.ok(), route).toBe(true);
       expect(await response!.text()).toContain(`lang="${locale === "zh" ? "zh-CN" : "en"}"`);
       await expect(page).toHaveTitle(new RegExp(titles[index]));
       await expect(page.getByRole("heading").first(), route).toBeVisible();
-      if (announcement) await (await announcement).finished();
       if (route === "/changelog") {
         // Its heading is server rendered. Let the translated client feed settle
         // before navigating away while hydration is still starting its fetch.

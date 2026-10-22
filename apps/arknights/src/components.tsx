@@ -11,7 +11,7 @@ import {
   Smile,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { CSSProperties, lazy, ReactElement, ReactNode, Suspense, startTransition, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, lazy, ReactElement, ReactNode, Suspense, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { AnimatedNumber, AnimatedText } from "@/components/AnimatedText";
 import { CachedScheduleView } from "@/components/CachedScheduleView";
@@ -1016,6 +1016,32 @@ function BuildingSkillBadge({
   );
 }
 
+function OperatorPortrait({ src, alt, size }: { src?: string; alt: string; size: number }) {
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
+  const imageRef = useCallback((image: HTMLImageElement | null) => {
+    if (image?.complete && image.naturalWidth > 0) setStatus("loaded");
+  }, []);
+
+  return <div className="absolute inset-0" aria-busy={status === "loading" || undefined} data-operator-portrait-state={status}>
+    {status !== "loaded" ? <Skeleton className={cn("absolute inset-0 size-full rounded-none bg-white/10", status === "loading" && "animate-pulse motion-reduce:animate-none")} aria-hidden="true" data-operator-portrait-skeleton /> : null}
+    {src && status !== "error" ? (
+      <img
+        ref={imageRef}
+        src={src}
+        alt={alt}
+        width={size}
+        height={size}
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setStatus("loaded")}
+        onError={() => setStatus("error")}
+        className={cn("absolute inset-0 h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10", status === "loading" && "invisible")}
+        data-operator-portrait
+      />
+    ) : null}
+  </div>;
+}
+
 export function OperatorSlot({
   slot,
   rarity,
@@ -1151,32 +1177,21 @@ export function OperatorSlot({
           >
             {slot ? (
               <>
-                {slot.portrait ? (
-                  <>
-                    <img
-                      src={slot.portrait}
-                      alt={displayName ?? slot.name}
-                      width={portraitSize}
-                      height={portraitSize}
-                      loading="lazy"
-                      decoding="async"
-                      className="absolute inset-0 h-full w-full object-cover outline outline-1 -outline-offset-1 outline-black/10 dark:outline-white/10"
-                    />
-                    {profession ? (
-                      <img
-                        src={profession.icon}
-                        alt=""
-                        aria-hidden="true"
-                        title={suppressNativeTitles ? undefined : intl("components.profession", { value1: (locale === "en") ? (professionLabelEnglish ?? "Unknown") : "", label: (locale === "en") ? "" : (profession.label) })}
-                        className="absolute left-0 top-0 z-10 h-[25%] w-auto"
-                      />
-                    ) : null}
-                  </>
-                ) : (
-                  <div className="flex h-full items-center justify-center bg-[#4B4B4B] px-2 text-center text-xs font-semibold text-white">
-                    <AnimatedText value={displayName ?? slot.name} trend={shiftDirection} />
-                  </div>
-                )}
+                <OperatorPortrait
+                  key={slot.portrait}
+                  src={slot.portrait}
+                  alt={displayName ?? slot.name}
+                  size={portraitSize}
+                />
+                {slot.portrait && profession ? (
+                  <img
+                    src={profession.icon}
+                    alt=""
+                    aria-hidden="true"
+                    title={suppressNativeTitles ? undefined : intl("components.profession", { value1: (locale === "en") ? (professionLabelEnglish ?? "Unknown") : "", label: (locale === "en") ? "" : (profession.label) })}
+                    className="absolute left-0 top-0 z-10 h-[25%] w-auto"
+                  />
+                ) : null}
                 {slot.buildingSkill ? (
                   <BuildingSkillBadge skill={slot.buildingSkill} interactive={!onActivate} />
                 ) : typeof slot.skill === "number" ? (
@@ -1713,7 +1728,7 @@ export function ScheduleBoard({
                     {onIssue ? <Tooltip>
                       <TooltipTrigger
                         render={
-                          <span className={cn("absolute top-2 z-10", onClearRoom ? "right-24" : "right-2")}>
+                          <span className={cn("absolute top-2 z-10", onClearRoom ? "right-24" : "right-2")} data-html2canvas-ignore>
                           <Button
                             id={scheduleIssueTriggerId(row)}
                             type="button"

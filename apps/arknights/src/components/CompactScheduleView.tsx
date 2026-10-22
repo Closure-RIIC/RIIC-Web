@@ -503,7 +503,7 @@ function CompactFeedbackButton({ row, disabled, offset, onIssue }: { row: RoomRo
     <Tooltip>
       <TooltipTrigger
         render={
-          <span className={`absolute top-2 z-20 ${offset ? "right-24" : "right-2"}`}>
+          <span className={`absolute top-2 z-20 ${offset ? "right-24" : "right-2"}`} data-html2canvas-ignore>
             <Button
               type="button"
               variant="ghost"

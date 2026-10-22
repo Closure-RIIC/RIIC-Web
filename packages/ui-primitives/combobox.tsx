@@ -22,12 +22,13 @@ const ComboboxAnchorContext = React.createContext<
 function Combobox<
   Value,
   Multiple extends boolean | undefined = false,
->(props: ComboboxPrimitive.Root.Props<Value, Multiple>) {
+  Item = Value,
+>(props: ComboboxPrimitive.Root.Props<Value, Multiple, Item>) {
   const anchorRef = React.useRef<HTMLDivElement | null>(null)
 
   return (
     <ComboboxAnchorContext.Provider value={anchorRef}>
-      <ComboboxPrimitive.Root {...props} />
+      <ComboboxPrimitive.Root<Value, Multiple, Item> {...props} />
     </ComboboxAnchorContext.Provider>
   )
 }

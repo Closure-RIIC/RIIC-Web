@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { createManualScheduleDraft, type ManualScheduleDraft } from "../apps/arknights/src/manual-schedule";
 import { createPosterDocument } from "../apps/arknights/src/schedule-poster-document";
 import layout243 from "@riic/arknights-domain/layouts/243.json" with { type: "json" };
-import { mockAnonymousWebsiteSession, mockApis, now, planData } from "./production-readiness.fixture";
+import { mockAnonymousWebsiteSession, mockSignedInWebsiteSession, mockApis, now, planData } from "./production-readiness.fixture";
 
 const operators = [
   { id: "char_002_amiya", name: "阿米娅", elite: 2, level: 80, own: true, potential: 6, rarity: 5 },
@@ -512,6 +512,7 @@ async function openManualWorkflow(page: Page, tradeOperators?: Array<string | nu
 }
 
 test("manual scheduling configures independent shifts and responsive drone controls", async ({ page }) => {
+  await mockSignedInWebsiteSession(page);
   const planRequests = await openManualWorkflow(page);
 
   await switchWorkbenchLanguage(page, "en");

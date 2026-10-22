@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Play, Users } from "lucide-react";
 import { Action, ActionContent, actionClassName, Notice, PageTitle } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
+import { pageLabels } from "../page-labels";
 import { Results } from "./Results";
 import { OperatorChip } from "./GameArtwork";
 import { RosterDialogTrigger } from "./RosterDialog";
@@ -10,7 +11,7 @@ import { ProductionDialog } from "./ProductionDialog";
 export function SchedulePage() {
   const { workspace, run, busy, result, storageError, resultStorageError, ready, t } = useWorkspace();
   return <div className="ef-page ef-schedule-page">
-    <PageTitle accent="chevrons" title={t("帝江号排班", "Dijiang scheduling")} subtitle={t(`${workspace.operators.length} 名干员 · 总控中枢 Lv.${workspace.options.levels.center}`, `${workspace.operators.length} operators · Control center Lv.${workspace.options.levels.center}`)}
+    <PageTitle accent="chevrons" title={t(...pageLabels["/"])} subtitle={t(`${workspace.operators.length} 名干员 · 总控中枢 Lv.${workspace.options.levels.center}`, `${workspace.operators.length} operators · Control center Lv.${workspace.options.levels.center}`)}
       action={<div className="ef-actions">
         <RosterDialogTrigger className={actionClassName({ size: "sm" })} data-roster-edit><ActionContent icon={<Users />}>{t("编辑名单", "Edit roster")}</ActionContent></RosterDialogTrigger>
         <ProductionDialog />

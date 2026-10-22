@@ -43,7 +43,7 @@ try {
   await page.waitForFunction(key => !!globalThis.localStorage.getItem(key), RESULT_STORAGE_KEY);
   const original = await board.textContent();
   const goHome = () => page.getByRole("link", { name: "自动排班", exact: true }).click();
-  for (const name of ["技能查询", "手动排班", "森空岛同步"]) {
+  for (const name of ["技能Wiki", "手动排班", "森空岛同步"]) {
     await page.getByRole("link", { name, exact: true }).click();
     if (name === "森空岛同步") await page.locator('[data-endfield-skland][aria-busy="false"]').waitFor();
     await goHome();

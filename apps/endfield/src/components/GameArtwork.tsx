@@ -11,7 +11,7 @@ export function GameArtwork({ src, name, className = "", size = 48, style }: { s
       : <span>{name.slice(0, 1) || "—"}</span>}
   </span>;
 }
-export function OperatorPortrait({ name, size = 48, elite: explicitElite }: { name: string; size?: number; elite?: number | null }) {
+export function OperatorPortrait({ name, size = 48, elite: explicitElite, showTitle = true }: { name: string; size?: number; elite?: number | null; showTitle?: boolean }) {
   const { workspace, locale, t } = useWorkspace();
   const display = operatorData(name);
   const elite = explicitElite === undefined ? workspace.operators.find(op => op.name === display?.name)?.elite : explicitElite;
@@ -23,7 +23,7 @@ export function OperatorPortrait({ name, size = 48, elite: explicitElite }: { na
     `Ship skills: ${progress.unlocked}/${progress.total} stages unlocked · Elite ${elite}`) : "";
   return <span className="ef-operator-portrait" data-rarity={display?.rarity} style={{ width: size, height: size }}
     role={label ? "img" : undefined} aria-label={label ? `${label}${progressLabel ? ` · ${progressLabel}` : ""}` : undefined}
-    aria-hidden={!label || undefined} title={progressLabel || label || undefined}>
+    aria-hidden={!label || undefined} title={showTitle ? progressLabel || label || undefined : undefined}>
     <GameArtwork src={display?.icon} name={label} size={size} style={{ width: "100%", height: "100%" }} />
     {progress ? <span className="ef-operator-skill-stage" aria-hidden="true">{progress.unlocked}<small>/{progress.total}</small></span> : null}
   </span>;

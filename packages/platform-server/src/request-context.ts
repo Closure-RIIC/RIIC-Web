@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from "node:async_hooks";
-import { parse } from "cookie";
+import { parseCookie } from "cookie";
 
 type RequestContext = { request: Request; memo: Map<string, unknown> };
 const context = new AsyncLocalStorage<RequestContext>();
@@ -15,7 +15,7 @@ export function getRequestHeaders(): Headers {
 }
 
 export function getCookies(): Record<string, string> {
-  return Object.fromEntries(Object.entries(parse(getRequestHeaders().get("cookie") ?? "")).filter((entry): entry is [string, string] => entry[1] !== undefined));
+  return Object.fromEntries(Object.entries(parseCookie(getRequestHeaders().get("cookie") ?? "")).filter((entry): entry is [string, string] => entry[1] !== undefined));
 }
 
 /** Deduplicate work only within this request; never share identities across requests. */

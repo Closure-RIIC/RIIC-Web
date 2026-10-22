@@ -457,7 +457,7 @@ test("primary pages load their route modules and navigate on the first click", a
 
   const destinations = [
     { name: "练卡建议", href: "/training", root: "[data-training-page]" },
-    { name: "技能查询", href: "/skills", root: "[data-skill-query-page]" },
+    { name: "技能Wiki", href: "/skills", root: "[data-skill-query-page]" },
     { name: "森空岛同步", href: "/skland", root: "[data-skland-page]" },
     { name: "账号管理", href: "/settings", root: "[data-account-management]" },
   ];
@@ -625,14 +625,12 @@ test("website login lazy-loads its UI without probing the shared session again",
     await expect(loadingDialog).toBeVisible();
     const box = await loadingDialog.boundingBox();
     expect(box).not.toBeNull();
-    if (viewport.width < 768) {
-      // The shared loading dialog uses the same mobile sheet as the loaded UI.
-      expect(Math.abs(box!.width - viewport.width)).toBeLessThan(1);
-      expect(Math.abs(box!.height - viewport.height)).toBeLessThan(1);
-    } else {
-      expect(box?.width ?? 0).toBeLessThanOrEqual(viewport.width - 16);
-      expect(box?.height ?? 0).toBeLessThanOrEqual(viewport.height - 16);
-    }
+    // Loading and loaded authentication share the compact, inset dialog surface.
+    expect(box!.width).toBeCloseTo(Math.min(460, viewport.width - 24), 0);
+    expect(box!.height).toBeLessThanOrEqual(viewport.height - 24);
+    expect(box!.x).toBeGreaterThanOrEqual(12);
+    expect(box!.y).toBeGreaterThanOrEqual(12);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height - 12);
   }
 
   releaseChunks?.();
@@ -653,7 +651,7 @@ test("website login lazy-loads its UI without probing the shared session again",
   expect(sessionRequests).toBe(1);
 });
 
-test("website login opens account management after the gated navigation dialog", async ({ page }) => {
+test("website login stays on the current page and account management remains in settings", async ({ page }) => {
   let authenticated = false;
   await page.unroute("**/api/auth/get-session");
   await page.route("**/api/auth/get-session", (route) => route.fulfill({
@@ -678,7 +676,9 @@ test("website login opens account management after the gated navigation dialog",
   await accountPanel.getByRole("button", { name: "登录", exact: true }).click();
 
   await expect(page.getByRole("dialog", { name: "登录网站账号" })).toHaveCount(0);
-  await expect(page).toHaveURL(/\/account$/);
+  await expect(page).toHaveURL(/\/$/);
+  await page.locator("[data-sidebar-settings-trigger]").click();
+  await expect(page).toHaveURL(/\/settings$/);
   await expect(page.locator("[data-account-management]")).toBeVisible();
   await expect(page.locator("[data-account-management]").getByText("signed-in@example.test", { exact: true })).toBeVisible();
   const websiteAvatar = page.locator("[data-website-account-avatar]");
@@ -689,8 +689,8 @@ test("website login opens account management after the gated navigation dialog",
   await expect(websiteAvatar.locator("[data-fluid-orb-fallback]")).toHaveCSS("opacity", "0");
   await expect(websiteAvatar).not.toContainText("新");
   const websiteAvatarBox = await websiteAvatar.boundingBox();
-  expect(websiteAvatarBox?.width).toBeCloseTo(56, 0);
-  expect(websiteAvatarBox?.height).toBeCloseTo(56, 0);
+  expect(websiteAvatarBox?.width).toBeCloseTo(32, 0);
+  expect(websiteAvatarBox?.height).toBeCloseTo(32, 0);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(websiteAvatar).toHaveAttribute("data-fluid-orb-motion", /^(still|fallback)$/);
 });
@@ -823,8 +823,11 @@ test("password reset rejects a link without a token before making a request", as
     return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ status: true }) });
   });
   await page.goto("/account/reset-password");
-  await expect(page.getByText("重置链接无效或缺少令牌，请重新申请密码重置邮件。")).toBeVisible();
-  await expect(page.getByRole("button", { name: "确认重置" })).toBeDisabled();
+  const dialog = page.getByRole("dialog", { name: "重置密码", exact: true });
+  await expect(dialog.getByRole("alert")).toHaveText("重置链接已失效或已被使用，请重新发送重置邮件。");
+  await expect(dialog.getByRole("button", { name: "确认重置" })).toHaveCount(0);
+  await dialog.getByRole("button", { name: "重新发送重置邮件", exact: true }).click();
+  await expect(page.getByRole("dialog").getByRole("button", { name: "发送重置邮件", exact: true })).toBeVisible();
   expect(resetRequests).toBe(0);
 });
 
@@ -841,7 +844,9 @@ test("password reset requires matching password confirmation before making a req
   });
   await page.goto("/account/reset-password?token=valid-reset-token");
 
-  // The form is server rendered; confirm its controls are hydrated before typing.
+  // The legacy link opens a modal and removes the token from the address bar.
+  await expect(page.getByRole("dialog", { name: "重置密码", exact: true })).toBeVisible();
+  await expect(page).toHaveURL(/\/$/);
   await page.getByRole("button", { name: "显示新密码" }).click();
   await expect(page.getByLabel("新密码", { exact: true })).toHaveAttribute("type", "text");
   await page.getByRole("button", { name: "隐藏新密码" }).click();
@@ -868,7 +873,9 @@ test("password reset requires matching password confirmation before making a req
   await expect(page.getByText("两次输入的密码不一致。", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "确认重置" }).click();
   await expect.poll(() => resetRequests).toBe(1);
-  await expect(page.getByText("密码已重置，旧 Session 已撤销，请返回首页登录。", { exact: true })).toBeVisible();
+  await expect(page.getByText("密码已重置，原有登录状态已失效。请使用新密码登录。", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "使用新密码登录", exact: true }).click();
+  await expect(page.getByLabel("邮箱", { exact: true })).toBeVisible();
 });
 
 test("anonymous MAA data cannot drive planning or training advice", async ({ page }) => {
@@ -950,6 +957,8 @@ test("serves versioned WebP portraits with immutable caching only when versioned
 });
 
 test("prefetches only the adjacent shift portrait during browser idle time", async ({ page }) => {
+  test.setTimeout(60_000);
+  await mockAnonymousWebsiteSession(page);
   await mockApis(page);
   await seedV4Session(page, adjacentPortraitPlanData);
   await page.addInitScript(() => {
@@ -971,6 +980,7 @@ test("prefetches only the adjacent shift portrait during browser idle time", asy
     }
   });
   await page.goto("/");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 45_000 });
   await expect(page.locator("[data-plan-board]")).toHaveAttribute("data-plan-revision", diagnosticId);
 
   await expect.poll(() => requestedPortraits.some((url) => url.includes("/003_kalts.webp?"))).toBe(true);
@@ -1433,20 +1443,22 @@ for (const viewport of [
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     if (viewport.width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
     const accountNavigation = await sidebarNavigation(page, "账号管理");
-    await expect(accountNavigation).toHaveAttribute("href", "/account");
+    await expect(accountNavigation).toHaveAttribute("data-sidebar-sign-in", "true");
     await accountNavigation.click();
     await expect(page.locator("[data-account-management]")).toHaveCount(0);
-    const accountDialog = page.getByRole("dialog", { name: "登录网站账号" });
+    const accountDialog = page.locator("[data-website-account-dialog]");
     await expect(accountDialog).toBeVisible();
     const accountPanel = accountDialog.locator("[data-website-account-panel]");
     await expect(accountPanel.locator("[data-wizard-steps]")).toHaveCount(0);
     await accountPanel.getByRole("button", { name: "忘记密码" }).click();
-    await expect(accountPanel.getByRole("button", { name: /第 1 步，共 2 步：确认邮箱/ })).toHaveAttribute("aria-current", "step");
+    await expect(accountDialog).toHaveAccessibleName("找回密码");
+    await expect(accountPanel.getByRole("textbox", { name: "邮箱", exact: true })).toBeVisible();
+    await expect(accountPanel.getByRole("button", { name: "发送重置邮件", exact: true })).toBeVisible();
     await accountPanel.getByRole("button", { name: "返回登录" }).click();
     await expect(accountPanel.locator("[data-wizard-steps]")).toHaveCount(0);
     await accountPanel.getByRole("button", { name: "创建账号" }).click();
     await expect(accountPanel.locator("[data-wizard-steps]")).toHaveCount(0);
-    await expect(accountPanel.getByRole("heading", { name: "创建网站账号" })).toBeVisible();
+    await expect(accountDialog).toHaveAccessibleName("创建网站账号");
     await expect(accountPanel.getByRole("link", { name: "服务条款", exact: true })).toHaveAttribute("href", "/terms");
     await expect(accountPanel.getByRole("link", { name: "隐私政策", exact: true })).toHaveAttribute("href", "/privacy");
     await expect(accountPanel.getByText("2–20 个字符，可使用中文、英文字母、数字、空格、下划线和短横线。", { exact: true })).toBeVisible();
@@ -1482,7 +1494,7 @@ for (const viewport of [
       await accountPanel.getByRole("textbox", { name: `邮箱验证码第 ${index + 1} 位，共 6 位` }).fill(digit);
     }
     await accountPanel.getByRole("button", { name: "验证邮箱", exact: true }).click();
-    await expect(accountPanel.getByText("邮箱验证完成", { exact: true })).toBeVisible();
+    await expect(accountDialog).toHaveAccessibleName("邮箱验证完成");
     await expect(accountPanel.getByText("邮箱验证完成，现在可以登录网站账号。")).toBeVisible();
   });
 }

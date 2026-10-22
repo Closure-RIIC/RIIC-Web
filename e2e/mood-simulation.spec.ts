@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { switchWorkbenchLanguage } from "./workbench-language";
 import layout from "@riic/arknights-domain/layouts/243.json" with {type:"json"};
-import { mockApis, mockAnonymousWebsiteSession } from "./production-readiness.fixture";
+import { mockApis, mockSignedInWebsiteSession } from "./production-readiness.fixture";
 
 test("manual morale worker, timeline, shared targets and simulation-only settings",async ({page}) => {
   test.setTimeout(120_000);
   await mockApis(page);
-  await mockAnonymousWebsiteSession(page);
+  await mockSignedInWebsiteSession(page);
   await page.addInitScript(({layout}) => {
     if (localStorage.getItem("mood-e2e-seeded")) return;
     localStorage.setItem("mood-e2e-seeded","1");

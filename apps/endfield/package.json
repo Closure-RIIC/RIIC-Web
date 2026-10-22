@@ -9,14 +9,14 @@
     "start": "node .output/server/index.mjs"
   },
   "dependencies": {
-    "@tanstack/react-start": "1.169.1",
-    "@tanstack/react-router": "1.170.44",
-    "@base-ui/react": "^1.6.0",
-    "react": "^19.2.8",
-    "react-dom": "^19.2.8",
-    "lucide-react": "^0.475.0",
-    "motion": "^13.0.0",
-    "overlayscrollbars": "^2.16.0",
+    "@tanstack/react-start": "1.169.4",
+    "@tanstack/react-router": "1.170.46",
+    "@base-ui/react": "^1.9.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "lucide-react": "^1.61.0",
+    "motion": "^14.6.0",
+    "overlayscrollbars": "^2.17.0",
     "qrcode.react": "4.2.0",
     "@riic/shell": "*",
     "@riic/ui-primitives": "*",
@@ -29,8 +29,8 @@
     "@riic/platform-server": "*"
   },
   "devDependencies": {
-    "vite": "^8.0.0",
-    "typescript": "^5.9.3",
+    "vite": "^8.3.5",
+    "typescript": "^6.0.3",
     "@vitejs/plugin-react-swc": "4.3.3",
     "@tailwindcss/vite": "4.3.3",
     "tailwindcss": "4.3.3",
