@@ -6,7 +6,7 @@
   position: relative;
   display: inline-flex;
   width: max-content;
-  height: 26px;
+  height: auto;
   pointer-events: none;
 }
 
