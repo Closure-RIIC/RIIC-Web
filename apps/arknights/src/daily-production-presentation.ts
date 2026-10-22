@@ -26,6 +26,7 @@ export function dailyProductionValueBreakdown(
 }
 
 export type ProductionDetailProduct = {
+  net?: boolean;
   id: string;
   label: string;
   unit: string;
