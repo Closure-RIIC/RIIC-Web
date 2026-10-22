@@ -382,16 +382,16 @@ test("progression adjustments sync back to the schedule settings manual BOX", as
   await expect(page.getByText(/正在查看练度调整后方案/)).toHaveCount(0);
 
   const lmdProduction = page.locator('[data-daily-product="lmd-orders"] [data-animated-value="number"]');
-  await expect(lmdProduction).toHaveAttribute("aria-label", "41,200");
+  await expect(lmdProduction).toHaveAttribute("aria-label", "-35,600");
   const lmdCalligraph = lmdProduction.locator("[data-calligraph]");
   await expect(lmdCalligraph).toBeVisible();
   await lmdCalligraph.evaluate((element) => element.setAttribute("data-animation-sentinel", "stable"));
   await scheduleVariantTabs.getByRole("tab", { name: "原方案", exact: true }).click();
   await expect(lmdCalligraph).toHaveAttribute("data-animation-sentinel", "stable");
-  await expect(lmdProduction).toHaveAttribute("aria-label", "34,254");
+  await expect(lmdProduction).toHaveAttribute("aria-label", "-42,546");
   await scheduleVariantTabs.getByRole("tab", { name: "练度调整后", exact: true }).click();
   await expect(lmdCalligraph).toHaveAttribute("data-animation-sentinel", "stable");
-  await expect(lmdProduction).toHaveAttribute("aria-label", "41,200");
+  await expect(lmdProduction).toHaveAttribute("aria-label", "-35,600");
 
   await expect.poll(() => page.evaluate(() => {
     const session = JSON.parse(window.localStorage.getItem("arknights-infra-calc-session-v5") ?? "{}");

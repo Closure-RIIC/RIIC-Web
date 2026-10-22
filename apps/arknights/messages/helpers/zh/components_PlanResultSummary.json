@@ -81,5 +81,14 @@
   "orundumBottleneckNone": "限制环节：暂无搓玉产线",
   "orundumBottleneckUnavailable": "限制环节：产出数据不足",
   "orderMaterial": "订单原料",
-  "manufactureStage": "制造环节"
+  "manufactureStage": "制造环节",
+  "productNetLmd": "净龙门币",
+  "shardManufacturingCost": "碎片制造消耗",
+  "netIncome": "净收益",
+  "shardRecipe": "碎片成本配方",
+  "orirockRecipeName": "固源岩",
+  "deviceRecipeName": "装置",
+  "orirockRecipe": "固源岩：1,600 龙门币/枚",
+  "deviceRecipe": "装置：1,000 龙门币/枚",
+  "shardCostAssumption": "按{recipe}配方每枚 {cost} 龙门币估算；可在上方切换。按碎片制造量扣费，不按合成玉兑换量；未计材料成本、库存及搓玉无人机增量。"
 }

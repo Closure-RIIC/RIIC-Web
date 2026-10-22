@@ -81,5 +81,14 @@
   "orundumBottleneckNone": "Bottleneck: no Orundum line",
   "orundumBottleneckUnavailable": "Bottleneck: insufficient production data",
   "orderMaterial": "Order material",
-  "manufactureStage": "Manufacturing stage"
+  "manufactureStage": "Manufacturing stage",
+  "productNetLmd": "Net LMD",
+  "shardManufacturingCost": "Shard manufacturing cost",
+  "netIncome": "Net income",
+  "shardRecipe": "Shard cost recipe",
+  "orirockRecipeName": "Orirock",
+  "deviceRecipeName": "Device",
+  "orirockRecipe": "Orirock: 1,600 LMD/shard",
+  "deviceRecipe": "Device: 1,000 LMD/shard",
+  "shardCostAssumption": "Estimated at {cost} LMD per shard using {recipe}; change the recipe above. Charged on shards manufactured, not Orundum traded. Material costs, stock limits and drone output for Orundum lines are excluded."
 }

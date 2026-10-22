@@ -15,10 +15,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type DailyProductionUnavailableReason } from "@/daily-production";
 import { type DailyProductionGroup, type ProductionDetailProduct } from "@/daily-production-presentation";
 import { createCalculatorProductionPresentation, type ProductionSummaryPresentation } from "@/production-summary-adapters";
+import { withOriginiumLmdCost, type OriginiumShardRecipe } from "@/originium-lmd-cost";
 import { cn } from "@/lib/utils";
 
 const PRODUCT_KEYS = { experience: "productExperience", "lmd-orders": "productLmd", gold: "productGold", orundum: "productOrundum", shards: "productShards" } as const;
-function productLabel(product: { id: string; label: string }, en: boolean) {
+function productLabel(product: { id: string; label: string; net?: boolean }, en: boolean) {
+  if (product.net) return localize_components_PlanResultSummary.text(en, "productNetLmd");
   const key = PRODUCT_KEYS[product.id as keyof typeof PRODUCT_KEYS];
   return en && key ? localize_components_PlanResultSummary.text(en, key) : product.label;
 }
@@ -142,6 +144,7 @@ export function PlanResultSummary({
   const [animateOnMount] = useState(animateEntrance);
   const [detailSection, setDetailSection] = useState<DetailSection>("efficiency");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [shardRecipe, setShardRecipe] = useState<OriginiumShardRecipe>("orirock");
   const performanceFeedbackPendingRef = useRef(false);
   const reportRendered = useEffectEvent((revision: string) => onEntranceConsumed?.(revision));
   useEffect(() => {
@@ -154,7 +157,8 @@ export function PlanResultSummary({
     : { source: "pending", groups: [], detailsAvailable: false, solverProduction: null, droneProduction: undefined };
   const activePresentation = productionPresentation ?? calculatorPresentation;
   const solverDaily = activePresentation.solverProduction;
-  const productGroups = activePresentation.groups;
+  const productGroups = withOriginiumLmdCost(activePresentation.groups, shardRecipe, en);
+  const hasShardCosts = productGroups.some((group) => group.primary.net);
   const adjustmentCount = countShiftPlacementAdjustments(comparison);
   const activeDetailSection = detailSection === "comparison" && comparison ? "comparison" : "efficiency";
   const canOpenDetails = activePresentation.detailsAvailable;
@@ -282,6 +286,19 @@ export function PlanResultSummary({
             <div data-yeye-scroll="auto" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-4 pb-6" data-plan-details-section={activeDetailSection}>
               <TabsContent value="efficiency" className="m-0">
                 <motion.div initial={{ opacity: 0, x: shouldReduceMotion ? 0 : -12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: shouldReduceMotion ? 0 : MOTION_DURATION.state, ease: MOTION_EASE_OUT }}>
+                  {hasShardCosts ? (
+                    <label className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+                      {localize_components_PlanResultSummary.text(en, "shardRecipe")}
+                      <select
+                        className="min-h-11 max-w-full rounded border border-border bg-background px-2 text-sm"
+                        value={shardRecipe}
+                        onChange={(event) => setShardRecipe(event.target.value === "device" ? "device" : "orirock")}
+                      >
+                        <option value="orirock">{localize_components_PlanResultSummary.text(en, "orirockRecipe")}</option>
+                        <option value="device">{localize_components_PlanResultSummary.text(en, "deviceRecipe")}</option>
+                      </select>
+                    </label>
+                  ) : null}
                   <EfficiencyDetails productGroups={productGroups} en={en} solverProduction={solverDaily} droneProduction={activePresentation.droneProduction} />
                 </motion.div>
               </TabsContent>
