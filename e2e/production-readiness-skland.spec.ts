@@ -62,6 +62,54 @@ test.beforeEach(async ({ page }) => {
   }));
 });
 
+for (const interaction of ["hover", "focus"] as const) {
+  test(`Skland renewal notice expires on a fixed timer during ${interaction} and stays dismissed`, async ({ page }) => {
+    test.slow();
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await mockApis(page, {
+      sklandConfigured: true, sklandSnapshot: authenticatedSklandSnapshot,
+      sklandBindingCount: 2, sklandRenewalDueCount: 1,
+    });
+    await seedPreferences(page);
+    const clockStart = new Date();
+    await page.clock.install({ time: clockStart });
+    await page.clock.pauseAt(new Date(clockStart.getTime() + 1_000));
+    await page.goto("/skland");
+    const notice = page.locator('[data-slot="live-activity"][data-activity-kind="skland-renewal"]');
+    await expect(notice).toContainText("有 1 个森空岛绑定已满七天", { timeout: 60_000 });
+    await expect(notice).toContainText("当前仍有效的账号可以继续使用");
+    await expect(notice).toHaveAttribute("data-activity-view", "expanded");
+    await expect(notice).toHaveAttribute("data-activity-phase", "notice");
+    await page.clock.runFor(2_000);
+    await notice[interaction]();
+    await page.clock.runFor(2_000);
+    await expect(notice).toBeVisible();
+    await page.clock.runFor(2_500);
+    await expect(notice).toHaveCount(0);
+    await page.clock.resume();
+    await expect(page.locator('[data-skland-add-account]')).toBeEnabled({ timeout: 60_000 });
+    await expect(page.locator('[data-skland-page]')).not.toContainText("已满七天");
+    await page.locator('[data-skland-view-tabs]').getByRole("tab").last().click();
+    await page.locator('[data-skland-view-tabs]').getByRole("tab").first().click();
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event("focus"));
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    await page.clock.runFor(1_000);
+    await expect(notice).toHaveCount(0);
+    await page.locator('[data-skland-add-account]').click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+  });
+}
+
+test("Skland accounts without expired bindings do not show a renewal notice", async ({ page }) => {
+  await mockApis(page, { sklandConfigured: true, sklandSnapshot: authenticatedSklandSnapshot });
+  await seedPreferences(page);
+  await page.goto("/skland");
+  await expect(page.locator('[data-skland-add-account]')).toBeEnabled();
+  await expect(page.locator('[data-activity-kind="skland-renewal"]')).toHaveCount(0);
+});
+
 test("Skland tab URLs support direct entry, refresh and browser history", async ({ page }) => {
   test.slow();
   await page.emulateMedia({ reducedMotion: "reduce" });
