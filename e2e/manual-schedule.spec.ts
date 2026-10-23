@@ -787,6 +787,47 @@ test("manual scheduling clears autofill and shifts and exports independent perio
 
 });
 
+for (const scenario of [
+  { name: "overlapping periods", first: ["00:00", "12:00"], second: ["12:00", "23:59"], minutes: [721, 719] },
+  { name: "period gaps", first: ["04:00", "11:59"], second: ["12:00", "23:59"], minutes: [720, 720] },
+]) {
+  test(`manual MAA import accepts ${scenario.name} and persists the resolved assignments`, async ({ page }) => {
+    await page.goto("/manual");
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+    await page.getByRole("button", { name: "导入排班文件" }).click();
+    const upload = page.locator("[data-file-upload-dialog]");
+    const chooser = page.waitForEvent("filechooser");
+    await upload.getByRole("button", { name: "选择文件", exact: true }).click();
+    await (await chooser).setFiles({
+      name: "maa-period-compatibility.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify({
+        plans: [
+          { period: [scenario.first], rooms: { control: [{ operators: ["阿米娅"] }] } },
+          { period: [scenario.second], rooms: { control: [{ operators: ["锡兰"] }] } },
+        ],
+      })),
+    });
+    const preview = page.getByRole("dialog", { name: "导入这个 MAA 排班？" });
+    await expect(preview).toContainText("重叠时采用文件中靠前的匹配计划，空档采用第一个计划");
+    await preview.getByRole("button", { name: "导入并替换草稿" }).click();
+    const readDraft = () => page.evaluate(() => {
+      const draft = JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!);
+      return {
+        mode: draft.scheduleMode,
+        minutes: draft.shifts.map((shift: ManualScheduleDraft["shifts"][number]) => Math.round(shift.durationHours * 60)),
+        operators: draft.shifts.map((shift: ManualScheduleDraft["shifts"][number]) => shift.rooms.control?.operators.filter(Boolean)),
+      };
+    });
+    const expected = { mode: "period", minutes: scenario.minutes, operators: [["阿米娅"], ["锡兰"]] };
+    await expect.poll(readDraft).toEqual(expected);
+    await page.reload();
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+    await expect.poll(readDraft).toEqual(expected);
+    await expect(page.locator('[data-manual-editor-board] [data-room-title="控制中枢"] [data-operator-identity="阿米娅"]')).toBeVisible();
+  });
+}
+
 test("manual scheduling previews and imports an external MAA schedule file", async ({ page }) => {
   await page.goto("/manual");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();

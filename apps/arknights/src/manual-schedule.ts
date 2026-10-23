@@ -413,15 +413,12 @@ function periodForSegment(start: number, duration: number): MaaPeriod[] {
 
 /**
  * 将 MAA 的时间选择规则展开成编辑器可表示的连续 24 小时时间线。
+ * 对齐 MAA Windows 客户端：重叠时取首个匹配计划，空档回退文件中的首个计划。
  * 同一计划的跨午夜相邻区间会合并；真正不连续的重复区间会复制为不同班次。
  */
 export function normalizeMaaScheduleForManualImport(maa: MaaJson): MaaJson {
   const timedPlans = maa.plans.filter((plan) => Array.isArray(plan.period) && plan.period.length > 0);
   if (timedPlans.length === 0) return structuredClone(maa);
-  if (timedPlans.length !== maa.plans.length) {
-    throw new Error("排班文件混合了有时间区间和无时间区间的班次，无法自动判断执行顺序。");
-  }
-
   const coverage = new Int16Array(MINUTES_PER_DAY).fill(-1);
   maa.plans.forEach((plan, planIndex) => {
     for (const range of plan.period ?? []) {
@@ -431,13 +428,15 @@ export function normalizeMaaScheduleForManualImport(maa: MaaJson): MaaJson {
       const duration = ((end - start + MINUTES_PER_DAY) % MINUTES_PER_DAY) + 1;
       for (let offset = 0; offset < duration; offset += 1) {
         const minute = (start + offset) % MINUTES_PER_DAY;
-        if (coverage[minute] !== -1) throw new Error(`排班时间在 ${formatTime(minute)} 发生重叠。`);
-        coverage[minute] = planIndex;
+        if (coverage[minute] === -1) coverage[minute] = planIndex;
       }
     }
   });
-  const gap = coverage.findIndex((planIndex) => planIndex === -1);
-  if (gap >= 0) throw new Error(`排班时间在 ${formatTime(gap)} 存在空档，时间区间模式必须覆盖完整 24 小时。`);
+  // period is a plan-selection window, not a requirement to cover the entire day.
+  // Untimed plans do not compete with timed matches; plan 0 is the fallback.
+  for (let minute = 0; minute < coverage.length; minute += 1) {
+    if (coverage[minute] === -1) coverage[minute] = 0;
+  }
 
   const preferredStart = parseTime(maa.plans[0]?.period?.[0]?.[0]) ?? 0;
   let cycleStart = preferredStart;
