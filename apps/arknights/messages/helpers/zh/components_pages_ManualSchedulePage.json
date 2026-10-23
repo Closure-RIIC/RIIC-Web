@@ -47,7 +47,7 @@
   "expandedFromPlans": "（由 {count} 个计划按时间展开）",
   "assignmentsLabel": "干员位置：",
   "unmappedAssignments": "{count} 个位置无法映射。",
-  "importMaaScheduleDetails": "时间计划会展开为连续覆盖 24 小时的班次；当前 Box 以外的干员也会保留。文件明确提供的设施数组会覆盖对应布局数量，可识别的房间产物会同步到 Box 与布局；未提供的设施类型和产物设置保持不变。",
+  "importMaaScheduleDetails": "有时间区间的计划会按 MAA Windows 客户端规则展开为 24 小时班次：重叠时采用文件中靠前的匹配计划，空档采用第一个计划。无时间区间的文件保留顺序模式。当前 Box 以外的干员也会保留。文件明确提供的设施数组会覆盖对应布局数量，可识别的房间产物会同步到 Box 与布局；未提供的设施类型和产物设置保持不变。",
   "replaceDraft": "导入并替换草稿",
   "clearEveryFacilityInShift": "清空当前班次所有设施",
   "clearEveryFacilityQuestion": "清空当前班次所有设施？",
