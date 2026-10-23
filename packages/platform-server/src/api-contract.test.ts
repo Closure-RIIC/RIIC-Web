@@ -71,6 +71,7 @@ test("success and failure responses include the request id", async () => {
   const success = successResponse({ plannerReady: false }, "request-1", 503);
   assert.equal(success.status, 503);
   assert.equal(success.headers.get("X-Request-Id"), "request-1");
+  assert.equal(success.headers.get("Cache-Control"), "private, no-store");
   assert.deepEqual(await success.json(), {
     success: true,
     data: { plannerReady: false },
@@ -85,6 +86,7 @@ test("success and failure responses include the request id", async () => {
   );
   assert.equal(failure.status, 429);
   assert.equal(failure.headers.get("X-Request-Id"), "request-2");
+  assert.equal(failure.headers.get("Cache-Control"), "private, no-store");
   assert.equal(failure.headers.get("Retry-After"), "7");
   const body = await failure.json();
   assert.equal(body.error.requestId, "request-2");
