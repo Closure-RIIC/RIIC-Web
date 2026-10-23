@@ -31,7 +31,7 @@ import { PrimaryPageTransition } from "@/components/layout/PrimaryPageTransition
 import { SetupDialogSkeleton } from "@/components/setup/SetupDialogSkeleton";
 import { WebsiteAccountDialogLoading } from "@/components/auth/WebsiteAccountDialogLoading";
 import { ACCOUNT_SIGN_IN_EVENT, accountDialogRequest, type AccountSignInDetail } from "@riic/shell/account-sign-in";
-import { LiveActivity, usePlanActivity } from "@/components/ui/live-activity";
+import { LiveActivity, usePlanActivity, type Activity } from "@/components/ui/live-activity";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { trackTelemetry } from "@/lib/telemetry-dispatch";
 import { WorkbenchContext } from "@/workbench-context";
@@ -591,6 +591,16 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     && planRetryCountdown === 0
   );
   const sklandBindingCount = sklandBindingSummary.totalCount;
+  const sklandRenewalActivity = useMemo<Activity | null>(() => sklandBindingSummary.renewalDueCount > 0 ? {
+    id: `${websiteSession?.user.id}:${sklandBindingSummary.latestExpiredAt}:${sklandBindingSummary.renewalDueCount}`,
+    kind: "skland-renewal",
+    phase: "notice",
+    error: null,
+    title: intl("components_pages_SklandStatus.sklandStatus"),
+    description: intl("components_pages_SklandStatus.sklandLinkSReachedTheSevenDayLimitAnd", {
+      renewalDueCount: sklandBindingSummary.renewalDueCount,
+    }),
+  } : null, [intl, sklandBindingSummary.latestExpiredAt, sklandBindingSummary.renewalDueCount, websiteSession?.user.id]);
   const sklandTrainingSyncOptions: SklandTrainingSyncOptions = {
     enabled: Boolean(CLIENT_SKLAND_ENABLED && websiteSession?.user.id && boxSource === "skland" && activeSklandAccount && hasRestoredSession),
     active: page === "training",
@@ -2562,6 +2572,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         ) : null}
         <LiveActivity
           activity={activity}
+          notice={page === "skland" && !sklandSessionLoading && sklandScheduleSnapshot && sklandStatusSnapshot && activeSklandAccount ? sklandRenewalActivity : null}
           trainingSync={page === "training" && accountCanUseCurrentBox ? sklandTrainingSync : null}
           onRetry={() => void handleRetry()}
           retryCountdownSeconds={planRetryCountdown}
