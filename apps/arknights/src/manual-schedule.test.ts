@@ -432,16 +432,72 @@ test("timed MAA imports merge midnight ranges and expand reused non-contiguous p
   ]);
 });
 
-test("timed MAA imports reject gaps and overlaps", () => {
-  assert.throws(() => normalizeMaaScheduleForManualImport(parseMaaScheduleText(JSON.stringify({
-    plans: [{ period: [["00:00", "12:00"]], rooms: {} }],
-  }))), /空档/);
-  assert.throws(() => normalizeMaaScheduleForManualImport(parseMaaScheduleText(JSON.stringify({
+test("timed MAA imports give overlapping boundaries to the first matching plan", () => {
+  const source = parseMaaScheduleText(JSON.stringify({
     plans: [
-      { period: [["00:00", "12:00"]], rooms: {} },
-      { period: [["12:00", "23:59"]], rooms: {} },
+      { period: [["00:00", "12:00"], ["08:00", "10:00"]], rooms: { control: [{ operators: ["但书"] }] } },
+      { period: [["12:00", "23:59"]], rooms: { control: [{ operators: ["巫恋"] }] } },
     ],
-  }))), /重叠/);
+  }));
+  const original = structuredClone(source);
+  const normalized = normalizeMaaScheduleForManualImport(source);
+  assert.deepEqual(source, original);
+  assert.deepEqual(normalized.plans.map(plan => plan.period), [
+    [["00:00", "12:00"]], [["12:01", "23:59"]],
+  ]);
+  assert.deepEqual(normalized.plans.map(plan => plan.duration), [721, 719]);
+  assert.deepEqual(normalized.plans.map(plan => plan.rooms.control?.[0]?.operators), [["但书"], ["巫恋"]]);
+});
+
+test("timed MAA imports use the first plan for uncovered time including midnight", () => {
+  const normalized = normalizeMaaScheduleForManualImport(parseMaaScheduleText(JSON.stringify({
+    plans: [
+      { period: [["04:00", "11:59"]], rooms: { control: [{ operators: ["但书"] }] } },
+      { period: [["12:00", "23:59"]], rooms: { control: [{ operators: ["巫恋"] }] } },
+    ],
+  })));
+  assert.deepEqual(normalized.plans.map(plan => plan.period), [
+    [["00:00", "11:59"]], [["12:00", "23:59"]],
+  ]);
+  assert.deepEqual(normalized.plans.map(plan => plan.duration), [720, 720]);
+  assert.deepEqual(normalized.plans.map(plan => plan.rooms.control?.[0]?.operators), [["但书"], ["巫恋"]]);
+});
+
+test("timed MAA imports allow an untimed first plan as the fallback", () => {
+  const normalized = normalizeMaaScheduleForManualImport(parseMaaScheduleText(JSON.stringify({
+    plans: [
+      { rooms: { control: [{ operators: ["但书"] }] } },
+      { period: [["08:00", "19:59"]], rooms: { control: [{ operators: ["巫恋"] }] } },
+    ],
+  })));
+  assert.deepEqual(normalized.plans.map(plan => plan.rooms.control?.[0]?.operators), [["巫恋"], ["但书"]]);
+  assert.deepEqual(normalized.plans.map(plan => plan.period), [
+    [["08:00", "19:59"]], [["20:00", "23:59"], ["00:00", "07:59"]],
+  ]);
+});
+
+test("timed MAA imports collapse fully shadowed plans but still reject invalid times", () => {
+  const normalized = normalizeMaaScheduleForManualImport(parseMaaScheduleText(JSON.stringify({
+    plans: [
+      { period: [["00:00", "23:59"]], rooms: { control: [{ operators: ["但书"] }] } },
+      { period: [["06:00", "11:59"]], rooms: { control: [{ operators: ["巫恋"] }] } },
+    ],
+  })));
+  assert.equal(normalized.plans.length, 1);
+  assert.equal(normalized.plans[0]?.duration, 1440);
+  assert.deepEqual(normalized.plans[0]?.rooms.control?.[0]?.operators, ["但书"]);
+  assert.throws(() => normalizeMaaScheduleForManualImport(parseMaaScheduleText(JSON.stringify({
+    plans: [{ period: [["25:00", "12:00"]], rooms: {} }],
+  }))), /无效时间区间/);
+});
+
+test("sequential MAA imports preserve multi-day durations and plan order", () => {
+  const source = parseMaaScheduleText(JSON.stringify({
+    plans: [12, 12, 12].map((hours, index) => ({ name: `Shift ${index + 1}`, duration: hours * 60, rooms: {} })),
+  }));
+  const normalized = normalizeMaaScheduleForManualImport(source);
+  assert.deepEqual(normalized, source);
+  assert.notEqual(normalized, source);
 });
 
 test("MAA layout import overrides specified room counts and imports room products", () => {
