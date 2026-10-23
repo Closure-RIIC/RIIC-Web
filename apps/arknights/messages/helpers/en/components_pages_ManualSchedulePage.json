@@ -47,7 +47,7 @@
   "expandedFromPlans": "(expanded from {count, plural, one {# plan} other {# plans}})",
   "assignmentsLabel": "Assignments: ",
   "unmappedAssignments": "{count, plural, one {# position could not be mapped.} other {# positions could not be mapped.}}",
-  "importMaaScheduleDetails": "Timed plans are expanded into a continuous 24-hour cycle. Operators outside the current Box are preserved. Facility arrays provided by the file replace matching layout counts, and recognized room products are synchronized to Box & layout; omitted facility types and product settings remain unchanged.",
+  "importMaaScheduleDetails": "Timed plans become a 24-hour cycle using MAA's Windows client rules: the first matching plan wins overlaps, and the first plan fills gaps. Files without time periods keep sequential mode. Operators outside the current Box are preserved. Facility arrays provided by the file replace matching layout counts, and recognized room products are synchronized to Box & layout; omitted facility types and product settings remain unchanged.",
   "replaceDraft": "Replace draft",
   "clearEveryFacilityInShift": "Clear every facility in this shift",
   "clearEveryFacilityQuestion": "Clear every facility in this shift?",

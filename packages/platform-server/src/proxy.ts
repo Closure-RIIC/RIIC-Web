@@ -1,4 +1,4 @@
-const sharedPaths = new Set(["/api/workspace", "/api/account/data-consent", "/api/account/session/extend", "/api/platform/session"]);
+const sharedPaths = new Set(["/api/workspace", "/api/account/data-consent", "/api/account/session/extend", "/api/platform/session", "/api/platform/endfield-access"]);
 
 export function isPlatformPath(pathname: string): boolean {
   return sharedPaths.has(pathname) || ["/api/auth/", "/api/skland/", "/api/endfield/skland/"].some(prefix => pathname.startsWith(prefix));

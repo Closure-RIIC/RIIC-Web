@@ -1,0 +1,9 @@
+.backdrop { position: fixed; inset: 0; z-index: 90; background: rgb(0 0 0 / 45%); transition: opacity 150ms ease; }
+.popup { position: fixed; top: 50%; left: 50%; z-index: 91; display:flex; flex-direction:column; width: min(460px, calc(100vw - 24px)); max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); min-width: 0; overflow: hidden; transform: translate(-50%, -50%); border: 1px solid var(--border); border-radius: 12px; background: var(--background); color: var(--foreground); box-shadow: 0 20px 80px rgb(0 0 0 / 20%); outline: none; transition: opacity 150ms ease; }
+.close { position: absolute; top: 8px; right: 8px; z-index: 2; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: var(--muted-foreground); background: var(--background); }
+.close svg { width: 16px; height: 16px; }
+.close:hover { background: var(--muted); color: var(--foreground); }
+.close:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.backdrop[data-starting-style], .backdrop[data-ending-style], .popup[data-starting-style], .popup[data-ending-style] { opacity: 0; }
+@media(max-width: 767px) { .close { width: 44px; height: 44px; top:2px; right:2px; } }
+@media(prefers-reduced-motion: reduce) { .backdrop, .popup { transition: none; } }

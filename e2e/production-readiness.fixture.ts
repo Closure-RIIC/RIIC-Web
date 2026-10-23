@@ -1113,6 +1113,14 @@ export async function openSklandOverview(page: Page) {
   await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCount(0);
 }
 
+export async function mockSignedInWebsiteSession(page: Page) {
+  await installMockSessionRefresh(page);
+  await page.route("**/api/auth/get-session", route => route.fulfill({ json: {
+    user: { id: "test-user", name: "Test user", email: "test@example.test", emailVerified: true },
+    session: { id: "test-session", userId: "test-user", expiresAt: "2099-01-01T00:00:00Z" },
+  } }));
+}
+
 export async function mockAnonymousWebsiteSession(page: Page) {
   await page.unroute("**/api/auth/get-session");
   await page.route("**/api/auth/get-session", (route) => route.fulfill({
@@ -1123,6 +1131,7 @@ export async function mockAnonymousWebsiteSession(page: Page) {
 }
 
 export async function sidebarNavigation(page: Page, name: string) {
+  if (name === "账号管理" && await page.locator("[data-sidebar-sign-in]").count()) return page.locator("[data-sidebar-sign-in]");
   if (["账号管理", "付费计划", "更新日志"].includes(name)) {
     const trigger = page.locator("[data-sidebar-account-trigger]");
     if (await trigger.getAttribute("aria-expanded") !== "true") {

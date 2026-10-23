@@ -35,3 +35,10 @@ export function syncSklandWorkspace(current: Workspace, snapshot: EndfieldSnapsh
 }
 
 export type SklandSyncStatus = ReturnType<typeof syncSklandWorkspace>["status"];
+
+export type SklandSyncActivity = {
+  id: number;
+  kind: "skland";
+  phase: "success" | "warning";
+  status: SklandSyncStatus;
+};

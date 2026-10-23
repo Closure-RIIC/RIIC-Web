@@ -373,7 +373,7 @@ try {
   assert.equal(await editRoster.evaluate(el => el === globalThis.document.activeElement), true, "Mobile focus returns to the edit button");
   await page.locator("[data-endfield-mobile-navigation]").click();
   await page.getByRole("link", { name: "自动排班", exact: true }).click();
-  await page.getByRole("heading", { name: "帝江号排班", exact: true }).waitFor();
+  await page.getByRole("heading", { name: "自动排班", exact: true }).waitFor();
   await page.getByRole("dialog", { name: "Sidebar" }).waitFor({ state: "hidden" });
   assert.ok(await page.evaluate(() => globalThis.document.documentElement.scrollWidth <= globalThis.innerWidth), "No mobile page overflow");
   await context.addCookies([{ name: "riic-endfield-locale", value: "en", url: endfield }]);
@@ -417,10 +417,10 @@ try {
   await page.locator('[data-workbench-hydrated="true"]').waitFor({ timeout: 60000 });
   await page.locator("[data-game-switcher]").click();
   const toEndfield = page.getByRole("menuitem", { name: "终末地", exact: true });
-  assert.equal(await toEndfield.getAttribute("href"), `${endfield}/`);
-  await toEndfield.click();
+  await expect(toEndfield).toHaveCount(0);
+  await page.goto(`${endfield}/`);
   await page.waitForURL(`${endfield}/`);
-  await page.getByRole("heading", { name: "帝江号排班", exact: true }).waitFor();
+  await page.getByRole("heading", { name: "自动排班", exact: true }).waitFor();
   // Roster edits still stop obsolete work after removing the dedicated cancel button.
   const fullWorkspace = { version: 1, operators: catalog.map(o => ({ name: o.name, elite: 4 })), options: { ...DEFAULT_OPTIONS, time: 30000, budget: 2000000 } };
   await seedWorkspace(fullWorkspace);

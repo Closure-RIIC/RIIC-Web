@@ -4,7 +4,7 @@ import { localize as localize_App } from "./i18n/helpers/App.ts";
 import { useTranslations, useLocale } from "use-intl";
 
 import { Link } from "@tanstack/react-router";
-import { useRenderedPathname, useRouter } from "@/navigation";
+import { useRenderedPathname, useRouter, useSearchParams } from "@/navigation";
 import {
   lazy,
   Suspense,
@@ -24,16 +24,18 @@ import { useAccountCloudWorkspace } from "account-cloud-workspace-bridge";
 import { AppSidebar } from "@/components/layout/AppSidebar";
 import { FilingLinks } from "@/components/layout/FilingLinks";
 import { AppTopBar, SklandAccountControl } from "@/components/layout/AppTopBar";
+import { WorkbenchDock } from "@/components/layout/WorkbenchDock";
 import { DotDistortionBackground } from "@/components/layout/DotDistortionBackground";
 import { AppMotionProvider } from "@/components/MotionProvider";
 import { PrimaryPageTransition } from "@/components/layout/PrimaryPageTransition";
 import { SetupDialogSkeleton } from "@/components/setup/SetupDialogSkeleton";
 import { WebsiteAccountDialogLoading } from "@/components/auth/WebsiteAccountDialogLoading";
-import { LiveActivity, usePlanActivity } from "@/components/ui/live-activity";
+import { ACCOUNT_SIGN_IN_EVENT, accountDialogRequest, type AccountSignInDetail } from "@riic/shell/account-sign-in";
+import { LiveActivity, usePlanActivity, type Activity } from "@/components/ui/live-activity";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { trackTelemetry } from "@/lib/telemetry-dispatch";
 import { WorkbenchContext } from "@/workbench-context";
-import { FeatureAccessBoundary } from "@/components/workbench/FeatureAccessProvider";
+import { useFeatureAccess } from "@/components/workbench/FeatureAccessProvider";
 import { workbenchHref, workbenchPageFromPathname, type AppPage } from "@/workbench-routes";
 import { setTrainingPlannerHandoff, type TrainingPlannerHandoff } from "@/training-planner-store";
 import { useWebsiteSession } from "@/website-session";
@@ -260,8 +262,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const locale = useLocale();
   const pathname = useRenderedPathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const page = workbenchPageFromPathname(pathname);
   const { data: websiteSession, isPending: websiteSessionPending, refetch: refetchWebsiteSession } = useWebsiteSession();
+  const { agent: agentAllowed } = useFeatureAccess();
   const { store: agentHistoryStore } = useAgentHistory();
   const agentRuntime = useAgentRuntime();
   const defaultPreset = PRESETS[0];
@@ -275,11 +279,16 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const websiteAuthFocusReturnTimerRef = useRef<number | null>(null);
   const [websiteAuthReloadKey, setWebsiteAuthReloadKey] = useState(0);
   const [websiteAuthDialogOpen, setWebsiteAuthDialogOpen] = useState(false);
+  const [websiteAuthResetToken, setWebsiteAuthResetToken] = useState<string>();
   const [websiteAuthDialogMounted, setWebsiteAuthDialogMounted] = useState(false);
   const [hasRestoredSession, setHasRestoredSession] = useState(false);
   const restoredLocalSession = useRef(false);
   const [onboardingPreference, setOnboardingPreference] = useState<OnboardingPreference>("active");
   const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS);
+  const [floatingAgentMinimized, setFloatingAgentMinimized] = useState(false);
+  const showFloatingAgent = hasRestoredSession && agentAllowed && userSettings.showFloatingAgent
+    && page !== "agent" && page !== "account" && page !== "gacha";
+  const showWorkbenchDock = page === "calculator" || showFloatingAgent;
   const [preset, setPreset] = useState<PresetDef>(defaultPreset);
   const [layout, setLayout] = useState<BaseBlueprint>(defaultLayout);
   const powerBudget = useMemo(() => computePowerBudget(layout), [layout]);
@@ -582,6 +591,16 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     && planRetryCountdown === 0
   );
   const sklandBindingCount = sklandBindingSummary.totalCount;
+  const sklandRenewalActivity = useMemo<Activity | null>(() => sklandBindingSummary.renewalDueCount > 0 ? {
+    id: `${websiteSession?.user.id}:${sklandBindingSummary.latestExpiredAt}:${sklandBindingSummary.renewalDueCount}`,
+    kind: "skland-renewal",
+    phase: "notice",
+    error: null,
+    title: intl("components_pages_SklandStatus.sklandStatus"),
+    description: intl("components_pages_SklandStatus.sklandLinkSReachedTheSevenDayLimitAnd", {
+      renewalDueCount: sklandBindingSummary.renewalDueCount,
+    }),
+  } : null, [intl, sklandBindingSummary.latestExpiredAt, sklandBindingSummary.renewalDueCount, websiteSession?.user.id]);
   const sklandTrainingSyncOptions: SklandTrainingSyncOptions = {
     enabled: Boolean(CLIENT_SKLAND_ENABLED && websiteSession?.user.id && boxSource === "skland" && activeSklandAccount && hasRestoredSession),
     active: page === "training",
@@ -683,6 +702,29 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (websiteAuthDialogOpen) setWebsiteAuthDialogMounted(true);
   }, [websiteAuthDialogOpen]);
+
+  useEffect(() => {
+    const open = (event: Event) => {
+      websiteAuthIntentRef.current = "account";
+      websiteAuthReturnFocusRef.current = (event as CustomEvent<AccountSignInDetail>).detail?.trigger ?? document.activeElement as HTMLElement | null;
+      setWebsiteAuthResetToken(undefined);
+      setWebsiteAuthDialogOpen(true);
+    };
+    window.addEventListener(ACCOUNT_SIGN_IN_EVENT, open);
+    return () => window.removeEventListener(ACCOUNT_SIGN_IN_EVENT, open);
+  }, []);
+
+  useEffect(() => {
+    if (websiteSessionPending) return;
+    const request = accountDialogRequest(window.location.href);
+    if (!request) return;
+    router.replace(request.cleanHref);
+    if (!websiteSession || request.resetToken !== undefined) {
+      websiteAuthIntentRef.current = "account";
+      setWebsiteAuthResetToken(request.resetToken);
+      setWebsiteAuthDialogOpen(true);
+    }
+  }, [pathname, searchParams, router, websiteSession, websiteSessionPending]);
 
   useEffect(() => {
     if (issueOpen) setIssueModalMounted(true);
@@ -910,14 +952,22 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }, [hasRestoredSession, websiteAuthReloadKey, websiteSessionPending, websiteUserId]);
 
   useEffect(() => {
-    if (websiteSessionPending || !websiteSession || !websiteAuthDialogOpen) return;
+    if (websiteSessionPending || !websiteSession || !websiteAuthDialogOpen || websiteAuthResetToken !== undefined) return;
     const intent = websiteAuthIntentRef.current;
     if (!intent) return;
     websiteAuthIntentRef.current = null;
+    const trigger = websiteAuthReturnFocusRef.current;
     websiteAuthReturnFocusRef.current = null;
     setWebsiteAuthDialogOpen(false);
     websiteIntentContinuationRef.current(intent);
-  }, [websiteAuthDialogOpen, websiteSession, websiteSessionPending]);
+    if (intent === "account" || intent === "run") {
+      websiteAuthFocusReturnTimerRef.current = window.setTimeout(() => {
+        websiteAuthFocusReturnTimerRef.current = null;
+        const target = trigger?.isConnected ? trigger : document.querySelector<HTMLElement>('[data-sidebar-account-trigger]');
+        target?.focus();
+      }, WEBSITE_AUTH_FOCUS_RETURN_DELAY_MS);
+    }
+  }, [websiteAuthDialogOpen, websiteAuthResetToken, websiteSession, websiteSessionPending]);
 
   useEffect(() => {
     if (!hasRestoredSession || websiteSessionPending) return;
@@ -1865,6 +1915,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   function requestWebsiteAccount(intent: WebsiteAuthIntent, trigger?: HTMLElement | null) {
     websiteAuthIntentRef.current = intent;
     websiteAuthReturnFocusRef.current = trigger ?? document.activeElement as HTMLElement | null;
+    setWebsiteAuthResetToken(undefined);
     setWebsiteAuthDialogOpen(true);
   }
 
@@ -1908,7 +1959,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       setSklandStatusSnapshot(null);
       setSklandError(null);
     }
-    await refetchWebsiteSession();
+    const next = await refetchWebsiteSession();
+    if (authenticated && !next) throw new Error("SESSION_REFRESH_FAILED");
+    if (authenticated) setWebsiteAuthResetToken(undefined);
     setWebsiteAuthReloadKey((current) => current + 1);
   }
 
@@ -1972,6 +2025,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   websiteIntentContinuationRef.current = (intent) => {
+    if (intent === "account") return;
     if (intent === "setup") {
       setSetupOpen(true);
       return;
@@ -2457,7 +2511,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         if (event.key === "Escape" && websiteAuthDialogOpen) handleWebsiteAuthDialogOpenChange(false);
       }}
     >
-    <SidebarProvider data-workbench-shell defaultOpen defaultOpenBreakpoint={1280} style={{ "--sidebar-width": "14rem", "--sidebar-width-icon": "3.25rem" } as React.CSSProperties}>
+    <SidebarProvider data-workbench-shell data-workbench-docked={showWorkbenchDock || undefined} data-agent-docked={showFloatingAgent || undefined} defaultOpen defaultOpenBreakpoint={1280} style={{ "--sidebar-width": "14rem", "--sidebar-width-icon": "3.25rem" } as React.CSSProperties}>
       {trainingSyncLoaded || page === "training" ? (
         <Suspense fallback={null}>
           <SklandTrainingSyncBridge options={sklandTrainingSyncOptions} onChange={setTrainingSyncSnapshot} />
@@ -2518,6 +2572,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         ) : null}
         <LiveActivity
           activity={activity}
+          notice={page === "skland" && !sklandSessionLoading && sklandScheduleSnapshot && sklandStatusSnapshot && activeSklandAccount ? sklandRenewalActivity : null}
+          trainingSync={page === "training" && accountCanUseCurrentBox ? sklandTrainingSync : null}
           onRetry={() => void handleRetry()}
           retryCountdownSeconds={planRetryCountdown}
           onCopyDiagnostic={() => {
@@ -2541,12 +2597,16 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       </WorkbenchContext.Provider>
       </div>
 
-      {hasRestoredSession && userSettings.showFloatingAgent && page !== "agent" && page !== "account" && page !== "gacha" ? <FeatureAccessBoundary feature="agent"><Suspense fallback={null}>
+      <WorkbenchDock showShortcuts={page === "calculator"}>
+      {showFloatingAgent ? <Suspense fallback={null}>
         <AgentFloatingWidget
+          minimized={floatingAgentMinimized}
+          onMinimizedChange={setFloatingAgentMinimized}
           automaticContextInput={page === "calculator" ? automaticAgentContextInput : undefined}
           pageContext={page === "manual" ? manualAgentPageContext : page === "account-health" ? accountHealthAgentPageContext : page === "training-planner" ? trainingPlannerAgentPageContext : null}
         />
-      </Suspense></FeatureAccessBoundary> : null}
+      </Suspense> : null}
+      </WorkbenchDock>
 
       {page !== "agent" ? <footer className="app-content-track workbench-footer mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border/70 py-5 text-xs text-muted-foreground">
         <div className="flex w-full flex-wrap items-center gap-x-4 md:contents">
@@ -2586,7 +2646,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
       {CLIENT_ACCOUNT_CLOUD_SYNC_ENABLED ? accountCloudWorkspace.syncElement : null}
       {hasRestoredSession ? <Suspense fallback={null}>
-        <ReleaseAnnouncement enabled={!websiteSessionPending && !websiteAuthDialogOpen && !setupOpen && !issueOpen && !pendingProductChange && !pendingManualDraftReplacement && !loading} />
+        <ReleaseAnnouncement enabled={page !== "changelog" && !websiteSessionPending && !websiteAuthDialogOpen && !setupOpen && !issueOpen && !pendingProductChange && !pendingManualDraftReplacement && !loading} />
       </Suspense> : null}
 
       {websiteAuthDialogMounted ? <Suspense fallback={(
@@ -2595,6 +2655,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
           open={websiteAuthDialogOpen}
           onOpenChange={handleWebsiteAuthDialogOpenChange}
           onSessionChanged={handleWebsiteSessionChanged}
+          resetToken={websiteAuthResetToken}
         /></Suspense> : null}
 
       {setupMounted ? <Suspense fallback={(

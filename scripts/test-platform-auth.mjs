@@ -53,6 +53,17 @@ try {
   assert.ok(cookie, "Login sets a shared secure domain cookie");
   assert.match(cookie, /;\s*HttpOnly/i);
   const token = cookie.split(";", 1)[0];
+  const accessPath = "/api/platform/endfield-access";
+  assert.equal((await request("endfield", accessPath)).status, 403);
+  assert.equal((await request("endfield", accessPath, { cookie: token })).status, 403);
+  await pool.query('UPDATE "user" SET role = $2 WHERE id = $1', [userId, "admin"]);
+  for (const app of ["arknights", "endfield"]) {
+    assert.equal((await request(app, accessPath, { cookie: token })).status, 204);
+  }
+  await pool.query('UPDATE "user" SET banned = true WHERE id = $1', [userId]);
+  assert.equal((await request("endfield", accessPath, { cookie: token })).status, 403);
+  await pool.query('UPDATE "user" SET role = $2, banned = false WHERE id = $1', [userId, "user"]);
+  assert.equal((await request("endfield", accessPath, { cookie: token })).status, 403);
   for (const app of ["arknights", "endfield"]) {
     for (const path of ["/api/auth/get-session", "/api/platform/session"]) {
       const response = await request(app, path, { cookie: token });

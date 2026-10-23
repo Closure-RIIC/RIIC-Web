@@ -295,7 +295,7 @@ test("CI enforces route and document preload JavaScript budgets after building",
   assert.match(budgetCheck, /MAX_SECONDARY_ROUTE_INITIAL_JS_BYTES = 1_672_000/);
   assert.match(budgetCheck, /MAX_MANUAL_ROUTE_INITIAL_JS_BYTES = 1_692_000/);
   assert.match(budgetCheck, /MAX_DOCUMENT_INITIAL_JS_FILES = 18/);
-  assert.match(budgetCheck, /WORKBENCH_ROUTES = \["\/", "\/manual", "\/training", "\/mastery", "\/recruitment", "\/skills", "\/skland", "\/account"\]/);
+  assert.match(budgetCheck, /WORKBENCH_ROUTES = \["\/", "\/manual", "\/training", "\/mastery", "\/recruitment", "\/skills", "\/skland", "\/settings"\]/);
   assert.match(budgetCheck, /firstLoadUncompressedJsBytes/);
   assert.match(budgetCheck, /\.output\/public/);
   assert.match(budgetCheck, /await renderBuildDocument\(\)/);
@@ -342,7 +342,7 @@ test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedul
   assert.doesNotMatch(workflow, /^\s*pull_request\s*:/m);
   assert.match(workflow, /cancel-in-progress: false/);
   assert.equal(readinessSpecs.length, 4);
-  assert.equal(readinessTestCount, 119);
+  assert.equal(readinessTestCount, 120);
   assert.equal(e2eFiles.includes("production-readiness.spec.ts"), false);
   assert.match(playwrightConfig, /fullyParallel: true/);
   assert.match(playwrightConfig, /workers: process\.env\.CI \? 2 : undefined/);
@@ -706,18 +706,18 @@ test("workbench views use intent-only code preloading under one persistent layou
     "apps/arknights/src/app/(workbench)/training/page.tsx",
     "apps/arknights/src/app/(workbench)/skills/page.tsx",
     "apps/arknights/src/app/(workbench)/skland/page.tsx",
-    "apps/arknights/src/app/(workbench)/account/page.tsx",
+    "apps/arknights/src/app/(workbench)/settings/page.tsx",
   ].map(readRepoFile));
   const loadingPages = await Promise.all([
     "apps/arknights/src/app/(workbench)/training/loading.tsx",
     "apps/arknights/src/app/(workbench)/skills/loading.tsx",
-    "apps/arknights/src/app/(workbench)/account/loading.tsx",
   ].map(readRepoFile));
 
   assert.match(layout, /import WorkbenchApp from "@\/App"/);
   assert.match(layout, /<WorkbenchApp>\{children\}<\/WorkbenchApp>/);
   assert.ok(pages.every((page) => !page.includes("dynamic(")));
   assert.ok(loadingPages.every((loadingPage) => loadingPage.includes("RouteSkeleton")));
+  assert.match(await readRepoFile("apps/arknights/src/routes/_workbench.account.tsx"), /redirect\(\{ href: "\/settings\?auth=signin"/);
   assert.doesNotMatch(app, /components\/pages\/(?:InfraCalculator|TrainingAdvice|SkillQuery|AccountStatusCenter|DevelopmentSklandStatusCenter)/);
   assert.match(routeMap, /training: "\/training"/);
   assert.match(routeMap, /"skill-query": "\/skills"/);

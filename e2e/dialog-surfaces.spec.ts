@@ -48,7 +48,7 @@ for (const [path, accent] of [["/", "#FFD800"], ["/mastery", "#B8F03A"], ["/skil
     await expect(trigger).toBeFocused();
     await (await sidebarNavigation(page, "账号管理")).click();
     await expect(dialog).toBeVisible();
-    await dialog.getByRole("button", { name: "Close", exact: true }).click();
+    await dialog.getByRole("button", { name: "关闭", exact: true }).click();
     await expect(dialog).toHaveCount(0);
     await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCount(0);
   });
@@ -79,7 +79,7 @@ test("resizing during dialog exit removes the popup and restores page interactio
   const dialog = page.locator('[data-website-account-dialog]:not([data-website-account-dialog-loading])');
   await expect(dialog).toBeVisible();
   await waitForOwnAnimations(dialog);
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await dialog.getByRole("button", { name: "关闭", exact: true }).click();
   // Crossing the scrollbar breakpoint while the exit is running must not
   // detach/reinsert the animated shell or leave an invisible click blocker.
   await page.setViewportSize({ width: 390, height: 844 });

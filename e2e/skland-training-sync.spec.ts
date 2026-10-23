@@ -57,6 +57,15 @@ test("sync refreshes training advice, preserves the schedule and skips unchanged
   await page.goto("/training");
   const sync = page.locator("[data-training-sync]");
   await expect(sync).toContainText("练度同步于", { timeout: 60_000 });
+  await expect(sync).toHaveAttribute("data-slot", "live-activity");
+  await expect(sync).toHaveAttribute("data-activity-kind", "training-sync");
+  await expect(sync).toHaveAttribute("data-activity-phase", "success");
+  await expect(page.locator('[data-training-page] [data-training-sync]')).toHaveCount(0);
+  await expect(page.locator('[data-slot="live-activity"]')).toHaveCount(1);
+  await expect(sync).toHaveAttribute("data-activity-view", "expanded");
+  await expect(sync).toContainText("每 5 分钟自动同步");
+  await page.clock.runFor(5_000);
+  await expect(sync).toHaveCount(0);
   await expect(page.locator('[data-training-advice-list] [data-slot="training-advice-card"]')).toHaveCount(0);
   expect(computes).toBe(1);
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox[0].elite)).toBe(2);
@@ -70,13 +79,16 @@ test("sync refreshes training advice, preserves the schedule and skips unchanged
   await page.locator('[data-primary-navigation-page="calculator"]').click();
   await expect(page.locator('[data-training-sync]')).toHaveCount(0);
   await page.locator('[data-primary-navigation-page="training"]').click();
-  await expect(sync).toContainText("练度同步于");
-  await expect(sync.getByRole("button")).toBeDisabled();
+  // A dismissed success stays dismissed; stale-input warnings remain eligible.
+  await expect(page.locator('[data-training-sync][data-activity-phase="success"]')).toHaveCount(0);
+  const syncButton = page.locator('[data-training-page] [data-training-sync-action]');
+  await expect(syncButton).toBeDisabled();
   await expect(page.locator('[data-training-advice-list] [data-slot="training-advice-card"]')).toHaveCount(0);
   expect(syncs).toBe(firstSyncs);
   expect(computes).toBe(1);
   await page.clock.fastForward(31_000);
-  await sync.getByRole("button", { name: "立即同步" }).click();
+  await expect(syncButton).toHaveText("立即同步");
+  await syncButton.click();
   await expect.poll(() => syncs).toBe(firstSyncs + 1);
   await expect(sync).toContainText("练度同步于");
   expect(computes).toBe(1);
@@ -99,6 +111,9 @@ test("sync refreshes training advice, preserves the schedule and skips unchanged
   failSync = true;
   await page.clock.fastForward(301_000);
   await expect(sync).toContainText("更新未完成");
+  await expect(sync).toHaveAttribute("data-activity-phase", "error");
+  await sync.focus();
+  await expect(sync.getByRole("button", { name: "复制诊断" })).toHaveCount(0);
   await expect(page.locator('[data-training-advice-list] [data-slot="training-advice-card"]')).toHaveCount(0);
   const failedSyncs = syncs;
   await page.clock.fastForward(301_000);
@@ -123,6 +138,7 @@ test("failed recomputation preserves old advice and can retry with the new progr
   await expect(page.locator('[data-training-advice-list] [data-slot="training-advice-card"]')).toHaveCount(1);
   failCompute = false;
   await page.clock.fastForward(31_000);
+  await sync.focus();
   await sync.getByRole("button", { name: "立即同步" }).click();
   await expect(sync).not.toContainText("更新未完成");
   await expect(page.locator('[data-training-advice-list] [data-slot="training-advice-card"]')).toHaveCount(0);
@@ -159,6 +175,7 @@ test("an authentication pause releases training sync so reauthentication can ret
   const sync = page.locator("[data-training-sync]");
   await expect(sync).toContainText("更新未完成", { timeout: 60_000 });
   await page.clock.fastForward(31_000);
+  await sync.focus();
   await sync.getByRole("button", { name: "立即同步" }).click();
   await expect(sync).not.toContainText("更新未完成");
   await expect(page.locator('[data-training-advice-list] [data-slot="training-advice-card"]')).toHaveCount(0);

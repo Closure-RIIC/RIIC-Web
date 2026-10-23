@@ -3,7 +3,8 @@ import { localize as localize_components_ui_live_activity } from "../../i18n/hel
 import { useTranslations, useLocale } from "use-intl";
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useAccountActivity } from "@riic/shell/account-activity";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -12,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { MOTION_EASE_OUT } from "@/motion";
 import type { DisplayError, MaaJson } from "@riic/arknights-domain/types";
 import { solverDiagnosticFor } from "@/solver-diagnostic";
+import type { useSklandTrainingSync } from "@/hooks/use-skland-training-sync";
+import { TrainingSyncButton } from "@/components/workbench/TrainingSyncButton";
 
 const SURFACE = { duration: 0.38, ease: MOTION_EASE_OUT } as const;
 const FACE = { duration: 0.26, ease: MOTION_EASE_OUT } as const;
@@ -30,11 +33,11 @@ function maaUncertainOperators(maa: MaaJson): string[] {
   return MAA_UNCERTAIN_OPERATOR_NAMES.filter((name) => scheduledNames.includes(name));
 }
 
-export type ActivityPhase = "running" | "queued" | "success" | "error";
-export type ActivityKind = "schedule" | "progression-adjustment";
+export type ActivityPhase = "running" | "queued" | "success" | "error" | "notice";
+export type ActivityKind = "schedule" | "progression-adjustment" | "account" | "training-sync" | "skland-renewal";
 
 export interface Activity {
-  id: number;
+  id: number | string;
   kind: ActivityKind;
   phase: ActivityPhase;
   error: DisplayError | null;
@@ -42,10 +45,14 @@ export interface Activity {
   etaSeconds?: number | null;
   buffered?: boolean;
   uncertainMaaOperators?: string[];
+  title?: string;
+  description?: string;
 }
 
 export interface LiveActivityProps {
   activity: Activity | null;
+  notice?: Activity | null;
+  trainingSync?: ReturnType<typeof useSklandTrainingSync> | null;
   onRetry: () => void;
   onCopyDiagnostic: () => void;
   retryCountdownSeconds?: number;
@@ -72,7 +79,7 @@ export function usePlanActivity({
   queuePosition?: number | null;
   etaSeconds?: number | null;
   buffered?: boolean;
-  kind?: ActivityKind;
+  kind?: "schedule" | "progression-adjustment";
 }) {
   const [activity, setActivity] = useState<Activity | null>(null);
   const wasLoading = useRef(false);
@@ -111,27 +118,49 @@ export function usePlanActivity({
   return activity;
 }
 
-export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdownSeconds = 0 }: LiveActivityProps) {
+export function LiveActivity({ activity: planActivity, notice, trainingSync, onRetry, onCopyDiagnostic, retryCountdownSeconds = 0 }: LiveActivityProps) {
   const intl = useTranslations();
   const reduceMotion = useReducedMotion();
   const locale = useLocale();
   const en = locale === "en";
   const [copied, setCopied] = useState(false);
-  const [dismissed, setDismissed] = useState<{ id: number; phase: ActivityPhase } | null>(null);
+  const accountActivity = useAccountActivity();
+  const [dismissed, setDismissed] = useState<Partial<Record<ActivityKind, string>>>({});
+  const dismiss = useCallback((item: Activity) => setDismissed(current => ({ ...current, [item.kind]: `${item.id}:${item.phase}` })), []);
+  const candidates: (Activity | null)[] = [planActivity, accountActivity, notice ?? null];
+  const available = candidates
+    .filter((item): item is Activity => !!item && dismissed[item.kind] !== `${item.id}:${item.phase}`);
+  const trainingSyncedAt = trainingSync?.syncedAt ?? 0;
+  const trainingPhase: ActivityPhase | null = !trainingSync ? null
+    : trainingSync.resume ? "error" : trainingSync.busy ? "running"
+      : trainingSync.error || trainingSync.stale ? "error" : trainingSync.syncedAt ? "success" : "queued";
+  const trainingCandidate = useMemo<Activity | null>(() => trainingPhase ? {
+    id: trainingSyncedAt,
+    kind: "training-sync",
+    phase: trainingPhase,
+    error: null,
+  } : null, [trainingPhase, trainingSyncedAt]);
+  const trainingActivity = trainingCandidate && dismissed["training-sync"] !== `${trainingCandidate.id}:${trainingCandidate.phase}`
+    ? trainingCandidate : null;
+  // Keep one surface: active work takes priority, then account and result feedback.
+  const activity = available.find(item => item.phase === "running" || item.phase === "queued")
+    ?? (trainingActivity?.phase === "running" ? trainingActivity : null)
+    ?? available.find(item => item.kind === "account") ?? available[0] ?? trainingActivity;
   const [solverWarningOpen, setSolverWarningOpen] = useState(false);
-  const [acknowledgedSchedule, setAcknowledgedSchedule] = useState<number>();
+  const [acknowledgedSchedule, setAcknowledgedSchedule] = useState<Activity["id"]>();
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [peek, setPeek] = useState(false);
   const compactRef = useRef<HTMLDivElement>(null);
   const expandedRef = useRef<HTMLDivElement>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const previousActivityId = useRef<number | undefined>(undefined);
+  const previousActivityId = useRef<string | undefined>(undefined);
   const [size, setSize] = useState<{ width: number; height: number } | null>(null);
-  const activityId = activity?.id;
+  const activityId = activity ? `${activity.kind}:${activity.id}` : undefined;
   const phase = activity?.phase;
-  const expanded = peek || hovered || focused || phase === "error" || phase === "success";
-  const markStatus: StatusMarkStatus = phase === "queued" ? "pending" : phase === "running" ? "running" : phase === "success" ? "done" : "failed";
+  const training = activity?.kind === "training-sync" ? trainingSync : null;
+  const expanded = peek || hovered || focused || phase === "error" || phase === "success" || phase === "notice";
+  const markStatus: StatusMarkStatus = phase === "queued" || phase === "notice" ? "pending" : phase === "running" ? "running" : phase === "success" ? "done" : "failed";
 
   // Keep the initial preview readable without resetting pointer or keyboard interaction on every phase update.
   useEffect(() => {
@@ -143,7 +172,7 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
       setFocused(false);
     }
 
-    if (activityId === undefined || phase === "success" || phase === "error") {
+    if (activityId === undefined || phase === "success" || phase === "error" || phase === "notice") {
       setPeek(false);
       return;
     }
@@ -157,22 +186,19 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
   }, []);
 
-  // 阶段切换（running ↔ queued、进入 success/error）时取消之前的关闭状态。
-  useEffect(() => {
-    if (!activity) return;
-    setDismissed((current) =>
-      current && current.id === activity.id && current.phase === activity.phase ? current : null,
-    );
-  }, [activity]);
-
   // 普通成功提示自动消失；包含 MAA 识别提醒时保留到用户手动关闭。
   useEffect(() => {
-    if (!activity || activity.phase !== "success" || activity.uncertainMaaOperators?.length) return;
-    const id = activity.id;
-    const phase = activity.phase;
-    const timer = window.setTimeout(() => setDismissed({ id, phase }), 4_000);
+    if (!activity || activity.phase !== "success" || activity.uncertainMaaOperators?.length || hovered || focused) return;
+    const timer = window.setTimeout(() => dismiss(activity), 4_000);
     return () => window.clearTimeout(timer);
-  }, [activity]);
+  }, [activity, dismiss, hovered, focused]);
+
+  // Informational notices have a fixed reading window, including while hovered or focused.
+  useEffect(() => {
+    if (!activity || activity.phase !== "notice") return;
+    const timer = window.setTimeout(() => dismiss(activity), 6_000);
+    return () => window.clearTimeout(timer);
+  }, [activity, dismiss]);
 
   useEffect(() => {
     if (!activity) return;
@@ -180,14 +206,17 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
   }, [activity]);
 
   useEffect(() => {
-    if (activity?.phase !== "success" || activity.kind !== "schedule") return;
+    if (planActivity?.phase !== "success" || planActivity.kind !== "schedule") return;
     const timer = window.setTimeout(() => setSolverWarningOpen(true), reduceMotion ? 0 : 650);
     return () => window.clearTimeout(timer);
-  }, [activity?.id, activity?.kind, activity?.phase, reduceMotion]);
+  }, [planActivity?.id, planActivity?.kind, planActivity?.phase, reduceMotion]);
 
   const diagnostic = activity?.error ? solverDiagnosticFor(activity.error, en) : null;
   const progressionAdjustment = activity?.kind === "progression-adjustment";
-  const label = activity?.phase === "running"
+  const label = training
+    ? phase === "error" ? intl("components_pages_TrainingAdvice.syncIssue")
+      : phase === "success" ? intl("components_pages_TrainingAdvice.syncComplete") : intl("components_pages_TrainingAdvice.syncTitle")
+    : activity?.title ? activity.title : activity?.phase === "running"
     ? progressionAdjustment
       ? (intl("components_ui_live_activity.adjustingProgression"))
       : (intl("components_ui_live_activity.generatingSchedule"))
@@ -198,12 +227,8 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
         ? (intl("components_ui_live_activity.progressionAdjustmentComplete"))
         : (intl("components_ui_live_activity.scheduleGenerated"))
       : diagnostic?.title ?? activity?.error?.message ?? (intl("components_ui_live_activity.scheduleGenerationFailed"));
-  const hidden = Boolean(
-    activity && dismissed && dismissed.id === activity.id && dismissed.phase === activity.phase,
-  );
-
   useLayoutEffect(() => {
-    if (!activity || hidden) return;
+    if (!activity) return;
     const measure = () => {
       const face = expanded ? expandedRef.current : compactRef.current;
       if (!face) return;
@@ -216,20 +241,21 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
     const face = expanded ? expandedRef.current : compactRef.current;
     if (face) observer.observe(face);
     return () => observer.disconnect();
-  }, [activity, expanded, hidden]);
+  }, [activity, expanded]);
 
   return (
     <>
       <AnimatePresence initial={false}>
-      {activity && !hidden ? (
+      {activity ? (
         <motion.aside
-          key={activity.id}
+          key={training ? "training-sync" : `${activity.kind}:${activity.id}`}
           data-slot="live-activity"
           data-activity-kind={activity.kind}
           data-activity-phase={activity.phase}
           data-activity-view={expanded ? "expanded" : "compact"}
+          data-training-sync={training ? "" : undefined}
           className={cn(
-            "fixed top-[max(0.75rem,env(safe-area-inset-top))] left-1/2 z-[80] -translate-x-1/2 overflow-hidden rounded-[11px] border text-sm outline-none",
+            "fixed top-[max(0.75rem,env(safe-area-inset-top))] max-md:top-[calc(3.75rem+env(safe-area-inset-top))] left-1/2 z-[80] max-md:z-40 -translate-x-1/2 overflow-hidden rounded-[11px] border text-sm outline-none",
             "bg-card text-card-foreground shadow-[var(--shadow-border)] focus-visible:ring-2 focus-visible:ring-ring",
             activity.phase === "error" ? "border-destructive/40" : "border-border",
           )}
@@ -255,8 +281,8 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
             if (event.key !== "Escape") return;
             event.preventDefault();
             event.stopPropagation();
-            if (activity.phase === "success" || activity.phase === "error") {
-              setDismissed({ id: activity.id, phase: activity.phase });
+            if (activity.phase === "success" || activity.phase === "error" || activity.phase === "notice") {
+              dismiss(activity);
             } else {
               setPeek(false);
               setHovered(false);
@@ -296,7 +322,7 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
           >
           <div className="relative flex min-h-[4.5rem] items-stretch overflow-hidden" data-slot="live-activity-body">
             <span
-              className={cn("relative z-10 grid w-12 shrink-0 self-stretch place-items-center", STATUS_MARK_COLORS)}
+              className={cn("relative z-10 grid w-12 shrink-0 self-stretch place-items-center", (training || phase === "notice") && "self-start pt-3", STATUS_MARK_COLORS)}
               aria-hidden="true"
               data-slot="status-mark-rail"
             >
@@ -308,7 +334,15 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
               <div className="min-w-0 flex-1 max-sm:basis-full">
               <strong className="block truncate font-medium">{label}</strong>
               <span className="mt-0.5 block">
-                {activity.phase === "queued" ? (
+                {training ? (
+                  <span className="text-sm text-muted-foreground">
+                    {training.busy ? intl("components_pages_TrainingAdvice.syncing")
+                      : training.syncedAt ? intl("components_pages_TrainingAdvice.lastSynced", { time: new Date(training.syncedAt).toLocaleString(locale) })
+                        : intl("components_pages_TrainingAdvice.autoSync")}
+                  </span>
+                ) : activity.description ? (
+                  <span className="text-sm text-muted-foreground">{activity.description}</span>
+                ) : activity.phase === "queued" ? (
                   <span className="text-sm text-muted-foreground">
                     {activity.buffered ? (
                       <>{intl("components_ui_live_activity.youAreInTheCandidateRingACandidateWill")}</>
@@ -344,14 +378,21 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
                   })}
                 </p>
               ) : null}
-              {activity.phase === "queued" ? (
+              {training && (training.error || training.stale) ? (
+                <p className="mt-1 text-sm leading-relaxed text-amber-700 dark:text-amber-300">
+                  {training.error ?? intl("components_pages_TrainingAdvice.syncStale")}
+                </p>
+              ) : null}
+              {!training && activity.phase === "queued" ? (
                 <span className="mt-1 block text-sm text-muted-foreground">
                   {intl("components_ui_live_activity.thisPageUpdatesAutomaticallyDoNotSubmitAgain")}
                 </span>
               ) : null}
               {diagnostic ? <span className="mt-1 block text-xs text-destructive">{diagnostic.suggestion}</span> : null}
               </div>
-              {activity.phase === "error" ? (
+              {training ? (
+                <TrainingSyncButton sync={training} className="max-sm:ml-auto" />
+              ) : activity.phase === "error" ? (
                 <span className="flex shrink-0 items-center gap-1 max-sm:basis-full max-sm:justify-end">
                 {activity.error?.retryable ? (
                   <Button type="button" size="sm" variant="ghost" className="h-9 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={onRetry} disabled={retryCountdownSeconds > 0}>
@@ -372,17 +413,17 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
                 </Button>
                 </span>
               ) : null}
-              <button
+              {!training ? <button
                 type="button"
-                onClick={() => setDismissed({ id: activity.id, phase: activity.phase })}
+                onClick={() => dismiss(activity)}
                 aria-label={intl("components_ui_live_activity.dismissNotification")}
                 className="h-8 shrink-0 rounded-md px-2 text-xs text-muted-foreground outline-none transition-colors hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring max-sm:ml-auto"
               >
                 {intl("components_ui_live_activity.dismiss")}
-              </button>
+              </button> : null}
             </div>
           </div>
-          {activity.phase !== "success" ? <div className="mx-3 h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true" data-slot="activity-progress-track">
+          {activity.phase !== "success" && activity.phase !== "notice" && !(training && activity.phase === "queued") ? <div className="mx-3 h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true" data-slot="activity-progress-track">
             {activity.phase === "running" ? (
               <motion.span
                 className="block h-full w-[38%] bg-amber-500 dark:bg-amber-300"
@@ -408,11 +449,11 @@ export function LiveActivity({ activity, onRetry, onCopyDiagnostic, retryCountdo
       ) : null}
       </AnimatePresence>
 
-      {activity?.phase === "success" && activity.kind === "schedule" && acknowledgedSchedule !== activity.id
+      {planActivity?.phase === "success" && planActivity.kind === "schedule" && acknowledgedSchedule !== planActivity.id
         ? <span hidden data-schedule-notice-pending /> : null}
       <Dialog open={solverWarningOpen} onOpenChange={(open) => {
         setSolverWarningOpen(open);
-        if (!open) setAcknowledgedSchedule(activity?.id);
+        if (!open) setAcknowledgedSchedule(planActivity?.id);
       }}>
         <DialogContent className="grid max-h-[min(680px,calc(100dvh-2rem))] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 sm:max-w-[min(540px,calc(100vw-2rem))]">
           <DialogHeader>

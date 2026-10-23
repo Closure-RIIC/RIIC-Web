@@ -1,6 +1,7 @@
 "use client";
 
-import { Link } from "@tanstack/react-router";
+import { requestAccountSignIn } from "@riic/shell/account-sign-in";
+import { reportAccountActivity } from "@riic/shell/account-activity";
 import { Clock3, RefreshCw, ShieldCheck } from "lucide-react";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useLocale, useTranslations } from "use-intl";
@@ -37,7 +38,6 @@ export function WebsiteSessionSettings({ actions }: { actions?: ReactNode }) {
   const [now, setNow] = useState(() => Date.now());
   const [extending, setExtending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 60_000);
@@ -60,14 +60,14 @@ export function WebsiteSessionSettings({ actions }: { actions?: ReactNode }) {
   async function extendSession() {
     setExtending(true);
     setError(null);
-    setMessage(null);
     try {
       const response = await fetch("/api/account/session/extend", { method: "POST", credentials: "same-origin" });
       const body = await response.json().catch(() => null) as { data?: { expiresAt?: string }; error?: { message?: string } } | null;
       if (!response.ok || !body?.data?.expiresAt) throw new Error(body?.error?.message ?? intl("extendFailed"));
       await refetch();
       setNow(Date.now());
-      setMessage(intl("extended"));
+      setOpen(false);
+      reportAccountActivity({ title: locale === "en" ? "Sign-in and security" : "登录与安全", description: intl("extended") });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : intl("extendFailed"));
     } finally {
@@ -92,7 +92,7 @@ export function WebsiteSessionSettings({ actions }: { actions?: ReactNode }) {
               <ShieldCheck />{intl("manage")}
             </Button>
           ) : (
-            <Button type="button" nativeButton={false} variant="outline" size="dialog" className="w-full border-white/22 bg-white/5 text-white hover:bg-white/10 hover:text-white sm:w-auto" render={<Link to="/account" />}>{intl("signIn")}</Button>
+            <Button type="button" variant="outline" size="dialog" className="w-full border-white/22 bg-white/5 text-white hover:bg-white/10 hover:text-white sm:w-auto" onClick={event => requestAccountSignIn(event.currentTarget)}>{intl("signIn")}</Button>
           )}
         </div>
 
@@ -111,7 +111,6 @@ export function WebsiteSessionSettings({ actions }: { actions?: ReactNode }) {
                 {expiry ? <span className="text-sm text-muted-foreground">{intl("expiresAt", { value: expiry })}</span> : null}
               </div>
               {error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
-              {message ? <Alert><AlertDescription>{message}</AlertDescription></Alert> : null}
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={extending}>{intl("close")}</Button>

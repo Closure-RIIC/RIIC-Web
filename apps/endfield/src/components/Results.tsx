@@ -10,7 +10,7 @@ import { categoryLabel, FacilityBoard, FacilityCard } from "./FacilityCard";
 
 const percent = (n: number) => `${(n * 100).toFixed(1)}%`;
 const hour = (n: number) => `${String(n).padStart(2, "0")}:00`;
-export function Results({ result }: { result: Result }) {
+export function Results({ result, showWeapons = true }: { result: Result; showWeapons?: boolean }) {
   const { workspace, t } = useWorkspace();
   const warnings = result.status.gaps.length + result.status.approximations.length + result.rooms.filter(room => !room.converged).length;
   const level = (key: string) => key === "会客室" ? workspace.options.levels.guest : key === "培养舱" ? workspace.options.levels.grow : key === "制造舱1" ? workspace.options.levels.mfg1 : workspace.options.levels.mfg2;
@@ -25,7 +25,7 @@ export function Results({ result }: { result: Result }) {
             footer={<>
               <Action size="sm" variant="dark" icon={<Download />} onClick={() => downloadJson("endfield-schedule.json", result)}>{t("导出结果", "Export")}</Action>
               <Dialog.Close className={actionClassName({ size: "sm", variant: "yellow" })}><ActionContent>{t("完成", "Done")}</ActionContent></Dialog.Close>
-            </>}><ResultDetails result={result} /></DialogFrame>
+            </>}><ResultDetails result={result} showWeapons={showWeapons} /></DialogFrame>
         </Dialog.Portal>
       </Dialog.Root>
     </header>
@@ -75,13 +75,13 @@ function FacilityTile({ kind, label, level, plan, room, scores, bonusA, bonusB }
     </div>
     {scores ? <div className="ef-output-summary">
       <p>{t("全舰日均等效产出", "Ship-wide daily output")} <small>{t("小时 / 日", "h/day")}</small></p>
-      <dl>{Object.entries(scores).map(([key, value]) => <div key={key}><dt><ProductionIcon category={key} size={key === "培养" ? 18 : 22} />{categoryLabel(key, t)}</dt><dd>{value.toFixed(2)}</dd></div>)}</dl>
+      <dl>{Object.entries(scores).map(([key, value]) => <div key={key}><dt><ProductionIcon category={key === "培养" ? "晶植" : key} size={22} />{categoryLabel(key, t)}</dt><dd>{value.toFixed(2)}</dd></div>)}</dl>
     </div> : null}
     {kind === "center" ? <p className="ef-facility-note">{t("各设施按各自标注的时间换班。", "Each facility follows its own shift times.")}</p> : room?.assist ? <p className="ef-facility-note">{t("中枢助力", "Central assistance")} · {room.assist.shift} · {room.assist.points} {t("点 / 日", "points/day")}</p> : null}
   </FacilityCard>;
 }
 
-function ResultDetails({ result }: { result: Result }) {
+function ResultDetails({ result, showWeapons }: { result: Result; showWeapons: boolean }) {
   const { t } = useWorkspace();
   const reason: Record<string, string> = {
     complete: t("搜索完成", "Search complete"), "node-budget": t("已达到节点预算", "Node budget reached"),
@@ -95,10 +95,10 @@ function ResultDetails({ result }: { result: Result }) {
     {result.center ? <>
       <div className="ef-stats">{Object.entries(result.scores).map(([key, value]) => <div className="ef-stat" key={key}><span>{key}</span><strong>{value.toFixed(2)}</strong><small>{t("等效小时 / 日", "effective h/day")}</small></div>)}</div>
       <article className="ef-result"><header><h3>{t("总控中枢", "Control center")}</h3><span className="ef-muted">{hour(result.center.hour)} {t("换班", "shift change")}</span></header>
-        <div className="ef-shifts">{(["a", "b"] as const).map((s, i) => <div className="ef-shift" key={s}><div className="ef-shift-label"><b>{s.toUpperCase()}</b><span className="ef-shift-time">{i ? `${hour(result.center!.hour)} — 24:00` : `00:00 — ${hour(result.center!.hour)}`}</span></div><div className="ef-crew">{result.center![s].map(n => <OperatorChip key={n} name={n} />)}</div></div>)}</div>
+        <div className="ef-shifts">{(["a", "b"] as const).map((s, i) => <div className="ef-shift" key={s}><div className="ef-shift-label"><b>{s.toUpperCase()}</b><span className="ef-shift-time">{i ? `${hour(result.center!.hour)} — 24:00` : `00:00 — ${hour(result.center!.hour)}`}</span></div><div className="ef-crew">{result.center![s].map(n => <OperatorChip key={n} name={n} showWeapon={showWeapons} />)}</div></div>)}</div>
       </article>
       {result.rooms.map(room => <article className="ef-result" key={room.key}><header><h3>{room.key} <span className="ef-muted">/ {room.category}</span></h3><span>{room.value.toFixed(2)} <small className="ef-muted">{t("等效小时 / 日", "effective h/day")}</small></span></header>
-        <div className="ef-shifts">{(["a", "b"] as const).map((s, i) => <div className="ef-shift" key={s}><div className="ef-shift-label"><b>{s.toUpperCase()}</b><span className={room.single ? undefined : "ef-shift-time"}>{room.single ? t(i ? "休息阶段" : "单班循环", i ? "Recovery" : "Single-shift cycle") : i ? `${hour(room.hour)} — 24:00` : `00:00 — ${hour(room.hour)}`}</span></div><div className="ef-crew">{room[s].map(n => <OperatorChip key={n} name={n} />)}</div>{room.single ? <p className="ef-muted">{t("工作 / 休息", "Work / rest")} <span className="ef-shift-time">{room.workHours?.toFixed(2)} / {room.restHours?.toFixed(2)} h</span></p> : null}</div>)}</div>
+        <div className="ef-shifts">{(["a", "b"] as const).map((s, i) => <div className="ef-shift" key={s}><div className="ef-shift-label"><b>{s.toUpperCase()}</b><span className={room.single ? undefined : "ef-shift-time"}>{room.single ? t(i ? "休息阶段" : "单班循环", i ? "Recovery" : "Single-shift cycle") : i ? `${hour(room.hour)} — 24:00` : `00:00 — ${hour(room.hour)}`}</span></div><div className="ef-crew">{room[s].map(n => <OperatorChip key={n} name={n} showWeapon={showWeapons} />)}</div>{room.single ? <p className="ef-muted">{t("工作 / 休息", "Work / rest")} <span className="ef-shift-time">{room.workHours?.toFixed(2)} / {room.restHours?.toFixed(2)} h</span></p> : null}</div>)}</div>
         <details className="ef-details"><summary>{t("心情闭环与模拟", "Morale and simulation")}</summary>
           {!room.single ? <><p>A · {mood(room.moodA)}</p><p>B · {mood(room.moodB)}</p></> : null}
           <p>{room.converged ? t("模拟已收敛", "Simulation converged") : t("模拟未收敛", "Simulation did not converge")} · {room.days} {t("天", "days")}</p>

@@ -109,6 +109,12 @@
 .item.destructiveItem { color: var(--destructive); }
 .separator { height: 1px; margin: 3px 6px; background: color-mix(in oklab, var(--border) 50%, transparent); }
 .error { padding: 8px 12px; color: var(--destructive); font-size: 12px; line-height: 18px; }
+.language { display: grid; min-height: 36px; grid-template-columns: repeat(2, minmax(0, 1fr)); border-radius: 8px; padding: 4px; background: var(--muted); color: var(--muted-foreground); }
+.languageItem { display: flex; min-height: 28px; align-items: center; justify-content: center; border-radius: 6px; padding: 0 6px; font-size: 12px; font-weight: 500; white-space: nowrap; cursor: pointer; outline: none; transition: background-color 120ms ease, color 120ms ease; }
+.languageItem[data-checked] { background: var(--background); color: var(--foreground); box-shadow: 0 1px 2px rgb(0 0 0 / 5%); }
+.languageItem:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+.languageItem[data-disabled] { pointer-events: none; opacity: 0.5; }
+.card:disabled { cursor: wait; }
 
 @media (max-width: 767px) {
   .card { min-height: 44px; }
@@ -117,5 +123,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .card,
-  .iconButton { transition: none; }
+  .iconButton,
+  .languageItem { transition: none; }
 }

@@ -25,6 +25,7 @@ const PAGE_CATEGORIES: Record<AppPage, keyof typeof CATEGORY_ACCENTS> = {
   account: "personal",
   billing: "personal",
   settings: "personal",
+  changelog: "personal",
   agent: "assistant",
 };
 

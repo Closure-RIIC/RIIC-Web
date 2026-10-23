@@ -251,6 +251,8 @@ test("operator skill terms reveal square hover cards on pointer and keyboard foc
 
   // The animated portrait ignores pointer events; hover its actual tooltip trigger.
   const operatorPortrait = page.locator('[data-slot="tooltip-trigger"][aria-label="陈"]').first();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  await waitForContentReady(operatorPortrait);
   const portraitBox = await operatorPortrait.boundingBox();
   await operatorPortrait.hover({ position: { x: 8, y: Math.max(8, (portraitBox?.height ?? 80) / 2) } });
   const skillTooltip = page.locator('[data-slot="tooltip-content"][data-open]');
@@ -659,7 +661,9 @@ test("plan completion reveals status, metrics, and schedule once without resetti
   const dormitorySection = page.locator('section[aria-label="宿舍"]');
   await dormitorySection.locator('button[aria-expanded="true"]').click();
   await page.getByRole("button", { name: "收起悬浮助理", exact: true }).click();
-  await expect(page.locator("[data-agent-floating-trigger]")).toHaveCSS("width", "44px");
+  await expect(page.locator("[data-agent-dock-trigger]")).toBeVisible();
+  await expect(page.locator("[data-agent-dock-trigger]")).toHaveAttribute("aria-expanded", "false");
+  await expect(page.locator("[data-agent-floating-surface]")).toHaveCount(0);
   await dormitorySection.getByRole("button", { name: "暂不显示" }).click();
   const restoreHidden = page.getByRole("button").filter({ hasText: "恢复已隐藏" });
   await expect(restoreHidden).toBeVisible();
@@ -858,8 +862,8 @@ test("live activity survives navigation and calculator search occupies the relea
   const activity = page.locator('[data-slot="live-activity"]');
   await expect(activity).toHaveAttribute("data-activity-phase", "running");
 
-  await page.getByRole("button", { name: "技能查询" }).click();
-  await expect(page.getByRole("heading", { name: "技能查询" })).toBeVisible();
+  await page.getByRole("button", { name: "技能Wiki" }).click();
+  await expect(page.getByRole("heading", { name: "技能Wiki" })).toBeVisible();
   await expect(activity).toHaveAttribute("data-activity-phase", "running");
   releasePlan();
   await expect(activity).toHaveAttribute("data-activity-phase", "success");
@@ -1427,7 +1431,7 @@ test("the initial onboarding is full-screen while other primary pages keep one c
 
     for (const destination of [
       { name: "练卡建议", pageKey: "training", root: "[data-training-page]" },
-      { name: "技能查询", pageKey: "skill-query", root: "[data-skill-query-page]" },
+      { name: "技能Wiki", pageKey: "skill-query", root: "[data-skill-query-page]" },
       { name: "森空岛同步", pageKey: "skland", root: "[data-skland-page]" },
       { name: "账号管理", pageKey: "settings", root: "[data-account-management]" },
     ]) {

@@ -5,13 +5,14 @@ import { Popover } from "@base-ui/react/popover";
 import { Paperclip, Plus, Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export function AgentComposerMenu({ en, personaName, onAttach, onPersona, attachmentCount, children }: {
+export function AgentComposerMenu({ en, personaName, onAttach, onPersona, attachmentCount, children, compact = false }: {
   en: boolean; personaName: string; onAttach: () => void; onPersona: () => void;
   attachmentCount: number; children: ReactNode;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return <Popover.Root open={open} onOpenChange={setOpen}>
-    <Popover.Trigger render={<Button variant="ghost" size="icon" />} className="relative size-11 shrink-0 rounded-full md:hidden" aria-label={en ? `Attachments and persona${attachmentCount ? `, ${attachmentCount} attachments` : ""}` : `附件与人格卡${attachmentCount ? `，${attachmentCount} 个附件` : ""}`}>
+    <Popover.Trigger render={<Button variant="ghost" size="icon" />} className={`relative shrink-0 rounded-full ${compact ? "size-9" : "size-11 md:hidden"}`} aria-label={en ? `Attachments and persona${attachmentCount ? `, ${attachmentCount} attachments` : ""}` : `附件与人格卡${attachmentCount ? `，${attachmentCount} 个附件` : ""}`}>
       <Plus className="size-5" aria-hidden="true" />
       {attachmentCount > 0 ? <span className="absolute right-0 top-0 grid size-4 place-items-center rounded-full bg-primary text-[10px] text-primary-foreground">{attachmentCount}</span> : null}
     </Popover.Trigger>

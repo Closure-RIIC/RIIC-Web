@@ -1,15 +1,16 @@
 "use client";
 import { formatPoints } from "@/billing-points";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
+import { WorkbenchCard } from "@/components/workbench/WorkbenchCard";
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useLocale } from "use-intl";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
+import { requestAccountSignIn } from "@riic/shell/account-sign-in";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { Input } from "@/components/ui/input";
-import dialogueStyles from "@/components/agent/beautiful/Dialogue.module.css";
 import styles from "./BillingPrototype.module.css";
 import { notifyBillingUpdated, subscribeBillingUpdates } from "@/lib/billing-events";
 import { isBillingOrderVisible } from "@/billing-order-visibility";
@@ -37,11 +38,8 @@ function orderStatus(status: string): { label: string; className: string } {
   return { label: "未付款 · 待支付", className: "text-amber-600" };
 }
 
-function BillingCard({ children, className = "", glass = false, ...props }: ComponentProps<"section"> & { glass?: boolean }) {
-  return <section className={`${styles.card} ${className}`} data-billing-card {...props}>
-    {glass ? <span aria-hidden="true" className={dialogueStyles.decoration} /> : null}
-    {children}
-  </section>;
+function BillingCard(props: ComponentProps<typeof WorkbenchCard>) {
+  return <WorkbenchCard {...props} data-billing-card />;
 }
 
 function money(fen: number) {
@@ -212,7 +210,7 @@ export function BillingPrototype() {
   };
 
   if (error && !data) {
-    return <section className={containerClass}>{heading}<div role="alert" className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm"><p>{error}</p><Link className={buttonVariants({ variant: "outline", className: `${styles.pill} mt-3` })} to="/account">前往账号管理登录</Link></div></section>;
+    return <section className={containerClass}>{heading}<div role="alert" className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm"><p>{error}</p><Button variant="outline" className={`${styles.pill} mt-3`} onClick={event => requestAccountSignIn(event.currentTarget)}>{locale === "en" ? "Sign in" : "登录网站账号"}</Button></div></section>;
   }
   if (!data) return <section className={containerClass}>{heading}<p role="status" className="py-8 text-center text-sm text-muted-foreground">正在加载积分账户……</p></section>;
 

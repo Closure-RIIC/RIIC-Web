@@ -33,7 +33,7 @@ export function FacilityCard({ kind, label, level, category, children }: {
         {Array.from({ length: level }, (_, index) => <i key={index} aria-hidden />)}
       </span>
       {category ? <span className="ef-facility-product" role="img" aria-label={categoryLabel(category, t)} title={categoryLabel(category, t)}>
-        <ProductionIcon category={category} size={kind === "grow" ? 28 : 36} />
+        <ProductionIcon category={kind === "grow" ? "晶植" : category} size={36} />
       </span> : null}
     </header>
     {children}

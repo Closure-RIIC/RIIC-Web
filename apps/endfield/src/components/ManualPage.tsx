@@ -6,7 +6,7 @@ import { manualTemplate, type Assignment } from "@riic/endfield-solver/model.mjs
 import { Action, ActionContent, actionClassName, Field, Notice, PageTitle } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
 import { Results } from "./Results";
-import { OperatorPortrait, EquippedWeapon } from "./GameArtwork";
+import { OperatorPortrait } from "./GameArtwork";
 import { RosterDialogTrigger } from "./RosterDialog";
 import { FacilitySettings } from "./FacilitySettings";
 import { DialogFrame } from "./DialogFrame";
@@ -82,7 +82,6 @@ export function ManualPage() {
                     {name ? <OperatorPortrait name={name} size={kind === "center" ? 88 : 68} /> : <span className="ef-manual-empty" aria-hidden><Plus size={24} /></span>}
                     <span title={name ? operatorLabel(name) : undefined}>{name ? operatorLabel(name) : t("选择干员", "Select operator")}</span>
                   </Dialog.Trigger>
-                  {name ? <EquippedWeapon name={name} compact /> : null}
                 </div>;
               })}</div>
             </div>)}</div>
@@ -102,7 +101,7 @@ export function ManualPage() {
       </Dialog.Portal>
     </Dialog.Root>
     {resultStorageError ? <Notice error>{resultStorageError}</Notice> : null}
-    {result && result.status.stopReason === "manual" ? <Results result={result} /> : null}
+    {result && result.status.stopReason === "manual" ? <Results result={result} showWeapons={false} /> : null}
   </div>;
 }
 

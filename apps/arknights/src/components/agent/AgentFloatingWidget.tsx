@@ -1,7 +1,7 @@
 "use client";
+import { requestAccountSignIn } from "@riic/shell/account-sign-in";
 
 import { Component, lazy, Suspense, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
-import { createPortal } from "react-dom";
 import { useLocale } from "use-intl";
 import { Minus } from "lucide-react";
 import { useWebsiteSession } from "@/website-session";
@@ -11,6 +11,7 @@ import { subscribeBillingUpdates } from "@/lib/billing-events";
 import { restoreAgentMessages } from "@/agent-history";
 import { buildAutomaticScheduleContext, type AgentPageContext } from "@/agent-page-context";
 import styles from "./AgentFloatingWidget.module.css";
+import dockStyles from "../layout/WorkbenchDock.module.css";
 
 type Availability = "checking" | "available" | "sign_in" | "credits" | "unavailable";
 const AgentChat = lazy(() => import("./AgentChat").then((module) => ({ default: module.AgentChat })));
@@ -33,9 +34,11 @@ class AgentChatErrorBoundary extends Component<{ en: boolean; children: ReactNod
   }
 }
 
-export function AgentFloatingWidget({ pageContext, automaticContextInput, visible = true }: {
+export function AgentFloatingWidget({ pageContext, automaticContextInput, minimized, onMinimizedChange, visible = true }: {
   pageContext: AgentPageContext | null;
   automaticContextInput?: Parameters<typeof buildAutomaticScheduleContext>[0];
+  minimized: boolean;
+  onMinimizedChange: (minimized: boolean) => void;
   visible?: boolean;
 }) {
   const resolvedPageContext = useMemo(() => automaticContextInput ? buildAutomaticScheduleContext(automaticContextInput) : pageContext, [automaticContextInput, pageContext]);
@@ -47,9 +50,11 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, visibl
   const owner = data?.user.id ?? null;
   const previousOwner = useRef(owner);
   const panelId = useId();
+  const floatingId = useId();
   const [availability, setAvailability] = useState<Availability>("checking");
   const [open, setOpen] = useState(false);
-  const [minimized, setMinimized] = useState(false);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const dockRef = useRef<HTMLButtonElement>(null);
   const [sharePageContext, setSharePageContext] = useState(true);
   const [mounted, setMounted] = useState(false);
 
@@ -112,12 +117,39 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, visibl
         ? (en ? "Add credits to start a conversation." : "准备积分后即可开始对话。")
         : (en ? "The assistant is temporarily unavailable." : "助理暂时不可用，请稍后再试。");
   const lockedAction = availability === "sign_in"
-    ? { href: "/account", label: en ? "Sign in" : "前往登录" }
+    ? { href: null, label: en ? "Sign in" : "登录网站账号" }
     : availability === "credits" && features.billing
       ? { href: "/billing", label: en ? "View credits" : "查看积分" }
       : null;
-  return createPortal(
+  const minimize = () => {
+    setOpen(false);
+    onMinimizedChange(true);
+    dockRef.current?.focus({ preventScroll: true });
+  };
+  return (
     <div className={styles.root} data-agent-floating-widget data-minimized={minimized}>
+      <button
+        ref={dockRef}
+        type="button"
+        className={dockStyles.button}
+        aria-label={minimized ? (en ? "Show floating assistant" : "显示悬浮助理") : (en ? "Hide floating assistant" : "隐藏悬浮助理")}
+        aria-expanded={!minimized}
+        aria-controls={minimized ? undefined : floatingId}
+        title={minimized ? (en ? "Show floating assistant" : "显示悬浮助理") : (en ? "Hide floating assistant" : "隐藏悬浮助理")}
+        onClick={() => {
+          if (minimized) {
+            onMinimizedChange(false);
+            setOpen(true);
+          } else {
+            minimize();
+          }
+        }}
+        data-agent-dock-trigger
+      >
+        <span className={styles.prtsCursor} aria-hidden="true" />
+        <span>{en ? "Assistant" : "助理"}</span>
+      </button>
+      {!minimized ? <div id={floatingId} className={styles.floating} data-agent-floating-surface>
       {open ? <section id={panelId} className={styles.panel} aria-label={en ? "Closure Assistant" : "可露希尔助理"} data-agent-floating-panel>
         {canChat && ready && conversationId ? <AgentChatErrorBoundary en={en}><Suspense fallback={<div className={styles.empty} role="status">{en ? "Opening conversation…" : "正在打开对话…"}</div>}><AgentChat
           key={`${owner ?? "anonymous"}:${conversationId}:floating`}
@@ -125,7 +157,10 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, visibl
           sharePageContext={sharePageContext}
           onSharePageContextChange={setSharePageContext}
           pageContext={resolvedPageContext}
-          onClose={() => setOpen(false)}
+          onClose={() => {
+            setOpen(false);
+            launcherRef.current?.focus({ preventScroll: true });
+          }}
           billingAllowed={features.billing}
           userId={owner ?? undefined}
           userName={data?.user.name}
@@ -135,32 +170,28 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, visibl
           <img src="/icon.png" alt="" draggable={false} />
           <strong>{en ? "Closure Assistant" : "可露希尔助理"}</strong>
           <p>{lockedMessage}</p>
-          {lockedAction ? <a href={lockedAction.href}>{lockedAction.label}</a> : null}
+          {lockedAction ? lockedAction.href ? <a href={lockedAction.href}>{lockedAction.label}</a> : <button type="button" onClick={event => requestAccountSignIn(event.currentTarget)}>{lockedAction.label}</button> : null}
         </div>}
       </section> : null}
-      {!open && !minimized ? <>
-        <span className={styles.hint} aria-hidden="true">{canChat ? (en ? "What would you like to ask about this page?" : "博士，这页有什么想问的？") : (en ? "Ask Closure about this page" : "点击查看可露希尔助理")}</span>
-        <button type="button" className={styles.minimize} aria-label={en ? "Minimize floating assistant" : "收起悬浮助理"} title={en ? "Minimize floating assistant" : "收起悬浮助理"} onClick={() => setMinimized(true)}>
-          <Minus size={14} aria-hidden="true" />
-        </button>
-      </> : null}
+      {!open ? <span className={styles.hint} aria-hidden="true">{canChat ? (en ? "What would you like to ask about this page?" : "博士，这页有什么想问的？") : (en ? "Ask Closure about this page" : "点击查看可露希尔助理")}</span> : null}
+      <button type="button" className={styles.minimize} aria-label={en ? "Minimize floating assistant" : "收起悬浮助理"} title={en ? "Minimize floating assistant" : "收起悬浮助理"} onClick={minimize}>
+        <Minus size={14} aria-hidden="true" />
+      </button>
       <button
+        ref={launcherRef}
         type="button"
         className={styles.launcher}
         aria-label={open ? (en ? "Close Closure Assistant" : "收起可露希尔助理") : (en ? "Open Closure Assistant" : "打开可露希尔助理")}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         title={open ? (en ? "Close assistant" : "收起助理") : (en ? "Ask Closure" : "和可露希尔聊聊")}
-        onClick={() => {
-          setMinimized(false);
-          setOpen((value) => !value);
-        }}
+        onClick={() => setOpen((value) => !value)}
         data-agent-floating-trigger
       >
         <span className={styles.launcherAvatar}><img src="/icon.png" alt="" draggable={false} /></span>
         <span className={styles.status} aria-hidden="true" />
       </button>
-    </div>,
-    document.body,
+      </div> : null}
+    </div>
   );
 }
