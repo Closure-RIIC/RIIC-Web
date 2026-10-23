@@ -1594,14 +1594,6 @@ export function SklandStatus({
         </Alert>
       ) : null}
 
-      {bindingSummary.renewalDueCount > 0 ? (
-        <Alert>
-          <AlertDescription data-ui-number-font>
-            {intl("components_pages_SklandStatus.sklandLinkSReachedTheSevenDayLimitAnd", { renewalDueCount: bindingSummary.renewalDueCount })}
-          </AlertDescription>
-        </Alert>
-      ) : null}
-
       {snapshot.warnings.length ? (
         <Alert>
           <AlertDescription className="font-number">

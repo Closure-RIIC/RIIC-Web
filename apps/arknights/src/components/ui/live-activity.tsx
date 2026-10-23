@@ -33,11 +33,11 @@ function maaUncertainOperators(maa: MaaJson): string[] {
   return MAA_UNCERTAIN_OPERATOR_NAMES.filter((name) => scheduledNames.includes(name));
 }
 
-export type ActivityPhase = "running" | "queued" | "success" | "error";
-export type ActivityKind = "schedule" | "progression-adjustment" | "account" | "training-sync";
+export type ActivityPhase = "running" | "queued" | "success" | "error" | "notice";
+export type ActivityKind = "schedule" | "progression-adjustment" | "account" | "training-sync" | "skland-renewal";
 
 export interface Activity {
-  id: number;
+  id: number | string;
   kind: ActivityKind;
   phase: ActivityPhase;
   error: DisplayError | null;
@@ -51,6 +51,7 @@ export interface Activity {
 
 export interface LiveActivityProps {
   activity: Activity | null;
+  notice?: Activity | null;
   trainingSync?: ReturnType<typeof useSklandTrainingSync> | null;
   onRetry: () => void;
   onCopyDiagnostic: () => void;
@@ -117,7 +118,7 @@ export function usePlanActivity({
   return activity;
 }
 
-export function LiveActivity({ activity: planActivity, trainingSync, onRetry, onCopyDiagnostic, retryCountdownSeconds = 0 }: LiveActivityProps) {
+export function LiveActivity({ activity: planActivity, notice, trainingSync, onRetry, onCopyDiagnostic, retryCountdownSeconds = 0 }: LiveActivityProps) {
   const intl = useTranslations();
   const reduceMotion = useReducedMotion();
   const locale = useLocale();
@@ -126,7 +127,7 @@ export function LiveActivity({ activity: planActivity, trainingSync, onRetry, on
   const accountActivity = useAccountActivity();
   const [dismissed, setDismissed] = useState<Partial<Record<ActivityKind, string>>>({});
   const dismiss = useCallback((item: Activity) => setDismissed(current => ({ ...current, [item.kind]: `${item.id}:${item.phase}` })), []);
-  const candidates: (Activity | null)[] = [planActivity, accountActivity];
+  const candidates: (Activity | null)[] = [planActivity, accountActivity, notice ?? null];
   const available = candidates
     .filter((item): item is Activity => !!item && dismissed[item.kind] !== `${item.id}:${item.phase}`);
   const trainingSyncedAt = trainingSync?.syncedAt ?? 0;
@@ -146,7 +147,7 @@ export function LiveActivity({ activity: planActivity, trainingSync, onRetry, on
     ?? (trainingActivity?.phase === "running" ? trainingActivity : null)
     ?? available.find(item => item.kind === "account") ?? available[0] ?? trainingActivity;
   const [solverWarningOpen, setSolverWarningOpen] = useState(false);
-  const [acknowledgedSchedule, setAcknowledgedSchedule] = useState<number>();
+  const [acknowledgedSchedule, setAcknowledgedSchedule] = useState<Activity["id"]>();
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [peek, setPeek] = useState(false);
@@ -158,8 +159,8 @@ export function LiveActivity({ activity: planActivity, trainingSync, onRetry, on
   const activityId = activity ? `${activity.kind}:${activity.id}` : undefined;
   const phase = activity?.phase;
   const training = activity?.kind === "training-sync" ? trainingSync : null;
-  const expanded = peek || hovered || focused || phase === "error" || phase === "success";
-  const markStatus: StatusMarkStatus = phase === "queued" ? "pending" : phase === "running" ? "running" : phase === "success" ? "done" : "failed";
+  const expanded = peek || hovered || focused || phase === "error" || phase === "success" || phase === "notice";
+  const markStatus: StatusMarkStatus = phase === "queued" || phase === "notice" ? "pending" : phase === "running" ? "running" : phase === "success" ? "done" : "failed";
 
   // Keep the initial preview readable without resetting pointer or keyboard interaction on every phase update.
   useEffect(() => {
@@ -171,7 +172,7 @@ export function LiveActivity({ activity: planActivity, trainingSync, onRetry, on
       setFocused(false);
     }
 
-    if (activityId === undefined || phase === "success" || phase === "error") {
+    if (activityId === undefined || phase === "success" || phase === "error" || phase === "notice") {
       setPeek(false);
       return;
     }
@@ -192,6 +193,13 @@ export function LiveActivity({ activity: planActivity, trainingSync, onRetry, on
     return () => window.clearTimeout(timer);
   }, [activity, dismiss, hovered, focused]);
 
+  // Informational notices have a fixed reading window, including while hovered or focused.
+  useEffect(() => {
+    if (!activity || activity.phase !== "notice") return;
+    const timer = window.setTimeout(() => dismiss(activity), 6_000);
+    return () => window.clearTimeout(timer);
+  }, [activity, dismiss]);
+
   useEffect(() => {
     if (!activity) return;
     setCopied(false);
@@ -208,7 +216,7 @@ export function LiveActivity({ activity: planActivity, trainingSync, onRetry, on
   const label = training
     ? phase === "error" ? intl("components_pages_TrainingAdvice.syncIssue")
       : phase === "success" ? intl("components_pages_TrainingAdvice.syncComplete") : intl("components_pages_TrainingAdvice.syncTitle")
-    : activity?.kind === "account" ? activity.title : activity?.phase === "running"
+    : activity?.title ? activity.title : activity?.phase === "running"
     ? progressionAdjustment
       ? (intl("components_ui_live_activity.adjustingProgression"))
       : (intl("components_ui_live_activity.generatingSchedule"))
@@ -273,7 +281,7 @@ export function LiveActivity({ activity: planActivity, trainingSync, onRetry, on
             if (event.key !== "Escape") return;
             event.preventDefault();
             event.stopPropagation();
-            if (activity.phase === "success" || activity.phase === "error") {
+            if (activity.phase === "success" || activity.phase === "error" || activity.phase === "notice") {
               dismiss(activity);
             } else {
               setPeek(false);
@@ -314,7 +322,7 @@ export function LiveActivity({ activity: planActivity, trainingSync, onRetry, on
           >
           <div className="relative flex min-h-[4.5rem] items-stretch overflow-hidden" data-slot="live-activity-body">
             <span
-              className={cn("relative z-10 grid w-12 shrink-0 self-stretch place-items-center", training && "self-start pt-3", STATUS_MARK_COLORS)}
+              className={cn("relative z-10 grid w-12 shrink-0 self-stretch place-items-center", (training || phase === "notice") && "self-start pt-3", STATUS_MARK_COLORS)}
               aria-hidden="true"
               data-slot="status-mark-rail"
             >
@@ -332,7 +340,7 @@ export function LiveActivity({ activity: planActivity, trainingSync, onRetry, on
                       : training.syncedAt ? intl("components_pages_TrainingAdvice.lastSynced", { time: new Date(training.syncedAt).toLocaleString(locale) })
                         : intl("components_pages_TrainingAdvice.autoSync")}
                   </span>
-                ) : activity.kind === "account" ? (
+                ) : activity.description ? (
                   <span className="text-sm text-muted-foreground">{activity.description}</span>
                 ) : activity.phase === "queued" ? (
                   <span className="text-sm text-muted-foreground">
@@ -415,7 +423,7 @@ export function LiveActivity({ activity: planActivity, trainingSync, onRetry, on
               </button> : null}
             </div>
           </div>
-          {activity.phase !== "success" && !(training && activity.phase === "queued") ? <div className="mx-3 h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true" data-slot="activity-progress-track">
+          {activity.phase !== "success" && activity.phase !== "notice" && !(training && activity.phase === "queued") ? <div className="mx-3 h-1 overflow-hidden rounded-full bg-muted" aria-hidden="true" data-slot="activity-progress-track">
             {activity.phase === "running" ? (
               <motion.span
                 className="block h-full w-[38%] bg-amber-500 dark:bg-amber-300"
