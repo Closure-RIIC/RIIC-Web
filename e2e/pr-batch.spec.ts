@@ -46,10 +46,21 @@ test("session renewal and wish submission enforce real authentication", async ({
     const denied = await request.post("/api/wishes", { headers, data: { title: "x", content: "x" } });
     expect(denied.status()).toBe(401);
     const missing = await request.post("/api/auth/request-password-reset", { headers, data: { email: id + "@example.test", redirectTo: baseURL + "/account/reset-password" } });
-    expect(missing.status()).toBe(404);
-    expect((await missing.json()).code).toBe("USER_NOT_FOUND");
+    expect(missing.status()).toBe(200);
+    expect(await missing.json()).toEqual({ status: true, message: "If this email exists in our system, check your email for the reset link" });
+    expect(missing.headers()["cache-control"]).toContain("no-store");
+    const invalidRedirect = { email: id + "@example.test", redirectTo: "https://untrusted.invalid/reset" };
+    const unknownRedirect = await request.post("/api/auth/request-password-reset", { headers, data: invalidRedirect });
+    expect(unknownRedirect.status()).toBe(403);
+    const unknownRedirectBody = await unknownRedirect.json();
+    expect(unknownRedirectBody.code).toBe("INVALID_REDIRECT_URL");
     await pool.query('INSERT INTO public."user" (id,name,email,email_verified,role) VALUES ($1,$1,$2,true,\'user\')', [id, id + "@example.test"]);
     await pool.query("INSERT INTO account (id,account_id,provider_id,user_id,password) VALUES ($1,$2,'credential',$2,$3)", [randomUUID(), id, await hashPassword(password)]);
+    // Reject the same untrusted redirect identically after registration, without sending email.
+    const existingRedirect = await request.post("/api/auth/request-password-reset", { headers, data: invalidRedirect });
+    expect(existingRedirect.status()).toBe(unknownRedirect.status());
+    expect(await existingRedirect.json()).toEqual(unknownRedirectBody);
+    expect(existingRedirect.headers()["cache-control"]).toContain("no-store");
     const login = await request.post("/api/auth/sign-in/email", { headers, data: { email: id + "@example.test", password } });
     expect(login.status(), await login.text()).toBe(200);
     const cookie = login.headersArray().filter(item => item.name.toLowerCase() === "set-cookie").map(item => item.value.split(";", 1)[0]).join("; ");
