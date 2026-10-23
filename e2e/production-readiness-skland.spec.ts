@@ -78,14 +78,10 @@ for (const interaction of ["hover", "focus"] as const) {
     await sessionLoaded;
     await expect(page.locator('[data-sidebar-account-trigger]')).toContainText("测试用户");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
-    await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 100));
-    await page.locator('[data-primary-navigation-page="skland"]').click();
+    await openSklandOverview(page);
     const notice = page.locator('[data-slot="live-activity"][data-activity-kind="skland-renewal"]');
-    await expect.poll(async () => {
-      await page.clock.runFor(50);
-      return notice.count();
-    }).toBe(1);
     await expect(notice).toContainText("有 1 个森空岛绑定已满七天", { timeout: 60_000 });
+    await page.clock.pauseAt(new Date(await page.evaluate(() => Date.now()) + 100));
     await expect(notice).toContainText("当前仍有效的账号可以继续使用");
     await expect(notice).toHaveAttribute("data-activity-view", "expanded");
     await expect(notice).toHaveAttribute("data-activity-phase", "notice");
