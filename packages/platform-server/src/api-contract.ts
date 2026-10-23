@@ -112,7 +112,7 @@ export function healthHttpStatus(plannerReady: boolean): 200 | 503 {
 export function successResponse<T>(data: T, requestId: string, status = 200): Response {
   return Response.json(
     { success: true, data, requestId },
-    { status, headers: { "X-Request-Id": requestId } }
+    { status, headers: { "X-Request-Id": requestId, "Cache-Control": "private, no-store" } }
   );
 }
 
@@ -130,7 +130,7 @@ export function failureResponse(
   request?: Request,
 ): Response {
   const known = normalizePublicError(error, fallback);
-  const headers: Record<string, string> = { "X-Request-Id": requestId };
+  const headers: Record<string, string> = { "X-Request-Id": requestId, "Cache-Control": "private, no-store" };
   if (known.retryAfter) headers["Retry-After"] = String(known.retryAfter);
 
   const diagnostic = makeDiagnostic({code:known.code, status:known.status, route, requestId,
@@ -177,7 +177,9 @@ async function readRequestBody(request: Request, maxBytes: number): Promise<Uint
     if (done) break;
     byteLength += value.byteLength;
     if (byteLength > maxBytes) {
-      await reader.cancel();
+      // A cloned Request tees its stream: awaiting cancellation can wait forever
+      // for the untouched original. Reject oversized input immediately instead.
+      void reader.cancel().catch(() => {});
       throw new PublicApiError("AIC-REQ-1002");
     }
     chunks.push(value);
