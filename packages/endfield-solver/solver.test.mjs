@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { catalog, DEFAULT_OPTIONS, evaluateManual, manualTemplate, parseRoster, parseWorkspace, solve, validateOptions } from "./index.mjs";
 import { prepare } from "./model.mjs";
-import { resetCaches, solveLayout } from "./upstream/optimizer.mjs";
+import { clueRankOf, resetCaches, solveLayout } from "./upstream/optimizer.mjs";
+import { isUseful } from "./upstream/candidates.mjs";
 import { verifyPlan } from "./upstream/verify-plan.mjs";
 
 const input = {
@@ -147,4 +148,77 @@ test("a roster without center recovery skills leaves the center unmanned", () =>
   assert.equal(result.center.a.length + result.center.b.length, 0);
   assert.equal(result.center.recoveryA, 0);
   assert.equal(result.center.recoveryB, 0);
+});
+
+test("clue-probability priority follows tier, clue 3 and clue 7 tiers", () => {
+  const names = ["阿列什", "艾维文娜", "噗切娜", "黎风", "弭弗", "余烬", "赛希", "弧光", "别礼"];
+  const expected = {
+    4: [1, 1, 1, 3, 3, 1, 1, 1, 5],
+    3: [2, 2, 1, 4, 3, 2, 2, 2, 6],
+    2: [2, 2, 2, 4, 4, 2, 2, 2, 6],
+    1: [7, 7, 2, 7, 4, 7, 7, 7, 7],
+  };
+  for (const [elite, ranks] of Object.entries(expected)) {
+    const { ops } = prepare({
+      operators: names.map(name => ({ name, elite: Number(elite) })),
+      options: { ...DEFAULT_OPTIONS },
+    });
+    assert.deepEqual(ops.map(clueRankOf), ranks, `elite ${elite}`);
+  }
+});
+
+test("clue-probability skills survive Skland exact node filtering", () => {
+  const withNode = nodeId => prepare({
+    operators: [{ name: "赛希", elite: 4, latestSpaceshipSkillNodes: [nodeId] }],
+    options: { ...DEFAULT_OPTIONS },
+  }).ops[0];
+  assert.equal(clueRankOf(withNode("spaceship_skill_chr_0011_seraph_2_2")), 1); // β
+  assert.equal(clueRankOf(withNode("spaceship_skill_chr_0011_seraph_2_1")), 2); // α
+});
+
+test("guest-room fillers prefer clue-probability operators over plain whiteboards", () => {
+  const roster = catalog.map(op => ({ name: op.name, elite: 4 }));
+  const result = solve({ operators: roster, options: { ...DEFAULT_OPTIONS } });
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  const guest = result.rooms.find(room => room.key === "会客室");
+  const { ops } = prepare({ operators: roster, options: { ...DEFAULT_OPTIONS } });
+  const byName = new Map(ops.map(op => [op.name, op]));
+  const isFiller = name => !isUseful(byName.get(name), { room: "会客室", weights: { 线索: 1 } });
+  const fillers = [...guest.a, ...guest.b].filter(isFiller);
+  assert.ok(fillers.length > 0, "the default plan still uses guest-room fillers");
+  for (const name of fillers) {
+    assert.ok(clueRankOf(byName.get(name)) < 7, `${name} should carry a clue-probability skill`);
+  }
+  assert.ok(Math.abs(result.scores["线索"] - 95.04) < 1e-9);
+});
+
+test("stronger B shift moves to A when the facility efficiency does not drop", () => {
+  const roster = catalog.map(op => ({ name: op.name, elite: 4 }));
+  const options = { ...DEFAULT_OPTIONS, mfg: "2干员" };
+  const { ops, cfg } = prepare({ operators: roster, options });
+  const { plan } = solveLayout({ ops, cfg });
+  for (const pick of plan.picks) {
+    if (pick.single) continue;
+    assert.ok(pick.stB.unit <= pick.stA.unit + 1e-9, `${pick.spec.key} should keep the stronger shift in A`);
+  }
+  const mfg = plan.picks.find(pick => pick.spec.key === "制造舱1");
+  assert.ok(mfg);
+  assert.equal(mfg.h, 14);
+  assert.ok(Math.abs(mfg.stA.unit - 3.96) < 1e-9);
+  assert.ok(Math.abs(mfg.stB.unit - 2.64) < 1e-9);
+  const result = solve({ operators: roster, options });
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  assert.ok(Math.abs(result.scores["干员经验"] - 171.82) < 1e-9);
+});
+
+test("default and assist plans already keep the stronger shift in A", () => {
+  const roster = catalog.map(op => ({ name: op.name, elite: 4 }));
+  for (const options of [{ ...DEFAULT_OPTIONS }, { ...DEFAULT_OPTIONS, assist: true }]) {
+    const { ops, cfg } = prepare({ operators: roster, options });
+    const { plan } = solveLayout({ ops, cfg });
+    for (const pick of plan.picks) {
+      if (pick.single) continue;
+      assert.ok(pick.stB.unit <= pick.stA.unit + 1e-9, `${pick.spec.key} B should not be stronger than A`);
+    }
+  }
 });
