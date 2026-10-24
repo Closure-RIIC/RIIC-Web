@@ -9,7 +9,7 @@ import { isUseful } from './candidates.mjs';
 const VERIFY_TOL = 1e-6;      // 数值重算容差（逐日模拟与闭式的浮点差）
 const STRUCT_TOL = 1e-9;      // 结构量（时间轴、u、R/C）容差
 
-export function verifyPlan({ ops, cfg, plan }) {
+export function verifyPlan({ ops, cfg, plan, allowEmptyShifts = false }) {
   const errors = [];
   if (!plan) return { ok: false, errors: ['无方案'] };
 
@@ -33,7 +33,7 @@ export function verifyPlan({ ops, cfg, plan }) {
     if (nA > cfg.centerSlots || nB > cfg.centerSlots) {
       errors.push(`中枢每班最多 ${cfg.centerSlots} 个工位`);
     }
-    if ((nA === 0) !== (nB === 0)) {
+    if (!allowEmptyShifts && (nA === 0) !== (nB === 0)) {
       errors.push('中枢要么两班都有人，要么两班都空（一队空、一队有人不是合法排班）');
     }
     addPeople(maskFrom(c.idxA), '中枢/A');
@@ -79,10 +79,11 @@ export function verifyPlan({ ops, cfg, plan }) {
 
       if (p.fillA !== sizeOf(fillCrewA) || p.fillB !== sizeOf(fillCrewB)) errors.push(`${tag} 补位人数与补位名单不一致`);
       const seats = p.spec.slots || 3;
-      if (sizeOf(p.crewA) + sizeOf(fillCrewA) !== p.nA || p.nA < 1 || p.nA > seats) {
+      const minCrew = allowEmptyShifts && !p.single ? 0 : 1;
+      if (sizeOf(p.crewA) + sizeOf(fillCrewA) !== p.nA || p.nA < minCrew || p.nA > seats) {
         errors.push(`${tag} A 班人数不合法（技能 ${sizeOf(p.crewA)} + 补位 ${sizeOf(fillCrewA)}，记录 ${p.nA}，工位 ${seats}）`);
       }
-      if (!p.single && (sizeOf(p.crewB) + sizeOf(fillCrewB) !== p.nB || p.nB < 1 || p.nB > seats)) {
+      if (!p.single && (sizeOf(p.crewB) + sizeOf(fillCrewB) !== p.nB || p.nB < minCrew || p.nB > seats)) {
         errors.push(`${tag} B 班人数不合法（技能 ${sizeOf(p.crewB)} + 补位 ${sizeOf(fillCrewB)}，记录 ${p.nB}，工位 ${seats}）`);
       }
       if (p.single && (sizeOf(fullB) !== 0 || p.nB !== 0)) errors.push(`${tag} 单班方案包含 B 班人员`);

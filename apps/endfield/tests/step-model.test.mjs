@@ -60,7 +60,7 @@ test("manufacturing layout and growth counts drive the products", () => {
   assert.equal(noGrowth.some(room => room.key === "培养舱"), false);
 });
 
-test("manual drafts map crews, hours and single-shift rooms", () => {
+test("manual drafts map crews and hours without turning empty shifts into cycles", () => {
   const ws = workspace();
   ws.manual = manualPlan(ws);
   ws.manual[2].b = [];
@@ -70,7 +70,7 @@ test("manual drafts map crews, hours and single-shift rooms", () => {
   assert.equal(rooms[0].hour, 10);
   assert.equal(rooms[0].crewA[0], null, "unknown operators are dropped");
   assert.equal(rooms[1].single, false);
-  assert.equal(rooms[2].single, true, "an empty B shift becomes a single-shift room");
+  assert.equal(rooms[2].single, false, "an empty B shift still follows the manual timetable");
   assert.deepEqual(rooms[2].crewB, rooms[2].crewB.map(() => null));
 });
 

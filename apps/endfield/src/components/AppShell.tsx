@@ -1,6 +1,6 @@
 import { type CSSProperties, type ReactNode } from "react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Calculator, SquarePen, Timer, Search, Cloud } from "lucide-react";
+import { Calculator, SquarePen, Search, Cloud } from "lucide-react";
 import { Sidebar, SidebarProvider, SidebarInset, SidebarHeader, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger, useSidebar } from "@riic/ui-primitives/sidebar";
 import { TooltipProvider } from "@riic/ui-primitives/tooltip";
 import { PageScrollbar } from "@riic/ui-primitives/page-scrollbar";
@@ -34,7 +34,6 @@ function Navigation() {
   const links = [
     { to: "/" as const, label: t(...pageLabels["/"]), icon: Calculator },
     { to: "/manual" as const, label: t(...pageLabels["/manual"]), icon: SquarePen },
-    { to: "/step" as const, label: t(...pageLabels["/step"]), icon: Timer },
     { to: "/skills" as const, label: t(...pageLabels["/skills"]), icon: Search },
     { to: "/skland" as const, label: t(...pageLabels["/skland"]), icon: Cloud },
   ];
