@@ -15,6 +15,16 @@ const detail = () => ({
     { id: "grow", type: 2, level: 3 }, { id: "guest-display", type: 3, level: 1 }, { id: "guest", type: 5, level: 3 },
   ] } }],
 });
+test("redacted room IDs preserve all actual facility levels and separate manufacturing rooms", () => {
+  const response = detail();
+  response.domain[0].spaceShip.rooms.forEach(room => { room.id = ""; });
+  const snapshot = normalizeEndfieldSnapshot(response);
+  assert.equal(snapshot.facilitiesComplete, true);
+  assert.equal(snapshot.rooms.length, 6);
+  assert.equal(new Set(snapshot.rooms.map(room => room.id)).size, 6);
+  assert.deepEqual(endfieldFacilityLevels(snapshot), { center: 5, mfg1: 3, mfg2: 3, grow: 3, guest: 3 });
+});
+
 test("binding parser selects only available Endfield roles, including distinct servers", () => {
   const role = { roleId: "r", serverId: "s1", nickname: "N", serverName: "S", isDefault: true };
   const result = endfieldRolesFromBinding({ list: [
