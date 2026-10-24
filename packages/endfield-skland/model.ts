@@ -116,11 +116,16 @@ export function normalizeEndfieldSnapshot(input: unknown, now = Date.now()): End
   let facilitiesComplete = roomLists.length > 0;
   for (const rawRooms of roomLists) {
     if (!Array.isArray(rawRooms)) { facilitiesComplete = false; continue; }
+    const typeOrdinals = new Map<number, number>();
     for (const value of rawRooms) {
       const room = object(value);
-      const id = text(room.id) || (integer(room.id, 0, Number.MAX_SAFE_INTEGER) ? String(room.id) : "");
       const type = roomInteger(room.type, 0, 1000), level = roomInteger(room.level, 0, 20);
-      if (!id || type === null || level === null) { facilitiesComplete = false; continue; }
+      if (type === null || level === null) { facilitiesComplete = false; continue; }
+      const ordinal = (typeOrdinals.get(type) ?? 0) + 1;
+      typeOrdinals.set(type, ordinal);
+      // Skland may redact every room ID to "" while retaining its type and level.
+      // Keep distinct manufacturing rooms using their order within the room type.
+      const id = text(room.id) || (integer(room.id, 0, Number.MAX_SAFE_INTEGER) ? String(room.id) : `skland-room-${type}-${ordinal}`);
       const previous = roomIds.get(id);
       if (previous) {
         if (previous.type !== type || previous.level !== level) facilitiesComplete = false;
