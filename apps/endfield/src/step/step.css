@@ -1,0 +1,67 @@
+/* Step-specific layout and chart geometry; controls and surfaces use the site components. */
+.ef-step-page { min-width:0; --ef-step-series-lightness:40%; --ef-step-rate:oklch(.56 .14 65); --ef-step-growth:oklch(.52 .12 155); --ef-step-mineral:oklch(.53 .14 285); }
+.dark .ef-step-page { --ef-step-series-lightness:72%; --ef-step-rate:oklch(.8 .14 85); --ef-step-growth:oklch(.76 .12 155); --ef-step-mineral:oklch(.78 .12 285); }
+.ef-step-page .ef-section + .ef-section { border-top:1px solid var(--ef-line); }
+.ef-step-page .ef-step-facilities { align-items:start; }
+.ef-step-page .ef-step-facilities .ef-facility-tile { min-width:0; }
+.ef-step-page fieldset { min-width:0; border:0; padding:0; margin:0; }
+.ef-step-page fieldset:disabled { opacity:.6; }
+.ef-step-room-options { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px; font-size:12px; }
+.ef-step-room-options .ef-toggle,.ef-step-mood-setting .ef-toggle { display:flex; align-items:center; gap:6px; }
+.ef-step-moods { margin-top:16px; border-top:1px solid var(--ef-line); padding-top:12px; font-size:12px; }
+.ef-step-moods summary,.ef-step-mood-stats summary { cursor:pointer; margin-bottom:12px; }
+.ef-step-mood-setting { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:12px; align-items:end; margin-top:12px; }
+.ef-step-mood-setting .ef-toggle { min-height:36px; }
+.ef-step-boost-summary { display:flex; gap:20px; align-items:end; flex-wrap:wrap; margin-bottom:16px; }
+.ef-step-boost-summary>.ef-field { min-width:160px; }
+.ef-step-boost-summary>p { max-width:48rem; line-height:1.7; padding-bottom:4px; }
+.ef-step-boost-entries { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:16px; margin-top:12px; }
+.ef-step-page .ef-step-boost-entry { display:flex; flex-wrap:wrap; align-items:end; gap:16px; background:var(--ef-raised); border:1px solid var(--ef-line); border-radius:6px; padding:16px; }
+.ef-step-boost-entry legend { font-size:12px; padding-inline:6px; }
+.ef-step-playback { margin-top:20px; }
+.ef-step-timeline { margin-top:24px; }
+.ef-step-time { display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-top:10px; font-variant-numeric:tabular-nums; }
+.ef-step-time strong { font-size:20px; font-weight:550; }
+.ef-step-page progress { display:block; appearance:none; border:0; border-radius:2px; overflow:hidden; width:100%; height:6px; background:var(--ef-line); color:var(--ef-accent); }
+.ef-step-page progress::-webkit-progress-bar { background:var(--ef-line); }
+.ef-step-page progress::-webkit-progress-value { background:var(--ef-accent); }
+.ef-step-page progress::-moz-progress-bar { background:var(--ef-accent); }
+.ef-step-page progress[data-low]::-webkit-progress-value { background:var(--destructive); }
+.ef-step-page progress[data-low]::-moz-progress-bar { background:var(--destructive); }
+.ef-step-live-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:16px; }
+.ef-step-live-grid .ef-result { margin:0; }
+.ef-step-live-body { padding:16px 20px; }
+.ef-step-operator { display:flex; gap:10px; align-items:center; margin-bottom:14px; min-width:0; }
+.ef-step-operator-info { flex:1; min-width:0; }
+.ef-step-operator-info>div { display:flex; justify-content:space-between; gap:8px; margin-bottom:7px; font-size:12px; }
+.ef-step-operator-info strong { font-weight:550; overflow-wrap:anywhere; }
+.ef-step-number { min-width:48px; text-align:right; font-size:12px; font-variant-numeric:tabular-nums; }
+.ef-step-metrics { border-top:1px solid var(--ef-line); padding-top:12px; display:grid; gap:8px; font-size:12px; }
+.ef-step-metrics>div { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.ef-step-metrics dt { color:var(--ef-muted); }
+.ef-step-metrics dd { font-variant-numeric:tabular-nums; }
+.ef-step-log { max-height:320px; overflow:auto; border:1px solid var(--ef-line); border-radius:6px; background:var(--ef-raised); padding:16px; }
+.ef-step-log-entry { display:grid; grid-template-columns:120px minmax(0,1fr); gap:12px; font-size:12px; line-height:1.8; padding-block:4px; }
+.ef-step-log-entry time { color:var(--ef-muted); font-variant-numeric:tabular-nums; }
+.ef-step-log-entry[data-event=mood-zero] { color:var(--destructive); }
+.ef-step-mood-stats { margin-top:20px; font-size:13px; }
+.ef-step-page .mood-charts-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr)); gap:16px; }
+.ef-step-page .mood-chart-card { min-width:0; padding:16px; border:1px solid var(--ef-line); border-radius:6px; background:var(--ef-raised); }
+.ef-step-page .mood-chart-title { font-size:13px; font-weight:600; margin-bottom:12px; }
+.ef-step-page .mood-chart-svg svg { display:block; width:100%; height:auto; aspect-ratio:640/240; overflow:visible; }
+.ef-step-page .chart-grid { stroke:var(--ef-line); stroke-width:.7; }
+.ef-step-page .chart-label { fill:var(--ef-muted); font-size:10px; font-variant-numeric:tabular-nums; }
+.ef-step-page .mood-chart-legend { display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:10px; color:var(--ef-muted); font-size:11px; }
+.ef-step-page .legend-item { display:inline-flex; align-items:center; gap:5px; }
+.ef-step-page .legend-dot { display:inline-block; width:7px; height:7px; border-radius:50%; }
+.ef-step-page .chart-tooltip { position:fixed; z-index:40; max-width:min(280px,calc(100vw - 24px)); padding:12px; border:1px solid var(--ef-line); border-radius:6px; background:var(--ef-raised); color:var(--ef-ink); box-shadow:0 8px 24px #0002; font-size:12px; pointer-events:none; }
+.ef-step-page .chart-tooltip-title { font-weight:600; margin-bottom:8px; font-variant-numeric:tabular-nums; }
+.ef-step-page .chart-tooltip-row { display:flex; gap:16px; justify-content:space-between; line-height:1.8; }
+.ef-step-page .chart-tooltip-row .val { font-variant-numeric:tabular-nums; }
+.ef-step-page .chart-tooltip-operators { margin-top:8px; padding-top:8px; border-top:1px solid var(--ef-line); }
+@media (max-width:640px) {
+  .ef-step-page .ef-section-actions { margin-left:0; width:100%; }
+  .ef-step-time { flex-wrap:wrap; }
+  .ef-step-log-entry { grid-template-columns:1fr; gap:0; padding-block:8px; }
+  .ef-step-page .mood-chart-card { padding:12px 8px; }
+}
