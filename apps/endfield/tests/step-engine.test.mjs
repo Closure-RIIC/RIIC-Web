@@ -37,6 +37,29 @@ test("playback advances by elapsed time independently of chart sampling", () => 
   }
 });
 
+test("timeline seeking replays shifts and assistance deterministically in both directions", () => {
+  const value = config({
+    moods: { A: 20 },
+    boost: { dailyCount: 1, currentDay: 0, days: [{ list: [{ hour: 6, minute: 0, target: "A" }] }] },
+  });
+  value.rooms[0] = { ...value.rooms[0], single: false, crewB: ["B"] };
+  const options = { startHour: 0, maxHours: 24, sampleSec: 60 };
+  const replay = new StepSimulation(value, NO_EFFECTS, RATES, options);
+  replay.runToEnd();
+  for (const seconds of [7 * 3600, 3 * 3600, 13 * 3600, 0, 24 * 3600]) {
+    replay.seekTo(seconds);
+    const expected = new StepSimulation(value, NO_EFFECTS, RATES, options);
+    expected.advanceBy(seconds);
+    assert.deepEqual(replay.snapshot(), expected.snapshot());
+  }
+  replay.seekTo(-10);
+  assert.equal(replay.view.tSec, 0);
+  replay.seekTo(Infinity);
+  assert.equal(replay.view.tSec, 0);
+  replay.seekTo(1e9);
+  assert.equal(replay.view.tSec, 86400);
+});
+
 test("display snapshots stay stable as the engine advances and clears its log", () => {
   const simulation = new StepSimulation(config(), NO_EFFECTS, RATES, { startHour: 0, maxHours: 24, sampleSec: 60 });
   const snapshot = simulation.snapshot();
@@ -80,6 +103,20 @@ test("two-shift rooms switch crews at the configured hour", () => {
   const during = simulation.view.history.find(item => item.tSec >= 43_200 && item.tSec < 86_400);
   assert.equal(during.workings.C, true, "shift B joins at the changeover");
   assert.ok(simulation.view.output["制造舱1"] > 0, "shift A produced before the switch");
+});
+
+test("an empty manual B shift still ends A at the configured hour", () => {
+  const value = config();
+  value.rooms[0].single = false;
+  const simulation = new StepSimulation(value, NO_EFFECTS, RATES, { startHour: 8, maxHours: 24, sampleSec: 60 });
+  simulation.advanceBy(5 * 3600);
+  assert.equal(simulation.view.rooms["会客室"].activeRound, "round2");
+  assert.equal(simulation.view.ops[0].working, false);
+  assert.ok(simulation.view.log.some(entry => entry.type === "switch" && entry.tSec === 4 * 3600));
+  const afterChangeover = new StepSimulation(value, NO_EFFECTS, RATES, { startHour: 14, maxHours: 24, sampleSec: 60 });
+  assert.equal(afterChangeover.view.ops[0].working, false, "an empty B shift is also respected at the start");
+  afterChangeover.advanceBy(10 * 3600);
+  assert.equal(afterChangeover.view.ops[0].working, true, "A resumes at midnight");
 });
 
 test("a boost adds 30 percentage points and is capped at 100", () => {

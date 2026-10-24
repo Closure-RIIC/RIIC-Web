@@ -1,18 +1,21 @@
-import type { StepBoostConfig, StepConfig, StepRoomKey } from "./step-types.ts";
-import { clampHour } from "./step-model.ts";
+import type { StepBoostConfig, StepConfig } from "./step-types.ts";
 import { STEP_STORAGE_KEY } from "./step-keys.ts";
 
-/** 步进页专属配置；名单与换班时刻每次都从 Workspace 重新导入，不在这里保存。 */
+/** 只保存模拟参数；人员、设施和换班时间始终来自手动排班。 */
 export { STEP_STORAGE_KEY };
 
-export interface StoredStepRoom {
-  enabled?: boolean;
-  hour?: number;
+export interface StepControls {
+  startHour: number;
+  maxHours: number;
+  sampleSec: number;
+  speed: number;
 }
 
+export const DEFAULT_STEP_CONTROLS: StepControls = { startHour: 8, maxHours: 24, sampleSec: 60, speed: 100 };
+
 export interface StoredStep {
-  version: 1;
-  rooms: Record<string, StoredStepRoom>;
+  version: 2;
+  controls: StepControls;
   moods: Record<string, number>;
   work: Record<string, boolean>;
   boost?: StepBoostConfig;
@@ -30,17 +33,17 @@ function storageOf(kind: "local" | "session"): Storage | undefined {
   }
 }
 
-function sanitizeRooms(value: unknown): Record<string, StoredStepRoom> {
-  if (!isRecord(value)) return {};
-  const rooms: Record<string, StoredStepRoom> = {};
-  for (const [key, entry] of Object.entries(value)) {
-    if (!isRecord(entry)) continue;
-    const room: StoredStepRoom = {};
-    if (typeof entry.enabled === "boolean") room.enabled = entry.enabled;
-    if (typeof entry.hour === "number" && Number.isFinite(entry.hour)) room.hour = Math.min(23, Math.max(1, Math.round(entry.hour)));
-    rooms[key] = room;
-  }
-  return rooms;
+function sanitizeControls(value: unknown): StepControls {
+  if (!isRecord(value)) return { ...DEFAULT_STEP_CONTROLS };
+  const choice = (input: unknown, options: number[], fallback: number) =>
+    typeof input === "number" && options.includes(input) ? input : fallback;
+  return {
+    startHour: typeof value.startHour === "number" && Number.isFinite(value.startHour)
+      ? Math.min(23, Math.max(0, Math.round(value.startHour))) : DEFAULT_STEP_CONTROLS.startHour,
+    maxHours: choice(value.maxHours, [24, 48, 72, 96], DEFAULT_STEP_CONTROLS.maxHours),
+    sampleSec: choice(value.sampleSec, [10, 30, 60, 300, 900], DEFAULT_STEP_CONTROLS.sampleSec),
+    speed: choice(value.speed, [1, 10, 100, 1000], DEFAULT_STEP_CONTROLS.speed),
+  };
 }
 
 function sanitizeNumbers(value: unknown, min: number, max: number): Record<string, number> {
@@ -85,10 +88,10 @@ export function loadStepConfig(storage: Pick<Storage, "getItem"> | undefined = s
     const raw = storage.getItem(STEP_STORAGE_KEY);
     if (!raw) return null;
     const value: unknown = JSON.parse(raw);
-    if (!isRecord(value) || value.version !== 1) return null;
+    if (!isRecord(value) || (value.version !== 1 && value.version !== 2)) return null;
     return {
-      version: 1,
-      rooms: sanitizeRooms(value.rooms),
+      version: 2,
+      controls: sanitizeControls(value.controls),
       moods: sanitizeNumbers(value.moods, 0, 100),
       work: sanitizeBooleans(value.work),
       ...(value.boost ? { boost: sanitizeBoost(value.boost) } : {}),
@@ -109,26 +112,15 @@ export function clearStepConfig(storage: Pick<Storage, "removeItem"> | undefined
   catch { /* 忽略：清理失败不影响页面。 */ }
 }
 
-export function toStored(config: StepConfig): StoredStep {
-  const rooms: Record<string, StoredStepRoom> = {};
-  for (const room of config.rooms) rooms[room.key] = { enabled: room.enabled, hour: room.hour };
-  return { version: 1, rooms, moods: { ...config.moods }, work: { ...config.work }, boost: config.boost };
+export function toStored(config: StepConfig, controls: StepControls = DEFAULT_STEP_CONTROLS): StoredStep {
+  return { version: 2, controls: { ...controls }, moods: { ...config.moods }, work: { ...config.work }, boost: config.boost };
 }
 
-/** 把持久化的“模拟专属”字段盖到刚导入的配置上；局内名单始终以 Workspace 为准。 */
+/** 兼容旧存档的心情与助力，但不允许旧 rooms 覆盖共享排班。 */
 export function applyStored(config: StepConfig, stored: StoredStep | null): StepConfig {
   if (!stored) return config;
-  const rooms = config.rooms.map(room => {
-    const saved = stored.rooms[room.key as StepRoomKey];
-    if (!saved) return room;
-    return {
-      ...room,
-      enabled: typeof saved.enabled === "boolean" ? saved.enabled : room.enabled,
-      hour: typeof saved.hour === "number" ? clampHour(saved.hour, room.hour) : room.hour,
-    };
-  });
   return {
-    rooms,
+    rooms: config.rooms,
     moods: { ...config.moods, ...stored.moods },
     work: { ...config.work, ...stored.work },
     boost: stored.boost ? { ...stored.boost, days: stored.boost.days.map(day => ({ list: day.list.map(entry => ({ ...entry })) })) } : config.boost,

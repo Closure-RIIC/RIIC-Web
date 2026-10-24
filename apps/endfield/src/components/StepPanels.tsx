@@ -1,4 +1,5 @@
 import { Action, Section } from "@riic/endfield-ui";
+import { ScrollArea } from "@riic/ui-primitives/scroll-area";
 import { Trash2 } from "lucide-react";
 import { useWorkspace } from "../state";
 import { OperatorPortrait } from "./GameArtwork";
@@ -48,11 +49,11 @@ export function StepRooms({ view, rooms, ratesOf, centralBonus, labelOf }: {
 export function StepLog({ log, startHour, onClear }: { log: StepLogEntry[]; startHour: number; onClear: () => void }) {
   const { t } = useWorkspace();
   return <Section title={t("事件日志", "Event log")} actions={<Action id="logClearBtn" size="sm" icon={<Trash2 />} disabled={!log.length} onClick={onClear}>{t("清空", "Clear")}</Action>}>
-    <div id="logList" className="ef-step-log" tabIndex={0} aria-label={t("事件日志", "Event log")}>
+    <ScrollArea id="logList" className="ef-step-log" viewportProps={{ "aria-label": t("事件日志", "Event log") }}>
       {log.length ? log.map((entry, index) => <div className="ef-step-log-entry" data-event={entry.type} key={index}>
         <time>{formatClock(entry.tSec, startHour)}</time><span>{entry.text.replace(/^[^\p{L}\p{N}]+/u, "")}</span>
       </div>) : <p className="ef-muted">{t("暂无事件", "No events yet")}</p>}
-    </div>
+    </ScrollArea>
   </Section>;
 }
 
@@ -71,20 +72,20 @@ export function StepStats({ view, rooms }: { view: StepView; rooms: StepRoom[] }
   });
   return <div id="statsArea">
     <p className="ef-muted">{t("产出单位为等效小时；均产按有效工作时长计算。", "Output is measured in effective hours; average rate uses active work time.")}</p>
-    <div className="ef-table-wrap"><table className="ef-table">
+    <ScrollArea direction="both" className="ef-table-wrap"><table className="ef-table">
       <caption className="sr-only">{t("设施产出统计", "Facility production statistics")}</caption>
       <thead><tr><th>{t("舱室 / 产物", "Facility / product")}</th><th>{t("累计产出", "Total output")}</th><th>{t("均产 / h", "Average / h")}</th><th>{t("有效工作", "Active work")}</th></tr></thead>
       <tbody>{rows}</tbody>
-    </table></div>
+    </table></ScrollArea>
     <details className="ef-details ef-step-mood-stats"><summary>{t("干员心情统计", "Operator morale statistics")}</summary>
-      <div className="ef-table-wrap"><table className="ef-table">
+      <ScrollArea direction="both" className="ef-table-wrap"><table className="ef-table">
         <thead><tr><th>{t("干员", "Operator")}</th><th>{t("最低", "Minimum")}</th><th>{t("最高", "Maximum")}</th><th>{t("当前", "Current")}</th></tr></thead>
         <tbody>{view.ops.map(op => {
           const moods = view.history.flatMap(sample => sample.moods[op.name] === undefined ? [] : [sample.moods[op.name]]);
           return <tr key={op.name}><td>{op.name}</td><td>{Math.min(op.mood, ...moods).toFixed(1)}%</td>
             <td>{Math.max(op.mood, ...moods).toFixed(1)}%</td><td>{op.mood.toFixed(1)}%</td></tr>;
         })}</tbody>
-      </table></div>
+      </table></ScrollArea>
     </details>
   </div>;
 }

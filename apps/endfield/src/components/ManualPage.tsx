@@ -1,6 +1,8 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
+import { getRouteApi } from "@tanstack/react-router";
 import { Dialog } from "@base-ui/react/dialog";
 import { Plus, SlidersHorizontal } from "lucide-react";
+import { Tabs, CompactTabsList, TabsTrigger } from "@riic/ui-primitives/tabs";
 import { operatorData } from "@riic/endfield-data";
 import { manualTemplate, type Assignment } from "@riic/endfield-solver/model.mjs";
 import { Action, ActionContent, actionClassName, Field, Notice, PageTitle } from "@riic/endfield-ui";
@@ -12,23 +14,29 @@ import { FacilitySettings } from "./FacilitySettings";
 import { DialogFrame } from "./DialogFrame";
 import { FacilityBoard, FacilityCard, type FacilityKind } from "./FacilityCard";
 import { RosterPage } from "./RosterPage";
+import { workspaceKey } from "../result-cache";
 
+const ManualSimulation = lazy(() => import("./ManualSimulation").then(module => ({ default: module.ManualSimulation })));
+const route = getRouteApi("/manual");
 type Slot = { key: string; shift: "a" | "b"; index: number };
 const facilityKinds: Record<string, FacilityKind> = { 中枢: "center", 会客室: "guest", 培养舱: "grow", 制造舱1: "mfg1", 制造舱2: "mfg2" };
 const hour = (value: number) => `${String(value).padStart(2, "0")}:00`;
 
 export function ManualPage() {
   const { workspace, update, result, busy, resultStorageError, run, cancel, ready, locale, t } = useWorkspace();
+  const { view } = route.useSearch();
+  const navigate = route.useNavigate();
+  const simulation = view === "simulation";
   const [slot, setSlot] = useState<Slot | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const fieldProps = { disabled: busy || !ready, emptyText: t("没有匹配选项", "No matching options") };
   const template = useMemo(() => { try { return manualTemplate(workspace.options); } catch { return []; } }, [workspace.options]);
-  const owned = new Set(workspace.operators.map(op => op.name));
-  const assignments = template.map(room => {
+  const owned = useMemo(() => new Set(workspace.operators.map(op => op.name)), [workspace.operators]);
+  const assignments = useMemo(() => template.map(room => {
     const old = workspace.manual?.find(x => x.key === room.key);
     const crew = (names: string[]) => Array.from({ length: room.slots }, (_, index) => owned.has(names[index]) ? names[index] : "");
     return old ? { ...room, hour: old.hour, a: crew(old.a), b: crew(old.b) } : room;
-  });
+  }), [template, workspace.manual, owned]);
   function change(index: number, next: Assignment) { update({ ...workspace, manual: assignments.map((a, i) => i === index ? next : a) }); }
   function copyResult() {
     if (!result?.center || result.rooms.some(r => r.single)) return;
@@ -52,17 +60,28 @@ export function ManualPage() {
     setPickerOpen(false);
   }
   return <div className="ef-page ef-schedule-page ef-manual-page">
-    <PageTitle title={t("手动排班", "Manual schedule")} subtitle={t("安排两班人员，用同一套算法校验产出与心情闭环。", "Assign two shifts and evaluate production and morale with the same engine.")}
+    <PageTitle title={t("手动排班", "Manual schedule")} subtitle={t("安排两班人员，评估长期产出，或回放指定时段的心情与换班。", "Assign two shifts, evaluate long-term production, or replay morale and shift changes over a chosen period.")}
       action={<div className="ef-actions ef-manual-actions">
         <FacilitySettingsDialog />
         <Action size="sm" disabled={busy || !ready || !result?.center || result.rooms.some(r => r.single)} onClick={copyResult}>{t("使用当前双班结果", "Copy current two-shift result")}</Action>
         {busy ? <Action size="sm" variant="red" onClick={cancel}>{t("取消", "Cancel")}</Action> : null}
-        <Action size="sm" variant="yellow" aria-busy={busy} disabled={!ready || busy || !workspace.operators.length} onClick={() => run(assignments.map(a => ({ ...a, a: a.a.filter(Boolean), b: a.b.filter(Boolean) })))}>{busy ? t("评估中…", "Evaluating…") : t("评估方案", "Evaluate")}</Action>
+        <Action size="sm" variant="yellow" aria-busy={busy} disabled={!ready || busy || !workspace.operators.length} onClick={() => {
+          void navigate({ search: previous => ({ ...previous, view: undefined }), hash: "", resetScroll: false });
+          run(assignments.map(a => ({ ...a, a: a.a.filter(Boolean), b: a.b.filter(Boolean) })));
+        }}>{busy ? t("评估中…", "Evaluating…") : t("评估方案", "Evaluate")}</Action>
       </div>} />
     {!workspace.operators.length ? <Notice><RosterDialogTrigger className="ef-text-action">{t("请先配置我的干员。", "Set up your roster first.")}</RosterDialogTrigger></Notice> : null}
-    {workspace.options.assist ? <Notice>{t("手动评估目前需关闭中枢助力，请在首页“生产配置”中关闭。", "Disable central assistance in Production setup before manual evaluation.")}</Notice> : null}
+    <Tabs value={simulation ? "simulation" : "edit"} onValueChange={value => {
+      void navigate({ search: previous => ({ ...previous, view: value === "simulation" ? "simulation" : undefined }), hash: "", resetScroll: false });
+    }}>
+      <CompactTabsList aria-label={t("排班视图", "Schedule view")}>
+        <TabsTrigger value="edit">{t("编辑排班", "Edit schedule")}</TabsTrigger>
+        <TabsTrigger value="simulation" disabled={!ready || busy}>{t("模拟回放", "Simulation replay")}</TabsTrigger>
+      </CompactTabsList>
+    </Tabs>
+    {workspace.options.assist && !simulation ? <Notice>{t("手动评估目前需在“设施与生产”中关闭中枢助力；模拟回放可单独设置助力时间。", "Disable central assistance in Facilities & production before evaluation. Simulation replay supports its own assistance times.")}</Notice> : null}
     <Dialog.Root open={pickerOpen} onOpenChange={setPickerOpen}>
-      <fieldset disabled={busy || !ready} data-manual-assignments aria-label={t("手动排班工位", "Manual schedule slots")}>
+      <fieldset hidden={simulation} disabled={busy || !ready} data-manual-assignments aria-label={t("手动排班工位", "Manual schedule slots")}>
         <FacilityBoard data-manual-board>{assignments.map((a, index) => {
           const kind = facilityKinds[a.key];
           const label = facilityLabel(a.key);
@@ -101,7 +120,8 @@ export function ManualPage() {
       </Dialog.Portal>
     </Dialog.Root>
     {resultStorageError ? <Notice error>{resultStorageError}</Notice> : null}
-    {result && result.status.stopReason === "manual" ? <Results result={result} showWeapons={false} /> : null}
+    {simulation && ready ? <Suspense fallback={<Notice>{t("正在加载模拟…", "Loading simulation…")}</Notice>}><ManualSimulation key={workspaceKey(workspace)} assignments={assignments} /></Suspense> : null}
+    {!simulation && result && result.status.stopReason === "manual" ? <Results result={result} showWeapons={false} /> : null}
   </div>;
 }
 
