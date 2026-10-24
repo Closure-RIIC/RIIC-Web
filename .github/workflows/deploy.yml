@@ -3,6 +3,10 @@ name: Deploy verified branch
 on:
   workflow_call:
     inputs:
+      application:
+        description: Application to deploy independently
+        required: true
+        type: string
       artifact_name:
         description: Immutable release artifact produced by the post-merge build job
         required: true
@@ -24,23 +28,26 @@ on:
 permissions:
   contents: read
   actions: read
+  deployments: write
 
 jobs:
   deploy:
+    name: Deploy ${{ inputs.application }}
     if: >-
       inputs.deployment_authorized &&
       inputs.deploy_required &&
       (github.ref_name == 'main' || github.ref_name == 'develop') &&
       vars.DEPLOY_AUTOMATION_ENABLED == '1' &&
-      github.repository == 'KnightCodeSquareMatrix/RIIC-Web'
+      github.repository == 'Closure-RIIC/RIIC-Web'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment:
       name: ${{ github.ref_name == 'main' && 'production' || 'development' }}
     concurrency:
-      group: deploy-${{ github.ref_name }}
+      group: deploy-${{ inputs.application }}-${{ github.ref_name }}
       cancel-in-progress: false
     env:
+      DEPLOY_APPLICATION: ${{ inputs.application }}
       DEPLOYMENT_ENV: ${{ github.ref_name == 'main' && 'production' || 'development' }}
       DEPLOY_SHA: ${{ github.sha }}
       DEPLOY_APP_ROOT: ${{ vars.DEPLOY_APP_ROOT }}
@@ -50,7 +57,7 @@ jobs:
       DEPLOY_DEBUG_TOOLS_ENABLED: ${{ vars.DEPLOY_DEBUG_TOOLS_ENABLED || '0' }}
       DEPLOY_RATE_LIMIT_ENABLED: ${{ vars.DEPLOY_RATE_LIMIT_ENABLED || '1' }}
       DEPLOY_APPROVED_SOLVER_SHA256: ${{ github.ref_name == 'develop' && vars.DEPLOY_APPROVED_SOLVER_SHA256 || '' }}
-      DEPLOY_EXPECTED_REPOSITORY: KnightCodeSquareMatrix/RIIC-Web
+      DEPLOY_EXPECTED_REPOSITORY: Closure-RIIC/RIIC-Web
       DEPLOY_RELEASE_HELPER_CONTRACT: "7"
 
     steps:
@@ -66,7 +73,14 @@ jobs:
         with:
           node-version: 22
 
+      - name: Reject stale releases and already successful retries
+        id: current
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-provenance.mjs prepare
+
       - name: Resolve verified release identity
+        if: steps.current.outputs.required == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -82,6 +96,7 @@ jobs:
           } >> "$GITHUB_ENV"
 
       - name: Validate deployment configuration
+        if: steps.current.outputs.required == 'true' && inputs.application == 'arknights'
         shell: bash
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -110,7 +125,7 @@ jobs:
           if [[ "$DEPLOYMENT_ENV" != "production" ]]; then
             [[ "$DEPLOY_APPROVED_SOLVER_SHA256" =~ ^[0-9a-f]{64}$ ]]
           fi
-          test "$DEPLOY_EXPECTED_REPOSITORY" = "KnightCodeSquareMatrix/RIIC-Web"
+          test "$DEPLOY_EXPECTED_REPOSITORY" = "Closure-RIIC/RIIC-Web"
           [[ "$DEPLOY_RELEASE_HELPER_CONTRACT" =~ ^[1-9][0-9]*$ ]]
           if [[ "$DEPLOYMENT_ENV" == "production" ]]; then
             test "$DEPLOY_APP_ROOT" = "/opt/arknights-infra"
@@ -128,6 +143,7 @@ jobs:
           fi
 
       - name: Download verified release artifact
+        if: steps.current.outputs.required == 'true' && inputs.application == 'arknights'
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ${{ inputs.artifact_name }}
@@ -136,6 +152,7 @@ jobs:
           path: ${{ runner.temp }}/riic-web-release-${{ github.run_id }}-${{ github.run_attempt }}/download
 
       - name: Validate and extract release artifact
+        if: steps.current.outputs.required == 'true' && inputs.application == 'arknights'
         shell: bash
         run: |
           set -euo pipefail
@@ -200,6 +217,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Configure SSH
+        if: steps.current.outputs.required == 'true'
         shell: bash
         env:
           DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
@@ -212,6 +230,7 @@ jobs:
           chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
 
       - name: Verify installed deployment helper contract
+        if: steps.current.outputs.required == 'true' && inputs.application == 'arknights'
         shell: bash
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -265,6 +284,7 @@ jobs:
             "$DEPLOY_RELEASE_HELPER_CONTRACT"
 
       - name: Resolve solver for deployment
+        if: steps.current.outputs.required == 'true' && inputs.application == 'arknights'
         shell: bash
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -293,6 +313,7 @@ jobs:
           printf 'Deployment solver SHA-256: %s\n' "$solver_sha256" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Sync standalone release tree and assemble verified archive
+        if: steps.current.outputs.required == 'true' && inputs.application == 'arknights'
         shell: bash
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -419,7 +440,14 @@ jobs:
           printf 'archive transfer=rsync file-tree delta total_bytes=%s sha256=%s\n' \
             "$DEPLOY_ARCHIVE_BYTES" "$DEPLOY_ARCHIVE_SHA256" >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Recheck branch before switching the live release
+        if: steps.current.outputs.required == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-provenance.mjs assert-current
+
       - name: Deploy and verify
+        if: steps.current.outputs.required == 'true' && inputs.application == 'arknights'
         shell: bash
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -447,6 +475,24 @@ jobs:
             '$DEPLOY_SOLVER_SHA256' \
             '$DEPLOY_TREE_SHA'"
 
+      - name: Download verified Endfield release
+        if: steps.current.outputs.required == 'true' && inputs.application == 'endfield'
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          run-id: ${{ inputs.artifact_run_id || github.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/endfield-release-download
+
+      - name: Deploy Endfield and verify the running release
+        if: steps.current.outputs.required == 'true' && inputs.application == 'endfield'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          ENDFIELD_ARTIFACT_DIRECTORY: ${{ runner.temp }}/endfield-release-download
+        run: bash scripts/deploy-endfield.sh
+
       - name: Remove staged release artifacts from the runner
         if: always()
         shell: bash
@@ -465,7 +511,15 @@ jobs:
         run: rm -f -- "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
 
       - name: Verify public response compression
-        if: env.DEPLOY_PUBLIC_HEALTH_CHECK_ENABLED == '1'
+        if: steps.current.outputs.required == 'true' && inputs.application == 'arknights' && env.DEPLOY_PUBLIC_HEALTH_CHECK_ENABLED == '1'
         env:
           DEPLOY_PUBLIC_HEALTH_URL: ${{ secrets.DEPLOY_PUBLIC_HEALTH_URL }}
         run: node scripts/verify-public-compression.mjs
+
+      - name: Record this application's deployment result
+        if: always() && steps.current.outputs.deployment_id != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DEPLOYMENT_ID: ${{ steps.current.outputs.deployment_id }}
+          DEPLOY_RESULT: ${{ job.status }}
+        run: node scripts/release-provenance.mjs finish

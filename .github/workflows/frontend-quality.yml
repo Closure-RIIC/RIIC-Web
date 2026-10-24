@@ -31,6 +31,7 @@ on:
 permissions:
   contents: read
   actions: read
+  deployments: write
 
 concurrency:
   group: post-merge-release-${{ github.ref }}
@@ -64,6 +65,13 @@ jobs:
       run_core: ${{ steps.scope.outputs.run_core }}
       run_browser: ${{ steps.scope.outputs.run_browser }}
       deploy_required: ${{ steps.scope.outputs.deploy_required }}
+      deploy_arknights: ${{ steps.scope.outputs.deploy_arknights }}
+      deploy_endfield: ${{ steps.scope.outputs.deploy_endfield }}
+      build_arknights: ${{ steps.scope.outputs.build_arknights }}
+      build_endfield: ${{ steps.scope.outputs.build_endfield }}
+      check_apps: ${{ steps.scope.outputs.check_apps }}
+      build_apps: ${{ steps.scope.outputs.build_apps }}
+      deploy_apps: ${{ steps.scope.outputs.deploy_apps }}
       deployment_authorized: ${{ steps.deploy_authorization.outputs.authorized }}
     steps:
       - name: Checkout
@@ -92,49 +100,18 @@ jobs:
           fi
           printf 'authorized=%s\n' "$authorized" >> "$GITHUB_OUTPUT"
 
-      - name: Find the last successful deployment
-        if: github.event_name == 'push'
-        id: deployed
+      - name: Use Node.js 22
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+
+      - name: Plan from each application's last successful deployment
+        id: scope
         env:
           GH_TOKEN: ${{ github.token }}
-        run: node scripts/release-provenance.mjs baseline
-
-      - name: Classify changed paths
-        id: scope
-        shell: bash
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          DEPLOYED_SHA: ${{ steps.deployed.outputs.base_sha }}
-          HEAD_SHA: ${{ github.sha }}
+          PUSH_BEFORE_SHA: ${{ github.event.before }}
           OPERATOR_DATA_BASE_SHA: ${{ inputs.operator_data_base_sha }}
-        run: |
-          set -euo pipefail
-          changed_files="$RUNNER_TEMP/changed-files.zlist"
-          : > "$changed_files"
-          classifier=(
-            node scripts/ci-change-scope.mjs
-            --input "$changed_files"
-            --github-output "$GITHUB_OUTPUT"
-            --summary "$GITHUB_STEP_SUMMARY"
-          )
-
-          if [[ "$EVENT_NAME" == "workflow_dispatch" && -n "$OPERATOR_DATA_BASE_SHA" ]]; then
-            [[ "$OPERATOR_DATA_BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
-            git cat-file -e "${OPERATOR_DATA_BASE_SHA}^{commit}"
-            git merge-base --is-ancestor "$OPERATOR_DATA_BASE_SHA" "$HEAD_SHA"
-            git diff --name-only -z "$OPERATOR_DATA_BASE_SHA..$HEAD_SHA" > "$changed_files"
-            "${classifier[@]}" --require-operator-data
-          elif [[ "$EVENT_NAME" == "push" ]] \
-            && [[ "$DEPLOYED_SHA" =~ ^[0-9a-f]{40}$ ]] \
-            && [[ "$HEAD_SHA" =~ ^[0-9a-f]{40}$ ]] \
-            && git cat-file -e "${DEPLOYED_SHA}^{commit}" \
-            && git merge-base --is-ancestor "$DEPLOYED_SHA" "$HEAD_SHA" \
-            && git cat-file -e "${HEAD_SHA}^{commit}"; then
-            git diff --name-only -z "$DEPLOYED_SHA..$HEAD_SHA" > "$changed_files"
-            "${classifier[@]}"
-          else
-            "${classifier[@]}" --force-full
-          fi
+        run: node scripts/app-release-plan.mjs
 
   repository_hygiene:
     name: Repository hygiene
@@ -189,8 +166,11 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Endfield release archive safety
+        run: python3 deploy/endfield-deploy.test.py && python3 deploy/endfield-transfer.test.py
+
       - name: Release provenance tests
-        run: node --test scripts/release-provenance.test.mjs
+        run: node --test scripts/release-provenance.test.mjs scripts/app-release-plan.test.mjs scripts/release-automation.test.mjs
 
       - name: API contract tests
         run: npm run test:api-contract
@@ -329,6 +309,7 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Build standalone application and worker
+        if: needs.changes.outputs.build_arknights == 'true' || github.event_name == 'schedule' || inputs.run_webkit
         env:
           APP_BUILD_ID: ${{ github.sha }}
           APP_DEPLOYMENT_ENV: ${{ env.DEPLOYMENT_ENV }}
@@ -343,9 +324,14 @@ jobs:
         run: npm run build && npm run worker:build && node --check dist/plan-worker.cjs
 
       - name: Build independent Endfield application
-        run: npm run build:endfield && npm run build:platform
+        if: needs.changes.outputs.build_endfield == 'true' || github.event_name == 'schedule'
+        run: npm run build:endfield && node scripts/test-endfield-access.mjs
+
+      - name: Build platform API verification artifact
+        run: npm run build:platform
 
       - name: Release output checks
+        if: needs.changes.outputs.build_arknights == 'true' || github.event_name == 'schedule' || inputs.run_webkit
         env:
           APP_DEPLOYMENT_ENV: production
           SKLAND_FEATURE_ENABLED: "1"
@@ -355,6 +341,7 @@ jobs:
           npm run check:production-client
 
       - name: Stage verified release artifact
+        if: needs.changes.outputs.build_arknights == 'true' || github.event_name == 'schedule' || inputs.run_webkit
         shell: bash
         run: |
           set -euo pipefail
@@ -408,11 +395,36 @@ jobs:
       - name: Upload release for deployment
         if: >-
           needs.changes.outputs.run_core == 'true' &&
-          needs.changes.outputs.deployment_authorized == 'true'
+          needs.changes.outputs.deployment_authorized == 'true' &&
+          needs.changes.outputs.deploy_arknights == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: riic-web-release-${{ github.sha }}
           path: ${{ runner.temp }}/riic-web-release-upload/*
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Stage independent Endfield deployment artifact
+        if: needs.changes.outputs.run_core == 'true' && needs.changes.outputs.deployment_authorized == 'true' && needs.changes.outputs.deploy_endfield == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_root="$RUNNER_TEMP/endfield-release"
+          upload_root="$RUNNER_TEMP/endfield-release-upload"
+          RELEASE_SHA="$GITHUB_SHA" RELEASE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')" \
+            node scripts/stage-app-release.mjs --app endfield --output "$release_root"
+          install -d -m 700 "$upload_root"
+          archive="endfield-${DEPLOYMENT_ENV}-${GITHUB_SHA}.tar.gz"
+          bash scripts/pack-endfield-release.sh "$release_root" "$upload_root/$archive" "$(git show -s --format=%ct HEAD)"
+          (cd "$upload_root" && sha256sum "$archive" > SHA256SUMS)
+
+      - name: Upload independent Endfield deployment artifact
+        if: needs.changes.outputs.run_core == 'true' && needs.changes.outputs.deployment_authorized == 'true' && needs.changes.outputs.deploy_endfield == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: endfield-release-${{ github.sha }}
+          path: ${{ runner.temp }}/endfield-release-upload/*
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
@@ -671,10 +683,15 @@ jobs:
       needs.changes.outputs.deploy_required == 'true' &&
       (github.ref_name == 'main' || github.ref_name == 'develop') &&
       vars.DEPLOY_AUTOMATION_ENABLED == '1' &&
-      github.repository == 'KnightCodeSquareMatrix/RIIC-Web'
+      github.repository == 'Closure-RIIC/RIIC-Web'
     uses: ./.github/workflows/deploy.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        application: ${{ fromJSON(needs.changes.outputs.deploy_apps || '[]') }}
     with:
-      artifact_name: riic-web-release-${{ github.sha }}
+      application: ${{ matrix.application }}
+      artifact_name: ${{ matrix.application == 'arknights' && 'riic-web' || 'endfield' }}-release-${{ github.sha }}
       deployment_authorized: ${{ needs.changes.outputs.deployment_authorized == 'true' }}
       deploy_required: ${{ needs.changes.outputs.deploy_required == 'true' }}
     secrets: inherit

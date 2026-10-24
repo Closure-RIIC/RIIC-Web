@@ -18,7 +18,8 @@
  *   - `unlock`← 解锁所需精英化阶段。**客户端主表里才有**，本工作区把它补写进 `shipSkills[].unlock`；
  *               读不到就按 0 处理（= 该档位不设精英化门槛）
  *
- * 概率类技能（`ClueProbabilityUp`）不进确定性模型，直接跳过。
+ * 概率类技能（`ClueProbabilityUp`）**不进确定性模型**：保留为 `kind: '概率'`（带 `clueIndex`/`tier`/
+ * 由 `slot` 派生的 `unlock`），只供最终补位排序使用；`val`/`crewStats`/`skillValueOf` 只读 `加成`/`减免`。
  * 同一 `(room, kind, cat, unlock)` 只留最高值；同一 `(room, kind, cat)` 内按 unlock 升序。
  */
 
@@ -51,9 +52,29 @@ export function normalizeShipSkills(shipSkills) {
   const bag = new Map();
   for (const s of shipSkills || []) {
     const effect = s && s.effect;
-    if (!effect || effect.key === 'ClueProbabilityUp') continue;   // 概率类不进模型
+    if (!effect) continue;
     const room = ROOM_BY_TYPE[String(s.roomType)];
     if (!room) continue;
+    if (effect.key === 'ClueProbabilityUp') {
+      // 只保留"哪一类线索 + α/β"，数值（10%/15%）不进模型。
+      // unlock 由 slot 派生（客户端 unlockHint）：slot1 → α 精英1 / β 精英3；slot2 → α 精英2 / β 精英4。
+      const clueIndex = Number(effect.clueIndex);
+      const tier = Number(effect.tier) === 2 ? 2 : 1;
+      if (!Number.isInteger(clueIndex) || clueIndex < 1) continue;
+      const slot = Number(s.slot) === 1 ? 1 : 2;
+      const unlock = slot === 1 ? (tier === 1 ? 1 : 3) : (tier === 1 ? 2 : 4);
+      const rec = {
+        room, kind: '概率', cat: '线索', clueIndex, tier, value: tier, unlock,
+      };
+      // 与上游节点过滤对齐：森空岛按 nodeId 精确取技能时，C2 档位也要能被 skillsAtNodes 选中。
+      if (s.skillId) {
+        rec.nodeId = s.skillId;
+        rec.slot = Number.isFinite(Number(s.slot)) ? Number(s.slot) : null;
+        rec.level = Number.isFinite(Number(s.level)) ? Number(s.level) : null;
+      }
+      bag.set(`${room}|概率|线索|${unlock}`, rec);
+      continue;
+    }
     const kind = kindOfKey(effect.key);
     const cat = catOfSkill(kind, s.desc || '', room);
     const value = Number(effect.rate);

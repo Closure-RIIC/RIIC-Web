@@ -3,8 +3,13 @@ name: Deploy previously verified release
 on:
   workflow_dispatch:
     inputs:
+      application:
+        description: Retry only this application's deployment
+        required: true
+        type: choice
+        options: [arknights, endfield]
       verified_run_id:
-        description: Successful Post-merge release run for this exact branch and commit
+        description: Post-merge release run whose required quality checks passed for this exact commit
         required: true
         type: string
       expected_sha:
@@ -15,6 +20,7 @@ on:
 permissions:
   contents: read
   actions: read
+  deployments: write
 
 concurrency:
   group: post-merge-release-${{ github.ref }}
@@ -23,7 +29,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      github.repository == 'KnightCodeSquareMatrix/RIIC-Web' &&
+      github.repository == 'Closure-RIIC/RIIC-Web' &&
       (github.ref_name == 'main' || github.ref_name == 'develop')
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -43,12 +49,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_SHA: ${{ inputs.expected_sha }}
           VERIFIED_RUN_ID: ${{ inputs.verified_run_id }}
+          DEPLOY_APPLICATION: ${{ inputs.application }}
         run: node scripts/release-provenance.mjs verify
 
   deploy:
     needs: verify
     uses: ./.github/workflows/deploy.yml
     with:
+      application: ${{ inputs.application }}
       artifact_name: ${{ needs.verify.outputs.artifact_name }}
       artifact_run_id: ${{ needs.verify.outputs.artifact_run_id }}
       deployment_authorized: true

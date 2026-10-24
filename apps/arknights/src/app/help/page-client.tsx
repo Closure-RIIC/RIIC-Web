@@ -48,7 +48,7 @@ export default function HelpHomePage() {
         <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{intl("app_help_page.recordTheCurrentBoxSourceOwnedOperatorCountBase")}</p>
         <div className="mt-4 flex flex-wrap gap-2">
           <Link className="inline-flex min-h-10 items-center rounded-[4px] bg-foreground px-3 text-sm font-medium text-background outline-none hover:opacity-85 focus-visible:ring-2 focus-visible:ring-ring" to="/">{intl("app_help_page.checkTheCalculator")}</Link>
-          <a className="inline-flex min-h-10 items-center rounded-[4px] border border-border px-3 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" href="https://github.com/KnightCodeSquareMatrix/RIIC-Web/issues" target="_blank" rel="noreferrer">{intl("app_help_page.reportAnIssue")}</a>
+          <a className="inline-flex min-h-10 items-center rounded-[4px] border border-border px-3 text-sm font-medium outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring" href="https://github.com/Closure-RIIC/RIIC-Web/issues" target="_blank" rel="noreferrer">{intl("app_help_page.reportAnIssue")}</a>
         </div>
       </section>
     </article>
