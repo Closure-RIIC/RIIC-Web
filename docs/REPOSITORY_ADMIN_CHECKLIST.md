@@ -25,7 +25,7 @@ The public repository is owned by `Closure-RIIC`. Use a repository administrator
 
 Ordinary pull requests run `Dual application packages`; they do not run the post-merge quality workflow. A separate lightweight policy rejects every pull request to `main` unless its head is a `release/**` branch in this same repository. By default, that head commit must contain `develop`; a maintainer-applied `direct-main-release` label may explicitly waive only the ancestry check. External and ordinary feature PRs target `develop`. Every push produced by a merge into `develop` or `main` runs the full parallel quality gate before deployment.
 
-Require checks only after observing their actual check-run names on the relevant PR base branch. Before enabling automatic merges, adapt the asset-sync publication flow to wait for required checks and independent review: it currently creates PRs with `GITHUB_TOKEN` and immediately calls the merge API. Verify that the generated PR's workflows run. Keep automation off while this compatibility is unresolved; do not add a protection bypass for the bot.
+Require checks only after observing their actual check-run names on the relevant PR base branch. The updated asset-sync flow uses a repository-scoped App token and native auto-merge to wait for checks and independent review. Existing pending resource PRs retain their commits; publication does not force-push them. After an actual resource merge to main, a validated closed-PR event creates the develop parity PR, which also waits for the same gates. Verify that this version is on main and generated PR workflows run before enabling automation; do not add a protection bypass for the bot.
 
 ## Deployment configuration
 

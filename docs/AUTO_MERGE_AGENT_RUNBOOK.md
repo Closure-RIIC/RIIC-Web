@@ -67,7 +67,9 @@ Secret 查询只读取名称；已有 Secret 的明文无法通过 GitHub API �
 
 门禁缺失时，按已有管理授权补齐；没有调整授权则列出具体缺口，保持自动化开关关闭。先确认这些检查在目标分支 PR 上确实运行，并确认存在 PR 作者之外的合格审核者。保留生产 Environment 审批。
 
-现有 `sync-arkntools-assets.yml` 使用 `GITHUB_TOKEN` 创建资源 PR 后立即调用合并 API，不会等待新要求的检查和人工审核。开启新门禁前必须处理此兼容性：让资源 PR 正常等待检查与审核，并确认其 PR 工作流已触发或获准运行。不得给机器人豁免审核或降低必需检查来维持立即合并。资源同步适配未验证时，保持新自动化关闭并报告阻塞。
+新版 `sync-arkntools-assets.yml` 使用单仓库 App 令牌创建资源 PR，以原生 auto-merge 等待检查和独立审核。定时任务发现尚未合并的资源 PR 时保留其提交；新分支不强制推送。资源 PR 实际合入 main 后，独立的 `pull_request: closed` 处理器核实 App 作者、仓库、合并 SHA 与受管路径，再创建 develop 对齐 PR，同样等待检查和审核。App 合并产生的 push 正常触发部署。`PR_AUTOMATION_ENABLED=0` 时只建 PR，不启用其自动合并；开启后可由维护者为之前的待审资源 PR 手动启用原生 auto-merge。
+
+迁移时核对 main 上已是这套等待式实现。旧版使用 `GITHUB_TOKEN` 立即调用合并 API，新增门禁会阻止它；不得添加机器人绕过。新旧切换期间自动化开关保持关闭。
 
 入口：[仓库 Settings](https://github.com/Closure-RIIC/RIIC-Web/settings) → General → Pull Requests → 勾选 **Allow auto-merge**。
 

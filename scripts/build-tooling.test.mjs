@@ -452,8 +452,8 @@ test("public deployment automation is repository-bound, opt-in, and secret-safe"
   assert.match(assetWorkflow, /UPDATE_BRANCH: release\/automation\/arkntools-assets/);
   assert.match(assetWorkflow, /gh pr (?:list|create)[\s\S]+--base "\$BASE_BRANCH"/);
   assert.match(assetWorkflow, /--label "direct-main-release"/);
-  assert.match(assetWorkflow, /gh api --method PUT[\s\S]+pulls\/\$PR_NUMBER\/merge/);
-  assert.match(assetWorkflow, /gh workflow run frontend-quality\.yml[\s\S]+--ref "\$BASE_BRANCH"[\s\S]+deploy=true[\s\S]+expected_sha="\$MERGED_SHA"/);
+  assert.match(assetWorkflow, /gh pr merge "\$PR_NUMBER"[\s\S]+--auto --merge --match-head-commit "\$EXPECTED_HEAD_SHA"/);
+  assert.doesNotMatch(assetWorkflow, /gh api --method PUT|gh workflow run|--force|--admin/);
   assert.match(assetWorkflow, /develop_parity:[\s\S]+BASE_BRANCH: develop[\s\S]+SOURCE_BRANCH: main/);
 
   for (const workflow of workflows) {
@@ -620,8 +620,11 @@ test("asset synchronization isolates untrusted generation from repository write 
   assert.match(generate, /persist-credentials: false/);
   assert.doesNotMatch(generate, /contents: write|pull-requests: write|actions: write|GH_TOKEN:/);
   assert.match(generate, /actions\/upload-artifact@[0-9a-f]{40}/);
-  assert.match(publish, /permissions:\n {6}actions: write\n {6}contents: write\n {6}issues: write\n {6}pull-requests: write/);
-  assert.match(publish, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.doesNotMatch(publish, /GH_TOKEN: \$\{\{ github\.token \}\}|^ {6}(?:contents|pull-requests|actions): write/m);
+  assert.equal((publish.match(/actions\/create-github-app-token@[0-9a-f]{40}/g) ?? []).length, 2);
+  assert.equal((publish.match(/repositories: RIIC-Web/g) ?? []).length, 2);
+  assert.match(publish, /GH_TOKEN: \$\{\{ steps\.app\.outputs\.token \}\}/);
+  assert.match(publish, /permission-contents: write\n {10}permission-pull-requests: write/);
   assert.match(publish, /actions\/download-artifact@[0-9a-f]{40}/);
   assert.match(publish, /git apply --check --index "\$publication\/managed\.patch"/);
   assert.match(publish, /patch_bytes > 0 && patch_bytes <= 104857600/);
@@ -632,16 +635,64 @@ test("asset synchronization isolates untrusted generation from repository write 
   assert.doesNotMatch(publish, /npm (?:ci|run)|node scripts\//);
 });
 
+test("resource publication waits for native gates and parity starts only after a trusted merge", async () => {
+  const workflow = await readRepoFile(".github/workflows/sync-arkntools-assets.yml");
+  const pending = workflow.slice(workflow.indexOf("  pending:"), workflow.indexOf("  generate:"));
+  const parity = workflow.slice(workflow.indexOf("  develop_parity:"));
+  assert.match(workflow, /pull_request:\n {4}branches: \[main\]\n {4}types: \[closed\]/);
+  assert.match(pending, /ready=false[\s\S]+Their commits are unchanged/);
+  assert.doesNotMatch(pending, /secrets\.|create-github-app-token|gh pr (?:merge|close)/);
+  assert.match(workflow, /generate:\n {4}needs: pending\n {4}if: needs\.pending\.outputs\.ready == 'true'/);
+  assert.equal((workflow.match(/if \[\[ "\$PR_AUTOMATION_ENABLED" == '1' \]\]; then\n {12}gh pr merge[^\n]+--auto --merge --match-head-commit "\$EXPECTED_HEAD_SHA"/g) ?? []).length, 2);
+  assert.match(parity, /github\.event\.pull_request\.merged == true/);
+  assert.match(parity, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
+  assert.match(parity, /test "\$\(jq -r '\.user\.login' <<< "\$pr_json"\)" = "\$APP_BOT"/);
+  assert.match(parity, /test "\$\(jq -r '\.merge_commit_sha' <<< "\$pr_json"\)" = "\$MERGED_SHA"/);
+  assert.ok(parity.indexOf("Merged resource PR changed a forbidden path") < parity.indexOf("Checkout development branch"));
+  assert.doesNotMatch(parity, /needs: publish/);
+});
+
+test("resource PR file validation fails closed on a partial GitHub API response", async () => {
+  const workflow = (await readRepoFile(".github/workflows/sync-arkntools-assets.yml")).replaceAll("\r\n", "\n");
+  const guards = [...workflow.matchAll(/^ {10}changed_paths="\$\(gh api --paginate[^\n]+\n[\s\S]*?^ {10}\(\( changed_count > 0 \)\)/gm)].map((match) => match[0]);
+  assert.equal(guards.length, 3, "Publication, merged-resource and parity metadata must all be complete");
+  const gitExecPath = process.platform === "win32" ? spawnSync("git", ["--exec-path"], { encoding: "utf8" }).stdout?.trim() : null;
+  const gitBash = gitExecPath ? resolve(gitExecPath, "../../../bin/bash.exe") : null;
+  const bash = process.env.TEST_BASH_PATH ?? (gitBash && existsSync(gitBash) ? gitBash : "bash");
+  for (const guard of guards) {
+    const script = `set -euo pipefail
+      gh() { printf '%s\\n' "$RESPONSE_PATHS"; return "$RESPONSE_EXIT"; }
+      ${guard}
+      echo VALIDATED
+    `;
+    const run = (paths, code = 0) => spawnSync(bash, ["--noprofile", "--norc", "-c", script], {
+      encoding: "utf8", timeout: 10_000,
+      env: { ...process.env, GITHUB_REPOSITORY: "Closure-RIIC/RIIC-Web", PR_NUMBER: "9", RESPONSE_PATHS: paths, RESPONSE_EXIT: String(code) },
+    });
+    const safe = run("packages/arknights-domain/src/generated/gacha-up.json");
+    assert.equal(safe.status, 0, safe.stderr);
+    assert.match(safe.stdout, /VALIDATED/);
+    for (const [paths, code] of [
+      ["packages/arknights-domain/src/generated/gacha-up.json", 42],
+      ["packages/arknights-domain/src/generated/gacha-up.json\n.github/workflows/deploy.yml", 0],
+      ["", 0],
+    ]) {
+      const result = run(paths, code);
+      assert.notEqual(result.status, 0, result.stdout);
+      assert.doesNotMatch(result.stdout, /VALIDATED/);
+    }
+  }
+});
+
 test("mastery, gacha UP data and the full fixture follow every managed-resource publication and parity gate", async () => {
   const workflow = await readRepoFile(".github/workflows/sync-arkntools-assets.yml");
   assert.match(workflow, /npm run assets:mastery -- \.tmp\/arknights-game-data\/zh_CN\/gamedata\/excel\/character_table\.json --game-source-sha=/);
   assert.match(workflow, /game_sha=\$\(git -C \.tmp\/arknights-game-data rev-parse HEAD\)/);
   assert.match(workflow, /\/assets\/img\/avatar/);
   assert.match(workflow, /\/item\/AP_BASE\.png/);
-  assert.equal((workflow.match(/echo "base_sha=\$remote_base_sha" >> "\$GITHUB_OUTPUT"/g) ?? []).length, 2);
-  assert.equal((workflow.match(/-f operator_data_base_sha="\$\{\{ steps\.merge\.outputs\.base_sha \}\}"/g) ?? []).length, 2);
+  assert.equal((workflow.match(/test "\$pull_request_base_sha" = "\$remote_base_sha"/g) ?? []).length, 2);
   const guards = workflow.match(/apps\/arknights\/public\/images\/operator-portraits\/\*\|[^\n]+;;/g) ?? [];
-  assert.equal(guards.length, 4);
+  assert.equal(guards.length, 5);
   for (const guard of guards) assert.match(guard, /\|apps\/arknights\/src\/generated\/mastery-data\.json\|packages\/arknights-domain\/src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
   const regularFileChecks = workflow.match(/git ls-files -s --[^\n]+/g) ?? [];
   assert.equal(regularFileChecks.length, 3);
