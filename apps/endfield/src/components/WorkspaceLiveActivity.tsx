@@ -51,6 +51,11 @@ function ActivitySurface({ activity, onDismiss }: {
   const expandedRef = useRef<HTMLDivElement>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [size, setSize] = useState<{ width: number; height: number }>();
+  useEffect(() => {
+    if (activity.kind !== "skland" || activity.status.blocked) return;
+    const timer = setTimeout(() => onDismiss(activity), 3000);
+    return () => clearTimeout(timer);
+  }, [activity, onDismiss]);
   const running = activity.phase === "running";
   const expanded = peek || hovered || focused || !running;
   const status = running ? "running" : activity.phase === "success" ? "done" : activity.phase === "warning" ? "pending" : "failed";

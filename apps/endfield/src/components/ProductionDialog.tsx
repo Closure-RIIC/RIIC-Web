@@ -3,7 +3,7 @@ import { SlidersHorizontal } from "lucide-react";
 import { ActionContent, actionClassName, Section } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
 import { DialogFrame } from "./DialogFrame";
-import { ProductionSettings } from "./ProductionSettings";
+import { FacilitySettings } from "./FacilitySettings";
 import { PriorityCards } from "./PriorityCards";
 
 export function ProductionDialog() {
@@ -13,9 +13,9 @@ export function ProductionDialog() {
     <Dialog.Portal>
       <Dialog.Backdrop className="ef-dialog-backdrop" />
       <DialogFrame className="ef-production-dialog" title={t("生产配置", "Production setup")} closeLabel={t("关闭生产配置", "Close production setup")}
-        description={t("设置制造产物与培养位分配，修改会自动保存并用于排班。设施等级可在手动排班中调整。", "Choose production types and growth plots. Changes are saved automatically and used for scheduling. Adjust facility levels in manual scheduling.")}
+        description={t("调整各舱室等级、制造产物与培养位分配；也可恢复账号实际配置。修改自动保存并用于排班。", "Adjust facility levels, production and growth plots, or restore your actual account setup. Changes are saved automatically.")}
         footer={<Dialog.Close className={actionClassName({ size: "sm", variant: "yellow" })}><ActionContent>{t("完成", "Done")}</ActionContent></Dialog.Close>}>
-        <ProductionSettings />
+        <FacilitySettings />
         <Section title={t("排班目标", "Scheduling priorities")}>
           <PriorityCards priority={workspace.options.priority} disabled={!ready || busy}
             onChange={priority => update({ ...workspace, options: { ...workspace.options, priority } })} />
