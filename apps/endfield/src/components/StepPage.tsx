@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { catalog } from "@riic/endfield-solver/model.mjs";
 import { SIM_RATES } from "@riic/endfield-solver/simulation.mjs";
 import { operatorData } from "@riic/endfield-data";
@@ -12,10 +12,10 @@ import { StepPicker, type PickerOperator } from "./StepPicker";
 import { StepRoomConfig } from "./StepRoomConfig";
 import { StepSimulation, formatClock, formatDuration } from "../step/step-engine.ts";
 import {
-  applyStored, buildStepConfig, defaultSource, effectTable, ensureBoostDays, maxBoostDays, roomEffectResolver, scheduledNames,
+  buildStepConfig, defaultSource, effectTable, ensureBoostDays, maxBoostDays, roomEffectResolver, scheduledNames,
   validateStepConfig, type ImportSource,
 } from "../step/step-model.ts";
-import { loadStepConfig, saveStepConfig, toStored } from "../step/step-store.ts";
+import { applyStored, loadStepConfig, saveStepConfig, toStored } from "../step/step-store.ts";
 import type { SimRates, StepBoostConfig, StepConfig, StepRoom, StepRoomKey, StepShift } from "../step/step-types.ts";
 import "../step/step.css";
 
@@ -260,7 +260,7 @@ export function StepPage() {
     ? "尚未开始"
     : `当前：${formatClock(view.tSec, view.startHour)}（已模拟 ${formatDuration(view.tSec)} / 剩余 ${formatDuration(view.maxTSec - view.tSec)}）`;
 
-  return <div className="step-page">
+  return <div className="ef-step-page step-page">
     <h1 className="sr-only">步进模拟 · 帝江号</h1>
     <main className="step-main">
       <section className="step-panel" id="setupPanel">

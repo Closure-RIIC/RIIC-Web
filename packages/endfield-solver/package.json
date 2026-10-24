@@ -6,6 +6,7 @@
   "exports": {
     "./data/ship-data.json": "./data/ship-data.json",
     "./index.mjs": "./index.mjs",
-    "./model.mjs": "./model.mjs"
+    "./model.mjs": "./model.mjs",
+    "./simulation.mjs": "./simulation.mjs"
   }
 }

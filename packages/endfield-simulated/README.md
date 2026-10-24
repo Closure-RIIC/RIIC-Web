@@ -1,5 +1,12 @@
 # 帝江号排班系统 · 步进模拟页 (Step Simulation)
 
+> **参考实现，不参与构建。** 本目录是从原网页（`index.html` + `step.js` + `step.css`）原样保留的原始版本，
+> 作为算法与交互的对照资料；它依赖 `/assets/css/*`、`/vendor/html2canvas.min.js`、`/Agent_characteristics.json`
+> 等**不在本仓库**的资源，因此不能直接运行。
+>
+> 本仓库实际使用的实现是 `apps/endfield/src/step/`（引擎/模型/存储）与 `apps/endfield/src/components/Step*`
+> （界面），移植时以本目录为参考、以 Workspace 数据为准。
+
 步进模拟页用于将“静态排班图”转化为“动态时间线”。通过读取干员天赋、舱室策略、初始心情和排班名单，利用事件驱动引擎模拟 24/48/72/96 小时内的心情消耗、轮班切换、产出曲线及心情助力。
 
 ## 1. 页面依赖的静态数据 (API)
