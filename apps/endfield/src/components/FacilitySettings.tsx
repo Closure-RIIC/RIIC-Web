@@ -1,6 +1,7 @@
 import { Field, Section } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
 import { ProductionSettings } from "./ProductionSettings";
+import { RestoreAccountButton } from "./RestoreAccountButton";
 
 export function FacilitySettings() {
   const { workspace, update, busy, ready, t } = useWorkspace();
@@ -26,6 +27,7 @@ export function FacilitySettings() {
         }} options={Array.from({ length: max - min + 1 }, (_, j) => ({ value: j + min, label: j + min ? `Lv.${j + min}` : t("未建造", "Not built") }))} />;
       })}
     </div>
+    <RestoreAccountButton />
     <div className="mt-5"><ProductionSettings /></div>
   </Section>;
 }
