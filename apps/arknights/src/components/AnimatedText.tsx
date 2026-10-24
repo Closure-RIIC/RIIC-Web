@@ -1,10 +1,9 @@
 "use client";
 
-import { Calligraph } from "calligraph";
-import { useReducedMotion } from "motion/react";
 import { type ComponentPropsWithoutRef, type CSSProperties } from "react";
 
 import { cn } from "@/lib/utils";
+export { AnimatedNumber } from "@riic/ui-primitives/animated-number";
 
 interface AnimatedValueProps extends Omit<ComponentPropsWithoutRef<"span">, "children"> {
   value: string | number;
@@ -43,45 +42,6 @@ export function AnimatedText({
       style={style}
     >
       <span key={text} aria-hidden="true" className="animated-field-value">{text}</span>
-    </span>
-  );
-}
-
-export function AnimatedNumber({
-  value,
-  accessibleText,
-  className,
-  drift = { x: 6, y: 0 },
-  trend = 0,
-  ...props
-}: AnimatedValueProps) {
-  const shouldReduceMotion = useReducedMotion();
-  const { text, spokenText } = animatedValueText(value, accessibleText);
-
-  return (
-    <span
-      aria-label={spokenText}
-      className={cn("inline-block min-w-0", className)}
-      data-animated-value="number"
-    >
-      {shouldReduceMotion ? (
-        <span aria-hidden="true">{text}</span>
-      ) : (
-        <Calligraph
-          {...props}
-          aria-hidden="true"
-          animation="default"
-          autoSize={false}
-          data-calligraph
-          drift={drift}
-          initial={false}
-          stagger={0.008}
-          trend={trend}
-          variant="number"
-        >
-          {text}
-        </Calligraph>
-      )}
     </span>
   );
 }

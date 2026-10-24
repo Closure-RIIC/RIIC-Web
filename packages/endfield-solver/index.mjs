@@ -1,4 +1,4 @@
-import { prepare, manualTemplate, SOLVER_REVISION } from "./model.mjs";
+import { prepare, manualTemplate, SOLVER_REVISION, validateOptions } from "./model.mjs";
 export { catalog, nonSchedulableOperators, DEFAULT_OPTIONS, STORAGE_KEY, SOLVER_REVISION, CATEGORIES, parseRoster, parseWorkspace, validateOptions, manualTemplate } from "./model.mjs";
 import { solveLayout, resetCaches, facilitySpecs } from "./upstream/optimizer.mjs";
 import { verifyPlan } from "./upstream/verify-plan.mjs";
@@ -61,7 +61,8 @@ export function solve(input, onProgress) {
 export function evaluateManual(input, assignments, onProgress) {
   const started = Date.now();
   onProgress?.({ stage: "preparing", elapsedMs: 0 });
-  const { ops, cfg } = prepare(input);
+  const { ops, cfg } = Array.isArray(input.operators) && input.operators.length === 0
+    ? { ops: [], cfg: validateOptions(input.options) } : prepare(input);
   if (cfg.assistOn) throw new Error("手动评估暂不支持自动分配助力，请先关闭中枢助力");
   const specs = manualTemplate(input.options);
   if (!Array.isArray(assignments) || assignments.length !== specs.length) throw new Error("手动方案设施数量不匹配");
@@ -72,7 +73,7 @@ export function evaluateManual(input, assignments, onProgress) {
     const a = matches[0];
     if (!Number.isInteger(a.hour) || a.hour < 1 || a.hour > 23) throw new Error("换班时间必须是 1–23 的整点");
     const crews = ["a", "b"].map(shift => {
-      if (!Array.isArray(a[shift]) || !a[shift].length || a[shift].length > spec.slots || (spec.key === "中枢" && a[shift].length !== spec.slots)) throw new Error(`「${spec.key}」${shift.toUpperCase()} 班人数不合法`);
+      if (!Array.isArray(a[shift]) || a[shift].length > spec.slots) throw new Error(`「${spec.key}」${shift.toUpperCase()} 班人数不合法`);
       return a[shift].map(name => {
         const i = ops.findIndex(op => op.name === name);
         if (i < 0) throw new Error(`「${name}」不在已选名单中`);
@@ -105,6 +106,6 @@ export function evaluateManual(input, assignments, onProgress) {
   }));
   const plan = { center, picks, catRes, score: cfg.priority.map(cat => catRes[cat].value), usedMask: fromIndices(ops.map((op, i) => seen.has(op.name) ? i : -1).filter(i => i >= 0)) };
   onProgress?.({ stage: "verifying", elapsedMs: Date.now() - started });
-  const verification = verifyPlan({ ops, cfg, plan });
+  const verification = verifyPlan({ ops, cfg, plan, allowEmptyShifts: true });
   return present(plan, { stopReason: "manual", searchComplete: false, centersVisited: 0, centersTotal: 0, nodes: 0, approximations: [], gaps: [] }, verification, ops, cfg, started);
 }

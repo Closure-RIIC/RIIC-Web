@@ -113,29 +113,25 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
     : t("选择助力目标", "Choose assistance target");
 
   const showResult = started && !!view && !!config;
-  const phaseLabel = phase === "running" ? t("模拟中", "Running") : phase === "paused" ? t("已暂停", "Paused")
-    : phase === "ended" ? t("模拟完成", "Complete") : t("待开始", "Ready");
+  const startLabel = phase === "paused" ? t("继续", "Resume") : t("开始", "Start");
   return <Dialog.Root open={settingsOpen} onOpenChange={open => { if (open) pause(); setSettingsOpen(open); }}>
   <div className="ef-step-page" id="manual-simulation">
-    <Section title={t("模拟回放", "Simulation replay")} actions={<Dialog.Trigger className={actionClassName({ size: "sm" })} disabled={!ready}>
-      <ActionContent icon={<Settings2 />}>{t("模拟设置", "Simulation settings")}</ActionContent>
-    </Dialog.Trigger>}>
-      <p className="ef-muted">{t("与编辑视图共用排班。修改人员、设施或换班时间后，回放重置，模拟参数保留。", "Replay uses the shared schedule. Changing operators, facilities or shift times resets playback and keeps simulation settings.")}</p>
-    </Section>
-    {error ? <Notice error>{error}</Notice> : null}
-    {!ready ? <Notice>{t("正在读取本地配置…", "Loading local configuration…")}</Notice> : null}
-
-    <Section title={t("模拟控制", "Simulation controls")}>
+    <Section>
+      {error ? <Notice error>{error}</Notice> : null}
+      {!ready ? <Notice>{t("正在读取本地配置…", "Loading local configuration…")}</Notice> : null}
       <div className="ef-actions ef-step-playback">
-        <Action id="startBtn" size="sm" variant="yellow" icon={<Play />} onClick={start} disabled={!ready || running || phase === "ended"}>
-          {phase === "paused" ? t("继续", "Resume") : t("开始", "Start")}
+        <Action id="startBtn" size="sm" variant="yellow" icon={<Play />} aria-label={startLabel} title={startLabel} onClick={start} disabled={!ready || running || phase === "ended"}>
+          {startLabel}
         </Action>
-        <Action id="pauseBtn" size="sm" icon={<Pause />} onClick={pause} disabled={!running}>{t("暂停", "Pause")}</Action>
-        <Action id="resetBtn" size="sm" icon={<RotateCcw />} onClick={reset} disabled={!ready}>{t("重置", "Reset")}</Action>
-        <Action id="fastBtn" size="sm" icon={<FastForward />} onClick={fastForward} disabled={!ready || phase === "ended"}>{t("快进到结束", "Fast forward")}</Action>
+        <Action id="pauseBtn" size="sm" icon={<Pause />} aria-label={t("暂停", "Pause")} title={t("暂停", "Pause")} onClick={pause} disabled={!running}>{t("暂停", "Pause")}</Action>
+        <Action id="resetBtn" size="sm" icon={<RotateCcw />} aria-label={t("重置", "Reset")} title={t("重置", "Reset")} onClick={reset} disabled={!ready}>{t("重置", "Reset")}</Action>
+        <Action id="fastBtn" size="sm" icon={<FastForward />} aria-label={t("快进到结束", "Fast forward")} title={t("快进到结束", "Fast forward")} onClick={fastForward} disabled={!ready || phase === "ended"}>{t("快进到结束", "Fast forward")}</Action>
         <Field label={t("播放速度", "Playback speed")} value={speed} disabled={!ready} onValueChange={value => setControls({ ...controls, speed: Number(value) })}
           options={SIM_SPEEDS.map(value => ({ value, label: `${value}×` }))} />
-        <span className="ef-muted" role="status">{phaseLabel}</span>
+        <Dialog.Trigger className={`${actionClassName({ size: "sm" })} ef-step-settings`} disabled={!ready}
+          aria-label={t("模拟设置", "Simulation settings")} title={t("模拟设置", "Simulation settings")}>
+          <ActionContent icon={<Settings2 />}>{t("模拟设置", "Simulation settings")}</ActionContent>
+        </Dialog.Trigger>
       </div>
       <div className="ef-step-timeline">
         <Slider min={0} max={maxHours * 3600} step={60} largeStep={900} value={view?.tSec ?? 0} disabled={!ready || !scheduled.size}
@@ -148,7 +144,7 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
       </div>
     </Section>
 
-    <Section title={t("心情与产率曲线", "Morale and production curves")}>
+    <Section>
       {showResult && view && timeline ? <MoodCharts view={view} timeline={timeline} rooms={config.rooms} onSeek={seek} />
         : <div className="ef-empty"><p>{t("开始模拟后显示心情、换班与产率曲线。", "Start the simulation to see morale, shift changes and production rates.")}</p></div>}
     </Section>

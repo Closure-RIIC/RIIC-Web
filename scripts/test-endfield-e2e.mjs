@@ -212,9 +212,13 @@ try {
   await expect(manualSlots.first()).toBeFocused();
   await choose(manualBoard.getByRole("combobox", { name: "换班整点", exact: true }).first(), "13:00");
   await expect(manualBoard.locator('[data-facility="center"] .ef-shift-time').first()).toHaveText("00:00 – 13:00");
-  await page.getByRole("button", { name: "评估方案", exact: true }).click();
-  await page.getByText("人员、工位与产出重算校验通过。", { exact: true }).waitFor();
-  await page.getByRole("button", { name: "使用当前双班结果", exact: true }).click();
+  await expect(page.getByRole("button", { name: "评估方案", exact: true })).toHaveCount(0);
+  await expect(page.locator("[data-manual-assignments]")).toHaveAttribute("data-evaluation-state", "ready");
+  await page.getByRole("button", { name: "详细报告", exact: true }).click();
+  const manualReport = page.getByRole("dialog", { name: "排班报告", exact: true });
+  await expect(manualReport.getByText("人员、工位与产出重算校验通过。", { exact: true })).toBeVisible();
+  await manualReport.getByRole("button", { name: "完成", exact: true }).click();
+  await expect(page.getByRole("button", { name: "使用当前双班结果", exact: true })).toBeDisabled();
   await expect(manualSlots.first()).toContainText(workspace.operators[0].name);
   await page.waitForFunction(key => JSON.parse(globalThis.localStorage.getItem(key)).manual[0].hour === 13, STORAGE_KEY);
   await page.reload();

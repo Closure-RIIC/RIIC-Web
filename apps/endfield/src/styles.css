@@ -218,9 +218,18 @@
 .ef-dialog-close:is(:hover,:active) { background:transparent; }
 .ef-dialog-close:focus-visible { outline:2px solid var(--ef-ink); outline-offset:2px; }
 .ef-dialog-close-glyph { width:18px; height:18px; background:currentColor; mask-repeat:no-repeat; mask-position:center; mask-size:contain; }
-.ef-dialog-body { min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:24px; }
+.ef-dialog-body { min-height:0; overflow-y:auto; overscroll-behavior:contain; scroll-padding-block:24px; padding:24px; isolation:isolate; }
 .ef-dialog-description { margin-bottom:20px; color:var(--ef-muted); font-size:13px; line-height:1.8; }
 .ef-dialog-footer { display:flex; flex-shrink:0; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:10px; padding:16px 24px; background:color-mix(in oklab,var(--ef-line) 30%,var(--ef-surface)); }
+/* Keep the scroll edges anchored to the fixed chrome, including nested account actions. */
+.ef-dialog-header,.ef-dialog-footer,.ef-account-dialog [data-auth-actions] { position:relative; z-index:1; }
+.ef-dialog-header::after,.ef-dialog-footer::before,.ef-account-dialog [data-auth-actions]::before {
+  content:""; position:absolute; inset-inline:0; height:20px; pointer-events:none;
+  background:color-mix(in oklab,var(--ef-surface) 20%,transparent);
+  -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px);
+}
+.ef-dialog-header::after { top:100%; -webkit-mask-image:linear-gradient(to bottom,#000,transparent); mask-image:linear-gradient(to bottom,#000,transparent); }
+.ef-dialog-footer::before,.ef-account-dialog [data-auth-actions]::before { bottom:100%; -webkit-mask-image:linear-gradient(to top,#000,transparent); mask-image:linear-gradient(to top,#000,transparent); }
 .ef-production-dialog { width:min(720px,calc(100vw - 24px)); }
 .ef-confirm-dialog { width:min(640px,calc(100vw - 24px)); }
 .ef-account-dialog {
@@ -234,6 +243,7 @@
   max-height:calc(var(--auth-viewport-height,100dvh) - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
 }
 .ef-account-dialog .ef-account-dialog-body { display:flex; flex-direction:column; min-height:0; padding:0; overflow:hidden; }
+.ef-account-dialog-body [data-yeye-scroll=auto] { padding-top:20px; scroll-padding-block:20px; }
 .ef-account-dialog>.ef-dialog-footer { display:none; }
 .ef-account-dialog [data-slot=button] { border-radius:4px; }
 .ef-account-dialog [role=group] input { min-height:0; padding:0; color:transparent; }
@@ -259,10 +269,11 @@
 .ef-roster-dialog { width:min(1120px,calc(100vw - 24px)); }
 .ef-roster-dialog-body .ef-section { padding-bottom:0; }
 .ef-roster-grid--compact { grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
-.ef-roster-grid--compact .ef-roster-card { padding:10px; border-radius:8px; }
+.ef-roster-grid--compact .ef-roster-card { padding:10px; border:0; border-radius:12px; background:var(--muted); }
 .ef-roster-grid--compact .ef-roster-card>header { gap:8px; }
 .ef-roster-grid--compact .ef-roster-identity h3 { font-size:13px; }
 .ef-roster-grid--compact .ef-roster-identity p { margin-top:2px; }
+.ef-roster-grid--compact .ef-roster-own { width:36px; height:36px; min-width:36px; min-height:36px; border-radius:50%; }
 .ef-roster-grid--compact .ef-roster-controls { margin-top:8px; }
 .ef-roster-grid--compact .ef-roster-elite>[data-filter-select] { width:88px; max-width:88px; }
 .ef-roster-editor .ef-roster-toolbar { margin-bottom:12px; }
@@ -347,14 +358,16 @@
 .ef-facility-tile[data-facility=center] .ef-facility-shifts { margin-block:auto; gap:28px; }
 .ef-facility-tile[data-facility=center] .ef-facility-shift-label { margin-bottom:12px; }
 .ef-facility-note { margin-top:10px; font-size:10px; color:var(--ef-muted); line-height:1.5; }
-.ef-manual-page fieldset[data-manual-assignments] { min-width:0; margin:0; padding:0; border:0; }
+.ef-manual-page fieldset[data-manual-assignments] { min-width:0; margin:20px 0 0; padding:0; border:0; }
+.ef-manual-page .ef-facility-tile>header h3 { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ef-manual-page .ef-facility-product { margin-left:0; }
 .ef-manual-actions { display:grid; grid-auto-flow:column; grid-auto-columns:max-content; flex-shrink:0; max-width:100%; }
-.ef-manual-hour { margin:0 0 14px; }
-.ef-manual-hour>.ef-field { display:flex; flex-direction:row; align-items:center; justify-content:space-between; gap:8px; }
-.ef-manual-hour .ef-field>label { margin:0; font-size:11px; }
-.ef-manual-hour .ef-field-control { width:100px; }
+.ef-manual-hour { margin-left:auto; flex-shrink:0; }
+.ef-manual-hour>.ef-field { gap:0; }
+.ef-manual-hour .ef-field>label { position:absolute; width:1px; height:1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+.ef-manual-hour .ef-field-control { width:88px; }
 .ef-manual-slot { display:flex; flex-direction:column; align-items:center; min-width:0; gap:4px; }
-.ef-manual-operator { width:100%; padding:4px; border-radius:10px; color:var(--ef-ink); }
+.ef-manual-operator { width:100%; padding:0; border-radius:10px; color:var(--ef-ink); }
 .ef-manual-operator:not(:disabled):hover { background:color-mix(in oklab,var(--facility-color) 18%,transparent); }
 .ef-manual-operator:focus-visible { outline:2px solid var(--ef-ink); outline-offset:2px; }
 .ef-manual-operator:disabled { cursor:not-allowed; opacity:.6; }
@@ -371,7 +384,6 @@
   font-size:13px; outline:none;
 }
 .ef-live-activity:focus-visible { outline:2px solid var(--ring); outline-offset:2px; }
-.ef-live-activity[data-activity-phase=error] { border-color:color-mix(in oklab,var(--destructive) 40%,var(--border)); }
 .ef-live-activity .status-mark { color:var(--color-amber-600); }
 .dark .ef-live-activity { --status-mark-done:var(--color-emerald-400); }
 .dark .ef-live-activity .status-mark { color:var(--color-amber-300); }
@@ -400,6 +412,9 @@
 @media(max-height:800px) and (min-width:1000px) {
   .ef-facility-tile { --result-avatar:60px; }
   .ef-facility-tile[data-facility=center] { --result-avatar:80px; }
+  .ef-manual-page .ef-facility-tile>header { margin-bottom:6px; }
+  .ef-manual-page .ef-facility-output { margin-bottom:4px; }
+  .ef-manual-page .ef-facility-shifts { gap:6px; }
 }
 @container(max-width:850px) {
   .ef-ship-board { grid-template-columns:1fr 1fr; grid-template-areas:"center center" "guest grow" "mfg1 mfg2"; }
@@ -428,6 +443,7 @@
   .ef-roster-grid--compact .ef-roster-elite { flex-wrap:wrap; }
 }
 @media(max-width:767px) {
+  .ef-roster-grid--compact .ef-roster-own { width:44px; height:44px; min-width:44px; min-height:44px; }
   .ef-status-grid { grid-template-columns:1fr; }
   .ef-page.ef-skland-login { padding-block:72px; }
   .ef-data-columns { grid-template-columns:minmax(0,1fr); }
@@ -441,7 +457,9 @@
   .ef-dialog-header { padding:2px 8px 2px 16px; }
   .ef-dialog-title { font-size:14px; }
   .ef-dialog-close { width:44px; height:44px; }
-  .ef-dialog-body { padding:16px; }
+  .ef-dialog-body { padding:16px; scroll-padding-block:16px; }
+  .ef-account-dialog-body [data-yeye-scroll=auto] { padding-top:16px; scroll-padding-block:16px; }
+  .ef-dialog-header::after,.ef-dialog-footer::before,.ef-account-dialog [data-auth-actions]::before { height:16px; }
   .ef-dialog-footer { padding:14px 16px; }
 }
 .os-theme-yeye { --os-size:8px; --os-handle-bg:color-mix(in oklab,var(--foreground) 25%,transparent); --os-handle-bg-hover:color-mix(in oklab,var(--foreground) 40%,transparent); --os-handle-border-radius:8px; }

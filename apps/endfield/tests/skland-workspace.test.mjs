@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { catalog, nonSchedulableOperators, DEFAULT_OPTIONS, manualTemplate, parseWorkspace } from "@riic/endfield-solver/model.mjs";
-import { sklandRosterSource, syncSklandWorkspace } from "../src/skland-workspace.ts";
+import { restoreSklandRoster, sklandRosterSource, syncSklandWorkspace } from "../src/skland-workspace.ts";
 import { workspaceKey } from "../src/result-cache.ts";
 
 const role = { roleId: "role-a", serverId: "server-a" };
@@ -86,4 +86,63 @@ test("malformed or mismatched responses fail before mutating scheduling input", 
   assert.throws(() => sync(current, snapshot({ characters: [character(0), character(0)] })), /重复/);
   assert.throws(() => sync(current, snapshot({ characters: [character(0, 9)] })), /elite|精英/);
   assert.deepEqual(current, before);
+});
+
+test("restoring a persisted Skland roster removes hypothetical operators and keeps facilities and valid manual slots", () => {
+  const synced = sync(base(), snapshot({ characters: [
+    { ...character(0, 2), latestSpaceshipSkillNodes: [] }, character(1, 3),
+  ] })).workspace;
+  const baseline = structuredClone(synced.operators);
+  const current = structuredClone(synced);
+  current.operators = [{ name: catalog[0].name, elite: 4 }, { name: catalog[2].name, elite: 4 }];
+  current.options.levels.center = 5;
+  current.manual = manualTemplate(current.options);
+  current.manual[0] = { ...current.manual[0], hour: 8, a: [catalog[0].name], b: [catalog[2].name] };
+  const reloaded = parseWorkspace(JSON.stringify(current));
+  assert.deepEqual(reloaded.sklandRoster, baseline);
+  const restored = restoreSklandRoster(reloaded);
+  assert.deepEqual(restored.operators, baseline);
+  assert.deepEqual(restored.options, reloaded.options);
+  assert.deepEqual(restored.manual[0], { ...reloaded.manual[0], b: [""] });
+  assert.deepEqual(current.operators, reloaded.operators, "restoring does not mutate the edited input");
+  restored.operators[0].elite = 4;
+  restored.operators[0].latestSpaceshipSkillNodes.push("unrelated");
+  assert.deepEqual(restored.sklandRoster, baseline, "the baseline has no shared arrays with editable data");
+});
+
+test("partial sync refreshes only the real baseline, without keeping hypothetical operators or progression", () => {
+  const current = sync(base()).workspace;
+  current.operators = [{ name: catalog[0].name, elite: 4 }, { name: catalog[2].name, elite: 4 }];
+  const merged = sync(current, snapshot({ characters: [character(1, 2)], rosterComplete: false })).workspace;
+  assert.deepEqual(merged.operators, [{ name: catalog[0].name, elite: 2 }, { name: catalog[1].name, elite: 2 }]);
+  assert.deepEqual(merged.sklandRoster, merged.operators);
+  const legacy = { ...current };
+  delete legacy.sklandRoster;
+  const partialLegacy = sync(legacy, snapshot({ characters: [character(1, 2)], rosterComplete: false })).workspace;
+  assert.equal(partialLegacy.sklandRoster, undefined, "a partial response cannot manufacture a complete backup");
+  assert.equal(restoreSklandRoster(partialLegacy), partialLegacy);
+});
+
+test("changing identity replaces the recovery baseline and blocked sync preserves the previous one", () => {
+  const current = sync(base()).workspace;
+  const identity = sklandRosterSource("owner-b", "account-b", role);
+  const blocked = sync(current, snapshot({ rosterComplete: false }), identity);
+  assert.equal(blocked.workspace, current);
+  const replaced = sync(current, snapshot({ characters: [character(2)] }), identity).workspace;
+  assert.deepEqual(replaced.sklandRoster, [{ name: catalog[2].name, elite: 1 }]);
+  assert.deepEqual(restoreSklandRoster(replaced).operators, replaced.sklandRoster);
+  const empty = sync(current, snapshot({ characters: [] })).workspace;
+  assert.deepEqual(parseWorkspace(JSON.stringify(empty)).sklandRoster, []);
+  assert.deepEqual(restoreSklandRoster({ ...empty, operators: current.operators }).operators, []);
+});
+
+test("baseline metadata cannot invalidate solver results and malformed backups are rejected", () => {
+  const current = sync(base()).workspace;
+  const legacy = { ...current };
+  delete legacy.sklandRoster;
+  assert.equal(workspaceKey(legacy), workspaceKey(current));
+  assert.equal(restoreSklandRoster(base()).sklandRoster, undefined);
+  for (const extra of [{ sklandRoster: {} }, { sklandRoster: [character(0, 9)] }, { rosterSource: undefined, sklandRoster: [] }]) {
+    assert.throws(() => parseWorkspace(JSON.stringify({ ...current, ...extra })));
+  }
 });

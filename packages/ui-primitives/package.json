@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "peerDependencies": {
+    "calligraph": "^1.4.1",
     "recharts": "^3.10.1",
     "@base-ui/react": "^1.9.0",
     "class-variance-authority": "^0.7.1",
@@ -15,6 +16,7 @@
   },
   "version": "0.0.0",
   "exports": {
+    "./animated-number": "./animated-number.tsx",
     "./chart": "./chart.tsx",
     "./scroll-area": "./scroll-area.tsx",
     "./slider": "./slider.tsx",
