@@ -2,30 +2,31 @@
 
 This checklist contains GitHub repository settings only. It deliberately excludes credentials, hostnames, private helper source, server topology, and operational commands.
 
-Only the personal-repository owner, `KnightCodeSquareMatrix`, can complete the admin-only steps. `yeyouchuan` remains a normal collaborator for code, pull requests, and reviews.
+The public repository is owned by `Closure-RIIC`. Use a repository administrator for repository settings and an organization owner or authorized App manager for App registration and installation. Verify current permissions instead of inferring them from the former personal ownership.
 
-## Before the initial push
+## Organization transfer
 
-- [ ] Create the new `KnightCodeSquareMatrix/RIIC-Web` repository without importing old history.
-- [ ] Invite `yeyouchuan` as a normal collaborator.
-- [ ] Disable GitHub Actions in the new repository.
-- [ ] Confirm the prepared public commit has no parent and that its tree passes `npm run check:public-repository`.
-- [ ] Push that one commit explicitly to `main` and `develop`; do not use `--mirror`, `--all`, or push tags.
+- [ ] Confirm the transferred repository is `Closure-RIIC/RIIC-Web` and retains its existing commits, issues, and pull requests.
+- [ ] Update Git remotes, workflow repository guards, release provenance checks, and public repository links to the organization path.
+- [ ] Verify collaborators and CODEOWNERS still have the required permissions. Individual author names and copyright notices remain unchanged.
+- [ ] Install the release App on `Closure-RIIC`, scoped only to `RIIC-Web`; verify its ID, private-key Secret, and requested permissions.
+- [ ] Keep `PR_AUTOMATION_ENABLED=0` and `RELEASE_PROMOTION_ENABLED=0` until the workflows, PR gates, and deployment baselines are ready. See [the Agent runbook](AUTO_MERGE_AGENT_RUNBOOK.md).
 
 ## Branch and Actions policy
 
 - [ ] Set `main` as the default branch.
-- [ ] Protect both `main` and `develop`: require at least one approval, resolved conversations, and block force pushes and deletion. Do not require post-merge `quality` as a PR status.
+- [ ] Protect both `main` and `develop`: require the `packages` PR check from `Dual application packages`, resolved conversations, and block force pushes and deletion. Do not require post-merge `quality` as a PR status.
 - [ ] On `main` only, require the lightweight `Release branch only` status so ordinary feature PRs cannot bypass the release lane.
-- [ ] Require CODEOWNER review for the sensitive paths listed in `.github/CODEOWNERS`.
-- [ ] Do not routinely bypass protection as repository owner.
+- [ ] Set `develop` to zero required approvals, with CODEOWNER review and last-push approval disabled.
+- [ ] On `main`, require one CODEOWNER approval from the administrators listed in `.github/CODEOWNERS`. Keep last-push approval disabled. Give those administrators PR-review bypass allowances so an admin-authored PR does not need a second person; keep the bypass App/team lists empty.
+- [ ] Keep enforcement for administrators enabled: required CI and release-policy checks apply even when an administrator uses their PR-review allowance. Synchronize CODEOWNERS and the review-bypass user list when repository administrators change.
 - [ ] Keep the default `GITHUB_TOKEN` permission read-only.
 - [ ] Allow GitHub Actions to create pull requests so the narrowly scoped asset-sync workflow can update `develop`.
 - [ ] Enable private vulnerability reporting and the relevant GitHub security checks.
 
-Ordinary pull requests do not run the post-merge quality workflow. A separate lightweight policy rejects every pull request to `main` unless its head is a `release/**` branch in this same repository. By default, that head commit must already be reachable from `develop`; a maintainer-applied `direct-main-release` label may explicitly waive only the ancestry check. External and ordinary feature PRs target `develop`. Every push produced by a merge into `develop` or `main` runs the full parallel quality gate before deployment.
+Ordinary pull requests run `Dual application packages`; they do not run the post-merge quality workflow. A separate lightweight policy rejects every pull request to `main` unless its head is a `release/**` branch in this same repository. By default, that head commit must contain `develop`; a maintainer-applied `direct-main-release` label may explicitly waive only the ancestry check. External and ordinary feature PRs target `develop`. Every push produced by a merge into `develop` or `main` runs the full parallel quality gate before deployment.
 
-Roll this policy out in order so branch protection never waits for a status that the new workflow no longer emits: first remove the old PR-required `quality` status from `develop` (or use the repository-owner bypass for the migration PR), merge the workflow change to `develop`, and promote it to `main`. Only after `Main release policy` exists on `main` and has emitted `Release branch only` at least once should that lightweight status become required on `main`.
+Require checks only after observing their actual check-run names on the relevant PR base branch. The updated asset-sync flow uses a repository-scoped App token and native auto-merge: main resource PRs wait for checks and administrator approval; develop parity PRs need checks only. Existing pending resource PRs retain their commits; publication does not force-push them. After an actual resource merge to main, a validated closed-PR event creates the develop parity PR. Verify that this version is on main and generated PR workflows run before enabling automation; do not add a protection bypass for the bot.
 
 ## Deployment configuration
 
@@ -55,7 +56,7 @@ Enter these non-sensitive variables separately in each Environment:
 
 Do not copy values out of old GitHub secrets; re-enter them from the owner-controlled secure store. In particular, the development health URL is an Environment secret, never a repository variable or committed value.
 
-Restrict `development` to `develop`. Restrict `production` to `main` and require `KnightCodeSquareMatrix` as reviewer.
+Restrict `development` to `develop`. Restrict `production` to `main` and retain its authorized human reviewers. Confirm reviewer permissions after the organization transfer.
 
 ## Enablement checkpoints
 
