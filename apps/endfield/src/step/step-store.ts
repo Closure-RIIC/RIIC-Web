@@ -1,5 +1,6 @@
 import type { StepBoostConfig, StepConfig } from "./step-types.ts";
 import { STEP_STORAGE_KEY } from "./step-keys.ts";
+import { SIM_HOURS, SIM_SAMPLE_SECONDS, SIM_SPEEDS } from "../mood-simulation/constants.ts";
 
 /** 只保存模拟参数；人员、设施和换班时间始终来自手动排班。 */
 export { STEP_STORAGE_KEY };
@@ -11,7 +12,7 @@ export interface StepControls {
   speed: number;
 }
 
-export const DEFAULT_STEP_CONTROLS: StepControls = { startHour: 8, maxHours: 24, sampleSec: 60, speed: 100 };
+export const DEFAULT_STEP_CONTROLS: StepControls = { startHour: 8, maxHours: 24, sampleSec: SIM_SAMPLE_SECONDS, speed: 100 };
 
 export interface StoredStep {
   version: 2;
@@ -35,14 +36,14 @@ function storageOf(kind: "local" | "session"): Storage | undefined {
 
 function sanitizeControls(value: unknown): StepControls {
   if (!isRecord(value)) return { ...DEFAULT_STEP_CONTROLS };
-  const choice = (input: unknown, options: number[], fallback: number) =>
+  const choice = (input: unknown, options: readonly number[], fallback: number) =>
     typeof input === "number" && options.includes(input) ? input : fallback;
   return {
     startHour: typeof value.startHour === "number" && Number.isFinite(value.startHour)
       ? Math.min(23, Math.max(0, Math.round(value.startHour))) : DEFAULT_STEP_CONTROLS.startHour,
-    maxHours: choice(value.maxHours, [24, 48, 72, 96], DEFAULT_STEP_CONTROLS.maxHours),
+    maxHours: choice(value.maxHours, SIM_HOURS, DEFAULT_STEP_CONTROLS.maxHours),
     sampleSec: choice(value.sampleSec, [10, 30, 60, 300, 900], DEFAULT_STEP_CONTROLS.sampleSec),
-    speed: choice(value.speed, [1, 10, 100, 1000], DEFAULT_STEP_CONTROLS.speed),
+    speed: choice(value.speed, SIM_SPEEDS, DEFAULT_STEP_CONTROLS.speed),
   };
 }
 

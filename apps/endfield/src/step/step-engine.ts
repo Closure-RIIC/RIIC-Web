@@ -3,7 +3,8 @@ import type {
 } from "./step-types.ts";
 
 const EPS = 1e-6;
-const MAX_SAMPLES = 20000;
+// 覆盖界面支持的最长 96h / 最细 10s 采样，并为换班、助力事件留余量。
+const MAX_SAMPLES = 40000;
 const MAX_LOG = 2000;
 
 interface SimBoost {

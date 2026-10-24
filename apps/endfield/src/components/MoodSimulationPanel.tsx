@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SIM_RATES } from "@riic/endfield-solver/simulation.mjs";
+import { useEffect, useMemo, useState } from "react";
 import { operatorData } from "@riic/endfield-data";
 import type { Assignment } from "@riic/endfield-solver/model.mjs";
 import { useWorkspace } from "../state";
@@ -7,63 +6,38 @@ import { Dialog } from "@base-ui/react/dialog";
 import { Slider } from "@riic/ui-primitives/slider";
 import { DialogFrame } from "./DialogFrame";
 import { StepSettings } from "./StepSettings";
-import { StepCharts } from "./StepCharts";
-import { StepLog, StepRooms, StepStats } from "./StepPanels";
+import { MoodCharts } from "../mood-simulation/charts";
+import { useMoodSimulation } from "../mood-simulation/use-simulation";
+import { SIM_SPEEDS } from "../mood-simulation/constants";
+import { StepLog, StepStats } from "./StepPanels";
 import { StepPicker } from "./StepPicker";
-import { StepSimulation, formatClock, formatDuration } from "../step/step-engine.ts";
+import { formatClock, formatDuration } from "../step/step-engine.ts";
 import {
   buildStepConfig, effectTable, ensureBoostDays, maxBoostDays, roomEffectResolver, scheduledNames, validateStepConfig,
 } from "../step/step-model.ts";
 import { applyStored, DEFAULT_STEP_CONTROLS, loadStepConfig, saveStepConfig, toStored, type StoredStep } from "../step/step-store.ts";
-import type { SimRates, StepBoostConfig, StepView } from "../step/step-types.ts";
+import type { StepBoostConfig } from "../step/step-types.ts";
 import { Action, ActionContent, actionClassName, Field, Notice, Section } from "@riic/endfield-ui";
 import { Play, Pause, RotateCcw, FastForward, Settings2 } from "lucide-react";
 import "../step/step.css";
 
-const RATES: SimRates = { work: SIM_RATES.work, rest: SIM_RATES.rest, head: SIM_RATES.head, assist: SIM_RATES.assist };
-
-type Phase = "idle" | "running" | "paused" | "ended";
 type PickerState = { day: number; index: number };
 
 /** 只编辑模拟参数；排班由父级提供，排班变化时父级重挂载以清除旧回放。 */
-export function ManualSimulation({ assignments }: { assignments: Assignment[] }) {
+export function MoodSimulationPanel({ assignments }: { assignments: Assignment[] }) {
   const { workspace, locale, t } = useWorkspace();
   const resolver = useMemo(() => roomEffectResolver(effectTable(workspace)), [workspace]);
 
   const [preferences, setPreferences] = useState<StoredStep | null>(null);
   const [controls, setControls] = useState(DEFAULT_STEP_CONTROLS);
   const [ready, setReady] = useState(false);
-  const { startHour, maxHours, sampleSec, speed } = controls;
+  const { startHour, maxHours, speed } = controls;
   const config = useMemo(() => applyStored(buildStepConfig({ ...workspace, manual: assignments }, null, "manual"), preferences), [workspace, assignments, preferences]);
-  const [running, setRunning] = useState(false);
-  const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState("");
-  const [started, setStarted] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [timeline, setTimeline] = useState<StepView | null>(null);
   const [picker, setPicker] = useState<PickerState | null>(null);
-  const engine = useRef<StepSimulation | null>(null);
-  const [snapshot, setSnapshot] = useState<{
-    view: StepView; rates: Record<string, Record<string, number>>; centralBonus: number;
-  } | null>(null);
-  const bump = useCallback(() => {
-    const simulation = engine.current;
-    if (!simulation) return;
-    const view = simulation.snapshot();
-    setSnapshot({ view, rates: Object.fromEntries(Object.keys(view.rooms).map(key => [key, simulation.roomRates(key)])), centralBonus: simulation.centralBonus() });
-  }, []);
-  const createSimulation = useCallback(() => {
-    const normalized = { ...config, boost: ensureBoostDays(config.boost, maxBoostDays(startHour, maxHours)) };
-    return new StepSimulation(normalized, resolver, RATES, { startHour, maxHours, sampleSec });
-  }, [config, resolver, startHour, maxHours, sampleSec]);
-  const rebuild = useCallback(() => {
-    engine.current = createSimulation();
-    setTimeline(null);
-    setRunning(false);
-    setPhase("idle");
-    setStarted(false);
-    bump();
-  }, [createSimulation, bump]);
+  const playback = useMoodSimulation(config, resolver, controls, ready);
+  const { view, timeline, running, phase, started, pause } = playback;
 
   // 客户端挂载后恢复参数，避免服务端与首次渲染不一致。
   useEffect(() => {
@@ -74,29 +48,9 @@ export function ManualSimulation({ assignments }: { assignments: Assignment[] })
   }, []);
 
   useEffect(() => {
-    if (ready) rebuild();
-  }, [ready, rebuild]);
-
-  useEffect(() => {
     if (ready) saveStepConfig(toStored(config, controls));
   }, [ready, config, controls]);
 
-  useEffect(() => {
-    if (!running) return;
-    let previous = performance.now();
-    const id = window.setInterval(() => {
-      const simulation = engine.current;
-      if (!simulation) return;
-      const now = performance.now();
-      simulation.advanceBy(speed * (now - previous) / 1000);
-      previous = now;
-      bump();
-      if (simulation.view.ended) { setRunning(false); setPhase("ended"); }
-    }, 100);
-    return () => window.clearInterval(id);
-  }, [running, speed, bump]);
-
-  const view = snapshot?.view ?? null;
   const days = maxBoostDays(startHour, maxHours);
   const scheduled = useMemo(() => scheduledNames(config.rooms), [config]);
 
@@ -126,56 +80,20 @@ export function ManualSimulation({ assignments }: { assignments: Assignment[] })
   }
 
   function start() {
-    if (running || !validate()) return;
-    if (!engine.current) engine.current = createSimulation();
-    else if (engine.current.view.ended) engine.current.seekTo(0);
-    prepareTimeline();
-    setStarted(true);
-    setRunning(true);
-    setPhase("running");
-    bump();
-  }
-
-  function pause() {
-    if (!running) return;
-    setRunning(false);
-    setPhase("paused");
-    engine.current?.markPaused();
-    bump();
+    if (validate()) playback.start();
   }
 
   function reset() {
-    setRunning(false);
     setError("");
-    rebuild();
+    playback.reset();
   }
 
   function fastForward() {
-    const simulation = engine.current;
-    if (!simulation || !validate()) return;
-    prepareTimeline();
-    setRunning(false);
-    setStarted(true);
-    simulation.runToEnd();
-    setPhase(simulation.view.ended ? "ended" : "idle");
-    bump();
-  }
-
-  function prepareTimeline() {
-    if (timeline) return;
-    const full = createSimulation();
-    full.runToEnd();
-    setTimeline(full.snapshot());
+    if (validate()) playback.seek(maxHours * 3600);
   }
 
   function seek(seconds: number) {
-    if (!validate()) return;
-    prepareTimeline();
-    engine.current?.seekTo(seconds);
-    setRunning(false);
-    setStarted(true);
-    setPhase(engine.current?.view.ended ? "ended" : "paused");
-    bump();
+    if (validate()) playback.seek(seconds);
   }
 
   function selectTarget(name: string | null) {
@@ -216,7 +134,7 @@ export function ManualSimulation({ assignments }: { assignments: Assignment[] })
         <Action id="resetBtn" size="sm" icon={<RotateCcw />} onClick={reset} disabled={!ready}>{t("重置", "Reset")}</Action>
         <Action id="fastBtn" size="sm" icon={<FastForward />} onClick={fastForward} disabled={!ready || phase === "ended"}>{t("快进到结束", "Fast forward")}</Action>
         <Field label={t("播放速度", "Playback speed")} value={speed} disabled={!ready} onValueChange={value => setControls({ ...controls, speed: Number(value) })}
-          options={[1, 10, 100, 1000].map(value => ({ value, label: `${value}×` }))} />
+          options={SIM_SPEEDS.map(value => ({ value, label: `${value}×` }))} />
         <span className="ef-muted" role="status">{phaseLabel}</span>
       </div>
       <div className="ef-step-timeline">
@@ -231,16 +149,11 @@ export function ManualSimulation({ assignments }: { assignments: Assignment[] })
     </Section>
 
     <Section title={t("心情与产率曲线", "Morale and production curves")}>
-      {showResult && view && timeline ? <StepCharts view={view} timeline={timeline} rooms={config.rooms} onSeek={seek} />
+      {showResult && view && timeline ? <MoodCharts view={view} timeline={timeline} rooms={config.rooms} onSeek={seek} />
         : <div className="ef-empty"><p>{t("开始模拟后显示心情、换班与产率曲线。", "Start the simulation to see morale, shift changes and production rates.")}</p></div>}
     </Section>
-    <Section title={t("舱室实时状态", "Live facility status")}>
-      {showResult && view && config ? <StepRooms view={view} rooms={config.rooms} ratesOf={key => snapshot?.rates[key] ?? {}}
-        centralBonus={snapshot?.centralBonus ?? 0} labelOf={labelOf} />
-        : <p className="ef-muted">{t("尚未开始", "Not started")}</p>}
-    </Section>
     <details className="ef-step-report"><summary>{t("事件日志与模拟统计", "Events and statistics")}</summary>
-      <StepLog log={showResult && view ? view.log : []} startHour={startHour} onClear={() => { engine.current?.clearLog(); bump(); }} />
+      <StepLog log={showResult && view ? view.log : []} startHour={startHour} onClear={playback.clearLog} />
       <Section title={t("模拟统计", "Simulation statistics")}>
       {showResult && view && config ? <StepStats view={view} rooms={config.rooms} />
         : <p className="ef-muted">{t("尚未开始", "Not started")}</p>}

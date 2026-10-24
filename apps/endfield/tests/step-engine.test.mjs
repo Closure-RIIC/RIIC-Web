@@ -176,6 +176,13 @@ test("ninety-six hours finish and stay deterministic", () => {
   assert.equal(first.view.log.length, second.view.log.length);
 });
 
+test("the longest supported replay keeps its beginning at the finest sampling interval", () => {
+  const simulation = run(config(), NO_EFFECTS, { maxHours: 96, sampleSec: 10 });
+  assert.equal(simulation.view.history[0].tSec, 0);
+  assert.equal(simulation.view.history.at(-1).tSec, 96 * 3600);
+  assert.ok(simulation.view.history.length >= 96 * 360);
+});
+
 test("clock and duration formatting stay stable", () => {
   assert.equal(formatClock(0, 8), "08:00:00");
   assert.equal(formatClock(16 * 3600, 8), "00:00:00 (+1d)");

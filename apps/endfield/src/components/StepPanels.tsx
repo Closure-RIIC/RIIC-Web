@@ -2,49 +2,8 @@ import { Action, Section } from "@riic/endfield-ui";
 import { ScrollArea } from "@riic/ui-primitives/scroll-area";
 import { Trash2 } from "lucide-react";
 import { useWorkspace } from "../state";
-import { OperatorPortrait } from "./GameArtwork";
 import type { StepLogEntry, StepRoom, StepView } from "../step/step-types.ts";
 import { formatClock, formatDuration } from "../step/step-engine.ts";
-
-export function StepRooms({ view, rooms, ratesOf, centralBonus, labelOf }: {
-  view: StepView; rooms: StepRoom[]; ratesOf: (key: string) => Record<string, number>;
-  centralBonus: number; labelOf: (name: string) => string;
-}) {
-  const { t } = useWorkspace();
-  return <div className="ef-step-live-grid" id="roomsGrid">{rooms.filter(room => view.rooms[room.key]).map(room => {
-    const state = view.rooms[room.key];
-    const rates = ratesOf(room.key);
-    const operators = view.ops.filter(op => op.roomKey === room.key);
-    return <article className="ef-result ef-step-live" key={room.key}>
-      <header><h3>{room.label}</h3><span className="ef-muted">{state.shiftEnabled
-        ? `${state.activeRound === "round1" ? "A" : "B"} ${t("班", "shift")}` : t("单班循环", "Single shift")}</span></header>
-      <div className="ef-step-live-body">
-        {operators.map(op => {
-          const active = op.round === state.activeRound;
-          const working = active && op.working;
-          const mood = Math.min(100, Math.max(0, op.mood));
-          return <div className="ef-step-operator" key={op.name}>
-            <OperatorPortrait name={op.name} size={36} />
-            <div className="ef-step-operator-info"><div><strong>{labelOf(op.name)}</strong>
-              <span className="ef-muted">{working ? t("工作", "Working") : active ? t("休息", "Resting") : t("待命", "Standby")}</span></div>
-              <progress max={100} value={mood} data-low={mood < 30 || undefined} aria-label={`${labelOf(op.name)} ${t("心情", "morale")}`} />
-            </div><span className="ef-step-number">{mood.toFixed(1)}%</span>
-          </div>;
-        })}
-        {!operators.length ? <p className="ef-muted">{t("未安排干员", "No operators assigned")}</p> : null}
-        <dl className="ef-step-metrics">
-          {room.key === "中枢" ? <div><dt>{t("心情恢复加成", "Morale recovery bonus")}</dt><dd>+{centralBonus.toFixed(1)}%</dd></div>
-            : room.products.map(product => {
-              const output = view.output[room.key];
-              const total = typeof output === "number" ? output : output?.[product] ?? 0;
-              return <div key={product}><dt>{product}</dt><dd>{(rates[product] ?? rates._total ?? 0).toFixed(2)}/h <small className="ef-muted">· {t("累计", "Total")} {total.toFixed(2)}</small></dd></div>;
-            })}
-          <div><dt>{t("有效工作", "Active work")}</dt><dd>{formatDuration(view.workTimeSec[room.key] ?? 0)}</dd></div>
-        </dl>
-      </div>
-    </article>;
-  })}</div>;
-}
 
 export function StepLog({ log, startHour, onClear }: { log: StepLogEntry[]; startHour: number; onClear: () => void }) {
   const { t } = useWorkspace();

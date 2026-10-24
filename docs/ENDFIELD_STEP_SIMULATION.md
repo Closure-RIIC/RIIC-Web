@@ -6,11 +6,14 @@
 
 初始心情、起始工作状态、助力目标与时间、起点、时长、采样和播放速度是模拟专属参数，不修改手动排班或长期评估。修改人员、设施、技能或换班时间会停止并重置旧回放，保留模拟参数；切换到评估视图也会停止播放。模拟参数以 v2 格式保存于原有本地存储键，读取 v1 时只迁移心情、工作状态及助力，忽略旧舱室启用和换班时间，防止覆盖共享配置。站内清空本地数据时也会清除模拟设置。
 
-交互参考明日方舟 `components/manual-mood/MoodSimulationPanel.tsx`：编辑 / 回放视图切换、模拟设置弹窗、可拖动时间轴、可搜索的干员列表及单人详情。两站通过 `packages/ui-primitives/chart.tsx` 复用 Recharts 的 `ChartContainer`、提示和图例；明日方舟原导入路径继续转发至共享组件。终末地显示 0–100% 心情，保留自己的换班、助力和产率算法。曲线展示完整模拟时段，点击图表或拖动时间轴会暂停播放并按同一事件引擎定位；向后跳转重建初始状态，确保助力和换班不被重复累计。事件日志与统计默认折叠。
+页面基于 [PR #603](https://github.com/Closure-RIIC/RIIC-Web/pull/603) 的舱室标签、心情 / 产率双图和干员状态卡继续改造。交互参考明日方舟 `components/manual-mood/MoodSimulationPanel.tsx`：编辑 / 回放视图切换、模拟设置弹窗、可拖动时间轴、可搜索的干员列表及单人曲线。两站通过 `packages/ui-primitives/chart.tsx` 复用 Recharts 的 `ChartContainer`、提示和图例；明日方舟原导入路径继续转发至共享组件。干员列表、日志和统计表使用共享 `ScrollArea`，时间轴使用基于 Base UI 的共享 `Slider`。
+
+终末地显示 0–100% 心情，保留自己的换班、助力和产率算法。曲线展示完整模拟时段，点击图表或拖动时间轴会暂停播放并按同一事件引擎定位；向后跳转重建初始状态，确保助力和换班不被重复累计。状态卡读取游标处的真实引擎快照，不提前采用未来采样点；产率保持引擎单位，中枢恢复加成不重复乘 100。事件日志与统计默认折叠。
 
 ## 保留的实现
 
-- `apps/endfield/src/components/ManualPage.tsx`、`ManualSimulation.tsx` 与 `Step*.tsx`：共享排班、模拟参数及回放组件；`src/routes/step.tsx` 仅保留兼容跳转。
+- `apps/endfield/src/components/ManualPage.tsx`、`MoodSimulationPanel.tsx` 与 `Step*.tsx`：共享排班、模拟参数及回放组件；`src/routes/step.tsx` 仅保留兼容跳转。
+- `apps/endfield/src/mood-simulation/`：基于 PR #603 的回放控制、舱室双图、状态卡和纯数据展示适配。
 - `apps/endfield/src/step/`：事件时间线、工作区数据映射、本地存储和样式。
 - `packages/endfield-solver/simulation.*`：复用求解器技能解锁、去重规则和速率常量的数据适配层；不增加第二套技能数据。线索概率技能不计入确定性产量。
 - 引擎、工作区适配与求解器数据边界的非 UI 回归测试。

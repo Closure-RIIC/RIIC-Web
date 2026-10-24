@@ -16,7 +16,7 @@ import { FacilityBoard, FacilityCard, type FacilityKind } from "./FacilityCard";
 import { RosterPage } from "./RosterPage";
 import { workspaceKey } from "../result-cache";
 
-const ManualSimulation = lazy(() => import("./ManualSimulation").then(module => ({ default: module.ManualSimulation })));
+const MoodSimulationPanel = lazy(() => import("./MoodSimulationPanel").then(module => ({ default: module.MoodSimulationPanel })));
 const route = getRouteApi("/manual");
 type Slot = { key: string; shift: "a" | "b"; index: number };
 const facilityKinds: Record<string, FacilityKind> = { 中枢: "center", 会客室: "guest", 培养舱: "grow", 制造舱1: "mfg1", 制造舱2: "mfg2" };
@@ -120,7 +120,7 @@ export function ManualPage() {
       </Dialog.Portal>
     </Dialog.Root>
     {resultStorageError ? <Notice error>{resultStorageError}</Notice> : null}
-    {simulation && ready ? <Suspense fallback={<Notice>{t("正在加载模拟…", "Loading simulation…")}</Notice>}><ManualSimulation key={workspaceKey(workspace)} assignments={assignments} /></Suspense> : null}
+    {simulation && ready ? <Suspense fallback={<Notice>{t("正在加载模拟…", "Loading simulation…")}</Notice>}><MoodSimulationPanel key={workspaceKey(workspace)} assignments={assignments} /></Suspense> : null}
     {!simulation && result && result.status.stopReason === "manual" ? <Results result={result} showWeapons={false} /> : null}
   </div>;
 }

@@ -5,6 +5,7 @@ import type { StepControls } from "../step/step-store.ts";
 import type { StepBoostConfig, StepConfig } from "../step/step-types.ts";
 import { ensureBoostDays, maxBoostDays } from "../step/step-model.ts";
 import { StepBoosts } from "./StepBoosts";
+import { SIM_HOURS } from "../mood-simulation/constants";
 
 export function StepSettings({ config, controls, scheduled, labelOf, onControls, onMood, onWork, onBoost, onPick }: {
   config: StepConfig; controls: StepControls; scheduled: ReadonlySet<string>; labelOf: (name: string) => string;
@@ -17,7 +18,7 @@ export function StepSettings({ config, controls, scheduled, labelOf, onControls,
     <Section title={t("时间范围", "Time range")}>
       <div className="ef-form-grid">
         <Field label={t("模拟时长", "Duration")} value={controls.maxHours} onValueChange={value => onControls({ ...controls, maxHours: Number(value) })}
-          options={[24, 48, 72, 96].map(value => ({ value, label: `${value} h` }))} />
+          options={SIM_HOURS.map(value => ({ value, label: `${value} h` }))} />
         <label className="ef-field"><span>{t("起点（小时）", "Start hour")}</span>
           <Input type="number" id="startHour" min={0} max={23} value={controls.startHour}
             onChange={event => { if (event.target.value !== "") onControls({ ...controls, startHour: Math.min(23, Math.max(0, Math.round(Number(event.target.value)))) }); }} />
