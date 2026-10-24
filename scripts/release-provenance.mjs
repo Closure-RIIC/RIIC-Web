@@ -3,7 +3,7 @@ import { appendFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
 import process from "node:process";
 
-export const RELEASE_REPOSITORY = "KnightCodeSquareMatrix/RIIC-Web";
+export const RELEASE_REPOSITORY = "Closure-RIIC/RIIC-Web";
 const SHA = /^[a-f0-9]{40}$/;
 const requiredJobs = ["Change scope", "Repository hygiene", "Static and unit checks", "Database integration", "Build release once", "quality"];
 

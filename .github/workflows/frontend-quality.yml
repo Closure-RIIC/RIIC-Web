@@ -683,7 +683,7 @@ jobs:
       needs.changes.outputs.deploy_required == 'true' &&
       (github.ref_name == 'main' || github.ref_name == 'develop') &&
       vars.DEPLOY_AUTOMATION_ENABLED == '1' &&
-      github.repository == 'KnightCodeSquareMatrix/RIIC-Web'
+      github.repository == 'Closure-RIIC/RIIC-Web'
     uses: ./.github/workflows/deploy.yml
     strategy:
       fail-fast: false

@@ -38,7 +38,7 @@ jobs:
       inputs.deploy_required &&
       (github.ref_name == 'main' || github.ref_name == 'develop') &&
       vars.DEPLOY_AUTOMATION_ENABLED == '1' &&
-      github.repository == 'KnightCodeSquareMatrix/RIIC-Web'
+      github.repository == 'Closure-RIIC/RIIC-Web'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     environment:
@@ -57,7 +57,7 @@ jobs:
       DEPLOY_DEBUG_TOOLS_ENABLED: ${{ vars.DEPLOY_DEBUG_TOOLS_ENABLED || '0' }}
       DEPLOY_RATE_LIMIT_ENABLED: ${{ vars.DEPLOY_RATE_LIMIT_ENABLED || '1' }}
       DEPLOY_APPROVED_SOLVER_SHA256: ${{ github.ref_name == 'develop' && vars.DEPLOY_APPROVED_SOLVER_SHA256 || '' }}
-      DEPLOY_EXPECTED_REPOSITORY: KnightCodeSquareMatrix/RIIC-Web
+      DEPLOY_EXPECTED_REPOSITORY: Closure-RIIC/RIIC-Web
       DEPLOY_RELEASE_HELPER_CONTRACT: "7"
 
     steps:
@@ -125,7 +125,7 @@ jobs:
           if [[ "$DEPLOYMENT_ENV" != "production" ]]; then
             [[ "$DEPLOY_APPROVED_SOLVER_SHA256" =~ ^[0-9a-f]{64}$ ]]
           fi
-          test "$DEPLOY_EXPECTED_REPOSITORY" = "KnightCodeSquareMatrix/RIIC-Web"
+          test "$DEPLOY_EXPECTED_REPOSITORY" = "Closure-RIIC/RIIC-Web"
           [[ "$DEPLOY_RELEASE_HELPER_CONTRACT" =~ ^[1-9][0-9]*$ ]]
           if [[ "$DEPLOYMENT_ENV" == "production" ]]; then
             test "$DEPLOY_APP_ROOT" = "/opt/arknights-infra"

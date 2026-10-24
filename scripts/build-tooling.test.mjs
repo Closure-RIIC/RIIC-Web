@@ -400,7 +400,7 @@ test("public deployment automation is repository-bound, opt-in, and secret-safe"
 
   assert.doesNotMatch(qualityWorkflow, /^\s*pull_request\s*:/m);
   assert.match(policyWorkflow, /pull_request:[\s\S]+branches: \[main\]/);
-  assert.match(policyWorkflow, /HEAD_REPOSITORY[\s\S]+EXPECTED_REPOSITORY: KnightCodeSquareMatrix\/RIIC-Web[\s\S]+"\$HEAD_REF" == release\/\*/);
+  assert.match(policyWorkflow, /HEAD_REPOSITORY[\s\S]+EXPECTED_REPOSITORY: Closure-RIIC\/RIIC-Web[\s\S]+"\$HEAD_REF" == release\/\*/);
   assert.match(policyWorkflow, /types: \[opened, synchronize, reopened, labeled, unlabeled\]/);
   assert.match(policyWorkflow, /DIRECT_MAIN_RELEASE: \$\{\{ contains\(github\.event\.pull_request\.labels\.\*\.name, 'direct-main-release'\)[\s\S]+"\$DIRECT_MAIN_RELEASE" == "1"[\s\S]+develop ancestry is intentionally skipped/);
   assert.match(policyWorkflow, /git merge-base --is-ancestor refs\/remotes\/origin\/develop "\$HEAD_SHA"/);
@@ -414,8 +414,8 @@ test("public deployment automation is repository-bound, opt-in, and secret-safe"
   assert.doesNotMatch(deployWorkflow, /^ {2}(?:push|workflow_dispatch):/m);
   assert.doesNotMatch(deployWorkflow, /allow_workflow_dispatch|github\.event_name/);
   assert.match(deployWorkflow, /deployment_authorized:[\s\S]+type: boolean[\s\S]+deploy_required:[\s\S]+type: boolean/);
-  assert.match(deployWorkflow, /inputs\.deployment_authorized &&[\s\S]+inputs\.deploy_required &&[\s\S]+github\.ref_name == 'main'[\s\S]+vars\.DEPLOY_AUTOMATION_ENABLED == '1'[\s\S]+github\.repository == 'KnightCodeSquareMatrix\/RIIC-Web'/);
-  assert.match(deployWorkflow, /DEPLOY_APPROVED_SOLVER_SHA256: \$\{\{ github\.ref_name == 'develop' && vars\.DEPLOY_APPROVED_SOLVER_SHA256 \|\| '' \}\}[\s\S]+DEPLOY_EXPECTED_REPOSITORY: KnightCodeSquareMatrix\/RIIC-Web[\s\S]+DEPLOY_RELEASE_HELPER_CONTRACT: "7"/);
+  assert.match(deployWorkflow, /inputs\.deployment_authorized &&[\s\S]+inputs\.deploy_required &&[\s\S]+github\.ref_name == 'main'[\s\S]+vars\.DEPLOY_AUTOMATION_ENABLED == '1'[\s\S]+github\.repository == 'Closure-RIIC\/RIIC-Web'/);
+  assert.match(deployWorkflow, /DEPLOY_APPROVED_SOLVER_SHA256: \$\{\{ github\.ref_name == 'develop' && vars\.DEPLOY_APPROVED_SOLVER_SHA256 \|\| '' \}\}[\s\S]+DEPLOY_EXPECTED_REPOSITORY: Closure-RIIC\/RIIC-Web[\s\S]+DEPLOY_RELEASE_HELPER_CONTRACT: "7"/);
   assert.doesNotMatch(deployWorkflow, /DEPLOY_PREPARE_HELPER_CONTRACT|arknights-infra-prepare-release/);
   assert.match(deployWorkflow, /DEPLOY_PUBLIC_HEALTH_URL: \$\{\{ secrets\.DEPLOY_PUBLIC_HEALTH_URL \}\}/);
   assert.doesNotMatch(deployWorkflow, /DEPLOY_PUBLIC_HEALTH_URL: \$\{\{ vars\./);
@@ -501,7 +501,7 @@ test("verified release reuse preserves provenance and normal deployment gates", 
   const deploy = await readRepoFile(".github/workflows/deploy.yml");
   const quality = await readRepoFile(".github/workflows/frontend-quality.yml");
   assert.match(workflow, /workflow_dispatch:[\s\S]+verified_run_id:[\s\S]+expected_sha:/);
-  assert.match(workflow, /github\.repository == 'KnightCodeSquareMatrix\/RIIC-Web'[\s\S]+github\.ref_name == 'main' \|\| github\.ref_name == 'develop'/);
+  assert.match(workflow, /github\.repository == 'Closure-RIIC\/RIIC-Web'[\s\S]+github\.ref_name == 'main' \|\| github\.ref_name == 'develop'/);
   assert.match(workflow, /EXPECTED_SHA: \$\{\{ inputs\.expected_sha \}\}[\s\S]+VERIFIED_RUN_ID: \$\{\{ inputs\.verified_run_id \}\}[\s\S]+node scripts\/release-provenance\.mjs verify/);
   assert.match(workflow, /deploy:[\s\S]+needs: verify[\s\S]+uses: \.\/\.github\/workflows\/deploy\.yml/);
   assert.match(workflow, /artifact_run_id: \$\{\{ needs\.verify\.outputs\.artifact_run_id \}\}/);
@@ -577,7 +577,7 @@ test("production pins the server solver only after preflight and development ret
     encoding: "utf8", timeout: 10_000,
     env: {
       ...process.env, DEPLOYMENT_ENV: "production", DEPLOY_APP_ROOT: "/opt/arknights-infra",
-      DEPLOY_EXPECTED_REPOSITORY: "KnightCodeSquareMatrix/RIIC-Web",
+      DEPLOY_EXPECTED_REPOSITORY: "Closure-RIIC/RIIC-Web",
       DEPLOY_APPROVED_SOLVER_SHA256: "", DEPLOY_HOST: "example.invalid", DEPLOY_SSH_USER: "fixture",
       SERVER_DIGEST: serverDigest, SSH_EXIT: "0", PREFLIGHT_EXIT: "0",
       GITHUB_STEP_SUMMARY: "/dev/null", ...overrides,

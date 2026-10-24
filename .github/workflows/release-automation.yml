@@ -30,7 +30,7 @@ concurrency:
 jobs:
   automate:
     if: >-
-      github.repository == 'KnightCodeSquareMatrix/RIIC-Web' &&
+      github.repository == 'Closure-RIIC/RIIC-Web' &&
       vars.PR_AUTOMATION_ENABLED == '1' &&
       (github.event_name == 'workflow_dispatch' ||
         (github.event.workflow_run.conclusion == 'success' &&

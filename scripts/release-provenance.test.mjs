@@ -76,6 +76,18 @@ test("validates inputs before using them as API paths", async () => {
   }
 });
 
+test("organization releases reject the former repository before any API request", async () => {
+  let requests = 0;
+  const oldRepository = "KnightCodeSquareMatrix/RIIC-Web";
+  const api = githubApi("fixture-token", async () => { requests++; throw new Error("Unexpected network access"); });
+  await assert.rejects(api(`/repos/${oldRepository}/actions/runs/123`), /Unexpected API path/);
+  await assert.rejects(verifyReleaseRun({ ...fixture().options, api, repository: oldRepository }), /Unexpected release repository/);
+  const f = fixture();
+  f.run.head_repository.full_name = oldRepository;
+  await assert.rejects(verifyReleaseRun(f.options), /Fork artifacts cannot deploy/);
+  assert.equal(requests, 0);
+});
+
 test("job and artifact pages are fully inspected", async () => {
   const f = fixture();
   const api = async (path) => {

@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   generate:
-    if: github.repository == 'KnightCodeSquareMatrix/RIIC-Web'
+    if: github.repository == 'Closure-RIIC/RIIC-Web'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -178,7 +178,7 @@ jobs:
 
   publish:
     needs: generate
-    if: needs.generate.result == 'success' && needs.generate.outputs.changed == 'true' && github.repository == 'KnightCodeSquareMatrix/RIIC-Web'
+    if: needs.generate.result == 'success' && needs.generate.outputs.changed == 'true' && github.repository == 'Closure-RIIC/RIIC-Web'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
@@ -354,7 +354,7 @@ jobs:
 
   develop_parity:
     needs: publish
-    if: needs.publish.result == 'success' && github.repository == 'KnightCodeSquareMatrix/RIIC-Web'
+    if: needs.publish.result == 'success' && github.repository == 'Closure-RIIC/RIIC-Web'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

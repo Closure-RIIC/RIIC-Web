@@ -15,7 +15,7 @@ function pull() {
 test("workflow-run requests require the trusted metadata source and reject fork runs", async () => {
   const event = { workflow_run: { path: ".github/workflows/pr-automation-request.yml", event: "pull_request", conclusion: "success",
     head_repository: { full_name: RELEASE_REPOSITORY }, head_sha: sha, head_branch: "feature/endfield", pull_requests: [{ number: 9 }] } };
-  const api = async (url) => { assert.match(url, /head=KnightCodeSquareMatrix%3Afeature%2Fendfield/); return [pull()]; };
+  const api = async (url) => { assert.match(url, /head=Closure-RIIC%3Afeature%2Fendfield/); return [pull()]; };
   assert.deepEqual(await requestedPullNumbers(api, event), [9]);
   event.workflow_run.pull_requests = [];
   assert.deepEqual(await requestedPullNumbers(api, event), [9]);

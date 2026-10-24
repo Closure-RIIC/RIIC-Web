@@ -29,7 +29,7 @@ concurrency:
 jobs:
   verify:
     if: >-
-      github.repository == 'KnightCodeSquareMatrix/RIIC-Web' &&
+      github.repository == 'Closure-RIIC/RIIC-Web' &&
       (github.ref_name == 'main' || github.ref_name == 'develop')
     runs-on: ubuntu-latest
     timeout-minutes: 5

@@ -16,7 +16,7 @@
 
 | 工具/能力 | 已确认情况 | 本轮用途 | 边界 |
 | --- | --- | --- | --- |
-| GitHub CLI / GitHub connector | 仓库 `KnightCodeSquareMatrix/RIIC-Web` 可读，默认分支 main | 读取运行、步骤、开放 issue/PR，人工核对重复项 | 不评论、关单或重跑发布 |
+| GitHub CLI / GitHub connector | 仓库 `Closure-RIIC/RIIC-Web` 可读，默认分支 main | 读取运行、步骤、开放 issue/PR，人工核对重复项 | 不评论、关单或重跑发布 |
 | GitHub Actions | 发布质量、资源同步、发布策略等工作流已存在 | 新增独立观察工作流，复用官方 action 的既有固定 SHA | 只读 token；保留原发布门禁 |
 | Node.js / npm | 本地 Node 22；现有 npm audit | lockfile 安全审计、候选采集、差异比较 | 不执行 npm audit fix；不更新 lockfile |
 | 项目检查与 Playwright | 现有非 UI 逻辑检查、构建检查、Node + Playwright e2e | 修复阶段按实际 diff 选择 | 不运行 UI 单元测试；UI 手动验收由用户完成 |
