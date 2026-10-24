@@ -352,19 +352,20 @@ test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedul
 test("CI change scope keeps one required quality gate and fails closed", async () => {
   const workflow = await readRepoFile(".github/workflows/frontend-quality.yml");
   const classifier = await readRepoFile("scripts/ci-change-scope.mjs");
+  const planner = await readRepoFile("scripts/app-release-plan.mjs");
 
   assert.doesNotMatch(workflow, /paths-ignore:/);
   assert.match(workflow, /changes:[\s\S]+name: Change scope/);
   assert.match(workflow, /repository_hygiene:[\s\S]+npm run check:public-repository/);
   assert.match(workflow, /fetch-depth: 0/);
-  assert.match(workflow, /node scripts\/ci-change-scope\.mjs/);
+  assert.match(workflow, /node scripts\/app-release-plan\.mjs/);
   assert.doesNotMatch(workflow, /PR_BASE_SHA|PR_HEAD_SHA/);
-  assert.match(workflow, /Find the last successful deployment[\s\S]+node scripts\/release-provenance\.mjs baseline/);
-  assert.match(workflow, /git merge-base --is-ancestor "\$DEPLOYED_SHA" "\$HEAD_SHA"[\s\S]+git diff --name-only -z "\$DEPLOYED_SHA\.\.\$HEAD_SHA"/);
-  assert.match(workflow, /"\$\{classifier\[@\]\}" --force-full/);
-  assert.match(workflow, /git merge-base --is-ancestor "\$OPERATOR_DATA_BASE_SHA" "\$HEAD_SHA"/);
-  assert.match(workflow, /git diff --name-only -z "\$OPERATOR_DATA_BASE_SHA\.\.\$HEAD_SHA"/);
-  assert.match(workflow, /"\$\{classifier\[@\]\}" --require-operator-data/);
+  assert.match(planner, /for \(const app of APPLICATIONS\)[\s\S]+deploymentBaseline\([\s\S]+application: app/);
+  assert.match(planner, /git\("merge-base", "--is-ancestor", base, head\)/);
+  assert.match(planner, /git\("diff", "--name-only", "--no-renames", "-z"/);
+  assert.match(planner, /catch \{ full = true; \}/);
+  assert.match(planner, /classifyChanges\(operatorPaths\)\.scope, "operator-data"/);
+  assert.match(planner, /validationPaths\.every\(\(file\) => operatorPaths\.includes\(file\)\)/);
   assert.match(workflow, /static_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /database_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /release_artifact:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);

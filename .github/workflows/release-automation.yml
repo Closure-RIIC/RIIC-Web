@@ -1,0 +1,75 @@
+name: Release PR automation
+
+on:
+  workflow_run:
+    workflows: [PR automation request, Post-merge release, Deploy previously verified release]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      mode:
+        type: choice
+        options: [automerge, promote]
+        required: true
+      pr_number:
+        description: PR number for automerge mode
+        type: string
+      verified_run_id:
+        description: Original Post-merge release run with successful quality checks, for promotion after retry
+        type: string
+      expected_sha:
+        description: Exact current develop SHA for promotion
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-pr-automation-${{ (github.event.workflow_run.name == 'PR automation request' && github.event.workflow_run.head_branch) || (inputs.mode == 'automerge' && inputs.pr_number) || 'promotion' }}
+  cancel-in-progress: false
+
+jobs:
+  automate:
+    if: >-
+      github.repository == 'KnightCodeSquareMatrix/RIIC-Web' &&
+      vars.PR_AUTOMATION_ENABLED == '1' &&
+      (github.event_name == 'workflow_dispatch' ||
+        (github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_repository.full_name == github.repository &&
+          (github.event.workflow_run.name == 'PR automation request' ||
+            (vars.RELEASE_PROMOTION_ENABLED == '1' && github.event.workflow_run.head_branch == 'develop'))))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Never check out, import, build or execute a PR head with the App token.
+      - name: Checkout trusted automation
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Use Node.js 22
+        uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+      - name: Create repository-scoped release App token
+        id: app
+        uses: actions/create-github-app-token@fee1f7d63c2ff003460e3d139729b119787bc349 # v2
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: RIIC-Web
+          permission-contents: write
+          permission-pull-requests: write
+          permission-issues: write
+          permission-actions: read
+          permission-checks: read
+          permission-statuses: read
+          permission-deployments: read
+      - name: Maintain opted-in PRs and verified releases
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          PR_AUTOMATION_ENABLED: ${{ vars.PR_AUTOMATION_ENABLED }}
+          RELEASE_PROMOTION_ENABLED: ${{ vars.RELEASE_PROMOTION_ENABLED }}
+          RELEASE_APP_BOT_LOGIN: ${{ steps.app.outputs.app-slug }}[bot]
+        run: node scripts/release-automation.mjs

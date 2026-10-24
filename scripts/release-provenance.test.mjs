@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { deploymentBaseline, githubApi, RELEASE_REPOSITORY, verifyReleaseRun } from "./release-provenance.mjs";
+import { assertCurrentRelease, deploymentBaseline, finishDeployment, githubApi, prepareDeployment, RELEASE_REPOSITORY, verifyReleaseRun } from "./release-provenance.mjs";
 
 const sha = "a".repeat(40);
 const otherSha = "b".repeat(40);
@@ -45,7 +45,7 @@ test("rejects stale, foreign, incomplete and untrusted verification", async (t) 
     "wrong branch/profile": (f) => { f.run.head_branch = "main"; },
     "old commit": (f) => { f.run.head_sha = otherSha; },
     "unfinished run": (f) => { f.run.status = "in_progress"; },
-    "failed run": (f) => { f.run.conclusion = "failure"; },
+    "cancelled verification": (f) => { f.run.conclusion = "cancelled"; },
     "invalid attempt": (f) => { f.run.run_attempt = 0; },
     "quality missing": (f) => { f.jobs.pop(); },
     "quality failed": (f) => { f.jobs.at(-1).conclusion = "failure"; },
@@ -89,25 +89,85 @@ test("job and artifact pages are fully inspected", async () => {
 });
 
 test("deployment baseline skips failed releases, retaining unshipped application changes", async () => {
+  const record = (id, sha, overrides = {}) => ({ id, sha, environment: "development", task: "deploy:endfield", payload: { formatVersion: 1, application: "endfield", branch: "develop" }, ...overrides });
   const queries = [];
   const api = async (path) => {
     queries.push(path);
     if (path.includes("/deployments?")) return [
-      { id: 3, environment: "production", ref: "main", sha },
-      { id: 2, environment: "development", ref: "develop", sha },
-      { id: 1, environment: "development", ref: "develop", sha: otherSha },
+      record(4, sha, { task: "deploy:arknights" }),
+      record(3, sha, { environment: "production" }),
+      record(2, sha),
+      record(1, otherSha),
     ];
-    if (path.endsWith("/2/statuses?per_page=1")) return [{ state: "failure" }];
-    if (path.endsWith("/1/statuses?per_page=1")) return [{ state: "success" }];
+    if (path.endsWith("/2/statuses?per_page=100")) return [{ state: "failure" }];
+    if (path.endsWith("/1/statuses?per_page=100")) return [{ state: "inactive" }, { state: "success" }];
     throw new Error("Unexpected deployment");
   };
-  assert.equal(await deploymentBaseline({ api, repository, branch: "develop" }), otherSha);
+  assert.equal(await deploymentBaseline({ api, repository, branch: "develop", application: "endfield" }), otherSha);
   assert.equal(queries.length, 3);
 });
 
 test("unknown deployment history has no trusted baseline", async () => {
-  assert.equal(await deploymentBaseline({ api: async () => [], repository, branch: "main" }), "");
-  await assert.rejects(deploymentBaseline({ api: async () => { throw new Error("unavailable"); }, repository, branch: "develop" }));
+  assert.equal(await deploymentBaseline({ api: async () => [], repository, branch: "main", application: "arknights" }), "");
+  await assert.rejects(deploymentBaseline({ api: async () => { throw new Error("unavailable"); }, repository, branch: "develop", application: "endfield" }));
+  await assert.rejects(deploymentBaseline({ api: async () => [], repository, branch: "main" }), /Application/);
+});
+
+test("Endfield can retry after its sibling deployment failed, only when all quality jobs passed", async () => {
+  const f = fixture();
+  f.run.conclusion = "failure";
+  f.artifact.name = `endfield-release-${sha}`;
+  f.jobs.push({ name: "deploy (arknights) / Deploy arknights", conclusion: "failure" });
+  assert.equal((await verifyReleaseRun({ ...f.options, application: "endfield" })).artifactName, f.artifact.name);
+  await assert.rejects(verifyReleaseRun({ ...f.options, application: "arknights" }), /Missing or ambiguous/);
+  f.jobs.find((job) => job.name === "quality").conclusion = "failure";
+  await assert.rejects(verifyReleaseRun({ ...f.options, application: "endfield" }), /Required job did not pass/);
+});
+
+test("history pagination finds a last success beyond recent failed attempts", async () => {
+  const api = async (path) => {
+    if (path.endsWith("page=1")) return Array.from({ length: 100 }, (_, id) => ({ id: id + 10, environment: "development", task: "other", sha }));
+    if (path.endsWith("page=2")) return [{ id: 1, environment: "development", task: "deploy:endfield", sha: otherSha, payload: JSON.stringify({ formatVersion: 1, application: "endfield", branch: "develop" }) }];
+    return [{ state: "success" }];
+  };
+  assert.equal(await deploymentBaseline({ api, repository, branch: "develop", application: "endfield" }), otherSha);
+});
+
+test("old branch jobs are rejected before creating a deployment record", async () => {
+  let writes = 0;
+  const api = async (_path, options) => { if (options?.method) writes++; return { object: { sha: otherSha } }; };
+  await assert.rejects(assertCurrentRelease({ api, repository, branch: "main", sha }), /Branch advanced/);
+  await assert.rejects(prepareDeployment({ api, repository, branch: "main", sha, application: "endfield" }), /Branch advanced/);
+  assert.equal(writes, 0);
+});
+
+test("a retry skips the already successful app and records failures without advancing its sibling", async () => {
+  const requests = [];
+  const payload = { formatVersion: 1, application: "endfield", branch: "develop", runId: "123", attempt: "1" };
+  const record = { id: 8, environment: "development", task: "deploy:endfield", sha, payload };
+  let deployed = true;
+  const api = async (path, options) => {
+    requests.push({ path, ...options });
+    if (path.endsWith("/git/ref/heads/develop")) return { object: { sha } };
+    if (path.includes("/deployments?")) return deployed ? [record] : [];
+    if (path.endsWith("/statuses?per_page=100")) return [{ state: "success" }];
+    if (path.endsWith("/deployments/8")) return record;
+    return { id: 8 };
+  };
+  const options = { api, repository, branch: "develop", sha, application: "endfield", runId: "123", attempt: "1" };
+  assert.deepEqual(await prepareDeployment(options), { required: false, deploymentId: "" });
+  assert.equal(requests.filter((request) => request.method).length, 0);
+  deployed = false;
+  assert.deepEqual(await prepareDeployment(options), { required: true, deploymentId: "8" });
+  const creation = requests.find((request) => request.method);
+  assert.equal(creation.body.task, "deploy:endfield");
+  assert.equal(creation.body.ref, sha);
+  assert.equal(creation.body.auto_merge, false);
+  await finishDeployment({ ...options, deploymentId: "8", result: "failure" });
+  assert.equal(requests.at(-1).body.state, "failure");
+  assert.equal(requests.at(-1).body.auto_inactive, false);
+  await assert.rejects(finishDeployment({ ...options, application: "arknights", deploymentId: "8", result: "success" }));
+  await assert.rejects(finishDeployment({ ...options, attempt: "2", deploymentId: "8", result: "success" }));
 });
 
 test("API wrapper confines token use and does not expose error response bodies", async () => {
