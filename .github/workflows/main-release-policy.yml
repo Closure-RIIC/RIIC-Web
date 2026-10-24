@@ -31,7 +31,7 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           HEAD_REPOSITORY: ${{ github.event.pull_request.head.repo.full_name }}
-          EXPECTED_REPOSITORY: KnightCodeSquareMatrix/RIIC-Web
+          EXPECTED_REPOSITORY: Closure-RIIC/RIIC-Web
           DIRECT_MAIN_RELEASE: ${{ contains(github.event.pull_request.labels.*.name, 'direct-main-release') && '1' || '0' }}
         run: |
           set -euo pipefail

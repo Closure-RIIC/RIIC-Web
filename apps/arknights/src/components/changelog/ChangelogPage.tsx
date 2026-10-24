@@ -55,7 +55,7 @@ export function ChangelogPage() {
         <p className="py-7 text-sm leading-7 text-muted-foreground">
           {t("earlier")}{" "}
           <a className="rounded-sm text-foreground underline underline-offset-4 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            href="https://github.com/KnightCodeSquareMatrix/RIIC-Web/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
+            href="https://github.com/Closure-RIIC/RIIC-Web/blob/main/CHANGELOG.md" target="_blank" rel="noopener noreferrer">
             {t("repositoryLink")}
           </a>
         </p>
