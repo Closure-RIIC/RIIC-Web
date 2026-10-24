@@ -7,18 +7,28 @@ import { Results } from "./Results";
 import { OperatorChip } from "./GameArtwork";
 import { RosterDialogTrigger } from "./RosterDialog";
 import { ProductionDialog } from "./ProductionDialog";
+import { completeMissingFacilities } from "../scheduling-options";
+
 
 export function SchedulePage() {
-  const { workspace, run, busy, result, storageError, resultStorageError, ready, t } = useWorkspace();
+  const { workspace, update, run, busy, result, storageError, resultStorageError, ready, t } = useWorkspace();
+  const missingFacilities = Object.values(workspace.options.levels).some(level => level === 0);
   return <div className="ef-page ef-schedule-page">
     <PageTitle accent="chevrons" title={t(...pageLabels["/"])} subtitle={t(`${workspace.operators.length} 名干员 · 总控中枢 Lv.${workspace.options.levels.center}`, `${workspace.operators.length} operators · Control center Lv.${workspace.options.levels.center}`)}
       action={<div className="ef-actions">
         <RosterDialogTrigger className={actionClassName({ size: "sm" })} data-roster-edit><ActionContent icon={<Users />}>{t("编辑名单", "Edit roster")}</ActionContent></RosterDialogTrigger>
         <ProductionDialog />
+        {missingFacilities ? <Action size="sm" disabled={!ready || busy}
+          title={t("仅为本地模拟补全缺失设施，保留已有设施等级。", "Fill missing facilities for local simulation; keep existing levels.")}
+          onClick={() => {
+            update({ ...workspace, options: completeMissingFacilities(workspace.options) });
+            window.dispatchEvent(new Event("riic:endfield:facilities-completed"));
+          }}>{t("补全基建设施", "Complete facilities")}</Action> : null}
         <Action size="sm" variant="yellow" icon={<Play />} aria-busy={busy} disabled={!ready || busy || workspace.operators.length === 0} onClick={() => run()}>{busy ? t("正在搜索…", "Searching…") : t("生成排班", "Generate schedule")}</Action>
       </div>} />
     {storageError ? <Notice error>{storageError}</Notice> : null}
     {resultStorageError ? <Notice error>{resultStorageError}</Notice> : null}
+
     {workspace.operators.length ? <div className="ef-roster-preview" aria-label={t("参与排班的干员", "Scheduling operators")}>{workspace.operators.slice(0, 8).map(op => <OperatorChip key={op.name} name={op.name} showWeapon={false} />)}{workspace.operators.length > 8 ? <RosterDialogTrigger className="ef-muted ef-text-action">{t(`查看全部 ${workspace.operators.length} 名`, `View all ${workspace.operators.length}`)}</RosterDialogTrigger> : null}</div> : null}
     {!result && !busy ? <div className="ef-schedule-empty">
       <div className="ef-ship-outline" aria-hidden><span /><span /><span /><span /><span /></div>

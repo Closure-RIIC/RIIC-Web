@@ -1,7 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { DEFAULT_OPTIONS, validateOptions } from "@riic/endfield-solver/model.mjs";
-import { movePriority, withFacilityLevels } from "../src/scheduling-options.ts";
+import { completeMissingFacilities, movePriority, withFacilityLevels } from "../src/scheduling-options.ts";
+
+test("facility completion fills missing rooms without upgrading owned rooms or altering production choices", () => {
+  const options = { ...structuredClone(DEFAULT_OPTIONS), mfg: "2武器", levels: { center: 2, mfg1: 1, mfg2: 0, grow: 0, guest: 0 } };
+  const before = structuredClone(options);
+  const completed = completeMissingFacilities(options);
+  assert.deepEqual(completed.levels, { center: 2, mfg1: 1, mfg2: 3, grow: 3, guest: 3 });
+  assert.equal(completed.mfg, options.mfg);
+  assert.deepEqual(completed.grow, options.grow);
+  assert.deepEqual(options, before);
+  assert.equal(completeMissingFacilities(completed), completed);
+});
 
 test("facility sync preserves production choices and budgets while respecting new capacity", () => {
   const options = { ...structuredClone(DEFAULT_OPTIONS), mfg: "2武器", grow: { 晶植: 2, 菌类: 4, 矿物: 3 }, time: 15000 };

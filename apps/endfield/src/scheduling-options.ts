@@ -1,4 +1,13 @@
-import type { Options } from "@riic/endfield-solver/model.mjs";
+import { DEFAULT_OPTIONS, type Options } from "@riic/endfield-solver/model.mjs";
+
+/** Fill absent rooms for local simulation without upgrading existing facilities. */
+export function completeMissingFacilities(options: Options): Options {
+  const levels = { ...options.levels };
+  for (const key of Object.keys(levels) as (keyof typeof levels)[]) {
+    if (levels[key] === 0) levels[key] = DEFAULT_OPTIONS.levels[key];
+  }
+  return withFacilityLevels(options, levels);
+}
 
 /** Preserve production choices; only reduce plot counts when capacity shrinks. */
 export function withFacilityLevels(options: Options, levels: Options["levels"]): Options {
