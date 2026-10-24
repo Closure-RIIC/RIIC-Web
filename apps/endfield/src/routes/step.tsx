@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { StepPage } from "../components/StepPage";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/step")({ component: StepPage });
+export const Route = createFileRoute("/step")({
+  beforeLoad: ({ search }) => { throw redirect({ to: "/manual", search: { ...search, view: "simulation" }, replace: true }); },
+});

@@ -1,21 +1,32 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useIsPresent, useReducedMotion } from "motion/react";
+import { useRouterState } from "@tanstack/react-router";
 import { StatusMark } from "@riic/ui-primitives/status-mark";
 import { MOTION_EASE_OUT } from "@riic/ui-primitives/motion";
 import { useAccountActivity, type AccountActivity } from "@riic/shell/account-activity";
-import type { SolverActivity } from "../solver-activity";
+import type { ManualEvaluationActivity, SolverActivity } from "../solver-activity";
 import type { SklandSyncActivity, SklandSyncStatus } from "../skland-workspace";
 import { useWorkspace } from "../state";
+import { useRosterDialog } from "./RosterDialog";
 
-type WorkspaceActivity = SolverActivity | SklandSyncActivity | AccountActivity;
+type RosterActivity = { kind: "roster"; id: number; phase: "warning" };
+type WorkspaceActivity = SolverActivity | ManualEvaluationActivity | SklandSyncActivity | AccountActivity | RosterActivity;
 
 export function WorkspaceLiveActivity() {
-  const { activity, sklandSyncActivity } = useWorkspace();
+  const { activity, manualEvaluationActivity, sklandSyncActivity, workspace, ready } = useWorkspace();
+  const path = useRouterState({ select: state => state.location.pathname });
+  const needsRoster = ready && path === "/manual" && workspace.operators.length === 0;
+  const rosterSequence = useRef(0);
+  const [rosterActivity, setRosterActivity] = useState<RosterActivity | null>(null);
+  useEffect(() => {
+    setRosterActivity(needsRoster ? { kind: "roster", id: ++rosterSequence.current, phase: "warning" } : null);
+  }, [needsRoster]);
   const accountActivity = useAccountActivity();
   const [dismissed, setDismissed] = useState<Partial<Record<WorkspaceActivity["kind"], string>>>({});
   const dismiss = useCallback((item: WorkspaceActivity) => setDismissed(current => ({ ...current, [item.kind]: `${item.id}:${item.phase}` })), []);
-  const available = [activity, sklandSyncActivity, accountActivity].filter((item): item is WorkspaceActivity => !!item && dismissed[item.kind] !== `${item.id}:${item.phase}`);
-  const current = available.find(item => item.phase === "running") ?? available.find(item => item.kind === "account") ?? available.sort((a, b) => b.id - a.id)[0];
+  const available = [activity, manualEvaluationActivity, sklandSyncActivity, accountActivity, rosterActivity].filter((item): item is WorkspaceActivity => !!item && dismissed[item.kind] !== `${item.id}:${item.phase}`);
+  const current = available.find(item => item.phase === "running") ?? available.find(item => item.kind === "account")
+    ?? available.filter(item => item.kind !== "roster").sort((a, b) => b.id - a.id)[0] ?? available.find(item => item.kind === "roster");
   return <AnimatePresence initial={false} mode="wait">
     {current
       ? <ActivitySurface key={`${current.kind}:${current.id}`} activity={current} onDismiss={dismiss} />
@@ -28,6 +39,7 @@ function ActivitySurface({ activity, onDismiss }: {
   onDismiss: (activity: WorkspaceActivity) => void;
 }) {
   const { t, retrySolve } = useWorkspace();
+  const { openRoster } = useRosterDialog();
   const reduceMotion = useReducedMotion();
   const present = useIsPresent();
   const [peek, setPeek] = useState(true);
@@ -47,8 +59,8 @@ function ActivitySurface({ activity, onDismiss }: {
   const running = activity.phase === "running";
   const expanded = peek || hovered || focused || !running;
   const status = running ? "running" : activity.phase === "success" ? "done" : activity.phase === "warning" ? "pending" : "failed";
-  const manual = activity.kind === "manual";
-  const title = activity.kind === "account" ? activity.title : activity.kind === "skland"
+  const manual = activity.kind === "manual" || activity.kind === "evaluation";
+  const title = activity.kind === "roster" ? t("先配置我的干员", "Set up your operators") : activity.kind === "account" ? activity.title : activity.kind === "skland"
     ? activity.status.blocked ? t("森空岛同步需要确认", "Skland sync needs attention") : t("森空岛同步完成", "Skland sync complete")
     : running
     ? manual ? t("正在评估方案", "Evaluating schedule") : t("正在生成排班", "Generating schedule")
@@ -57,17 +69,18 @@ function ActivitySurface({ activity, onDismiss }: {
       : activity.problem === "empty" ? t("未找到可用方案", "No schedule found")
         : activity.problem === "verification" ? t("方案校验未通过", "Schedule validation failed")
           : manual ? t("方案评估失败", "Evaluation failed") : t("排班生成失败", "Scheduling failed");
-  const stage = activity.kind === "skland" || activity.kind === "account" ? "" : activity.stage === "preparing" ? t("准备干员与设施配置", "Preparing operators and facilities")
+  const stage = activity.kind === "skland" || activity.kind === "account" || activity.kind === "roster" ? "" : activity.stage === "preparing" ? t("准备干员与设施配置", "Preparing operators and facilities")
     : activity.stage === "searching"
       ? manual ? t("模拟生产与心情循环", "Simulating production and morale") : t("搜索班组与换班时间", "Searching crews and shift times")
       : t("校验人员、工位与产出", "Checking crew, capacity and output");
-  const description = activity.kind === "account" ? activity.description : activity.kind === "skland" ? <SklandSyncSummary status={activity.status} /> : running ? stage
+  const description = activity.kind === "roster" ? t("选择已拥有的干员后即可安排班次。", "Select your operators to start assigning shifts.") : activity.kind === "account" ? activity.description : activity.kind === "skland" ? <SklandSyncSummary status={activity.status} /> : running ? stage
     : activity.phase === "success"
       ? activity.limited ? t("已生成当前搜索范围内的方案，详情见报告。", "A candidate is ready within the search budget. See the full report.")
         : t("人员、工位与产出校验通过，可以查看结果。", "Crew, capacity and output checked. Your result is ready.")
       : activity.problem === "empty" ? t("请检查名单、设施配置或调整搜索预算。", "Check your roster and facilities, or adjust the search budget.")
-        : activity.error || t("请检查配置后重试。", "Check your setup and try again.");
-  const elapsed = activity.kind === "skland" || activity.kind === "account" ? null : running ? Math.max(activity.elapsedMs, now - activity.startedAt, 0) : activity.elapsedMs;
+        : activity.kind === "evaluation" && activity.error ? <div>{activity.error.split("；").map((message, index) => <p key={index}>{message}</p>)}</div>
+          : activity.error || t("请检查配置后重试。", "Check your setup and try again.");
+  const elapsed = activity.kind === "skland" || activity.kind === "account" || activity.kind === "roster" ? null : running ? Math.max(activity.elapsedMs, now - activity.startedAt, 0) : activity.elapsedMs;
   const elapsedLabel = elapsed === null ? null : t(`${(elapsed / 1000).toFixed(running ? 0 : 1)} 秒`, `${(elapsed / 1000).toFixed(running ? 0 : 1)}s`);
   const transition = reduceMotion ? { duration: 0 } : { duration: 0.38, ease: MOTION_EASE_OUT };
 
@@ -89,8 +102,8 @@ function ActivitySurface({ activity, onDismiss }: {
     return () => clearTimeout(timer);
   }, [running]);
   useEffect(() => {
-    if (activity.phase !== "success" || hovered || focused || !pageVisible) return;
-    const timer = setTimeout(() => onDismiss(activity), 4000);
+    if ((activity.kind !== "roster" && activity.phase !== "success") || hovered || focused || !pageVisible) return;
+    const timer = setTimeout(() => onDismiss(activity), activity.kind === "roster" ? 3000 : 4000);
     return () => clearTimeout(timer);
   }, [activity, hovered, focused, pageVisible, onDismiss]);
   useEffect(() => () => { if (leaveTimer.current) clearTimeout(leaveTimer.current); }, []);
@@ -110,7 +123,7 @@ function ActivitySurface({ activity, onDismiss }: {
   return <motion.aside
     className="ef-live-activity"
     data-slot="live-activity" data-activity-kind={activity.kind} data-activity-phase={activity.phase}
-    data-activity-view={expanded ? "expanded" : "compact"} data-solver-stage={activity.kind === "skland" || activity.kind === "account" ? undefined : activity.stage}
+    data-activity-view={expanded ? "expanded" : "compact"} data-solver-stage={activity.kind === "skland" || activity.kind === "account" || activity.kind === "roster" ? undefined : activity.stage}
     aria-label={title} aria-hidden={!present || undefined} inert={!present} tabIndex={present ? 0 : -1}
     onPointerEnter={event => {
       if (event.pointerType === "touch") return;
@@ -158,9 +171,13 @@ function ActivitySurface({ activity, onDismiss }: {
         {elapsedLabel ? <span className="ef-live-time" aria-hidden>{elapsedLabel}</span> : null}
       </div>
       <div className="ef-live-actions">
-        {activity.phase === "error" ? <button type="button" onClick={retrySolve}>{t("重试", "Retry")}</button> : null}
+        {activity.kind === "roster" ? <button type="button" aria-haspopup="dialog" onClick={() => {
+          openRoster(document.querySelector<HTMLElement>("[data-manual-slot]") ?? undefined);
+          onDismiss(activity);
+        }}>{t("配置干员", "Set up operators")}</button> : null}
+        {activity.phase === "error" ? <button type="button" onClick={activity.kind === "evaluation" ? activity.retry : retrySolve}>{t("重试", "Retry")}</button> : null}
         <button type="button" onClick={() => onDismiss(activity)}
-          aria-label={activity.kind === "account" ? t("关闭账号提示", "Dismiss account notification") : activity.kind === "skland" ? t("关闭同步提示", "Dismiss sync notification") : t("关闭求解提示", "Dismiss solver notification")}>{t("收起", "Dismiss")}</button>
+          aria-label={activity.kind === "roster" ? t("关闭干员配置提示", "Dismiss roster notification") : activity.kind === "account" ? t("关闭账号提示", "Dismiss account notification") : activity.kind === "skland" ? t("关闭同步提示", "Dismiss sync notification") : t("关闭求解提示", "Dismiss solver notification")}>{t("收起", "Dismiss")}</button>
       </div>
     </motion.div>
   </motion.aside>;

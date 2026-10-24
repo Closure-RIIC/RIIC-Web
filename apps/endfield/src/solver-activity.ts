@@ -18,6 +18,12 @@ export interface SolverActivity {
   error?: string;
 }
 
+export type ManualEvaluationActivity = Omit<SolverActivity, "kind" | "phase"> & {
+  kind: "evaluation";
+  phase: "error";
+  retry: () => void;
+};
+
 export function completeSolverActivity(activity: SolverActivity, result: Result): SolverActivity {
   const problem = !result.center ? "empty" : !result.verification.ok ? "verification" : undefined;
   return {

@@ -1,13 +1,14 @@
 import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentPropsWithRef, type ReactNode } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Dialog } from "@base-ui/react/dialog";
-import { Download } from "lucide-react";
+import { Download, RotateCcw } from "lucide-react";
 import { Action, ActionContent, actionClassName } from "@riic/endfield-ui";
 import { downloadJson, useWorkspace } from "../state";
 import { DialogFrame } from "./DialogFrame";
+import { restoreSklandRoster } from "../skland-workspace";
 
 const RosterContent = lazy(() => import("./RosterPage").then(module => ({ default: module.RosterPage })));
-const RosterDialogContext = createContext<{ openRoster: (trigger?: HTMLElement) => void } | null>(null);
+const RosterDialogContext = createContext<{ openRoster: (trigger?: HTMLElement) => void; rosterOpen: boolean } | null>(null);
 
 export function useRosterDialog() {
   const context = useContext(RosterDialogContext);
@@ -24,7 +25,7 @@ export function RosterDialogTrigger({ onClick, ...props }: ComponentPropsWithRef
 }
 
 export function RosterDialogProvider({ children }: { children: ReactNode }) {
-  const { workspace, ready, t } = useWorkspace();
+  const { workspace, update, ready, t } = useWorkspace();
   const [open, setOpen] = useState(false);
   const trigger = useRef<HTMLElement | null>(null);
   const close = useRef<HTMLButtonElement | null>(null);
@@ -34,7 +35,7 @@ export function RosterDialogProvider({ children }: { children: ReactNode }) {
     trigger.current = element ?? null;
     setOpen(true);
   }, []);
-  const context = useMemo(() => ({ openRoster }), [openRoster]);
+  const context = useMemo(() => ({ openRoster, rosterOpen: open }), [openRoster, open]);
 
   useEffect(() => {
     if (!legacyRequest) return;
@@ -51,6 +52,9 @@ export function RosterDialogProvider({ children }: { children: ReactNode }) {
           title={t("我的干员", "My operators")} closeLabel={t("关闭我的干员", "Close my operators")}
           description={t("勾选已拥有的干员并设置精英化阶段，修改会自动保存。", "Select your operators and elite stages. Changes are saved automatically.")}
           footer={<>
+            <Action size="sm" icon={<RotateCcw />} disabled={!ready || !workspace.sklandRoster}
+              title={workspace.sklandRoster ? t("恢复最近同步的干员、精英化与技能，保留设施设置。", "Restore the last synced operators, elite stages and skills; keep facility settings.") : t("请先前往森空岛完成一次完整同步。", "Complete a full Skland sync first.")}
+              onClick={() => update(restoreSklandRoster)}>{t("恢复森空岛数据", "Restore Skland data")}</Action>
             <Action size="sm" variant="dark" icon={<Download />} disabled={!ready} onClick={() => downloadJson("endfield-roster.json", { operators: workspace.operators })}>{t("导出名单", "Export roster")}</Action>
             <Dialog.Close className={actionClassName({ size: "sm", variant: "yellow" })}><ActionContent>{t("完成", "Done")}</ActionContent></Dialog.Close>
           </>} finalFocus={() => {
