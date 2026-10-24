@@ -189,6 +189,9 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Endfield release archive safety
+        run: python3 deploy/endfield-deploy.test.py
+
       - name: Release provenance tests
         run: node --test scripts/release-provenance.test.mjs
 
@@ -413,6 +416,30 @@ jobs:
         with:
           name: riic-web-release-${{ github.sha }}
           path: ${{ runner.temp }}/riic-web-release-upload/*
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Stage independent Endfield deployment artifact
+        if: needs.changes.outputs.run_core == 'true' && needs.changes.outputs.deployment_authorized == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_root="$RUNNER_TEMP/endfield-release"
+          upload_root="$RUNNER_TEMP/endfield-release-upload"
+          RELEASE_SHA="$GITHUB_SHA" RELEASE_TREE_SHA="$(git rev-parse 'HEAD^{tree}')" \
+            node scripts/stage-app-release.mjs --app endfield --output "$release_root"
+          install -d -m 700 "$upload_root"
+          archive="endfield-${DEPLOYMENT_ENV}-${GITHUB_SHA}.tar.gz"
+          tar --sort=name --owner=0 --group=0 --numeric-owner -czf "$upload_root/$archive" -C "$release_root" .
+          (cd "$upload_root" && sha256sum "$archive" > SHA256SUMS)
+
+      - name: Upload independent Endfield deployment artifact
+        if: needs.changes.outputs.run_core == 'true' && needs.changes.outputs.deployment_authorized == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: endfield-release-${{ github.sha }}
+          path: ${{ runner.temp }}/endfield-release-upload/*
           if-no-files-found: error
           retention-days: 7
           compression-level: 0
