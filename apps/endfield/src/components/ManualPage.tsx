@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { Plus, SlidersHorizontal } from "lucide-react";
 import { operatorData } from "@riic/endfield-data";
@@ -6,6 +6,7 @@ import { manualTemplate, type Assignment } from "@riic/endfield-solver/model.mjs
 import { Action, ActionContent, actionClassName, Field, Notice, PageTitle } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
 import { Results } from "./Results";
+import { MoodSimulationPanel } from "./MoodSimulationPanel";
 import { OperatorPortrait } from "./GameArtwork";
 import { RosterDialogTrigger } from "./RosterDialog";
 import { FacilitySettings } from "./FacilitySettings";
@@ -102,6 +103,7 @@ export function ManualPage() {
     </Dialog.Root>
     {resultStorageError ? <Notice error>{resultStorageError}</Notice> : null}
     {result && result.status.stopReason === "manual" ? <Results result={result} showWeapons={false} /> : null}
+    <MoodSimulationPanel />
   </div>;
 }
 

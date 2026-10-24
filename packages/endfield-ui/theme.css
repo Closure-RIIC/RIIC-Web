@@ -214,17 +214,64 @@
   .ef-ship-skill>div { flex-basis:120px; }
 }
 
-/* ============ 排班结果下方的心情模拟折叠区 ============ */
+/* ============ 手动排班页下方的心情模拟区 ============ */
 .ef-step-section { margin-top: 24px; border: 1px solid color-mix(in oklab,var(--ef-line) 55%,transparent); border-radius: 12px; background: var(--ef-raised); overflow: clip; }
 .ef-step-toggle { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 12px; width: 100%; padding: 14px 18px; border: 0; background: transparent; color: var(--ef-ink); font: inherit; text-align: left; cursor: pointer; }
-.ef-step-toggle:disabled { cursor: not-allowed; opacity: .6; }
 .ef-step-toggle > span:first-child { font-size: 14px; font-weight: 600; }
 .ef-step-toggle .ef-muted { font-size: 12px; }
 .ef-step-chevron { transition: transform .18s ease; color: var(--ef-muted); }
 .ef-step-section.is-open .ef-step-chevron { transform: rotate(180deg); }
-.ef-step-body { padding: 0 18px 18px; border-top: 1px solid color-mix(in oklab,var(--ef-line) 45%,transparent); }
+.ef-step-body { display: grid; gap: 14px; padding: 14px 18px 18px; border-top: 1px solid color-mix(in oklab,var(--ef-line) 45%,transparent); }
+
+.ef-mood-toolbar { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; }
+.ef-mood-selects { display: flex; gap: 10px; margin-left: auto; }
+.ef-mood-selects .ef-field { display: grid; gap: 2px; }
+.ef-mood-selects .ef-field label { font-size: 11px; color: var(--ef-muted); }
+.ef-mood-selects [data-slot="input-group"], .ef-mood-selects [data-filter-select] { width: 88px; min-width: 88px; height: 30px; font-size: 12px; padding-inline: 8px; }
+
+/* 滑块轨道铺满整行：左右各留出滑块半径，拖到终点时按钮正好贴住右端 */
+.ef-mood-timeline { width: 100%; margin-inline: -9px; padding-inline: 9px; box-sizing: content-box; accent-color: var(--ef-ink); cursor: pointer; }
+.ef-mood-timeline:focus-visible { outline: 2px solid var(--ef-ink); outline-offset: 5px; border-radius: 999px; }
+.ef-mood-clock { margin: 0; font-size: 11px; font-variant-numeric: tabular-nums; }
+
+/* 一次只显示一个舱室：心情图与产率图并排 */
+.ef-mood-room-panel { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; padding-top: 10px; }
+.ef-mood-card { margin: 0; display: grid; gap: 8px; padding: 10px 12px 12px; border: 1px solid color-mix(in oklab,var(--ef-line) 55%,transparent); border-radius: 10px; background: var(--ef-surface); min-width: 0; }
+.ef-mood-card figcaption { font-size: 12px; font-weight: 600; color: var(--ef-ink); }
+.ef-mood-chart { width: 100%; height: 170px; min-width: 0; }
+.ef-mood-empty { margin: 0; padding: 16px 0; text-align: center; font-size: 12px; }
+
+.ef-mood-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 0; padding: 0; list-style: none; font-size: 11px; color: var(--ef-muted); }
+.ef-mood-legend li { display: inline-flex; align-items: center; gap: 5px; }
+.ef-mood-legend-line { width: 16px; height: 2px; border-radius: 2px; display: inline-block; }
+
+.ef-mood-people { display: grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.ef-mood-people > li { display: grid; grid-template-columns: auto 1fr auto; grid-template-areas: "avatar person mood" "avatar person status"; align-items: center; gap: 0 8px; padding: 6px 8px; border: 1px solid color-mix(in oklab,var(--ef-line) 45%,transparent); border-radius: 8px; }
+.ef-mood-people > li > .ef-operator-portrait { grid-area: avatar; }
+.ef-mood-person { grid-area: person; display: grid; line-height: 1.25; min-width: 0; }
+.ef-mood-person b { font-size: 12px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ef-mood-person small { font-size: 10px; }
+.ef-mood-person-mood { grid-area: mood; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.ef-mood-person-status { grid-area: status; display: inline-flex; align-items: center; gap: 4px; justify-self: end; font-size: 10px; color: var(--ef-muted); }
+.ef-mood-person-status i { width: 6px; height: 6px; border-radius: 50%; background: var(--ef-muted); }
+.ef-mood-people > li[data-status="work"] .ef-mood-person-status i { background: oklch(.62 .14 150); }
+.ef-mood-people > li[data-status="rest"] .ef-mood-person-status i { background: var(--ef-line); }
+.ef-mood-people > li[data-status="zero"] .ef-mood-person-status i { background: oklch(.55 .18 25); }
+.ef-mood-people > li[data-status="zero"] .ef-mood-person-mood { color: oklch(.55 .18 25); }
+
+.ef-mood-log { font-size: 12px; }
+.ef-mood-log summary { cursor: pointer; color: var(--ef-muted); min-height: 32px; display: flex; align-items: center; }
+.ef-mood-log ul { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; max-height: 220px; overflow-y: auto; }
+.ef-mood-log li { display: flex; gap: 8px; font-size: 11px; }
+.ef-mood-log li>.ef-muted { font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+
+@media (max-width: 1000px) {
+  .ef-mood-room-panel { grid-template-columns: minmax(0,1fr); }
+}
 @media (max-width: 767px) {
   .ef-step-toggle { grid-template-columns: 1fr auto; padding: 12px 14px; }
   .ef-step-toggle .ef-muted { grid-column: 1 / -1; }
-  .ef-step-body { padding: 0 12px 12px; }
+  .ef-step-body { padding: 12px; }
+  .ef-mood-selects { margin-left: 0; }
+  .ef-mood-chart { height: 150px; }
 }

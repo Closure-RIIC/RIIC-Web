@@ -4,8 +4,6 @@ import type {
   EffectTable, RoomEffectResolver, RoomEffects, StepBoostConfig, StepBoostEntry, StepConfig, StepRoom, StepRoomKey, StepRoomKind,
 } from "./step-types.ts";
 
-export type ImportSource = "manual" | "result" | "template";
-
 /** 舱室显示名。key 本身仍是求解器的 `中枢/会客室/制造舱1/制造舱2/培养舱`。 */
 const LABELS: Record<StepRoomKey, string> = {
   中枢: "总控中枢",
@@ -80,17 +78,14 @@ function roomTemplate(workspace: Workspace): Assignment[] {
   catch { return []; }
 }
 
-/** 只按设施配置生成舱室，不带任何名单。 */
-export function roomsFromTemplate(workspace: Workspace): StepRoom[] {
-  return roomTemplate(workspace).flatMap(template =>
-    isStepRoomKey(template.key) ? [baseRoom(template.key, template.slots, workspace)] : []);
-}
 
 /** 从手动草稿导入；B 班为空视为单班循环。 */
 export function roomsFromManual(workspace: Workspace): StepRoom[] {
   const owned = new Set(workspace.operators.map(operator => operator.name));
   const manual = new Map((workspace.manual ?? []).map(room => [room.key, room] as const));
-  return roomsFromTemplate(workspace).map(room => {
+  return roomTemplate(workspace).flatMap(template =>
+    isStepRoomKey(template.key) ? [baseRoom(template.key, template.slots, workspace)] : [])
+    .map(room => {
     const entry = manual.get(room.key);
     if (!entry) return room;
     const crewA = fitCrew(entry.a, room.slots, owned);
@@ -99,41 +94,8 @@ export function roomsFromManual(workspace: Workspace): StepRoom[] {
   });
 }
 
-/** 从最近一次求解结果导入（自动或手动评估都适用）。 */
-export function roomsFromResult(workspace: Workspace, result: Result | null): StepRoom[] {
-  if (!result?.center) return roomsFromManual(workspace);
-  const owned = new Set(workspace.operators.map(operator => operator.name));
-  const center = result.center;
-  return roomsFromTemplate(workspace).map(room => {
-    if (room.key === "中枢") {
-      return {
-        ...room, hour: clampHour(center.hour, room.hour), single: false,
-        crewA: fitCrew(center.a, room.slots, owned), crewB: fitCrew(center.b, room.slots, owned),
-      };
-    }
-    const plan = result.rooms.find(item => item.key === room.key);
-    if (!plan) return { ...room, single: true };
-    const crewA = fitCrew(plan.a, room.slots, owned);
-    const crewB = fitCrew(plan.b, room.slots, owned);
-    // 单班方案的 hour 是 24（没有换班），回退到默认时刻而不是压成 23。
-    const hour = plan.hour >= 1 && plan.hour <= 23 ? plan.hour : room.hour;
-    return { ...room, hour, single: plan.single || !crewB.some(Boolean), crewA, crewB };
-  });
-}
 
-/** 默认数据来源：手动草稿有内容优先，其次最近结果，最后设施骨架。 */
-export function defaultSource(workspace: Workspace, result: Result | null): ImportSource {
-  if ((workspace.manual ?? []).some(room => room.a.some(Boolean) || room.b.some(Boolean))) return "manual";
-  if (result?.center) return "result";
-  return "template";
-}
 
-export function buildStepConfig(workspace: Workspace, result: Result | null, source: ImportSource): StepConfig {
-  const rooms = source === "result" ? roomsFromResult(workspace, result)
-    : source === "manual" ? roomsFromManual(workspace)
-      : roomsFromTemplate(workspace);
-  return { rooms, moods: {}, work: {}, boost: defaultBoost(workspace, result) };
-}
 
 /** 名单里每人一份技能效果，供界面与引擎共用。 */
 export function effectTable(workspace: Workspace): EffectTable {
@@ -199,34 +161,6 @@ export function ensureBoostDays(boost: StepBoostConfig, days: number): StepBoost
   return { ...boost, currentDay: Math.min(boost.currentDay, count - 1), days: normalized };
 }
 
-/** 当前所有舱室已排班的干员名（助力目标只能从这里选）。 */
-export function scheduledNames(rooms: readonly StepRoom[]): Set<string> {
-  const names = new Set<string>();
-  for (const room of rooms) {
-    for (const name of room.crewA) if (name) names.add(name);
-    if (!room.single) for (const name of room.crewB) if (name) names.add(name);
-  }
-  return names;
-}
 
-/** 换班时刻的合法性；返回给界面显示的中文错误。 */
-export function validateStepConfig(config: StepConfig, owned: ReadonlySet<string>): string[] {
-  const problems: string[] = [];
-  const seen = new Set<string>();
-  for (const room of config.rooms) {
-    if (!room.enabled) continue;
-    if (!Number.isInteger(room.hour) || room.hour < 1 || room.hour > 23) problems.push(`${room.label}：换班时刻必须是 1–23 的整点`);
-    const crews: [string, (string | null)[]][] = room.single ? [["A", room.crewA]] : [["A", room.crewA], ["B", room.crewB]];
-    for (const [shift, crew] of crews) {
-      for (const name of crew) {
-        if (!name) continue;
-        if (!owned.has(name)) { problems.push(`${room.label} ${shift} 班：${name} 不在名单中`); continue; }
-        if (seen.has(name)) problems.push(`干员「${name}」被重复排班`);
-        seen.add(name);
-      }
-    }
-  }
-  return problems;
-}
 
 export { LABELS as STEP_ROOM_LABELS, STEP_KEYS };

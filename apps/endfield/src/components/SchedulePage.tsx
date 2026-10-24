@@ -4,7 +4,6 @@ import { Action, ActionContent, actionClassName, Notice, PageTitle } from "@riic
 import { useWorkspace } from "../state";
 import { pageLabels } from "../page-labels";
 import { Results } from "./Results";
-import { StepSimulationSection } from "./StepSimulationSection";
 import { OperatorChip } from "./GameArtwork";
 import { RosterDialogTrigger } from "./RosterDialog";
 import { ProductionDialog } from "./ProductionDialog";
@@ -28,6 +27,5 @@ export function SchedulePage() {
       <Link to={workspace.operators.length ? "/manual" : "/skland"} className="ef-text-action">{workspace.operators.length ? t("调整设施等级", "Adjust facility levels") : t("前往森空岛同步", "Open Skland sync")}</Link>
     </div> : null}
     {result ? <Results result={result} /> : null}
-    {result ? <StepSimulationSection /> : null}
   </div>;
 }
