@@ -213,3 +213,18 @@
   .ef-ship-skill { flex-wrap:wrap; padding:8px; }
   .ef-ship-skill>div { flex-basis:120px; }
 }
+
+/* ============ 排班结果下方的心情模拟折叠区 ============ */
+.ef-step-section { margin-top: 24px; border: 1px solid color-mix(in oklab,var(--ef-line) 55%,transparent); border-radius: 12px; background: var(--ef-raised); overflow: clip; }
+.ef-step-toggle { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 4px 12px; width: 100%; padding: 14px 18px; border: 0; background: transparent; color: var(--ef-ink); font: inherit; text-align: left; cursor: pointer; }
+.ef-step-toggle:disabled { cursor: not-allowed; opacity: .6; }
+.ef-step-toggle > span:first-child { font-size: 14px; font-weight: 600; }
+.ef-step-toggle .ef-muted { font-size: 12px; }
+.ef-step-chevron { transition: transform .18s ease; color: var(--ef-muted); }
+.ef-step-section.is-open .ef-step-chevron { transform: rotate(180deg); }
+.ef-step-body { padding: 0 18px 18px; border-top: 1px solid color-mix(in oklab,var(--ef-line) 45%,transparent); }
+@media (max-width: 767px) {
+  .ef-step-toggle { grid-template-columns: 1fr auto; padding: 12px 14px; }
+  .ef-step-toggle .ef-muted { grid-column: 1 / -1; }
+  .ef-step-body { padding: 0 12px 12px; }
+}

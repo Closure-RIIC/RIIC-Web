@@ -1,13 +1,14 @@
 /* ============================================================
    step.css —— 步进模拟页 v4
    ============================================================ */
+.ef-step-page { color: var(--ef-ink); font-size: 13px; }
 .ef-step-page .step-main {
-  padding: 16px 20px 40px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-width: 1400px;
-  margin: 0 auto;
+  gap: 12px;
+  max-width: none;
+  margin: 0;
 }
 .ef-step-page .step-panel {
   background: #fff;
