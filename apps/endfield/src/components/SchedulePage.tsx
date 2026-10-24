@@ -7,6 +7,7 @@ import { Results } from "./Results";
 import { OperatorChip } from "./GameArtwork";
 import { RosterDialogTrigger } from "./RosterDialog";
 import { ProductionDialog } from "./ProductionDialog";
+import { FacilityCompletionNotice } from "./FacilityCompletionNotice";
 
 export function SchedulePage() {
   const { workspace, run, busy, result, storageError, resultStorageError, ready, t } = useWorkspace();
@@ -19,6 +20,7 @@ export function SchedulePage() {
       </div>} />
     {storageError ? <Notice error>{storageError}</Notice> : null}
     {resultStorageError ? <Notice error>{resultStorageError}</Notice> : null}
+    <FacilityCompletionNotice />
     {workspace.operators.length ? <div className="ef-roster-preview" aria-label={t("参与排班的干员", "Scheduling operators")}>{workspace.operators.slice(0, 8).map(op => <OperatorChip key={op.name} name={op.name} showWeapon={false} />)}{workspace.operators.length > 8 ? <RosterDialogTrigger className="ef-muted ef-text-action">{t(`查看全部 ${workspace.operators.length} 名`, `View all ${workspace.operators.length}`)}</RosterDialogTrigger> : null}</div> : null}
     {!result && !busy ? <div className="ef-schedule-empty">
       <div className="ef-ship-outline" aria-hidden><span /><span /><span /><span /><span /></div>
