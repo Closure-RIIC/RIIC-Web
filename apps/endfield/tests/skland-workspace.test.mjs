@@ -79,6 +79,17 @@ test("incomplete facilities, unsupported operators and skill-less operators are 
   assert.deepEqual(sync(workspace, snapshot({ characters: [data.characters[1]] })).workspace.operators, [], "a genuinely empty schedulable roster clears old operators");
 });
 
+test("restoring a complete roster removes simulated operators and elite upgrades even when facilities are unavailable", () => {
+  const simulated = sync(base()).workspace;
+  simulated.operators = [0, 1, 2].map(index => ({ name: catalog[index].name, elite: 4 }));
+  const levels = structuredClone(simulated.options.levels);
+  const restored = sync(simulated, snapshot({ facilitiesComplete: false, rooms: [] }));
+  assert.deepEqual(restored.workspace.operators, [{ name: catalog[0].name, elite: 2 }, { name: catalog[1].name, elite: 3 }]);
+  assert.deepEqual(restored.workspace.options.levels, levels);
+  assert.equal(restored.status.facilitiesApplied, false);
+  assert.equal(restored.status.blocked, null);
+});
+
 test("malformed or mismatched responses fail before mutating scheduling input", () => {
   const current = sync(base()).workspace;
   const before = structuredClone(current);

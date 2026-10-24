@@ -1,6 +1,6 @@
 import { type CSSProperties, type ReactNode } from "react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Calculator, SquarePen, Search, Cloud } from "lucide-react";
+import { Calculator, SquarePen, Timer, Search, Cloud } from "lucide-react";
 import { Sidebar, SidebarProvider, SidebarInset, SidebarHeader, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger, useSidebar } from "@riic/ui-primitives/sidebar";
 import { TooltipProvider } from "@riic/ui-primitives/tooltip";
 import { PageScrollbar } from "@riic/ui-primitives/page-scrollbar";
@@ -34,6 +34,7 @@ function Navigation() {
   const links = [
     { to: "/" as const, label: t(...pageLabels["/"]), icon: Calculator },
     { to: "/manual" as const, label: t(...pageLabels["/manual"]), icon: SquarePen },
+    { to: "/step" as const, label: t(...pageLabels["/step"]), icon: Timer },
     { to: "/skills" as const, label: t(...pageLabels["/skills"]), icon: Search },
     { to: "/skland" as const, label: t(...pageLabels["/skland"]), icon: Cloud },
   ];
@@ -41,7 +42,7 @@ function Navigation() {
     <SidebarHeader className={nav.header}><GameSwitcher game="endfield" locale={locale} targetOrigin={import.meta.env.VITE_ARKNIGHTS_ORIGIN} /><SidebarTrigger className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground" /></SidebarHeader>
     <SidebarContent><SidebarGroup><SidebarGroupLabel>{t("帝江号", "Dijiang")}</SidebarGroupLabel><SidebarMenu>
       {links.map(({ to, label, icon: Icon }) => <SidebarMenuItem key={to}><SidebarMenuButton
-        render={<Link to={to} preload={false} aria-current={path === to ? "page" : undefined} onClick={() => setOpenMobile(false)} />}
+        render={<Link to={to} preload={false} aria-label={label} aria-current={path === to ? "page" : undefined} onClick={() => setOpenMobile(false)} />}
         isActive={path === to} tooltip={label} className="ef-nav-link"><Icon /><span className={nav.copy}>{label}</span></SidebarMenuButton></SidebarMenuItem>)}
     </SidebarMenu></SidebarGroup></SidebarContent>
     <SidebarFooter className={nav.footer}><AccountMenu /></SidebarFooter>
