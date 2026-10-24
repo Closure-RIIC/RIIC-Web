@@ -15,17 +15,18 @@ The public repository is owned by `Closure-RIIC`. Use a repository administrator
 ## Branch and Actions policy
 
 - [ ] Set `main` as the default branch.
-- [ ] Protect both `main` and `develop`: require the `packages` PR check from `Dual application packages`, at least one approval, resolved conversations, and block force pushes and deletion. Do not require post-merge `quality` as a PR status.
+- [ ] Protect both `main` and `develop`: require the `packages` PR check from `Dual application packages`, resolved conversations, and block force pushes and deletion. Do not require post-merge `quality` as a PR status.
 - [ ] On `main` only, require the lightweight `Release branch only` status so ordinary feature PRs cannot bypass the release lane.
-- [ ] Require CODEOWNER review for the sensitive paths listed in `.github/CODEOWNERS`.
-- [ ] Do not routinely bypass protection as repository owner.
+- [ ] Set `develop` to zero required approvals, with CODEOWNER review and last-push approval disabled.
+- [ ] On `main`, require one CODEOWNER approval from the administrators listed in `.github/CODEOWNERS`. Keep last-push approval disabled. Give those administrators PR-review bypass allowances so an admin-authored PR does not need a second person; keep the bypass App/team lists empty.
+- [ ] Keep enforcement for administrators enabled: required CI and release-policy checks apply even when an administrator uses their PR-review allowance. Synchronize CODEOWNERS and the review-bypass user list when repository administrators change.
 - [ ] Keep the default `GITHUB_TOKEN` permission read-only.
 - [ ] Allow GitHub Actions to create pull requests so the narrowly scoped asset-sync workflow can update `develop`.
 - [ ] Enable private vulnerability reporting and the relevant GitHub security checks.
 
 Ordinary pull requests run `Dual application packages`; they do not run the post-merge quality workflow. A separate lightweight policy rejects every pull request to `main` unless its head is a `release/**` branch in this same repository. By default, that head commit must contain `develop`; a maintainer-applied `direct-main-release` label may explicitly waive only the ancestry check. External and ordinary feature PRs target `develop`. Every push produced by a merge into `develop` or `main` runs the full parallel quality gate before deployment.
 
-Require checks only after observing their actual check-run names on the relevant PR base branch. The updated asset-sync flow uses a repository-scoped App token and native auto-merge to wait for checks and independent review. Existing pending resource PRs retain their commits; publication does not force-push them. After an actual resource merge to main, a validated closed-PR event creates the develop parity PR, which also waits for the same gates. Verify that this version is on main and generated PR workflows run before enabling automation; do not add a protection bypass for the bot.
+Require checks only after observing their actual check-run names on the relevant PR base branch. The updated asset-sync flow uses a repository-scoped App token and native auto-merge: main resource PRs wait for checks and administrator approval; develop parity PRs need checks only. Existing pending resource PRs retain their commits; publication does not force-push them. After an actual resource merge to main, a validated closed-PR event creates the develop parity PR. Verify that this version is on main and generated PR workflows run before enabling automation; do not add a protection bypass for the bot.
 
 ## Deployment configuration
 

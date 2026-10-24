@@ -6,7 +6,7 @@
 
 目标仓库：`Closure-RIIC/RIIC-Web`。
 
-预期流程：维护者给 PR 添加 `automerge` 标签 → 必需检查与审核通过 → 合入 `develop` → 部署受影响的应用 → 自动创建发布 PR → 发布 PR 通过检查与审核后合入 `main` → 生产环境审批 → 部署受影响的生产应用。
+预期流程：维护者给 PR 添加 `automerge` 标签 → 必需检查通过，无需审核 → 合入 `develop` → 部署受影响的应用 → 自动创建发布 PR → 发布 PR 通过检查、由管理员确认后合入 `main` → 生产环境审批 → 部署受影响的生产应用。
 
 明日方舟与终末地分别维护开发、生产部署状态。明日方舟独有改动跳过终末地部署；共享改动可能部署两站。终末地使用文件树增量传输，完整校验后切换版本。第一次建立新格式的部署基线时，两站会各部署一次。
 
@@ -63,11 +63,13 @@ Secret 查询只读取名称；已有 Secret 的明文无法通过 GitHub API �
 
 ## 2. 核对门禁，再开启仓库原生 auto-merge
 
-先读取两个分支的 protection 和适用 rulesets。目标门禁为：两分支都要求 PR 检查 `packages`（来自 `Dual application packages`）和至少一位独立维护者审核；`main` 额外要求 `Release branch only`。使用实际 check-run 名称并核实检查来源为 GitHub Actions。`quality` 只在合并后运行，不能配置为 PR 必需检查。
+先读取两个分支的 protection 和适用 rulesets。两分支都要求 PR 检查 `packages`（来自 `Dual application packages`）；`develop` 审核数为 0，不要求 CODEOWNER 或最后一次推送审核。`main` 额外要求 `Release branch only` 和一位管理员 CODEOWNER 批准。CODEOWNERS 覆盖全部路径，列出当前仓库管理员；管理员名单变更时同步更新。使用实际 check-run 名称并核实检查来源为 GitHub Actions。`quality` 只在合并后运行，不能配置为 PR 必需检查。
 
-门禁缺失时，按已有管理授权补齐；没有调整授权则列出具体缺口，保持自动化开关关闭。先确认这些检查在目标分支 PR 上确实运行，并确认存在 PR 作者之外的合格审核者。保留生产 Environment 审批。
+GitHub 不允许 PR 作者批准自己的 PR。为 main 配置仅含当前管理员的 `bypass_pull_request_allowances.users`，App 和 team 列表为空，允许管理员在检查通过后直接确认自己提交的 PR，不必另找第二个人。`enforce_admins=true` 保持不变，管理员仍须通过必需 CI 和发布策略；不启用 `require_last_push_approval`。机器人创建的 main PR 由任一管理员批准一次即可。保留生产 Environment 审批。
 
-新版 `sync-arkntools-assets.yml` 使用单仓库 App 令牌创建资源 PR，以原生 auto-merge 等待检查和独立审核。定时任务发现尚未合并的资源 PR 时保留其提交；新分支不强制推送。资源 PR 实际合入 main 后，独立的 `pull_request: closed` 处理器核实 App 作者、仓库、合并 SHA 与受管路径，再创建 develop 对齐 PR，同样等待检查和审核。App 合并产生的 push 正常触发部署。`PR_AUTOMATION_ENABLED=0` 时只建 PR，不启用其自动合并；开启后可由维护者为之前的待审资源 PR 手动启用原生 auto-merge。
+门禁缺失时按已有管理授权补齐；没有调整授权则报告具体缺口，保持自动化开关关闭。先确认检查在对应目标分支 PR 上确实运行，并核对管理员名单及权限。
+
+新版 `sync-arkntools-assets.yml` 使用单仓库 App 令牌创建资源 PR，以原生 auto-merge 等待 main 的检查和管理员批准。定时任务发现尚未合并的资源 PR 时保留其提交；新分支不强制推送。资源 PR 实际合入 main 后，`pull_request: closed` 处理器核实 App 作者、仓库、合并 SHA 与受管路径，再创建 develop 对齐 PR；该 PR 只等待检查，无需人工审核。App 合并产生的 push 正常触发部署。`PR_AUTOMATION_ENABLED=0` 时只建 PR，不启用其自动合并；开启后可由维护者为之前的待审资源 PR 手动启用原生 auto-merge。
 
 迁移时核对 main 上已是这套等待式实现。旧版使用 `GITHUB_TOKEN` 立即调用合并 API，新增门禁会阻止它；不得添加机器人绕过。新旧切换期间自动化开关保持关闭。
 

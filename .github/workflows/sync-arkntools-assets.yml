@@ -351,7 +351,7 @@ jobs:
           if [[ "$PR_AUTOMATION_ENABLED" == '1' ]]; then
             gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --merge --match-head-commit "$EXPECTED_HEAD_SHA"
           fi
-          echo "Resource PR #$PR_NUMBER awaits required checks and independent review. Its merge will trigger normal post-merge CI and production approval." >> "$GITHUB_STEP_SUMMARY"
+          echo "Resource PR #$PR_NUMBER awaits required checks and administrator approval. Its merge will trigger normal post-merge CI and production approval." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Report publication failure
         if: failure()
@@ -526,7 +526,7 @@ jobs:
           if [[ "$PR_AUTOMATION_ENABLED" == '1' ]]; then
             gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --merge --match-head-commit "$EXPECTED_HEAD_SHA"
           fi
-          echo "Develop parity PR #$PR_NUMBER awaits required checks and independent review. Its merge triggers normal development CI." >> "$GITHUB_STEP_SUMMARY"
+          echo "Develop parity PR #$PR_NUMBER awaits required checks; develop does not require review. Its merge triggers normal development CI." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Report develop parity failure
         if: failure()
