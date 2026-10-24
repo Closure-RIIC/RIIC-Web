@@ -1,8 +1,8 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import { DEFAULT_OPTIONS, STORAGE_KEY, manualTemplate, parseWorkspace, type Assignment, type Result, type Workspace } from "@riic/endfield-solver/model.mjs";
 import type { EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { ENDFIELD_LOCALE_COOKIE, DISPLAY_STORAGE_KEY, readEndfieldColorMode, readEndfieldLocale, clearEndfieldStorage } from "./local-settings";
-import { completeSolverActivity, type SolverActivity, type SolverMessage } from "./solver-activity";
+import { completeSolverActivity, type ManualEvaluationActivity, type SolverActivity, type SolverMessage } from "./solver-activity";
 import type { SklandSyncActivity, SklandSyncStatus } from "./skland-workspace";
 import { RESULT_STORAGE_KEY, encodeResultCache, restoreResultCache, workspaceKey } from "./result-cache";
 
@@ -24,14 +24,31 @@ function useWorkspaceState() {
   const [sklandSnapshot, setSklandSnapshot] = useState<EndfieldSnapshot | null>(null);
   const [busy, setBusy] = useState(false);
   const [activity, setActivity] = useState<SolverActivity | null>(null);
+  const [manualEvaluationActivity, setManualEvaluationActivity] = useState<ManualEvaluationActivity | null>(null);
   const [sklandSyncActivity, setSklandSyncActivity] = useState<SklandSyncActivity | null>(null);
   const activitySequence = useRef(0);
+  const reportManualEvaluationError = useCallback((error: string, retry: () => void, result: Result | null) => {
+    const id = ++activitySequence.current;
+    setManualEvaluationActivity({ id, kind: "evaluation", phase: "error", error, retry,
+      stage: result ? "verifying" : "preparing", problem: result ? "verification" : "worker",
+      startedAt: Date.now(), elapsedMs: result?.elapsedMs ?? 0 });
+    return () => setManualEvaluationActivity(current => current?.id === id ? null : current);
+  }, []);
   const lastAssignments = useRef<Assignment[] | undefined>(undefined);
   const worker = useRef<Worker | null>(null);
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const skipSave = useRef(false);
+  const clearSklandData = useEffectEvent(() => {
+    setSklandSyncActivity(null); setSklandSnapshot(null);
+    update(current => {
+      if (!current.sklandRoster) return current;
+      const next = { ...current };
+      delete next.sklandRoster;
+      return next;
+    });
+  });
   useEffect(() => {
-    const clear = () => { setSklandSyncActivity(null); setSklandSnapshot(null); };
+    const clear = () => clearSklandData();
     window.addEventListener(WEBSITE_SIGN_OUT_EVENT, clear);
     window.addEventListener(WEBSITE_SESSION_CHANGE_EVENT, clear);
     return () => { window.removeEventListener(WEBSITE_SIGN_OUT_EVENT, clear); window.removeEventListener(WEBSITE_SESSION_CHANGE_EVENT, clear); };
@@ -140,8 +157,9 @@ function useWorkspaceState() {
         return { ...template, hour: old.hour, a: crew(old.a), b: crew(old.b) };
       }) };
     }
-    if (workspaceKey(value) === workspaceKey(current)) return;
-    clearResult();
+    const inputChanged = workspaceKey(value) !== workspaceKey(current);
+    if (!inputChanged && JSON.stringify(value.sklandRoster) === JSON.stringify(current.sklandRoster)) return;
+    if (inputChanged) clearResult();
     workspaceRef.current = value;
     setWorkspace(value);
   }
@@ -216,7 +234,7 @@ function useWorkspaceState() {
       throw new Error("无法清除全部本地数据，请检查浏览器存储权限。 / Could not clear local data; check browser storage permissions.");
     }
   }
-  return { workspace, update, ready, storageError, resultStorageError, repairStorage, clearLocalData, clearResult, locale, setLocale, colorMode, setColorMode, showImages, setShowImages, showDijiangBackdrop, setShowDijiangBackdrop, result, sklandSnapshot, setSklandSnapshot, sklandSyncActivity, reportSklandSync, setSklandSyncActivity, busy, activity, retrySolve, run, cancel, t: (zh: string, en: string) => locale === "zh" ? zh : en };
+  return { workspace, update, ready, storageError, resultStorageError, repairStorage, clearLocalData, clearResult, locale, setLocale, colorMode, setColorMode, showImages, setShowImages, showDijiangBackdrop, setShowDijiangBackdrop, result, sklandSnapshot, setSklandSnapshot, sklandSyncActivity, reportSklandSync, setSklandSyncActivity, busy, activity, manualEvaluationActivity, reportManualEvaluationError, retrySolve, run, cancel, t: (zh: string, en: string) => locale === "zh" ? zh : en };
 }
 const Context = createContext<ReturnType<typeof useWorkspaceState> | null>(null);
 export function WorkspaceProvider({ children }: { children: ReactNode }) { const value = useWorkspaceState(); return <Context.Provider value={value}>{children}</Context.Provider>; }

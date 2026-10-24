@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Play, Users } from "lucide-react";
+import { Play, RefreshCw, Users } from "lucide-react";
 import { Action, ActionContent, actionClassName, Notice, PageTitle } from "@riic/endfield-ui";
 import { useWorkspace } from "../state";
 import { pageLabels } from "../page-labels";
@@ -13,6 +13,7 @@ export function SchedulePage() {
   return <div className="ef-page ef-schedule-page">
     <PageTitle accent="chevrons" title={t(...pageLabels["/"])} subtitle={t(`${workspace.operators.length} 名干员 · 总控中枢 Lv.${workspace.options.levels.center}`, `${workspace.operators.length} operators · Control center Lv.${workspace.options.levels.center}`)}
       action={<div className="ef-actions">
+        <Link to="/skland" className={actionClassName({ size: "sm" })}><ActionContent icon={<RefreshCw />}>{t("森空岛同步", "Skland sync")}</ActionContent></Link>
         <RosterDialogTrigger className={actionClassName({ size: "sm" })} data-roster-edit><ActionContent icon={<Users />}>{t("编辑名单", "Edit roster")}</ActionContent></RosterDialogTrigger>
         <ProductionDialog />
         <Action size="sm" variant="yellow" icon={<Play />} aria-busy={busy} disabled={!ready || busy || workspace.operators.length === 0} onClick={() => run()}>{busy ? t("正在搜索…", "Searching…") : t("生成排班", "Generate schedule")}</Action>

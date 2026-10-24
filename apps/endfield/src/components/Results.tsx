@@ -1,12 +1,13 @@
 import { Check, Download, TriangleAlert } from "lucide-react";
 import { Dialog } from "@base-ui/react/dialog";
+import { AnimatedNumber } from "@riic/ui-primitives/animated-number";
 import { operatorData } from "@riic/endfield-data";
 import { OperatorChip, OperatorPortrait, ProductionIcon } from "./GameArtwork";
 import { Action, ActionContent, actionClassName, Notice, Section } from "@riic/endfield-ui";
 import type { Result, Mood } from "@riic/endfield-solver/index.mjs";
 import { downloadJson, useWorkspace } from "../state";
 import { DialogFrame } from "./DialogFrame";
-import { categoryLabel, FacilityBoard, FacilityCard } from "./FacilityCard";
+import { categoryLabel, FacilityBoard, FacilityCard, type FacilityKind } from "./FacilityCard";
 
 const percent = (n: number) => `${(n * 100).toFixed(1)}%`;
 const hour = (n: number) => `${String(n).padStart(2, "0")}:00`;
@@ -17,17 +18,7 @@ export function Results({ result, showWeapons = true }: { result: Result; showWe
   return <section className="ef-schedule-result" aria-label={t("排班结果", "Schedule result")}>
     <header className="ef-result-toolbar">
       <div><h2>{t("排班结果", "Schedule result")}</h2><span className="ef-muted">{t("每日循环", "Daily cycle")} · {(result.elapsedMs / 1000).toFixed(2)}s</span></div>
-      <Dialog.Root>
-        <Dialog.Trigger className={actionClassName({ size: "sm" })}><ActionContent>{t("详细报告", "Full report")}</ActionContent></Dialog.Trigger>
-        <Dialog.Portal><Dialog.Backdrop className="ef-dialog-backdrop" />
-          <DialogFrame title={t("排班报告", "Schedule report")} closeLabel={t("关闭排班报告", "Close schedule report")} bodyClassName="ef-report-body"
-            description={t("查看搜索状态、心情闭环和逐日模拟。产出单位为等效小时 / 日。", "Search status, morale cycles and daily simulations. Output is measured in effective hours per day.")}
-            footer={<>
-              <Action size="sm" variant="dark" icon={<Download />} onClick={() => downloadJson("endfield-schedule.json", result)}>{t("导出结果", "Export")}</Action>
-              <Dialog.Close className={actionClassName({ size: "sm", variant: "yellow" })}><ActionContent>{t("完成", "Done")}</ActionContent></Dialog.Close>
-            </>}><ResultDetails result={result} showWeapons={showWeapons} /></DialogFrame>
-        </Dialog.Portal>
-      </Dialog.Root>
+      <ResultReportDialog result={result} showWeapons={showWeapons} />
     </header>
     {result.center ? <>
       <FacilityBoard data-schedule-board>
@@ -47,6 +38,40 @@ export function Results({ result, showWeapons = true }: { result: Result; showWe
   </section>;
 }
 
+export function ResultReportDialog({ result, showWeapons = true }: { result: Result; showWeapons?: boolean }) {
+  const { t } = useWorkspace();
+  return <Dialog.Root>
+    <Dialog.Trigger className={actionClassName({ size: "sm" })}><ActionContent>{t("详细报告", "Full report")}</ActionContent></Dialog.Trigger>
+    <Dialog.Portal><Dialog.Backdrop className="ef-dialog-backdrop" />
+      <DialogFrame title={t("排班报告", "Schedule report")} closeLabel={t("关闭排班报告", "Close schedule report")} bodyClassName="ef-report-body"
+        description={t("查看搜索状态、心情闭环和逐日模拟。产出单位为等效小时 / 日。", "Search status, morale cycles and daily simulations. Output is measured in effective hours per day.")}
+        footer={<>
+          <Action size="sm" variant="dark" icon={<Download />} onClick={() => downloadJson("endfield-schedule.json", result)}>{t("导出结果", "Export")}</Action>
+          <Dialog.Close className={actionClassName({ size: "sm", variant: "yellow" })}><ActionContent>{t("完成", "Done")}</ActionContent></Dialog.Close>
+        </>}><ResultDetails result={result} showWeapons={showWeapons} /></DialogFrame>
+    </Dialog.Portal>
+  </Dialog.Root>;
+}
+
+export function FacilityBonus({ kind, value, placeholder, animated = false }: { kind: FacilityKind; value: number | null | undefined; placeholder?: string; animated?: boolean }) {
+  const { t } = useWorkspace();
+  if (value == null && !placeholder) return null;
+  const label = kind === "center" ? t("恢复加成", "Recovery bonus") : t("整体加成", "Total bonus");
+  const description = kind === "center"
+    ? t("全员在岗时的心情恢复加成，作用于每小时 12% 的基础恢复。", "Full-crew recovery bonus, applied to the base recovery of 12% per hour.")
+    : t("全员在岗时，相对基础产速的整体加成，含人数与技能；培养舱按培养位加权。日均产出另计心情与休息。", "Full-crew production bonus over the base rate, including staffing and skills; growth is weighted by plots. Daily output also accounts for morale and rest.");
+  const text = value == null ? placeholder ?? "—" : `+${percent(value)}`;
+  return <span className="ef-facility-bonus" title={description}>{label} <strong>{animated ? <AnimatedNumber value={text} animation="smooth" stagger={0.04} /> : text}</strong></span>;
+}
+
+export function FacilityOutputSummary({ scores, animated = false }: { scores: Record<string, number | null>; animated?: boolean }) {
+  const { t } = useWorkspace();
+  return <div className="ef-output-summary">
+    <p>{t("全舰日均等效产出", "Ship-wide daily output")} <small>{t("小时 / 日", "h/day")}</small></p>
+    <dl>{Object.entries(scores).map(([key, value]) => <div key={key}><dt><ProductionIcon category={key === "培养" ? "晶植" : key} size={22} />{categoryLabel(key, t)}</dt><dd>{animated ? <AnimatedNumber value={value?.toFixed(2) ?? "—"} animation="smooth" stagger={0.04} /> : value?.toFixed(2) ?? "—"}</dd></div>)}</dl>
+  </div>;
+}
+
 function FacilityTile({ kind, label, level, plan, room, scores, bonusA, bonusB }: {
   kind: "center" | "guest" | "grow" | "mfg1" | "mfg2"; label: string; level: number;
   plan: { hour: number; a: string[]; b: string[] }; room?: Result["rooms"][number];
@@ -54,18 +79,12 @@ function FacilityTile({ kind, label, level, plan, room, scores, bonusA, bonusB }
   bonusA: number | null; bonusB: number | null;
 }) {
   const { locale, t } = useWorkspace();
-  const bonusLabel = kind === "center" ? t("恢复加成", "Recovery bonus") : t("整体加成", "Total bonus");
-  const bonusDescription = kind === "center"
-    ? t("全员在岗时的心情恢复加成，作用于每小时 12% 的基础恢复。", "Full-crew recovery bonus, applied to the base recovery of 12% per hour.")
-    : t("全员在岗时，相对基础产速的整体加成，含人数与技能；培养舱按培养位加权。日均产出另计心情与休息。", "Full-crew production bonus over the base rate, including staffing and skills; growth is weighted by plots. Daily output also accounts for morale and rest.");
   return <FacilityCard kind={kind} label={label} level={level} category={room?.category}>
     {!room ? <p className="ef-facility-output">{t("全舰心情恢复", "Ship-wide morale recovery")}</p> : null}
     <div className="ef-facility-shifts">
       {(["a", "b"] as const).map((shift, index) => <div className="ef-facility-shift" key={shift}>
         <div className="ef-facility-shift-label"><div><b>{room?.single ? t(index ? "休息" : "工作", index ? "Rest" : "Work") : `${shift.toUpperCase()} ${t("班", "shift")}`}</b>
-          {(index ? bonusB : bonusA) != null ? <span className="ef-facility-bonus" title={bonusDescription}>
-            {bonusLabel} <strong>+{percent((index ? bonusB : bonusA)!)}</strong>
-          </span> : null}</div>
+          <FacilityBonus kind={kind} value={index ? bonusB : bonusA} /></div>
           <span className="ef-shift-time">{room?.single ? `${(index ? room.restHours : room.workHours)?.toFixed(2) ?? "—"} h` : index ? `${hour(plan.hour)} – 24:00` : `00:00 – ${hour(plan.hour)}`}</span></div>
         {plan[shift].length ? <div className="ef-facility-crew">{plan[shift].map(name => <div key={name} className="ef-result-operator">
           <OperatorPortrait name={name} size={kind === "center" ? 88 : 68} />
@@ -73,10 +92,7 @@ function FacilityTile({ kind, label, level, plan, room, scores, bonusA, bonusB }
         </div>)}</div> : <p className="ef-facility-rest">{room?.single ? t("原班干员休息后继续生产", "The same crew returns after resting") : t("未安排干员", "No operators assigned")}</p>}
       </div>)}
     </div>
-    {scores ? <div className="ef-output-summary">
-      <p>{t("全舰日均等效产出", "Ship-wide daily output")} <small>{t("小时 / 日", "h/day")}</small></p>
-      <dl>{Object.entries(scores).map(([key, value]) => <div key={key}><dt><ProductionIcon category={key === "培养" ? "晶植" : key} size={22} />{categoryLabel(key, t)}</dt><dd>{value.toFixed(2)}</dd></div>)}</dl>
-    </div> : null}
+    {scores ? <FacilityOutputSummary scores={scores} /> : null}
     {kind === "center" ? <p className="ef-facility-note">{t("各设施按各自标注的时间换班。", "Each facility follows its own shift times.")}</p> : room?.assist ? <p className="ef-facility-note">{t("中枢助力", "Central assistance")} · {room.assist.shift} · {room.assist.points} {t("点 / 日", "points/day")}</p> : null}
   </FacilityCard>;
 }

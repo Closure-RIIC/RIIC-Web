@@ -63,6 +63,28 @@ test("budget exhaustion remains distinct from a completed search", () => {
   assert.equal(result.status.searchComplete, false);
   assert.equal(result.status.stopReason, "node-budget");
 });
+
+test("manual evaluation supports empty and partial shifts without inventing production", () => {
+  const empty = manualTemplate(input.options);
+  const result = evaluateManual({ ...input, operators: [] }, empty);
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  assert.ok(result.rooms.every(room => room.value === 0 && room.converged && !room.single));
+  assert.ok(Object.values(result.scores).every(value => value === 0));
+  const partial = structuredClone(empty);
+  partial[1].a = [input.operators[0].name];
+  const first = evaluateManual(input, partial);
+  assert.equal(first.verification.ok, true, first.verification.errors.join(";"));
+  assert.ok(first.rooms[0].value > 0);
+  assert.equal(first.rooms[1].value, 0);
+  partial[1].hour = 6;
+  const shorter = evaluateManual(input, partial);
+  assert.equal(shorter.verification.ok, true, shorter.verification.errors.join(";"));
+  assert.ok(shorter.rooms[0].value < first.rooms[0].value, "An empty B shift must not restart the A crew early");
+  partial[0].a = [input.operators[1].name];
+  assert.equal(evaluateManual(input, partial).verification.ok, true, "The center may have just one occupied shift");
+  assert.throws(() => evaluateManual(input, partial.map((room, i) => i === 2 ? { ...room, a: partial[1].a } : room)), /重复排班/);
+  assert.throws(() => evaluateManual(input, partial.map((room, i) => i === 1 ? { ...room, a: [input.operators[0].name, input.operators[2].name] } : room)), /人数不合法/);
+});
 test("partial manual drafts round-trip safely and reject unknown or repeated crews", () => {
   const manual = manualTemplate(input.options);
   manual[0].a = [input.operators[0].name];

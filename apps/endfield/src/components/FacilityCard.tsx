@@ -20,21 +20,22 @@ export function FacilityBoard({ children, className = "", ...props }: ComponentP
   </div>;
 }
 
-export function FacilityCard({ kind, label, level, category, children }: {
-  kind: FacilityKind; label: string; level: number; category?: string; children: ReactNode;
+export function FacilityCard({ kind, label, level, category, actions, children }: {
+  kind: FacilityKind; label: string; level: number; category?: string; actions?: ReactNode; children: ReactNode;
 }) {
   const { t } = useWorkspace();
   const facility = workbenchArtwork.facilities[kind === "mfg1" || kind === "mfg2" ? "mfg" : kind];
   const levelLabel = t(`设施等级 ${level}`, `Facility level ${level}`);
   return <article className="ef-facility-tile" data-facility={kind} style={{ "--facility-color": facility.color } as CSSProperties}>
     <header>
-      <FacilityIcon kind={kind} label={label} /><h3>{label}</h3>
+      <FacilityIcon kind={kind} label={label} /><h3 title={label}>{label}</h3>
       <span className="ef-facility-level" role="img" aria-label={levelLabel} title={levelLabel}>
         {Array.from({ length: level }, (_, index) => <i key={index} aria-hidden />)}
       </span>
       {category ? <span className="ef-facility-product" role="img" aria-label={categoryLabel(category, t)} title={categoryLabel(category, t)}>
         <ProductionIcon category={kind === "grow" ? "晶植" : category} size={36} />
       </span> : null}
+      {actions}
     </header>
     {children}
   </article>;

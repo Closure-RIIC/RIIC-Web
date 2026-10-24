@@ -66,7 +66,13 @@ export function parseWorkspace(text) {
     });
   }
   if (value.rosterSource !== undefined && (typeof value.rosterSource !== "string" || !value.rosterSource.length || value.rosterSource.length > 2048)) throw new Error("名单来源格式错误");
-  return { version: 1, operators, options, ...(manual ? { manual } : {}), ...(value.rosterSource ? { rosterSource: value.rosterSource } : {}) };
+  let sklandRoster;
+  if (value.sklandRoster !== undefined) {
+    if (!value.rosterSource || !Array.isArray(value.sklandRoster)) throw new Error("森空岛名单备份格式错误");
+    sklandRoster = value.sklandRoster.length ? parseRoster(value.sklandRoster) : [];
+  }
+  return { version: 1, operators, options, ...(manual ? { manual } : {}), ...(value.rosterSource ? { rosterSource: value.rosterSource } : {}),
+    ...(sklandRoster ? { sklandRoster } : {}) };
 }
 
 export function prepare(input) {

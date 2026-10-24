@@ -86,7 +86,7 @@ export function roomsFromTemplate(workspace: Workspace): StepRoom[] {
     isStepRoomKey(template.key) ? [baseRoom(template.key, template.slots, workspace)] : []);
 }
 
-/** 从手动草稿导入；B 班为空视为单班循环。 */
+/** 手动排班按标注的 A/B 时段执行，空班也保留换班时间。 */
 export function roomsFromManual(workspace: Workspace): StepRoom[] {
   const owned = new Set(workspace.operators.map(operator => operator.name));
   const manual = new Map((workspace.manual ?? []).map(room => [room.key, room] as const));
@@ -95,7 +95,7 @@ export function roomsFromManual(workspace: Workspace): StepRoom[] {
     if (!entry) return room;
     const crewA = fitCrew(entry.a, room.slots, owned);
     const crewB = fitCrew(entry.b, room.slots, owned);
-    return { ...room, hour: clampHour(entry.hour, room.hour), single: !crewB.some(Boolean), crewA, crewB };
+    return { ...room, hour: clampHour(entry.hour, room.hour), single: false, crewA, crewB };
   });
 }
 

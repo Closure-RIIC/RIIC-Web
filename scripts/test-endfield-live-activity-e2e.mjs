@@ -3,7 +3,8 @@ import { chromium, expect } from "@playwright/test";
 import { catalog, DEFAULT_OPTIONS, STORAGE_KEY, manualTemplate, solve } from "@riic/endfield-solver/index.mjs";
 
 const origin = process.env.ENDFIELD_E2E_ORIGIN || "http://127.0.0.1:5176";
-if (!["127.0.0.1", "localhost"].includes(new URL(origin).hostname)) throw new Error("Local preview only");
+const entry = process.env.ENDFIELD_E2E_ENTRY || origin;
+for (const address of [origin, entry]) if (!["127.0.0.1", "localhost"].includes(new URL(address).hostname)) throw new Error("Local preview only");
 const input = {
   version: 1, operators: catalog.slice(0, 8).map(op => ({ name: op.name, elite: 0 })),
   options: { ...DEFAULT_OPTIONS, levels: { center: 1, mfg1: 1, mfg2: 1, grow: 0, guest: 0 }, grow: { 晶植: 0, 菌类: 0, 矿物: 0 }, time: 30000, budget: 10000 },
@@ -13,7 +14,7 @@ assert.ok(result.center && result.verification.ok);
 const browser = await chromium.launch({ headless: true });
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  await context.route("**/api/auth/get-session**", route => route.fulfill({ contentType: "application/json", body: "null" }));
+  if (entry === origin) await context.route("**/api/auth/get-session**", route => route.fulfill({ contentType: "application/json", body: "null" }));
   await context.addCookies([{ name: "riic-endfield-locale", value: "zh", url: origin }]);
   await context.addInitScript(({ origin, key, input }) => {
     if (globalThis.location.origin !== origin) return;
@@ -35,7 +36,8 @@ try {
   const page = await context.newPage();
   const errors = [];
   page.on("pageerror", error => errors.push(error.message));
-  await page.goto(origin);
+  await page.goto(entry);
+  if (new URL(page.url()).pathname !== "/") await page.goto(origin);
   await page.locator('body[data-app-hydrated="true"]').waitFor();
   const live = page.locator('[data-slot="live-activity"]');
   const generate = page.getByRole("button", { name: "生成排班", exact: true });
@@ -106,16 +108,21 @@ try {
 
   // Manual retry must retain its assignments rather than launching an automatic solve.
   await page.getByRole("link", { name: "手动排班", exact: true }).click();
-  await page.getByRole("button", { name: "评估方案", exact: true }).click();
+  await page.waitForFunction(() => globalThis.__solverWorkers.at(-1).request?.assignments && !globalThis.__solverWorkers.at(-1).terminated);
   const assignments = await page.evaluate(() => globalThis.__solverWorkers.at(-1).request.assignments);
   assert.ok(assignments);
   await emit({ type: "error", error: "「中枢」B 班人数不合法" });
   await expect(live.getByRole("alert")).toContainText("「中枢」B 班人数不合法");
   await expect(page.locator(".ef-page .ef-notice--error")).toHaveCount(0);
+  const workersBeforeRetry = await page.evaluate(() => globalThis.__solverWorkers.length);
   await live.getByRole("button", { name: "重试", exact: true }).click();
+  await page.waitForFunction(count => globalThis.__solverWorkers.length > count, workersBeforeRetry);
   assert.deepEqual(await page.evaluate(() => globalThis.__solverWorkers.at(-1).request.assignments), assignments);
-  await expect(live).toHaveAttribute("data-activity-kind", "manual");
-  await page.getByRole("button", { name: "取消", exact: true }).click();
+  await emit({ type: "error", error: "Fixture retry failure" });
+  await expect(live).toHaveAttribute("data-activity-kind", "evaluation");
+  await page.getByRole("link", { name: "技能Wiki", exact: true }).click();
+  await expect(live).toHaveCount(0);
+  await emit({ type: "result", result });
   await expect(live).toHaveCount(0);
 
   // Narrow English/dark layout and reduced motion use the same activity state.
@@ -136,36 +143,44 @@ try {
   await live.getByRole("button", { name: "Dismiss solver notification", exact: true }).click();
   await expect(live).toHaveCount(0);
 
-  // Use the real worker to verify an incomplete manual plan, dismissal and recovery.
+  // Use the real worker to verify an unsustainable center, dismissal and recovery.
   const realContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-  await realContext.route("**/api/auth/get-session**", route => route.fulfill({ json: null }));
+  if (entry === origin) await realContext.route("**/api/auth/get-session**", route => route.fulfill({ json: null }));
   await realContext.addCookies([{ name: "riic-endfield-locale", value: "zh", url: origin }]);
+  const recoveryOperator = catalog.find(op => op.skills.some(skill => skill.room === "总控中枢" && skill.effectKey === "MoodRecoveryAll"));
   const manual = manualTemplate(input.options);
-  manual[0].a = [input.operators[0].name];
-  await realContext.addInitScript(({ key, input }) => globalThis.localStorage.setItem(key, JSON.stringify(input)), { key: STORAGE_KEY, input: { ...input, manual } });
+  manual[0].a = [recoveryOperator.name];
+  manual[0].hour = 23;
+  const realInput = { ...input, manual, operators: [{ name: recoveryOperator.name, elite: 4 }, ...input.operators.filter(op => op.name !== recoveryOperator.name)] };
+  await realContext.addInitScript(({ origin, key, input }) => {
+    if (globalThis.location.origin !== origin || globalThis.sessionStorage.getItem("live-activity-fixture")) return;
+    globalThis.localStorage.setItem(key, JSON.stringify(input));
+    globalThis.sessionStorage.setItem("live-activity-fixture", "1");
+  }, { origin, key: STORAGE_KEY, input: realInput });
   const realPage = await realContext.newPage();
   realPage.on("pageerror", error => errors.push(error.message));
+  await realPage.goto(entry);
   await realPage.goto(`${origin}/manual`);
   await realPage.locator('body[data-app-hydrated="true"]').waitFor();
   const realLive = realPage.locator('[data-slot="live-activity"]');
-  await realPage.getByRole("button", { name: "评估方案", exact: true }).click();
   await expect(realLive).toHaveAttribute("data-activity-phase", "error");
-  await expect(realLive.getByRole("alert")).toContainText("「中枢」B 班人数不合法");
+  await expect(realLive.getByRole("alert")).toContainText("中枢 A 段不满足 R ≥ C");
   await expect(realPage.locator(".ef-page .ef-notice--error")).toHaveCount(0);
   await realLive.getByRole("button", { name: "关闭求解提示", exact: true }).click();
   await expect(realLive).toHaveCount(0);
   await expect(realPage.getByRole("alert")).toHaveCount(0);
-  await realPage.getByRole("button", { name: "评估方案", exact: true }).click();
-  await expect(realLive.getByRole("alert")).toContainText("「中枢」B 班人数不合法");
+  await realPage.getByRole("combobox", { name: "换班整点", exact: true }).first().fill("12:00");
+  await realPage.getByRole("option", { name: "12:00", exact: true }).click();
+  await expect(realPage.locator("[data-manual-assignments]")).toHaveAttribute("data-evaluation-state", "ready");
   const slots = realPage.locator("[data-manual-slot]");
   for (let index = 1; index < 6; index++) {
     await slots.nth(index).click();
-    await realPage.getByRole("dialog", { name: "选择干员", exact: true }).locator(`[data-operator-name="${input.operators[index].name}"]`).click();
+    await realPage.getByRole("dialog", { name: "选择干员", exact: true }).locator(`[data-operator-name="${realInput.operators[index].name}"]`).click();
   }
   await expect(realLive).toHaveCount(0);
-  await realPage.getByRole("button", { name: "评估方案", exact: true }).click();
-  await expect(realLive).toHaveAttribute("data-activity-phase", "success");
-  await expect(realPage.locator("[data-schedule-board]")).toBeVisible();
+  await expect(realPage.locator("[data-manual-assignments]")).toHaveAttribute("data-evaluation-state", "ready");
+  await expect(realPage.locator("[data-manual-board]")).toBeVisible();
+  await expect(realPage.locator('[data-manual-output] [data-animated-value][aria-label="0.00"]')).toHaveCount(0);
   await expect(realPage.locator(".ef-page .ef-notice--error")).toHaveCount(0);
   await realContext.close();
   assert.deepEqual(errors, []);

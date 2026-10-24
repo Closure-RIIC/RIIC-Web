@@ -3,7 +3,8 @@ import type {
 } from "./step-types.ts";
 
 const EPS = 1e-6;
-const MAX_SAMPLES = 20000;
+// 覆盖界面支持的最长 96h / 最细 10s 采样，并为换班、助力事件留余量。
+const MAX_SAMPLES = 40000;
 const MAX_LOG = 2000;
 
 interface SimBoost {
@@ -97,7 +98,7 @@ export class StepSimulation {
     for (const room of this.config.rooms) {
       if (!room.enabled) continue;
       const hour = Math.min(23, Math.max(1, Math.round(room.hour)));
-      const shiftEnabled = !room.single && room.crewB.some(Boolean);
+      const shiftEnabled = !room.single;
       const activeRound: StepRound = shiftEnabled && this.startHour >= hour ? "round2" : "round1";
       this.rooms[room.key] = {
         activeRound,
@@ -419,6 +420,14 @@ export class StepSimulation {
       if (!this.nextEvent()) break;
     }
     this.checkEnd();
+  }
+
+  /** 跳转使用同一事件引擎重放；向后跳转时从初始状态重建，避免插值破坏助力或换班。 */
+  seekTo(seconds: number): void {
+    if (!Number.isFinite(seconds)) return;
+    const target = Math.min(this.maxTSec, Math.max(0, seconds));
+    if (target < this.tSec) this.build();
+    this.advanceBy(target - this.tSec);
   }
 
   /** 一次跑完；步数上限防止异常数据造成死循环。 */
