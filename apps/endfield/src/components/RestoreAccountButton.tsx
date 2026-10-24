@@ -36,7 +36,8 @@ export function RestoreAccountButton() {
         const restored = syncSklandWorkspace(current, snapshot, workspace.rosterSource!, roleId);
         if (restored.status.blocked) throw new Error(t("账号数据无法恢复，已保留本地配置。", "Account data cannot be restored. Local settings were kept."));
         facilitiesApplied = restored.status.facilitiesApplied;
-        const { manual: _manual, ...next } = restored.workspace;
+        const next = { ...restored.workspace };
+        delete next.manual;
         reportSklandSync(restored.status);
         return next;
       });
