@@ -22,8 +22,8 @@ const sources: LinkCardItem[] = [
 ];
 
 const contributionCards: LinkCardItem[] = [
-  { title: "RIIC-Web", zh: messageRecord("zh", "app_about_page_content4").value as [string, string[]], en: messageRecord("en", "app_about_page_content4").value as [string, string[]], href: "https://github.com/KnightCodeSquareMatrix/RIIC-Web", icon: Code2 },
-  { title: "", titleKey: "contribute", zh: messageRecord("zh", "app_about_page_content5").value as [string, string[]], en: messageRecord("en", "app_about_page_content5").value as [string, string[]], href: "https://github.com/KnightCodeSquareMatrix/RIIC-Web/issues", icon: MessageSquareText },
+  { title: "RIIC-Web", zh: messageRecord("zh", "app_about_page_content4").value as [string, string[]], en: messageRecord("en", "app_about_page_content4").value as [string, string[]], href: "https://github.com/Closure-RIIC/RIIC-Web", icon: Code2 },
+  { title: "", titleKey: "contribute", zh: messageRecord("zh", "app_about_page_content5").value as [string, string[]], en: messageRecord("en", "app_about_page_content5").value as [string, string[]], href: "https://github.com/Closure-RIIC/RIIC-Web/issues", icon: MessageSquareText },
 ];
 
 function ResourceLink({ item, featured = false }: { item: LinkCardItem; featured?: boolean }) {

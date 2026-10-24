@@ -106,6 +106,29 @@ function pairMap(root, centerKey) {
 
 const charIdOf = (op) => op.charId || op.name;
 
+/**
+ * 会客室补位优先级（决策 Q13）：只分 α/β 与线索编号，不看 10%/15%。
+ *   1 β1/2/4/5/6 → 2 α1/2/4/5/6 → 3 β3 → 4 α3 → 5 β7 → 6 α7 → 7 白板
+ * `op.skills` 已经按精英化过滤，所以 β 未解锁时这里只会看到 α。
+ */
+export function clueRankOf(op) {
+  let best = 7;
+  for (const s of op.skills) {
+    if (s.kind !== '概率') continue;
+    const tier = s.tier === 2 ? 2 : 1;
+    const clue = s.clueIndex;
+    const rank = clue === 3
+      ? (tier === 2 ? 3 : 4)
+      : clue === 7
+        ? (tier === 2 ? 5 : 6)
+        : clue >= 1 && clue <= 6
+          ? (tier === 2 ? 1 : 2)
+          : 7;
+    if (rank < best) best = rank;
+  }
+  return best;
+}
+
 // ───────────────────────── 中枢枚举 ─────────────────────────
 export let PURE_USEFUL = new Set();
 
@@ -1651,11 +1674,36 @@ function upgradeFillers(ops, plan) {
   if (!slots.length) return;
   const free = toIndices(without(maskAll(ops.length), skilledMask));
   const byCharId = free.slice().sort((a, b) => (charIdOf(ops[a]) < charIdOf(ops[b]) ? -1 : 1));
+  // 会客室补位：C2 只是"略优于白板"的次级排序，不影响产量（fillers 不带 b/r）
+  const byClue = free.slice().sort((a, b) => {
+    const ra = clueRankOf(ops[a]);
+    const rb = clueRankOf(ops[b]);
+    if (ra !== rb) return ra - rb;
+    return charIdOf(ops[a]) < charIdOf(ops[b]) ? -1 : 1;
+  });
   const taken = new Set();
+  const kept = new Set();
+  // 助力目标落在补位里的班次保留原补位：替换会破坏 verifyPlan 的助力目标校验
+  for (const p of picks) {
+    if (!p.assist) continue;
+    const targets = new Set((p.assist.cycle || []).flat());
+    const fills = toIndices(union(p.fillCrewA || EMPTY, p.fillCrewB || EMPTY));
+    if (!fills.some((i) => targets.has(i))) continue;
+    kept.add(p);
+    for (const i of fills) taken.add(i);
+  }
+  // 会客室先处理：C2 干员优先留给会客室
+  const ordered = slots.slice().sort((x, y) => {
+    const kx = x.pick.spec.key === '会客室' ? 0 : 1;
+    const ky = y.pick.spec.key === '会客室' ? 0 : 1;
+    return kx - ky;
+  });
   const next = new Map();                      // pick -> {A, B}
-  for (const slot of slots) {
+  for (const slot of ordered) {
+    if (kept.has(slot.pick)) continue;
+    const list = slot.pick.spec.key === '会客室' ? byClue : byCharId;
     let chosen = -1;
-    for (const i of byCharId) {
+    for (const i of list) {
       if (taken.has(i)) continue;
       if (isUseful(ops[i], { room: slot.pick.spec.room, weights: slot.pick.spec.weights })) continue;
       chosen = i;
@@ -1669,12 +1717,78 @@ function upgradeFillers(ops, plan) {
     next.set(slot.pick, rec);
   }
   for (const p of picks) {
+    if (kept.has(p)) continue;
     const rec = next.get(p) || { A: EMPTY, B: EMPTY };
     p.fillCrewA = rec.A;
     p.fillCrewB = rec.B;
     p.fillA = sizeOf(rec.A);
     p.fillB = sizeOf(rec.B);
   }
+}
+
+/**
+ * 非中枢设施的 A/B 朝向规范化（决策 Q1–Q11）：
+ * 若 B 班 `st.unit` 更高，且交换两组人（h → 24−h）后该设施效率不降低，则交换，
+ * 让效率更高的班落在 A 段。只做后处理，不改搜索/裁决。
+ */
+function alignStrongCrewToA(ops, cfg, plan) {
+  if (!plan || !plan.picks || !plan.center) return;
+  const tol = cfg.limits.valueTol;
+  const timeline = plan.center.timeline;
+  let raised = false;
+  for (const p of plan.picks) {
+    if (p.single || p.assist || !p.stA || !p.stB) continue;
+    if (!(p.stB.unit > p.stA.unit + tol)) continue;
+    if (!(p.h > 0 && p.h < 24)) continue;
+    const swapped = {
+      ...p,
+      h: 24 - p.h,
+      crewA: p.crewB,
+      crewB: p.crewA,
+      fillCrewA: p.fillCrewB || EMPTY,
+      fillCrewB: p.fillCrewA || EMPTY,
+      nA: p.nB,
+      nB: p.nA,
+      stA: p.stB,
+      stB: p.stA,
+      fillA: p.fillB || 0,
+      fillB: p.fillA || 0,
+      assist: null,
+    };
+    let sim;
+    try {
+      sim = simulateFacility({
+        facility: p.spec, ops, plan: swapped, timeline, limits: cfg.limits,
+      });
+    } catch {
+      continue;
+    }
+    if (!sim.converged || !Number.isFinite(sim.avg)) continue;
+    if (sim.avg < p.trueValue - tol) continue;   // 效率降低：不换
+    const delta = sim.avg - p.trueValue;
+    p.h = swapped.h;
+    p.crewA = swapped.crewA;
+    p.crewB = swapped.crewB;
+    p.fillCrewA = swapped.fillCrewA;
+    p.fillCrewB = swapped.fillCrewB;
+    p.nA = swapped.nA;
+    p.nB = swapped.nB;
+    p.stA = swapped.stA;
+    p.stB = swapped.stB;
+    p.fillA = swapped.fillA;
+    p.fillB = swapped.fillB;
+    p.simulation = sim;
+    if (delta > tol) {
+      p.trueValue = sim.avg;
+      const index = cfg.priority.indexOf(p.spec.cat);
+      if (index >= 0) {
+        plan.score[index] += delta;
+        if (plan.catRes[p.spec.cat]) plan.catRes[p.spec.cat].value += delta;
+      }
+      raised = true;
+    }
+  }
+  if (raised) plan.metrics = metricsOf({ score: plan.score, usedCount: sizeOf(plan.usedMask) });
 }
 
 // ───────────────────────── 主入口之上的装配 ─────────────────────────
@@ -1753,6 +1867,9 @@ export function solveLayout({ ops, cfg, testOptions = null }) {
     // 跨中枢现任（P5）：下一条中枢就能用上，弱中枢会更早被剪
     if (!base.incumbent || comparePlans(metrics, base.incumbent, cfg) > 0) base.incumbent = metrics;
   }
+
+  // A/B 朝向规范化：只对最终选中的方案做一次，不参与搜索与裁决
+  if (best) alignStrongCrewToA(ops, cfg, best);
 
   // 未收敛候选只在"上界仍能威胁最终方案"时才算数（真实值 ≤ 上界）：
   // 否则它不可能赢，忽略是合法的，而不是掩盖。

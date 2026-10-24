@@ -6,7 +6,7 @@
 
 ## 私密报告
 
-请通过本仓库的 [GitHub Security Advisory 私密报告入口](https://github.com/KnightCodeSquareMatrix/RIIC-Web/security/advisories/new) 提交漏洞。请提供：
+请通过本仓库的 [GitHub Security Advisory 私密报告入口](https://github.com/Closure-RIIC/RIIC-Web/security/advisories/new) 提交漏洞。请提供：
 
 - 受影响的页面、API 或提交；
 - 可复现的最小步骤；

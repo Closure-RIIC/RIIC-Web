@@ -130,6 +130,16 @@ test("collapsed footer stays keyboard accessible and hides restricted payment pl
   await page.locator('[data-slot="sidebar"]').getByRole("button", { name: "Toggle Sidebar" }).click();
   const footer = page.locator("[data-sidebar-account-footer]");
   await expect(footer).toHaveAttribute("data-compact", "true");
+  const alignment = await page.locator('[data-slot="sidebar-inner"]').evaluate(root => {
+    const bounds = root.getBoundingClientRect();
+    const center = bounds.x + bounds.width / 2;
+    return [...root.querySelectorAll('[data-slot="sidebar-menu-button"] > svg, [data-game-switcher] > svg:first-child, [data-slot="sidebar-trigger"] > svg, [data-sidebar-account-trigger] > :first-child, [data-sidebar-account-footer] a > svg')].map(icon => {
+      const box = icon.getBoundingClientRect();
+      return Math.abs(box.x + box.width / 2 - center);
+    });
+  });
+  expect(alignment.length).toBeGreaterThan(8);
+  expect(Math.max(...alignment)).toBeLessThanOrEqual(0.51);
   const trigger = footer.locator("[data-sidebar-account-trigger]");
   await trigger.focus();
   await page.keyboard.press("Enter");

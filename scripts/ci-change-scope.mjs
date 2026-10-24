@@ -70,7 +70,7 @@ function isBrowserTest(filePath) {
 function isTestOnly(filePath) {
   return (
     isBrowserTest(filePath) ||
-    /(?:^|\/)[^/]+\.(?:test|spec)\.[cm]?[jt]sx?$/.test(filePath) ||
+    /(?:^|\/)[^/]+\.(?:test|spec)\.(?:[cm]?[jt]sx?|py)$/.test(filePath) ||
     /^scripts\/[^/]+\.test\.sh$/.test(filePath)
   );
 }

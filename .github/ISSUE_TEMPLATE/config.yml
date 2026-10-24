@@ -1,5 +1,5 @@
 blank_issues_enabled: false
 contact_links:
   - name: Private security report
-    url: https://github.com/KnightCodeSquareMatrix/RIIC-Web/security/advisories/new
+    url: https://github.com/Closure-RIIC/RIIC-Web/security/advisories/new
     about: 请在这里私密报告安全漏洞，不要创建公开 Issue。

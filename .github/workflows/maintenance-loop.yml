@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   observe:
-    if: github.repository == 'KnightCodeSquareMatrix/RIIC-Web'
+    if: github.repository == 'Closure-RIIC/RIIC-Web'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
