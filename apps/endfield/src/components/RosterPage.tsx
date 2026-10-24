@@ -155,8 +155,13 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
     {!embedded ? <PageTitle title={skillsOnly ? t(...pageLabels["/skills"]) : t("我的干员", "My operators")} subtitle={skillsOnly ? t("查询干员技能与精英化解锁阶段。", "Browse ship skills and their elite-stage requirements.") : t("只勾选你已拥有的干员，并设置实际精英化阶段。", "Select the operators you own and set their actual elite stages.")}
       meta={skillsOnly ? <span className="ef-muted" aria-live="polite">{t(`${rows.length} 名干员`, `${rows.length} operators`)}</span> : undefined}
       action={!skillsOnly ? <Action variant="dark" icon={<Download />} disabled={!ready} onClick={() => downloadJson("endfield-roster.json", { operators: workspace.operators })}>{t("导出名单", "Export roster")}</Action>
-        : <Button type="button" variant="ghost" size="sm" disabled={rarity === "all" && profession === "all" && room === "all" && tag === "all"}
-          onClick={() => { setRarity("all"); setProfession("all"); setRoom("all"); setTag("all"); }}><X aria-hidden />{t("清除选择", "Clear filters")}</Button>} /> : null}
+        : <div className="flex flex-wrap items-center gap-2">
+          <SelectionButton selected={onlyOwned} onSelectedChange={setOnlyOwned} disabled={!ready}
+            className="transition-[scale,translate,box-shadow,background-color,border-color,color] duration-150 ease-out active:translate-y-px active:scale-[0.96] active:shadow-inner motion-reduce:transition-none motion-reduce:active:scale-100 motion-reduce:active:translate-y-0"
+          >{t("仅查看已拥有角色", "Owned operators only")}</SelectionButton>
+          <Button type="button" variant="ghost" size="sm" disabled={!onlyOwned && rarity === "all" && profession === "all" && room === "all" && tag === "all"}
+            onClick={() => { setOnlyOwned(false); setRarity("all"); setProfession("all"); setRoom("all"); setTag("all"); }}><X aria-hidden />{t("清除选择", "Clear filters")}</Button>
+        </div>} /> : null}
     {storageError ? <Notice error>{storageError}</Notice> : null}
     <>
       <SkillFilters rarity={rarity} profession={profession} room={room} tag={tag} onRarityChange={setRarity} onProfessionChange={setProfession}
