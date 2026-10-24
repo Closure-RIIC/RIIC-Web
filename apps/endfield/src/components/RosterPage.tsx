@@ -82,6 +82,7 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
   const { workspace, update, t, locale, ready, storageError } = useWorkspace();
   const [query, setQuery] = useState("");
   const [onlyOwned, setOnlyOwned] = useState(false);
+  const [upgradeChoicesOpen, setUpgradeChoicesOpen] = useState(false);
   const [rarity, setRarity] = useState("all");
   const [room, setRoom] = useState("all");
   const [profession, setProfession] = useState("all");
@@ -103,6 +104,19 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
   function skillTiers(op: (typeof catalog)[number]) {
     const display = operatorData(op.id);
     return op.skills.map(skill => ({ ...skill, unlock: displayUnlock(display, skill.nodeId, skill.unlock) }));
+  }
+
+  function maxRoster(includeAll: boolean) {
+    const entries = includeAll ? catalog.map(op => workspace.operators.find(entry => entry.name === op.name) ?? { name: op.name, elite: 0 }) : workspace.operators;
+    save(entries.map(entry => {
+      const op = catalog.find(item => item.name === entry.name);
+      if (!op) return entry;
+      const tiers = skillTiers(op);
+      const nodes = tiers.flatMap(skill => skill.nodeId ? [skill.nodeId] : [])
+        .sort((a, b) => (parseSkillNodeId(b)?.level ?? 0) - (parseSkillNodeId(a)?.level ?? 0));
+      return { ...entry, elite: 4, latestSpaceshipSkillNodes: reconcileSkillNodes(tiers, nodes, 4) };
+    }));
+    setUpgradeChoicesOpen(false);
   }
 
   /** 当前生效的节点：没有字段时按精英化回退，并收敛成每槽最高档。 */
@@ -167,6 +181,20 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
       {!skillsOnly ? <div className="ef-roster-toolbar">
         <div className="ef-roster-filters">
           {!picker ? <SelectionButton selected={onlyOwned} onSelectedChange={setOnlyOwned}>{t("仅已选", "Selected only")}</SelectionButton> : null}
+          {!picker ? <div className="flex flex-wrap items-center gap-2" onKeyDown={event => { if (event.key === "Escape") setUpgradeChoicesOpen(false); }}>
+            <Button type="button" variant="outline" disabled={!ready} aria-expanded={upgradeChoicesOpen}
+              onClick={() => setUpgradeChoicesOpen(value => !value)}>{t("全精4 · 技能全解锁", "Elite 4 · Unlock all skills")}</Button>
+            {upgradeChoicesOpen ? <div className="flex flex-wrap gap-2" role="group" aria-label={t("选择升级范围", "Choose upgrade scope")}>
+              <Button type="button" variant="outline" className="h-auto min-h-11 flex-col items-start gap-1 whitespace-normal px-3 py-2 shadow-sm" disabled={!ready || selected.size === 0} onClick={() => maxRoster(false)}>
+                <span>{t("仅改变已拥有的状态", "Upgrade owned operators only")}</span>
+                <small className="font-normal text-muted-foreground">{t("保留名单 · 全精4与技能全解锁", "Keep roster · Elite 4 and all skills")}</small>
+              </Button>
+              <Button type="button" variant="outline" className="h-auto min-h-11 flex-col items-start gap-1 whitespace-normal px-3 py-2 shadow-sm" disabled={!ready} onClick={() => maxRoster(true)}>
+                <span>{t("获取所有干员并且全精4", "Add all operators at elite 4")}</span>
+                <small className="font-normal text-muted-foreground">{t("加入全部干员 · 技能全解锁", "Full roster · All skills unlocked")}</small>
+              </Button>
+            </div> : null}
+          </div> : null}
           <Button type="button" variant="ghost" size="sm" disabled={rarity === "all" && profession === "all" && room === "all" && tag === "all"}
             onClick={() => { setRarity("all"); setProfession("all"); setRoom("all"); setTag("all"); }}><X aria-hidden />{t("清除选择", "Clear filters")}</Button>
           <span className="ef-roster-count ef-muted" role="status">{picker
