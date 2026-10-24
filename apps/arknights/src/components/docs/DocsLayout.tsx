@@ -51,7 +51,7 @@ function DocsNavigation({ slug, onSearch }: { slug: string; onSearch: () => void
       </SidebarContent>
       <SidebarFooter className={styles.sidebarFooter}>
         <LanguageSwitch />
-        <a href="https://github.com/KnightCodeSquareMatrix/RIIC-Web/issues" target="_blank" rel="noreferrer" className={styles.supportLink}>{en ? "Feedback" : "反馈问题"}<ArrowUpRight size={13} aria-hidden="true" /></a>
+        <a href="https://github.com/Closure-RIIC/RIIC-Web/issues" target="_blank" rel="noreferrer" className={styles.supportLink}>{en ? "Feedback" : "反馈问题"}<ArrowUpRight size={13} aria-hidden="true" /></a>
       </SidebarFooter>
     </div>
   </Sidebar>;

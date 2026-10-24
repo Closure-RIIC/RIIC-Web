@@ -1,6 +1,6 @@
 # 2026-10-14 首轮 loop 实践
 
-本轮基线：`KnightCodeSquareMatrix/RIIC-Web` 的远端 main，SHA `d31a6ae7c7b0b21d24b696aca9a14dda513d84a0`。在独立工作树执行，原工作区未提交的业务改动没有被纳入。观察器运行时工作区的新增内容是本次 loop 文件；业务源码与 lockfile 未修改。
+本轮基线：`Closure-RIIC/RIIC-Web` 的远端 main，SHA `d31a6ae7c7b0b21d24b696aca9a14dda513d84a0`。在独立工作树执行，原工作区未提交的业务改动没有被纳入。观察器运行时工作区的新增内容是本次 loop 文件；业务源码与 lockfile 未修改。
 
 ## 实际执行
 
@@ -17,7 +17,7 @@
 
 ## 发现一：定时质量检查成功，但安全审计未执行
 
-[定时运行 38481024014](https://github.com/KnightCodeSquareMatrix/RIIC-Web/actions/runs/38481024014) 的四个 WebKit 分片成功，`Static and unit checks` 为 skipped。代码里的 schedule/change-scope 依赖关系与实际 GitHub job 记录一致。
+[定时运行 38481024014](https://github.com/Closure-RIIC/RIIC-Web/actions/runs/38481024014) 的四个 WebKit 分片成功，`Static and unit checks` 为 skipped。代码里的 schedule/change-scope 依赖关系与实际 GitHub job 记录一致。
 
 处理：准备独立只读 `maintenance-loop.yml`，直接进行 lockfile audit，不依赖被 schedule 跳过的 change-scope。该工作流只在合入默认分支后才能真正每日运行；目前是已验证的本地待审文件。
 
@@ -25,7 +25,7 @@
 
 ## 发现二：资源同步被时间边界测试阻塞
 
-[资源同步运行 38512022520](https://github.com/KnightCodeSquareMatrix/RIIC-Web/actions/runs/38512022520) 的 `Generate and validate assets` 成功，`Run pre-PR quality gates` 失败，发布阶段跳过。失败测试为 `apps/arknights/src/server/gacha-archive-validation.test.ts` 的 legacy import 校验，错误是 `Missing expected exception`。
+[资源同步运行 38512022520](https://github.com/Closure-RIIC/RIIC-Web/actions/runs/38512022520) 的 `Generate and validate assets` 成功，`Run pre-PR quality gates` 失败，发布阶段跳过。失败测试为 `apps/arknights/src/server/gacha-archive-validation.test.ts` 的 legacy import 校验，错误是 `Missing expected exception`。
 
 本地精确基线运行同一非 UI 测试：1 失败、1 通过，重现 CI 症状。调查发现测试构造 `Date.now() + 86400001`，生产解析器拒绝大于自身 `Date.now() + 86400000` 的值。两个 Date.now 之间只要经过 1 ms，原先在边界外的样本就可能落回允许范围。因此本轮证据指向测试时间竞态，不能因测试名称包含 ownership 就称其为权限漏洞。
 
@@ -40,7 +40,7 @@ node --test --experimental-strip-types --import ./.tmp/freeze-gacha-test-clock.m
 
 ## 发现三：重复反馈候选
 
-[issue #363](https://github.com/KnightCodeSquareMatrix/RIIC-Web/issues/363) 与 [issue #364](https://github.com/KnightCodeSquareMatrix/RIIC-Web/issues/364) 的标题、正文、复现步骤和附件链接相同。观察器仅根据标题归组，Agent 再只读核对正文，构成“机器筛选 → 证据确认”的一次实践。
+[issue #363](https://github.com/Closure-RIIC/RIIC-Web/issues/363) 与 [issue #364](https://github.com/Closure-RIIC/RIIC-Web/issues/364) 的标题、正文、复现步骤和附件链接相同。观察器仅根据标题归组，Agent 再只读核对正文，构成“机器筛选 → 证据确认”的一次实践。
 
 建议维护者决定主记录并关联另一条；本轮不关闭、不评论，也不下载用户附件。重复条目的确认不代表原问题已经修复。
 

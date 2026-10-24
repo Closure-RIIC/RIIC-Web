@@ -7,7 +7,7 @@
 旧私有仓库中的开放 PR 不会复制 commit。请按以下方式重新提交：
 
 1. 删除或归档旧仓库的脱离 fork；
-2. 重新 fork `KnightCodeSquareMatrix/RIIC-Web`；
+2. 重新 fork `Closure-RIIC/RIIC-Web`；
 3. 从公开仓库最新 `develop` 创建新分支；
 4. 只移植仍需要的代码，不复制旧 merge commit；
 5. 向 `develop` 创建新 PR，并在描述中注明原 PR 编号。
