@@ -1,5 +1,6 @@
 import { STORAGE_KEY } from "@riic/endfield-solver/model.mjs";
 import { RESULT_STORAGE_KEY } from "./result-cache.ts";
+import { STEP_STORAGE_KEY } from "./step/step-keys.ts";
 
 export const ENDFIELD_LOCALE_COOKIE = "riic-endfield-locale";
 export const DISPLAY_STORAGE_KEY = "riic:endfield:display";
@@ -13,6 +14,6 @@ export function readEndfieldLocale(cookie: string): "zh" | "en" {
   return saved?.endsWith("=en") ? "en" : "zh";
 }
 export function clearEndfieldStorage(local: Pick<Storage, "removeItem">, session: Pick<Storage, "removeItem">) {
-  for (const key of [STORAGE_KEY, RESULT_STORAGE_KEY, DISPLAY_STORAGE_KEY, "riic-color-mode"]) local.removeItem(key);
+  for (const key of [STORAGE_KEY, RESULT_STORAGE_KEY, STEP_STORAGE_KEY, DISPLAY_STORAGE_KEY, "riic-color-mode"]) local.removeItem(key);
   session.removeItem("riic:endfield:skland-selection");
 }
