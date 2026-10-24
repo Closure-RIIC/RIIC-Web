@@ -2,7 +2,7 @@ import "@tanstack/react-start/server-only";
 
 export const DEFAULT_LEGAL_OPERATOR_NAME = "可露希尔基建终端项目维护者";
 export const DEFAULT_LEGAL_CONTACT_URL =
-  "https://github.com/KnightCodeSquareMatrix/RIIC-Web/issues";
+  "https://github.com/Closure-RIIC/RIIC-Web/issues";
 
 export interface LegalIdentity {
   operatorName: string;

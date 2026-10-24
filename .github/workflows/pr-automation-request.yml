@@ -1,0 +1,19 @@
+name: PR automation request
+
+on:
+  pull_request:
+    branches: [develop, main]
+    types: [opened, reopened, synchronize, ready_for_review, labeled, unlabeled, edited]
+
+permissions:
+  contents: read
+
+jobs:
+  request:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      # No App token, checkout, artifacts, PR code or PR-provided shell strings.
+      # workflow_run in the trusted default branch reads GitHub's current PR state.
+      - run: echo 'Request trusted auto-merge policy evaluation.'

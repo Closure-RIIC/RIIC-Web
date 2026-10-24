@@ -5,7 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
 
-const REPO = "KnightCodeSquareMatrix/RIIC-Web";
+const REPO = "Closure-RIIC/RIIC-Web";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const rank = { critical: 0, high: 1, moderate: 2, medium: 2, low: 3, info: 4 };
 const hash = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 16);

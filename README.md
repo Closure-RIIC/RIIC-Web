@@ -3,8 +3,8 @@
 面向《明日方舟》玩家的基建排班 Web 应用。导入干员数据、配置基建布局后，应用会调用独立的 `infra-cli` 求解服务生成三班排班，并提供效率概览、练卡建议和 MAA JSON 导出。
 
 - 在线地址：[riic.autos](https://riic.autos)
-- 前端仓库：[KnightCodeSquareMatrix/RIIC-Web](https://github.com/KnightCodeSquareMatrix/RIIC-Web)
-- 问题反馈：[GitHub Issues](https://github.com/KnightCodeSquareMatrix/RIIC-Web/issues)
+- 前端仓库：[Closure-RIIC/RIIC-Web](https://github.com/Closure-RIIC/RIIC-Web)
+- 问题反馈：[GitHub Issues](https://github.com/Closure-RIIC/RIIC-Web/issues)
 
 本仓库包含明日方舟、终末地两个 TanStack Start 应用、共享组件与公共平台后端。方舟排班通过独立的私有 `infra-cli` 服务求解；终末地的求解适配与固定版本上游位于 `packages/endfield-solver`，在浏览器 Worker 中运行。
 
@@ -57,7 +57,7 @@
 需要 Node.js 22 和 npm。
 
 ```bash
-git clone https://github.com/KnightCodeSquareMatrix/RIIC-Web.git
+git clone https://github.com/Closure-RIIC/RIIC-Web.git
 cd RIIC-Web
 npm install
 npm run dev
