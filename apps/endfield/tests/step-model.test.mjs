@@ -3,7 +3,7 @@ import test from "node:test";
 import { catalog, DEFAULT_OPTIONS, manualTemplate } from "@riic/endfield-solver/model.mjs";
 import { MFG_LAYOUTS } from "@riic/endfield-solver/simulation.mjs";
 import {
-  buildStepConfig, defaultSource, productsFor, roomsFromManual, roomsFromResult, roomsFromTemplate, scheduledNames, validateStepConfig,
+  buildStepConfig, defaultSource, effectTable, productsFor, roomEffectResolver, roomsFromManual, roomsFromResult, roomsFromTemplate, scheduledNames, validateStepConfig,
 } from "../src/step/step-model.ts";
 
 const OPTIONS = {
@@ -13,6 +13,11 @@ const OPTIONS = {
 };
 const OPERATORS = catalog.slice(0, 6).map(operator => ({ name: operator.name, elite: 4 }));
 const NAMES = OPERATORS.map(operator => operator.name);
+
+test("clue probability does not increase the deterministic guest-room production", () => {
+  const resolve = roomEffectResolver(effectTable(workspace({ operators: [{ name: "赛希", elite: 4 }] })));
+  assert.deepEqual(resolve("赛希", "会客室"), { reduce: 0, restore: 0, effMap: {} });
+});
 
 function workspace(overrides = {}) {
   return { version: 1, operators: structuredClone(OPERATORS), options: structuredClone(OPTIONS), ...overrides };

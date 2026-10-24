@@ -36,7 +36,8 @@ export const SIM_RATES = Object.freeze({
 });
 
 /**
- * 某干员“当前已解锁”的技能效果，每个 `(room|kind|cat)` 只保留最高档。
+ * 某干员“当前已解锁”的确定性技能效果，每个 `(room|kind|cat)` 只保留最高档。
+ * 线索概率只用于求解器补位排序，不作为模拟的确定性产量加成。
  *
  * - `latestSpaceshipSkillNodes` 是数组 → 以实际解锁的节点为准（`[]` 表示一个都没解锁）；
  * - 缺省 → 没有账号数据，按 `elite` 回退。
@@ -52,6 +53,7 @@ export function operatorEffects(operator) {
     : skillsAtElite(record.skills, Number.isInteger(operator.elite) ? operator.elite : 0);
   const best = new Map();
   for (const skill of unlocked) {
+    if (!["加成", "减免", "恢复"].includes(skill.kind)) continue;
     const key = `${skill.room}|${skill.kind}|${skill.cat ?? ""}`;
     const previous = best.get(key);
     if (!previous || skill.value > previous.value) best.set(key, skill);

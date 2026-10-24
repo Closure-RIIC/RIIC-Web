@@ -41,7 +41,7 @@ function normalizeHour(value: number): number {
 }
 
 /**
- * 事件驱动模拟内核（从 endfield-simulated/step.js v11 移植）。
+ * 事件驱动模拟内核（从 PR #586 的 step.js v11 移植，来源见 docs/ENDFIELD_STEP_SIMULATION.md）。
  *
  * 保留原有的速率与公式：工作 7.2%/h、休息 12%/h、助力 +30%、产率
  * `(1 + Σ效率/100) × (1 + 0.4N)`。数据全部来自构造参数，不读 DOM、不读存储。
@@ -409,6 +409,18 @@ export class StepSimulation {
     return !this.ended;
   }
 
+  /** Playback may stop between samples; sampling frequency must not change playback speed. */
+  advanceBy(seconds: number): void {
+    if (!Number.isFinite(seconds) || seconds <= 0 || this.ended) return;
+    const target = Math.min(this.maxTSec, this.tSec + seconds);
+    while (!this.ended && this.tSec < target) {
+      const next = Math.ceil(this.findNextEventSec() - EPS);
+      if (next > target) { this.advanceTo(target); break; }
+      if (!this.nextEvent()) break;
+    }
+    this.checkEnd();
+  }
+
   /** 一次跑完；步数上限防止异常数据造成死循环。 */
   runToEnd(limit = 5_000_000): void {
     let steps = 0;
@@ -429,6 +441,18 @@ export class StepSimulation {
 
   clearLog(): void {
     this.log = [];
+  }
+
+  /** Stable display state; historical samples and log entries are append-only. */
+  snapshot(): StepView {
+    return {
+      ...this.view,
+      ops: this.ops.map(op => ({ ...op, effMap: { ...op.effMap } })),
+      rooms: Object.fromEntries(Object.entries(this.rooms).map(([key, room]) => [key, { ...room }])),
+      output: Object.fromEntries(Object.entries(this.output).map(([key, value]) => [key, typeof value === "number" ? value : { ...value }])),
+      workTimeSec: { ...this.workTimeSec },
+      history: [...this.history], log: [...this.log],
+    };
   }
 
   get view(): StepView {

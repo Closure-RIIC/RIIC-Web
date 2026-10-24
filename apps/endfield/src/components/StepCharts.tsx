@@ -1,6 +1,7 @@
 import { useState, type MouseEvent as ReactMouseEvent } from "react";
 import type { StepRoom, StepView } from "../step/step-types.ts";
 import { formatClock } from "../step/step-engine.ts";
+import { useWorkspace } from "../state";
 
 const W = 640;
 const H = 240;
@@ -12,13 +13,13 @@ const PW = W - PAD_L - PAD_R;
 const PH = H - PAD_T - PAD_B;
 
 const PRODUCT_COLORS: Record<string, string> = {
-  晶植: "#6a9a3a", 菌类: "#8a5e00", 矿物: "#e08a2c", 干员经验: "#3f7e6b", 武器经验: "#8a5e00", 线索: "#b0885a",
+  晶植: "var(--ef-step-growth)", 菌类: "var(--ef-step-rate)", 矿物: "var(--ef-step-mineral)", 干员经验: "var(--ef-step-growth)", 武器经验: "var(--ef-step-rate)", 线索: "var(--ef-step-rate)",
 };
 
 function colorForName(name: string): string {
   let hash = 0;
   for (let index = 0; index < name.length; index += 1) hash = (hash * 31 + name.charCodeAt(index)) & 0xffffff;
-  return `hsl(${hash % 360}, 65%, 45%)`;
+  return `hsl(${hash % 360} 60% var(--ef-step-series-lightness))`;
 }
 
 function buildStepPolyline(samples: StepView["history"], valueOf: (index: number) => number | null, xs: (t: number) => number, ys: (value: number) => number): string {
@@ -51,6 +52,7 @@ function nearestSample(times: number[], tSec: number): number {
 }
 
 function Chart({ room, view }: { room: StepRoom; view: StepView }) {
+  const { t } = useWorkspace();
   const [hover, setHover] = useState<{ left: number; top: number; index: number } | null>(null);
   const operators = view.ops.filter(op => op.roomKey === room.key);
   const samples = view.history;
@@ -96,7 +98,7 @@ function Chart({ room, view }: { room: StepRoom; view: StepView }) {
   return <div className="mood-chart-card" data-room={room.key}>
     <div className="mood-chart-title">{room.label}</div>
     <div className="mood-chart-svg">
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" data-room={room.key}>
+      <svg viewBox={`0 0 ${W} ${H}`} data-room={room.key} role="img" aria-label={`${room.label} ${t("心情与产率曲线", "morale and production chart")}`}>
         {Array.from({ length: Math.floor(hours / gridStep) + 1 }, (_, index) => index * gridStep).map(hour => {
           const x = xs(hour * 3600);
           return <g key={`h${hour}`}>
@@ -118,15 +120,15 @@ function Chart({ room, view }: { room: StepRoom; view: StepView }) {
             {isCentral ? value.toFixed(0) : value.toFixed(1)}
           </text>;
         })}
-        <text className="chart-label chart-label-rate" x={W - 4} y={PAD_T + 8} textAnchor="end" style={{ fontSize: 9, fill: "#e08a2c" }}>
-          {isCentral ? "%/h" : "产率"}
+        <text className="chart-label chart-label-rate" x={W - 4} y={PAD_T + 8} textAnchor="end">
+          {isCentral ? "%" : t("产率", "Rate")}
         </text>
         {view.log.map((entry, index) => {
           if (entry.room !== room.key) return null;
           if (entry.type !== "switch" && entry.type !== "boost") return null;
           const x = xs(entry.tSec);
           return <line key={`e${index}`} x1={x} y1={PAD_T} x2={x} y2={PAD_T + PH}
-            stroke={entry.type === "boost" ? "#f0b400" : "#3f7e6b"} strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />;
+            stroke={entry.type === "boost" ? "var(--ef-step-rate)" : "var(--ef-ink)"} strokeWidth="1" strokeDasharray="3 3" opacity="0.6" />;
         })}
         {operators.map(operator => {
           const points = samples.map(item => {
@@ -139,15 +141,15 @@ function Chart({ room, view }: { room: StepRoom; view: StepView }) {
         {isGrowth
           ? products.map(product => {
             const points = buildStepPolyline(samples, index => samples[index].rates[room.key]?.[product] ?? null, xs, ysRate);
-            return points ? <polyline key={product} points={points} fill="none" stroke={PRODUCT_COLORS[product] ?? "#e08a2c"}
+            return points ? <polyline key={product} points={points} fill="none" stroke={PRODUCT_COLORS[product] ?? "var(--ef-step-rate)"}
               strokeWidth="2" strokeLinejoin="miter" strokeLinecap="butt" /> : null;
           })
           : (() => {
             const points = buildStepPolyline(samples, index => samples[index].rates[room.key]?._total ?? null, xs, ysRate);
-            return points ? <polyline points={points} fill="none" stroke="#e08a2c" strokeWidth="2" strokeLinejoin="miter" strokeLinecap="butt" /> : null;
+            return points ? <polyline points={points} fill="none" stroke="var(--ef-step-rate)" strokeWidth="2" strokeLinejoin="miter" strokeLinecap="butt" /> : null;
           })()}
-        <line x1={xs(view.tSec)} y1={PAD_T} x2={xs(view.tSec)} y2={PAD_T + PH} stroke="#c0392b" strokeWidth="1.5" />
-        {hoverX != null ? <line className="chart-hover-line" x1={hoverX} y1={PAD_T} x2={hoverX} y2={PAD_T + PH} stroke="#222" strokeWidth="1" opacity="0.5" style={{ pointerEvents: "none" }} /> : null}
+        <line x1={xs(view.tSec)} y1={PAD_T} x2={xs(view.tSec)} y2={PAD_T + PH} stroke="var(--ef-ink)" strokeWidth="1.5" />
+        {hoverX != null ? <line className="chart-hover-line" x1={hoverX} y1={PAD_T} x2={hoverX} y2={PAD_T + PH} stroke="var(--ef-ink)" strokeWidth="1" opacity="0.5" style={{ pointerEvents: "none" }} /> : null}
         <rect className="chart-hover-area" x={PAD_L} y={PAD_T} width={PW} height={PH} fill="transparent" style={{ cursor: "crosshair" }}
           onMouseMove={move} onMouseLeave={() => setHover(null)} />
       </svg>
@@ -158,10 +160,10 @@ function Chart({ room, view }: { room: StepRoom; view: StepView }) {
       </span>)}
       {isGrowth
         ? products.map(product => <span className="legend-item" key={product}>
-          <span className="legend-line-rate" style={{ background: PRODUCT_COLORS[product] ?? "#e08a2c", height: 2, width: 16, display: "inline-block" }} />{product}产率
+          <span className="legend-line-rate" style={{ background: PRODUCT_COLORS[product] ?? "var(--ef-step-rate)", height: 2, width: 16, display: "inline-block" }} />{product} {t("产率", "rate")}
         </span>)
         : <span className="legend-item">
-          <span className="legend-line-rate total" style={{ height: 2, width: 16, display: "inline-block", background: "#e08a2c" }} />{isCentral ? "恢复值" : "产率"}
+          <span className="legend-line-rate total" style={{ height: 2, width: 16, display: "inline-block", background: "var(--ef-step-rate)" }} />{isCentral ? t("恢复加成", "Recovery bonus") : t("产率", "Rate")}
         </span>}
     </div>
     {hover && sample ? <div className="chart-tooltip" style={{ display: "block", left: hover.left, top: hover.top }}>
@@ -170,23 +172,23 @@ function Chart({ room, view }: { room: StepRoom; view: StepView }) {
         ? products.map(product => {
           const value = sample.rates[room.key]?.[product] ?? 0;
           return <div className="chart-tooltip-row" key={product}>
-            <span className="label" style={{ color: PRODUCT_COLORS[product] ?? "#e08a2c" }}>{product}</span>
+            <span className="label" style={{ color: PRODUCT_COLORS[product] ?? "var(--ef-step-rate)" }}>{product}</span>
             <span className="val chart-tooltip-rate">{value.toFixed(2)}</span>
           </div>;
         })
         : <div className="chart-tooltip-row">
-          <span className="label">{isCentral ? "恢复值" : "产率"}</span>
+          <span className="label">{isCentral ? t("恢复加成", "Recovery bonus") : t("产率", "Rate")}</span>
           <span className="val chart-tooltip-rate">
-            {isCentral ? `+${(sample.rates[room.key]?._total ?? 0).toFixed(0)}%/h` : (sample.rates[room.key]?._total ?? 0).toFixed(2)}
+            {isCentral ? `+${(sample.rates[room.key]?._total ?? 0).toFixed(0)}%` : (sample.rates[room.key]?._total ?? 0).toFixed(2)}
           </span>
         </div>}
-      <div style={{ marginTop: 4, borderTop: "1px solid rgba(255,255,255,0.15)", paddingTop: 4 }}>
+      <div className="chart-tooltip-operators">
         {operators.map(operator => {
           const mood = sample.moods[operator.name];
           if (mood === undefined) return null;
           const activeRound = sample.activeRounds[room.key];
           const working = sample.workings[operator.name];
-          const status = operator.round === activeRound ? (working ? "工作" : "休息") : "待命";
+          const status = operator.round === activeRound ? (working ? t("工作", "Working") : t("休息", "Resting")) : t("待命", "Standby");
           return <div className="chart-tooltip-row" key={operator.name}>
             <span className="label">{operator.name}{operator.round === "round2" ? "Ⅱ" : ""} · {status}</span>
             <span className="val">{mood.toFixed(1)}%</span>
@@ -199,8 +201,9 @@ function Chart({ room, view }: { room: StepRoom; view: StepView }) {
 
 /** ② 各舱心情曲线与产率。 */
 export function StepCharts({ view, rooms }: { view: StepView; rooms: StepRoom[] }) {
+  const { t } = useWorkspace();
   if (!view.ops.length || !view.history.length) {
-    return <div className="mood-charts-grid" id="moodCharts"><div className="chart-placeholder">点击「开始」后绘制</div></div>;
+    return <div className="ef-empty" id="moodCharts"><p>{t("配置排班后开始模拟。", "Assign operators and start the simulation.")}</p></div>;
   }
   const visible = rooms.filter(room => view.ops.some(op => op.roomKey === room.key));
   return <div className="mood-charts-grid" id="moodCharts">

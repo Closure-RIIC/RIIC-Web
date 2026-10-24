@@ -24,6 +24,29 @@ const run = (value, resolver = NO_EFFECTS, options = {}) => {
   return simulation;
 };
 
+test("playback advances by elapsed time independently of chart sampling", () => {
+  for (const sampleSec of [10, 60, 900]) {
+    const simulation = new StepSimulation(config(), NO_EFFECTS, RATES, { startHour: 0, maxHours: 24, sampleSec });
+    for (let tick = 0; tick < 10; tick++) simulation.advanceBy(0.1);
+    assert.ok(Math.abs(simulation.view.tSec - 1) < 1e-6);
+    simulation.advanceBy(3600 - simulation.view.tSec);
+    assert.ok(Math.abs(simulation.view.ops[0].mood - 92.8) < 1e-6);
+    simulation.advanceBy(86400);
+    assert.equal(simulation.view.ended, true);
+    assert.ok(Math.abs(simulation.view.output["会客室"] - run(config(), NO_EFFECTS, { sampleSec }).view.output["会客室"]) < 1e-6);
+  }
+});
+
+test("display snapshots stay stable as the engine advances and clears its log", () => {
+  const simulation = new StepSimulation(config(), NO_EFFECTS, RATES, { startHour: 0, maxHours: 24, sampleSec: 60 });
+  const snapshot = simulation.snapshot();
+  const saved = structuredClone(snapshot);
+  simulation.runToEnd();
+  simulation.clearLog();
+  assert.deepEqual(snapshot, saved);
+  assert.equal(simulation.snapshot().ended, true);
+});
+
 test("a 100% mood operator drains to zero in 100 / 7.2 hours", () => {
   const simulation = run(config());
   const zero = simulation.view.log.find(entry => entry.type === "mood-zero");

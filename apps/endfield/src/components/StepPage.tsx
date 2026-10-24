@@ -1,22 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { catalog } from "@riic/endfield-solver/model.mjs";
 import { SIM_RATES } from "@riic/endfield-solver/simulation.mjs";
 import { operatorData } from "@riic/endfield-data";
 import { useWorkspace } from "../state";
-import { workspaceKey } from "../result-cache";
 import { RosterDialogTrigger } from "./RosterDialog";
 import { StepBoosts } from "./StepBoosts";
 import { StepCharts } from "./StepCharts";
 import { StepLog, StepRooms, StepStats } from "./StepPanels";
-import { StepPicker, type PickerOperator } from "./StepPicker";
+import { StepPicker } from "./StepPicker";
 import { StepRoomConfig } from "./StepRoomConfig";
 import { StepSimulation, formatClock, formatDuration } from "../step/step-engine.ts";
 import {
-  applyStored, buildStepConfig, defaultSource, effectTable, ensureBoostDays, maxBoostDays, roomEffectResolver, scheduledNames,
+  buildStepConfig, defaultSource, effectTable, ensureBoostDays, maxBoostDays, roomEffectResolver, scheduledNames,
   validateStepConfig, type ImportSource,
 } from "../step/step-model.ts";
-import { loadStepConfig, saveStepConfig, toStored } from "../step/step-store.ts";
-import type { SimRates, StepBoostConfig, StepConfig, StepRoom, StepRoomKey, StepShift } from "../step/step-types.ts";
+import { applyStored, loadStepConfig, saveStepConfig, toStored } from "../step/step-store.ts";
+import type { SimRates, StepBoostConfig, StepConfig, StepRoom, StepRoomKey, StepShift, StepView } from "../step/step-types.ts";
+import { Action, ActionContent, actionClassName, Field, Notice, PageTitle, Section } from "@riic/endfield-ui";
+import { Play, Pause, RotateCcw, FastForward, Import, Users, ChevronsUpDown } from "lucide-react";
+import { Input } from "@riic/ui-primitives/input";
 import "../step/step.css";
 
 const RATES: SimRates = { work: SIM_RATES.work, rest: SIM_RATES.rest, head: SIM_RATES.head, assist: SIM_RATES.assist };
@@ -28,9 +29,8 @@ type PickerState =
 
 /** 步进模拟页：读取 Workspace/Result，事件驱动推演心情与产出。 */
 export function StepPage() {
-  const { workspace, result, ready, showImages } = useWorkspace();
-  const signature = useMemo(() => workspaceKey(workspace), [workspace]);
-  const resolver = useMemo(() => roomEffectResolver(effectTable(workspace)), [signature]);
+  const { workspace, result, ready, locale, t } = useWorkspace();
+  const resolver = useMemo(() => roomEffectResolver(effectTable(workspace)), [workspace]);
 
   const [config, setConfig] = useState<StepConfig | null>(null);
   const [source, setSource] = useState<ImportSource>("template");
@@ -44,13 +44,19 @@ export function StepPage() {
   const [collapsed, setCollapsed] = useState(false);
   const [started, setStarted] = useState(false);
   const [picker, setPicker] = useState<PickerState | null>(null);
-  const [, setTick] = useState(0);
-  const bump = useCallback(() => setTick(value => value + 1), []);
-
   const engine = useRef<StepSimulation | null>(null);
+  const [snapshot, setSnapshot] = useState<{
+    view: StepView; rates: Record<string, Record<string, number>>; centralBonus: number;
+  } | null>(null);
+  const bump = useCallback(() => {
+    const simulation = engine.current;
+    if (!simulation) return;
+    const view = simulation.snapshot();
+    setSnapshot({ view, rates: Object.fromEntries(Object.keys(view.rooms).map(key => [key, simulation.roomRates(key)])), centralBonus: simulation.centralBonus() });
+  }, []);
   const configRef = useRef<StepConfig | null>(null);
   const startRef = useRef({ startHour, maxHours, sampleSec });
-  startRef.current = { startHour, maxHours, sampleSec };
+  useEffect(() => { startRef.current = { startHour, maxHours, sampleSec }; }, [startHour, maxHours, sampleSec]);
 
   const rebuild = useCallback((next: StepConfig) => {
     const options = { ...startRef.current };
@@ -78,8 +84,7 @@ export function StepPage() {
     setSource(nextSource);
     setConfig(next);
     rebuild(next);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, signature]);
+  }, [ready, workspace, result, rebuild]);
 
   // 起点/时长/采样变化后按当前配置重建。
   useEffect(() => {
@@ -96,36 +101,19 @@ export function StepPage() {
     const id = window.setInterval(() => {
       const simulation = engine.current;
       if (!simulation) return;
-      const target = Math.min(simulation.view.maxTSec, simulation.view.tSec + speed * 0.1);
-      let guard = 0;
-      while (simulation.view.tSec < target && !simulation.view.ended && guard < 100000) {
-        if (!simulation.nextEvent()) break;
-        guard += 1;
-      }
+      simulation.advanceBy(speed * 0.1);
       bump();
       if (simulation.view.ended) { setRunning(false); setPhase("ended"); }
     }, 100);
     return () => window.clearInterval(id);
-  }, [running, speed]);
+  }, [running, speed, bump]);
 
-  const view = engine.current?.view ?? null;
+  const view = snapshot?.view ?? null;
   const days = maxBoostDays(startHour, maxHours);
   const boost = config ? ensureBoostDays(config.boost, days) : null;
   const scheduled = useMemo(() => config ? scheduledNames(config.rooms) : new Set<string>(), [config]);
 
-  const pickerOperators = useMemo<PickerOperator[]>(() => workspace.operators.map(operator => {
-    const entry = catalog.find(item => item.name === operator.name);
-    return {
-      name: operator.name,
-      elite: operator.elite,
-      rarity: entry?.rarity ?? 0,
-      profession: entry?.profession ?? "",
-      icon: entry ? operatorData(entry.id)?.icon : undefined,
-    };
-  }), [workspace.operators]);
-
-  const labelOf = (name: string) => operatorData(name)?.name || name;
-  const iconOf = (name: string) => operatorData(name)?.icon;
+  const labelOf = (name: string) => locale === "en" ? operatorData(name)?.enName || name : name;
 
   function importFrom(kind: ImportSource) {
     const next = applyStored(buildStepConfig(workspace, result, kind), loadStepConfig());
@@ -154,13 +142,18 @@ export function StepPage() {
     commit({ ...config, boost: ensureBoostDays(next, days) }, true);
   }
 
-  function start() {
-    if (!config || running) return;
-    if (!workspace.operators.length) { setError("名单为空，请先在“编辑名单”中配置我的干员。"); return; }
-    if (!config.rooms.some(room => room.enabled)) { setError("没有启用任何舱室，请先在“排班设置”里勾选要模拟的舱室。"); return; }
+  function validate() {
+    if (!config) return false;
+    if (!workspace.operators.length) { setError(t("名单为空，请先配置我的干员。", "Set up your roster before starting.")); return false; }
+    if (!config.rooms.some(room => room.enabled)) { setError(t("请至少启用一个舱室。", "Enable at least one facility.")); return false; }
     const problems = validateStepConfig(config, new Set(workspace.operators.map(operator => operator.name)));
-    if (problems.length) { setError(problems.join("；")); return; }
+    if (problems.length) { setError(problems.join("；")); return false; }
     setError("");
+    return true;
+  }
+
+  function start() {
+    if (!config || running || !validate()) return;
     if (!engine.current || engine.current.view.ended) rebuild(config);
     setStarted(true);
     setRunning(true);
@@ -183,7 +176,7 @@ export function StepPage() {
 
   function fastForward() {
     const simulation = engine.current;
-    if (!simulation || !config) return;
+    if (!simulation || !config || !validate()) return;
     setRunning(false);
     setStarted(true);
     simulation.runToEnd();
@@ -192,7 +185,7 @@ export function StepPage() {
   }
 
   function selectOperator(name: string) {
-    if (!config || !picker) return;
+    if (!config || !picker || unavailable.has(name)) return;
     if (picker.mode === "boost") {
       const base = ensureBoostDays(config.boost, Math.max(days, picker.day + 1));
       const boostDays = base.days.map((day, dayIndex) => dayIndex === picker.day
@@ -242,150 +235,97 @@ export function StepPage() {
     return (picker.shift === "a" ? room.crewA : room.crewB)[picker.index] ?? null;
   })();
 
-  const unavailable = useMemo(() => {
-    const names = new Set(scheduled);
-    if (currentName) names.delete(currentName);
-    return names;
-  }, [scheduled, currentName]);
+  const unavailable = new Set(picker?.mode === "boost"
+    ? workspace.operators.map(op => op.name).filter(name => !scheduled.has(name)) : scheduled);
+  if (currentName && picker?.mode !== "boost") unavailable.delete(currentName);
 
   const pickerTitle = picker?.mode === "boost"
-    ? `选择助力目标 · 第 ${picker.day + 1} 天 · 第 ${picker.index + 1} 次`
-    : picker
-      ? `选择干员 · ${config?.rooms.find(room => room.key === picker.key)?.label ?? picker.key} ${picker.shift === "a" ? "一轮" : "二轮"} 槽位 ${picker.index + 1}`
-      : "选择干员";
+    ? t(`助力目标 · 第 ${picker.day + 1} 天 · 第 ${picker.index + 1} 次`, `Assistance target · Day ${picker.day + 1} · Assist ${picker.index + 1}`)
+    : t("选择排班干员", "Select assigned operator");
 
   const showResult = started && !!view && !!config;
   const percent = showResult && view && view.maxTSec > 0 ? (view.tSec / view.maxTSec) * 100 : 0;
-  const info = !showResult || !view || !view.ops.length
-    ? "尚未开始"
-    : `当前：${formatClock(view.tSec, view.startHour)}（已模拟 ${formatDuration(view.tSec)} / 剩余 ${formatDuration(view.maxTSec - view.tSec)}）`;
+  const phaseLabel = phase === "running" ? t("模拟中", "Running") : phase === "paused" ? t("已暂停", "Paused")
+    : phase === "ended" ? t("模拟完成", "Complete") : t("待开始", "Ready");
+  const controlsDisabled = !ready || running;
 
-  return <div className="step-page">
-    <h1 className="sr-only">步进模拟 · 帝江号</h1>
-    <main className="step-main">
-      <section className="step-panel" id="setupPanel">
-        <div className="step-panel-header">
-          <h2>① 排班设置</h2>
-          <div className="panel-actions">
-            <button id="importFromManualBtn" className="step-btn-secondary" type="button" onClick={() => importFrom("manual")}>📥 从手动排班导入</button>
-            <button id="importFromResultBtn" className="step-btn-secondary" type="button" disabled={!result?.center} onClick={() => importFrom("result")}>📊 从当前结果导入</button>
-            <button id="collapseAllBtn" className="step-btn-secondary" type="button" onClick={() => setCollapsed(value => !value)}>{collapsed ? "全部展开" : "全部收起"}</button>
-          </div>
+  return <div className="ef-page ef-schedule-page ef-step-page">
+    <PageTitle title={t("步进模拟", "Step simulation")}
+      subtitle={t("沿时间线检查排班，查看心情、换班与产出变化。", "Replay a schedule to inspect morale, shift changes and production.")}
+      action={<RosterDialogTrigger className={actionClassName({ size: "sm" })} disabled={running}>
+        <ActionContent icon={<Users />}>{t("编辑名单", "Edit roster")}</ActionContent>
+      </RosterDialogTrigger>} />
+    {error ? <Notice error>{error}</Notice> : null}
+    {!ready ? <Notice>{t("正在读取本地配置…", "Loading local configuration…")}</Notice> : null}
+    {ready && !workspace.operators.length ? <Notice>{t("请先配置我的干员，再从手动排班或当前结果导入。", "Set up your roster, then import a manual schedule or the current result.")}</Notice> : null}
+
+    <Section title={t("排班设置", "Schedule setup")} actions={<>
+      <Action size="sm" icon={<Import />} disabled={controlsDisabled} onClick={() => importFrom("manual")} id="importFromManualBtn">{t("导入手动排班", "Import manual schedule")}</Action>
+      <Action size="sm" disabled={controlsDisabled || !result?.center} onClick={() => importFrom("result")} id="importFromResultBtn">{t("导入当前结果", "Import current result")}</Action>
+      <Action size="sm" icon={<ChevronsUpDown />} aria-expanded={!collapsed} aria-controls="step-configuration" onClick={() => setCollapsed(value => !value)}>
+        {collapsed ? t("展开", "Expand") : t("收起", "Collapse")}
+      </Action>
+    </>}>
+      <div id="step-configuration" hidden={collapsed}>
+        {config ? <StepRoomConfig rooms={config.rooms} moods={config.moods} work={config.work} startHour={startHour}
+          disabled={running} onRoomChange={changeRoom} onMoodChange={changeMood} onWorkChange={changeWork}
+          onPick={(key, shift, index) => setPicker({ mode: "room", key, shift, index })} /> : null}
+        {source === "template" ? <p className="ef-facility-note">{t("当前为设施模板，请选择干员或导入排班。修改仅用于本页模拟。", "This is a facility template. Select operators or import a schedule. Changes apply only to this simulation.")}</p> : null}
+      </div>
+    </Section>
+
+    <Section title={t("心情恢复助力", "Morale assistance")}>
+      {boost ? <StepBoosts boost={boost} maxDays={days} scheduled={scheduled} labelOf={labelOf}
+        disabled={running} assistEnabled={workspace.options.assist} onChange={changeBoost}
+        onPickTarget={(day, index) => setPicker({ mode: "boost", day, index })} /> : null}
+    </Section>
+
+    <Section title={t("模拟控制", "Simulation controls")}>
+      <div className="ef-form-grid">
+        <Field label={t("曲线采样", "Chart sampling")} value={sampleSec} disabled={controlsDisabled} onValueChange={value => setSampleSec(Number(value))}
+          options={[10, 30, 60, 300, 900].map(value => ({ value, label: value < 60 ? `${value} s` : `${value / 60} min` }))} />
+        <Field label={t("模拟时长", "Duration")} value={maxHours} disabled={controlsDisabled} onValueChange={value => setMaxHours(Number(value))}
+          options={[24, 48, 72, 96].map(value => ({ value, label: `${value} h` }))} />
+        <label className="ef-field"><span>{t("起点（小时）", "Start hour")}</span>
+          <Input type="number" id="startHour" min={0} max={23} value={startHour} disabled={controlsDisabled}
+            onChange={event => { if (event.target.value !== "") setStartHour(Math.min(23, Math.max(0, Math.round(Number(event.target.value))))); }} />
+        </label>
+        <Field label={t("播放速度", "Playback speed")} value={speed} onValueChange={value => setSpeed(Number(value))}
+          options={[1, 10, 100, 1000].map(value => ({ value, label: `${value}×` }))} />
+      </div>
+      <div className="ef-actions ef-step-playback">
+        <Action id="startBtn" size="sm" variant="yellow" icon={<Play />} onClick={start} disabled={!ready || running || phase === "ended"}>
+          {phase === "paused" ? t("继续", "Resume") : t("开始", "Start")}
+        </Action>
+        <Action id="pauseBtn" size="sm" icon={<Pause />} onClick={pause} disabled={!running}>{t("暂停", "Pause")}</Action>
+        <Action id="resetBtn" size="sm" icon={<RotateCcw />} onClick={reset} disabled={!ready}>{t("重置", "Reset")}</Action>
+        <Action id="fastBtn" size="sm" icon={<FastForward />} onClick={fastForward} disabled={!ready || phase === "ended"}>{t("快进到结束", "Fast forward")}</Action>
+        <span className="ef-muted" role="status">{phaseLabel}</span>
+      </div>
+      <div className="ef-step-timeline">
+        <progress max={100} value={percent} aria-label={t("模拟进度", "Simulation progress")} />
+        <div className="ef-step-time" id="timeInfo">
+          <strong>{showResult && view ? formatClock(view.tSec, view.startHour) : "--:--:--"}</strong>
+          <span className="ef-muted">{showResult && view ? `${formatDuration(view.tSec)} / ${formatDuration(view.maxTSec)}` : t("尚未开始", "Not started")}</span>
         </div>
-        {!ready ? <div className="rooms-placeholder">加载中…</div> : <>
-          {error ? <div className="rooms-placeholder" style={{ color: "#c0392b" }}>{error}</div> : null}
-          {!workspace.operators.length ? <div className="rooms-placeholder">
-            名单为空，请先配置干员。
-            <RosterDialogTrigger className="step-btn-secondary" style={{ marginLeft: 8 }}>编辑名单</RosterDialogTrigger>
-          </div> : null}
-          {config && !collapsed ? <StepRoomConfig
-            rooms={config.rooms} moods={config.moods} work={config.work} startHour={startHour}
-            disabled={running} showImages={showImages} labelOf={labelOf} iconOf={iconOf}
-            onRoomChange={changeRoom} onMoodChange={changeMood} onWorkChange={changeWork}
-            onPick={(key, shift, index) => setPicker({ mode: "room", key, shift, index })} /> : null}
-          {config && !collapsed && source === "template" ? <p className="rooms-placeholder" style={{ padding: "0 0 8px" }}>
-            当前只载入了设施骨架；可从手动排班或最近结果导入名单与换班时刻。
-          </p> : null}
-        </>}
-      </section>
+      </div>
+    </Section>
 
-      <section className="step-panel">
-        <div className="step-panel-header"><h2>⚡ 心情恢复助力</h2></div>
-        {boost ? <StepBoosts boost={boost} maxDays={days} scheduled={scheduled} labelOf={labelOf}
-          disabled={running} assistEnabled={workspace.options.assist}
-          onChange={changeBoost} onPickTarget={(day, index) => setPicker({ mode: "boost", day, index })} />
-          : <div className="rooms-placeholder">加载中…</div>}
-      </section>
-
-      <section className="step-panel">
-        <div className="step-controls">
-          <label>曲线采样
-            <select id="sampleSec" value={sampleSec} disabled={running} onChange={event => setSampleSec(Number(event.target.value))}>
-              <option value={10}>10 秒</option>
-              <option value={30}>30 秒</option>
-              <option value={60}>1 分钟</option>
-              <option value={300}>5 分钟</option>
-              <option value={900}>15 分钟</option>
-            </select>
-          </label>
-          <label>时长
-            <select id="maxHours" value={maxHours} disabled={running} onChange={event => setMaxHours(Number(event.target.value))}>
-              <option value={24}>24 h</option>
-              <option value={48}>48 h</option>
-              <option value={72}>72 h</option>
-              <option value={96}>96 h</option>
-            </select>
-          </label>
-          <label>起点
-            <input type="number" id="startHour" min={0} max={23} value={startHour} disabled={running} style={{ width: 56 }}
-              onChange={event => { if (event.target.value === "") return; setStartHour(Math.min(23, Math.max(0, Math.round(Number(event.target.value))))); }} /> 时
-          </label>
-          <label>播放速度
-            <select id="speedSel" value={speed} onChange={event => setSpeed(Number(event.target.value))}>
-              <option value={1}>1×（实时）</option>
-              <option value={10}>10×</option>
-              <option value={100}>100×</option>
-              <option value={1000}>1000×</option>
-            </select>
-          </label>
-          <button id="startBtn" className="step-btn-primary" type="button" onClick={start} disabled={running || phase === "ended"}>▶ 开始</button>
-          <button id="pauseBtn" type="button" onClick={pause} disabled={!running}>⏸ 暂停</button>
-          <button id="resetBtn" type="button" className={phase === "ended" ? "step-btn-danger" : undefined} onClick={reset}>
-            {phase === "ended" ? "⏹ 重置（模拟已结束）" : "⏹ 重置"}
-          </button>
-          <button id="fastBtn" type="button" onClick={fastForward} disabled={phase === "ended"}>⏭ 快进到结束</button>
-        </div>
-      </section>
-
-      <section className="step-panel">
-        <div className="timeline-bar">
-          <div className="timeline-fill" id="timelineFill" style={{ width: `${percent}%` }} />
-          <div className="timeline-cursor" id="timelineCursor" style={{ left: `${percent}%` }} />
-        </div>
-        <div className="timeline-info"><span id="timeInfo">{info}</span></div>
-      </section>
-
-      <section className="step-panel">
-        <div className="step-panel-header"><h2>② 各舱心情曲线 &amp; 产率</h2></div>
-        {showResult && view && config
-          ? <StepCharts view={view} rooms={config.rooms} />
-          : <div className="mood-charts-grid" id="moodCharts"><div className="chart-placeholder">点击「开始」后绘制</div></div>}
-      </section>
-
-      <section className="step-panel">
-        <div className="step-panel-header"><h2>③ 舱室实时状态</h2></div>
-        {showResult && view && config
-          ? <StepRooms view={view} rooms={config.rooms} ratesOf={key => engine.current?.roomRates(key) ?? {}}
-            centralBonus={engine.current?.centralBonus() ?? 0} labelOf={labelOf} iconOf={iconOf} showImages={showImages} />
-          : <div className="rooms-grid" id="roomsGrid"><div className="rooms-placeholder">尚未开始</div></div>}
-      </section>
-
-      <section className="step-panel">
-        {showResult && view
-          ? <StepLog log={view.log} startHour={startHour} onClear={() => { engine.current?.clearLog(); bump(); }} />
-          : <><div className="step-panel-header"><h2>④ 事件日志</h2><button className="step-btn-secondary" type="button">清空</button></div>
-            <div className="log-list" id="logList"><div className="log-empty">暂无事件</div></div></>}
-      </section>
-
-      <section className="step-panel">
-        <div className="step-panel-header"><h2>⑤ 最终统计</h2></div>
-        {showResult && view && config ? <StepStats view={view} rooms={config.rooms} />
-          : <div className="stats-area" id="statsArea"><div className="stats-placeholder">尚未开始</div></div>}
-      </section>
-    </main>
-
-    <StepPicker
-      open={!!picker}
-      title={pickerTitle}
-      operators={pickerOperators}
-      current={currentName}
-      unavailable={unavailable}
-      scheduled={scheduled}
-      boostOnly={picker?.mode === "boost"}
-      showImages={showImages}
-      onSelect={selectOperator}
-      onClear={clearOperator}
-      onClose={() => setPicker(null)}
-    />
+    <Section title={t("心情与产率曲线", "Morale and production curves")}>
+      {showResult && view && config ? <StepCharts view={view} rooms={config.rooms} />
+        : <div className="ef-empty"><p>{t("开始模拟后显示心情、换班与产率曲线。", "Start the simulation to see morale, shift changes and production rates.")}</p></div>}
+    </Section>
+    <Section title={t("舱室实时状态", "Live facility status")}>
+      {showResult && view && config ? <StepRooms view={view} rooms={config.rooms} ratesOf={key => snapshot?.rates[key] ?? {}}
+        centralBonus={snapshot?.centralBonus ?? 0} labelOf={labelOf} />
+        : <p className="ef-muted">{t("尚未开始", "Not started")}</p>}
+    </Section>
+    <StepLog log={showResult && view ? view.log : []} startHour={startHour} onClear={() => { engine.current?.clearLog(); bump(); }} />
+    <Section title={t("模拟统计", "Simulation statistics")}>
+      {showResult && view && config ? <StepStats view={view} rooms={config.rooms} />
+        : <p className="ef-muted">{t("尚未开始", "Not started")}</p>}
+    </Section>
+    <StepPicker open={!!picker} title={pickerTitle} current={currentName} unavailable={unavailable}
+      onSelect={selectOperator} onClear={clearOperator} onClose={() => setPicker(null)} />
   </div>;
 }

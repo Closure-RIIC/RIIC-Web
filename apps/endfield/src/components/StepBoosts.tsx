@@ -1,72 +1,58 @@
+import { Action, Field, Notice } from "@riic/endfield-ui";
+import { Input } from "@riic/ui-primitives/input";
+import { Tabs, CompactTabsList, TabsTrigger, TabsContent } from "@riic/ui-primitives/tabs";
+import { useWorkspace } from "../state";
 import type { StepBoostConfig } from "../step/step-types.ts";
 import { createBoostEntry } from "../step/step-model.ts";
 
 export interface StepBoostsProps {
-  boost: StepBoostConfig;
-  maxDays: number;
-  scheduled: ReadonlySet<string>;
-  labelOf: (name: string) => string;
-  disabled: boolean;
-  assistEnabled: boolean;
-  onChange: (next: StepBoostConfig) => void;
-  onPickTarget: (dayIndex: number, entryIndex: number) => void;
+  boost: StepBoostConfig; maxDays: number; scheduled: ReadonlySet<string>;
+  labelOf: (name: string) => string; disabled: boolean; assistEnabled: boolean;
+  onChange: (next: StepBoostConfig) => void; onPickTarget: (dayIndex: number, entryIndex: number) => void;
 }
 
-/** 按天独立配置的心情恢复助力；每次 +30%，最多 2 次/日。 */
 export function StepBoosts({ boost, maxDays, scheduled, labelOf, disabled, assistEnabled, onChange, onPickTarget }: StepBoostsProps) {
-  const dayIndex = Math.min(boost.currentDay, Math.max(0, boost.days.length - 1));
-  const day = boost.days[dayIndex] ?? { list: [] };
-
-  function patch(next: Partial<StepBoostConfig>) {
-    onChange({ ...boost, ...next });
+  const { t } = useWorkspace();
+  const dayIndex = Math.min(boost.currentDay, Math.max(0, maxDays - 1));
+  function changeCount(value: string | number) {
+    const dailyCount = Number(value) as 0 | 1 | 2;
+    const days = boost.days.map(day => {
+      const list = day.list.slice(0, dailyCount);
+      while (list.length < dailyCount) list.push(createBoostEntry(list.length));
+      return { list };
+    });
+    onChange({ ...boost, dailyCount, days });
   }
-  function patchEntry(index: number, entry: Partial<{ hour: number; minute: number; target: string | null }>) {
-    const days = boost.days.map((item, position) => position === dayIndex
-      ? { list: item.list.map((current, entryIndex) => entryIndex === index ? { ...current, ...entry } : current) }
-      : item);
+  function patchEntry(dayIndex: number, index: number, patch: Partial<{ hour: number; minute: number }>) {
+    const days = boost.days.map((day, i) => i === dayIndex ? {
+      list: day.list.map((entry, j) => j === index ? { ...entry, ...patch } : entry),
+    } : day);
     onChange({ ...boost, days });
   }
-
-  return <div className="step-boost-settings">
-    <label className="boost-count-label">每天可用次数：
-      <select id="dailyBoostCount" value={boost.dailyCount} disabled={disabled}
-        onChange={event => {
-          const dailyCount: 0 | 1 | 2 = Number(event.target.value) === 1 ? 1 : Number(event.target.value) === 2 ? 2 : 0;
-          const days = boost.days.map(item => {
-            const list = item.list.slice(0, dailyCount);
-            while (list.length < dailyCount) list.push(createBoostEntry(list.length));
-            return { list };
-          });
-          onChange({ ...boost, dailyCount, days });
-        }}>
-        <option value="0">0 次</option>
-        <option value="1">1 次</option>
-        <option value="2">2 次</option>
-      </select>
-    </label>
-    <span className="boost-hint">（每次助力使目标心情 +30%，不超 100%；可分别设置第 1~{maxDays} 天，仅可选已排班干员）</span>
-    {!assistEnabled ? <span className="boost-hint">· 当前排班未开启“中枢助力”，这里的设置只用于本页推演。</span> : null}
-    <div className="boost-day-tabs" id="boostDayTabs">
-      {Array.from({ length: maxDays }, (_, index) => <button key={index} type="button"
-        className={`boost-day-tab${index === dayIndex ? " active" : ""}`} data-day={index} disabled={disabled}
-        onClick={() => patch({ currentDay: index })}>第 {index + 1} 天</button>)}
+  return <div className="ef-step-boost">
+    <div className="ef-step-boost-summary">
+      <Field label={t("每日助力次数", "Assists per day")} value={boost.dailyCount} disabled={disabled}
+        onValueChange={changeCount} options={[0, 1, 2].map(value => ({ value, label: t(`${value} 次`, String(value)) }))} />
+      <p className="ef-muted">{t("每次恢复 30% 心情，最多恢复至 100%。仅可选择已排班干员。", "Each assist restores 30% morale, up to 100%. Only assigned operators are eligible.")}</p>
     </div>
-    <div id="boostConfigList" className="boost-config-list">
-      {Array.from({ length: boost.dailyCount }, (_, index) => {
-        const entry = day.list[index] ?? createBoostEntry(index);
-        const valid = !!entry.target && scheduled.has(entry.target);
-        return <div className="boost-config-row" key={index}>
-          <span>第 {index + 1} 次助力：</span>
-          <input type="number" className="boost-hour" data-idx={index} min={0} max={23} value={entry.hour} disabled={disabled}
-            onChange={event => { if (event.target.value === "") return; patchEntry(index, { hour: Math.min(23, Math.max(0, Math.round(Number(event.target.value)))) }); }} /> 时
-          <input type="number" className="boost-minute" data-idx={index} min={0} max={59} value={entry.minute} disabled={disabled}
-            onChange={event => { if (event.target.value === "") return; patchEntry(index, { minute: Math.min(59, Math.max(0, Math.round(Number(event.target.value)))) }); }} /> 分
-          <button type="button" className={`boost-target-btn${valid ? " has-target" : ""}`} data-idx={index} disabled={disabled}
-            onClick={() => onPickTarget(dayIndex, index)}>{valid ? labelOf(entry.target as string) : "选择干员"}</button>
-          {valid ? <span className="boost-target-level">（已排班）</span> : null}
-        </div>;
-      })}
-      {boost.dailyCount === 0 ? <div style={{ fontSize: "0.8rem", color: "#888" }}>未启用助力：需要时把“每天可用次数”调到 1 或 2。</div> : null}
-    </div>
+    {!assistEnabled ? <Notice>{t("工作区未开启中枢助力；此处配置仅用于本次模拟。", "Central assistance is off in the workspace. These settings apply only to this simulation.")}</Notice> : null}
+    {boost.dailyCount ? <Tabs value={dayIndex} onValueChange={value => onChange({ ...boost, currentDay: Number(value) })}>
+      <CompactTabsList aria-label={t("助力日期", "Assistance day")}>{Array.from({ length: maxDays }, (_, index) =>
+        <TabsTrigger key={index} value={index} disabled={disabled}>{t(`第 ${index + 1} 天`, `Day ${index + 1}`)}</TabsTrigger>)}</CompactTabsList>
+      {Array.from({ length: maxDays }, (_, day) => <TabsContent key={day} value={day}>
+        <div className="ef-step-boost-entries">{Array.from({ length: boost.dailyCount }, (_, index) => {
+          const entry = boost.days[day]?.list[index] ?? createBoostEntry(index);
+          const valid = !!entry.target && scheduled.has(entry.target);
+          return <fieldset key={index} disabled={disabled} className="ef-step-boost-entry">
+            <legend>{t(`助力 ${index + 1}`, `Assist ${index + 1}`)}</legend>
+            <label className="ef-field"><span>{t("时间", "Time")}</span>
+              <Input type="time" step={60} value={`${String(entry.hour).padStart(2, "0")}:${String(entry.minute).padStart(2, "0")}`}
+                onChange={event => { const [hour, minute] = event.target.value.split(":").map(Number); if (Number.isFinite(hour) && Number.isFinite(minute)) patchEntry(day, index, { hour, minute }); }} />
+            </label>
+            <Action size="sm" disabled={disabled} onClick={() => onPickTarget(day, index)}>{valid ? labelOf(entry.target!) : t("选择助力目标", "Choose target")}</Action>
+          </fieldset>;
+        })}</div>
+      </TabsContent>)}
+    </Tabs> : <p className="ef-muted">{t("本次模拟不使用助力。", "No assistance in this simulation.")}</p>}
   </div>;
 }

@@ -155,7 +155,7 @@ export function roomEffectResolver(table: EffectTable): RoomEffectResolver {
       if (effect.room !== solverRoom) continue;
       if (effect.kind === "减免") effects.reduce += effect.value;
       else if (effect.kind === "恢复") effects.restore += effect.value;
-      else if (effect.cat) effects.effMap[effect.cat] = (effects.effMap[effect.cat] ?? 0) + effect.value;
+      else if (effect.kind === "加成" && effect.cat) effects.effMap[effect.cat] = (effects.effMap[effect.cat] ?? 0) + effect.value;
     }
     cache.set(id, effects);
     return effects;
