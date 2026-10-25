@@ -10,6 +10,7 @@ import { SklandLoginPanel, type EndfieldLogin } from "./SklandLoginPanel";
 import { SklandDataView, SklandProfile } from "./SklandDataView";
 import { useWorkspace, WEBSITE_SIGN_OUT_EVENT, WEBSITE_SESSION_CHANGE_EVENT } from "../state";
 import { sklandRosterSource, syncSklandWorkspace } from "../skland-workspace";
+import { operatorCatalog } from "@riic/endfield-data";
 import { DialogFrame } from "./DialogFrame";
 
 type Account = { id: string; label: string; source: string };
@@ -54,7 +55,7 @@ export function SklandPage() {
     if (signal.aborted) return;
     const source = sklandRosterSource(owner.current, id, role);
     update(current => {
-      const synced = syncSklandWorkspace(current, value.snapshot, source, role.roleId);
+      const synced = syncSklandWorkspace(current, value.snapshot, source, role.roleId, operatorCatalog);
       reportSklandSync(synced.status);
       // Other scheduling pages must not display equipment from a rejected account.
       setSklandSnapshot(synced.status.blocked ? null : value.snapshot);
