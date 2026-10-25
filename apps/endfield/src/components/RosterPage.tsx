@@ -13,6 +13,7 @@ import { Button } from "@riic/ui-primitives/button";
 import { GameArtwork, OperatorPortrait } from "./GameArtwork";
 import { SkillFilters } from "./SkillFilters";
 import { ManualOperatorChoice } from "./ManualOperatorChoice";
+import { OperatorSkillTooltip } from "./OperatorSkillTooltip";
 
 const skillCatalog = [...catalog].sort(compareOperatorRelease);
 
@@ -224,7 +225,8 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
           </div>;
         })}</div></div>)}</div> : null;
         return <article key={op.id} className="ef-roster-card" data-operator-id={op.id} data-selected={skillsOnly ? undefined : selected.has(op.name)}>
-          <header><OperatorPortrait name={op.id} size={skillsOnly ? 96 : 48} elite={skillsOnly ? null : undefined} /><div className="ef-roster-identity"><h3>{locale === "en" ? op.enName : op.name}</h3><p><span className="ef-roster-rarity">{op.rarity}★</span>{skillsOnly ? <span>{locale === "en" ? op.name : op.enName}</span> : null}</p></div>
+          <header>{(skillsOnly ? <OperatorPortrait name={op.id} size={96} elite={null} />
+            : <OperatorSkillTooltip name={op.name}><OperatorPortrait name={op.id} size={48} showTitle={false} /></OperatorSkillTooltip>)}<div className="ef-roster-identity"><h3>{locale === "en" ? op.enName : op.name}</h3><p><span className="ef-roster-rarity">{op.rarity}★</span>{skillsOnly ? <span>{locale === "en" ? op.name : op.enName}</span> : null}</p></div>
             {!skillsOnly ? <SelectionButton selected={selected.has(op.name)} aria-label={t(`拥有${op.name}`, `Own ${op.enName}`)} disabled={!ready} size="icon" className="ef-roster-own rounded-full"
               title={selected.has(op.name) ? t("移出我的干员", "Remove from my operators") : t("加入我的干员", "Add to my operators")}
               onSelectedChange={owned => save(owned ? [...workspace.operators, { name: op.name, elite: 0 }] : workspace.operators.filter(x => x.name !== op.name))}>

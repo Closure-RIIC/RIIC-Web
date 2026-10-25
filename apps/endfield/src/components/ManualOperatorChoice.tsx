@@ -5,6 +5,7 @@ import { unlockedSkillNodes } from "@riic/endfield-skland/skill-nodes";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@riic/ui-primitives/tooltip";
 import { useWorkspace } from "../state";
 import { GameArtwork, OperatorPortrait } from "./GameArtwork";
+import { operatorSkillTiers } from "./OperatorSkillTooltip";
 
 export function ManualOperatorChoice({ operator, owned, selected, unavailable, onSelect }: {
   operator: (typeof catalog)[number];
@@ -18,10 +19,7 @@ export function ManualOperatorChoice({ operator, owned, selected, unavailable, o
   const tooltipId = useId();
   const display = operatorData(operator.id);
   const name = locale === "en" ? operator.enName : operator.name;
-  const skills = operator.skills.map(skill => {
-    const source = display?.skills.find(item => item.id === skill.nodeId) ?? display?.skills.find(item => item.name === skill.name);
-    return { ...skill, source, unlock: source?.unlock ?? skill.unlock };
-  });
+  const skills = operatorSkillTiers(operator);
   const unlocked = new Set(unlockedSkillNodes(skills, owned));
   const state = selected ? t("当前工位", "Current slot") : unavailable ? t("已安排至其他工位", "Assigned elsewhere") : "";
   return <Tooltip open={open} onOpenChange={setOpen}>
