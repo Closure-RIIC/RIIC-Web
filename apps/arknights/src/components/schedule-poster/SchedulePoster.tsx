@@ -102,7 +102,9 @@ export function SchedulePoster(props: Props) {
       </button>
       <div className="poster-shift-stack" style={{ gridTemplateRows: `repeat(${shifts.length}, minmax(0,1fr))` }}>
         {shifts.map((shift, index) => {
-          const members = shift.rooms[room.id]?.operators ?? [];
+          const assignment = shift.rooms[room.id];
+          const members = assignment?.operators ?? [];
+          const facilityAutofill = assignment?.autofill === true || Boolean(assignment?.autofillSlots?.length);
           const capacity = variant === "control" ? 5 : manualRoomCapacity(room);
           const evaluation = result?.roomsByShift[index]?.find(item => item.roomId === room.id);
           const skillEfficiency = evaluation
@@ -132,13 +134,14 @@ export function SchedulePoster(props: Props) {
           const memberSlots = Array.from({ length: visibleCapacity }, (_, slot) => {
                 const isDormHanger = variant === "dorm" && slot === 5;
                 const name = isDormHanger ? doc.presentation.dormHangerOperators[index] ?? undefined : members[slot];
+                const autofill = !name && !isDormHanger && slot < capacity && facilityAutofill;
                 const presentation = name ? operatorPresentationFor({ name }) : undefined;
                 const training = name ? doc.operators.find(operator => operator.name === name) : undefined;
-                return <div className="poster-member" key={slot} data-poster-hanger-slot={isDormHanger ? "" : undefined} style={{ "--poster-name-units": Math.max(3, (name ?? "空位").split("").reduce((sum, char) => sum + (char.charCodeAt(0) < 128 ? .62 : 1), 0)) } as CSSProperties}>
+                return <div className="poster-member" key={slot} data-poster-hanger-slot={isDormHanger ? "" : undefined} style={{ "--poster-name-units": Math.max(3, (name ?? (autofill ? "AUTO" : "空位")).split("").reduce((sum, char) => sum + (char.charCodeAt(0) < 128 ? .62 : 1), 0)) } as CSSProperties}>
                   <div className="poster-operator-art">
                     {room.kind === "training_room" ? <span className="poster-training-role">{slot === 0 ? "专精" : "协助"}</span> : null}
                     <OperatorSlot slot={name ? { name, label: name, portrait: presentation?.portrait, profession: presentation?.operator?.profession } : undefined}
-                      elite={training?.elite} eliteBadgeVariant="poster" rarity={presentation?.operator?.rarity} selectionMode tooltipDisabled emptyLabel="空位"
+                      elite={training?.elite} eliteBadgeVariant="poster" rarity={presentation?.operator?.rarity} selectionMode tooltipDisabled emptyLabel="空位" autofill={autofill}
                       onActivate={isDormHanger
                         ? () => onSelect({ roomId: room.id, shift: index, slot, presentationOnly: "dorm-hanger" })
                         : slot < capacity ? () => onSelect({ roomId: room.id, shift: index, slot }) : undefined} />
@@ -200,7 +203,7 @@ export function SchedulePoster(props: Props) {
       </header>
       <main className="poster-body">
         {control ? facility(control, "control") : <div />}
-        <div className="poster-production-zone">{[production.slice(0, 3), production.slice(3)].map((row, index) => <div className="poster-production-row" key={index} style={{ gridTemplateColumns: `repeat(${Math.max(1, row.length)}, minmax(0,1fr))` }}>{row.map(room => facility(room, "production"))}</div>)}</div>
+        <div className="poster-production-zone">{[production.slice(0, 3), production.slice(3)].map((row, index) => <div className="poster-production-row" key={index} data-room-count={row.length} style={{ gridTemplateColumns: `repeat(${Math.max(1, row.length)}, minmax(0,1fr))` }}>{row.map(room => facility(room, "production"))}</div>)}</div>
         <div className="poster-support-zone">
           <div className="poster-support-row" style={{ gridTemplateColumns: `repeat(${Math.max(1, singles.length)}, minmax(0,1fr))` }}>{singles.map(room => facility(room, "single"))}</div>
           <div className="poster-support-row" style={{ gridTemplateColumns: `repeat(${Math.max(1, pairs.length)}, minmax(0,1fr))` }}>{pairs.map(room => facility(room, "pair"))}</div>
