@@ -1,0 +1,140 @@
+{
+  "来源页面": "https://wei.linxia.dev/",
+  "静态资源来源": "https://wei-static.linxia.dev/",
+  "采集日期": "2026-10-25",
+  "说明": "界面与部分美术资源参考、复用原站公开页面，静态文件本地加载。原作者及素材原始权利人保留相应权利；此记录不代表再分发授权。",
+  "文件": [
+    {
+      "path": "bonds/arcaneShip.png",
+      "sha256": "886e97d0309d42c46b9c34465bb4e333464170bd2e6089267ed24ed063ff9e10"
+    },
+    {
+      "path": "bonds/deputShip.png",
+      "sha256": "2732a33e7ff03408d1960046e0de40aa7a24d35bfa4dbfae65f8b62537132467"
+    },
+    {
+      "path": "bonds/egirShip.png",
+      "sha256": "a1e1d2c154b340a6d6117276cb48789b7890c4c2ad4a4eeb922a498c8a99f17f"
+    },
+    {
+      "path": "bonds/emptyShip.png",
+      "sha256": "6d4de3797e89f8f26cc004017192ff7136f8dacfb4e91a7de1ac15efb953e029"
+    },
+    {
+      "path": "bonds/indomShip.png",
+      "sha256": "695901fc6b9283ac867c03adee33502e4a12d578005064854efe6d3d5c7bb6bf"
+    },
+    {
+      "path": "bonds/investShip.png",
+      "sha256": "6e25388873b714bf39442613c93d614e85d9de0c1f8c29f0eb50c4717c856c9c"
+    },
+    {
+      "path": "bonds/kazimierzShip.png",
+      "sha256": "376d828df1d3fcd9ffb4ca4a754c797541e4c4b3210b4500d09d305c3c965a99"
+    },
+    {
+      "path": "bonds/kjeragShip.png",
+      "sha256": "ca25640b14d4bd541de79110ea627c16cd7c55380b76d86ef512c2a0dc73da0a"
+    },
+    {
+      "path": "bonds/lateranoShip.png",
+      "sha256": "e1a94d87b9ec0e7d6cd27ec631ba15b0aa76905dadd872c1957c588ae683b850"
+    },
+    {
+      "path": "bonds/maniShip.png",
+      "sha256": "43d45a8d93643b9415c85012b44de0451699c96d3b1a2d98d0d42f9dc915ea8c"
+    },
+    {
+      "path": "bonds/miraShip.png",
+      "sha256": "21afd79f3db8495b7fda4350451e1831068552a299e8b411767ab006522614ce"
+    },
+    {
+      "path": "bonds/preciShip.png",
+      "sha256": "38b603a607ed30ef8a479b54bffe20834d61b46fe1e8805576b632b7f24e2495"
+    },
+    {
+      "path": "bonds/raidShip.png",
+      "sha256": "6451999212ffb7bd52f8b4658d6b0b31ef588444b735a4dfa9960f885a6b13d0"
+    },
+    {
+      "path": "bonds/sargonShip.png",
+      "sha256": "b1df4be6fcfa59c773a47e82008161620f356585a23ea59244b2c7e05c9526ce"
+    },
+    {
+      "path": "bonds/siracusaShip.png",
+      "sha256": "84b4f55e0ec03f57c23b1bb3083bc5d05baed44a965236b4f0b57d8a0dad6e6c"
+    },
+    {
+      "path": "bonds/skillfulShip.png",
+      "sha256": "857335ef66222f945c6a959d1d89aa8994c3f3603c7ed5d64b6340bc887416a4"
+    },
+    {
+      "path": "bonds/soloShip.png",
+      "sha256": "6b5286cde852e1e7fad3f2f04b092b3ed4ae16bafc203c6158a866c1b7417343"
+    },
+    {
+      "path": "bonds/steadShip.png",
+      "sha256": "46d4fd5cf44980527ed5f91aa194ea6adc28a90e24f75107b57ead550d399ef5"
+    },
+    {
+      "path": "bonds/suntShip.png",
+      "sha256": "f3910297ce5f195d53ef09a581b57e72a16abb682b8d8da347a979a33a435053"
+    },
+    {
+      "path": "bonds/swiftShip.png",
+      "sha256": "53238b4cfc9bee78c9ede117b24550a1399c47ec01c9e06145d83d3efd7f0eb2"
+    },
+    {
+      "path": "bonds/victoriaShip.png",
+      "sha256": "aabea68b4d745b5ef7df4f7b63a59a9b8fa8d3ac4aa3af594ec504405ba90417"
+    },
+    {
+      "path": "bonds/visiShip.png",
+      "sha256": "074fb4c9b3efe11f66798f187e5d586cdc4e88cc1ac7afdddf6e33c9d7dcd417"
+    },
+    {
+      "path": "bonds/yanShip.png",
+      "sha256": "ee44a09b625d801a998ee483fa328961b323355329b11b8329a052d8fb51678b"
+    },
+    {
+      "path": "hub-ach-land.svg",
+      "sha256": "b42b301b4ba61dedaaef69abded1cc42633d702efa510cd4090bd806b90129d7"
+    },
+    {
+      "path": "hub-emblem.svg",
+      "sha256": "676275ea05ea00b37d3f2a82b5b743f6d054c217444f618a0798d3d82dd42a27"
+    },
+    {
+      "path": "hub-land.svg",
+      "sha256": "1987df35dc9fb9501326f54b2360df864051fcd89a88105dbaaa9eef8c555c90"
+    },
+    {
+      "path": "mode_abyss_icon.png",
+      "sha256": "a923fba9f807cf43068aeb265246319a538254618c565467a8b23b75a28c182d"
+    },
+    {
+      "path": "mode_funny_icon.png",
+      "sha256": "c79722712d98e868e2ca6d2a590fa1a45744e29b8def3611359d7522bb5cc71e"
+    },
+    {
+      "path": "mode_hard_icon.png",
+      "sha256": "8c99b4515e5fb1bab17bc71eec30c584df5df9b78ec2716054cbb3629b7826ad"
+    },
+    {
+      "path": "mode_normal_icon.png",
+      "sha256": "223a6f751f2b5a0272f15cf26d75ad17ba52896a7c93d32c7f50cd920e8c3901"
+    },
+    {
+      "path": "operator-preset.webp",
+      "sha256": "347031f4288ca5ed107cc11b10ba951150aad9e3d301e1bb4e4eeed082f48bbe"
+    },
+    {
+      "path": "waiting-portrait-2.png",
+      "sha256": "5e1f0810f790f42e1bc957707728dca5abd8e0bb3f4b48b40a398d0a7b965d0e"
+    },
+    {
+      "path": "waiting-portrait.png",
+      "sha256": "7c15cdfd89823cc3a6ea25888efdeed133142907e3f67993280f05da37f8713e"
+    }
+  ]
+}

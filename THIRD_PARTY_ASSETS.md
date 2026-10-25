@@ -1,5 +1,16 @@
 # Third-party asset sources
 
+## 卫戍协议匹配房间：界面参考与美术资源来源
+
+本功能的大厅、协议选择页及四人等待室的布局、交互和美术表现参考了 [卫戍协议：盟约](https://wei.linxia.dev/)。本提交实际复用了该公开页面中的部分美术资源和界面样式，包括背景、点阵徽标、协议页 SVG 插画、23 个盟约图标、等待室装饰立绘及按钮图标，并非全部由本项目原创。
+
+- 来源页面：[https://wei.linxia.dev/](https://wei.linxia.dev/)
+- 静态资源来源：`https://wei-static.linxia.dev/`
+- 采集日期：2026-10-25；文件清单与 SHA-256 见 `apps/arknights/public/images/defense-reference/source.json`。
+- 静态素材均在本地加载，不热链原站，不接入或复用原站账号、玩家数据、统计或游戏服务。
+- 原站作者与素材原始权利人保留相应权利。来源备注不等于取得再分发授权，也不将第三方内容自动纳入本仓库许可证；合并、发布前仍需维护者核对授权范围。
+- 装饰立绘仅用于房间界面展示，不表示用户持有对应干员。
+
 ## Shared account form controls
 
 The OTP input and password-strength controls in `packages/shell/auth/` retain their Interior component attribution (copyright 2026 ozzy) and MIT license in `packages/shell/auth/LICENSE`. The original Arknights import paths re-export these shared controls.
@@ -80,3 +91,14 @@ Numeric UI text uses the Bender Bold font distributed in the public [1001 Fonts 
 - License SHA-256: `7F18EC1EBB6B50E3ED0F74B2C61F25B8D7CD69E43F4DE66E991BCFD3C419A8BB`
 
 The font is self-hosted in the Vite build. Runtime pages do not request the font from 1001 Fonts, Hypergryph, or another third-party font CDN.
+
+### 具体复用范围
+
+- 大厅背景与徽标：`public/images/defense-reference/hub-*.svg`。
+- 协议选择页：`DefenseProtocolScreen.css`、`defense-protocol-reference.json`，包括四档协议插画、卡片与选择印章。
+- 核心及附加盟约：`public/images/defense-reference/bonds/` 下的 23 个图标。
+- 四人等待室：`DefenseWaitingRoom.css`、`defense-waiting-icons.json`。
+- 装饰立绘原路径：`assets/char/portrait/char_4211_snhunt_2.png`、`char_350_surtr_2.png`。
+- 菜单图标原路径：`assets/local/ui/outer/operator_preset.webp`。
+
+以上文件均需结合上述第三方权利说明审查，不主张其原创权或额外授权。

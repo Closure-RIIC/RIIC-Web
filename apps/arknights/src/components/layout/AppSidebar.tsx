@@ -152,6 +152,14 @@ export function AppSidebar({ page, onPageChange, showMower = false, onSessionCha
             <AppNavigationItem page={page} target="skill-query" label={labels.skills} icon={Search} onPageChange={onPageChange} />
           </SidebarMenu>
         </SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>{locale === "en" ? "Co-op" : "联机组队"}</SidebarGroupLabel>
+          <SidebarMenu><SidebarMenuItem>
+            <SidebarMenuButton render={<Link to="/defense-team" preload={false} />} tooltip={locale === "en" ? "Defense Protocol" : "卫戍协议四人组队"}>
+              <UserRoundPlus className="size-5"/><span>{locale === "en" ? "Defense Protocol · 4 players" : "卫戍协议 · 四人组队"}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem></SidebarMenu>
+        </SidebarGroup>
         {features.agent ? <SidebarGroup>
           <SidebarGroupLabel>{locale === "en" ? "AI Assistant" : "智能助理"}</SidebarGroupLabel>
           <SidebarMenu>

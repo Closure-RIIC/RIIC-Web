@@ -11,12 +11,12 @@
   "type": "module",
   "scripts": {
     "test:pr-batch": "node --test --experimental-strip-types apps/arknights/src/wish-validation.test.ts packages/platform-server/src/auth/session-lifetime.test.ts",
-    "posttest": "npm run test:pr-batch && npm run test:training-planner && npm run test:route-preload",
+    "posttest": "npm run test:pr-batch && npm run test:training-planner && npm run test:route-preload && npm run test:defense-team",
     "test:wishes-integration": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test apps/arknights/src/server/wishes.integration.test.mjs",
     "test:agent-resources": "node --experimental-strip-types --experimental-test-module-mocks --test apps/arknights/src/server/agent/message-history.test.ts apps/arknights/src/server/agent/answer-boundary.test.ts apps/arknights/src/server/agent/resource-policy.test.ts apps/arknights/src/server/agent/resource-import.test.ts apps/arknights/src/server/agent/resources-api.test.ts",
     "test:agent-resources-integration": "node --experimental-transform-types --test apps/arknights/src/server/agent/resources.integration.test.mjs",
     "test:billing-integration": "node --experimental-transform-types --test apps/arknights/src/server/billing/cdk.integration.test.mjs",
-    "posttest:auth-integration": "npm run test:billing-integration && npm run test:agent-billing-integration && npm run test:wishes-integration",
+    "posttest:auth-integration": "npm run test:billing-integration && npm run test:agent-billing-integration && npm run test:wishes-integration && npm run test:defense-team:integration",
     "test:agent-billing-integration": "node --experimental-transform-types --test apps/arknights/src/server/billing/agent-accounting.integration.test.mjs && npm run test:agent-resources-integration",
     "test:agent-gateway": "node --experimental-strip-types --experimental-test-module-mocks --test apps/arknights/src/server/agent/filter-policy.test.ts apps/arknights/src/server/billing/rate-policy.test.ts apps/arknights/src/server/billing/pricing.test.ts apps/arknights/src/server/billing/points.test.ts apps/arknights/src/server/billing/admin-api.test.ts && npm run test:agent-resources",
     "test:agent-billing:e2e": "playwright test --config=playwright.agent-billing.config.ts",
@@ -99,7 +99,9 @@
     "test:workspace": "node --test scripts/workspace-layout.test.mjs",
     "test:platform:integration": "node scripts/test-platform-auth.mjs",
     "test:platform": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test packages/contracts/*.test.ts packages/platform/*.test.ts packages/platform-server/src/request-context.test.ts packages/platform-server/src/response-cookies.test.ts packages/platform-server/src/snapshot-cache.test.ts packages/platform-server/src/proxy.test.ts packages/platform-server/src/auth/shared-session.test.ts && node --experimental-strip-types --experimental-test-module-mocks --test packages/platform-server/src/auth/endfield-access.test.ts packages/platform-server/src/auth/password-reset-privacy.test.ts",
-    "release:stage:app": "node scripts/stage-app-release.mjs"
+    "release:stage:app": "node scripts/stage-app-release.mjs",
+    "test:defense-team": "node --test --experimental-strip-types --import ./scripts/register-hooks.mjs apps/arknights/src/defense-team-validation.test.ts apps/arknights/src/defense-bond-matching.test.ts",
+    "test:defense-team:integration": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test apps/arknights/src/server/defense-team.integration.test.mjs"
   },
   "devDependencies": {
     "@tanstack/router-generator": "1.167.46",
