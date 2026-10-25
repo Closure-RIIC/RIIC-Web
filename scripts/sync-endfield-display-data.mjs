@@ -38,6 +38,39 @@ const { CharacterTable: characters, CharGrowthTable: growth, WeaponBasicTable: w
   SpaceshipCharSkillTable: charSkills, SpaceshipSkillTable: skills, I18nTextTable_CN: zh, I18nTextTable_EN: en } = tableData;
 const localize = (field, dict) => field?.text || dict[field?.id] || "";
 const clean = text => text.replace(/<[^>]*>/g, "");
+
+// Upstream only stores numeric ids for effects, professions and room types; these tables mirror
+// packages/endfield-solver/data/ship-data.json so both data sets stay readable side by side.
+// Unknown ids fail the sync on purpose: a new game version should be reviewed, not silently dropped.
+const EFFECT_TYPES = {
+  0: { key: "MoodRecoveryAll", zh: "全员心情恢复提升", en: "Ship-wide morale recovery" },
+  1: { key: "RoomMoodConsumeDown", zh: "舱室内干员心情消耗降低", en: "Room morale consumption" },
+  3: { key: "GrowSpeedUp", zh: "培养舱 · 指定质料培养速度提升", en: "Growth speed" },
+  4: { key: "ClueEfficiencyUp", zh: "会客室 · 线索收集效率提升", en: "Clue collection" },
+  6: { key: "ClueProbabilityUp", zh: "会客室 · 指定线索出现概率提升", en: "Clue probability" },
+  7: { key: "ManufactureEfficiencyUp", zh: "制造舱 · 指定经验素材生产效率提升", en: "Production efficiency" },
+};
+const PROFESSIONS = {
+  0: { zh: "近卫", en: "Guard" },
+  2: { zh: "重装", en: "Defender" },
+  4: { zh: "辅助", en: "Support" },
+  5: { zh: "术师", en: "Caster" },
+  7: { zh: "先锋", en: "Vanguard" },
+  8: { zh: "突击", en: "Striker" },
+};
+/** Chinese names follow the game's SpaceshipRoomTypeTable verbatim; English is the site's own copy. */
+const ROOMS = {
+  0: { zh: "总控中枢", en: "Control center" },
+  1: { zh: "制造舱", en: "Manufacturing" },
+  2: { zh: "培养舱", en: "Growth" },
+  3: { zh: "会客室(接待/展示)", en: "Reception (display)" },
+  5: { zh: "会客室(线索)", en: "Reception (clues)" },
+};
+const lookUp = (table, id, what) => {
+  const entry = table[id];
+  if (!entry) throw new Error(`Unknown ${what} id ${id}; review the game data before syncing.`);
+  return entry;
+};
 const beyondRoot = `https://raw.githubusercontent.com/555me/EndfieldAssets/${assetRevision}/assets/beyond/`;
 const assetRoot = `${beyondRoot}dynamicassets/`;
 const manifest = [];
@@ -50,6 +83,8 @@ function asset(folder, name, source, sourceRoot = assetRoot) {
 }
 const operators = Object.fromEntries(Object.entries(characters).filter(([id]) => id !== "chr_9000_endmin").map(([id, char]) => [id, {
   id, name: localize(char.name, zh), enName: localize(char.name, en) || char.engName, rarity: char.rarity,
+  profession: lookUp(PROFESSIONS, char.profession, "profession").zh,
+  enProfession: lookUp(PROFESSIONS, char.profession, "profession").en,
   // Illustrated round portraits; charbattleicon contains the in-battle 3D model heads.
   icon: asset("operators", `portrait_${id}`, `gameplay/ui/sprites/charroundicon/icon_round_${id}.png`),
   skills: (charSkills[id]?.skillList ?? []).map(ref => {
@@ -57,9 +92,12 @@ const operators = Object.fromEntries(Object.entries(characters).filter(([id]) =>
     if (!skill) throw new Error(`Missing skill ${ref.skillId}`);
     const node = Object.values(growth[id]?.talentNodeMap ?? {}).find(node =>
       node.nodeType === 5 && node.factorySkillNodeInfo.index === ref.skillIndex && node.factorySkillNodeInfo.level === skill.level);
+    const effect = lookUp(EFFECT_TYPES, skill.effectType, "effectType");
+    const room = lookUp(ROOMS, skill.roomType, "roomType");
     return { id: ref.skillId, name: localize(skill.name, zh), enName: localize(skill.name, en),
       description: clean(localize(skill.desc, zh)), enDescription: clean(localize(skill.desc, en)),
       unlock: node?.factorySkillNodeInfo.breakStage ?? null, roomType: skill.roomType,
+      room: room.zh, enRoom: room.en, effectKey: effect.key, effectName: effect.zh, enEffectName: effect.en,
       icon: asset("skills", skill.icon, `gameplay/ui/sprites/spaceship/spaceshipskillicon/${skill.icon}.png`) };
   }),
 }]));

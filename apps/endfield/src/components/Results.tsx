@@ -3,6 +3,7 @@ import { Dialog } from "@base-ui/react/dialog";
 import { AnimatedNumber } from "@riic/ui-primitives/animated-number";
 import { operatorData } from "@riic/endfield-data";
 import { OperatorChip, OperatorPortrait, ProductionIcon } from "./GameArtwork";
+import { OperatorSkillTooltip } from "./OperatorSkillTooltip";
 import { Action, ActionContent, actionClassName, Notice, Section } from "@riic/endfield-ui";
 import type { Result, Mood } from "@riic/endfield-solver/index.mjs";
 import { downloadJson, useWorkspace } from "../state";
@@ -86,10 +87,10 @@ function FacilityTile({ kind, label, level, plan, room, scores, bonusA, bonusB }
         <div className="ef-facility-shift-label"><div><b>{room?.single ? t(index ? "休息" : "工作", index ? "Rest" : "Work") : `${shift.toUpperCase()} ${t("班", "shift")}`}</b>
           <FacilityBonus kind={kind} value={index ? bonusB : bonusA} /></div>
           <span className="ef-shift-time">{room?.single ? `${(index ? room.restHours : room.workHours)?.toFixed(2) ?? "—"} h` : index ? `${hour(plan.hour)} – 24:00` : `00:00 – ${hour(plan.hour)}`}</span></div>
-        {plan[shift].length ? <div className="ef-facility-crew">{plan[shift].map(name => <div key={name} className="ef-result-operator">
-          <OperatorPortrait name={name} size={kind === "center" ? 88 : 68} />
-          <span title={locale === "en" ? operatorData(name)?.enName || name : name}>{locale === "en" ? operatorData(name)?.enName || name : name}</span>
-        </div>)}</div> : <p className="ef-facility-rest">{room?.single ? t("原班干员休息后继续生产", "The same crew returns after resting") : t("未安排干员", "No operators assigned")}</p>}
+        {plan[shift].length ? <div className="ef-facility-crew">{plan[shift].map(name => <OperatorSkillTooltip key={name} name={name}><div className="ef-result-operator">
+          <OperatorPortrait name={name} size={kind === "center" ? 88 : 68} showTitle={false} />
+          <span>{locale === "en" ? operatorData(name)?.enName || name : name}</span>
+        </div></OperatorSkillTooltip>)}</div> : <p className="ef-facility-rest">{room?.single ? t("原班干员休息后继续生产", "The same crew returns after resting") : t("未安排干员", "No operators assigned")}</p>}
       </div>)}
     </div>
     {scores ? <FacilityOutputSummary scores={scores} /> : null}

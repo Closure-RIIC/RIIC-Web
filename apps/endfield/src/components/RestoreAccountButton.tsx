@@ -4,6 +4,7 @@ import type { EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { useWorkspace } from "../state";
 import { sklandApi } from "../skland-client";
 import { syncSklandWorkspace } from "../skland-workspace";
+import { operatorCatalog } from "@riic/endfield-data";
 
 export function RestoreAccountButton() {
   const { workspace, update, ready, busy, setSklandSnapshot, reportSklandSync, t } = useWorkspace();
@@ -33,7 +34,7 @@ export function RestoreAccountButton() {
       let facilitiesApplied = false;
       update(current => {
         if (current.rosterSource !== workspace.rosterSource) throw new Error(t("账号已切换，请重新操作。", "The account changed. Retry."));
-        const restored = syncSklandWorkspace(current, snapshot, workspace.rosterSource!, roleId);
+        const restored = syncSklandWorkspace(current, snapshot, workspace.rosterSource!, roleId, operatorCatalog);
         if (restored.status.blocked) throw new Error(t("账号数据无法恢复，已保留本地配置。", "Account data cannot be restored. Local settings were kept."));
         facilitiesApplied = restored.status.facilitiesApplied;
         const next = { ...restored.workspace };

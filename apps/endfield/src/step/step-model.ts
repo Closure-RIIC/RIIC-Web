@@ -19,7 +19,13 @@ const KINDS: Record<StepRoomKey, StepRoomKind> = {
   中枢: "center", 会客室: "guest", 制造舱1: "mfg", 制造舱2: "mfg", 培养舱: "grow",
 };
 
-/** 显示用的舱室 key → `ship-data` 里的房间名（技能效果用这一列匹配）。 */
+/**
+ * 显示用的舱室 key → 求解器效果里的 `room`（技能效果用这一列匹配）。
+ *
+ * 目标值必须和 `packages/endfield-solver/upstream/ship-data.mjs` 的 `ROOM_BY_TYPE` 一致：
+ * 求解器把 `roomType` 归一成「中枢 / 制造舱 / 培养舱 / 会客室」，并不使用原始 `roomName`
+ * （原始值是「总控中枢」「会客室(线索)」）。
+ */
 const SOLVER_ROOMS: Record<StepRoomKey, "中枢" | "制造舱" | "培养舱" | "会客室"> = {
   中枢: "中枢", 会客室: "会客室", 制造舱1: "制造舱", 制造舱2: "制造舱", 培养舱: "培养舱",
 };

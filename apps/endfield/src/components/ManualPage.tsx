@@ -10,6 +10,7 @@ import { Action, ActionContent, actionClassName, Field, Notice, PageTitle } from
 import { useWorkspace } from "../state";
 import { FacilityBonus, FacilityOutputSummary, ResultReportDialog } from "./Results";
 import { OperatorPortrait } from "./GameArtwork";
+import { OperatorSkillTooltip } from "./OperatorSkillTooltip";
 import { RosterDialogTrigger, useRosterDialog } from "./RosterDialog";
 import { FacilitySettings } from "./FacilitySettings";
 import { DialogFrame } from "./DialogFrame";
@@ -107,13 +108,14 @@ export function ManualPage() {
               <div className="ef-facility-shift-label"><div><b>{shift.toUpperCase()} {t("班", "shift")}</b><FacilityBonus kind={kind} value={bonuses[shift === "a" ? 0 : 1]} placeholder="—" animated /></div><span className="ef-shift-time">{shift === "a" ? `00:00 – ${hour(a.hour)}` : `${hour(a.hour)} – 24:00`}</span></div>
               <div className="ef-facility-crew">{Array.from({ length: a.slots }, (_, i) => {
                 const name = a[shift][i] ?? "";
+                const slot = <SlotTrigger className="ef-result-operator ef-manual-operator" disabled={busy || !ready}
+                  data-manual-slot={`${a.key}:${shift}:${i}`} aria-label={`${label} · ${shift.toUpperCase()} · ${t("工位", "Slot")} ${i + 1} · ${name ? operatorLabel(name) : t("选择干员", "Select operator")}`}
+                  onClick={() => { if (owned.size) setSlot({ key: a.key, shift, index: i }); }}>
+                  {name ? <OperatorPortrait name={name} size={kind === "center" ? 88 : 68} showTitle={false} /> : <span className="ef-manual-empty" aria-hidden><Plus size={24} /></span>}
+                  <span>{name ? operatorLabel(name) : t("选择干员", "Select operator")}</span>
+                </SlotTrigger>;
                 return <div className="ef-manual-slot" key={i}>
-                  <SlotTrigger className="ef-result-operator ef-manual-operator" disabled={busy || !ready}
-                    data-manual-slot={`${a.key}:${shift}:${i}`} aria-label={`${label} · ${shift.toUpperCase()} · ${t("工位", "Slot")} ${i + 1} · ${name ? operatorLabel(name) : t("选择干员", "Select operator")}`}
-                    onClick={() => { if (owned.size) setSlot({ key: a.key, shift, index: i }); }}>
-                    {name ? <OperatorPortrait name={name} size={kind === "center" ? 88 : 68} /> : <span className="ef-manual-empty" aria-hidden><Plus size={24} /></span>}
-                    <span title={name ? operatorLabel(name) : undefined}>{name ? operatorLabel(name) : t("选择干员", "Select operator")}</span>
-                  </SlotTrigger>
+                  {name ? <OperatorSkillTooltip name={name}>{slot}</OperatorSkillTooltip> : slot}
                 </div>;
               })}</div>
             </div>)}</div>
