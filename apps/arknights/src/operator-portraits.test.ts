@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import test from "node:test";
 
 import sourceManifest from "@riic/arknights-domain/generated/arkntools/source.json" with { type: "json" };
@@ -20,9 +21,13 @@ import {
   operatorProfessionPresentation,
 } from "./operatorPortraits.ts";
 
-const portraitManifest: { version: number; portraitsFallback?: { commit: string; operators: string[] } } = sourceManifest;
+const portraitManifest: { version: number; portraitVersioning?: string; portraitsFallback?: { commit: string; operators: string[] } } = sourceManifest;
 const fallbackPortraits = portraitManifest.portraitsFallback;
 const portraitPath = (shortId: string) => {
+  if (portraitManifest.portraitVersioning === "sha256") {
+    const bytes = readFileSync(new URL(`../public/images/operator-portraits/${shortId}.webp`, import.meta.url));
+    return `/images/operator-portraits/${shortId}.webp?v=sha256-${createHash("sha256").update(bytes).digest("hex")}`;
+  }
   const commit = fallbackPortraits?.operators.includes(`char_${shortId}`)
     ? fallbackPortraits.commit : sourceManifest.portraitsSource.commit;
   return `/images/operator-portraits/${shortId}.webp?v=${sourceManifest.version}-${commit.slice(0, 12)}`;
@@ -187,7 +192,7 @@ test("generated catalog has unique ids, names, and matching stable portrait path
   }
 });
 
-test("fallback portraits are tied to the toolbox revision and real catalog entries", () => {
+test("fallback portrait provenance matches the toolbox revision and resolves real catalog entries", () => {
   if (!fallbackPortraits) return;
   assert.equal(fallbackPortraits.commit, sourceManifest.source.commit);
   assert.equal(new Set(fallbackPortraits.operators).size, fallbackPortraits.operators.length);

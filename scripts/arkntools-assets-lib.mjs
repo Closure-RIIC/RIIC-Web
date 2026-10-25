@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { createHash } from "node:crypto";
 import { lstat, mkdir, mkdtemp, readFile, readdir, rename, rm, writeFile, copyFile } from "node:fs/promises";
 import { setTimeout as delay } from "node:timers/promises";
 
@@ -240,6 +241,10 @@ function portraitAssetVersion(portraitsSha) {
   return `${GENERATED_VERSION}-${normalizeCommit(portraitsSha).slice(0, 12)}`;
 }
 
+function portraitContentVersion(bytes) {
+  return `sha256-${createHash("sha256").update(bytes).digest("hex")}`;
+}
+
 async function portraitWebpInput(filePath, label) {
   const input = await readFile(filePath);
   const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
@@ -288,6 +293,7 @@ async function writePortraitWebp(source, target, label) {
   const { input, raw } = await portraitWebpInput(source, label);
   const output = await sharp(input, { raw }).webp(WEBP_PORTRAIT_OPTIONS).toBuffer();
   await writeFile(target, output);
+  return portraitContentVersion(output);
 }
 
 async function loadSource(sourceRoot, sourceSha, portraitsRoot, portraitsSha) {
@@ -297,7 +303,6 @@ async function loadSource(sourceRoot, sourceSha, portraitsRoot, portraitsSha) {
   const resolvedPortraits = path.resolve(portraitsRoot);
   const normalizedSourceSha = normalizeCommit(sourceSha);
   const normalizedPortraitsSha = normalizeCommit(portraitsSha);
-  const portraitVersion = portraitAssetVersion(normalizedPortraitsSha);
   const [rawCharacterData, buildingData, rawCharacterLocale, buildingLocale, termLocale] = await Promise.all([
     readJson(path.join(resolvedSource, SOURCE_PATHS.characterData), "干员数据"),
     readJson(path.join(resolvedSource, SOURCE_PATHS.buildingData), "基建数据"),
@@ -368,7 +373,7 @@ async function loadSource(sourceRoot, sourceSha, portraitsRoot, portraitsSha) {
       rarity: metadata.star,
       profession: metadata.profession,
       position: metadata.position,
-      portrait: relativeAssetPath("operator-portraits", shortId, "webp", portraitVersion),
+      portrait: relativeAssetPath("operator-portraits", shortId, "webp"),
       buildingSkills,
     });
   }
@@ -437,11 +442,11 @@ async function loadSource(sourceRoot, sourceSha, portraitsRoot, portraitsSha) {
       if (error.code !== "ENOENT") throw error;
       source = path.join(resolvedSource, "assets/img/avatar", `${shortId}.png`);
       fallbackPortraitIds.push(operator.id);
-      operator.portrait = relativeAssetPath("operator-portraits", shortId, "webp", portraitAssetVersion(normalizedSourceSha));
     }
     portraitFiles.push({
       name: `${shortId}.webp`,
       source,
+      operator,
     });
   }
   const iconFiles = [...referencedIcons].sort((left, right) => left.localeCompare(right, "en")).map((icon) => ({
@@ -463,6 +468,7 @@ async function loadSource(sourceRoot, sourceSha, portraitsRoot, portraitsSha) {
   const skillCatalog = sortedObject(skills.map((skill) => [skill.id, skill]));
   const manifest = {
     version: GENERATED_VERSION,
+    portraitVersioning: "sha256",
     source: {
       repository: ARKNTOOLS_REPOSITORY,
       commit: normalizedSourceSha,
@@ -509,8 +515,10 @@ async function writeStage(stageRoot, generated) {
   await mkdir(path.join(stageRoot, "fixtures"), { recursive: true });
 
   await Promise.all([
-    mapLimit(generated.portraitFiles, 16, ({ source, name }) =>
-      writePortraitWebp(source, path.join(portraitTarget, name), `干员头像 ${name}`)),
+    mapLimit(generated.portraitFiles, 16, async ({ source, name, operator }) => {
+      const version = await writePortraitWebp(source, path.join(portraitTarget, name), `干员头像 ${name}`);
+      operator.portrait = relativeAssetPath("operator-portraits", operator.id.slice(5), "webp", version);
+    }),
     mapLimit(generated.iconFiles, 16, ({ source, name, normalizeWidth }) => normalizeWidth
       ? sharp(source)
           .extend({ right: 1, background: { r: 0, g: 0, b: 0, alpha: 0 } })
@@ -521,7 +529,6 @@ async function writeStage(stageRoot, generated) {
       const output = await sharp(await readFile(sourcePath)).webp(WEBP_PRODUCT_OPTIONS).toBuffer();
       await writeFile(path.join(productTarget, name), output);
     }),
-    writeFile(path.join(dataTarget, "operator-catalog.json"), json(generated.operators), "utf8"),
     writeFile(path.join(dataTarget, "operator-pinyin.json"), json(generateOperatorPinyin(generated.operators)), "utf8"),
     writeFile(path.join(dataTarget, "operator-rarities.json"), json(Object.fromEntries(generated.operators.map(({ id, rarity }) => [id, rarity]))), "utf8"),
     writeFile(path.join(dataTarget, "building-skill-catalog.json"), json(generated.skills), "utf8"),
@@ -529,6 +536,8 @@ async function writeStage(stageRoot, generated) {
     writeFile(path.join(dataTarget, "source.json"), json(generated.manifest), "utf8"),
     writeFile(path.join(stageRoot, MANAGED_PATHS[4]), json(generateFullOperatorFixture(generated.operators)), "utf8"),
   ]);
+  // The catalog must be serialized after every final WebP has its content hash.
+  await writeFile(path.join(dataTarget, "operator-catalog.json"), json(generated.operators), "utf8");
 }
 
 async function listRegularAssetNames(directory, label, extension) {
@@ -559,6 +568,8 @@ export async function checkGeneratedAssets(root) {
   const operatorPinyin = await readJson(path.join(dataRoot, "operator-pinyin.json"), "干员拼音索引");
   assert(JSON.stringify(operatorPinyin) === JSON.stringify(generateOperatorPinyin(operators)), "干员拼音索引需要随资源同步更新。");
   assert(isObject(manifest) && manifest.version === GENERATED_VERSION, "已生成来源清单版本无效。");
+  // Existing checked-in catalogs keep working until the next resource sync.
+  assert(manifest.portraitVersioning === undefined || manifest.portraitVersioning === "sha256", "已生成头像缓存版本策略无效。");
   normalizeCommit(manifest.source?.commit);
   assert(manifest.source?.repository === ARKNTOOLS_REPOSITORY, "已生成来源仓库无效。");
   assert(isObject(manifest.portraitsSource), "已生成头像来源清单无效。");
@@ -595,8 +606,10 @@ export async function checkGeneratedAssets(root) {
     names.add(operator.name);
     const shortId = operator.id.slice(5);
     assert(!EXCLUDED_OPERATOR_IDS.has(shortId), `干员目录不应包含阿米娅替代形态：${operator.id}`);
-    const version = fallbackIds.has(operator.id) ? portraitAssetVersion(fallback.commit) : portraitVersion;
-    assert(operator.portrait === relativeAssetPath("operator-portraits", shortId, "webp", version), `干员 ${operator.id} 的头像路径无效。`);
+    if (manifest.portraitVersioning !== "sha256") {
+      const version = fallbackIds.has(operator.id) ? portraitAssetVersion(fallback.commit) : portraitVersion;
+      assert(operator.portrait === relativeAssetPath("operator-portraits", shortId, "webp", version), `干员 ${operator.id} 的头像路径无效。`);
+    }
     assert(Number.isInteger(operator.order), `干员 ${operator.id} 的原始顺序无效。`);
     portraitNames.push(`${shortId}.webp`);
     assert(Array.isArray(operator.buildingSkills), `干员 ${operator.id} 的基建技能无效。`);
@@ -659,7 +672,15 @@ export async function checkGeneratedAssets(root) {
   assert(manifest.counts?.buildingSkillIcons === actualIcons.length, "来源清单的技能图标数量不一致。");
   assert(manifest.counts?.productIcons === actualProducts.length, "来源清单的产物图标数量不一致。");
 
-  await mapLimit(actualPortraits, 16, (name) => validateWebpFormat(path.join(portraitDirectory, name), `干员头像 ${name}`));
+  await mapLimit(operators, 16, async (operator) => {
+    const shortId = operator.id.slice(5);
+    const filePath = path.join(portraitDirectory, `${shortId}.webp`);
+    await validateWebpFormat(filePath, `干员头像 ${shortId}.webp`);
+    if (manifest.portraitVersioning === "sha256") {
+      const version = portraitContentVersion(await readFile(filePath));
+      assert(operator.portrait === relativeAssetPath("operator-portraits", shortId, "webp", version), `干员 ${operator.id} 的头像内容哈希与路径不一致。`);
+    }
+  });
   await mapLimit(actualIcons, 16, (name) => validatePng(path.join(iconDirectory, name), 36, 36, `基建技能图标 ${name}`));
   await mapLimit(actualProducts, 5, (name) => validateProductWebp(path.join(productDirectory, name), `产物图标 ${name}`));
   return manifest;
