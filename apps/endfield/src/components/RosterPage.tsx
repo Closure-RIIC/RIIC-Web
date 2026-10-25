@@ -4,7 +4,7 @@ import type { Operator } from "@riic/endfield-solver/model.mjs";
 import { Action, Notice, PageTitle, Section } from "@riic/endfield-ui";
 import { downloadJson, useWorkspace } from "../state";
 import { pageLabels } from "../page-labels";
-import { compareOperatorRelease, operatorData, operatorCatalog, skillTiersOf, type DisplayOperator, type DisplaySkillTier } from "@riic/endfield-data";
+import { compareOperatorRelease, operatorCatalog, skillTiersOf, type DisplayOperator, type DisplaySkillTier } from "@riic/endfield-data";
 import { SearchInput } from "@riic/ui-primitives/search-input";
 import { parseSkillNodeId, reconcileSkillNodes, requiredElite, toggleSkillNode, unlockedSkillNodes } from "@riic/endfield-skland/skill-nodes";
 import { FilterSelect } from "@riic/ui-primitives/filter-select";

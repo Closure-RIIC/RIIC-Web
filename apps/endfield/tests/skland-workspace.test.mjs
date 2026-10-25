@@ -24,7 +24,7 @@ const FIXTURE_CATALOG = [
   { id: "chr_9000_endmin", name: "管理员", enName: "Endministrator", rarity: 6, profession: "近卫", enProfession: "Guard", icon: "", skills: [] },
 ];
 const testCatalog = FIXTURE_CATALOG;
-const { schedulable: testSchedulable, nonSchedulable: testNonSchedulable } = rosterMatchTables(testCatalog);
+const { nonSchedulable: testNonSchedulable } = rosterMatchTables(testCatalog);
 
 const sync = (current, data = snapshot(), identity = source) => syncSklandWorkspace(current, data, identity, role.roleId, testCatalog);
 
