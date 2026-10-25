@@ -71,6 +71,14 @@ GitHub 不允许 PR 作者批准自己的 PR。为 main 配置仅含当前管理
 
 新版 `sync-arkntools-assets.yml` 使用单仓库 App 令牌创建资源 PR，以原生 auto-merge 等待 main 的检查和管理员批准。定时任务发现尚未合并的资源 PR 时保留其提交；新分支不强制推送。资源 PR 实际合入 main 后，`pull_request: closed` 处理器核实 App 作者、仓库、合并 SHA 与受管路径，再创建 develop 对齐 PR；该 PR 只等待检查，无需人工审核。App 合并产生的 push 正常触发部署。`PR_AUTOMATION_ENABLED=0` 时只建 PR，不启用其自动合并；开启后可由维护者为之前的待审资源 PR 手动启用原生 auto-merge。
 
+资源同步使用以下内容变化规则：
+
+- 新生成的头像 URL 使用最终 WebP 文件的 SHA-256，包括备用头像。只改变上游 commit 不会改变头像 URL；只有图片内容变化才刷新对应头像缓存。
+- 旧目录继续通过校验；首次运行新版生成器会一次性将头像 URL 迁移为内容哈希，并在 `source.json` 记录 `portraitVersioning: "sha256"`。这是需要审核的迁移 PR，之后不再因上游 commit 变化整批改写头像 URL。
+- `scripts/arkntools-sync-changes.mjs` 在原有质量检查通过后判断是否创建资源 PR。仅忽略 `source.json` 内已知来源的 commit，以及 `mastery-data.json` 内规则和分支来源的 commit；来源仓库、版本、数量、技能描述、分支、规则及其他字段均参与比较。
+- 如果只有这些来源 commit 变化，任务在 Actions 摘要中记录跳过结果，不创建 PR 或部署。仓库保留上一次发布的来源记录；下一次有真实数据或图片变化时，一并提交当前完整来源记录。
+- 干员、卡池、技能、图片、受管文件新增或删除仍触发原有发布流程。移除资源仍须显式确认，main 管理员审核和 production 环境审批保持不变；不要把同步脚本或工作流修改混入纯资源 PR。
+
 迁移时核对 main 上已是这套等待式实现。旧版使用 `GITHUB_TOKEN` 立即调用合并 API，新增门禁会阻止它；不得添加机器人绕过。新旧切换期间自动化开关保持关闭。
 
 入口：[仓库 Settings](https://github.com/Closure-RIIC/RIIC-Web/settings) → General → Pull Requests → 勾选 **Allow auto-merge**。
