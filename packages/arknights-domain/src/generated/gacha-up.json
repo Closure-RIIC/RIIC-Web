@@ -83,6 +83,7 @@
   "CLASSIC_DOUBLE_77_0_1": {"six":["艾雅法拉","风笛"],"five":["华法琳","初雪","苇草"],"openTime":1789588800,"endTime":1790798399,"ruleType":"CLASSIC_DOUBLE"},
   "CLASSIC_DOUBLE_77_0_2": {"six":["银灰","灵知"],"five":["梅尔","可颂","惊蛰"],"openTime":1790798400,"endTime":1792007999,"ruleType":"CLASSIC_DOUBLE"},
   "CLASSIC_DOUBLE_78_0_1": {"six":["棘刺","凯尔希"],"five":["诗怀雅","灰喉","四月"],"openTime":1792008000,"endTime":1793217599,"ruleType":"CLASSIC_DOUBLE"},
+  "CLASSIC_DOUBLE_78_0_2": {"six":["莫斯提马","阿"],"five":["红","普罗旺斯","月禾"],"openTime":1793217600,"endTime":1794427199,"ruleType":"CLASSIC_DOUBLE"},
   "DOUBLE_59_0_2": {"six":["老鲤","琳琅诗怀雅"],"five":["明椒","火哨","空构"],"openTime":1741809600,"endTime":1743019199,"ruleType":"DOUBLE"},
   "DOUBLE_59_0_4": {"six":["澄闪","伊内丝"],"five":["掠风","铎铃","历阵锐枪芬"],"openTime":1743019200,"endTime":1744228799,"ruleType":"DOUBLE"},
   "DOUBLE_60_0_2": {"six":["黑键","提丰"],"five":["寒檀","小满","特克诺"],"openTime":1744228800,"endTime":1745438399,"ruleType":"DOUBLE"},
