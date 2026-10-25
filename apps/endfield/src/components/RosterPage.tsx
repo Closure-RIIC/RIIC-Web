@@ -99,8 +99,14 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
     update({ ...workspace, operators, ...(manual ? { manual } : {}) });
   }
 
+  /**
+   * 「获取所有干员并且全精4」只收录有基建技能的干员。
+   * 用 skills.length 而不是名字判断：管理员的两个分支同名且都没有基建技能，
+   * 加进名单会超出求解器认可的人数（32 名可排班干员）。
+   */
   function maxRoster(includeAll: boolean) {
-    const entries = includeAll ? operatorCatalog.map(op => workspace.operators.find(entry => entry.name === op.name) ?? { name: op.name, elite: 0 }) : workspace.operators;
+    const schedulable = operatorCatalog.filter(op => op.skills.length > 0);
+    const entries = includeAll ? schedulable.map(op => workspace.operators.find(entry => entry.name === op.name) ?? { name: op.name, elite: 0 }) : workspace.operators;
     save(entries.map(entry => {
       const op = byName.get(entry.name);
       if (!op) return entry;
