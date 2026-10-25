@@ -1,10 +1,10 @@
 import { Fragment, useState } from "react";
 import { Download, Check, Plus, X } from "lucide-react";
-import { catalog, type Operator } from "@riic/endfield-solver/model.mjs";
+import type { Operator } from "@riic/endfield-solver/model.mjs";
 import { Action, Notice, PageTitle, Section } from "@riic/endfield-ui";
 import { downloadJson, useWorkspace } from "../state";
 import { pageLabels } from "../page-labels";
-import { compareOperatorRelease, operatorData } from "@riic/endfield-data";
+import { compareOperatorRelease, operatorData, operatorCatalog, skillTiersOf, type DisplayOperator, type DisplaySkillTier } from "@riic/endfield-data";
 import { SearchInput } from "@riic/ui-primitives/search-input";
 import { parseSkillNodeId, reconcileSkillNodes, requiredElite, toggleSkillNode, unlockedSkillNodes } from "@riic/endfield-skland/skill-nodes";
 import { FilterSelect } from "@riic/ui-primitives/filter-select";
@@ -15,59 +15,52 @@ import { SkillFilters } from "./SkillFilters";
 import { ManualOperatorChoice } from "./ManualOperatorChoice";
 import { OperatorSkillTooltip } from "./OperatorSkillTooltip";
 
-const skillCatalog = [...catalog].sort(compareOperatorRelease);
+const skillCatalog = [...operatorCatalog].sort(compareOperatorRelease);
+const byName = new Map(operatorCatalog.map(op => [op.name, op]));
 
 type OperatorPicker = { value: string; unavailable: ReadonlySet<string>; onSelect: (name: string) => void };
 
-/** 展示数据里的解锁要求（catalog.json 才有这些值，求解器数据缺字段时会当成 0）。 */
-function displayUnlock(display: ReturnType<typeof operatorData>, nodeId: string | undefined, fallback: number): number {
-  const matched = nodeId ? display?.skills.find(item => item.id === nodeId) : undefined;
-  return Number.isFinite(matched?.unlock) ? (matched?.unlock as number) : fallback;
+/** 列表/搜索用的技能文本：中英文名称与描述都在 catalog 里。 */
+function searchable(op: DisplayOperator): string {
+  return `${op.name} ${op.enName} ${op.profession} ${op.enProfession} ${op.skills.map(s => `${s.name} ${s.enName} ${s.description} ${s.enDescription} ${s.room}`).join(" ")}`.toLowerCase();
 }
 
 /** The two skill rows retain their offset, with tiers ordered from left to right. */
-function ShipSkillNodes({ skills, latestSpaceshipSkillNodes, elite, display, disabled, onToggle }: {
-  skills: (typeof catalog)[number]["skills"];
+function ShipSkillNodes({ tiers, latestSpaceshipSkillNodes, elite, disabled, onToggle }: {
+  tiers: DisplaySkillTier[];
   latestSpaceshipSkillNodes?: string[];
   elite: number;
-  display: ReturnType<typeof operatorData>;
   disabled: boolean;
   onToggle: (nodeId: string) => void;
 }) {
   const { locale, t } = useWorkspace();
-  const unlocked = new Set(unlockedSkillNodes(skills, { elite, latestSpaceshipSkillNodes }));
-  const bySlot = new Map<number, (typeof skills)[number][]>();
-  for (const skill of skills) {
-    const match = /^spaceship_skill_.*_(\d+)_(\d+)$/.exec(skill.nodeId ?? "");
-    const slot = match ? Number(match[1]) : 0;
-    if (!slot) continue;
-    const list = bySlot.get(slot) ?? [];
+  const unlocked = new Set(unlockedSkillNodes(tiers, { elite, latestSpaceshipSkillNodes }));
+  const bySlot = new Map<number, DisplaySkillTier[]>();
+  for (const skill of tiers) {
+    const list = bySlot.get(skill.slot) ?? [];
     list.push(skill);
-    bySlot.set(slot, list);
+    bySlot.set(skill.slot, list);
   }
   const slots = [...bySlot.entries()]
     .sort(([a], [b]) => a - b)
-    .map(([slot, list]) => [slot, list.slice().sort((a, b) => (a.nodeId ?? "").localeCompare(b.nodeId ?? ""))] as const);
+    .map(([slot, list]) => [slot, list.slice().sort((a, b) => a.level - b.level)] as const);
   if (!slots.length) return null;
   return (
     <div className="ef-skill-nodes" role="group" aria-label={t("基建技能解锁", "Ship skill unlocks")}>
       {slots.map(([slot, list], row) => (
         <div className="ef-skill-node-row" key={slot} data-row={row}>
           {list.map((skill, index) => {
-            const active = unlocked.has(skill.nodeId ?? "");
-            const source = display?.skills.find(item => item.id === skill.nodeId)
-              ?? display?.skills.find(item => item.name === skill.name);
-            const unlock = displayUnlock(display, skill.nodeId, skill.unlock);
-            const name = locale === "en" ? source?.enName || skill.name : skill.name;
+            const active = unlocked.has(skill.nodeId);
+            const name = locale === "en" ? skill.enName || skill.name : skill.name;
             return (
               <Fragment key={skill.nodeId}>
                 {index > 0 ? <span className="ef-skill-node-link" data-active={active || undefined} aria-hidden /> : null}
                 <button type="button" className="ef-skill-node" data-active={active || undefined} disabled={disabled}
-                  aria-pressed={active} aria-label={`${name} · E${unlock}`}
-                  title={active ? name : `${name} · ${t("需要精英化", "Requires elite")} ${unlock}`}
-                  onClick={() => onToggle(skill.nodeId ?? "")}>
-                  <GameArtwork src={source?.icon} name={skill.name} size={30} />
-                  <small>E{unlock}</small>
+                  aria-pressed={active} aria-label={`${name} · E${skill.unlock}`}
+                  title={active ? name : `${name} · ${t("需要精英化", "Requires elite")} ${skill.unlock}`}
+                  onClick={() => onToggle(skill.nodeId)}>
+                  <GameArtwork src={skill.icon} name={name} size={30} />
+                  <small>E{skill.unlock}</small>
                 </button>
               </Fragment>
             );
@@ -88,47 +81,43 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
   const [profession, setProfession] = useState("all");
   const [tag, setTag] = useState("all");
   const selected = new Map((skillsOnly ? [] : workspace.operators).map(op => [op.name, op.elite]));
-  const rows = (skillsOnly ? skillCatalog : catalog).filter(op => (skillsOnly || !(onlyOwned || picker) || selected.has(op.name)) && (rarity === "all" || op.rarity === Number(rarity))
+  const needle = query.trim().toLowerCase();
+  const rows = (skillsOnly ? skillCatalog : operatorCatalog).filter(op => (skillsOnly || !(onlyOwned || picker) || selected.has(op.name))
+    && (rarity === "all" || op.rarity === Number(rarity))
     && (profession === "all" || op.profession === profession)
     && op.skills.some(skill => (room === "all" || skill.room === room) && (tag === "all" || skill.effectKey === tag))
-    && `${op.name} ${op.enName} ${op.skills.map(s => `${s.name} ${s.description}`).join(" ")} ${operatorData(op.id)?.skills.map(s => `${s.enName} ${s.enDescription}`).join(" ")}`.toLowerCase().includes(query.trim().toLowerCase()));
-  const roomNames: Record<string, string> = { 中枢: "Control center", 总控中枢: "Control center", 制造舱: "Manufacturing", 培养舱: "Growth", 会客室: "Reception", "会客室(线索)": "Reception (clues)" };
+    && (!needle || searchable(op).includes(needle)));
   const emptyText = t("没有匹配选项", "No matching options");
-  const facilityLabel = (value: string) => locale === "en" ? roomNames[value] || value : value;
+  const facilityLabel = (value: string) => {
+    if (locale !== "en") return value;
+    const skill = operatorCatalog.flatMap(op => op.skills).find(item => item.room === value);
+    return skill?.enRoom || value;
+  };
   function save(operators: Operator[]) {
     const owned = new Set(operators.map(op => op.name));
     const manual = workspace.manual?.map(room => ({ ...room, a: room.a.map(n => owned.has(n) ? n : ""), b: room.b.map(n => owned.has(n) ? n : "") }));
     update({ ...workspace, operators, ...(manual ? { manual } : {}) });
   }
-  /** 判断/切换用的技能表：解锁要求以展示数据为准（求解器数据缺这 18 条）。 */
-  function skillTiers(op: (typeof catalog)[number]) {
-    const display = operatorData(op.id);
-    return op.skills.map(skill => ({ ...skill, unlock: displayUnlock(display, skill.nodeId, skill.unlock) }));
-  }
 
   function maxRoster(includeAll: boolean) {
-    const entries = includeAll ? catalog.map(op => workspace.operators.find(entry => entry.name === op.name) ?? { name: op.name, elite: 0 }) : workspace.operators;
+    const entries = includeAll ? operatorCatalog.map(op => workspace.operators.find(entry => entry.name === op.name) ?? { name: op.name, elite: 0 }) : workspace.operators;
     save(entries.map(entry => {
-      const op = catalog.find(item => item.name === entry.name);
+      const op = byName.get(entry.name);
       if (!op) return entry;
-      const tiers = skillTiers(op);
-      const nodes = tiers.flatMap(skill => skill.nodeId ? [skill.nodeId] : [])
-        .sort((a, b) => (parseSkillNodeId(b)?.level ?? 0) - (parseSkillNodeId(a)?.level ?? 0));
+      const tiers = skillTiersOf(op.name);
+      const nodes = tiers.map(skill => skill.nodeId).sort((a, b) => (parseSkillNodeId(b)?.level ?? 0) - (parseSkillNodeId(a)?.level ?? 0));
       return { ...entry, elite: 4, latestSpaceshipSkillNodes: reconcileSkillNodes(tiers, nodes, 4) };
     }));
     setUpgradeChoicesOpen(false);
   }
 
   /** 当前生效的节点：没有字段时按精英化回退，并收敛成每槽最高档。 */
-  function currentNodes(op: (typeof catalog)[number], entry: Operator) {
-    const tiers = skillTiers(op);
+  function currentNodes(op: DisplayOperator, entry: Operator) {
+    const tiers = skillTiersOf(op.name);
     const nodes = entry.latestSpaceshipSkillNodes
       ?? unlockedSkillNodes(tiers, entry).filter((id) => {
         const parsed = parseSkillNodeId(id);
-        const top = tiers
-          .map((skill) => parseSkillNodeId(skill.nodeId ?? ""))
-          .filter((item): item is { slot: number; level: number } => !!item && item.slot === parsed?.slot)
-          .reduce((max, item) => Math.max(max, item.level), 0);
+        const top = tiers.filter(skill => skill.slot === parsed?.slot).reduce((max, skill) => Math.max(max, skill.level), 0);
         return (parsed?.level ?? 0) === top;
       });
     return reconcileSkillNodes(tiers, nodes, entry.elite);
@@ -141,25 +130,20 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
    * - 该槽原本没有节点 → 加入这一档。
    * 换到更高档而精英化不够时自动提级；精英化永不因点击而降低。
    */
-  function toggleNode(op: (typeof catalog)[number], nodeId: string) {
+  function toggleNode(op: DisplayOperator, nodeId: string) {
     const entry = workspace.operators.find(item => item.name === op.name);
     if (!entry) return;
-    const tiers = skillTiers(op);
+    const tiers = skillTiersOf(op.name);
     if (!tiers.some(skill => skill.nodeId === nodeId)) return;
-    const before = currentNodes(op, entry);
-    const next = toggleSkillNode(tiers, before, nodeId);
+    const next = toggleSkillNode(tiers, currentNodes(op, entry), nodeId);
     const elite = requiredElite(tiers, next, entry.elite);
     save(workspace.operators.map(item => item.name === op.name ? { ...item, elite, latestSpaceshipSkillNodes: next } : item));
   }
 
-  /**
-   * 修改精英化：调低时把无法解锁的档降到可解锁的最高档（一档都不到则取消该槽）；
-   * 调高不补技能。
-   */
-  function changeElite(op: (typeof catalog)[number], entry: Operator, nextElite: number) {
-    const tiers = skillTiers(op);
-    const before = currentNodes(op, entry);
-    const next = reconcileSkillNodes(tiers, before, nextElite);
+  /** 修改精英化：调低时把无法解锁的档降到可解锁的最高档；调高不补技能。 */
+  function changeElite(op: DisplayOperator, entry: Operator, nextElite: number) {
+    const tiers = skillTiersOf(op.name);
+    const next = reconcileSkillNodes(tiers, currentNodes(op, entry), nextElite);
     save(workspace.operators.map(item => item.name === op.name
       ? { ...item, elite: nextElite, latestSpaceshipSkillNodes: next.length ? next : [] }
       : item));
@@ -209,21 +193,17 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
           return <ManualOperatorChoice key={op.id} operator={op} owned={workspace.operators.find(item => item.name === op.name)!}
             selected={current} unavailable={unavailable} onSelect={() => picker.onSelect(op.name)} />;
         }
-        const display = operatorData(op.id);
         const ownedOperator = skillsOnly ? undefined : workspace.operators.find(item => item.name === op.name);
         const matchingSkills = op.skills.filter(skill => (room === "all" || skill.room === room) && (tag === "all" || skill.effectKey === tag));
         const facilities = Array.from(new Set(matchingSkills.map(skill => skill.room)));
         const skillList = skillsOnly ? <div className="ef-ship-skills">{facilities.map(facility => <div className="ef-skill-group" key={facility}>
           <p className="ef-skill-facility">{facilityLabel(facility)}</p>
-          <div className="ef-skill-variants">{matchingSkills.filter(skill => skill.room === facility).map((skill, i) => {
-          const source = display?.skills.find(s => s.id === skill.nodeId) ?? display?.skills.find(s => s.name === skill.name);
-          const unlock = displayUnlock(display, skill.nodeId, skill.unlock);
-          return <div key={i} className="ef-ship-skill">
-            <GameArtwork src={source?.icon} name={skill.name} size={36} className="ef-skill-artwork" />
-            <div><h4>{locale === "en" ? source?.enName || skill.name : skill.name}<small title={t(`精英化 ${unlock} 解锁`, `Unlocked at elite ${unlock}`)}>E{unlock}</small></h4>
-              <p>{locale === "en" ? source?.enDescription || skill.description : skill.description}</p></div>
-          </div>;
-        })}</div></div>)}</div> : null;
+          <div className="ef-skill-variants">{matchingSkills.filter(skill => skill.room === facility).map((skill, i) =>
+            <div key={i} className="ef-ship-skill">
+              <GameArtwork src={skill.icon} name={skill.name} size={36} className="ef-skill-artwork" />
+              <div><h4>{locale === "en" ? skill.enName || skill.name : skill.name}<small title={t(`精英化 ${skill.unlock} 解锁`, `Unlocked at elite ${skill.unlock}`)}>E{skill.unlock}</small></h4>
+                <p>{locale === "en" ? skill.enDescription || skill.description : skill.description}</p></div>
+            </div>)}</div></div>)}</div> : null;
         return <article key={op.id} className="ef-roster-card" data-operator-id={op.id} data-selected={skillsOnly ? undefined : selected.has(op.name)}>
           <header>{(skillsOnly ? <OperatorPortrait name={op.id} size={96} elite={null} />
             : <OperatorSkillTooltip name={op.name}><OperatorPortrait name={op.id} size={48} showTitle={false} /></OperatorSkillTooltip>)}<div className="ef-roster-identity"><h3>{locale === "en" ? op.enName : op.name}</h3><p><span className="ef-roster-rarity">{op.rarity}★</span>{skillsOnly ? <span>{locale === "en" ? op.name : op.enName}</span> : null}</p></div>
@@ -234,7 +214,7 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
             </SelectionButton> : null}
           </header>
           {!skillsOnly ? <div className="ef-roster-controls"><div className="ef-roster-elite"><label htmlFor={`elite-${op.id}`}>{t("精英化", "Elite stage")}</label><div className="ef-roster-elite-select"><FilterSelect id={`elite-${op.id}`} aria-label={`${op.name} ${t("精英化", "elite stage")}`} value={selected.get(op.name) ?? 0} disabled={!ready || !selected.has(op.name)} onValueChange={value => { const entry = workspace.operators.find(item => item.name === op.name); if (entry) changeElite(op, entry, Number(value)); }} emptyText={emptyText} options={[0,1,2,3,4].map(value => ({ value, label: `E${value}` }))} /></div></div>
-            <ShipSkillNodes skills={op.skills} latestSpaceshipSkillNodes={ownedOperator?.latestSpaceshipSkillNodes} elite={ownedOperator?.elite ?? 0} display={display} disabled={!ready || !ownedOperator} onToggle={nodeId => toggleNode(op, nodeId)} />
+            <ShipSkillNodes tiers={skillTiersOf(op.name)} latestSpaceshipSkillNodes={ownedOperator?.latestSpaceshipSkillNodes} elite={ownedOperator?.elite ?? 0} disabled={!ready || !ownedOperator} onToggle={nodeId => toggleNode(op, nodeId)} />
           </div> : null}
           {skillList}
         </article>;

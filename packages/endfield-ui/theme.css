@@ -175,7 +175,10 @@
 .ef-skill-node[data-active=true] { opacity:1; border-color:color-mix(in oklab,var(--ef-accent) 55%,var(--ef-line)); box-shadow:0 0 0 1px color-mix(in oklab,var(--ef-accent) 30%,transparent); }
 .ef-skill-node:not(:disabled):hover { opacity:1; }
 .ef-skill-node:focus-visible { outline:2px solid var(--ef-ink); outline-offset:2px; }
-.ef-skill-node:disabled { cursor:not-allowed; }
+/* 未拥有的干员：所有技能一律灰掉，不能因为“不需要精英化”而显示成已解锁 */
+.ef-skill-node:disabled { cursor:not-allowed; opacity:.3; }
+.ef-skill-node:disabled .ef-artwork { filter:grayscale(1); }
+.ef-skill-node:disabled[data-active=true] { border-color:var(--ef-line); box-shadow:none; }
 .ef-skill-node-link { position:relative; flex:1 1 12px; min-width:12px; max-width:56px; height:2px; border-radius:2px; background:var(--ef-line); opacity:.5; }
 .ef-skill-node-link[data-active=true] { opacity:1; background:color-mix(in oklab,var(--ef-accent) 60%,var(--ef-line)); }
 .ef-skill-node-link::after { content:""; position:absolute; right:-2px; top:50%; translate:0 -50%; border-left:5px solid currentColor; border-block:3.5px solid transparent; color:var(--ef-line); }
