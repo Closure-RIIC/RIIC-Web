@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdtemp, mkdir, readFile, rm, stat, unlink, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import process from "node:process";
 
 import sharp from "sharp";
 
@@ -19,6 +22,7 @@ import {
   stripGameMarkup,
   supplementalSkillTags,
 } from "./arkntools-assets-lib.mjs";
+import { detectManagedChanges, hasManagedContentChange } from "./arkntools-sync-changes.mjs";
 
 const SOURCE_SHA = "0123456789abcdef0123456789abcdef01234567";
 const PORTRAITS_SHA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
@@ -85,11 +89,21 @@ test("missing primary portraits use pinned toolbox assets, while corrupt primary
   const { manifest } = await generateAssets(options);
   assert.deepEqual(manifest.portraitsFallback, { repository: ARKNTOOLS_REPOSITORY, commit: SOURCE_SHA, directory: "assets/img/avatar", operators: ["char_001_alpha"] });
   const catalog = JSON.parse(await readFile(path.join(options.outputRoot, "packages/arknights-domain/src/generated/arkntools/operator-catalog.json"), "utf8"));
-  assert.ok(catalog[0].portrait.endsWith(SOURCE_SHA.slice(0, 12)));
-  assert.ok(catalog[1].portrait.endsWith(PORTRAITS_SHA.slice(0, 12)));
+  assert.equal(catalog[0].portrait, await contentPortraitPath(options.outputRoot, "001_alpha"));
+  assert.equal(catalog[1].portrait, await contentPortraitPath(options.outputRoot, "002_beta"));
+  const next = { ...options, sourceSha: "b".repeat(40), portraitsSha: "c".repeat(40) };
+  await generateAssets(next);
+  const nextCatalog = JSON.parse(await readFile(path.join(options.outputRoot, "packages/arknights-domain/src/generated/arkntools/operator-catalog.json"), "utf8"));
+  assert.deepEqual(nextCatalog, catalog, "Fallback and primary portrait URLs do not depend on upstream commits");
+  await png(path.join(source, "assets/img/avatar/001_alpha.png"), 180, 180, { r: 230, g: 10, b: 20, alpha: 1 });
+  await generateAssets(next);
+  const changedCatalog = JSON.parse(await readFile(path.join(options.outputRoot, "packages/arknights-domain/src/generated/arkntools/operator-catalog.json"), "utf8"));
+  assert.notEqual(changedCatalog[0].portrait, catalog[0].portrait);
+  assert.equal(changedCatalog[1].portrait, catalog[1].portrait);
   const manifestPath = path.join(options.outputRoot, "packages/arknights-domain/src/generated/arkntools/source.json");
-  manifest.portraitsFallback.operators.push("char_999_unknown");
-  await writeFile(manifestPath, JSON.stringify(manifest));
+  const currentManifest = await checkGeneratedAssets(options.outputRoot);
+  currentManifest.portraitsFallback.operators.push("char_999_unknown");
+  await writeFile(manifestPath, JSON.stringify(currentManifest));
   await assert.rejects(checkGeneratedAssets(options.outputRoot), /备用头像来源包含未知干员/);
   await writeFile(primary, "corrupt PNG");
   await assert.rejects(generateAssets(options), /PNG|image format/);
@@ -103,6 +117,11 @@ async function makeTemp(t) {
 
 async function png(filePath, width, height, color) {
   await sharp({ create: { width, height, channels: 4, background: color } }).png().toFile(filePath);
+}
+
+async function contentPortraitPath(root, shortId) {
+  const bytes = await readFile(path.join(root, `apps/arknights/public/images/operator-portraits/${shortId}.webp`));
+  return `/images/operator-portraits/${shortId}.webp?v=sha256-${createHash("sha256").update(bytes).digest("hex")}`;
 }
 
 async function boundedPng(filePath, width, height, { left, top, right, bottom }) {
@@ -261,7 +280,8 @@ test("generates deterministic catalogs and normalizes the known 35px icon input"
   ]);
   assert.equal(manifest.source.repository, ARKNTOOLS_REPOSITORY);
   const operators = JSON.parse(await readFile(path.join(first, "packages/arknights-domain/src/generated/arkntools/operator-catalog.json"), "utf8"));
-  assert.equal(operators[0].portrait, `/images/operator-portraits/001_alpha.webp?v=${GENERATED_VERSION}-${PORTRAITS_SHA.slice(0, 12)}`);
+  assert.equal(manifest.portraitVersioning, "sha256");
+  assert.equal(operators[0].portrait, await contentPortraitPath(first, "001_alpha"));
   assert.equal(operators[0].order, 0);
   assert.equal(operators[1].order, 1);
   assert.deepEqual(operators[0].buildingSkills[0], { index: 1, id: "skill_alpha", elite: 0, level: 1 });
@@ -378,4 +398,140 @@ test("blocks managed file removals unless explicitly confirmed", async (t) => {
     /上游干员数量从 2 降至 1/
   );
   assert.equal((await checkGeneratedAssets(output)).counts.operators, 2);
+});
+
+test("upstream-only updates skip publication and changing one portrait only invalidates its own URL", async (t) => {
+  const root = await makeTemp(t);
+  const source = path.join(root, "source");
+  const output = path.join(root, "output");
+  await createSource(source);
+  const options = { sourceRoot: source, sourceSha: SOURCE_SHA, portraitsRoot: path.join(source, "portraits"), portraitsSha: PORTRAITS_SHA, outputRoot: output };
+  await generateAssets(options);
+  const catalogFile = path.join(output, "packages/arknights-domain/src/generated/arkntools/operator-catalog.json");
+  const originalCatalog = JSON.parse(await readFile(catalogFile, "utf8"));
+  const git = (...args) => execFileSync("git", args, { cwd: output, stdio: "pipe" });
+  git("init", "--quiet");
+  git("add", ".");
+  git("-c", "user.name=Resource test", "-c", "user.email=resource@example.test", "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "baseline");
+  assert.deepEqual(await detectManagedChanges(output), { changed: false, contentFiles: [], provenanceOnlyFiles: [] });
+
+  await generateAssets({ ...options, sourceSha: "b".repeat(40), portraitsSha: "c".repeat(40) });
+  assert.deepEqual(JSON.parse(await readFile(catalogFile, "utf8")), originalCatalog);
+  assert.deepEqual(await detectManagedChanges(output), {
+    changed: false, contentFiles: [], provenanceOnlyFiles: ["packages/arknights-domain/src/generated/arkntools/source.json"],
+  });
+
+  const ghOutput = path.join(root, "github-output");
+  const ghSummary = path.join(root, "github-summary");
+  execFileSync(process.execPath, [path.join(import.meta.dirname, "arkntools-sync-changes.mjs")], {
+    cwd: output, env: { ...process.env, GITHUB_OUTPUT: ghOutput, GITHUB_STEP_SUMMARY: ghSummary }, stdio: "pipe",
+  });
+  assert.equal(await readFile(ghOutput, "utf8"), "changed=false\n");
+  assert.match(await readFile(ghSummary, "utf8"), /do not create a resource PR or deployment/);
+
+  await png(path.join(source, "portraits/avatar/char_001_alpha.png"), 180, 180, { r: 240, g: 20, b: 30, alpha: 1 });
+  await generateAssets(options);
+  const changedCatalog = JSON.parse(await readFile(catalogFile, "utf8"));
+  assert.notEqual(changedCatalog[0].portrait, originalCatalog[0].portrait);
+  assert.deepEqual(changedCatalog[1], originalCatalog[1]);
+  assert.deepEqual((await detectManagedChanges(output)).contentFiles, [
+    "apps/arknights/public/images/operator-portraits/001_alpha.webp",
+    "packages/arknights-domain/src/generated/arkntools/operator-catalog.json",
+  ]);
+  // Valid image bytes with a stale URL must also fail the asset gate.
+  changedCatalog[0].portrait = originalCatalog[0].portrait;
+  await writeFile(catalogFile, JSON.stringify(changedCatalog));
+  await assert.rejects(checkGeneratedAssets(output), /头像内容哈希与路径不一致/);
+});
+
+test("legacy portrait catalogs remain valid until a generated content-hash migration", async (t) => {
+  const root = await makeTemp(t);
+  const source = path.join(root, "source");
+  const output = path.join(root, "output");
+  await createSource(source);
+  await generateAssets({ sourceRoot: source, sourceSha: SOURCE_SHA, portraitsRoot: path.join(source, "portraits"), portraitsSha: PORTRAITS_SHA, outputRoot: output });
+  const dataRoot = path.join(output, "packages/arknights-domain/src/generated/arkntools");
+  const manifest = JSON.parse(await readFile(path.join(dataRoot, "source.json"), "utf8"));
+  const catalog = JSON.parse(await readFile(path.join(dataRoot, "operator-catalog.json"), "utf8"));
+  delete manifest.portraitVersioning;
+  for (const operator of catalog) operator.portrait = `/images/operator-portraits/${operator.id.slice(5)}.webp?v=${GENERATED_VERSION}-${PORTRAITS_SHA.slice(0, 12)}`;
+  await writeFile(path.join(dataRoot, "source.json"), JSON.stringify(manifest));
+  await writeFile(path.join(dataRoot, "operator-catalog.json"), JSON.stringify(catalog));
+  await checkGeneratedAssets(output);
+  manifest.portraitVersioning = "unknown";
+  await writeFile(path.join(dataRoot, "source.json"), JSON.stringify(manifest));
+  await assert.rejects(checkGeneratedAssets(output), /头像缓存版本策略无效/);
+});
+
+test("publication ignores only pinned provenance commits, not schema, source or mastery changes", () => {
+  const manifestFile = "packages/arknights-domain/src/generated/arkntools/source.json";
+  const masteryFile = "apps/arknights/src/generated/mastery-data.json";
+  const manifest = {
+    version: 2, source: { repository: ARKNTOOLS_REPOSITORY, commit: SOURCE_SHA },
+    portraitsSource: { repository: ARKNIGHTS_GAME_RESOURCE_REPOSITORY, commit: PORTRAITS_SHA },
+    portraitsFallback: { repository: ARKNTOOLS_REPOSITORY, commit: SOURCE_SHA, operators: ["char_001_alpha"] },
+    counts: { operators: 2 },
+  };
+  const mastery = { source: { rules: manifest.source, branches: manifest.portraitsSource, descriptionsHash: "reviewed" }, branches: { char_001_alpha: "fighter" }, rules: { train: { speed: 0.3 } } };
+  const changed = (file, before, after) => hasManagedContentChange(file, JSON.stringify(before), JSON.stringify(after));
+  const nextManifest = globalThis.structuredClone(manifest);
+  for (const source of [nextManifest.source, nextManifest.portraitsSource, nextManifest.portraitsFallback]) source.commit = "d".repeat(40);
+  assert.equal(changed(manifestFile, manifest, nextManifest), false);
+  const nextMastery = globalThis.structuredClone(mastery);
+  nextMastery.source.rules.commit = "e".repeat(40);
+  nextMastery.source.branches.commit = "f".repeat(40);
+  assert.equal(changed(masteryFile, mastery, nextMastery), false);
+  for (const mutate of [
+    (data) => { data.source.repository = "https://example.test/changed-source"; },
+    (data) => { data.counts.operators = 1; },
+    (data) => { data.portraitsFallback.operators = ["char_002_beta"]; },
+    (data) => { data.portraitVersioning = "sha256"; },
+    (data) => { data.source.commit = "invalid"; },
+    (data) => { data.source.commit = "<upstream-commit>"; },
+    (data) => { delete data.source.commit; },
+  ]) {
+    const data = globalThis.structuredClone(nextManifest);
+    mutate(data);
+    assert.equal(changed(manifestFile, manifest, data), true);
+  }
+  for (const mutate of [
+    (data) => { data.source.descriptionsHash = "changed"; },
+    (data) => { data.branches.char_001_alpha = "caster"; },
+    (data) => { data.rules.train.speed = 0.4; },
+  ]) {
+    const data = globalThis.structuredClone(nextMastery);
+    mutate(data);
+    assert.equal(changed(masteryFile, mastery, data), true);
+  }
+  assert.throws(() => hasManagedContentChange(manifestFile, JSON.stringify(manifest), "broken JSON"));
+  assert.equal(hasManagedContentChange(manifestFile, null, JSON.stringify(manifest)), true);
+  assert.equal(hasManagedContentChange(manifestFile, JSON.stringify(manifest), null), true);
+  assert.equal(changed("packages/arknights-domain/src/generated/gacha-up.json", { pool: 1 }, { pool: 2 }), true);
+});
+
+test("publication detects staged, untracked and deleted managed files without modifying the index", async (t) => {
+  const root = await makeTemp(t);
+  const catalogRoot = path.join(root, "packages/arknights-domain/src/generated/arkntools");
+  await mkdir(catalogRoot, { recursive: true });
+  const sourceFile = path.join(catalogRoot, "source.json");
+  const source = { source: { commit: SOURCE_SHA } };
+  await writeFile(sourceFile, JSON.stringify(source));
+  const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: "pipe" });
+  git("init", "--quiet");
+  git("add", ".");
+  git("-c", "user.name=Resource test", "-c", "user.email=resource@example.test", "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "baseline");
+  source.source.commit = PORTRAITS_SHA;
+  await writeFile(sourceFile, JSON.stringify(source));
+  git("add", ".");
+  const indexBefore = git("diff", "--cached");
+  assert.equal((await detectManagedChanges(root)).changed, false);
+  assert.equal(git("diff", "--cached"), indexBefore);
+
+  const poolFile = path.join(root, "packages/arknights-domain/src/generated/gacha-up.json");
+  await writeFile(poolFile, JSON.stringify({ newPool: { six: ["测试甲"] } }));
+  assert.deepEqual((await detectManagedChanges(root)).contentFiles, ["packages/arknights-domain/src/generated/gacha-up.json"]);
+  git("add", ".");
+  assert.equal((await detectManagedChanges(root)).changed, true);
+  await unlink(sourceFile);
+  assert.ok((await detectManagedChanges(root)).contentFiles.includes("packages/arknights-domain/src/generated/arkntools/source.json"));
 });

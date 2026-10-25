@@ -704,7 +704,7 @@ test("mastery, gacha UP data and the full fixture follow every managed-resource 
   assert.match(workflow, /git restore --source[^\n]+[\s\S]*?packages\/arknights-domain\/src\/generated\/arkntools \\\n\s+apps\/arknights\/src\/generated\/mastery-data\.json/);
   const generateStep = workflow.slice(workflow.indexOf("      - name: Generate and validate assets"), workflow.indexOf("      - name: Run pre-PR quality gates"));
   assert.ok(generateStep.indexOf("npm run assets:gacha-up") > generateStep.indexOf("npm run assets:sync:arkntools"));
-  assert.match(workflow, /git status --porcelain --[^\n]*packages\/arknights-domain\/src\/generated\/gacha-up\.json/);
+  assert.match(workflow, /id: changes\n\s+run: node scripts\/arkntools-sync-changes\.mjs/);
   assert.match(workflow, /git add --[^\n]*packages\/arknights-domain\/src\/generated\/gacha-up\.json/);
   assert.match(workflow, /packages\/arknights-domain\/src\/generated\/gacha-up\.json \\\n\s+fixtures\/operbox_full_e2\.json/);
   assert.match(workflow, /git show HEAD:packages\/arknights-domain\/src\/generated\/gacha-up\.json/);
