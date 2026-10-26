@@ -1,4 +1,5 @@
-import { catalog, nonSchedulableOperators, parseRoster, type Operator, type Workspace } from "@riic/endfield-solver/model.mjs";
+import { parseRoster, type Operator, type Workspace } from "@riic/endfield-solver/model.mjs";
+import type { DisplayOperator } from "@riic/endfield-data";
 import { endfieldFacilityLevels, matchEndfieldRoster, type EndfieldRole, type EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { withFacilityLevels } from "./scheduling-options.ts";
 
@@ -28,9 +29,20 @@ export function restoreSklandRoster(current: Workspace): Workspace {
   return { ...current, operators, ...(manual ? { manual } : {}) };
 }
 
-export function syncSklandWorkspace(current: Workspace, snapshot: EndfieldSnapshot, source: string, roleId: string) {
+/** catalog.json 是干员名单的唯一来源；没有基建技能的（如管理员）单独分组，避免被排进班次。 */
+export function rosterMatchTables(catalog: readonly DisplayOperator[]) {
+  const toEntry = (op: DisplayOperator) => ({ id: op.id, name: op.name });
+  return {
+    schedulable: catalog.filter(op => op.skills.length > 0).map(toEntry),
+    nonSchedulable: catalog.filter(op => op.skills.length === 0).map(toEntry),
+  };
+}
+
+export function syncSklandWorkspace(current: Workspace, snapshot: EndfieldSnapshot, source: string, roleId: string,
+  catalog: readonly DisplayOperator[]) {
   if (snapshot.role.roleId !== roleId) throw new Error("森空岛返回的角色不匹配，请重新同步。 / Skland returned a different character; please retry.");
-  const matched = matchEndfieldRoster(snapshot, catalog, nonSchedulableOperators);
+  const { schedulable, nonSchedulable } = rosterMatchTables(catalog);
+  const matched = matchEndfieldRoster(snapshot, schedulable, nonSchedulable);
   // parseRoster carries `latestSpaceshipSkillNodes`（每槽最高档）next to `elite`.
   const incoming = matched.operators.length ? parseRoster(matched.operators) : [];
   const sameSource = current.rosterSource === source;
