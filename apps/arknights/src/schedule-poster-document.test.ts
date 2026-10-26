@@ -8,7 +8,12 @@ import type { BaseBlueprint } from "@riic/arknights-domain/types";
 const layout = JSON.parse(readFileSync(new URL("../../../packages/arknights-domain/src/layouts/252.json", import.meta.url), "utf8")) as BaseBlueprint;
 test("editable work file preserves shift products, efficiency, training roles and dormant facilities", () => {
   const draft = createManualScheduleDraft([8, 8, 8]);
-  draft.shifts[0]!.rooms.trade_1 = { operators: ["巫恋", "卡夫卡", "龙舌兰"], manualSkillEfficiencyPct: 125 };
+  draft.shifts[0]!.rooms.trade_1 = {
+    operators: ["巫恋", null, "龙舌兰"],
+    autofill: true,
+    autofillSlots: [1],
+    manualSkillEfficiencyPct: 125,
+  };
   draft.shifts[1]!.rooms.trade_1 = { operators: ["能天使"], product: { trade: { order: "originium" } }, manualSkillEfficiencyPct: 100 };
   draft.shifts[0]!.rooms.training_room = { operators: ["银灰", "杜宾"] };
   draft.shifts[0]!.rooms.dorm_4 = { operators: ["德克萨斯"], autofill: false };
@@ -19,6 +24,7 @@ test("editable work file preserves shift products, efficiency, training roles an
   assert.deepEqual(manual.shifts[0]!.rooms.training_room?.operators, ["银灰", "杜宾"]);
   assert.equal(manual.shifts[0]!.rooms.dorm_4?.operators[0], "德克萨斯");
   assert.equal(manual.shifts[0]!.rooms.trade_1?.manualSkillEfficiencyPct, 125);
+  assert.deepEqual(manual.shifts[0]!.rooms.trade_1?.autofillSlots, [1]);
   assert.deepEqual(manual.shifts[1]!.rooms.trade_1?.product, { trade: { order: "originium" } });
   const edited = assignManualOperator({ draft: manual, layout, shiftIndex: 0, roomId: "trade_1", slotIndex: 1, operator: "但书" }).draft;
   assert.equal(edited.shifts[0]!.rooms.trade_1?.operators[1], "但书");
@@ -63,6 +69,9 @@ test("import rejects duplicate assignments, low-level orundum, excess capacity a
     (doc: typeof good) => { doc.draft.shifts[0]!.rooms.trade_1 = { operators: ["芬", "芬"] }; },
     (doc: typeof good) => { doc.draft.shifts[0]!.rooms.trade_2 = { operators: [], product: { trade: { order: "originium" } } }; },
     (doc: typeof good) => { doc.draft.shifts[0]!.rooms.trade_2 = { operators: ["芬", "香草", "红豆"] }; },
+    (doc: typeof good) => { doc.draft.shifts[0]!.rooms.control = { operators: ["芬"], autofillSlots: [5] }; },
+    (doc: typeof good) => { doc.draft.shifts[0]!.rooms.training_room = { operators: [], autofillSlots: [0] }; },
+    (doc: typeof good) => { doc.draft.shifts[0]!.rooms.control = { operators: [], autofillSlots: [1, 1] }; },
   ]) { const bad = structuredClone(good); mutate(bad); assert.throws(() => readPosterFile(JSON.stringify(bad))); }
   const multiDay = structuredClone(good);
   multiDay.draft.shifts[0]!.durationHours = 20;
