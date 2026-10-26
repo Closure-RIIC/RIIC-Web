@@ -24,6 +24,7 @@ const PAGE_CATEGORIES: Record<AppPage, keyof typeof CATEGORY_ACCENTS> = {
   skland: "personal",
   account: "personal",
   billing: "personal",
+  referral: "personal",
   settings: "personal",
   changelog: "personal",
   agent: "assistant",

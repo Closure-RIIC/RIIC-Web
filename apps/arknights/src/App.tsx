@@ -169,7 +169,7 @@ const ManualDraftReplaceDialog = lazy(() => import("@/components/ManualDraftRepl
 type ProductChange =
   | { type: "factory"; roomId: string; recipe: FactoryRecipe }
   | { type: "trade"; roomId: string; order: TradeOrder };
-type WebsiteAuthIntent = "account" | "billing" | "manual" | "manual-edit" | "run" | "setup" | "skland" | "upgrade" | "mastery";
+type WebsiteAuthIntent = "account" | "billing" | "referral" | "manual" | "manual-edit" | "run" | "setup" | "skland" | "upgrade" | "mastery";
 
 type SklandFullRestoreResult =
   | { session: SklandSessionData; error?: never }
@@ -1904,7 +1904,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       requestWebsiteAccount("manual", trigger);
       return false;
     }
-    if ((nextPage === "account" || nextPage === "billing" || nextPage === "skland") && !websiteSession) {
+    if ((nextPage === "account" || nextPage === "billing" || nextPage === "referral" || nextPage === "skland") && !websiteSession) {
       requestWebsiteAccount(nextPage, trigger);
       return false;
     }

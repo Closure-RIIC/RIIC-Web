@@ -2,7 +2,7 @@
 
 import { cloneElement, useId, useRef, useState, type ComponentPropsWithRef, type MouseEvent, type ReactElement, type ReactNode } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { BookOpen, ChevronDown, CircleHelp, CreditCard, LoaderCircle, LogOut, Settings, UserRound } from "lucide-react";
+import { BookOpen, ChevronDown, CircleHelp, CreditCard, Gift, LoaderCircle, LogOut, Settings, UserRound } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { FluidOrb } from "@riic/ui-primitives/fluid-orb";
 import { Skeleton } from "@riic/ui-primitives/skeleton";
@@ -10,7 +10,7 @@ import { useSidebar } from "@riic/ui-primitives/sidebar";
 import { accountOrbColor } from "./account-orb";
 import styles from "./SidebarAccountMenu.module.css";
 
-export type AccountMenuDestination = "billing" | "changelog" | "docs" | "settings";
+export type AccountMenuDestination = "billing" | "referral" | "changelog" | "docs" | "settings";
 type AccountLink = ReactElement<ComponentPropsWithRef<"a">>;
 
 function FooterLink({ link, ...props }: ComponentPropsWithRef<"a"> & { link: AccountLink }) {
@@ -18,8 +18,8 @@ function FooterLink({ link, ...props }: ComponentPropsWithRef<"a"> & { link: Acc
 }
 
 const copy = {
-  zh: { menu: "账号菜单", anonymous: "未登录", signIn: "登录网站账号", loading: "正在加载账号", billing: "付费计划", changelog: "更新日志", signOut: "退出登录", signingOut: "正在退出…", signOutFailed: "退出登录失败，请重试。", docs: "Docs", settings: "设置", language: "语言", englishDisabled: "EN（关闭）", unavailable: "账号服务暂不可用，本地排班仍可使用。" },
-  en: { menu: "Account menu", anonymous: "Not signed in", signIn: "Sign in to your account", loading: "Loading account", billing: "Payment plans", changelog: "Changelog", signOut: "Sign out", signingOut: "Signing out…", signOutFailed: "Could not sign out. Please try again.", docs: "Docs", settings: "Settings", language: "Language", englishDisabled: "EN (disabled)", unavailable: "Account service unavailable. Local scheduling still works." },
+  zh: { menu: "账号菜单", anonymous: "未登录", signIn: "登录网站账号", loading: "正在加载账号", billing: "付费计划", referral: "邀请返利", changelog: "更新日志", signOut: "退出登录", signingOut: "正在退出…", signOutFailed: "退出登录失败，请重试。", docs: "Docs", settings: "设置", language: "语言", englishDisabled: "EN（关闭）", unavailable: "账号服务暂不可用，本地排班仍可使用。" },
+  en: { menu: "Account menu", anonymous: "Not signed in", signIn: "Sign in to your account", loading: "Loading account", billing: "Payment plans", referral: "Invite friends", changelog: "Changelog", signOut: "Sign out", signingOut: "Signing out…", signOutFailed: "Could not sign out. Please try again.", docs: "Docs", settings: "Settings", language: "Language", englishDisabled: "EN (disabled)", unavailable: "Account service unavailable. Local scheduling still works." },
 };
 
 /** Both apps provide their own router links and account actions; menu behavior stays shared. */
@@ -30,7 +30,7 @@ export function SidebarAccountMenu({ user, pending, busy = false, unavailable = 
   unavailable?: boolean;
   language: { locale: string; pending?: boolean; englishEnabled?: boolean; setLocale: (locale: "zh" | "en") => void };
   billingEnabled?: boolean;
-  links: Record<Exclude<AccountMenuDestination, "billing">, AccountLink> & { billing?: AccountLink };
+  links: Record<Exclude<AccountMenuDestination, "billing" | "referral">, AccountLink> & { billing?: AccountLink; referral?: AccountLink };
   currentPage?: string;
   onNavigate?: (event: MouseEvent<HTMLAnchorElement>, destination: AccountMenuDestination, trigger: HTMLElement | null) => void;
   onSignIn: (trigger: HTMLElement) => void;
@@ -38,6 +38,7 @@ export function SidebarAccountMenu({ user, pending, busy = false, unavailable = 
 }) {
   const labels = copy[language.locale === "en" ? "en" : "zh"];
   const billingLink = links.billing;
+  const referralLink = links.referral;
   const { state, isMobile, setOpenMobile } = useSidebar();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -121,6 +122,11 @@ export function SidebarAccountMenu({ user, pending, busy = false, unavailable = 
             onClick={event => navigate(event, "billing")} data-primary-navigation-page="billing"
             render={(props, state) => cloneElement(billingLink, props, renderItemContent(state.highlighted, props.children))}>
             <CreditCard aria-hidden="true" />{labels.billing}
+          </Menu.LinkItem> : null}
+          {referralLink ? <Menu.LinkItem closeOnClick className={styles.item} aria-current={currentPage === "referral" ? "page" : undefined}
+            onClick={event => navigate(event, "referral")} data-primary-navigation-page="referral"
+            render={(props, state) => cloneElement(referralLink, props, renderItemContent(state.highlighted, props.children))}>
+            <Gift aria-hidden="true" />{labels.referral}
           </Menu.LinkItem> : null}
           <Menu.LinkItem closeOnClick className={styles.item} onClick={event => navigate(event, "changelog")} data-changelog-link
             render={(props, state) => cloneElement(links.changelog, props, renderItemContent(state.highlighted, props.children))}>
