@@ -18,6 +18,8 @@ export interface RoomRow {
   /** Fixed-position slots used by editors; unlike operatorSlots, empty gaps are preserved. */
   slotAssignments?: Array<RoomOperatorSlot | undefined>;
   unavailableSlotIndices?: number[];
+  /** Slots explicitly marked as automatic in a manual assignment. */
+  autofillSlotIndices?: number[];
   positionSlots?: RoomPositionSlot[];
   autofill: boolean;
   efficiency?: RoomEfficiency;

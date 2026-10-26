@@ -153,10 +153,19 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await workbench.getByRole("button", { name: "批量填写排班" }).click();
   const bulk = page.getByLabel("批量排班文本");
   const shiftCount = await poster.locator('[data-poster-room="trade_1"] [data-poster-shift]').count();
-  await bulk.fill(`贸易站1：巫恋、龙舌兰、柏喙 @自动 #龙门币${Array.from({ length: shiftCount - 1 }, () => " | -").join("")}`);
+  const tradeLine = `贸易站1：巫恋、龙舌兰、柏喙 @自动 #龙门币${Array.from({ length: shiftCount - 1 }, () => " | -").join("")}`;
+  const controlLine = `中枢：阿米娅、锡兰、auto、Free${Array.from({ length: shiftCount - 1 }, () => " | =").join("")}`;
+  await bulk.fill(`${tradeLine}\n${controlLine}`);
   await page.getByRole("button", { name: "检查并应用" }).click();
   await expect(tradeEfficiency).toContainText(/(?:[1-9]\d*|\d+\.\d+)%赤金/);
   await expect(tradeEfficiency).toHaveAttribute("title", /巫恋 E2 \+ 龙舌兰 E2/);
+  const control = poster.locator('[data-poster-room="control"] [data-poster-shift="0"]');
+  await expect(control).toContainText("AUTO");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).draft.shifts[0].rooms.control.autofillSlots)).toEqual([2, 3]);
+  await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
+  const controlEditor = page.locator('[data-manual-editor-board] [data-room-group="control"]');
+  await expect(controlEditor.locator('[data-operator-identity="autofill"]')).toHaveCount(3);
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
   await workbench.getByLabel("班次数", { exact: true }).click();
   await page.getByRole("option", { name: "4 班", exact: true }).click();
   await expect(poster).toHaveAttribute("data-shift-count", "4");
@@ -473,6 +482,24 @@ test("manual MAA downloads normalize dorm autofill without changing the editor s
     }
   }
   await expect(autofill).toHaveAttribute("aria-pressed", "false");
+});
+
+test("poster bulk text toggles dorm autofill per shift and inherits with equals", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/manual");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  const workbench = page.locator("[data-poster-workbench]");
+  await expect(workbench.locator("[data-schedule-poster]")).toHaveAttribute("data-shift-count", "3");
+  await workbench.getByRole("button", { name: "批量填写排班" }).click();
+  await expect(page.getByText(/整间设施用 @auto.*@manual/)).toBeVisible();
+  await page.getByLabel("批量排班文本").fill("宿舍1：银灰 @自动填充 | = | - @手动填充");
+  await page.getByRole("button", { name: "检查并应用" }).click();
+  await expect(page.getByRole("dialog", { name: "批量填写设施与干员" })).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => {
+    const draft = JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!);
+    return draft.shifts.map((shift: { rooms: Record<string, { autofill?: boolean }> }) => shift.rooms.dorm_1?.autofill);
+  })).toEqual([true, true, false]);
 });
 
 async function openManualWorkflow(page: Page, tradeOperators?: Array<string | null>) {

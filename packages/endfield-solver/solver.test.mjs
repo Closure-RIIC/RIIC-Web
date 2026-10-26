@@ -244,3 +244,71 @@ test("default and assist plans already keep the stronger shift in A", () => {
     }
   }
 });
+
+// ── 决策 65：除中枢外每舱 ≥1 人 + 缺项进 skipped（不再算校验失败） ──
+const roster14 = ["莱万汀", "庄方宜", "余烬", "佩丽卡", "艾维文娜", "别礼", "伊冯", "艾尔黛拉", "提弗洛斯", "汤汤", "洛茜", "祀", "诀", "弭弗"];
+const zeroSkill14 = roster14.map(name => ({ name, elite: 4, latestSpaceshipSkillNodes: [] }));
+const fullSkill14 = roster14.map(name => ({ name, elite: 4 }));
+const everyFacilityStaffed = result => {
+  const rooms = new Map(result.rooms.map(room => [room.key, room]));
+  const expected = ["会客室", "制造舱1", "制造舱2", "培养舱"];
+  for (const key of expected) {
+    const room = rooms.get(key);
+    assert.ok(room, `${key} should appear in the plan`);
+    assert.ok(room.a.length + room.b.length >= 1, `${key} needs at least one operator`);
+  }
+};
+
+test("a 14-operator dual-experience pool with no skills still staffs every facility", () => {
+  const result = solve({ operators: zeroSkill14, options: { ...DEFAULT_OPTIONS, mfg: "2干员", time: 30000, budget: 2000000 } });
+  everyFacilityStaffed(result);
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  assert.deepEqual(result.verification.skipped, []);
+  assert.ok(result.scores["干员经验"] > 0, "the two manufacturing facilities must produce experience");
+});
+
+test("a 14-operator single-experience pool also staffs every facility", () => {
+  const result = solve({ operators: zeroSkill14, options: { ...DEFAULT_OPTIONS, time: 30000, budget: 2000000 } });
+  everyFacilityStaffed(result);
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  assert.deepEqual(result.verification.skipped, []);
+});
+
+test("a full-skill 14-operator pool staffs every facility as well", () => {
+  const result = solve({ operators: fullSkill14, options: { ...DEFAULT_OPTIONS, mfg: "2干员", time: 30000, budget: 2000000 } });
+  everyFacilityStaffed(result);
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  assert.deepEqual(result.verification.skipped, []);
+});
+
+test("facilities that cannot be staffed are reported as skipped, not as verification errors", () => {
+  const result = solve({ operators: [{ name: "莱万汀", elite: 4 }, { name: "余烬", elite: 4 }], options: { ...DEFAULT_OPTIONS, time: 30000, budget: 2000000 } });
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  const skipped = result.verification.skipped ?? [];
+  // 2 人先够 2 个舱：会客室塌成单班 + 制造舱1 单班各 1 人；剩下两个舱才弃。
+  assert.equal(skipped.length, 2, JSON.stringify(skipped));
+  assert.deepEqual(skipped.map(item => item.key).sort(), ["制造舱2", "培养舱"].sort());
+  assert.ok(skipped.every(item => item.reason === "人手不足" && item.cat));
+  assert.deepEqual(result.status.gaps.map(gap => gap.key).sort(), skipped.map(item => item.key).sort());
+});
+
+test("the coverage floor keeps the stronger shift in A", () => {
+  for (const roster of [zeroSkill14, fullSkill14]) {
+    const result = solve({ operators: roster, options: { ...DEFAULT_OPTIONS, mfg: "2干员", time: 30000, budget: 2000000 } });
+    for (const room of result.rooms) {
+      if (room.single) continue;
+      assert.ok((room.bonusA ?? 0) >= (room.bonusB ?? 0) - 1e-9,
+        `${room.key} keeps the stronger shift in B: A=${room.bonusA} B=${room.bonusB}`);
+    }
+  }
+});
+
+test("the full 32-operator baseline keeps its exact scores after the coverage floor", () => {
+  const result = solve({ operators: catalog.map(op => ({ name: op.name, elite: 4 })), options: { ...DEFAULT_OPTIONS, time: 30000, budget: 2000000 } });
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  assert.deepEqual(result.verification.skipped, []);
+  assert.ok(Math.abs(result.scores["线索"] - 95.04) < 1e-9, String(result.scores["线索"]));
+  assert.ok(Math.abs(result.scores["干员经验"] - 99.22) < 1e-9, String(result.scores["干员经验"]));
+  assert.ok(Math.abs(result.scores["武器经验"] - 97.02) < 1e-9, String(result.scores["武器经验"]));
+  assert.ok(Math.abs(result.scores["培养"] - 775.795) < 5e-4, String(result.scores["培养"]));
+});

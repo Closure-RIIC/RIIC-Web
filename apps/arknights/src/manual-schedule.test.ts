@@ -305,7 +305,7 @@ test("calculator results become an editable manual draft with room order, shifts
           Fiammetta: { enable: true, target: ["但书", "巫恋"], order: "pre" },
           drones: { enable: true, room: "trading", index: 1, order: "pre" },
           rooms: {
-            control: [{ operators: [{ name: "菲亚梅塔", skill: 2 }] }],
+            control: [{ operators: [{ name: "菲亚梅塔", skill: 2 }], autofill: true }],
             trading: [{ operators: ["但书", null, { name: "巫恋" }] }],
             dormitory: [{ operators: ["菲亚梅塔"], autofill: false }],
           },
@@ -323,6 +323,7 @@ test("calculator results become an editable manual draft with room order, shifts
 
   assert.deepEqual(draft.shifts.map((shift) => shift.durationHours), [12, 12]);
   assert.deepEqual(draft.shifts[0]?.rooms.control?.operators, ["菲亚梅塔", null, null, null, null]);
+  assert.equal(draft.shifts[0]?.rooms.control?.autofill, true);
   assert.deepEqual(draft.shifts[0]?.rooms.trade_1?.operators, ["但书", null, "巫恋"]);
   assert.equal(draft.shifts[0]?.rooms.dorm_1?.autofill, false);
   assert.equal(draft.shifts[0]?.fiammettaTarget, "但书");
