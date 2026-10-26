@@ -12,6 +12,16 @@ import { categoryLabel, FacilityBoard, FacilityCard, type FacilityKind } from ".
 
 const percent = (n: number) => `${(n * 100).toFixed(1)}%`;
 const hour = (n: number) => `${String(n).padStart(2, "0")}:00`;
+type OutputRow = {
+  key: string;
+  icon: string;
+  label: string;
+  output: string;
+  unit: string;
+  secondary?: string;
+  secondaryUnit?: string;
+  hint?: string;
+};
 export function Results({ result, showWeapons = true }: { result: Result; showWeapons?: boolean }) {
   const { workspace, t } = useWorkspace();
   const warnings = result.status.gaps.length + result.status.approximations.length + result.rooms.filter(room => !room.converged).length;
@@ -71,10 +81,10 @@ export function FacilityBonus({ kind, value, placeholder, animated = false }: { 
 
 export function FacilityOutputSummary({ scores, production, animated = false }: { scores: Record<string, number | null>; production?: Record<string, ProductionSummary>; animated?: boolean }) {
   const { t } = useWorkspace();
-  const rows = Object.entries(scores).flatMap(([key]) => {
+  const rows: OutputRow[] = Object.entries(scores).flatMap(([key]) => {
     const summary = production?.[key];
     if ((key === "干员经验" || key === "武器经验") && summary?.experience !== undefined && summary.sanity !== undefined) {
-      return [{ key, icon: key, label: categoryLabel(key, t), output: `${summary.sanity.toFixed(2)} ${t("理智", "sanity")} · ${(summary.experience / 10_000).toFixed(2)} ${t("万经验", "10k EXP")}`, unit: "", hint: summary.note }];
+      return [{ key, icon: key, label: categoryLabel(key, t), output: summary.sanity.toFixed(2), unit: t("理智", "sanity"), secondary: (summary.experience / 10_000).toFixed(2), secondaryUnit: t("万经验", "10k EXP"), hint: summary.note }];
     }
     return (summary?.options ?? []).map(option => ({
       key: `${key}-${option.kind ?? option.name}`,
@@ -87,7 +97,7 @@ export function FacilityOutputSummary({ scores, production, animated = false }: 
   });
   return <div className="ef-output-summary">
     <p>{t("全舰日均产出", "Ship-wide daily output")} <small>{t("24h 周期 · 最终产物 / 日", "24h cycle · final output / day")}</small></p>
-    <dl>{rows.map(row => <div key={row.key}><dt><ProductionIcon category={row.icon} size={22} />{row.label}</dt><dd title={row.hint}>{animated ? <AnimatedNumber value={row.output} animation="smooth" stagger={0.04} /> : row.output}{row.unit ? <small> {row.unit}</small> : null}</dd></div>)}</dl>
+    <dl>{rows.map(row => <div key={row.key}><dt><ProductionIcon category={row.icon} size={22} />{row.label}</dt><dd title={row.hint}>{animated ? <AnimatedNumber value={row.output} animation="smooth" stagger={0.04} /> : row.output}<small> {row.unit}</small>{row.secondary ? <> · {animated ? <AnimatedNumber value={row.secondary} animation="smooth" stagger={0.04} /> : row.secondary}<small> {row.secondaryUnit}</small></> : null}</dd></div>)}</dl>
   </div>;
 }
 
