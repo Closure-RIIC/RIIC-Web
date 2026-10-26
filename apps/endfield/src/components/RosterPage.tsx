@@ -11,7 +11,7 @@ import { FilterSelect } from "@riic/ui-primitives/filter-select";
 import { SelectionButton } from "@riic/ui-primitives/selection-button";
 import { Button } from "@riic/ui-primitives/button";
 import { GameArtwork, OperatorPortrait } from "./GameArtwork";
-import { SkillFilters } from "./SkillFilters";
+import { SkillFilters, skillTagOf } from "./SkillFilters";
 import { ManualOperatorChoice } from "./ManualOperatorChoice";
 import { OperatorSkillTooltip } from "./OperatorSkillTooltip";
 
@@ -85,7 +85,7 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
   const rows = (skillsOnly ? skillCatalog : operatorCatalog).filter(op => (skillsOnly || !(onlyOwned || picker) || selected.has(op.name))
     && (rarity === "all" || op.rarity === Number(rarity))
     && (profession === "all" || op.profession === profession)
-    && op.skills.some(skill => (room === "all" || skill.room === room) && (tag === "all" || skill.effectKey === tag))
+    && op.skills.some(skill => (room === "all" || skill.room === room) && (tag === "all" || skillTagOf(skill) === tag))
     && (!needle || searchable(op).includes(needle)));
   const emptyText = t("没有匹配选项", "No matching options");
   const facilityLabel = (value: string) => {
@@ -200,7 +200,7 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
             selected={current} unavailable={unavailable} onSelect={() => picker.onSelect(op.name)} />;
         }
         const ownedOperator = skillsOnly ? undefined : workspace.operators.find(item => item.name === op.name);
-        const matchingSkills = op.skills.filter(skill => (room === "all" || skill.room === room) && (tag === "all" || skill.effectKey === tag));
+        const matchingSkills = op.skills.filter(skill => (room === "all" || skill.room === room) && (tag === "all" || skillTagOf(skill) === tag));
         const facilities = Array.from(new Set(matchingSkills.map(skill => skill.room)));
         const skillList = skillsOnly ? <div className="ef-ship-skills">{facilities.map(facility => <div className="ef-skill-group" key={facility}>
           <p className="ef-skill-facility">{facilityLabel(facility)}</p>

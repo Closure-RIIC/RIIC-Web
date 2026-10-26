@@ -58,6 +58,11 @@ const PROFESSIONS = {
   7: { zh: "先锋", en: "Vanguard" },
   8: { zh: "突击", en: "Striker" },
 };
+// Second skill parameter narrows the effect down to one target (see ship-data enums.effectParam).
+const EXP_TYPES = { 1: { zh: "干员经验", en: "Operator EXP" }, 2: { zh: "武器经验", en: "Weapon EXP" } };
+const MATERIAL_TYPES = { 1: { zh: "菌类", en: "Fungus" }, 2: { zh: "晶植", en: "Crystal" }, 3: { zh: "矿物", en: "Mineral" } };
+/** ClueProbabilityUp carries [clueIndex, tier]: tier 1 is the small boost, tier 2 the larger one. */
+const CLUE_TIERS = { 1: { zh: "小幅提升", en: "Small boost" }, 2: { zh: "提升", en: "Boost" } };
 /** Chinese names follow the game's SpaceshipRoomTypeTable verbatim; English is the site's own copy. */
 const ROOMS = {
   0: { zh: "总控中枢", en: "Control center" },
@@ -71,6 +76,35 @@ const lookUp = (table, id, what) => {
   if (!entry) throw new Error(`Unknown ${what} id ${id}; review the game data before syncing.`);
   return entry;
 };
+/** Reads one indexed parameter list (valueIntList ?? valueFloatList) from a skill. */
+const paramList = (skill, index) => {
+  const param = skill.parameters?.[index];
+  return param?.valueIntList ?? param?.valueFloatList ?? null;
+};
+/**
+ * The second skill parameter narrows the effect to one target:
+ * ManufactureEfficiencyUp → [rate, expType], GrowSpeedUp → [rate, materialType],
+ * ClueProbabilityUp → [clueIndex, tier]. Other effects have no target.
+ */
+function skillTarget(skill, effectKey) {
+  const second = paramList(skill, 1);
+  const id = Array.isArray(second) && second.length ? Number(second[0]) : null;
+  if (effectKey === "ManufactureEfficiencyUp") {
+    const target = lookUp(EXP_TYPES, id, "expType");
+    return { targetId: id, target: target.zh, enTarget: target.en };
+  }
+  if (effectKey === "GrowSpeedUp") {
+    const target = lookUp(MATERIAL_TYPES, id, "materialType");
+    return { targetId: id, target: target.zh, enTarget: target.en };
+  }
+  if (effectKey === "ClueProbabilityUp") {
+    const clueIndex = Number(Array.isArray(paramList(skill, 0)) ? paramList(skill, 0)[0] : NaN);
+    const tier = lookUp(CLUE_TIERS, id, "clue tier");
+    if (!Number.isInteger(clueIndex) || clueIndex < 1) throw new Error(`ClueProbabilityUp without clueIndex: ${skill.id}`);
+    return { targetId: clueIndex, target: `线索 ${clueIndex}`, enTarget: `Clue ${clueIndex}`, clueIndex, clueTier: id, clueTierName: tier.zh, enClueTierName: tier.en };
+  }
+  return {};
+}
 const beyondRoot = `https://raw.githubusercontent.com/555me/EndfieldAssets/${assetRevision}/assets/beyond/`;
 const assetRoot = `${beyondRoot}dynamicassets/`;
 const manifest = [];
@@ -98,6 +132,7 @@ const operators = Object.fromEntries(Object.entries(characters).filter(([id]) =>
       description: clean(localize(skill.desc, zh)), enDescription: clean(localize(skill.desc, en)),
       unlock: node?.factorySkillNodeInfo.breakStage ?? null, roomType: skill.roomType,
       room: room.zh, enRoom: room.en, effectKey: effect.key, effectName: effect.zh, enEffectName: effect.en,
+      ...skillTarget(skill, effect.key),
       icon: asset("skills", skill.icon, `gameplay/ui/sprites/spaceship/spaceshipskillicon/${skill.icon}.png`) };
   }),
 }]));
