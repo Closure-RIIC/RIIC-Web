@@ -179,6 +179,7 @@
 .ef-inventory-group { margin-top:24px; }
 .ef-inventory-group>h3 { display:flex; gap:8px; align-items:center; margin-bottom:10px; font-size:14px; font-weight:600; }
 .ef-inventory-group>h3 small { color:var(--ef-muted); font-size:12px; font-weight:400; }
+.ef-inventory-summary { margin:-4px 0 10px; color:var(--ef-muted); font-size:12px; line-height:1.6; font-variant-numeric:tabular-nums; }
 .ef-inventory-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,260px),1fr)); gap:10px; }
 .ef-inventory-item { display:flex; align-items:center; gap:12px; min-width:0; padding:14px; border:1px solid var(--ef-line); border-radius:6px; background:var(--ef-raised); }
 .ef-inventory-item>img,.ef-inventory-placeholder { flex-shrink:0; width:44px; height:44px; object-fit:contain; }
