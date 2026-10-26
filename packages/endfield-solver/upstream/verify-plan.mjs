@@ -9,9 +9,11 @@ import { isUseful } from './candidates.mjs';
 const VERIFY_TOL = 1e-6;      // 数值重算容差（逐日模拟与闭式的浮点差）
 const STRUCT_TOL = 1e-9;      // 结构量（时间轴、u、R/C）容差
 
-export function verifyPlan({ ops, cfg, plan, allowEmptyShifts = false }) {
+export function verifyPlan({ ops, cfg, plan, allowEmptyShifts = false, skipped = [] }) {
   const errors = [];
-  if (!plan) return { ok: false, errors: ['无方案'] };
+  const skippedByKey = new Map((skipped || []).map((s) => [s.key, s]));
+  const skippedOut = [];
+  if (!plan) return { ok: false, errors: ['无方案'], skipped: skippedOut };
 
   const seen = new Map();
   let reconstructedUsed = EMPTY;
@@ -154,7 +156,13 @@ export function verifyPlan({ ops, cfg, plan, allowEmptyShifts = false }) {
 
   const expectedFacilities = [...(cfg.hasGuest ? ['会客室'] : []), ...cfg.manufacturing.map((_, i) => `制造舱${i + 1}`)];
   if (cfg.hasGrow) expectedFacilities.push('培养舱');
-  for (const key of expectedFacilities) if (!foundFacilities.has(key)) errors.push(`缺少必需设施方案「${key}」`);
+  // 决策 65：缺项分两种——「按优先级弃舱」（记 skipped，方案仍然可用）与「实现丢了设施」（真错）。
+  for (const key of expectedFacilities) {
+    if (foundFacilities.has(key)) continue;
+    const info = skippedByKey.get(key);
+    if (info) { skippedOut.push(info); continue; }
+    errors.push(`缺少必需设施方案「${key}」`);
+  }
 
   if (assistActions.length) {
     const period = assistActions.reduce((n, action) => lcm(n, action.cycle.length), 1);
@@ -180,7 +188,7 @@ export function verifyPlan({ ops, cfg, plan, allowEmptyShifts = false }) {
   if (reconstructedUsed !== plan.usedMask) errors.push('usedMask 与中枢/设施实际人员并集不一致');
   if (sizeOf(reconstructedUsed) > ops.length) errors.push('占用人数超过名单人数');
 
-  return { ok: errors.length === 0, errors, recompute, total: categoryScores.reduce((s, v) => s + v, 0) };
+  return { ok: errors.length === 0, errors, skipped: skippedOut, recompute, total: categoryScores.reduce((s, v) => s + v, 0) };
 }
 
 function maskFrom(ids) {

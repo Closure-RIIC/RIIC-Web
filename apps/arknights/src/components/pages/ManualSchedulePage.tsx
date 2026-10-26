@@ -522,7 +522,8 @@ export function ManualSchedulePage({
           ),
           unavailableSlotIndices: Array.from({ length: Math.max(0, visibleSlots - capacity) }, (_, index) => capacity + index),
         }),
-        ...(row.group === "dormitory" ? { autofill: Boolean(assignment?.autofill) } : {}),
+        autofill: Boolean(assignment?.autofill || assignment?.autofillSlots?.length),
+        autofillSlotIndices: assignment?.autofillSlots,
         ...(room?.kind === "trade_post" || room?.kind === "factory" || room?.kind === "power_plant"
           ? { manualSkillEfficiencyPct: assignment?.manualSkillEfficiencyPct }
           : {}),

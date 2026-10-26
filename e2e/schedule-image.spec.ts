@@ -18,6 +18,9 @@ for (const { width, mode, dark } of [
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 45_000 });
     const board = page.locator("[data-plan-board]");
     await expect(board.locator(`[data-schedule-view="${mode}"]`)).toBeVisible();
+    // Mounted cards can still be covered by SkeletonSwap's minimum display time.
+    await expect(board.locator('[data-skeleton-swap="loading"]')).toHaveCount(0);
+    await expect(board.locator("[data-skeleton-swap-placeholder]")).toHaveCount(0);
     await page.evaluate((enabled) => document.documentElement.classList.toggle("dark", enabled), dark);
     await board.locator("img").evaluateAll(images => Promise.all(images.map(image => {
       image.loading = "eager";
