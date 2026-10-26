@@ -20,12 +20,13 @@ export function SidebarAccountMenu({ page, onPageChange, onSessionChanged }: {
   return <SharedAccountMenu user={session?.user} pending={isPending} language={language} billingEnabled={features.billing} currentPage={page}
     links={{
       billing: <Link to={workbenchHref("billing")} preload={false} />,
+      referral: <Link to={workbenchHref("referral")} preload={false} />,
       changelog: <Link to="/changelog" preload={false} />,
       docs: <Link to="/docs" data-docs-link />,
       settings: <Link to={workbenchHref("settings")} preload={false} />,
     }}
     onNavigate={(event, destination, trigger) => {
-      if ((destination === "billing" || destination === "settings") && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) {
+      if ((destination === "billing" || destination === "referral" || destination === "settings") && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) {
         if (!onPageChange(destination, trigger ?? event.currentTarget)) event.preventDefault();
       }
     }}
