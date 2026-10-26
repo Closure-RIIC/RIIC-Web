@@ -119,7 +119,7 @@ export function ManualPage() {
                 </div>;
               })}</div>
             </div>)}</div>
-            {kind === "center" ? <FacilityOutputSummary scores={evaluation?.scores ?? emptyScores} animated /> : null}
+            {kind === "center" ? <FacilityOutputSummary scores={evaluation?.scores ?? emptyScores} production={evaluation?.production} animated /> : null}
             {kind === "center" ? <p className="ef-facility-note">{t("各设施按各自标注的时间换班。", "Each facility follows its own shift times.")}</p> : null}
           </FacilityCard>;
         })}</FacilityBoard>

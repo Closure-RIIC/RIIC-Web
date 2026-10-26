@@ -23,21 +23,31 @@ const strings = (value: unknown): value is string[] => Array.isArray(value) && v
 const nullableNumber = (value: unknown) => value === null || number(value);
 const crew = (value: Record<string, unknown>) => strings(value.a) && strings(value.b) && number(value.hour);
 const mood = (value: unknown) => value === null || object(value) && number(value.consumption) && number(value.recovery) && typeof value.stable === "boolean";
+const production = (value: unknown) => object(value) && Object.values(value).every(entry => object(entry)
+  && Array.isArray(entry.options) && entry.options.every(option => object(option) && typeof option.name === "string" && number(option.units) && number(option.baseHours)
+    && (option.coefficient === undefined || number(option.coefficient)) && (option.kind === undefined || typeof option.kind === "string")
+    && (option.slots === undefined || number(option.slots)) && (option.label === undefined || typeof option.label === "string")
+    && (option.outputCount === undefined || number(option.outputCount)) && (option.input === undefined || typeof option.input === "string")
+    && (option.inputCount === undefined || number(option.inputCount))
+    && (option.effectiveHours === undefined || number(option.effectiveHours)))
+  && (entry.experience === undefined || number(entry.experience)) && (entry.sanity === undefined || number(entry.sanity))
+  && (entry.note === undefined || typeof entry.note === "string"));
 
 /** A cache is optional: obsolete or incomplete data must never break rendering. */
 function validResult(value: unknown): value is Result {
   if (!object(value) || value.revision !== SOLVER_REVISION || !number(value.elapsedMs)) return false;
-  const { status, verification, center, scores, rooms } = value;
+  const { status, verification, center, scores, production: output, rooms } = value;
   return object(status) && typeof status.searchComplete === "boolean" && typeof status.stopReason === "string"
     && [status.centersVisited, status.centersTotal, status.nodes].every(number) && strings(status.approximations)
     && Array.isArray(status.gaps) && status.gaps.every(gap => object(gap) && typeof gap.cat === "string" && typeof gap.reason === "string" && (gap.detail === undefined || typeof gap.detail === "string"))
     && object(verification) && verification.ok === true && strings(verification.errors)
     && object(center) && crew(center) && number(center.recoveryA) && number(center.recoveryB)
-    && object(scores) && Object.values(scores).every(number)
+    && object(scores) && Object.values(scores).every(number) && production(output)
     && Array.isArray(rooms) && rooms.length <= 4 && rooms.every(room =>
       object(room) && typeof room.key === "string" && typeof room.category === "string" && typeof room.single === "boolean"
       && crew(room) && number(room.value) && nullableNumber(room.bonusA) && nullableNumber(room.bonusB)
       && typeof room.converged === "boolean" && number(room.days) && numbers(room.daily)
+      && object(room.avgByKind) && Object.values(room.avgByKind).every(number)
       && mood(room.moodA) && mood(room.moodB) && nullableNumber(room.workHours) && nullableNumber(room.restHours)
       && (room.assist === null || object(room.assist) && number(room.assist.points) && typeof room.assist.shift === "string"
         && Array.isArray(room.assist.cycle) && room.assist.cycle.every(strings)));

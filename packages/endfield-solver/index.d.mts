@@ -9,15 +9,22 @@ export interface Assignment { key: string; slots: number; hour: number; a: strin
 export interface Mood { consumption: number; recovery: number; stable: boolean }
 export type SolverStage = "preparing" | "searching" | "verifying";
 export interface SolverProgress { stage: SolverStage; elapsedMs: number }
+export interface ProductionOption {
+  name: string; units: number; coefficient?: number; kind?: string; slots?: number; baseHours: number;
+  label?: string; outputCount?: number; input?: string; inputCount?: number; effectiveHours?: number;
+}
+export interface ProductionSummary { options: ProductionOption[]; experience?: number; sanity?: number; note?: string }
 export interface FacilityGap { key?: string; cat: string; reason: string; detail?: string }
 export interface Result {
   revision: string; elapsedMs: number;
   status: { searchComplete: boolean; stopReason: string; centersVisited: number; centersTotal: number; nodes: number; approximations: string[]; gaps: FacilityGap[]; skipped?: FacilityGap[] };
   verification: { ok: boolean; errors: string[]; skipped?: FacilityGap[] }; scores: Record<string, number>;
+  production: Record<string, ProductionSummary>;
   center: { hour: number; a: string[]; b: string[]; recoveryA: number; recoveryB: number } | null;
   rooms: { key: string; category: string; single: boolean; hour: number; a: string[]; b: string[]; value: number;
     bonusA: number | null; bonusB: number | null;
     converged: boolean; days: number; daily: number[]; moodA: Mood | null; moodB: Mood | null; workHours: number | null; restHours: number | null;
+    avgByKind: Record<string, number>;
     assist: { points: number; shift: string; cycle: string[][] } | null }[];
 }
 export const catalog: { id: string; name: string; enName: string; rarity: number; profession: string; skills: SkillTier[] }[];
