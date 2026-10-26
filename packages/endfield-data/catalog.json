@@ -62,6 +62,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 3,
+          "target": "线索 3",
+          "enTarget": "Clue 3",
+          "clueIndex": 3,
+          "clueTier": 1,
+          "clueTierName": "小幅提升",
+          "enClueTierName": "Small boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         },
         {
@@ -77,6 +84,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 3,
+          "target": "线索 3",
+          "enTarget": "Clue 3",
+          "clueIndex": 3,
+          "clueTier": 2,
+          "clueTierName": "提升",
+          "enClueTierName": "Boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         }
       ]
@@ -143,6 +157,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -158,6 +175,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         }
       ]
@@ -184,6 +204,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -199,6 +222,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -214,6 +240,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 3,
+          "target": "矿物",
+          "enTarget": "Mineral",
           "icon": "/images/game/skills/facskill_spaceship_plant_mineral.png"
         },
         {
@@ -229,6 +258,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 3,
+          "target": "矿物",
+          "enTarget": "Mineral",
           "icon": "/images/game/skills/facskill_spaceship_plant_mineral.png"
         }
       ]
@@ -285,6 +317,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 2,
+          "target": "线索 2",
+          "enTarget": "Clue 2",
+          "clueIndex": 2,
+          "clueTier": 1,
+          "clueTierName": "小幅提升",
+          "enClueTierName": "Small boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         },
         {
@@ -300,6 +339,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 2,
+          "target": "线索 2",
+          "enTarget": "Clue 2",
+          "clueIndex": 2,
+          "clueTier": 2,
+          "clueTierName": "提升",
+          "enClueTierName": "Boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         }
       ]
@@ -326,6 +372,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 3,
+          "target": "线索 3",
+          "enTarget": "Clue 3",
+          "clueIndex": 3,
+          "clueTier": 1,
+          "clueTierName": "小幅提升",
+          "enClueTierName": "Small boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         },
         {
@@ -341,6 +394,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 3,
+          "target": "线索 3",
+          "enTarget": "Clue 3",
+          "clueIndex": 3,
+          "clueTier": 2,
+          "clueTierName": "提升",
+          "enClueTierName": "Boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         },
         {
@@ -356,6 +416,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 1,
+          "target": "菌类",
+          "enTarget": "Fungus",
           "icon": "/images/game/skills/facskill_spaceship_plant_fungus.png"
         },
         {
@@ -371,6 +434,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 1,
+          "target": "菌类",
+          "enTarget": "Fungus",
           "icon": "/images/game/skills/facskill_spaceship_plant_fungus.png"
         }
       ]
@@ -397,6 +463,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 3,
+          "target": "矿物",
+          "enTarget": "Mineral",
           "icon": "/images/game/skills/facskill_spaceship_plant_mineral.png"
         },
         {
@@ -412,6 +481,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 3,
+          "target": "矿物",
+          "enTarget": "Mineral",
           "icon": "/images/game/skills/facskill_spaceship_plant_mineral.png"
         },
         {
@@ -427,6 +499,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 2,
+          "target": "晶植",
+          "enTarget": "Crystal",
           "icon": "/images/game/skills/facskill_spaceship_plant_flower.png"
         },
         {
@@ -442,6 +517,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 2,
+          "target": "晶植",
+          "enTarget": "Crystal",
           "icon": "/images/game/skills/facskill_spaceship_plant_flower.png"
         }
       ]
@@ -468,6 +546,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -483,6 +564,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -498,6 +582,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 3,
+          "target": "矿物",
+          "enTarget": "Mineral",
           "icon": "/images/game/skills/facskill_spaceship_plant_mineral.png"
         },
         {
@@ -513,6 +600,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 3,
+          "target": "矿物",
+          "enTarget": "Mineral",
           "icon": "/images/game/skills/facskill_spaceship_plant_mineral.png"
         }
       ]
@@ -539,6 +629,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 2,
+          "target": "晶植",
+          "enTarget": "Crystal",
           "icon": "/images/game/skills/facskill_spaceship_plant_flower.png"
         },
         {
@@ -554,6 +647,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 2,
+          "target": "晶植",
+          "enTarget": "Crystal",
           "icon": "/images/game/skills/facskill_spaceship_plant_flower.png"
         },
         {
@@ -569,6 +665,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -584,6 +683,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         }
       ]
@@ -610,6 +712,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -625,6 +730,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -640,6 +748,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 6,
+          "target": "线索 6",
+          "enTarget": "Clue 6",
+          "clueIndex": 6,
+          "clueTier": 1,
+          "clueTierName": "小幅提升",
+          "enClueTierName": "Small boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         },
         {
@@ -655,6 +770,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 6,
+          "target": "线索 6",
+          "enTarget": "Clue 6",
+          "clueIndex": 6,
+          "clueTier": 2,
+          "clueTierName": "提升",
+          "enClueTierName": "Boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         }
       ]
@@ -711,6 +833,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -726,6 +851,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         }
       ]
@@ -752,6 +880,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -767,6 +898,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -782,6 +916,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 4,
+          "target": "线索 4",
+          "enTarget": "Clue 4",
+          "clueIndex": 4,
+          "clueTier": 1,
+          "clueTierName": "小幅提升",
+          "enClueTierName": "Small boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         },
         {
@@ -797,6 +938,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 4,
+          "target": "线索 4",
+          "enTarget": "Clue 4",
+          "clueIndex": 4,
+          "clueTier": 2,
+          "clueTierName": "提升",
+          "enClueTierName": "Boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         }
       ]
@@ -823,6 +971,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -838,6 +989,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -853,6 +1007,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 5,
+          "target": "线索 5",
+          "enTarget": "Clue 5",
+          "clueIndex": 5,
+          "clueTier": 1,
+          "clueTierName": "小幅提升",
+          "enClueTierName": "Small boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         },
         {
@@ -868,6 +1029,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 5,
+          "target": "线索 5",
+          "enTarget": "Clue 5",
+          "clueIndex": 5,
+          "clueTier": 2,
+          "clueTierName": "提升",
+          "enClueTierName": "Boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         }
       ]
@@ -894,6 +1062,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 2,
+          "target": "线索 2",
+          "enTarget": "Clue 2",
+          "clueIndex": 2,
+          "clueTier": 1,
+          "clueTierName": "小幅提升",
+          "enClueTierName": "Small boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         },
         {
@@ -909,6 +1084,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 2,
+          "target": "线索 2",
+          "enTarget": "Clue 2",
+          "clueIndex": 2,
+          "clueTier": 2,
+          "clueTierName": "提升",
+          "enClueTierName": "Boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         },
         {
@@ -924,6 +1106,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -939,6 +1124,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         }
       ]
@@ -1036,6 +1224,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 1,
+          "target": "菌类",
+          "enTarget": "Fungus",
           "icon": "/images/game/skills/facskill_spaceship_plant_fungus.png"
         },
         {
@@ -1051,6 +1242,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 1,
+          "target": "菌类",
+          "enTarget": "Fungus",
           "icon": "/images/game/skills/facskill_spaceship_plant_fungus.png"
         },
         {
@@ -1107,6 +1301,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -1122,6 +1319,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -1178,6 +1378,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 2,
+          "target": "晶植",
+          "enTarget": "Crystal",
           "icon": "/images/game/skills/facskill_spaceship_plant_flower.png"
         },
         {
@@ -1193,6 +1396,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 2,
+          "target": "晶植",
+          "enTarget": "Crystal",
           "icon": "/images/game/skills/facskill_spaceship_plant_flower.png"
         },
         {
@@ -1208,6 +1414,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 7,
+          "target": "线索 7",
+          "enTarget": "Clue 7",
+          "clueIndex": 7,
+          "clueTier": 1,
+          "clueTierName": "小幅提升",
+          "enClueTierName": "Small boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         },
         {
@@ -1223,6 +1436,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 7,
+          "target": "线索 7",
+          "enTarget": "Clue 7",
+          "clueIndex": 7,
+          "clueTier": 2,
+          "clueTierName": "提升",
+          "enClueTierName": "Boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         }
       ]
@@ -1249,6 +1469,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 1,
+          "target": "菌类",
+          "enTarget": "Fungus",
           "icon": "/images/game/skills/facskill_spaceship_plant_fungus.png"
         },
         {
@@ -1264,6 +1487,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 1,
+          "target": "菌类",
+          "enTarget": "Fungus",
           "icon": "/images/game/skills/facskill_spaceship_plant_fungus.png"
         },
         {
@@ -1421,6 +1647,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 2,
+          "target": "晶植",
+          "enTarget": "Crystal",
           "icon": "/images/game/skills/facskill_spaceship_plant_flower.png"
         },
         {
@@ -1436,6 +1665,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 2,
+          "target": "晶植",
+          "enTarget": "Crystal",
           "icon": "/images/game/skills/facskill_spaceship_plant_flower.png"
         }
       ]
@@ -1675,6 +1907,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 3,
+          "target": "矿物",
+          "enTarget": "Mineral",
           "icon": "/images/game/skills/facskill_spaceship_plant_mineral.png"
         },
         {
@@ -1690,6 +1925,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 3,
+          "target": "矿物",
+          "enTarget": "Mineral",
           "icon": "/images/game/skills/facskill_spaceship_plant_mineral.png"
         },
         {
@@ -1746,6 +1984,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -1761,6 +2002,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -1918,6 +2162,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 1,
+          "target": "线索 1",
+          "enTarget": "Clue 1",
+          "clueIndex": 1,
+          "clueTier": 1,
+          "clueTierName": "小幅提升",
+          "enClueTierName": "Small boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         },
         {
@@ -1933,6 +2184,13 @@
           "effectKey": "ClueProbabilityUp",
           "effectName": "会客室 · 指定线索出现概率提升",
           "enEffectName": "Clue probability",
+          "targetId": 1,
+          "target": "线索 1",
+          "enTarget": "Clue 1",
+          "clueIndex": 1,
+          "clueTier": 2,
+          "clueTierName": "提升",
+          "enClueTierName": "Boost",
           "icon": "/images/game/skills/facskill_spaceship_guestroom_clue.png"
         }
       ]
@@ -2030,6 +2288,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -2045,6 +2306,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -2131,6 +2395,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         },
         {
@@ -2146,6 +2413,9 @@
           "effectKey": "ManufactureEfficiencyUp",
           "effectName": "制造舱 · 指定经验素材生产效率提升",
           "enEffectName": "Production efficiency",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
           "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
         }
       ]
@@ -2172,6 +2442,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 3,
+          "target": "矿物",
+          "enTarget": "Mineral",
           "icon": "/images/game/skills/facskill_spaceship_plant_mineral.png"
         },
         {
@@ -2187,6 +2460,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 3,
+          "target": "矿物",
+          "enTarget": "Mineral",
           "icon": "/images/game/skills/facskill_spaceship_plant_mineral.png"
         },
         {
@@ -2202,6 +2478,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 1,
+          "target": "菌类",
+          "enTarget": "Fungus",
           "icon": "/images/game/skills/facskill_spaceship_plant_fungus.png"
         },
         {
@@ -2217,6 +2496,9 @@
           "effectKey": "GrowSpeedUp",
           "effectName": "培养舱 · 指定质料培养速度提升",
           "enEffectName": "Growth speed",
+          "targetId": 1,
+          "target": "菌类",
+          "enTarget": "Fungus",
           "icon": "/images/game/skills/facskill_spaceship_plant_fungus.png"
         }
       ]
