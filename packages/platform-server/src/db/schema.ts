@@ -94,6 +94,41 @@ export const sklandBinding = pgTable("skland_binding", {
 
 export const appSchema = pgSchema("app");
 
+export const defenseRoom = appSchema.table("defense_room", {
+  id: text("id").primaryKey(),
+  hostId: text("host_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  server: text("server").notNull(),
+  roomCode: text("room_code").default("").notNull(),
+  inviteCode: text("invite_code").notNull(),
+  note: text("note").default("").notNull(),
+  status: text("status").default("open").notNull(),
+  difficulty: text("difficulty").default("ac1").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).default(sql`now() + interval '2 hours'`).notNull(),
+}, table => [index("defense_room_lobby_idx").on(table.server,table.status,table.expiresAt),
+  uniqueIndex("defense_room_invite_code_idx").on(table.inviteCode),
+  check("defense_room_server_check",sql`${table.server} IN ('official','bilibili')`),
+  check("defense_room_status_check",sql`${table.status} IN ('open','started','closed')`),
+  check("defense_room_difficulty_check",sql`${table.difficulty} IN ('ac1','ac2','ac3','ac4')`)]);
+
+export const defenseProfile = appSchema.table("defense_profile", {
+  portrait: text("portrait").default("default").notNull(),
+  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  favoriteFactions: text("favorite_factions").array().default(sql`ARRAY[]::text[]`).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, table => [check("defense_profile_portrait_check", sql`portrait IN ('default','portrait-1','portrait-2') OR portrait ~ '^char_[a-z0-9_]{1,64}$'`), check("defense_profile_factions_check",sql`cardinality(${table.favoriteFactions}) <= 23 AND ${table.favoriteFactions} <@ ARRAY['aegir','kazimierz','laterano','sargon','victoria','kjerag','siracusa','yan','harmony','precision','swift','dexterity','arcane','steadfast','support','foresight','miracle','investor','assault','unyielding','assistant','solo','technique']::text[]`)]);
+
+export const defenseMember = appSchema.table("defense_member", {
+  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  roomId: text("room_id").notNull().references(() => defenseRoom.id, { onDelete: "cascade" }),
+  seat: integer("seat").notNull(),
+  isReady: boolean("is_ready").default(false).notNull(),
+  joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
+}, table => [index("defense_member_room_idx").on(table.roomId),
+  uniqueIndex("defense_member_room_seat_idx").on(table.roomId,table.seat),
+  check("defense_member_seat_check",sql`${table.seat} BETWEEN 0 AND 3`)]);
+
 // Archival ownership is independent of expiring Skland / gacha credentials.
 export const gachaArchive = appSchema.table("gacha_archive", {
   uid: text("uid").primaryKey(),

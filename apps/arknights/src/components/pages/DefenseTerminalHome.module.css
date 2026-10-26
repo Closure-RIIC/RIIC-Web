@@ -1,0 +1,1205 @@
+.scene {
+  position: relative;
+  isolation: isolate;
+  min-height: 650px;
+  height: 100dvh;
+  overflow: hidden;
+  color: #dce8e4;
+  background: #050909;
+  font-family: "Bender", "Arial", "Microsoft YaHei", sans-serif;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 60%, #1837378a, transparent 64%), #050909;
+}
+.stars {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, #6ab8a524 0.9px, transparent 1.3px),
+    radial-gradient(circle, #83e2c490 1px, transparent 2px);
+  background-size:
+    17px 17px,
+    233px 179px;
+  background-position:
+    0 0,
+    42px 73px;
+  mask-image: linear-gradient(transparent, #0006 15%, #0009 60%, transparent);
+}
+.horizon {
+  position: absolute;
+  inset: 30% 0 0;
+  background: radial-gradient(ellipse at 50% 60%, #20625c38, transparent 70%);
+}
+.land {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 64%;
+  object-fit: fill;
+}
+.groundGrid {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: -6%;
+  height: 30%;
+  opacity: 0.13;
+  background:
+    repeating-linear-gradient(90deg, #59f4ca80 0 1px, transparent 1px 24px),
+    repeating-linear-gradient(0deg, #59f4ca80 0 1px, transparent 1px 24px);
+  transform: perspective(180px) rotateX(62deg);
+  transform-origin: 50% 100%;
+  mask-image: linear-gradient(0deg, #000 5%, transparent 85%);
+}
+.vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(#0006, transparent 18%),
+    radial-gradient(130% 95% at 50% 42%, transparent 50%, #000b),
+    repeating-linear-gradient(0deg, transparent 0 2px, #90c5b703 2px 3px);
+}
+.scene[data-background="false"] .land,
+.scene[data-background="false"] .groundGrid,
+.scene[data-background="false"] .stars {
+  visibility: hidden;
+}
+.toolbar {
+  position: absolute;
+  z-index: 5;
+  left: 26px;
+  right: 26px;
+  top: 18px;
+  min-height: 54px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #21665866;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.returnLink {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #a5b6b0;
+  font-size: 11px;
+  min-height: 32px;
+}
+.statusPill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #455a515c;
+  border-radius: 20px;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: #52d7b6;
+  white-space: nowrap;
+}
+.statusPill:first-of-type {
+  color: #e2b650;
+}
+.statusPill b {
+  font-size: 12px;
+}
+.statusPill small {
+  color: #a0b4ac;
+  font-size: 9px;
+}
+.connection {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #93aaa0;
+  font-size: 10px;
+}
+.toolButtons {
+  display: flex;
+  gap: 6px;
+}
+.scene .toolButtons button {
+  min-height: 32px;
+  width: 32px;
+  border-radius: 0;
+  color: #54d9b4;
+  background: #0c1917bd;
+  border: 1px solid #6d897b55;
+}
+.language {
+  margin-left: 5px;
+}
+.scene .language button {
+  min-height: 24px;
+}
+.scene .account {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  min-height: 46px;
+  height: auto;
+  min-width: 180px;
+  max-width: 240px;
+  padding: 5px 9px 5px 5px;
+  border-radius: 0;
+  border: 1px solid #5a81716b;
+  background: #07110fbf;
+}
+.accountAvatar {
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: linear-gradient(140deg, #236b5866, #0e2d2566);
+  color: #55d8b2;
+  border: 1px solid #438f73;
+}
+.accountCopy {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 2px;
+}
+.accountCopy strong {
+  max-width: 145px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  line-height: 1.2;
+}
+.accountCopy small {
+  color: #729187;
+  font:
+    8px ui-monospace,
+    monospace;
+  letter-spacing: 1px;
+}
+.account > svg {
+  margin-left: auto;
+  color: #4aca9e;
+}
+.leftRail {
+  position: absolute;
+  z-index: 3;
+  top: 108px;
+  left: 26px;
+  width: 225px;
+  display: grid;
+  gap: 13px;
+}
+.scene .mySquad {
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  padding: 0;
+  border: 1px solid #60796759;
+  border-radius: 0;
+  background: #0b1513c7;
+  overflow: hidden;
+}
+.squadBanner {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 64px;
+  padding: 9px 12px;
+  background:
+    linear-gradient(#61491e3b, #12110c26),
+    url("/images/defense-reference/hub-ach-land.svg") center/cover;
+  color: #f0e5c6;
+}
+.squadBanner > b {
+  font:
+    26px ui-monospace,
+    monospace;
+}
+.squadBanner small {
+  color: #c7bfa9;
+  font-size: 12px;
+}
+.squadLabel {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 9px;
+  padding: 9px 12px;
+}
+.squadLabel strong {
+  font-size: 15px;
+}
+.squadLabel small {
+  color: #55d2b1;
+  font-size: 10px;
+}
+.scene .joinCard,
+.scene .darkCard {
+  justify-content: flex-start;
+  gap: 12px;
+  height: auto;
+  min-height: 57px;
+  border: 1px solid #617d6e55;
+  border-left: 3px solid #45cba8;
+  border-radius: 0;
+  background: #08120fca;
+  padding: 10px 14px;
+}
+.joinCard > svg,
+.darkCard > svg {
+  flex-shrink: 0;
+  color: #46cfaa;
+}
+.joinCard > span,
+.darkCard > span {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.joinCard strong,
+.darkCard strong {
+  font-size: 16px;
+  font-weight: 750;
+}
+.joinCard small,
+.darkCard small {
+  color: #6d8e80;
+  font:
+    8px ui-monospace,
+    monospace;
+  letter-spacing: 1.5px;
+}
+.tipCard {
+  position: relative;
+  padding: 14px 12px 16px;
+  border: 1px solid #78998b5e;
+  background: #08120fbd;
+}
+.tipCard:before,
+.tipCard:after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-color: #90aa9b;
+  border-style: solid;
+}
+.tipCard:before {
+  left: -1px;
+  top: -1px;
+  border-width: 2px 0 0 2px;
+}
+.tipCard:after {
+  right: -1px;
+  bottom: -1px;
+  border-width: 0 2px 2px 0;
+}
+.tipHeading {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.tipHeading > svg {
+  color: #54d5ae;
+}
+.tipHeading strong {
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+.tipHeading small {
+  margin-left: auto;
+  color: #8aa997;
+  font:
+    9px ui-monospace,
+    monospace;
+}
+.scene .tipHeading button {
+  width: 19px;
+  min-width: 19px;
+  min-height: 22px;
+  height: 22px;
+  border: 1px solid #58766570;
+  border-radius: 0;
+  padding: 0;
+}
+.tipCard p {
+  margin-top: 13px;
+  font-size: 12px;
+  line-height: 1.85;
+  color: #9bb6a8;
+}
+.rightRail {
+  position: absolute;
+  z-index: 3;
+  top: 98px;
+  right: 26px;
+  width: 275px;
+  display: grid;
+  gap: 11px;
+}
+.scene .whiteCard {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  height: auto;
+  min-height: 53px;
+  border-radius: 0;
+  border: 3px solid #b2c2b8;
+  box-shadow: inset 0 0 0 1px #f1f5ef66;
+  background: linear-gradient(#e7eeea, #bdcac3);
+  color: #11241c;
+  padding: 9px 13px;
+}
+.whiteCard strong {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+  font-size: 18px;
+  font-weight: 800;
+}
+.whiteCard small {
+  flex-shrink: 0;
+  margin-left: auto;
+  font:
+    8px ui-monospace,
+    monospace;
+  border: 1px solid #899c90;
+  padding: 3px;
+  letter-spacing: 1px;
+  color: #577260;
+}
+.whiteCard > svg {
+  padding-right: 6px;
+  box-sizing: content-box;
+  border-right: 1px solid #82988b;
+}
+.center {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 46%;
+  transform: translate(-50%, -50%);
+  width: min(560px, 56vw);
+  text-align: center;
+}
+.radar {
+  position: relative;
+  margin: auto;
+  width: 280px;
+  height: 280px;
+  display: grid;
+  place-items: center;
+}
+.radarGeometry {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  fill: none;
+  stroke: #66cbb13a;
+  stroke-width: 1;
+}
+.radarTicks {
+  stroke-width: 5;
+  stroke-dasharray: 1.4 9.8;
+  stroke: #5bb49d55;
+}
+.radarSweep {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 285deg,
+    transparent 0 42deg,
+    #4ff8b91c 43deg 64deg,
+    transparent 65deg
+  );
+}
+.emblemFrame {
+  position: relative;
+  width: 132px;
+  height: 138px;
+  padding: 10px;
+}
+.emblemFrame:before,
+.emblemFrame:after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 13px;
+  border-color: #91a99f88;
+  border-style: solid;
+}
+.emblemFrame:before {
+  left: 0;
+  border-width: 2px 0 2px 2px;
+}
+.emblemFrame:after {
+  right: 0;
+  border-width: 2px 2px 2px 0;
+}
+.emblemFrame img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.centerOverline {
+  margin-top: -25px;
+  color: #b6c8c1;
+  font:
+    11px ui-monospace,
+    monospace;
+  letter-spacing: 5px;
+  position: relative;
+}
+.centerOverline span {
+  color: #41d4ad;
+}
+.center h1 {
+  margin-top: 18px;
+  font-size: clamp(26px, 3.1vw, 47px);
+  font-weight: 850;
+  letter-spacing: 3px;
+  color: #e4ebe7;
+  line-height: 1.25;
+}
+.center h1 span {
+  color: #e4ebe7;
+}
+.centerSubtitle {
+  margin: 12px auto 0;
+  max-width: 440px;
+  font-size: 11px;
+  line-height: 1.8;
+  letter-spacing: 0.4px;
+  color: #86aaa0;
+}
+.scene .currentTeam {
+  margin: 15px auto 0;
+  max-width: 100%;
+  gap: 7px;
+  border: 1px solid #347b60;
+  background: #09251dcc;
+  border-radius: 0;
+  color: #9ac7ad;
+  min-height: 32px;
+  height: auto;
+  font-size: 11px;
+  white-space: normal;
+}
+.currentTeam b {
+  color: #56ddb2;
+}
+.actions {
+  position: absolute;
+  z-index: 4;
+  bottom: 35px;
+  right: 26px;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.scene .actionCard {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-end;
+  overflow: hidden;
+  gap: 7px;
+  width: 174px;
+  min-height: 98px;
+  height: auto;
+  padding: 15px 14px 13px;
+  border: 1px solid #6c8a7b77;
+  border-radius: 0;
+  background: linear-gradient(125deg, #253d3373, #11251b66);
+  box-shadow: inset 0 1px #88bda50d;
+}
+.actionCard:after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 0;
+  height: 0;
+  border-left: 19px solid transparent;
+  border-bottom: 19px solid #4fbd97;
+}
+.actionCard strong {
+  white-space: normal;
+  text-align: left;
+  position: relative;
+  z-index: 1;
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 850;
+  letter-spacing: 1px;
+}
+.actionCaption {
+  max-width: 145px;
+  color: #53e2bb;
+  font:
+    8px/1.2 ui-monospace,
+    monospace;
+  letter-spacing: 1.3px;
+  text-align: left;
+}
+.scene:lang(en) .actionCard strong {
+  font-size: 19px;
+  letter-spacing: 0;
+}
+@media (max-width: 900px) {
+  .scene:lang(en) .actionCard strong {
+    font-size: 14px;
+  }
+}
+.actionCard[data-primary] .actionCaption {
+  color: #e7b452;
+}
+.scene .actionIcon {
+  position: absolute;
+  right: 14px;
+  top: 20px;
+  width: 39px;
+  height: 39px;
+  color: #3e987c50;
+}
+.scene button:not(:disabled):hover {
+  filter: brightness(1.13);
+}
+.scene .actionCard:not(:disabled):hover {
+  border-color: #64d9b1;
+  background: #17352cbf;
+}
+.scene button:focus-visible,
+.scene a:focus-visible {
+  outline: 2px solid #58e3b6;
+  outline-offset: 4px;
+}
+.footer {
+  position: absolute;
+  z-index: 2;
+  bottom: 16px;
+  left: 26px;
+  right: 26px;
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  color: #627e73;
+  font:
+    8px ui-monospace,
+    monospace;
+  letter-spacing: 1px;
+}
+@media (min-width: 1600px) {
+  .leftRail {
+    width: 245px;
+    top: 118px;
+  }
+  .rightRail {
+    width: 320px;
+    top: 108px;
+  }
+  .center {
+    top: 46%;
+  }
+  .radar {
+    width: 330px;
+    height: 330px;
+  }
+  .emblemFrame {
+    width: 150px;
+    height: 155px;
+  }
+  .actionCard {
+    width: 188px !important;
+    min-height: 110px !important;
+  }
+}
+@media (max-width: 1100px) and (min-width: 901px) {
+  .leftRail {
+    width: 195px;
+    left: 18px;
+  }
+  .rightRail {
+    width: 235px;
+    right: 18px;
+  }
+  .toolbar {
+    left: 18px;
+    right: 18px;
+  }
+  .language,
+  .connection {
+    display: none;
+  }
+  .center {
+    width: 420px;
+  }
+  .radar {
+    width: 230px;
+    height: 230px;
+  }
+  .center h1 {
+    font-size: 29px;
+  }
+  .actions {
+    right: 18px;
+  }
+  .scene .actionCard {
+    width: 150px;
+    min-height: 92px;
+  }
+}
+@media (max-width: 900px) {
+  .scene {
+    height: auto;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 18px;
+    overflow: hidden;
+  }
+  .toolbar {
+    position: relative;
+    inset: auto;
+    margin: 0 16px;
+    padding: 13px 0;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .toolbarLeft {
+    gap: 7px;
+  }
+  .toolbar .connection,
+  .toolbar .language {
+    display: none;
+  }
+  .scene .account {
+    min-width: 0;
+    width: 42px;
+    max-width: 42px;
+    padding: 3px;
+    min-height: 40px;
+  }
+  .accountCopy,
+  .account > svg {
+    display: none;
+  }
+  .accountAvatar {
+    width: 32px;
+    height: 32px;
+  }
+  .toolButtons {
+    gap: 4px;
+  }
+  .scene .toolButtons button {
+    width: 29px;
+    min-height: 29px;
+  }
+  .returnLink span {
+    display: none;
+  }
+  .statusPill {
+    padding: 4px 6px;
+    gap: 3px;
+  }
+  .statusPill b {
+    font-size: 10px;
+  }
+  .statusPill small {
+    font-size: 8px;
+  }
+  .center {
+    position: relative;
+    left: auto;
+    top: auto;
+    transform: none;
+    width: 100%;
+    padding: 24px 20px 26px;
+    order: 1;
+  }
+  .radar {
+    width: 215px;
+    height: 215px;
+  }
+  .emblemFrame {
+    width: 108px;
+    height: 116px;
+  }
+  .centerOverline {
+    font-size: 8px;
+    letter-spacing: 3px;
+    margin-top: -17px;
+  }
+  .center h1 {
+    font-size: 30px;
+    letter-spacing: 1px;
+    margin-top: 13px;
+  }
+  .centerSubtitle {
+    max-width: 380px;
+    font-size: 10px;
+  }
+  .leftRail {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: auto;
+    margin: 0 16px;
+    order: 3;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .scene .mySquad {
+    min-width: 0;
+  }
+  .squadBanner {
+    min-height: 45px;
+  }
+  .squadLabel {
+    padding: 8px;
+    font-size: 11px;
+  }
+  .squadLabel strong {
+    font-size: 13px;
+  }
+  .squadLabel small {
+    font-size: 9px;
+  }
+  .scene .joinCard {
+    height: 100%;
+    padding: 10px;
+    gap: 8px;
+  }
+  .joinCard strong {
+    font-size: 15px;
+  }
+  .joinCard small {
+    font-size: 7px;
+  }
+  .tipCard {
+    grid-column: 1/-1;
+  }
+  .tipCard p {
+    font-size: 11px;
+    margin-top: 8px;
+  }
+  .rightRail {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: auto;
+    margin: 12px 16px 0;
+    order: 4;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .scene .whiteCard {
+    min-height: 46px;
+    padding: 8px;
+    gap: 7px;
+    border-width: 2px;
+  }
+  .whiteCard strong {
+    font-size: 13px;
+  }
+  .whiteCard small {
+    display: none;
+  }
+  .whiteCard > svg {
+    width: 18px;
+    height: 18px;
+  }
+  .scene .darkCard {
+    grid-column: 1/-1;
+    min-height: 46px;
+  }
+  .actions {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    margin: 0 16px 15px;
+    order: 2;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .scene .actionCard {
+    width: auto;
+    min-height: 86px;
+    padding: 12px 9px;
+    gap: 6px;
+  }
+  .actionCard strong {
+    font-size: 18px;
+    letter-spacing: 0;
+  }
+  .actionCaption {
+    font-size: 6px;
+    letter-spacing: 1px;
+    min-height: 15px;
+  }
+  .scene .actionIcon {
+    right: 5px;
+    top: 11px;
+    width: 25px;
+    height: 25px;
+  }
+  .footer {
+    position: relative;
+    inset: auto;
+    margin: 20px 16px 0;
+    order: 5;
+    font-size: 6px;
+    letter-spacing: 0.6px;
+  }
+  .land {
+    height: 64%;
+    top: 8%;
+    bottom: auto;
+    opacity: 0.85;
+  }
+  .groundGrid {
+    display: none;
+  }
+}
+@media (max-width: 420px) {
+  .toolbarLeft {
+    gap: 5px;
+  }
+  .toolButtons button:nth-child(2) {
+    display: none;
+  }
+  .scene .account {
+    width: 37px;
+    max-width: 37px;
+  }
+  .center h1 {
+    font-size: 27px;
+  }
+  .centerSubtitle {
+    max-width: 280px;
+  }
+  .statusPill {
+    padding: 3px 5px;
+  }
+  .actionCard strong {
+    font-size: 16px;
+  }
+}
+
+.actionDetail {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  line-height: 1.4;
+  color: #95b6a7;
+  position: relative;
+  z-index: 1;
+}
+.whiteCard > svg {
+  padding: 5px;
+  border: 0;
+  background: #102c24;
+  color: #55dcb3;
+}
+.whiteCard:before,
+.whiteCard:after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 27px;
+  border-color: #263e32;
+  border-style: solid;
+  pointer-events: none;
+}
+.whiteCard:before {
+  left: 4px;
+  border-width: 2px 0 2px 2px;
+}
+.whiteCard:after {
+  right: 4px;
+  border-width: 2px 2px 2px 0;
+}
+.accountAvatar {
+  position: relative;
+}
+.accountAvatar:before,
+.accountAvatar:after {
+  content: "";
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-color: #5bdfb2;
+  border-style: solid;
+}
+.accountAvatar:before {
+  top: -1px;
+  left: -1px;
+  border-width: 2px 0 0 2px;
+}
+.accountAvatar:after {
+  bottom: -1px;
+  right: -1px;
+  border-width: 0 2px 2px 0;
+}
+@media (max-width: 900px) {
+  .scene .actionCard {
+    min-height: 98px;
+  }
+  .actionDetail {
+    font-size: 8px;
+  }
+  .whiteCard > svg {
+    width: 17px;
+    height: 17px;
+    padding: 4px;
+  }
+}
+
+/* Desktop geometry follows the supplied 1908 × 844 reference frame. */
+@media (min-width: 1101px) {
+  .toolbar {
+    left: 1.8%;
+    right: 1.8%;
+    top: 2.2%;
+    min-height: 68px;
+    padding-bottom: 19px;
+  }
+  .toolbarLeft {
+    gap: 10px;
+  }
+  .returnLink {
+    font-size: 14px;
+  }
+  .statusPill {
+    padding: 3px 9px;
+    font-size: 13px;
+  }
+  .statusPill b {
+    font-size: 17px;
+  }
+  .statusPill small {
+    font-size: 12px;
+  }
+  .connection {
+    font-size: 13px;
+  }
+  .scene .toolButtons button {
+    width: 39px;
+    min-height: 39px;
+  }
+  .scene .account {
+    min-width: 204px;
+    min-height: 48px;
+  }
+  .accountCopy strong {
+    font-size: 17px;
+  }
+  .accountCopy small {
+    font-size: 10px;
+  }
+  .language {
+    display: none;
+  }
+  .leftRail {
+    left: 1.45%;
+    top: 14%;
+    width: 13.1%;
+    gap: 14px;
+  }
+  .squadBanner {
+    min-height: 64px;
+  }
+  .squadLabel {
+    padding: 5px 9px;
+  }
+  .squadLabel strong {
+    font-size: 20px;
+  }
+  .squadLabel small {
+    font-size: 13px;
+  }
+  .scene .joinCard {
+    min-height: 59px;
+  }
+  .joinCard strong,
+  .darkCard strong {
+    font-size: 20px;
+  }
+  .joinCard small,
+  .darkCard small {
+    font-size: 9px;
+  }
+  .tipCard {
+    min-height: 182px;
+    padding: 15px 17px;
+  }
+  .tipHeading strong {
+    writing-mode: vertical-rl;
+    letter-spacing: 6px;
+    font-size: 16px;
+    height: 96px;
+  }
+  .tipHeading small {
+    font-size: 13px;
+  }
+  .tipCard p {
+    margin-top: 9px;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+  .rightRail {
+    right: 1.45%;
+    top: 11.6%;
+    width: 17.8%;
+    gap: 12px;
+  }
+  .scene .whiteCard {
+    min-height: 55px;
+    padding: 8px 13px;
+  }
+  .whiteCard strong {
+    font-size: 21px;
+  }
+  .scene .darkCard {
+    min-height: 58px;
+  }
+  .center {
+    top: 39%;
+    width: 580px;
+  }
+  .radar {
+    width: 370px;
+    height: 370px;
+  }
+  .emblemFrame {
+    width: 166px;
+    height: 133px;
+    padding: 8px 29px;
+  }
+  .centerOverline {
+    margin-top: -106px;
+    font-size: 17px;
+    letter-spacing: 5px;
+  }
+  .center h1 {
+    margin-top: 19px;
+    font-size: 46px;
+    letter-spacing: 6px;
+  }
+  .centerSubtitle {
+    position: absolute;
+    top: calc(100% + 18px);
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.15s;
+    width: 440px;
+  }
+  .center:hover .centerSubtitle {
+    opacity: 1;
+  }
+  .scene .currentTeam {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+  }
+  .scene .currentTeam:focus-visible {
+    opacity: 1;
+  }
+  .actions {
+    right: 1.45%;
+    bottom: 4.3%;
+    gap: 11px;
+  }
+  .scene .actionCard {
+    width: clamp(150px, 8.6vw, 180px) !important;
+    min-height: 106px !important;
+    padding: 15px 12px;
+    gap: 10px;
+  }
+  .actionCard strong {
+    font-size: 29px;
+    letter-spacing: 0;
+  }
+  .actionCaption {
+    max-width: 112px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+  }
+  .actionDetail {
+    display: none;
+  }
+  .scene .actionIcon {
+    right: 13px;
+    top: 34px;
+    width: 45px;
+    height: 45px;
+    color: #47bd9760;
+  }
+  .footer {
+    opacity: 0;
+  }
+  .groundGrid {
+    display: none;
+  }
+  .stars {
+    background-size:
+      17px 17px,
+      233px 179px;
+    mask-image: linear-gradient(#0008, #000 58%, transparent);
+  }
+  .radarSweep {
+    inset: 5.4%;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0 292deg,
+      #50d7b92b 360deg
+    );
+    mask-image: radial-gradient(circle, transparent 0 17%, #000 18%);
+    animation: terminalSweep 9s linear infinite;
+  }
+}
+@keyframes terminalSweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .radarSweep {
+    animation: none;
+  }
+}

@@ -1,0 +1,134 @@
+.slot {
+  position: relative;
+  gap: 8px;
+  min-width: 0;
+  min-height: 142px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 12px 9px 14px;
+  border: 1px dashed var(--border);
+  border-radius: 0;
+  background: color-mix(in oklch, var(--background) 75%, var(--muted));
+  box-shadow: none;
+  color: var(--foreground);
+}
+.slot[data-filled="true"] {
+  border-style: solid;
+  border-color: color-mix(in oklch, var(--primary) 35%, var(--border));
+  background: linear-gradient(
+    150deg,
+    color-mix(in oklch, var(--primary) 9%, var(--background)),
+    var(--background)
+  );
+}
+.slot[data-filled="true"]:after {
+  content: "";
+  position: absolute;
+  inset: -1px auto auto -1px;
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid var(--primary);
+  border-left: 2px solid var(--primary);
+}
+.meta {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 14px;
+  color: var(--muted-foreground);
+  font:
+    9px ui-monospace,
+    monospace;
+  letter-spacing: 1.5px;
+}
+.meta > span:last-child:not(:first-child) {
+  color: #ddc88c;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 0;
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+.slot[data-filled="true"] .avatar {
+  color: var(--primary);
+  background: color-mix(in oklch, var(--primary) 12%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in oklch, var(--primary) 3%, transparent);
+}
+.name {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.me {
+  border-radius: 0;
+  font-size: 8px;
+  height: 16px;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+.factions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+}
+.faction {
+  border-radius: 0;
+  height: auto;
+  min-height: 18px;
+  max-width: 100%;
+  padding: 2px 5px;
+  font-size: 9px;
+  line-height: 1.4;
+  color: var(--muted-foreground);
+  border-color: var(--border);
+}
+.factionImage {
+  width: 15px;
+  height: 15px;
+  object-fit: contain;
+}
+.muted {
+  color: var(--muted-foreground);
+  font-size: 9px;
+  line-height: 1.6;
+}
+.compact {
+  min-height: 147px;
+  padding: 10px 6px 12px;
+  gap: 8px;
+}
+.compact .name {
+  font-size: 10px;
+}
+@media (max-width: 520px) {
+  .slot {
+    min-height: 137px;
+  }
+  .compact {
+    min-height: 140px;
+  }
+  .compact .avatar {
+    width: 32px;
+    height: 32px;
+  }
+  .compact .faction {
+    border-radius: 0;
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+}

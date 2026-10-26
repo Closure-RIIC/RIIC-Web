@@ -1,0 +1,2 @@
+ALTER TABLE "app"."defense_profile" DROP CONSTRAINT "defense_profile_factions_check";--> statement-breakpoint
+ALTER TABLE "app"."defense_profile" ADD CONSTRAINT "defense_profile_factions_check" CHECK (cardinality("app"."defense_profile"."favorite_factions") <= 23 AND "app"."defense_profile"."favorite_factions" <@ ARRAY['aegir','kazimierz','laterano','sargon','victoria','kjerag','siracusa','yan','harmony','precision','swift','dexterity','arcane','steadfast','support','foresight','miracle','investor','assault','unyielding','assistant','solo','technique']::text[]);

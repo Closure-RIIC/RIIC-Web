@@ -36,6 +36,7 @@ import { useWebsiteSession } from "@/website-session";
 
 import { requestAccountSignIn } from "@riic/shell/account-sign-in";
 import { reportAccountActivity } from "@riic/shell/account-activity";
+import { DefenseProfileEditor } from "../pages/DefenseProfileEditor";
 type AccountAction = "signout" | "sessions" | "delete";
 const AUTH_PASSWORD_TOGGLE_CLASS = "text-[#737373] hover:text-[#242424] dark:text-[#737373] dark:hover:text-[#242424]";
 
@@ -238,9 +239,10 @@ export function WebsiteAccountPanel({
 
     if (renderSections) return renderSections({
       headerProfile: <div className="min-w-0 max-w-full sm:max-w-64" data-website-account-panel data-authenticated="true">{identity}</div>,
-      profile: error ? <div className="grid gap-3">
+      profile: <div className="grid gap-3">
         {error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
-      </div> : null,
+        <DefenseProfileEditor key={session.user.id} />
+      </div>,
       securityActions: <div className="grid gap-4 border-t border-white/14 pt-5" data-account-action-cards>
         <p className="text-sm leading-6 text-white/64">{en ? "Revoke every session to require all devices to sign in again." : "撤销全部登录会话后，所有设备都需要重新登录。"}</p>
         <div className="flex flex-wrap justify-end gap-3">
@@ -254,6 +256,7 @@ export function WebsiteAccountPanel({
     return (
       <div className="grid gap-6" data-website-account-panel data-authenticated="true">
         <StatusCenterHeader identity={identity} actions={signOutButton} />
+        <DefenseProfileEditor key={session.user.id} />
         {error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]" data-account-action-cards>
