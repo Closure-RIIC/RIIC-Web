@@ -52,7 +52,7 @@ export function solve(input, onProgress) {
   onProgress?.({ stage: "searching", elapsedMs: Date.now() - started });
   const result = solveLayout({ ops, cfg });
   onProgress?.({ stage: "verifying", elapsedMs: Date.now() - started });
-  const verification = verifyPlan({ ops, cfg, plan: result.plan });
+  const verification = verifyPlan({ ops, cfg, plan: result.plan, skipped: result.status?.skipped ?? [] });
   return present(result.plan, result.status, verification, ops, cfg, started);
 }
 
