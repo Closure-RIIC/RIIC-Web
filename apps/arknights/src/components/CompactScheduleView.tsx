@@ -347,7 +347,11 @@ function CompactRoomCard({
       selectionMode={Boolean(simulation)}
       nameColor="white"
       operatorLevel={slot ? levelByOperator?.get(slot.name) : undefined}
-      autofill={row.group === "dormitory" && row.autofill}
+      autofill={Boolean(
+        !slot
+        && !row.unavailableSlotIndices?.includes(index)
+        && (row.autofill || row.autofillSlotIndices?.includes(index)),
+      )}
       compactView
       showSkillTooltip
       shiftDirection={shiftDirection}

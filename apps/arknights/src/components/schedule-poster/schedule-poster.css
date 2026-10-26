@@ -62,7 +62,7 @@
 .poster-product-heading img,.poster-shift-meta img { height:20px; width:20px; object-fit:contain; }
 .poster-shift-meta { display:flex; font-size:12px; color:#69765e; line-height:18px; }
 .poster-shift-meta>span:first-child { display:flex; gap:4px; align-items:center; white-space:nowrap; }
-.poster-efficiency-pair { display:flex; flex-direction:column; gap:1px; color:#384334; font-size:11px; line-height:14px; }
+.poster-efficiency-pair { display:flex; flex-direction:column; gap:1px; color:#384334; font-size:11px; line-height:14px; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .poster-efficiency-pair>span { display:flex; align-items:baseline; gap:3px; }
 .poster-equivalent-values { display:flex; flex-direction:column; gap:0; white-space:nowrap; }
 .poster-equivalent-values>span { white-space:nowrap; font-weight:500; }
@@ -71,10 +71,13 @@
 .poster-production-heading { display:flex; align-items:center; gap:8px; min-height:18px; }
 .poster-production-heading .poster-shift-label { flex:1; min-width:0; margin:0; justify-content:flex-start; }
 .poster-production-heading .poster-shift-label>span { margin-left:auto; }
-.poster-production-content { display:flex; align-items:center; gap:6px; flex:1; min-width:0; }
-.poster-production .poster-members { flex:1; min-width:0; margin:0; padding:0; gap:6px; }
+.poster-production-content { display:grid; grid-template-columns:max-content minmax(0,1fr); align-content:center; align-items:start; gap:8px; flex:1; min-width:0; }
+.poster-production .poster-members { margin:0; padding:0; gap:6px; }
 .poster-production .poster-member { --poster-card-scale:.50; }
-.poster-efficiency-panel { flex:0 0 132px; min-width:0; color:#384334; }
+.poster-efficiency-panel { justify-self:end; min-width:0; color:#384334; }
+/* Four-facility rows need room for three portraits and an independent metric column. */
+.poster-production-row[data-room-count="4"] .poster-members { gap:4px; }
+.poster-production-row[data-room-count="4"] .poster-member { --poster-card-scale:.44; }
 .poster-production-zone { display:grid; grid-template-rows:minmax(0,1fr) minmax(0,1fr); gap:16px; min-width:0; min-height:0; }
 .poster-production-row { display:grid; grid-template-rows:minmax(0,1fr); gap:10px; min-height:0; }
 .poster-control .poster-shift-stack { gap:10px; padding:10px 0 0; }

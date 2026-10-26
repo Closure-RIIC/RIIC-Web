@@ -32,6 +32,8 @@ export {
 export interface ManualRoomAssignment {
   operators: Array<string | null>;
   autofill?: boolean;
+  /** Slots explicitly marked as automatic in the editor; MAA exports autofill per room. */
+  autofillSlots?: number[];
   /** Per-shift production choice. Falls back to the base layout when absent. */
   product?: BlueprintRoom["product"];
   /** User-entered paper skill efficiency in percentage points, per shift and room. */
@@ -94,6 +96,20 @@ const MAA_GROUP_BY_ROOM_KIND: Partial<Record<RoomKind, keyof MaaRooms>> = {
   meeting_room: "meeting",
   workshop: "processing",
 };
+
+function supportsMaaAutofill(room: EditableRoom): boolean {
+  return Boolean(MAA_GROUP_BY_ROOM_KIND[room.kind as RoomKind]);
+}
+
+function normalizedAutofillSlots(value: unknown, capacity = 5, operators: readonly (string | null)[] = []): number[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(value.filter((index): index is number => (
+    Number.isInteger(index)
+    && index >= 0
+    && index < capacity
+    && !operators[index]
+  )))].sort((left, right) => left - right);
+}
 
 const MINUTES_PER_DAY = 24 * 60;
 
@@ -602,7 +618,9 @@ export function createManualScheduleDraftFromCalculator(input: {
           { length: manualRoomCapacity(room) },
           (_, slotIndex) => maaOperatorName(sourceOperators[slotIndex] ?? null),
         ),
-        ...(room.kind === "dormitory" ? { autofill: sourceRoom.autofill ?? true } : {}),
+        ...(supportsMaaAutofill(room)
+          ? { autofill: sourceRoom.autofill ?? (room.kind === "dormitory") }
+          : {}),
         ...(importedProduct ? { product: normalizedManualProduct(room, importedProduct, input.layout) } : {}),
       };
     }
@@ -650,15 +668,22 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
         ? Object.fromEntries(Object.entries(candidate.rooms).flatMap(([roomId, assignment]) => {
           if (!assignment || typeof assignment !== "object" || !Array.isArray((assignment as ManualRoomAssignment).operators)) return [];
           const manualSkillEfficiencyPct = Number((assignment as ManualRoomAssignment).manualSkillEfficiencyPct);
+          const operators = (assignment as ManualRoomAssignment).operators.map((name) => typeof name === "string" ? name : null);
+          const autofillSlots = normalizedAutofillSlots(
+            (assignment as ManualRoomAssignment).autofillSlots,
+            5,
+            operators,
+          );
           const rawProduct = (assignment as ManualRoomAssignment).product;
           const product = rawProduct && typeof rawProduct === "object" && !Array.isArray(rawProduct)
             ? structuredClone(rawProduct)
             : undefined;
           return [[roomId, {
-            operators: (assignment as ManualRoomAssignment).operators.map((name) => typeof name === "string" ? name : null),
+            operators,
             ...(typeof (assignment as ManualRoomAssignment).autofill === "boolean"
               ? { autofill: (assignment as ManualRoomAssignment).autofill }
               : {}),
+            ...(autofillSlots.length ? { autofillSlots } : {}),
             ...(Number.isFinite(manualSkillEfficiencyPct) && manualSkillEfficiencyPct >= 0
               ? { manualSkillEfficiencyPct: Math.round(manualSkillEfficiencyPct * 100) / 100 }
               : {}),
@@ -777,9 +802,18 @@ export function reconcileManualScheduleDraft(
           const manualSkillEfficiencyPct = Number(assignment?.manualSkillEfficiencyPct);
           const isProductionRoom = room.kind === "trade_post" || room.kind === "factory" || room.kind === "power_plant";
           const product = normalizedManualProduct(room, assignment?.product, layout);
+          const autofillSlots = supportsMaaAutofill(room)
+            ? normalizedAutofillSlots(assignment?.autofillSlots, operators.length, operators)
+            : [];
+          const autofill = supportsMaaAutofill(room)
+            ? room.kind === "dormitory"
+              ? assignment?.autofill ?? true
+              : assignment?.autofill
+            : undefined;
           return [room.id, {
             operators,
-            ...(room.kind === "dormitory" ? { autofill: assignment?.autofill ?? true } : {}),
+            ...(typeof autofill === "boolean" ? { autofill } : {}),
+            ...(autofillSlots.length ? { autofillSlots } : {}),
             ...(product ? { product } : {}),
             ...(isProductionRoom && Number.isFinite(manualSkillEfficiencyPct) && manualSkillEfficiencyPct >= 0
               ? { manualSkillEfficiencyPct: Math.round(manualSkillEfficiencyPct * 100) / 100 }
@@ -845,9 +879,12 @@ export function assignManualOperator(input: {
   const conflict = operator ? findManualOperatorConflict(shift, operator, roomId, slotIndex) : null;
   if (conflict?.roomId === roomId) {
     const next = structuredClone(input.draft);
-    const operators = next.shifts[shiftIndex]!.rooms[roomId]!.operators;
+    const assignment = next.shifts[shiftIndex]!.rooms[roomId]!;
+    const operators = assignment.operators;
     operators[slotIndex] = operator;
     operators[conflict.slotIndex] = currentOperator;
+    assignment.autofillSlots = (assignment.autofillSlots ?? []).filter((index) => index !== slotIndex);
+    if (!assignment.autofillSlots.length) delete assignment.autofillSlots;
     return { draft: next, conflict: null };
   }
   if (conflict && !input.moveExisting) return { draft: input.draft, conflict };
@@ -866,7 +903,12 @@ export function assignManualOperator(input: {
     { length: manualRoomCapacity(room) },
     (_, index) => index === slotIndex ? operator : assignment.operators[index] ?? null,
   );
-  if (room.kind === "dormitory" && operator === null) assignment.autofill = false;
+  assignment.autofillSlots = (assignment.autofillSlots ?? []).filter((index) => index !== slotIndex);
+  if (!assignment.autofillSlots.length) delete assignment.autofillSlots;
+  if (room.kind === "dormitory" && operator === null) {
+    assignment.autofill = false;
+    delete assignment.autofillSlots;
+  }
   nextShift.rooms[roomId] = assignment;
   return { draft: next, conflict };
 }
@@ -953,6 +995,7 @@ export function setManualDormAutofill(
     operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
   };
   assignment.autofill = enabled;
+  if (!enabled) delete assignment.autofillSlots;
   shift.rooms[roomId] = assignment;
   return next;
 }
@@ -982,7 +1025,7 @@ export function clearManualRoom(
   const previousProduct = next.shifts[shiftIndex]!.rooms[roomId]?.product;
   next.shifts[shiftIndex]!.rooms[roomId] = {
     operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
-    ...(room.kind === "dormitory" ? { autofill: false } : {}),
+    ...(supportsMaaAutofill(room) ? { autofill: false } : {}),
     ...((room.kind === "trade_post" || room.kind === "factory")
       ? { product: previousProduct ? structuredClone(previousProduct) : roomProduct(room) }
       : {}),
@@ -1003,7 +1046,7 @@ export function clearManualShift(
     const previousProduct = shift.rooms[room.id]?.product;
     return [room.id, {
       operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
-      ...(room.kind === "dormitory" ? { autofill: false } : {}),
+      ...(supportsMaaAutofill(room) ? { autofill: false } : {}),
       ...((room.kind === "trade_post" || room.kind === "factory")
         ? { product: previousProduct ? structuredClone(previousProduct) : roomProduct(room) }
         : {}),
@@ -1073,7 +1116,9 @@ function maaRoom(room: BlueprintRoom, assignment: ManualRoomAssignment | undefin
     operators,
     sort: true,
     skip: false,
-    autofill: room.kind === "dormitory" ? assignment?.autofill ?? true : false,
+    autofill: assignment?.autofill === true
+      || Boolean(assignment?.autofillSlots?.length)
+      || (room.kind === "dormitory" && assignment?.autofill !== false),
     ...(product ? { product } : {}),
   };
 }

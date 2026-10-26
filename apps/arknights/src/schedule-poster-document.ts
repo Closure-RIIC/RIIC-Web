@@ -14,6 +14,7 @@ const product = z.union([
 const assignment = z.object({
   operators: z.array(text(80).nullable()).max(5),
   product: product.optional(), autofill: z.boolean().optional(),
+  autofillSlots: z.array(z.number().int().min(0).max(4)).max(5).optional(),
   manualSkillEfficiencyPct: z.number().finite().min(0).max(10000).optional(),
 });
 const schema = z.object({
@@ -75,6 +76,13 @@ export function parsePosterDocument(value: unknown): SchedulePosterDocument {
       const room = rooms.find(room => room.id === id);
       if (!room) { errors.push(`未知设施 ${id}`); continue; }
       if (assignment.operators.length > manualRoomCapacity(room)) errors.push(`${id} 人数超过容量。`);
+      if (new Set(assignment.autofillSlots ?? []).size !== (assignment.autofillSlots ?? []).length) errors.push(`${id} 的 AUTO 槽位重复。`);
+      if (assignment.autofillSlots?.length && ["training_room", "recycling"].includes(room.kind)) errors.push(`${id} 不支持 MAA 自动填充。`);
+      for (const slotIndex of assignment.autofillSlots ?? []) {
+        if (slotIndex >= manualRoomCapacity(room)) errors.push(`${id} 的 AUTO 槽位超过设施容量。`);
+        if (assignment.operators[slotIndex]) errors.push(`${id} 的 AUTO 槽位不能同时安排固定干员。`);
+      }
+      if (assignment.autofillSlots?.length && assignment.autofill === false) errors.push(`${id} 设置了 AUTO 槽位但关闭了设施自动填充。`);
       for (const name of assignment.operators.filter(Boolean)) {
         if (used.has(name!)) errors.push(`第 ${index + 1} 班的 ${name} 重复入驻。`);
         used.add(name!);

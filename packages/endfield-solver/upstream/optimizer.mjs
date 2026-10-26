@@ -16,7 +16,7 @@ import {
   EMPTY, has, intersects, sizeOf, toIndices, union, without,
 } from './set.mjs';
 import {
-  SLOTS, COST_BASE, EPS, ASSIST_MOOD, val, buildTimeline, integrate, recoveryTable,
+  SLOTS, COST_BASE, EPS, ASSIST_MOOD, val, buildTimeline, crewStats, integrate, recoveryTable,
   shiftFromRecovery, simulateFacility, simulateSingleFacility, timeToRecoverWrap,
 } from './evaluator.mjs';
 import { isUseful, relevantMask, crewSignatureGroups } from './candidates.mjs';
@@ -837,6 +837,36 @@ function maximizeSingle(ctx, table, assistLeft) {
  * 稳定实例用闭式（精确）；衰减实例用上界先定位，再逐日模拟修正，直到上界不再高于已知最优。
  * 最后一级是 §6.8 + 决定性尾序（需求↓ → 班长↑ → 占用串），与单设施路径同口径。
  */
+/**
+ * `rel` 为空时的双舱精确配对（`maximizePair` 的补充路径，见那里的注释）。
+ * 两舱没有"相关干员"可争，唯一共享资源是补位池 ⇒ 只要两舱实例不同、占用不重叠、补位总数 ≤ 池。
+ * 实例数很少（实测 29 条），两两枚举即精确解，不做近似。
+ */
+function pairWithoutRelevant(ctx, inst, table) {
+  const mCap = table.fillPool.length;
+  const tol = ctx.cfg.limits.valueTol;
+  const stable = inst.filter((e) => e.stable);
+  const list = stable.length >= 2 ? stable : inst;
+  const value = (e) => (e.stable ? e.cf : (Number.isFinite(e.currentValue) ? e.currentValue : e.ub));
+  const feasible = (a, b) => a !== b && (a.footprint & b.footprint) === 0n
+    && (a.fillNeed ?? 0) + (b.fillNeed ?? 0) <= mCap;
+  let best = -Infinity;
+  const combos = [];
+  for (let i = 0; i < list.length; i += 1) {
+    for (let j = i + 1; j < list.length; j += 1) {
+      const a = list[i];
+      const b = list[j];
+      if (!feasible(a, b)) continue;
+      const v = value(a) + value(b);
+      if (v > best + tol) { best = v; combos.length = 0; combos.push([a, b]); }
+      else if (Math.abs(v - best) <= tol && combos.length < 400) combos.push([a, b]);
+    }
+  }
+  if (!combos.length) return { value: 0, combos: [] };
+  if (!stable.length) ctx.approximations.add('同类双设施缺少稳定实例，按上界估计');
+  return { value: best, combos };
+}
+
 function maximizePair(ctx, tableA) {
   const tol = ctx.cfg.limits.valueTol;
   const rel = tableA.rel;
@@ -1150,6 +1180,11 @@ function maximizePair(ctx, tableA) {
   if (process.env.DEBUG_CAT) console.error(`  [pair] inst=${inst.length} size=${size} fillPool=${tableA.fillPool.length} rel=${n}`);
   if (!inst.length) return { value: 0, combos: [] };
   if (!ctx.budget.tick()) return { value: 0, combos: [], exhausted: true };
+  // `rel` 为空（该类别没有任何"相关干员"，例如零技能名单）：局部位空间退化成 1 格（size=1、full=0），
+  // SOS 每格只留一条实例，`feasiblePair` 的 a!==b ⇒ 永远配不出两舱 ⇒ 整个类别被记 0
+  // （实测：14 人 + 双经验舱 + 零技能，8 个空闲人也排不出两个制造舱）。
+  // 此时两舱共享的只有补位池、实例数很小，直接精确枚举两两组合。
+  if (n === 0) return pairWithoutRelevant(ctx, inst, tableA);
 
   // 先按"不设补位联合约束"的快路径算（多数实例的赢家本来就补得起），
   // 只有当结果依赖"两舱合计补位 > 池"的组合（不可行）时才退回分层精确路径重算。
@@ -1791,6 +1826,151 @@ function alignStrongCrewToA(ops, cfg, plan) {
   if (raised) plan.metrics = metricsOf({ score: plan.score, usedCount: sizeOf(plan.usedMask) });
 }
 
+// ───────────────────────── 覆盖下限（决策 65） ─────────────────────────
+/**
+ * 决策 65：除中枢外每个舱室至少 1 人（每舱**总计** ≥1，允许单班 24h 顶两班），然后才比产出。
+ *
+ * 实现策略：搜索仍按原有字典序跑完（保证 32 人全图鉴基线逐位不变），**只在最终方案缺舱时**介入：
+ *   ① 先用空闲干员补一个单班 1 人的保底班；
+ *   ② 空闲不够时，从"类别优先级最低、人数最多"的已排设施抽 1 人（先缩班次再按优先级弃舱）；
+ *   ③ 仍做不到才弃舱，记进 `skipped`（校验器不再把它算成 errors）。
+ */
+function specPriorityIndex(cfg, spec) {
+  const i = cfg.priority.indexOf(catOf(spec));
+  return i < 0 ? cfg.priority.length : i;
+}
+
+function makeFloorPick({ ops, cfg, center, spec, crewA, crewB, single, h }) {
+  const nA = sizeOf(crewA);
+  const nB = single ? 0 : sizeOf(crewB);
+  const stA = crewStats(ops, crewA, spec, nA);
+  const stB = single ? null : crewStats(ops, crewB, spec, nB);
+  const simPlan = { h: single ? 24 : h, crewA, crewB: single ? EMPTY : crewB, nA, nB };
+  const simulation = single
+    ? simulateSingleFacility({ facility: spec, ops, timeline: center.timeline, plan: simPlan, limits: cfg.limits })
+    : simulateFacility({ facility: spec, ops, timeline: center.timeline, plan: simPlan, limits: cfg.limits, assistPlan: null });
+  return {
+    spec, single, h: single ? null : h, seats: Math.min(spec.slots || SLOTS, SLOTS),
+    nA, nB, crewA, crewB: single ? EMPTY : crewB, fillCrewA: EMPTY, fillCrewB: EMPTY, fillA: 0, fillB: 0,
+    stA, stB, trueValue: simulation.avg, assist: null, assistUsed: 0, simulation, closedForm: false,
+  };
+}
+
+function usedOfPlan(plan) {
+  let used = plan.center ? plan.center.used : EMPTY;
+  for (const p of plan.picks) {
+    used = union(used, union(union(p.crewA, p.crewB || EMPTY), union(p.fillCrewA || EMPTY, p.fillCrewB || EMPTY)));
+  }
+  return used;
+}
+
+/** 从某个已排设施抽 1 人（只从不小于 2 人的班里抽，保证抽完仍有 ≥1 人）。 */
+function donateOne({ ops, cfg, donor, center }) {
+  // nA/nB 是"技能 + 补位"的总人数，抽人必须按并集算，否则会抽到空 crew。
+  const crewOfA = union(donor.crewA, donor.fillCrewA || EMPTY);
+  const crewOfB = donor.single ? EMPTY : union(donor.crewB || EMPTY, donor.fillCrewB || EMPTY);
+  const fromA = sizeOf(crewOfA) >= sizeOf(crewOfB);
+  const crew = fromA ? crewOfA : crewOfB;
+  if (sizeOf(crew) < 2) return null;
+  const ids = toIndices(crew).sort((a, b) => {
+    const ia = charIdOf(ops[a]);
+    const ib = charIdOf(ops[b]);
+    return ia < ib ? 1 : ia > ib ? -1 : 0;      // 抽 charId 最大的那位，结果确定
+  });
+  const taken = ids[0];
+  const rest = without(crew, 1n << BigInt(taken));
+  const rebuilt = makeFloorPick({
+    ops, cfg, center, spec: donor.spec,
+    crewA: fromA ? rest : crewOfA,
+    crewB: fromA ? crewOfB : rest,
+    single: donor.single, h: donor.h ?? 24,
+  });
+  Object.assign(donor, rebuilt);
+  return taken;
+}
+
+function finalizePlan(ops, cfg, plan) {
+  plan.picks.sort((a, b) => specPriorityIndex(cfg, a.spec) - specPriorityIndex(cfg, b.spec));
+  plan.catRes = Object.fromEntries(cfg.priority.map((cat) => {
+    const group = plan.picks.filter((p) => catOf(p.spec) === cat);
+    const value = group.reduce((s, p) => s + (Number.isFinite(p.trueValue) ? p.trueValue : 0), 0);
+    return [cat, { value, picks: group }];
+  }));
+  plan.score = cfg.priority.map((cat) => plan.catRes[cat].value);
+  plan.usedMask = usedOfPlan(plan);
+  return plan;
+}
+
+/** 把双班舱塌成单班（保留人多的那一班），释放另一班的人。决策 65 的"先缩班次"就是这一步。 */
+function collapseToSingle({ ops, cfg, donor, center }) {
+  if (donor.single || donor.nA === 0 || donor.nB === 0) return null;
+  const crewA = union(donor.crewA, donor.fillCrewA || EMPTY);
+  const crewB = union(donor.crewB || EMPTY, donor.fillCrewB || EMPTY);
+  const keepA = sizeOf(crewA) >= sizeOf(crewB);
+  const keep = keepA ? crewA : crewB;
+  const freed = keepA ? crewB : crewA;
+  if (!sizeOf(freed)) return null;
+  const rebuilt = makeFloorPick({ ops, cfg, center, spec: donor.spec, crewA: keep, crewB: EMPTY, single: true, h: null });
+  Object.assign(donor, rebuilt);
+  return toIndices(freed)[0];
+}
+
+function enforceCoverageFloor(ops, cfg, plan, specs) {
+  const skipped = [];
+  if (!plan || !plan.center) return { skipped };
+  const covered = new Set(plan.picks.map((p) => p.spec.key));
+  const missing = specs.filter((s) => !covered.has(s.key))
+    .sort((a, b) => specPriorityIndex(cfg, a) - specPriorityIndex(cfg, b));
+  if (!missing.length) return { skipped };
+  const all = maskAll(ops.length);
+  for (const spec of missing) {
+    const pool = without(all, usedOfPlan(plan));
+    const order = toIndices(pool).sort((a, b) => {
+      const ua = PURE_USEFUL.has(a) ? 1 : 0;
+      const ub = PURE_USEFUL.has(b) ? 1 : 0;
+      if (ua !== ub) return ua - ub;
+      const ia = charIdOf(ops[a]);
+      const ib = charIdOf(ops[b]);
+      return ia < ib ? -1 : ia > ib ? 1 : 0;
+    });
+    let person = order.length ? order[0] : null;
+    if (person === null) {
+      const donors = plan.picks.slice().sort((a, b) => {
+        const pa = specPriorityIndex(cfg, a.spec);
+        const pb = specPriorityIndex(cfg, b.spec);
+        if (pa !== pb) return pb - pa;                 // 先抽最低优先级的舱
+        return (b.nA + b.nB) - (a.nA + a.nB);          // 同优先级抽人多的
+      });
+      for (const donor of donors) {
+        const taken = donateOne({ ops, cfg, donor, center: plan.center });
+        if (taken !== null) { person = taken; break; }
+      }
+      // 没有人多于 1 的班可抽 ⇒ 先把一个双班舱塌成单班（决策 65 的"先缩班次"），再借人
+      if (person === null) {
+        for (const donor of donors) {
+          const freed = collapseToSingle({ ops, cfg, donor, center: plan.center });
+          if (freed !== null) { person = freed; break; }
+        }
+      }
+    }
+    if (person === null) {
+      skipped.push({ key: spec.key, cat: catOf(spec), reason: '人手不足', detail: '可用 0 人，每舱至少需要 1 人' });
+      continue;
+    }
+    plan.picks.push(makeFloorPick({
+      ops, cfg, center: plan.center, spec,
+      crewA: 1n << BigInt(person), crewB: EMPTY, single: true, h: null,
+    }));
+  }
+  finalizePlan(ops, cfg, plan);
+  return { skipped };
+}
+
+/** 最终方案的缺口（决策 20 + 本轮 Q4=a）：只描述这次结果，不掺搜索过程中被放弃的分支。 */
+function finalGaps(skipped) {
+  return skipped.map((s) => ({ key: s.key, cat: s.cat, reason: s.reason, detail: s.detail }));
+}
+
 // ───────────────────────── 主入口之上的装配 ─────────────────────────
 export function solveLayout({ ops, cfg, testOptions = null }) {
   const specs = facilitySpecs(cfg);
@@ -1868,7 +2048,11 @@ export function solveLayout({ ops, cfg, testOptions = null }) {
     if (!base.incumbent || comparePlans(metrics, base.incumbent, cfg) > 0) base.incumbent = metrics;
   }
 
-  // A/B 朝向规范化：只对最终选中的方案做一次，不参与搜索与裁决
+  // 决策 65：覆盖下限（除中枢外每舱 ≥1 人）。只在最终方案缺舱时介入，因此满编场景下不影响既有结果。
+  const coverage = enforceCoverageFloor(ops, cfg, best, specs);
+
+  // A/B 朝向规范化：必须放在覆盖下限**之后**——补位/抽人会改变两班人数，
+  // 若不重跑，会出现"强班在 B"（实测：制造舱Ⅰ A=2 人 +80%、B=3 人 +120%）。
   if (best) alignStrongCrewToA(ops, cfg, best);
 
   // 未收敛候选只在"上界仍能威胁最终方案"时才算数（真实值 ≤ 上界）：
@@ -1907,7 +2091,8 @@ export function solveLayout({ ops, cfg, testOptions = null }) {
       unresolved: budgetUnresolved,
       unresolvedAll: unresolvedAll.length,
       approximations: [...approximations],
-      gaps: [...new Map(base.gapsList.map((g) => [`${g.cat}|${g.reason}|${g.detail}`, g])).values()],
+      gaps: finalGaps(coverage.skipped),
+      skipped: coverage.skipped,
       // 观测（P0）：只报告事实，不参与任何判断
       search: { ...counters },
       assistOn: !!cfg.assistOn,
