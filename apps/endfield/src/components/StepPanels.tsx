@@ -40,9 +40,16 @@ export function StepStats({ view, rooms }: { view: StepView; rooms: StepRoom[] }
       <ScrollArea direction="both" className="ef-table-wrap"><table className="ef-table">
         <thead><tr><th>{t("干员", "Operator")}</th><th>{t("最低", "Minimum")}</th><th>{t("最高", "Maximum")}</th><th>{t("当前", "Current")}</th></tr></thead>
         <tbody>{view.ops.map(op => {
-          const moods = view.history.flatMap(sample => sample.moods[op.name] === undefined ? [] : [sample.moods[op.name]]);
-          return <tr key={op.name}><td>{op.name}</td><td>{Math.min(op.mood, ...moods).toFixed(1)}%</td>
-            <td>{Math.max(op.mood, ...moods).toFixed(1)}%</td><td>{op.mood.toFixed(1)}%</td></tr>;
+          let minimum = op.mood;
+          let maximum = op.mood;
+          for (const sample of view.history) {
+            const mood = sample.moods[op.name];
+            if (mood === undefined) continue;
+            if (mood < minimum) minimum = mood;
+            if (mood > maximum) maximum = mood;
+          }
+          return <tr key={op.name}><td>{op.name}</td><td>{minimum.toFixed(1)}%</td>
+            <td>{maximum.toFixed(1)}%</td><td>{op.mood.toFixed(1)}%</td></tr>;
         })}</tbody>
       </table></ScrollArea>
     </details>

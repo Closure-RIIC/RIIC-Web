@@ -48,7 +48,8 @@ export function MoodCharts({ view, timeline, rooms, onSeek }: {
           </figure>
         </div>
         <p className="ef-muted ef-step-chart-summary">{t("横轴为已模拟小时；产率以基础产率的百分比显示，中枢显示恢复加成。", "The horizontal axis shows elapsed hours. Production is a percentage of the base rate; the center shows recovery bonus.")}</p>
-        <p className="ef-muted ef-step-chart-summary">{t("虚线表示当前回放位置；点击图表或拖动时间轴查看当时状态。", "The dashed line marks the replay position. Click a chart or drag the timeline to inspect a moment.")}</p>
+        <p className="ef-muted ef-step-chart-summary">{t("换班后产率按新班次干员的技能重新计算；全舱休息或 B 班为空时产率为 0 属于停工，心情回满/换班后恢复。中枢显示的是当前班组的恢复加成。", "Rates are recalculated from the crew on shift. Zero output while the whole room rests or the B shift is empty is expected; morale refilling or the next shift restores it. The center shows the current crew's recovery bonus.")}</p>
+        <p className="ef-muted ef-step-chart-summary">{t("虚线表示当前回放位置；点击图表查看当时状态。", "The dashed line marks the inspected moment. Click a chart to inspect it.")}</p>
       </div>
     </div>
   </div>;
@@ -118,10 +119,56 @@ export function RoomMoodChart({ timeline, room, cursor, selected, onSeek }: Char
   </>;
 }
 
+/** Recharts 渲染 3 万多个 SVG 点会明显卡顿；图表最多保留约 720 个转折点。 */
+const MAX_CHART_POINTS = 720;
+
+/** 换班前极短的全员停工不画成 0 点，避免图上出现瞬间掉到 0 的竖线；长停工仍保留。 */
+function withoutShortShiftStops(history: StepView["history"], roomKey: string, rateKey: string | null): StepView["history"] {
+  if (!rateKey) return history;
+  const rateOf = (point: StepView["history"][number]) => point.rates[roomKey]?.[rateKey] ?? 0;
+  const points: StepView["history"] = [];
+  for (let index = 0; index < history.length;) {
+    if (rateOf(history[index]) > 0) { points.push(history[index]); index += 1; continue; }
+    let end = index;
+    while (end < history.length && rateOf(history[end]) === 0) end += 1;
+    const before = points.at(-1);
+    const after = history[end];
+    const switchGap = before && after && before.activeRounds[roomKey] !== after.activeRounds[roomKey]
+      && history[end - 1].tSec - history[index].tSec <= 3600;
+    if (!switchGap) for (let cursor = index; cursor < end; cursor += 1) points.push(history[cursor]);
+    index = end;
+  }
+  return points;
+}
+
+/**
+ * 长时长 + 短采样时压缩曲线：固定步长取点，并保留换班、产物/心情变化导致的
+ * 产率跳变点，避免压缩后把台阶或归零点抹平。
+ */
+function chartHistory(history: StepView["history"], roomKey: string, rateKey: string | null = null): StepView["history"] {
+  const source = withoutShortShiftStops(history, roomKey, rateKey);
+  if (source.length <= MAX_CHART_POINTS) return source;
+  const stride = Math.max(1, Math.ceil(source.length / MAX_CHART_POINTS));
+  const points: StepView["history"] = [];
+  let lastRound: string | undefined;
+  let lastRate: string | undefined;
+  for (let index = 0; index < source.length; index += 1) {
+    const point = source[index];
+    const round = point.activeRounds[roomKey];
+    const rate = JSON.stringify(point.rates[roomKey] ?? {});
+    if (index % stride === 0 || index === source.length - 1 || round !== lastRound || rate !== lastRate) {
+      points.push(point);
+      lastRound = round;
+      lastRate = rate;
+    }
+  }
+  return points;
+}
+
 function useMoodSeries(timeline: StepView, roomKey: string, selected: ReadonlySet<string> | null) {
   return useMemo(() => {
     const names = timeline.ops.filter(op => op.roomKey === roomKey && (selected === null || selected.has(op.name))).map(op => op.name);
-    const rows = timeline.history.map(point => ({ hour: point.tSec / 3600,
+    const rows = chartHistory(timeline.history, roomKey).map(point => ({ hour: point.tSec / 3600,
       ...Object.fromEntries(names.map((name, index) => [`op${index}`, point.moods[name]])),
     }));
     return { rows, names };
@@ -130,11 +177,18 @@ function useMoodSeries(timeline: StepView, roomKey: string, selected: ReadonlySe
 
 export function RoomRateChart({ timeline, room, cursor, onSeek }: ChartProps) {
   const { t } = useWorkspace();
-  const { rows, keys, max } = useRateSeries(timeline, room.key);
+  const [selectedProduct, setSelectedProduct] = useState<string | null>(null);
+  const { rows, keys, max, activeKey } = useRateSeries(timeline, room.key, selectedProduct);
+  const summary = useMemo(() => activeKey ? integrateRate(timeline, room.key, activeKey) : null, [timeline, room.key, activeKey]);
   const labelOf = (key: string) => key === "_total"
     ? room.key === "中枢" ? t("恢复加成", "Recovery bonus") : t("产率", "Rate") : productLabel(key, t);
-  const colorOf = (key: string) => keys.length > 1 ? colorForName(key) : "var(--ef-ink)";
+  const colorOf = () => "var(--ef-ink)";
   return <>
+    {keys.length > 1 ? <Tabs value={activeKey ?? ""} onValueChange={value => setSelectedProduct(String(value))}>
+      <CompactTabsList aria-label={t("产物", "Product")}>
+        {keys.map(key => <TabsTrigger key={key} value={key}>{productLabel(key, t)}</TabsTrigger>)}
+      </CompactTabsList>
+    </Tabs> : null}
     <div className="ef-mood-chart" data-step-chart="rate">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart accessibilityLayer data={rows} margin={{ top: 16, right: 12, bottom: 4, left: 4 }}>
@@ -145,31 +199,50 @@ export function RoomRateChart({ timeline, room, cursor, onSeek }: ChartProps) {
           <Tooltip contentStyle={tooltipStyle} labelFormatter={clock}
             formatter={(value, name) => [`${Number(value).toFixed(1)}%`, String(name)]} />
           <ReferenceLine x={cursor / 3600} stroke="var(--ef-ink)" strokeDasharray="3 3" />
-          {keys.map((key, index) => <Line key={key} dataKey={`rate${index}`} type="stepAfter" name={labelOf(key)}
-            stroke={colorOf(key)} strokeWidth={1.6} dot={false} isAnimationActive={false} />)}
+          {activeKey ? <Line dataKey="rate0" type="stepAfter" name={labelOf(activeKey)}
+            stroke={colorOf()} strokeWidth={1.6} dot={false} isAnimationActive={false} /> : null}
           <SeekArea max={timeline.maxTSec} onSeek={onSeek} />
         </LineChart>
       </ResponsiveContainer>
     </div>
-    <Legend items={keys.map(key => ({ label: labelOf(key), color: colorOf(key) }))} />
+    {activeKey ? <Legend items={[{ label: labelOf(activeKey), color: colorOf() }]} /> : null}
+    {summary ? <p className="ef-muted ef-step-chart-summary">
+      {room.key === "中枢"
+        ? t(`积分 ${summary.integral.toFixed(1)} %·h · 平均 ${summary.average.toFixed(1)}%`, `Integral ${summary.integral.toFixed(1)} %·h · average ${summary.average.toFixed(1)}%`)
+        : t(`积分 ${summary.integral.toFixed(2)} 等效小时 · 平均 ${summary.average.toFixed(2)}×（${(summary.average * 100).toFixed(1)}%）`, `Integral ${summary.integral.toFixed(2)} base-hours · average ${summary.average.toFixed(2)}× (${(summary.average * 100).toFixed(1)}%)`)}
+    </p> : null}
   </>;
 }
 
-function useRateSeries(timeline: StepView, roomKey: string) {
+/** 对完整历史（不是降采样后的图）按台阶做积分；产率单位保持引擎口径。 */
+function integrateRate(timeline: StepView, roomKey: string, key: string) {
+  const points = timeline.history;
+  let integral = 0;
+  for (let index = 1; index < points.length; index += 1) {
+    const rate = points[index - 1].rates[roomKey]?.[key] ?? 0;
+    integral += rate * (points[index].tSec - points[index - 1].tSec) / 3600;
+  }
+  const last = points.at(-1);
+  if (last && last.tSec < timeline.maxTSec) integral += (last.rates[roomKey]?.[key] ?? 0) * (timeline.maxTSec - last.tSec) / 3600;
+  const hours = timeline.maxTSec / 3600;
+  return { integral, average: hours > 0 ? integral / hours : 0 };
+}
+
+function useRateSeries(timeline: StepView, roomKey: string, selectedKey: string | null) {
   return useMemo(() => {
     const keys = [...new Set(timeline.history.flatMap(point => Object.keys(point.rates[roomKey] ?? {})))];
+    const activeKey = selectedKey && keys.includes(selectedKey) ? selectedKey : keys[0] ?? null;
+    const history = chartHistory(timeline.history, roomKey, activeKey);
     let peak = 0;
-    const rows = timeline.history.map(point => ({ hour: point.tSec / 3600,
-      ...Object.fromEntries(keys.map((key, index) => {
-        const rate = point.rates[roomKey]?.[key] ?? 0;
-        // 中枢本来就是百分点；生产舱室倍率转成原版图表的百分比。
-        const value = roomKey === "中枢" ? rate : rate * 100;
-        peak = Math.max(peak, value);
-        return [`rate${index}`, value];
-      })),
-    }));
-    return { rows, keys, max: Math.max(100, Math.ceil((peak * 1.15) / 50) * 50) };
-  }, [timeline, roomKey]);
+    const rows = history.map(point => {
+      const rate = activeKey ? point.rates[roomKey]?.[activeKey] ?? 0 : 0;
+      // 中枢本来就是百分点；生产舱室倍率转成原版图表的百分比。
+      const value = roomKey === "中枢" ? rate : rate * 100;
+      peak = Math.max(peak, value);
+      return { hour: point.tSec / 3600, rate0: value };
+    });
+    return { rows, keys, max: Math.max(100, Math.ceil((peak * 1.15) / 50) * 50), activeKey };
+  }, [timeline, roomKey, selectedKey]);
 }
 
 function SeekArea({ max, onSeek }: { max: number; onSeek: (seconds: number) => void }) {
