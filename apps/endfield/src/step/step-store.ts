@@ -12,7 +12,7 @@ export interface StepControls {
   speed: number;
 }
 
-export const DEFAULT_STEP_CONTROLS: StepControls = { startHour: 8, maxHours: 24, sampleSec: SIM_SAMPLE_SECONDS, speed: 100 };
+export const DEFAULT_STEP_CONTROLS: StepControls = { startHour: 0, maxHours: 24, sampleSec: SIM_SAMPLE_SECONDS, speed: 100 };
 
 export interface StoredStep {
   version: 2;

@@ -92,7 +92,7 @@ export function roomsFromTemplate(workspace: Workspace): StepRoom[] {
     isStepRoomKey(template.key) ? [baseRoom(template.key, template.slots, workspace)] : []);
 }
 
-/** 手动排班按标注的 A/B 时段执行，空班也保留换班时间。 */
+/** 手动排班按标注的 A/B 时段执行；换班点只切换上班/休息，不提前换班。 */
 export function roomsFromManual(workspace: Workspace): StepRoom[] {
   const owned = new Set(workspace.operators.map(operator => operator.name));
   const manual = new Map((workspace.manual ?? []).map(room => [room.key, room] as const));
@@ -148,6 +148,13 @@ export function effectTable(workspace: Workspace): EffectTable {
   return table;
 }
 
+/**
+ * 求解器技能数值是 0–1 的小数（0.12 = 12%），而引擎公式（`1 - reduce / 100`、
+ * `1 + restore / 100`、`1 + efficiency / 100`）使用百分点。聚合时统一乘以 100，
+ * 否则所有技能效果都会缩小 100 倍，表现为“心情几乎不降、加成几乎为零”。
+ */
+const EFFECT_PERCENT = 100;
+
 /** 把技能效果聚合成 `crewStats` 使用的三个量；按 name|room 记忆化。 */
 export function roomEffectResolver(table: EffectTable): RoomEffectResolver {
   const cache = new Map<string, RoomEffects>();
@@ -159,9 +166,9 @@ export function roomEffectResolver(table: EffectTable): RoomEffectResolver {
     const effects: RoomEffects = { reduce: 0, restore: 0, effMap: {} };
     for (const effect of table[name] ?? []) {
       if (effect.room !== solverRoom) continue;
-      if (effect.kind === "减免") effects.reduce += effect.value;
-      else if (effect.kind === "恢复") effects.restore += effect.value;
-      else if (effect.kind === "加成" && effect.cat) effects.effMap[effect.cat] = (effects.effMap[effect.cat] ?? 0) + effect.value;
+      if (effect.kind === "减免") effects.reduce += effect.value * EFFECT_PERCENT;
+      else if (effect.kind === "恢复") effects.restore += effect.value * EFFECT_PERCENT;
+      else if (effect.kind === "加成" && effect.cat) effects.effMap[effect.cat] = (effects.effMap[effect.cat] ?? 0) + effect.value * EFFECT_PERCENT;
     }
     cache.set(id, effects);
     return effects;

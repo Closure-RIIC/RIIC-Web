@@ -1,24 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { operatorData } from "@riic/endfield-data";
 import type { Assignment } from "@riic/endfield-solver/model.mjs";
 import { useWorkspace } from "../state";
-import { Dialog } from "@base-ui/react/dialog";
-import { Slider } from "@riic/ui-primitives/slider";
-import { DialogFrame } from "./DialogFrame";
 import { StepSettings } from "./StepSettings";
 import { MoodCharts } from "../mood-simulation/charts";
 import { useMoodSimulation } from "../mood-simulation/use-simulation";
-import { SIM_SPEEDS } from "../mood-simulation/constants";
 import { StepLog, StepStats } from "./StepPanels";
 import { StepPicker } from "./StepPicker";
-import { formatClock, formatDuration } from "../step/step-engine.ts";
 import {
   buildStepConfig, effectTable, ensureBoostDays, maxBoostDays, roomEffectResolver, scheduledNames, validateStepConfig,
 } from "../step/step-model.ts";
 import { applyStored, DEFAULT_STEP_CONTROLS, loadStepConfig, saveStepConfig, toStored, type StoredStep } from "../step/step-store.ts";
 import type { StepBoostConfig } from "../step/step-types.ts";
-import { Action, ActionContent, actionClassName, Field, Notice, Section } from "@riic/endfield-ui";
-import { Play, Pause, RotateCcw, FastForward, Settings2 } from "lucide-react";
+import { Action, Notice, Section } from "@riic/endfield-ui";
+import { Play, RotateCcw } from "lucide-react";
 import "../step/step.css";
 
 type PickerState = { day: number; index: number };
@@ -31,13 +26,13 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
   const [preferences, setPreferences] = useState<StoredStep | null>(null);
   const [controls, setControls] = useState(DEFAULT_STEP_CONTROLS);
   const [ready, setReady] = useState(false);
-  const { startHour, maxHours, speed } = controls;
+  const { startHour, maxHours } = controls;
   const config = useMemo(() => applyStored(buildStepConfig({ ...workspace, manual: assignments }, null, "manual"), preferences), [workspace, assignments, preferences]);
   const [error, setError] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [picker, setPicker] = useState<PickerState | null>(null);
+  const reportRef = useRef<HTMLDetailsElement>(null);
   const playback = useMoodSimulation(config, resolver, controls, ready);
-  const { view, timeline, running, phase, started, pause } = playback;
+  const { view, timeline, started } = playback;
 
   // 客户端挂载后恢复参数，避免服务端与首次渲染不一致。
   useEffect(() => {
@@ -79,17 +74,17 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
     return true;
   }
 
-  function start() {
-    if (validate()) playback.start();
+  function showResults() {
+    if (!validate()) return;
+    playback.showResults();
+    if (reportRef.current) reportRef.current.open = true;
+    requestAnimationFrame(() => document.getElementById("moodCharts")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   function reset() {
     setError("");
     playback.reset();
-  }
-
-  function fastForward() {
-    if (validate()) playback.seek(maxHours * 3600);
+    if (reportRef.current) reportRef.current.open = false;
   }
 
   function seek(seconds: number) {
@@ -113,58 +108,37 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
     : t("选择助力目标", "Choose assistance target");
 
   const showResult = started && !!view && !!config;
-  const startLabel = phase === "paused" ? t("继续", "Resume") : t("开始", "Start");
-  return <Dialog.Root open={settingsOpen} onOpenChange={open => { if (open) pause(); setSettingsOpen(open); }}>
+  return <>
   <div className="ef-step-page" id="manual-simulation">
     <Section>
       {error ? <Notice error>{error}</Notice> : null}
       {!ready ? <Notice>{t("正在读取本地配置…", "Loading local configuration…")}</Notice> : null}
       <div className="ef-actions ef-step-playback">
-        <Action id="startBtn" size="sm" variant="yellow" icon={<Play />} aria-label={startLabel} title={startLabel} onClick={start} disabled={!ready || running || phase === "ended"}>
-          {startLabel}
+        <Action id="showResultBtn" size="sm" variant="yellow" icon={<Play />} onClick={showResults} disabled={!ready}>
+          {t("展示模拟结果", "Show results")}
         </Action>
-        <Action id="pauseBtn" size="sm" icon={<Pause />} aria-label={t("暂停", "Pause")} title={t("暂停", "Pause")} onClick={pause} disabled={!running}>{t("暂停", "Pause")}</Action>
-        <Action id="resetBtn" size="sm" icon={<RotateCcw />} aria-label={t("重置", "Reset")} title={t("重置", "Reset")} onClick={reset} disabled={!ready}>{t("重置", "Reset")}</Action>
-        <Action id="fastBtn" size="sm" icon={<FastForward />} aria-label={t("快进到结束", "Fast forward")} title={t("快进到结束", "Fast forward")} onClick={fastForward} disabled={!ready || phase === "ended"}>{t("快进到结束", "Fast forward")}</Action>
-        <Field label={t("播放速度", "Playback speed")} value={speed} disabled={!ready} onValueChange={value => setControls({ ...controls, speed: Number(value) })}
-          options={SIM_SPEEDS.map(value => ({ value, label: `${value}×` }))} />
-        <Dialog.Trigger className={`${actionClassName({ size: "sm" })} ef-step-settings`} disabled={!ready}
-          aria-label={t("模拟设置", "Simulation settings")} title={t("模拟设置", "Simulation settings")}>
-          <ActionContent icon={<Settings2 />}>{t("模拟设置", "Simulation settings")}</ActionContent>
-        </Dialog.Trigger>
-      </div>
-      <div className="ef-step-timeline">
-        <Slider min={0} max={maxHours * 3600} step={60} largeStep={900} value={view?.tSec ?? 0} disabled={!ready || !scheduled.size}
-          label={t("模拟时间轴", "Simulation timeline")} valueText={formatClock(view?.tSec ?? 0, startHour)} onValueChange={seek}
-          onKeyDown={event => { if (event.code === "Space") { event.preventDefault(); if (running) pause(); else start(); } }} />
-        <div className="ef-step-time" id="timeInfo">
-          <strong>{showResult && view ? formatClock(view.tSec, view.startHour) : "--:--:--"}</strong>
-          <span className="ef-muted">{showResult && view ? `${formatDuration(view.tSec)} / ${formatDuration(view.maxTSec)}` : t("尚未开始", "Not started")}</span>
-        </div>
+        <Action id="resetBtn" size="sm" icon={<RotateCcw />} onClick={reset} disabled={!ready}>
+          {t("重置模拟", "Reset simulation")}
+        </Action>
       </div>
     </Section>
 
     <Section>
       {showResult && view && timeline ? <MoodCharts view={view} timeline={timeline} rooms={config.rooms} onSeek={seek} />
-        : <div className="ef-empty"><p>{t("开始模拟后显示心情、换班与产率曲线。", "Start the simulation to see morale, shift changes and production rates.")}</p></div>}
+        : <div className="ef-empty"><p>{t("安排干员后点击「展示模拟结果」查看曲线。", "Assign operators, then choose Show results.")}</p></div>}
     </Section>
-    <details className="ef-step-report"><summary>{t("事件日志与模拟统计", "Events and statistics")}</summary>
-      <StepLog log={showResult && view ? view.log : []} startHour={startHour} onClear={playback.clearLog} />
-      <Section title={t("模拟统计", "Simulation statistics")}>
+    <details className="ef-step-report"><summary>{t("模拟设置", "Simulation settings")}</summary>
+      <StepSettings config={config} controls={controls} scheduled={scheduled} labelOf={labelOf} onControls={setControls}
+        onMood={changeMood} onWork={changeWork} onBoost={changeBoost} onPick={(day, index) => setPicker({ day, index })} />
+    </details>
+    <details className="ef-step-report" ref={reportRef}><summary>{t("事件日志与模拟统计", "Events and statistics")}</summary>
+      <StepLog log={showResult && view ? view.log : []} startHour={startHour} onClear={playback.clearLog} />      <Section title={t("模拟统计", "Simulation statistics")}>
       {showResult && view && config ? <StepStats view={view} rooms={config.rooms} />
         : <p className="ef-muted">{t("尚未开始", "Not started")}</p>}
       </Section>
     </details>
   </div>
-  <Dialog.Portal><Dialog.Backdrop className="ef-dialog-backdrop" />
-    <DialogFrame className="ef-production-dialog" title={t("模拟设置", "Simulation settings")} closeLabel={t("关闭模拟设置", "Close simulation settings")}
-      description={t("参数仅用于模拟回放，修改后重新开始。", "These settings apply to replay only. Changes reset playback.")}
-      footer={<Dialog.Close className={actionClassName({ size: "sm", variant: "yellow" })}><ActionContent>{t("完成", "Done")}</ActionContent></Dialog.Close>}>
-      <StepSettings config={config} controls={controls} scheduled={scheduled} labelOf={labelOf} onControls={setControls}
-        onMood={changeMood} onWork={changeWork} onBoost={changeBoost} onPick={(day, index) => setPicker({ day, index })} />
-      <StepPicker open={!!picker} title={pickerTitle} current={currentName} unavailable={unavailable}
-        onSelect={selectTarget} onClear={() => selectTarget(null)} onClose={() => setPicker(null)} />
-    </DialogFrame>
-  </Dialog.Portal>
-  </Dialog.Root>;
+  <StepPicker open={!!picker} title={pickerTitle} current={currentName} unavailable={unavailable}
+    onSelect={selectTarget} onClear={() => selectTarget(null)} onClose={() => setPicker(null)} />
+  </>;
 }
