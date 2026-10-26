@@ -156,6 +156,36 @@ test("center staffs only recovery operators and keeps the baseline production", 
   assert.ok(Math.abs(result.scores["干员经验"] - 99.22) < 1e-9);
   assert.ok(Math.abs(result.scores["武器经验"] - 97.02) < 1e-9);
   assert.ok(Math.abs(result.scores["培养"] - 775.7951219512195) < 1e-6);
+  const clueOption = result.production["线索"].options[0];
+  assert.equal(clueOption.name, "线索");
+  assert.equal(clueOption.units, 3.89);
+  assert.ok(Math.abs(clueOption.baseHours - (8_800_000 / (100 * 60 * 60))) < 1e-12);
+  const operatorExp = result.production["干员经验"];
+  const operatorExpByRecord = result.scores["干员经验"] * 360_000 / 3_520_000 * 10_000;
+  const operatorExpByCarrier = result.scores["干员经验"] * 360_000 / 8_800_000 * 25_000;
+  assert.ok(Math.abs(operatorExp.experience - operatorExpByRecord) < 1e-6);
+  assert.ok(Math.abs(operatorExp.experience - operatorExpByCarrier) < 1e-6);
+  assert.ok(Math.abs(operatorExp.sanity - operatorExp.experience / (170_000 / 80)) < 0.01);
+  const weaponExp = result.production["武器经验"];
+  const weaponItems = result.scores["武器经验"] * 360_000 / 3_520_000;
+  assert.ok(Math.abs(weaponExp.experience - weaponItems * 10_000) < 1e-6);
+  assert.ok(Math.abs(weaponExp.sanity - weaponExp.experience / (170_000 / 80)) < 0.01);
+  assert.deepEqual(result.production["培养"].options.map(option => [option.name, option.input, option.units, option.effectiveHours]), [["金色晶植", "受蚀玉化叶根茎", 18.62, 775.8]]);
+});
+
+test("mixed growth slots report each configured high-grade output separately", () => {
+  const operators = catalog.slice(0, 5).map(op => ({ name: op.name, elite: 4 }));
+  for (const grow of [
+    { 晶植: 0, 菌类: 3, 矿物: 6 },
+    { 晶植: 3, 菌类: 3, 矿物: 3 },
+  ]) {
+    const options = { ...DEFAULT_OPTIONS, grow };
+    const assignments = manualTemplate(options).map((room, index) => ({ ...room, a: [operators[index].name], b: [] }));
+    const result = evaluateManual({ operators, options }, assignments);
+    const outputs = result.production["培养"].options;
+    assert.deepEqual(outputs.map(option => option.kind).sort(), Object.entries(grow).filter(([, slots]) => slots > 0).map(([kind]) => kind).sort());
+    assert.ok(outputs.every(option => option.units > 0 && option.name.startsWith("金色")));
+  }
 });
 
 test("a roster without center recovery skills leaves the center unmanned", () => {
