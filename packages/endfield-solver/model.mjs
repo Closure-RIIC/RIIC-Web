@@ -1,7 +1,7 @@
 import raw from "./data/ship-data.json" with { type: "json" };
 import { loadShipData, skillsAtElite, skillsAtNodes } from "./upstream/ship-data.mjs";
 import { normalizeConfig, validateRoster } from "./upstream/config.mjs";
-export const SOLVER_REVISION = "455d7f17e06d7bb08ab7cef0f154b72b72455fd4";
+export const SOLVER_REVISION = "455d7f17e06d7bb08ab7cef0f154b72b72455fd4-output-v5";
 export const STORAGE_KEY = "riic:endfield:workspace:v1";
 export const CATEGORIES = ["线索", "干员经验", "武器经验", "培养"];
 const data = loadShipData(raw);

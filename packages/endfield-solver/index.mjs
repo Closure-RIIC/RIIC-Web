@@ -1,14 +1,131 @@
 import { prepare, manualTemplate, SOLVER_REVISION, validateOptions } from "./model.mjs";
 export { catalog, nonSchedulableOperators, DEFAULT_OPTIONS, STORAGE_KEY, SOLVER_REVISION, CATEGORIES, parseRoster, parseWorkspace, validateOptions, manualTemplate } from "./model.mjs";
+import rawShipData from "./data/ship-data.json" with { type: "json" };
 import { solveLayout, resetCaches, facilitySpecs } from "./upstream/optimizer.mjs";
 import { verifyPlan } from "./upstream/verify-plan.mjs";
 import { buildTimeline, COST_BASE, crewStats, integrate, integrateWrap, simulateFacility, simulateSingleFacility, val } from "./upstream/evaluator.mjs";
 import { fromIndices, toIndices } from "./upstream/set.mjs";
 
+// Upstream SpaceshipConst uses production points per second. The default
+// production rate is 100 and one clue fills at 8,800,000 points.
+const BASE_PRODUCTION_RATE_PER_SECOND = 100;
+const PROGRESS_PER_HOUR = BASE_PRODUCTION_RATE_PER_SECOND * 60 * 60;
+const CLUE_POINT_CAP = 8_800_000;
+const CLUE_HOURS_PER_UNIT = CLUE_POINT_CAP / PROGRESS_PER_HOUR;
+const OPERATOR_EXP_PER_ITEM = {
+  item_expcard_stage1_low: 200, item_expcard_stage1_mid: 1_000, item_expcard_stage1_high: 10_000,
+  // Cognitive carriers are converted to battle-record-equivalent EXP (2.5x).
+  item_expcard_stage2_low: 2_500, item_expcard_stage2_high: 25_000,
+};
+// WeaponExpItemTable.itemExp is the unified comparison value; weaponExp is
+// the separate in-game weapon-level value.
+const WEAPON_EXP_PER_ITEM = { item_weapon_expcard_low: 200, item_weapon_expcard_mid: 1_000, item_weapon_expcard_high: 10_000 };
+// The pinned Exp05 A/B bundles each equal 170,000 battle-record-equivalent
+// EXP per 80 sanity. Their stacking semantics are not present in the tables.
+const OPERATOR_EXP_PER_SANITY = 170_000 / 80;
+const WEAPON_EXP_PER_SANITY = 170_000 / 80;
+
+function facilityWithRecipe(predicate) {
+  return rawShipData.facilities.find(facility => facility.levels?.some(level => level.summary?.unlockRecipes?.some(predicate)));
+}
+
+function recipesAt(facility, level) {
+  return facility?.levels?.[Math.max(0, Math.min(facility.levels.length - 1, level - 1))]?.summary?.unlockRecipes ?? [];
+}
+
+function latestRecipe(facility, level, predicate) {
+  return recipesAt(facility, level).filter(predicate).sort((a, b) => b.totalProgress - a.totalProgress)[0] ?? null;
+}
+
+function highestRarityRecipe(facility, level, predicate) {
+  return recipesAt(facility, level).filter(predicate)
+    .sort((a, b) => (b.rarity ?? 0) - (a.rarity ?? 0) || b.totalProgress - a.totalProgress)[0] ?? null;
+}
+
+function growthOutputName(kind, rarity) {
+  const grade = rarity === 5 ? "金色" : `${rarity}级`;
+  return `${grade}${kind}`;
+}
+
+const manufacturingData = facilityWithRecipe(recipe => recipe.id?.startsWith("mfg_exp_"));
+const growthData = facilityWithRecipe(recipe => recipe.id?.startsWith("growcabin_"));
+
+function recipeUnits(effectiveHours, recipe, outputCount = 1) {
+  if (!recipe || !Number.isFinite(effectiveHours)) return 0;
+  return effectiveHours * PROGRESS_PER_HOUR / recipe.totalProgress * outputCount;
+}
+
+function buildProduction(rooms, scores, cfg) {
+  const production = {};
+  const manufacturingLevels = cfg.levels.manufacturing;
+  const roomLevel = key => key === "制造舱1" ? manufacturingLevels[0] : manufacturingLevels[1];
+  const roomsFor = category => rooms.filter(room => room.category === category);
+
+  if (roomsFor("线索").length) {
+    production["线索"] = {
+      options: [{
+        name: "线索",
+        units: Number((scores["线索"] / CLUE_HOURS_PER_UNIT).toFixed(2)),
+        baseHours: CLUE_HOURS_PER_UNIT,
+      }],
+      note: "按上游 8,800,000 点进度和 100 点/秒基础速率换算；具体线索类型仍由概率技能决定。",
+    };
+  }
+
+  const expRooms = roomsFor("干员经验");
+  if (expRooms.length) {
+    const experience = expRooms.reduce((total, room) => {
+      const level = roomLevel(room.key);
+      const recipe = latestRecipe(manufacturingData, level, item => item.id?.startsWith("mfg_exp_1_"))
+        ?? latestRecipe(manufacturingData, level, item => item.id?.startsWith("mfg_exp_2_"));
+      const expPerItem = OPERATOR_EXP_PER_ITEM[recipe?.productItemId];
+      return total + recipeUnits(room.value, recipe, 1) * (expPerItem ?? 0);
+    }, 0);
+    production["干员经验"] = {
+      options: [], experience: Number(experience.toFixed(2)), sanity: Number((experience / OPERATOR_EXP_PER_SANITY).toFixed(2)),
+      note: "干员经验按作战记录等效口径；认知载体按 2.5 倍折算。经验副本 A/B 任一奖励包均折合 17 万等效经验 / 80 理智，未假定两包叠加。",
+    };
+  }
+
+  const weaponRooms = roomsFor("武器经验");
+  if (weaponRooms.length) {
+    const experience = weaponRooms.reduce((total, room) => {
+      const recipe = latestRecipe(manufacturingData, roomLevel(room.key), item => item.id?.startsWith("mfg_weapon_exp_"));
+      return total + recipeUnits(room.value, recipe, 1) * (WEAPON_EXP_PER_ITEM[recipe?.productItemId] ?? 0);
+    }, 0);
+    production["武器经验"] = {
+      options: [], experience: Number(experience.toFixed(2)), sanity: Number((experience / WEAPON_EXP_PER_SANITY).toFixed(2)),
+      note: "武器经验按解包 WeaponExpItemTable 的 itemExp 统一口径；最高级武器经验副本折合 17 万等效经验 / 80 理智。",
+    };
+  }
+
+  const growRoom = rooms.find(room => room.category === "培养");
+  if (growRoom) {
+    const options = Object.entries(cfg.grow).filter(([, slots]) => slots > 0).map(([kind]) => {
+      const type = { 菌类: 1, 晶植: 2, 矿物: 3 }[kind];
+      const recipe = highestRarityRecipe(growthData, cfg.levels.grow, item => item.type === type);
+      if (!recipe) return null;
+      const effectiveHours = growRoom.avgByKind?.[kind] ?? 0;
+      return {
+        name: growthOutputName(kind, recipe.rarity),
+        kind,
+        units: Number(recipeUnits(effectiveHours, recipe, recipe.outcomeCount ?? 1).toFixed(2)),
+        slots: cfg.grow[kind],
+        baseHours: recipe.totalProgress / PROGRESS_PER_HOUR,
+        outputCount: recipe.outcomeCount ?? 1,
+        input: recipe.seed,
+        inputCount: recipe.seedCount ?? 1,
+        effectiveHours: Number(effectiveHours.toFixed(2)),
+      };
+    }).filter(Boolean);
+    production["培养"] = { options, note: "按当前培养位类别和培养舱等级对应的最高级素材换算。" };
+  }
+  return production;
+}
 
 function present(plan, status, verification, ops, cfg, started) {
   const names = mask => toIndices(mask ?? 0n).map(i => ops[i].name);
-  if (!plan) return { revision: SOLVER_REVISION, status, verification, elapsedMs: Date.now() - started, rooms: [], scores: {}, center: null };
+  if (!plan) return { revision: SOLVER_REVISION, status, verification, elapsedMs: Date.now() - started, rooms: [], scores: {}, production: {}, center: null };
   const rooms = plan.picks.map(p => {
     const crewA = (p.crewA ?? 0n) | (p.fillCrewA ?? 0n);
     const crewB = (p.crewB ?? 0n) | (p.fillCrewB ?? 0n);
@@ -33,13 +150,15 @@ function present(plan, status, verification, ops, cfg, started) {
       value: p.trueValue, converged: simulation.converged, days: simulation.days ?? 0,
       daily: simulation.daily ?? [], moodA: mood(p.stA, p.h ?? 24, p.h ?? 24, 24),
       moodB: p.single ? null : mood(p.stB, 24 - p.h, 0, p.h),
+      avgByKind: simulation.avgByKind ?? {},
       workHours: simulation.workHours ?? null, restHours: simulation.restHours ?? null,
       assist: p.assist ? { points: p.assist.points, shift: p.assist.shift, cycle: p.assist.cycle.map(day => day.map(i => ops[i].name)) } : null,
     };
   });
+  const scores = Object.fromEntries(cfg.priority.map((cat, i) => [cat, plan.score[i]]));
   return {
     revision: SOLVER_REVISION, status, verification, elapsedMs: Date.now() - started, rooms,
-    scores: Object.fromEntries(cfg.priority.map((cat, i) => [cat, plan.score[i]])),
+    scores, production: buildProduction(rooms, scores, cfg),
     center: { hour: plan.center.hCenter, a: plan.center.idxA.map(i => ops[i].name), b: plan.center.idxB.map(i => ops[i].name), recoveryA: plan.center.uA, recoveryB: plan.center.uB },
   };
 }
