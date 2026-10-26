@@ -1,3 +1,5 @@
+import { isDefensePortrait, type DefensePortrait } from "./defense-portraits";
+export { DEFENSE_PORTRAITS, defensePortraitUrl, type DefensePortrait } from "./defense-portraits";
 export const TEAM_CAPACITY = 4;
 export type GameServer = "official" | "bilibili";
 export const TEAM_DIFFICULTIES = ["ac1", "ac2", "ac3", "ac4"] as const;
@@ -51,12 +53,6 @@ export function coreBondCount(bonds: readonly DefenseFaction[]) {
 export function validCoreBondSelection(bonds: readonly DefenseFaction[]) {
   const count = coreBondCount(bonds);
   return count >= CORE_BOND_MIN && count <= CORE_BOND_MAX;
-}
-export const DEFENSE_PORTRAITS = ["default", "portrait-1", "portrait-2"] as const;
-export type DefensePortrait = (typeof DEFENSE_PORTRAITS)[number];
-export function defensePortraitUrl(value: DefensePortrait | undefined, seat = 0) {
-  const second = value === "portrait-2" || ((!value || value === "default") && seat % 2 === 1);
-  return `/images/defense-reference/${second ? "waiting-portrait-2.png" : "waiting-portrait.png"}`;
 }
 export type DefenseProfile = {
   portrait: DefensePortrait;
@@ -179,7 +175,7 @@ export function parseDefenseInput(value: unknown) {
   const favoriteFactions =
     action === "profile" ? parseFavoriteFactions(body.favoriteFactions) : [];
   const portrait = body.portrait === undefined ? "default" : body.portrait;
-  if (action === "profile" && !(DEFENSE_PORTRAITS as readonly unknown[]).includes(portrait)) return null;
+  if (action === "profile" && !isDefensePortrait(portrait)) return null;
   const profileOwner =
     typeof body.profileOwner === "string" && body.profileOwner.length <= 128
       ? body.profileOwner

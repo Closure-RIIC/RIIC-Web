@@ -117,7 +117,7 @@ export const defenseProfile = appSchema.table("defense_profile", {
   userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
   favoriteFactions: text("favorite_factions").array().default(sql`ARRAY[]::text[]`).notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-}, table => [check("defense_profile_portrait_check", sql`portrait IN ('default','portrait-1','portrait-2')`), check("defense_profile_factions_check",sql`cardinality(${table.favoriteFactions}) <= 23 AND ${table.favoriteFactions} <@ ARRAY['aegir','kazimierz','laterano','sargon','victoria','kjerag','siracusa','yan','harmony','precision','swift','dexterity','arcane','steadfast','support','foresight','miracle','investor','assault','unyielding','assistant','solo','technique']::text[]`)]);
+}, table => [check("defense_profile_portrait_check", sql`portrait IN ('default','portrait-1','portrait-2') OR portrait ~ '^char_[a-z0-9_]{1,64}$'`), check("defense_profile_factions_check",sql`cardinality(${table.favoriteFactions}) <= 23 AND ${table.favoriteFactions} <@ ARRAY['aegir','kazimierz','laterano','sargon','victoria','kjerag','siracusa','yan','harmony','precision','swift','dexterity','arcane','steadfast','support','foresight','miracle','investor','assault','unyielding','assistant','solo','technique']::text[]`)]);
 
 export const defenseMember = appSchema.table("defense_member", {
   userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),

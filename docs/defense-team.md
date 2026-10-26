@@ -22,7 +22,7 @@
 
 ## 数据与验证
 
-部署前运行 `npm run db:migrate`。本功能包含 `0028`–`0034` 迁移，保留此前本地迭代的迁移顺序；无账号、会话、真实连接信息或本地登录捷径改动。
+部署前运行 `npm run db:migrate`。本功能包含 `0028`–`0035` 迁移，保留此前本地迭代的迁移顺序；无账号、会话、真实连接信息或本地登录捷径改动。
 
 - `npm run test:defense-team`：参数、核心盟约数量与互补评分。
 - `npm run test:defense-team:integration`：配置专用 `AUTH_INTEGRATION_DATABASE_URL` 后运行。数据库名须为 `riic_defense_*_test`，或 CI 专用 `arknights_auth_test`；无配置时跳过。
@@ -37,4 +37,10 @@
 
 ## 个人立绘
 
-个人资料中可选择两张现有完整立绘，或恢复按座位分配的默认立绘。选择随账号保存，等待室轮询同步给队友；仅允许已收录的本地素材标识。新增迁移 0034_defense_portrait，需在启动前执行。
+个人资料可选择 432 名干员的默认立绘，支持中文名、拼音全拼和首字母搜索；保留两张原站立绘与按座位分配的默认选项。先点击干员预览，再点击「保存个人资料」，等待室会同步更新。选择独立保存在当前账号下，刷新或退出房间不会丢失。
+
+目录使用项目现有的干员数据，立绘来自已固定版本的 ArknightsGameResource `skin/*_1b.png`，下载后压缩为带透明通道的本地 WebP，离线可用。来源、原文件和本地文件 SHA-256 见 `apps/arknights/src/defense-portraits.json`。选择器分批展示并使用小头像缩略图，只有预览选中干员时加载完整立绘。
+
+新增迁移 `0035_defense_operator_portraits`，放宽数据库字段以保存干员标识；接口仍仅接受本地目录白名单，拒绝外部图片网址和未知标识。素材同步：`node scripts/sync-defense-portraits.mjs`；本地完整性校验：`node scripts/sync-defense-portraits.mjs --check`。版权仍归相关权利人，参见第三方资源说明。
+
+![干员立绘搜索与预览](images/defense-operator-picker.png)

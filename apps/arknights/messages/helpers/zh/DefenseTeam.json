@@ -248,8 +248,16 @@
   "protocolCreateBrief": "先创建站内四人匹配房间，队友入队后共享游戏房间码。",
   "matchRoomNote": "房主备注：{note}",
   "portraitTitle": "等待室立绘",
-  "portraitHint": "选择个人立绘，保存后队友也能看到。当前提供两张参考立绘。",
+  "portraitHint": "选择喜欢的干员立绘，随账号保存，队友在等待室也能看到。",
   "portrait_default": "默认立绘",
   "portrait_portrait-1": "立绘一",
-  "portrait_portrait-2": "立绘二"
+  "portrait_portrait-2": "立绘二",
+  "portraitSearch": "搜索干员",
+  "portraitSearchPlaceholder": "输入干员名字、拼音或首字母，如：阿米娅 / amiya / amy",
+  "portraitOriginals": "原站立绘与默认选项",
+  "portraitOperators": "干员立绘目录",
+  "portraitCount": "找到 {count} 名干员",
+  "portraitNoResults": "没有找到对应干员，试试其他名字或拼音。",
+  "portraitLoadMore": "加载更多干员",
+  "portraitSelected": "当前选择 · 点击保存后生效"
 }

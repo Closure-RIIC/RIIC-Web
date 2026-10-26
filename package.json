@@ -64,7 +64,7 @@
     "assets:room-emblems": "node scripts/extract-room-emblems.mjs",
     "assets:sync:arkntools": "node scripts/sync-arkntools-assets.mjs",
     "assets:site-icon": "node scripts/generate-site-icons.mjs",
-    "assets:check": "node scripts/generate-site-icons.mjs --check && node scripts/sync-arkntools-assets.mjs --check && node scripts/generate-mastery-data.mjs --check",
+    "assets:check": "node scripts/generate-site-icons.mjs --check && node scripts/sync-arkntools-assets.mjs --check && node scripts/generate-mastery-data.mjs --check && node scripts/sync-defense-portraits.mjs --check",
     "assets:mastery": "node scripts/generate-mastery-data.mjs",
     "assets:gacha-up": "node scripts/sync-gacha-up.mjs",
     "assets:gacha-titles": "node scripts/sync-gacha-titles.mjs",

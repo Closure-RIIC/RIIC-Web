@@ -1,3 +1,4 @@
+import { isDefensePortrait } from "../defense-portraits";
 import { randomUUID, randomBytes } from "node:crypto";
 import { getDatabasePool } from "@riic/platform-server/db";
 import { PublicApiError } from "@riic/platform-server/api-contract";
@@ -126,6 +127,8 @@ export async function mutateDefenseRoom(userId: string, input: Input) {
         throw invalid(
           "核心盟约至少选择2个、至多4个。 / Choose 2–4 core bonds.",
         );
+      if (!isDefensePortrait(input.portrait ?? "default"))
+        throw invalid("请选择已收录的干员立绘。 / Choose a known operator illustration.");
       await db.query(
         "INSERT INTO app.defense_profile (user_id,favorite_factions,portrait) VALUES ($1,$2::text[],$3) ON CONFLICT (user_id) DO UPDATE SET favorite_factions=EXCLUDED.favorite_factions,portrait=EXCLUDED.portrait,updated_at=now()",
         [userId, input.favoriteFactions, input.portrait ?? "default"],

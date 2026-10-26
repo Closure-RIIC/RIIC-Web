@@ -102,3 +102,7 @@ The font is self-hosted in the Vite build. Runtime pages do not request the font
 - 菜单图标原路径：`assets/local/ui/outer/operator_preset.webp`。
 
 以上文件均需结合上述第三方权利说明审查，不主张其原创权或额外授权。
+
+## 卫戍协议可选干员完整立绘
+
+`apps/arknights/public/images/defense-operators` 的 432 张完整立绘复用本项目既有的 [yuanyan3060/ArknightsGameResource](https://github.com/yuanyan3060/ArknightsGameResource) 固定提交 `512db2d9a1b58bfd35f8c93c4c7ff41e284f7b35` 中 `skin/<干员标识>_1b.png`，压缩为透明 WebP 并在本地加载。来源仓库声明游戏素材版权归 Arknights/上海鹰角网络科技有限公司，供学习交流；仓库标注 AGPL-3.0，不代表素材权利人另行授予了商用或再分发许可。各原文件及转换后文件 SHA-256 记录在 `apps/arknights/src/defense-portraits.json`；生成与检查脚本为 `scripts/sync-defense-portraits.mjs`。本项目不主张拥有这些游戏美术内容。

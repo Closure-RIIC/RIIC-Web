@@ -589,11 +589,3 @@
     transition: none;
   }
 }
-
-.portraitChoices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 12px 0 24px; }
-.portraitChoices button { border: 1px solid #3b6250; background: #091a16; color: #d9ebe6; padding: 8px; cursor: pointer; }
-.portraitChoices button[aria-pressed="true"] { border-color: #59f4ca; box-shadow: inset 0 0 0 1px #59f4ca; }
-.portraitChoices button:focus-visible { outline: 2px solid #59f4ca; outline-offset: 3px; }
-.portraitChoices button:disabled { opacity: .5; cursor: default; }
-.portraitChoices img { width: 100%; height: 150px; object-fit: contain; }
-.portraitChoices span { display: block; margin-top: 6px; }

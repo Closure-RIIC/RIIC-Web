@@ -229,7 +229,7 @@ test("four-player room concurrency, membership, host permissions, expiry and cod
       action: "profile",
       profileOwner: users[3],
       favoriteFactions: ["kazimierz", "yan", "harmony", "technique"],
-      portrait: "portrait-2",
+      portrait: "char_002_amiya",
     });
     assert.deepEqual((await profile(users[3])).favoriteFactions, [
       "kazimierz",
@@ -238,7 +238,7 @@ test("four-player room concurrency, membership, host permissions, expiry and cod
       "technique",
     ]);
     assert.deepEqual((await profile(users[0])).favoriteFactions, []);
-    assert.equal((await profile(users[3])).portrait, "portrait-2");
+    assert.equal((await profile(users[3])).portrait, "char_002_amiya");
     assert.equal((await profile(users[0])).portrait, "default");
     const publicRoom = (await list(users[9])).find(
       (room) => room.id === fourthDifficulty,
@@ -251,7 +251,7 @@ test("four-player room concurrency, membership, host permissions, expiry and cod
       ),
       true,
     );
-    assert.equal(publicRoom.members.find(member => member.portrait === "portrait-2")?.portrait, "portrait-2");
+    assert.equal(publicRoom.members.find(member => member.portrait === "char_002_amiya")?.portrait, "char_002_amiya");
     assert.equal(publicRoom.roomCode, null);
     await act(users[3], { action: "leave" });
     assert.deepEqual(

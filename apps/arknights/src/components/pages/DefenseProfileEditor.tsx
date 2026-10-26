@@ -4,8 +4,6 @@ import { createPlatformClient } from "@riic/platform/client";
 import {
   type DefenseFaction,
   type DefensePortrait,
-  DEFENSE_PORTRAITS,
-  defensePortraitUrl,
   type DefenseProfile,
   validCoreBondSelection,
 } from "../../defense-team-validation";
@@ -22,6 +20,7 @@ import { Badge } from "../ui/badge";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Check, LoaderCircle, ShieldCheck, UserRound } from "lucide-react";
 import styles from "./DefenseProfileEditor.module.css";
+import { DefensePortraitPicker } from "./DefensePortraitPicker";
 import { DefenseBondPicker } from "./DefenseBondPicker";
 
 const api = createPlatformClient();
@@ -136,18 +135,8 @@ export function DefenseProfileEditor({
         </div>
       </CardHeader>
       <CardContent>
-        <h3 className={styles.sectionHeading}>{t("portraitTitle")}</h3>
-        <p className={styles.hint}>{t("portraitHint")}</p>
-        <div className={styles.portraitChoices}>
-          {DEFENSE_PORTRAITS.map((value) => (
-            <button key={value} type="button" aria-pressed={portrait === value}
-              disabled={loading || saving || !profile}
-              onClick={() => { setPortrait(value); setSaved(false); }}>
-              <img src={defensePortraitUrl(value)} alt="" loading="lazy" />
-              <span>{t(`portrait_${value}`)}</span>
-            </button>
-          ))}
-        </div>
+        <DefensePortraitPicker value={portrait} disabled={loading || saving || !profile}
+          onChange={(value) => { setPortrait(value); setSaved(false); }} />
         <div className={styles.sectionHeading}>
           <h3>{t("favoriteFactions")}</h3>
           <Badge variant="secondary">

@@ -248,8 +248,16 @@
   "protocolCreateBrief": "Create a four-player matching room and share the game room code after teammates join.",
   "matchRoomNote": "Host note: {note}",
   "portraitTitle": "Waiting room portrait",
-  "portraitHint": "Save a portrait for your teammates to see. Two reference portraits are available.",
+  "portraitHint": "Choose your favorite operator illustration. Save it to your profile for teammates to see in the waiting room.",
   "portrait_default": "Default",
   "portrait_portrait-1": "Portrait 1",
-  "portrait_portrait-2": "Portrait 2"
+  "portrait_portrait-2": "Portrait 2",
+  "portraitSearch": "Search operators",
+  "portraitSearchPlaceholder": "Operator name, pinyin or initials, e.g. amiya / amy",
+  "portraitOriginals": "Original artwork and default options",
+  "portraitOperators": "Operator illustration catalogue",
+  "portraitCount": "{count} operators found",
+  "portraitNoResults": "No operators found. Try another name or pinyin.",
+  "portraitLoadMore": "Load more operators",
+  "portraitSelected": "Selected · Save profile to apply"
 }

@@ -231,8 +231,19 @@ test("four-player room input bounds text and requires a known action and server"
 
 test("personal portraits accept only known local artwork", () => {
   const profile = { action: "profile", profileOwner: "test", favoriteFactions: ["yan", "sargon"] };
-  for (const portrait of ["default", "portrait-1", "portrait-2"]) assert.equal(parseDefenseInput({ ...profile, portrait })?.portrait, portrait);
-  for (const portrait of ["https://example.com/a.png", "../secret", null, 1]) {
+  for (const portrait of ["default", "portrait-1", "portrait-2", "char_002_amiya"]) assert.equal(parseDefenseInput({ ...profile, portrait })?.portrait, portrait);
+  for (const portrait of ["https://example.com/a.png", "../secret", "char_999999_unknown", "char_002_amiya/../../secret", null, 1]) {
     assert.equal(parseDefenseInput({ ...profile, portrait }), null);
   }
+});
+
+ test("operator illustrations search by Chinese, pinyin and initials and use pinned local images", async () => {
+  const { searchDefensePortraits, defensePortraitUrl, DEFENSE_OPERATOR_PORTRAITS } = await import("./defense-portraits.ts");
+  assert.equal(DEFENSE_OPERATOR_PORTRAITS.length, 432);
+  for (const query of ["阿米娅", "amiya", "amy", " AMIYA "]) {
+    assert.ok(searchDefensePortraits(query).some((operator) => operator.id === "char_002_amiya"));
+  }
+  assert.deepEqual(searchDefensePortraits("没有这名干员xyz"), []);
+  assert.match(defensePortraitUrl("char_002_amiya"), /^\/images\/defense-operators\/char_002_amiya\.webp\?v=[a-f0-9]{12}$/);
+  assert.equal(defensePortraitUrl("default", 1), "/images/defense-reference/waiting-portrait-2.png");
 });
