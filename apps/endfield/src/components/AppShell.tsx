@@ -14,6 +14,7 @@ import { requestAccountSignIn } from "@riic/shell/account-sign-in";
 import { AccountDialogHost } from "./AccountDialogHost";
 import { SiteFooter } from "./SiteFooter";
 import { RosterDialogProvider } from "./RosterDialog";
+import { SklandSyncDetails } from "./SklandSyncDetails";
 import { WorkspaceLiveActivity } from "./WorkspaceLiveActivity";
 
 function AccountMenu() {
@@ -66,6 +67,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div id="endfield-scrollbar" data-app-page-scrollbar data-yeye-scroll-slot-host />
     <PageScrollbar />
     <WorkspaceLiveActivity />
+    <SklandSyncDetails />
     <AccountDialogHost />
     </RosterDialogProvider>
   </SidebarProvider></TooltipProvider>;

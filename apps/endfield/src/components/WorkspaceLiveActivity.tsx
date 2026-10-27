@@ -13,7 +13,7 @@ type RosterActivity = { kind: "roster"; id: number; phase: "warning" };
 type WorkspaceActivity = SolverActivity | ManualEvaluationActivity | SklandSyncActivity | AccountActivity | RosterActivity;
 
 export function WorkspaceLiveActivity() {
-  const { activity, manualEvaluationActivity, sklandSyncActivity, workspace, ready } = useWorkspace();
+  const { activity, manualEvaluationActivity, sklandSyncActivity, sklandSyncDetailsOpen, sklandSyncReport, workspace, ready } = useWorkspace();
   const path = useRouterState({ select: state => state.location.pathname });
   const needsRoster = ready && path === "/manual" && workspace.operators.length === 0;
   const rosterSequence = useRef(0);
@@ -24,7 +24,7 @@ export function WorkspaceLiveActivity() {
   const accountActivity = useAccountActivity();
   const [dismissed, setDismissed] = useState<Partial<Record<WorkspaceActivity["kind"], string>>>({});
   const dismiss = useCallback((item: WorkspaceActivity) => setDismissed(current => ({ ...current, [item.kind]: `${item.id}:${item.phase}` })), []);
-  const available = [activity, manualEvaluationActivity, sklandSyncActivity, accountActivity, rosterActivity].filter((item): item is WorkspaceActivity => !!item && dismissed[item.kind] !== `${item.id}:${item.phase}`);
+  const available = [activity, manualEvaluationActivity, sklandSyncActivity, accountActivity, rosterActivity].filter((item): item is WorkspaceActivity => !!item && !(item.kind === "skland" && (sklandSyncDetailsOpen || path === "/skland" && !!sklandSyncReport)) && dismissed[item.kind] !== `${item.id}:${item.phase}`);
   const current = available.find(item => item.phase === "running") ?? available.find(item => item.kind === "account")
     ?? available.filter(item => item.kind !== "roster").sort((a, b) => b.id - a.id)[0] ?? available.find(item => item.kind === "roster");
   return <AnimatePresence initial={false} mode="wait">
@@ -38,7 +38,7 @@ function ActivitySurface({ activity, onDismiss }: {
   activity: WorkspaceActivity;
   onDismiss: (activity: WorkspaceActivity) => void;
 }) {
-  const { t, retrySolve } = useWorkspace();
+  const { t, retrySolve, sklandSyncReport, setSklandSyncDetailsOpen } = useWorkspace();
   const { openRoster } = useRosterDialog();
   const reduceMotion = useReducedMotion();
   const present = useIsPresent();
@@ -175,6 +175,7 @@ function ActivitySurface({ activity, onDismiss }: {
           openRoster(document.querySelector<HTMLElement>("[data-manual-slot]") ?? undefined);
           onDismiss(activity);
         }}>{t("配置干员", "Set up operators")}</button> : null}
+        {activity.kind === "skland" && sklandSyncReport ? <button type="button" aria-haspopup="dialog" onClick={() => { setSklandSyncDetailsOpen(true); onDismiss(activity); }}>{t("查看明细", "View details")}</button> : null}
         {activity.phase === "error" ? <button type="button" onClick={activity.kind === "evaluation" ? activity.retry : retrySolve}>{t("重试", "Retry")}</button> : null}
         <button type="button" onClick={() => onDismiss(activity)}
           aria-label={activity.kind === "roster" ? t("关闭干员配置提示", "Dismiss roster notification") : activity.kind === "account" ? t("关闭账号提示", "Dismiss account notification") : activity.kind === "skland" ? t("关闭同步提示", "Dismiss sync notification") : t("关闭求解提示", "Dismiss solver notification")}>{t("收起", "Dismiss")}</button>
@@ -194,6 +195,5 @@ function SklandSyncSummary({ status }: { status: SklandSyncStatus }) {
     {status.partial && !status.blocked ? <p>{t("本次仅返回部分干员，已保留该角色此前同步的其余名单。", "Only part of the roster was returned. Other operators previously saved for this character were retained.")}</p> : null}
     {!status.facilitiesApplied && !status.blocked ? <p>{t("设施数据不完整，已保留原设施配置，请在排班前确认等级。", "Facility data is incomplete. The previous setup was kept; check facility levels before scheduling.")}</p> : null}
     {status.unsupported.length ? <p>{t("暂未支持，未纳入排班：", "Not yet supported; excluded from scheduling: ")}{status.unsupported.join("、")}</p> : null}
-    {status.excluded.length ? <p>{t("无基建技能，未纳入排班：", "No ship skills; excluded from scheduling: ")}{status.excluded.join("、")}</p> : null}
   </div>;
 }
