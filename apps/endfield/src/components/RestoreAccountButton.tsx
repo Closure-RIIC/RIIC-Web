@@ -3,6 +3,7 @@ import { Action, Notice } from "@riic/endfield-ui";
 import type { EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { useWorkspace } from "../state";
 import { sklandApi } from "../skland-client";
+import { buildSklandSyncReport } from "../skland-sync-report";
 import { syncSklandWorkspace } from "../skland-workspace";
 import { operatorCatalog } from "@riic/endfield-data";
 
@@ -39,7 +40,7 @@ export function RestoreAccountButton() {
         facilitiesApplied = restored.status.facilitiesApplied;
         const next = { ...restored.workspace };
         delete next.manual;
-        reportSklandSync(restored.status);
+        reportSklandSync(restored.status, buildSklandSyncReport(current, restored.workspace, restored.status, current.rosterSource ?? ""));
         return next;
       });
       setSklandSnapshot(snapshot);
