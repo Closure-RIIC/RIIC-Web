@@ -1,0 +1,20 @@
+.header:global(.ef-skland-header) { padding: 22px 24px; margin-bottom: 12px; border: 1px solid var(--ef-line); border-radius: 14px; background: var(--ef-surface); gap: 20px; }
+.header :global(.ef-skland-profile) { flex-basis: 220px; }
+.controls:global(.ef-skland-controls) { display: grid; justify-items: end; gap: 12px; }
+.controls :global(.ef-skland-selectors) { width: min(360px, 100%); }
+.actions:global(.ef-actions) { gap: 8px; }
+.syncBar { display: flex; align-items: center; gap: 11px; padding: 12px 16px; margin-bottom: 24px; border-radius: 10px; background: var(--ef-raised); border: 1px solid color-mix(in oklab, var(--ef-line) 55%, transparent); }
+.syncMark { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: #d8eee5; color: #16634c; flex-shrink: 0; }
+.warning { background: #f4e7d1; color: #88511d; }
+.syncCopy { flex: 1; min-width: 0; }
+.syncCopy strong { display: block; font-size: 12px; font-weight: 500; line-height: 1.6; }
+.syncCopy > span { display: flex; align-items: center; gap: 8px; color: var(--ef-muted); font-size: 11px; line-height: 1.7; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.syncCopy i { width: 3px; height: 3px; border-radius: 50%; background: var(--ef-muted); }
+@media (max-width: 640px) {
+  .header:global(.ef-skland-header) { padding: 16px; gap: 16px; }
+  .controls:global(.ef-skland-controls) { width: 100%; justify-items: stretch; }
+  .controls :global(.ef-skland-selectors) { width: 100%; }
+  .actions:global(.ef-actions) { flex-wrap: wrap; }
+  .syncBar { padding: 12px; flex-wrap: wrap; gap: 8px; }
+  .syncBar > :last-child { margin-left: auto; }
+}

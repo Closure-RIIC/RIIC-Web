@@ -99,7 +99,8 @@
     "test:workspace": "node --test scripts/workspace-layout.test.mjs",
     "test:platform:integration": "node scripts/test-platform-auth.mjs",
     "test:platform": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test packages/contracts/*.test.ts packages/platform/*.test.ts packages/platform-server/src/request-context.test.ts packages/platform-server/src/response-cookies.test.ts packages/platform-server/src/snapshot-cache.test.ts packages/platform-server/src/proxy.test.ts packages/platform-server/src/auth/shared-session.test.ts && node --experimental-strip-types --experimental-test-module-mocks --test packages/platform-server/src/auth/endfield-access.test.ts packages/platform-server/src/auth/password-reset-privacy.test.ts",
-    "release:stage:app": "node scripts/stage-app-release.mjs"
+    "release:stage:app": "node scripts/stage-app-release.mjs",
+    "test:endfield:sync-details:e2e": "node scripts/test-endfield-sync-details-e2e.mjs"
   },
   "devDependencies": {
     "@tanstack/router-generator": "1.167.46",

@@ -1,0 +1,13 @@
+.root { width: 100%; min-width: 0; }
+.summary { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.value { display: flex; align-items: baseline; flex-wrap: wrap; gap: 7px; font-variant-numeric: tabular-nums; }
+.value strong { font-size: 32px; font-weight: 600; line-height: 1.2; color: var(--ef-ink); }
+.value > span { font-size: 14px; color: var(--ef-muted); }
+.percent { flex-shrink: 0; font-size: 12px; color: var(--ef-muted); font-variant-numeric: tabular-nums; }
+.root .bar, .placeholder { display: block; width: 100%; height: 10px; appearance: none; border: 1px solid color-mix(in oklab, var(--ef-line) 65%, transparent); border-radius: 6px; overflow: hidden; background: var(--muted); color: var(--ef-ink); }
+.root .bar::-webkit-progress-bar { background: var(--muted); border-radius: 6px; }
+.root .bar::-webkit-progress-value { background: var(--ef-ink); border-radius: 5px; }
+.root .bar::-moz-progress-bar { background: var(--ef-ink); border-radius: 5px; }
+.compact { padding: 12px 0 16px; }
+.compact .value strong { font-size: 26px; }
+.hint { color: var(--ef-muted); font-size: 12px; line-height: 1.6; margin-top: 8px; }

@@ -3,6 +3,7 @@ import { Section } from "@riic/endfield-ui";
 import { detailLabels, type DetailRecord, type DetailValue } from "@riic/endfield-skland/details";
 import type { EndfieldRole, EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { useWorkspace } from "../state";
+import { SklandProgress } from "./SklandProgress";
 import { SklandInventory } from "./SklandInventory";
 import { Tabs, CompactTabsList, TabsTrigger, TabsContent } from "@riic/ui-primitives/tabs";
 import { SearchInput } from "@riic/ui-primitives/search-input";
@@ -61,9 +62,19 @@ function DataFields({ value, names, field = "" }: { value: DetailValue; names: M
 }
 
 function StatusCard({ title, current, max, description }: { title: string; current: number | null; max: number | null; description: string }) {
-  return <article className="ef-status-card"><h3>{title}</h3><p className="ef-status-value">{current ?? "—"}{max !== null ? <small> / {max}</small> : null}</p>
-    {current !== null && max !== null && max > 0 ? <progress value={Math.min(current, max)} max={max} aria-label={title} /> : null}
+  return <article className="ef-status-card"><h3>{title}</h3>
+    <SklandProgress label={title} current={current} max={max} />
     <p className="ef-muted">{description}</p></article>;
+}
+
+function ProgressDetails({ label, data, currentKey, maxKey, names }: {
+  label: string; data: DetailRecord; currentKey: string; maxKey: string; names: Map<string, string>;
+}) {
+  const remaining = Object.fromEntries(Object.entries(data).filter(([key]) => key !== currentKey && key !== maxKey));
+  return <>
+    <SklandProgress label={label} current={quantity(data[currentKey])} max={quantity(data[maxKey])} compact />
+    {Object.keys(remaining).length ? <DataFields value={remaining} names={names} /> : null}
+  </>;
 }
 
 export function SklandProfile({ snapshot, role, accountLabel }: { snapshot: EndfieldSnapshot | null; role?: EndfieldRole; accountLabel?: string }) {
@@ -140,8 +151,8 @@ export function SklandDataView({ snapshot }: { snapshot: EndfieldSnapshot }) {
         </div>
         <Section title={t("角色信息", "Character information")}><DataFields value={Object.fromEntries(Object.entries(base).filter(([key]) => !["avatarUrl", "name", "roleId", "serverName"].includes(key)))} names={names} /></Section>
         <Section title={t("日常详情", "Daily details")}><div className="ef-data-columns">
-          {data.dungeon ? <Disclosure title={t("理智恢复", "Sanity recovery")}><DataFields value={data.dungeon} names={names} /></Disclosure> : null}
-          {data.bpSystem ? <Disclosure title={t("通行证进度", "Battle pass progress")}><DataFields value={data.bpSystem} names={names} /></Disclosure> : null}
+          {data.dungeon ? <Disclosure title={t("理智恢复", "Sanity recovery")}><ProgressDetails label={t("理智恢复", "Sanity recovery")} data={sanity} currentKey="curStamina" maxKey="maxStamina" names={names} /></Disclosure> : null}
+          {data.bpSystem ? <Disclosure title={t("通行证进度", "Battle pass progress")}><ProgressDetails label={t("通行证进度", "Battle pass progress")} data={pass} currentKey="curLevel" maxKey="maxLevel" names={names} /></Disclosure> : null}
         </div></Section>
       </TabsContent>
       <TabsContent value="operators"><Section>
