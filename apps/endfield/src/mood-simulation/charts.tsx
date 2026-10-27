@@ -233,14 +233,13 @@ function useRateSeries(timeline: StepView, roomKey: string, selectedKey: string 
     const keys = [...new Set(timeline.history.flatMap(point => Object.keys(point.rates[roomKey] ?? {})))];
     const activeKey = selectedKey && keys.includes(selectedKey) ? selectedKey : keys[0] ?? null;
     const history = chartHistory(timeline.history, roomKey, activeKey);
-    let peak = 0;
     const rows = history.map(point => {
       const rate = activeKey ? point.rates[roomKey]?.[activeKey] ?? 0 : 0;
       // 中枢本来就是百分点；生产舱室倍率转成原版图表的百分比。
       const value = roomKey === "中枢" ? rate : rate * 100;
-      peak = Math.max(peak, value);
       return { hour: point.tSec / 3600, rate0: value };
     });
+    const peak = rows.reduce((highest, point) => Math.max(highest, point.rate0), 0);
     return { rows, keys, max: Math.max(100, Math.ceil((peak * 1.15) / 50) * 50), activeKey };
   }, [timeline, roomKey, selectedKey]);
 }
