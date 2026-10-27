@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Notice, Section } from "@riic/endfield-ui";
 import type { EndfieldInventory, EndfieldMaterialGroup } from "@riic/endfield-skland/inventory";
+import { inventoryExperienceSummary } from "@riic/endfield-skland/inventory-summary";
 import { useWorkspace } from "../state";
 import { SearchInput } from "@riic/ui-primitives/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@riic/ui-primitives/tabs";
@@ -10,6 +11,7 @@ export function SklandInventory({ inventory }: { inventory?: EndfieldInventory }
   const [search, setSearch] = useState("");
   const [group, setGroup] = useState("all");
   const items = inventory?.items ?? [];
+  const experience = inventoryExperienceSummary(inventory);
   const groups: [EndfieldMaterialGroup, string][] = [
     ["charExpMaterials", t("干员经验", "Operator EXP")],
     ["weaponExpMaterials", t("武器经验", "Weapon EXP")],
@@ -17,6 +19,9 @@ export function SklandInventory({ inventory }: { inventory?: EndfieldInventory }
     ["other", t("其他物品", "Other items")],
   ];
   const query = search.trim().toLocaleLowerCase();
+  const wan = (value: number) => `${(value / 10_000).toLocaleString(locale === "zh" ? "zh-CN" : "en-US", {
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  })} ${t("万经验", "10k EXP")}`;
   const filtered = items.filter(item => (group === "all" || item.group === group)
     && (item.name.toLocaleLowerCase().includes(query) || item.id.toLowerCase().includes(query)));
   const issue = inventory?.issue;
@@ -44,8 +49,14 @@ export function SklandInventory({ inventory }: { inventory?: EndfieldInventory }
         value={search} onChange={event => setSearch(event.target.value)} onClear={() => setSearch("")} clearLabel={t("清空搜索", "Clear search")} />
       {groups.map(([id, title]) => {
         const rows = filtered.filter(item => item.group === id);
+        const summary = id === "charExpMaterials" && experience.operator
+          ? `${t("认知载体", "Cognitive carriers")} ${wan(experience.operator.carriers)} · ${t("作战记录", "Battle records")} ${wan(experience.operator.records)}`
+          : id === "weaponExpMaterials" && experience.weapon !== null
+            ? `${t("合计", "Total")} ${wan(experience.weapon)}`
+            : null;
         return rows.length ? <div key={id} className="ef-inventory-group">
           <h3>{title}<small>{rows.length}</small></h3>
+          {summary ? <p className="ef-inventory-summary">{summary}</p> : null}
           <div className="ef-inventory-grid">{rows.map(item => <article key={item.id} className="ef-inventory-item" data-material-id={item.id}>
             {item.icon ? <img src={item.icon} alt="" width={44} height={44} loading="lazy" referrerPolicy="no-referrer" /> : <span className="ef-inventory-placeholder" aria-hidden="true">◇</span>}
             <div><h4 title={item.id}>{item.name}</h4><p>{t("库存", "In stock")}</p></div>

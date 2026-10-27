@@ -19,8 +19,8 @@ const detail = {
   })), { id: "owned-instance-admin", charData: { id: "chr_0003_endminf", name: "管理员" }, evolvePhase: 4, level: 90 },
   { id: "new-unknown", charData: { name: "未知测试干员" }, evolvePhase: 0, level: 1 }],
   spaceShip: { rooms: [
-    { id: "center", type: 0, level: 4, chars: [{ charId: catalog[0].id, physicalStrength: 83, favorability: 60 }], reports: { "123": { output: { item: 18 } } } },
-    { id: "m1", type: 1, level: 3 }, { id: "m2", type: 1, level: 2 }, { id: "grow", type: 2, level: 2 }, { id: "guest", type: 5, level: 2 },
+    { id: "center", type: 0, level: 4, chars: [{ charId: catalog[0].id, physicalStrength: 3449.2324, favorability: 340 }, { charId: catalog[1].id, physicalStrength: 5000, favorability: 690 }], reports: { "123": { output: { item: 18 } } } },
+    { id: "m1", type: 1, level: 3 }, { id: "m2", type: 1, level: 2 }, { id: "grow", type: 2, level: 2 }, { id: "guest", type: 5, level: 2 }, { id: "reception", type: 3, level: 1 },
   ] },
   dailyMission: { dailyActivation: 80, maxDailyActivation: 100 }, dungeon: { curStamina: "120", maxStamina: "240" },
   achieve: { count: 50 }, bpSystem: { curLevel: 20, maxLevel: 60 },
@@ -28,16 +28,34 @@ const detail = {
   futureCategory: { fixtureField: "新字段也会显示" },
 };
 const snapshot = normalizeEndfieldSnapshot(detail);
-const materials = Object.fromEntries(Array.from({ length: 40 }, (_, i) => [`material-${i}`, {
+const materials = Object.fromEntries(Array.from({ length: 32 }, (_, i) => [`material-${i}`, {
   id: `material-${i}`, name: i === 0 ? "测试折金" : `测试材料 ${i}`,
 }]));
+const charExpMaterials = {
+  item_expcard_stage2_high: { id: "item_expcard_stage2_high", name: "高级认知载体" },
+  item_expcard_stage2_low: { id: "item_expcard_stage2_low", name: "初级认知载体" },
+  item_expcard_stage1_high: { id: "item_expcard_stage1_high", name: "高级作战记录" },
+  item_expcard_stage1_mid: { id: "item_expcard_stage1_mid", name: "中级作战记录" },
+  item_expcard_stage1_low: { id: "item_expcard_stage1_low", name: "初级作战记录" },
+};
+const weaponExpMaterials = {
+  item_weapon_expcard_high: { id: "item_weapon_expcard_high", name: "武器检查套组" },
+  item_weapon_expcard_mid: { id: "item_weapon_expcard_mid", name: "武器检查装置" },
+  item_weapon_expcard_low: { id: "item_weapon_expcard_low", name: "武器检查单元" },
+};
+const catalogItems = { ...materials, ...charExpMaterials, ...weaponExpMaterials };
+const expCounts = {
+  item_expcard_stage2_high: 826, item_expcard_stage2_low: 5_442,
+  item_expcard_stage1_high: 263, item_expcard_stage1_mid: 981, item_expcard_stage1_low: 958,
+  item_weapon_expcard_high: 798, item_weapon_expcard_mid: 312, item_weapon_expcard_low: 523,
+};
 const materialCatalog = { code: 0, data: {
-  materials, charExpMaterials: Object.fromEntries(Object.entries(materials).slice(1, 5)),
-  weaponExpMaterials: Object.fromEntries(Object.entries(materials).slice(5, 8)),
+  materials, charExpMaterials, weaponExpMaterials,
+  priorities: [{ ids: Object.keys(catalogItems) }],
 } };
 const inventory = (selected, offset = 0) => normalizeEndfieldInventory(materialCatalog, {
   code: 0, data: { userGameData: { roleId: selected.roleId, serverId: selected.serverId,
-    itemCount: Object.fromEntries(Object.keys(materials).map((id, i) => [id, i + offset])) } },
+    itemCount: Object.fromEntries(Object.keys(catalogItems).map((id, i) => [id, (expCounts[id] ?? i) + offset])) } },
 }, selected);
 snapshot.inventory = inventory(role);
 snapshot.weapons = normalizeEndfieldWeapons({ code: 0, data: { userGameData: { ...role, userWeapons: [
@@ -151,6 +169,10 @@ try {
   assert.ok((await page.locator(".ef-sync-note").boundingBox()).y >= inventoryBottom.y + inventoryBottom.height, "Inventory explanation follows the item list");
   assert.equal(await page.locator("[data-material-id]").count(), 40);
   assert.equal(await page.locator('[data-material-id="material-0"] [data-material-count]').textContent(), "0");
+  assert.deepEqual(await page.locator(".ef-inventory-summary").allTextContents(), [
+    "认知载体 1,370.20 万经验 · 作战记录 380.26 万经验",
+    "合计 839.66 万经验",
+  ], "Inventory EXP summaries use raw item EXP and separate carriers from battle records");
   await page.getByLabel("搜索仓库物品", { exact: true }).fill("测试折金");
   assert.equal(await page.locator("[data-material-id]").count(), 1);
   await page.getByLabel("搜索仓库物品", { exact: true }).fill("no-match");
@@ -158,7 +180,7 @@ try {
   await page.getByRole("button", { name: "清空搜索", exact: true }).click();
   assert.equal(await page.getByLabel("搜索仓库物品", { exact: true }).evaluate(el => el === globalThis.document.activeElement), true, "Clear restores search focus");
   await choose("物品分类", "干员经验");
-  assert.equal(await page.locator("[data-material-id]").count(), 4);
+  assert.equal(await page.locator("[data-material-id]").count(), 5);
   await choose("物品分类", "全部物品");
   await page.getByRole("tab", { name: "干员状态", exact: true }).click();
   await checkSearchLayout("搜索干员");
@@ -174,7 +196,11 @@ try {
   await page.getByRole("tab", { name: "帝江号", exact: true }).click();
   assert.equal(await page.getByRole("heading", { name: "帝江号设施与生产", exact: true }).count(), 0);
   assert.equal(await page.locator(".ef-data-card").count(), 5);
+  assert.equal(await page.getByRole("heading", { name: "会客室 · Lv.1", exact: true }).count(), 0, "The empty reception placeholder is hidden when the clue room is present");
   assert.equal(await page.locator(".ef-ship-crew .ef-operator-skill-stage").textContent(), "1/4", "Ship crew uses snapshot progress independently of the local scheduling roster");
+  assert.deepEqual(await page.locator(".ef-ship-crew > div > span:not(.ef-operator-portrait) small").allTextContents(), [
+    "心情 34.49% · 信赖 103%（亲近）", "心情 50% · 信赖 132%（亲近）",
+  ], "Ship crew sorts by mood and uses the correct mood and trust scales");
   await page.locator("dt").filter({ hasText: /^生产报告$/ }).waitFor();
   assert.equal(await page.getByRole("tab", { name: "地区与探索", exact: true }).count(), 0);
   assert.equal(await page.getByRole("tab", { name: "其他资料", exact: true }).count(), 0);

@@ -6,6 +6,7 @@
   "exports": {
     "./details": "./details.ts",
     "./inventory": "./inventory.ts",
+    "./inventory-summary": "./inventory-summary.ts",
     "./model": "./model.ts",
     "./presentation": "./presentation.ts",
     "./skill-nodes": "./skill-nodes.ts",
