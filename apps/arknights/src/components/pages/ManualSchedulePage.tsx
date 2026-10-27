@@ -478,6 +478,8 @@ export function ManualSchedulePage({
   }), [draft, shiftStartTime]);
   const maa = useMemo(() => manualScheduleToMaa(maaDraft, layout, fiammettaEnabled), [maaDraft, fiammettaEnabled, layout]);
   const activePlan = maa.plans[activeShift];
+  /** 模拟模式下不显示产物控件，但仍要传一份（空表），保证 roomProducts 始终有值。 */
+  const activeRoomProductsForBoard = useMemo(() => new Map<string, import("@riic/arknights-domain/types").RoomProduct>(), []);
   const activeRoomProducts = useMemo(() => new Map(
     layout.rooms
       .filter((room) => room.kind === "trade_post" || room.kind === "factory")
@@ -1074,7 +1076,7 @@ export function ManualSchedulePage({
         onManualSkillEfficiencyChange={simulation ? undefined : setRoomSkillEfficiency}
         onFactoryRecipeChange={handleFactoryRecipeChange}
         onTradeOrderChange={handleTradeOrderChange}
-        roomProducts={simulation ? undefined : activeRoomProducts}
+        roomProducts={simulation ? activeRoomProductsForBoard : activeRoomProducts}
         compactProductControls={!simulation}
       />
     </div>

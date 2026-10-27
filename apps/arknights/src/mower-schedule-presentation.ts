@@ -16,6 +16,7 @@ export function mowerSchedulePresentation(plan: Record<string, MowerFacility | n
   const layout: BaseBlueprint = { template: "Mower", drone_cap: 200, scenario: {}, rooms: [] };
   const counts = new Map<RoomGroup, number>();
   const rows: RoomRow[] = [];
+  const products = new Map<string, RoomProduct>();
   for (const key of [...MOWER_PRODUCTION_KEYS, ...MOWER_FIXED_ROOMS.map((room) => room.key)]) {
     const facility = plan[key];
     const fixed = MOWER_FIXED_ROOMS.find((room) => room.key === key);
@@ -34,6 +35,9 @@ export function mowerSchedulePresentation(plan: Record<string, MowerFacility | n
     if (group === "manufacture") product = { factory: { recipe: facility?.product === "exp3" ? "battle_record" : facility?.product === "orirock" ? "originium" : "gold" } };
     // Recycling is an editor-only facility, outside the solver blueprint contract.
     if (group !== "recycling") layout.rooms.push({ id: key, kind: kinds[group], level: group === "dormitory" ? 5 : 3, product });
+    // 一图流与列表的产物来源：Mower 文档里已经按设施类型和产物算好，这里一并交出去，
+    // 避免调用方再解析一遍中文名称。
+    if (product) products.set(key, product);
     rows.push({
       key, roomId: key, group, groupLabel: name, index, level: group === "dormitory" ? 5 : 3,
       title: key.startsWith("room_") ? `${name} B${key.split("_")[1]}0${key.split("_")[2]}` : fixed?.name ?? name,
@@ -41,5 +45,5 @@ export function mowerSchedulePresentation(plan: Record<string, MowerFacility | n
       autofill: false, rule: "", suspicious: false,
     });
   }
-  return { rows, layout };
+  return { rows, layout, products };
 }
