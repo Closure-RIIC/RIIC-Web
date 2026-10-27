@@ -93,7 +93,7 @@ test("reviewer roles enforce real-session API boundaries and take effect without
     assert.equal(access.isReviewer, true);
     assert.equal(access.isAdmin, false);
     await assert.rejects(requireWebsiteAdmin(request(targetCookie)));
-    const users = await status(await handleListAdminUsers(request(bootstrapCookie)));
+    const users = await status(await handleListAdminUsers(request(bootstrapCookie, undefined, `/api/admin/users?q=${targetId}`)));
     assert.equal(users.data.users.find(user => user.id === targetId).isReviewer, true);
     for (const cookie of [undefined, targetCookie]) {
       const denied = cookie ? 403 : 401;
