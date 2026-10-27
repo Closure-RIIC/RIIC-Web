@@ -46,32 +46,68 @@ test("bulk patches preserve omitted facilities and allow moving an operator betw
   assert.deepEqual(result.draft.shifts[0]!.rooms.dorm_4, draft.shifts[0]!.rooms.dorm_4);
   assert.deepEqual(draft.shifts[0]!.rooms.trade_1?.operators, ["能天使"]);
 });
-test("bulk text toggles dormitory autofill without changing the team", () => {
+test("bulk text derives facility autofill from operator-level auto markers while dash stays manual", () => {
   const draft = empty();
   draft.shifts[0]!.rooms.dorm_1 = { operators: ["银灰"], autofill: false };
   const result = applyScheduleText(
-    "宿舍1：银灰 @自动填充 | = | - @手动填充\n宿舍2：- @手动填充 | - @自动补位 | - @自动填充",
+    "宿舍1：银灰、auto | = | -\n宿舍2：德克萨斯 | Free | -",
     layout,
     draft,
     names,
   );
   assert.deepEqual(result.errors, []);
-  assert.deepEqual(result.draft.shifts[0]!.rooms.dorm_1, { operators: ["银灰"], autofill: true });
-  assert.deepEqual(result.draft.shifts[1]!.rooms.dorm_1, { operators: ["银灰"], autofill: true });
+  assert.deepEqual(result.draft.shifts[0]!.rooms.dorm_1, { operators: ["银灰", null], autofill: true, autofillSlots: [1] });
+  assert.deepEqual(result.draft.shifts[1]!.rooms.dorm_1, { operators: ["银灰", null], autofill: true, autofillSlots: [1] });
   assert.deepEqual(result.draft.shifts[2]!.rooms.dorm_1, { operators: [], autofill: false });
-  assert.equal(result.draft.shifts[0]!.rooms.dorm_2?.autofill, false);
-  assert.equal(result.draft.shifts[1]!.rooms.dorm_2?.autofill, true);
-  assert.equal(result.draft.shifts[2]!.rooms.dorm_2?.autofill, true);
+  assert.deepEqual(result.draft.shifts[0]!.rooms.dorm_2, { operators: ["德克萨斯"], autofill: false });
+  assert.deepEqual(result.draft.shifts[1]!.rooms.dorm_2, { operators: [null], autofill: true, autofillSlots: [0] });
+  assert.equal(result.draft.shifts[2]!.rooms.dorm_2?.autofill, false);
 });
-test("bulk text round-trips each dormitory autofill setting", () => {
+
+test("bulk text no longer accepts facility-level autofill directives", () => {
+  for (const directive of ["@auto", "@manual", "@自动填充", "@手动填充"]) {
+    const result = applyScheduleText(`宿舍1：银灰 ${directive} | - | -`, layout, empty(), names);
+    assert.match(result.errors[0] ?? "", /无法识别设置/);
+  }
+});
+
+test("bulk text round-trips operator-level autofill markers without facility directives", () => {
   const draft = empty();
-  draft.shifts[0]!.rooms.dorm_1 = { operators: ["银灰"], autofill: true };
+  draft.shifts[0]!.rooms.dorm_1 = { operators: ["银灰", null], autofill: true, autofillSlots: [1] };
   draft.shifts[1]!.rooms.dorm_1 = { operators: ["德克萨斯"], autofill: false };
   const text = scheduleDraftToText(layout, draft);
-  assert.match(text, /宿舍1：银灰 @auto \| 德克萨斯 @manual \| - @auto/);
+  assert.match(text, /宿舍1：银灰、auto \| 德克萨斯 \| auto/);
   const result = applyScheduleText(text, layout, draft, names);
   assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.draft.shifts.map(shift => shift.rooms.dorm_1?.autofillSlots), [[1], undefined, [0]]);
   assert.deepEqual(result.draft.shifts.map(shift => shift.rooms.dorm_1?.autofill), [true, false, true]);
+});
+
+test("bulk text exports the default empty marker as an operator-level auto", () => {
+  const draft = empty();
+  const before = structuredClone(draft);
+  const text = scheduleDraftToText(layout, draft);
+  assert.match(text, /中枢：auto \| auto \| auto/);
+  assert.match(text, /宿舍1：auto \| auto \| auto/);
+  assert.match(text, /训练室：- \| - \| -/);
+  assert.doesNotMatch(text, /@(?:auto|manual)\b/);
+  assert.deepEqual(draft, before);
+  const result = applyScheduleText(text, layout, draft, names);
+  assert.deepEqual(result.errors, []);
+  assert.equal(result.draft.shifts[0]!.rooms.control?.autofill, true);
+  assert.deepEqual(result.draft.shifts[0]!.rooms.control?.autofillSlots, [0]);
+});
+
+test("bulk text converts existing facility autofill to a slot marker and preserves explicit manual empties", () => {
+  const draft = empty();
+  draft.shifts[0]!.rooms.dorm_1 = { operators: ["银灰"], autofill: true };
+  draft.shifts[1]!.rooms.dorm_1 = { operators: [], autofill: false };
+  const text = scheduleDraftToText(layout, draft);
+  assert.match(text, /宿舍1：银灰、auto \| - \| auto/);
+  const result = applyScheduleText(text, layout, draft, names);
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.draft.shifts[0]!.rooms.dorm_1, { operators: ["银灰", null], autofill: true, autofillSlots: [1] });
+  assert.equal(result.draft.shifts[1]!.rooms.dorm_1?.autofill, false);
 });
 test("auto and Free retain individual slots and export fixed operators with facility autofill", () => {
   const result = applyScheduleText(
@@ -83,7 +119,7 @@ test("auto and Free retain individual slots and export fixed operators with faci
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.draft.shifts[0]!.rooms.control?.operators, ["能天使", "德克萨斯", "拉普兰德", null, null]);
   assert.deepEqual(result.draft.shifts[0]!.rooms.control?.autofillSlots, [3, 4]);
-  assert.equal(result.draft.shifts[0]!.rooms.control?.autofill, undefined);
+  assert.equal(result.draft.shifts[0]!.rooms.control?.autofill, true);
   const maa = manualScheduleToMaa(result.draft, layout, false);
   assert.deepEqual(maa.plans[0]?.rooms.control?.[0], {
     operators: ["能天使", "德克萨斯", "拉普兰德"], sort: true, skip: false, autofill: true,
@@ -97,30 +133,33 @@ test("auto and Free retain individual slots and export fixed operators with faci
   assert.deepEqual(roundTrip.errors, []);
   assert.deepEqual(roundTrip.draft.shifts[0]!.rooms.control?.autofillSlots, [3, 4]);
 });
-test("bare dash clears all MAA fill behavior while dash with auto keeps an empty autofill room", () => {
+test("dash clears eligible facilities while named-only teams stay manual", () => {
+  const draft = empty();
+  for (const shift of draft.shifts) shift.rooms.control = { operators: [null], autofill: true, autofillSlots: [0] };
   const result = applyScheduleText(
-    "中枢：- | - @auto | - @manual",
+    "中枢：- | _ | 能天使",
     layout,
-    empty(),
+    draft,
     names,
   );
   assert.deepEqual(result.errors, []);
-  assert.deepEqual(result.draft.shifts.map(shift => shift.rooms.control?.autofill), [false, true, false]);
-  assert.deepEqual(result.draft.shifts.map(shift => shift.rooms.control?.operators), [[], [], []]);
+  assert.deepEqual(result.draft.shifts.map(shift => shift.rooms.control?.autofill), [false, false, false]);
+  assert.deepEqual(result.draft.shifts.map(shift => shift.rooms.control?.operators), [[], [null], ["能天使"]]);
+  assert.deepEqual(result.draft.shifts.map(shift => shift.rooms.control?.autofillSlots), [undefined, undefined, undefined]);
   const maa = manualScheduleToMaa(result.draft, layout, false);
   assert.deepEqual(maa.plans.map(plan => plan.rooms.control?.[0]), [
     { operators: [], sort: true, skip: false, autofill: false },
-    { operators: [], sort: true, skip: false, autofill: true },
     { operators: [], sort: true, skip: false, autofill: false },
+    { operators: ["能天使"], sort: true, skip: false, autofill: false },
   ]);
 });
 test("overwriting a production team without an efficiency directive clears its prior manual override", () => {
   const draft = empty();
   draft.shifts[0]!.rooms.trade_1 = { operators: ["能天使"], manualSkillEfficiencyPct: 75 };
-  const result = applyScheduleText("贸易站1：- @auto | - | -", layout, draft, names);
+  const result = applyScheduleText("贸易站1：- | - | -", layout, draft, names);
   assert.deepEqual(result.errors, []);
   assert.equal(result.draft.shifts[0]!.rooms.trade_1?.manualSkillEfficiencyPct, undefined);
-  assert.equal(result.draft.shifts[0]!.rooms.trade_1?.autofill, true);
+  assert.equal(result.draft.shifts[0]!.rooms.trade_1?.autofill, false);
 });
 test("invalid text never changes the draft and gives line-specific feedback", () => {
   const draft = empty();
@@ -154,6 +193,6 @@ test("generated templates retain positions, manual efficiency and dormant room d
     const result = applyScheduleText(text,layout,draft,names);
     assert.deepEqual(result.errors,[]);
     assert.deepEqual(result.draft.shifts[0]!.rooms.training_room,draft.shifts[0]!.rooms.training_room);
-    assert.deepEqual(result.draft.shifts[0]!.rooms.trade_1,draft.shifts[0]!.rooms.trade_1);
+    assert.deepEqual(result.draft.shifts[0]!.rooms.trade_1,{...draft.shifts[0]!.rooms.trade_1,autofill:false});
   }
 });

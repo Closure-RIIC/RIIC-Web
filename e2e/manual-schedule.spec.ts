@@ -484,7 +484,7 @@ test("manual MAA downloads normalize dorm autofill without changing the editor s
   await expect(autofill).toHaveAttribute("aria-pressed", "false");
 });
 
-test("poster bulk text toggles dorm autofill per shift and inherits with equals", async ({ page }) => {
+test("poster bulk text derives facility autofill from slot markers and defaults empty facilities to auto", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/manual");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
@@ -492,8 +492,9 @@ test("poster bulk text toggles dorm autofill per shift and inherits with equals"
   const workbench = page.locator("[data-poster-workbench]");
   await expect(workbench.locator("[data-schedule-poster]")).toHaveAttribute("data-shift-count", "3");
   await workbench.getByRole("button", { name: "批量填写排班" }).click();
-  await expect(page.getByText(/整间设施用 @auto.*@manual/)).toBeVisible();
-  await page.getByLabel("批量排班文本").fill("宿舍1：银灰 @自动填充 | = | - @手动填充");
+  await expect(page.getByLabel("批量排班文本")).toHaveValue(/宿舍1：auto \| auto \| auto/);
+  await expect(page.getByText(/设施里只要出现一个 auto，整间设施/)).toBeVisible();
+  await page.getByLabel("批量排班文本").fill("宿舍1：银灰、auto | = | -");
   await page.getByRole("button", { name: "检查并应用" }).click();
   await expect(page.getByRole("dialog", { name: "批量填写设施与干员" })).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => {
