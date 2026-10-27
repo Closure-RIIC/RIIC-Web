@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { catalog, DEFAULT_OPTIONS, manualTemplate } from "@riic/endfield-solver/model.mjs";
-import { MFG_LAYOUTS } from "@riic/endfield-solver/simulation.mjs";
+import { MFG_LAYOUTS, operatorEffects } from "@riic/endfield-solver/simulation.mjs";
 import {
   buildStepConfig, defaultSource, effectTable, productsFor, roomEffectResolver, roomsFromManual, roomsFromResult, roomsFromTemplate, scheduledNames, validateStepConfig,
 } from "../src/step/step-model.ts";
@@ -17,6 +17,17 @@ const NAMES = OPERATORS.map(operator => operator.name);
 test("clue probability does not increase the deterministic guest-room production", () => {
   const resolve = roomEffectResolver(effectTable(workspace({ operators: [{ name: "赛希", elite: 4 }] })));
   assert.deepEqual(resolve("赛希", "会客室"), { reduce: 0, restore: 0, effMap: {} });
+});
+
+test("solver fractions are converted to the percentage points used by the engine formulas", () => {
+  const operator = catalog.find(op => operatorEffects({ name: op.name, elite: 4 }).some(effect => effect.kind === "减免"));
+  assert.ok(operator, "fixture operator with a morale-reduction skill is required");
+  const raw = operatorEffects({ name: operator.name, elite: 4 }).find(effect => effect.kind === "减免");
+  const roomKey = { 中枢: "中枢", 制造舱: "制造舱1", 培养舱: "培养舱", 会客室: "会客室" }[raw.room];
+  const resolve = roomEffectResolver(effectTable(workspace({ operators: [{ name: operator.name, elite: 4 }] })));
+  const effects = resolve(operator.name, roomKey);
+  assert.ok(Math.abs(effects.reduce - raw.value * 100) < 1e-9, `expected ${raw.value * 100} percentage points, got ${effects.reduce}`);
+  assert.ok(effects.reduce > 1, "a fraction such as 0.15 must not be passed through as 0.15%");
 });
 
 function workspace(overrides = {}) {
@@ -60,7 +71,7 @@ test("manufacturing layout and growth counts drive the products", () => {
   assert.equal(noGrowth.some(room => room.key === "培养舱"), false);
 });
 
-test("manual drafts map crews and hours without turning empty shifts into cycles", () => {
+test("manual drafts map crews and hours without turning empty shifts into other cycles", () => {
   const ws = workspace();
   ws.manual = manualPlan(ws);
   ws.manual[2].b = [];
