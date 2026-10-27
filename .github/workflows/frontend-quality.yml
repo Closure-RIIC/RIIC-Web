@@ -47,6 +47,8 @@ env:
   BETTER_AUTH_SECRET: integration-test-secret-at-least-32-bytes-long
   BETTER_AUTH_URL: https://auth.integration.test
   RESEND_API_KEY: re_test_not_used
+  # Keep the existing test-only provider fixture explicit; runtime defaults to Aliyun.
+  AUTH_EMAIL_PROVIDER: resend
   AUTH_EMAIL_FROM: Authentication Test <auth@example.test>
 
 jobs:

@@ -18,7 +18,7 @@ import { OperatorSkillTooltip } from "./OperatorSkillTooltip";
 const skillCatalog = [...operatorCatalog].sort(compareOperatorRelease);
 const byName = new Map(operatorCatalog.map(op => [op.name, op]));
 
-type OperatorPicker = { value: string; unavailable: ReadonlySet<string>; onSelect: (name: string) => void };
+type OperatorPicker = { value: string; unavailable: ReadonlySet<string>; unavailableLabel?: string; onSelect: (name: string) => void };
 
 /** 列表/搜索用的技能文本：中英文名称与描述都在 catalog 里。 */
 function searchable(op: DisplayOperator): string {
@@ -197,7 +197,7 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
           const current = picker.value === op.name;
           const unavailable = picker.unavailable.has(op.name);
           return <ManualOperatorChoice key={op.id} operator={op} owned={workspace.operators.find(item => item.name === op.name)!}
-            selected={current} unavailable={unavailable} onSelect={() => picker.onSelect(op.name)} />;
+            selected={current} unavailable={unavailable} unavailableLabel={picker.unavailableLabel} onSelect={() => picker.onSelect(op.name)} />;
         }
         const ownedOperator = skillsOnly ? undefined : workspace.operators.find(item => item.name === op.name);
         const matchingSkills = op.skills.filter(skill => (room === "all" || skill.room === room) && (tag === "all" || skillTagOf(skill) === tag));

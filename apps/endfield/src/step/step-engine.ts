@@ -310,6 +310,17 @@ export class StepSimulation {
     this.tSec = tSec;
   }
 
+  private activateRound(key: string, to: StepRound): void {
+    const room = this.rooms[key];
+    if (!room) return;
+    room.activeRound = to;
+    for (const op of this.ops) {
+      if (op.roomKey !== key) continue;
+      if (op.round === to && op.mood > EPS) { op.wantWork = true; op.working = true; }
+      else op.working = false;
+    }
+  }
+
   private processEventsAt(tSec: number): void {
     let extraSample = false;
 
@@ -352,16 +363,14 @@ export class StepSimulation {
       if (tSec < room.nextSwitchAtSec - EPS) continue;
       const from = room.activeRound;
       const to: StepRound = from === "round1" ? "round2" : "round1";
-      room.activeRound = to;
-      for (const op of this.ops) {
-        if (op.roomKey !== key) continue;
-        if (op.round === to && op.mood > 0) { op.wantWork = true; op.working = true; }
-        else op.working = false;
-      }
+      this.activateRound(key, to);
       this.logEvent("switch", `🔄 ${this.roomLabel(key)} ${roundName(from)} → ${roundName(to)}`, key as StepRoomKey);
       room.nextSwitchAtSec = tSec + (to === "round2" ? room.shiftBASec : room.shiftABSec);
       extraSample = true;
     }
+
+    // 换班点只是“上班/休息”的提示：提前耗尽心情的班组在原地休息，
+    // 不会提前把另一班拉起来；如果同班时间内回满，会按原轮次继续工作。
 
     if (tSec >= this.nextSampleSec - EPS) {
       this.recordSampleAt(tSec);
@@ -381,7 +390,11 @@ export class StepSimulation {
       rates[key] = this.roomRates(key);
       activeRounds[key] = this.rooms[key].activeRound;
     }
-    this.history.push({ tSec, moods, workings, rates, activeRounds });
+    const sample: StepSample = { tSec, moods, workings, rates, activeRounds };
+    // 同一时刻只保留最终状态；换班/归零事件与采样重合时避免出现同 x 的假折线。
+    const last = this.history[this.history.length - 1];
+    if (last?.tSec === tSec) this.history[this.history.length - 1] = sample;
+    else this.history.push(sample);
     if (this.history.length > MAX_SAMPLES) this.history.shift();
   }
 

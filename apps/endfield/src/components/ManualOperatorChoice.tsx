@@ -6,11 +6,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@riic/ui-primitives/too
 import { useWorkspace } from "../state";
 import { GameArtwork, OperatorPortrait } from "./GameArtwork";
 
-export function ManualOperatorChoice({ operator, owned, selected, unavailable, onSelect }: {
+export function ManualOperatorChoice({ operator, owned, selected, unavailable, unavailableLabel, onSelect }: {
   operator: DisplayOperator;
   owned: Operator;
   selected: boolean;
   unavailable: boolean;
+  unavailableLabel?: string;
   onSelect: () => void;
 }) {
   const { locale, t, ready } = useWorkspace();
@@ -19,7 +20,8 @@ export function ManualOperatorChoice({ operator, owned, selected, unavailable, o
   const name = locale === "en" ? operator.enName : operator.name;
   const skills = skillTiersOf(operator.name);
   const unlocked = new Set(unlockedSkillNodes(skills, owned));
-  const state = selected ? t("当前工位", "Current slot") : unavailable ? t("已安排至其他工位", "Assigned elsewhere") : "";
+  const state = selected ? t("当前工位", "Current slot")
+    : unavailable ? (unavailableLabel ?? t("已安排至其他工位", "Assigned elsewhere")) : "";
   return <Tooltip open={open} onOpenChange={setOpen}>
     <TooltipTrigger delay={0} aria-describedby={open ? tooltipId : undefined} render={<button type="button" className="ef-manual-choice"
       data-operator-id={operator.id} data-operator-name={operator.name} data-current-selection={selected || undefined}

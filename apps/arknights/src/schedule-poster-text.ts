@@ -12,8 +12,6 @@ export function scheduleTextRoomLabel(room: EditableRoom, layout: BaseBlueprint)
   return labels[room.kind] + (numbered ? layout.rooms.filter(r => r.kind === room.kind).findIndex(r => r.id === room.id) + 1 : "");
 }
 const compact = (value: string) => value.replace(/\s/g, "");
-const autofillEnabledTokens = new Set(["auto", "autofill", "auto-fill", "自动填充", "自动补位"]);
-const autofillDisabledTokens = new Set(["manual", "手动", "手动填充", "关闭自动填充", "不自动填充", "关闭自动补位", "不自动补位"]);
 const automaticEfficiencyTokens = new Set(["自动", "效率自动", "auto-efficiency"]);
 const supportsMaaAutofill = (room: EditableRoom) => !["training_room", "recycling"].includes(room.kind);
 const productLabel = (room: EditableRoom, assignment: ManualScheduleDraft["shifts"][number]["rooms"][string]) => {
@@ -30,24 +28,23 @@ export function scheduleDraftToText(layout: BaseBlueprint, draft: ManualSchedule
     const assignment = shift.rooms[room.id];
     const names = assignment?.operators ?? [];
     const autoSlots = new Set(assignment?.autofillSlots ?? []);
+    if (supportsMaaAutofill(room) && assignment?.autofill === true && !autoSlots.size) {
+      const firstEmptySlot = Array.from({ length: manualRoomCapacity(room) }, (_, index) => names[index]).findIndex(name => !name);
+      if (firstEmptySlot >= 0) autoSlots.add(firstEmptySlot);
+    }
     const lastSlot = Math.max(
       names.reduce((last, name, index) => name ? index : last, -1),
       ...autoSlots,
     );
-    const team = lastSlot < 0 ? "-" : Array.from({ length: lastSlot + 1 }, (_, index) => (
-      autoSlots.has(index) ? "auto" : names[index] ?? "_"
-    )).join("、");
+    const team = lastSlot < 0
+      ? supportsMaaAutofill(room) && assignment?.autofill !== false ? "auto" : "-"
+      : Array.from({ length: lastSlot + 1 }, (_, index) => (
+        autoSlots.has(index) ? "auto" : names[index] ?? "_"
+      )).join("、");
     const efficiency = ["trade_post", "factory", "power_plant"].includes(room.kind)
       ? ` @${assignment?.manualSkillEfficiencyPct === undefined ? "自动" : `${assignment.manualSkillEfficiencyPct}%`}` : "";
-    const autofill = supportsMaaAutofill(room)
-      ? assignment?.autofill === true
-        ? " @auto"
-        : assignment?.autofill === false
-          ? " @manual"
-          : room.kind === "dormitory" ? " @auto" : ""
-      : "";
     const product = productLabel(room, assignment);
-    return team + efficiency + autofill + (product ? ` #${product}` : "");
+    return team + efficiency + (product ? ` #${product}` : "");
   }).join(" | "));
   lines.push("无人机：" + draft.shifts.map(shift => rooms.find(r => r.id === shift.droneTargetRoomId)).map(room => room ? scheduleTextRoomLabel(room, layout) : "-").join(" | "));
   lines.push("菲亚梅塔：" + draft.shifts.map(shift => draft.fiammettaEnabled ? shift.fiammettaTarget ?? "-" : "-").join(" | "));
@@ -107,16 +104,12 @@ export function applyScheduleText(text: string, layout: BaseBlueprint, draft: Ma
       if (!team) { fail(`${index + 1} 班为空；清空请写 -。`); continue; }
       const directives = atIndex < 0 ? [] : withoutProduct.slice(atIndex + 1).split("@").map(value => value.trim());
       if (directives.some(value => !value)) { fail(`${index + 1} 班 @ 设置格式错误。`); continue; }
-      let autofillMode: boolean | undefined;
       let efficiencyMode: number | "automatic" | undefined;
       let invalidDirective = false;
       for (const directive of directives) {
         const token = directive.replace(/\s*[%％]\s*$/, "").trim();
         const lowerToken = token.toLowerCase();
-        if (autofillEnabledTokens.has(lowerToken) || autofillDisabledTokens.has(lowerToken)) {
-          if (autofillMode !== undefined) { fail(`${index + 1} 班只能设置一次设施自动填充。`); invalidDirective = true; break; }
-          autofillMode = autofillEnabledTokens.has(lowerToken);
-        } else if (automaticEfficiencyTokens.has(lowerToken)) {
+        if (automaticEfficiencyTokens.has(lowerToken)) {
           if (efficiencyMode !== undefined) { fail(`${index + 1} 班只能设置一次技能效率。`); invalidDirective = true; break; }
           efficiencyMode = "automatic";
         } else if (/^\d+(?:\.\d+)?$/.test(token)) {
@@ -136,18 +129,12 @@ export function applyScheduleText(text: string, layout: BaseBlueprint, draft: Ma
       if (names.length > manualRoomCapacity(room)) fail(`${scheduleTextRoomLabel(room, layout)}最多 ${manualRoomCapacity(room)} 位，第 ${index + 1} 班填写了 ${names.length} 位。`);
       for (const name of names) if (name !== null && !knownNames.has(name)) fail(`${index + 1} 班未知干员“${name}”。请使用图鉴全名。`);
       const assignment: ManualRoomAssignment = { ...shift.rooms[room.id], operators: names };
-      if ((autofillMode !== undefined || autofillSlots.length) && !supportsMaaAutofill(room)) fail("训练室和回收站不支持 MAA 自动填充。");
-      if (autofillMode === false && autofillSlots.length) fail("逐槽 auto 与 @manual 不能同时使用。");
-      if (team === "-") {
-        assignment.autofill = autofillMode === true;
-        delete assignment.autofillSlots;
-      } else if (autofillMode !== undefined) {
-        assignment.autofill = autofillMode;
-        if (!autofillMode) delete assignment.autofillSlots;
-      }
+      if (autofillSlots.length && !supportsMaaAutofill(room)) fail("训练室和回收站不支持 MAA 自动填充。");
+      if (supportsMaaAutofill(room)) assignment.autofill = autofillSlots.length > 0;
+      else delete assignment.autofill;
       if (autofillSlots.length) {
         assignment.autofillSlots = autofillSlots;
-      } else if (team !== "-") {
+      } else {
         delete assignment.autofillSlots;
       }
       if (["trade_post", "factory", "power_plant"].includes(room.kind)) {

@@ -19,7 +19,7 @@ export function StepPicker({ open, title, current, unavailable, onSelect, onClea
           <Action size="sm" disabled={!current} onClick={onClear}>{t("清空选择", "Clear selection")}</Action>
           <Dialog.Close className={actionClassName({ size: "sm", variant: "yellow" })}><ActionContent>{t("取消", "Cancel")}</ActionContent></Dialog.Close>
         </>}>
-        {open ? <RosterPage embedded picker={{ value: current ?? "", unavailable, onSelect }} /> : null}
+        {open ? <RosterPage embedded picker={{ value: current ?? "", unavailable, unavailableLabel: t("未排班", "Not scheduled"), onSelect }} /> : null}
       </DialogFrame>
     </Dialog.Portal>
   </Dialog.Root>;

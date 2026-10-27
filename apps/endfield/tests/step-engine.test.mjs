@@ -24,6 +24,27 @@ const run = (value, resolver = NO_EFFECTS, options = {}) => {
   return simulation;
 };
 
+test("a crew that refills inside its own shift resumes work without switching", () => {
+  const value = config({ moods: { A: 10 } });
+  value.rooms[0] = { ...value.rooms[0], hour: 20, single: false, crewB: ["B"] };
+  const simulation = run(value, NO_EFFECTS, { startHour: 0, maxHours: 19, sampleSec: 60 });
+  assert.ok(simulation.view.log.some(entry => entry.type === "mood-full"));
+  assert.equal(simulation.view.rooms["会客室"].activeRound, "round1", "the crew must not switch early");
+  assert.equal(simulation.view.ops[0].working, true, "the same crew resumes after refilling");
+  assert.ok((simulation.view.history.at(-1).rates["会客室"]?._total ?? 0) > 0);
+});
+
+test("moods continue across midnight instead of resetting", () => {
+  const simulation = run(config({ moods: { A: 80 } }), NO_EFFECTS, { startHour: 0, maxHours: 48, sampleSec: 60 });
+  const history = simulation.view.history;
+  const before = history.filter(point => point.tSec <= 86400).at(-1);
+  const after = history.find(point => point.tSec > 86400);
+  const elapsedHours = (after.tSec - before.tSec) / 3600;
+  assert.ok(Math.abs(after.moods.A - before.moods.A) <= 12 * elapsedHours + 0.01,
+    `mood jumped from ${before.moods.A} to ${after.moods.A} across midnight`);
+  assert.notEqual(after.moods.A, 80, "the initial mood must not be re-applied at midnight");
+});
+
 test("playback advances by elapsed time independently of chart sampling", () => {
   for (const sampleSec of [10, 60, 900]) {
     const simulation = new StepSimulation(config(), NO_EFFECTS, RATES, { startHour: 0, maxHours: 24, sampleSec });

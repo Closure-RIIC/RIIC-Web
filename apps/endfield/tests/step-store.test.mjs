@@ -46,7 +46,7 @@ test("invalid persisted controls and morale are bounded or replaced with default
   assert.deepEqual(saved.moods, { A: 0, B: 100 });
   assert.deepEqual(saved.work, { A: false });
   assert.equal(load({ version: 2, controls: { startHour: -5 } }).controls.startHour, 0);
-  assert.equal(load({ version: 2, controls: { startHour: "2" } }).controls.startHour, 8);
+  assert.equal(load({ version: 2, controls: { startHour: "2" } }).controls.startHour, 0);
   assert.equal(load({ version: 99 }), null);
   assert.equal(loadStepConfig({ getItem: () => "broken json" }), null);
   assert.equal(loadStepConfig({ getItem: () => { throw new Error("blocked"); } }), null);
