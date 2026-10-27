@@ -20,7 +20,7 @@ export type AuthEmailConfig = {
 };
 
 export function requireAuthEmailConfig(env: Record<string, string | undefined> = process.env): AuthEmailConfig {
-  const provider = env.AUTH_EMAIL_PROVIDER?.trim() || "resend";
+  const provider = env.AUTH_EMAIL_PROVIDER?.trim() || "aliyun";
   const fallback = env.AUTH_EMAIL_FALLBACK_PROVIDER?.trim() || "none";
   if (provider !== "resend" && provider !== "aliyun") {
     throw new Error("AUTH_EMAIL_PROVIDER must be resend or aliyun.");
