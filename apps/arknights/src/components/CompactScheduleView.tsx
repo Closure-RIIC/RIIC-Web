@@ -11,6 +11,7 @@ import { RecyclingRoomNotice } from "@/components/RecyclingRoomNotice";
 
 import {
   factoryRecipeFor,
+  factoryRecipeFromMaaProduct,
   maxRoomLevel,
   tradeOrderFor,
 } from "@riic/arknights-domain/blueprint";
@@ -263,7 +264,7 @@ function CompactRoomCard({
           );
         })() : isFactory ? (() => {
           const product = roomProducts?.get(row.roomId);
-          const recipe = product && "factory" in product ? product.factory.recipe : factoryRecipeFor(layoutRoom!);
+          const recipe = product && "factory" in product ? product.factory.recipe : factoryRecipeFromMaaProduct(row.product ?? "") ?? factoryRecipeFor(layoutRoom!);
           const label = recipe === "all" ? intl("components_CompactScheduleView.auto") : recipe === "gold" ? intl("components_CompactScheduleView.pureGold") : recipe === "battle_record" ? intl("components_CompactScheduleView.battleRecord") : recipe === "originium" ? intl("components_CompactScheduleView.originiumShard") : recipe;
           const iconUrl = recipe === "gold" ? PRODUCT_ICON_URLS.gold : recipe === "battle_record" ? PRODUCT_ICON_URLS.experience : recipe === "originium" ? PRODUCT_ICON_URLS.shards : undefined;
           return compactProductControls && onFactoryRecipeChange ? (

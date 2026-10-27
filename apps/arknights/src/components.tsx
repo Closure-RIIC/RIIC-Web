@@ -59,6 +59,7 @@ import {
   TRADE_ORDER_OPTIONS,
   TradeOrder,
   factoryRecipeFor,
+  factoryRecipeFromMaaProduct,
   hasUnlockedFactoryRecipes,
   maxRoomLevel,
   productLabel,
@@ -820,7 +821,7 @@ export function RoomProductControls({
   const isTrade = layoutRoom?.kind === "trade_post";
   const isFactory = layoutRoom?.kind === "factory";
   const activeOrder = isTrade ? (product && "trade" in product ? product.trade.order : tradeOrderFor(layoutRoom!)) : null;
-  const activeRecipe = isFactory ? (product && "factory" in product ? product.factory.recipe : factoryRecipeFor(layoutRoom!)) : null;
+  const activeRecipe = isFactory ? (product && "factory" in product ? product.factory.recipe : factoryRecipeFromMaaProduct(row.product ?? "") ?? factoryRecipeFor(layoutRoom!)) : null;
   const activeProduct = activeOrder ?? activeRecipe;
 
   if (activeProduct) {
