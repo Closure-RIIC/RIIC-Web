@@ -124,6 +124,13 @@ const FACTORY_PRODUCT_LABELS: Record<string, string> = {
   originium: "源石碎片",
 };
 
+/** RoomRow products are normalized labels, independent of the display locale. */
+export function tradeOrderFromScheduleProduct(product: string | undefined): "gold" | "originium" | undefined {
+  if (product === TRADE_PRODUCT_LABELS.LMD) return "gold";
+  if (product === TRADE_PRODUCT_LABELS.Orundum) return "originium";
+  return undefined;
+}
+
 function productLabel(value: unknown, group?: RoomGroup): string | undefined {
   if (typeof value !== "string" || value.length === 0) return undefined;
   if (group === "trading") return TRADE_PRODUCT_LABELS[value] ?? PRODUCT_LABELS[value] ?? value;

@@ -1233,10 +1233,14 @@ test("scheduled product changes require destructive confirmation and rerun with 
       rerunPayload = route.request().postDataJSON() as Record<string, unknown>;
       await rerunGate;
     }
+    const responseData = structuredClone(productChangePlanData);
+    if (planRequests === 2) {
+      for (const plan of responseData.maa.plans) plan.rooms.trading[0]!.product = "Originium Shard";
+    }
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ success: true, data: productChangePlanData, requestId }),
+      body: JSON.stringify({ success: true, data: responseData, requestId }),
     });
   });
   await seedV4Session(page, null);

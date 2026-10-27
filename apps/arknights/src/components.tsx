@@ -71,7 +71,7 @@ import {
   shiftTeamSummary,
 } from "./rotation-presentation";
 import { DEFAULT_ROTATION_PROFILE } from "@riic/arknights-domain/rotation-settings";
-import { RoomRow } from "./schedule";
+import { RoomRow, tradeOrderFromScheduleProduct } from "./schedule";
 import { recyclingRoom, withRecyclingRoom, type RecyclingRoom } from "./recycling-room";
 import { RecyclingRoomNotice } from "./components/RecyclingRoomNotice";
 import {
@@ -819,7 +819,7 @@ export function RoomProductControls({
 
   const isTrade = layoutRoom?.kind === "trade_post";
   const isFactory = layoutRoom?.kind === "factory";
-  const activeOrder = isTrade ? (product && "trade" in product ? product.trade.order : tradeOrderFor(layoutRoom!)) : null;
+  const activeOrder = isTrade ? (product && "trade" in product ? product.trade.order : tradeOrderFromScheduleProduct(row.product) ?? tradeOrderFor(layoutRoom!)) : null;
   const activeRecipe = isFactory ? (product && "factory" in product ? product.factory.recipe : factoryRecipeFor(layoutRoom!)) : null;
   const activeProduct = activeOrder ?? activeRecipe;
 

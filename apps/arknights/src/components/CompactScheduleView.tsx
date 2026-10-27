@@ -34,7 +34,7 @@ import {
   COMPACT_ROOM_TITLE_CLASS,
   roomGridTone,
 } from "@/schedule-view-presentation";
-import type { RoomRow } from "@/schedule";
+import { tradeOrderFromScheduleProduct, type RoomRow } from "@/schedule";
 import type { BaseBlueprint, MaaPlan, RoomProduct } from "@riic/arknights-domain/types";
 import type { ShiftDirection } from "@/motion";
 import { localizedRoomTitle } from "@/i18n/game-data";
@@ -244,7 +244,7 @@ function CompactRoomCard({
       {(isTrade || isFactory) && <div className="ml-auto flex shrink-0 items-center gap-1.5" style={{ marginRight: onIssue ? "2.25rem" : undefined }} data-compact-room-actions>
         {isTrade ? (() => {
           const product = roomProducts?.get(row.roomId);
-          const order = product && "trade" in product ? product.trade.order : tradeOrderFor(layoutRoom!);
+          const order = product && "trade" in product ? product.trade.order : tradeOrderFromScheduleProduct(row.product) ?? tradeOrderFor(layoutRoom!);
           const label = order === "gold" ? intl("components_CompactScheduleView.lmdOrder") : order === "originium" ? intl("components_CompactScheduleView.originiumOrder") : order;
           const iconUrl = order === "originium" ? PRODUCT_ICON_URLS.orundum : PRODUCT_ICON_URLS.lmdOrders;
           return compactProductControls && onTradeOrderChange ? (
