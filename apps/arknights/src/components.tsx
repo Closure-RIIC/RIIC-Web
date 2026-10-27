@@ -189,6 +189,7 @@ type Option<T extends string> = {
 
 export function ProductToggleGroup<T extends string>({
   value,
+  defaultValue,
   options,
   onChange,
   columns,
@@ -198,7 +199,10 @@ export function ProductToggleGroup<T extends string>({
   ariaLabel,
   disabledValue,
 }: {
-  value: T;
+  /** 受控用法：与 `onChange` 配对。 */
+  value?: T;
+  /** 非受控用法：只给初值，后续由点击自行切换（调用方拿不到有效产物时用它兜底）。 */
+  defaultValue?: T;
   options: Option<T>[];
   onChange: (value: T) => void;
   columns: 2 | 3 | 4;
@@ -212,11 +216,12 @@ export function ProductToggleGroup<T extends string>({
   const roomProductControls = surface === "room" && (tone === "trade" || tone === "factory");
   const compactRoomProductControls = roomProductControls && layout === "compact";
   const fillRoomProductControls = roomProductControls && layout === "fill";
+  const controlled = value !== undefined;
 
   return (
     <ToggleGroup
       aria-label={ariaLabel}
-      value={[value]}
+      {...(controlled ? { value: [value] } : { defaultValue: defaultValue === undefined ? [] : [defaultValue] })}
       onValueChange={(nextValue) => {
         const next = nextValue[0] as T | undefined;
         if (next) onChange(next);
@@ -819,16 +824,18 @@ export function RoomProductControls({
 
   const isTrade = layoutRoom?.kind === "trade_post";
   const isFactory = layoutRoom?.kind === "factory";
-  const activeOrder = isTrade ? (product && "trade" in product ? product.trade.order : tradeOrderFor(layoutRoom!)) : null;
-  const activeRecipe = isFactory ? (product && "factory" in product ? product.factory.recipe : factoryRecipeFor(layoutRoom!)) : null;
-  const activeProduct = activeOrder ?? activeRecipe;
+  // 只认排班行里携带的产物。读不到时不再回退到布局订单——那会让按钮选中项
+  // 和这一班真正的产物对不上；改成非受控并让用户自己点选。
+  const activeOrder = isTrade && product && "trade" in product ? product.trade.order : null;
+  const activeRecipe = isFactory && product && "factory" in product ? product.factory.recipe : null;
+  const activeProduct = isTrade ? activeOrder : activeRecipe;
 
-  if (activeProduct) {
+  if (isTrade || isFactory) {
     return (
       <div className={cn("w-full", isTrade ? "max-sm:w-fit" : "max-w-[220px]")}>
         <ProductToggleGroup<TradeOrder | FactoryRecipe>
           ariaLabel={`${localizedRoomTitle(row.title, row.group, locale, gameCatalog)} ${isTrade ? (intl("components.orders")) : (intl("components.recipe"))}`}
-          value={activeProduct}
+          {...(activeProduct ? { value: activeProduct } : {})}
           options={isTrade ? TRADE_ORDER_OPTIONS : FACTORY_RECIPE_OPTIONS}
           columns={isTrade ? 2 : 4}
           tone={isTrade ? "trade" : "factory"}
@@ -1348,7 +1355,8 @@ export function ScheduleBoard({
   onManualSkillEfficiencyChange?: (row: RoomRow, value: number | null) => void;
   highlightNoLayoutSkill?: boolean;
   noRoomSkillOperators?: ReadonlyMap<string, ReadonlySet<string>>;
-  roomProducts?: ReadonlyMap<string, RoomProduct>;
+  /** 当前班次各房间的产物，必传：一图流与列表都只认它，不再回退布局订单。 */
+  roomProducts: ReadonlyMap<string, RoomProduct>;
   compactProductControls?: boolean;
 }) {
   const intl = useTranslations();
