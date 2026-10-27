@@ -15,7 +15,7 @@ const serverOnlyHook = registerHooks({
 });
 process.once("exit", () => serverOnlyHook.deregister());
 
-const primaryEnv = { RESEND_API_KEY: "test-resend-key", AUTH_EMAIL_FROM: "auth@example.test" };
+const primaryEnv = { AUTH_EMAIL_PROVIDER: "resend", RESEND_API_KEY: "test-resend-key", AUTH_EMAIL_FROM: "auth@example.test" };
 const env = {
   ...primaryEnv, AUTH_EMAIL_PROVIDER: "resend", AUTH_EMAIL_FALLBACK_PROVIDER: "aliyun",
   ALIYUN_DM_REGION_ID: "cn-hangzhou", ALIYUN_DM_ACCOUNT_NAME: "auth@backup.example.test",
@@ -52,10 +52,34 @@ test("Direct Mail signing matches Alibaba's published POST test vector", () => {
   assert.equal(signAliyunParameters({ ...parameters, Signature: "ignored" }, "testsecret"), "llJfXJjBW3OacrVgxxsITgYaYm0=");
 });
 
-test("existing Resend configuration works and unused Aliyun credentials do not enable fallback", () => {
+test("explicit Resend configuration works and unused Aliyun credentials do not enable fallback", () => {
   assert.equal(requireAuthEmailConfig(primaryEnv).aliyun, undefined);
   assert.equal(requireAuthEmailConfig({ ...env, AUTH_EMAIL_FALLBACK_PROVIDER: "none" }).aliyun, undefined);
-  assert.throws(() => requireAuthEmailConfig({ AUTH_EMAIL_FROM: "auth@example.test" }), /RESEND_API_KEY/);
+  assert.throws(() => requireAuthEmailConfig({ AUTH_EMAIL_PROVIDER: "resend", AUTH_EMAIL_FROM: "auth@example.test" }), /RESEND_API_KEY/);
+});
+
+test("default and blank provider send through Aliyun even when a Resend key is configured", async (context) => {
+  const calls = mockRequests(context, [accepted(), accepted(), accepted()]);
+  for (const provider of [undefined, "", "  "]) {
+    const config = requireAuthEmailConfig({ ...env, AUTH_EMAIL_PROVIDER: provider, AUTH_EMAIL_FALLBACK_PROVIDER: "none" });
+    assert.equal(config.provider, "aliyun");
+    await deliverAuthEmail(message, config);
+  }
+  assert.equal(calls.length, 3);
+  assert.ok(calls.every(call => call.url === ALIYUN_DM_ENDPOINTS["cn-hangzhou"]));
+});
+
+test("default Aliyun needs no Resend key and fails closed when its credentials are incomplete", () => {
+  assert.equal(requireAuthEmailConfig({ ...env, AUTH_EMAIL_PROVIDER: undefined, RESEND_API_KEY: undefined }).provider, "aliyun");
+  assert.throws(() => requireAuthEmailConfig({ ...primaryEnv, AUTH_EMAIL_PROVIDER: undefined }), /ALIYUN_DM_REGION_ID/);
+  assert.throws(() => requireAuthEmailConfig({ ...env, AUTH_EMAIL_PROVIDER: undefined, ALIYUN_DM_ACCESS_KEY_SECRET: "" }), /ALIYUN_DM_ACCESS_KEY/);
+});
+
+test("an uncertain Aliyun primary send never retries through the configured Resend account", async (context) => {
+  const calls = mockRequests(context, [new Error("request timed out")]);
+  await assert.rejects(deliverAuthEmail(message, requireAuthEmailConfig({ ...env, AUTH_EMAIL_PROVIDER: undefined })), /Aliyun/);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, ALIYUN_DM_ENDPOINTS["cn-hangzhou"]);
 });
 
 test("enabled Aliyun configuration rejects incomplete credentials, unknown regions and multiple senders", () => {
@@ -107,7 +131,7 @@ for (const reason of ["monthly_quota_exceeded", "daily_quota_exceeded", "rate_li
   });
 }
 
-test("manual Aliyun mode skips Resend, supports all configured regions and generates fresh nonces", async (context) => {
+test("explicit Aliyun mode skips Resend, supports all configured regions and generates fresh nonces", async (context) => {
   const calls = mockRequests(context, Object.keys(ALIYUN_DM_ENDPOINTS).map(accepted));
   for (const [region, endpoint] of Object.entries(ALIYUN_DM_ENDPOINTS)) {
     await deliverAuthEmail(message, requireAuthEmailConfig({
@@ -170,6 +194,29 @@ test("Aliyun never sends an authentication secret to multiple recipients", async
   await assert.rejects(deliverAuthEmail({ ...message, to: "one@example.test,two@example.test" },
     requireAuthEmailConfig({ ...env, AUTH_EMAIL_PROVIDER: "aliyun" })), /one recipient/);
   assert.equal(calls.length, 0);
+});
+
+test("registration and reset entry points use Aliyun by default", async (context) => {
+  const previous = Object.fromEntries(Object.keys(env).map((key) => [key, process.env[key]]));
+  Object.assign(process.env, env);
+  delete process.env.AUTH_EMAIL_PROVIDER;
+  delete process.env.AUTH_EMAIL_FALLBACK_PROVIDER;
+  delete process.env.RESEND_API_KEY;
+  context.after(() => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  const calls = mockRequests(context, [accepted(), accepted()]);
+  const { sendAuthEmail } = await import("./email.ts");
+  await sendAuthEmail({ to: message.to, kind: "verify-code", code: "123456" });
+  await sendAuthEmail({ to: message.to, kind: "reset", url: "https://example.test/reset?token=secret&next=home" });
+  assert.equal(calls.length, 2);
+  assert.ok(calls.every(call => call.url === ALIYUN_DM_ENDPOINTS["cn-hangzhou"]));
+  assert.equal(body(calls[0]).get("Subject"), `邮箱验证码｜${AUTH_EMAIL_BRAND}`);
+  assert.match(body(calls[0]).get("HtmlBody")!, /123456/);
+  assert.match(body(calls[1]).get("HtmlBody")!, /token=secret&amp;next=home/);
 });
 
 test("registration and reset entry points preserve content when falling back", async (context) => {
