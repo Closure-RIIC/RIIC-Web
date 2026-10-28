@@ -46,6 +46,9 @@ def extract_release(archive, destination, sha, tree):
             seen.add(str(path))
         bundle.extractall(destination, filter="data")
     metadata = json.loads((destination / ".release-artifact.json").read_text())
+    access_mode = metadata.pop("accessMode", "admin")
+    if access_mode not in ("admin", "public"):
+        raise ValueError("Invalid Endfield access mode")
     if metadata != {"formatVersion": 1, "kind": "riic-endfield", "releaseSha": sha, "releaseTreeSha": tree}:
         raise ValueError("Release identity mismatch")
     if not (destination / "runtime/server/index.mjs").is_file():
@@ -64,13 +67,19 @@ def healthy(port, service, release):
         pid = subprocess.check_output(["systemctl", "show", service, "--property=MainPID", "--value"], text=True, timeout=10).strip()
         if not pid.isdecimal() or pid == "0" or Path(f"/proc/{pid}/cwd").resolve() != release:
             return False
-        # The administrator gate must remain closed to anonymous requests.
-        # Verify the live process's release directory separately from this probe.
+        # Legacy preview artifacts remain valid rollback targets. Public releases
+        # must serve the actual application, not merely return a successful status.
+        access_mode = json.loads((release / ".release-artifact.json").read_text()).get("accessMode", "admin")
+        if access_mode not in ("admin", "public"):
+            return False
         try:
-            urllib.request.urlopen(f"http://127.0.0.1:{port}/skills", timeout=10).close()
+            with urllib.request.urlopen(f"http://127.0.0.1:{port}/skills", timeout=10) as response:
+                return access_mode == "public" and response.status == 200 and \
+                    response.headers.get_content_type() == "text/html" and \
+                    b'data-app-scroll-area="endfield"' in response.read(2 * 1024**2)
         except urllib.error.HTTPError as response:
-            return response.code == 404 and response.read() == b"Not Found"
-        return False
+            with response:
+                return access_mode == "admin" and response.code == 404 and response.read() == b"Not Found"
     except (OSError, ValueError, subprocess.SubprocessError):
         return False
 
