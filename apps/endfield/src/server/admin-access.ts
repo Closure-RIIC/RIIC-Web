@@ -1,7 +1,7 @@
 import { accountHeaders, accountOrigin } from "./account-origin.ts";
 
 /**
- * 本地开发便利：没有配置账号服务、且请求来自回环地址时直接放行。
+ * 管理员预览的本地开发便利：没有配置账号服务、且请求来自回环地址时直接放行。
  * 生产环境（NODE_ENV=production）或配置了账号服务时绝不生效，
  * 因此不会把正式部署的管理员边界打开。
  */
@@ -17,6 +17,10 @@ function localDevelopmentBypass(request: Request): boolean {
 }
 
 export async function canAccessEndfield(request: Request): Promise<boolean> {
+  // Public tools do not depend on an account session. Private APIs validate their own sessions.
+  const mode = process.env.ENDFIELD_ACCESS_MODE?.trim() || "public";
+  if (mode === "public") return true;
+  if (mode !== "admin") return false;
   if (localDevelopmentBypass(request)) return true;
   const cookie = (request.headers.get("cookie") ?? "").split(";").map(value => value.trim())
     .filter(value => /^(?:__Secure-|__Host-)?better-auth\.[^=]+=/.test(value)).join("; ");

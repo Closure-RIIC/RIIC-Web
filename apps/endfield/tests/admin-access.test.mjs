@@ -7,6 +7,7 @@ test("Endfield fails closed and only accepts the trusted account server's explic
   const originalFetch = globalThis.fetch;
   t.after(() => { process.env = environment; globalThis.fetch = originalFetch; });
   process.env.NODE_ENV = "production";
+  process.env.ENDFIELD_ACCESS_MODE = "admin";
   process.env.ENDFIELD_ACCOUNT_ORIGIN = "https://riic.autos";
   delete process.env.PLATFORM_API_ORIGIN;
   let status = 403, seen, unavailable = false;
@@ -37,4 +38,22 @@ test("Endfield fails closed and only accepts the trusted account server's explic
   assert.equal(denied.status, 404);
   assert.match(denied.headers.get("cache-control"), /private, no-store/);
   assert.equal(denied.headers.get("vary"), "Cookie");
+});
+
+test("public Endfield pages do not require a session or contact the account service", async t => {
+  const environment = { ...process.env };
+  const originalFetch = globalThis.fetch;
+  t.after(() => { process.env = environment; globalThis.fetch = originalFetch; });
+  process.env.NODE_ENV = "production";
+  process.env.APP_DEPLOYMENT_ENV = "production";
+  globalThis.fetch = async () => { throw new Error("Public access must not call the account service"); };
+  for (const mode of [undefined, "", "public"]) {
+    if (mode === undefined) delete process.env.ENDFIELD_ACCESS_MODE;
+    else process.env.ENDFIELD_ACCESS_MODE = mode;
+    for (const cookie of ["", "better-auth.session_token=ordinary-user", "role=admin"]) {
+      assert.equal(await canAccessEndfield(new Request("https://endfield.riic.autos/skills", { headers: { cookie } })), true);
+    }
+  }
+  process.env.ENDFIELD_ACCESS_MODE = "invalid";
+  assert.equal(await canAccessEndfield(new Request("https://endfield.riic.autos/skills")), false);
 });
