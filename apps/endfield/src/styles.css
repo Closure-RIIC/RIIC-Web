@@ -213,14 +213,22 @@
 .ef-dialog { position:fixed; z-index:46; top:50%; left:50%; transform:translate(-50%,-50%); display:flex; flex-direction:column; width:min(960px,calc(100vw - 24px)); max-height:calc(100dvh - 24px); overflow:hidden; padding:0; border:1px solid color-mix(in oklab,var(--ef-line) 60%,transparent); border-radius:14px; box-shadow:0 24px 80px #0004; }
 .ef-dialog::before,.ef-dialog::after { display:none; }
 .ef-dialog-header { display:flex; flex-shrink:0; align-items:center; justify-content:space-between; gap:16px; padding:6px 14px 6px 20px; border-bottom:1px solid color-mix(in oklab,var(--ef-line) 55%,transparent); }
-.ef-dialog-title { display:flex; align-items:center; gap:6px; font-size:14px; font-weight:500; line-height:1.5; }
-.ef-dialog-title>span { letter-spacing:2px; font-style:italic; }
+.ef-dialog-title { display:flex; align-items:center; gap:8px; font-size:16px; font-weight:700; line-height:1.5; }
+.ef-dialog-title-mark { position:relative; flex-shrink:0; width:1em; height:1em; }
+.ef-dialog-title-mark::before,.ef-dialog-title-mark::after { content:""; position:absolute; inset-block:0; width:.1875em; background:currentColor; transform:skewX(-20deg); }
+.ef-dialog-title-mark::before { left:.1875em; }
+.ef-dialog-title-mark::after { right:.1875em; }
 .ef-dialog-close { display:grid; place-items:center; flex-shrink:0; width:28px; height:28px; border-radius:3px; color:var(--ef-ink); }
 .ef-dialog-close:is(:hover,:active) { background:transparent; }
 .ef-dialog-close:focus-visible { outline:2px solid var(--ef-ink); outline-offset:2px; }
-.ef-dialog-close-glyph { width:18px; height:18px; background:currentColor; mask-repeat:no-repeat; mask-position:center; mask-size:contain; }
-.ef-dialog-body { min-height:0; overflow-y:auto; overscroll-behavior:contain; scroll-padding-block:24px; padding:24px; isolation:isolate; }
-.ef-dialog-description { margin-bottom:20px; color:var(--ef-muted); font-size:13px; line-height:1.8; }
+/* The source icon's visible center sits one source pixel right and above its canvas center. */
+.ef-dialog-close-glyph { width:19px; height:19px; transform:translate(-.5px,.5px); background:currentColor; mask-repeat:no-repeat; mask-position:center; mask-size:contain; }
+.ef-dialog-body { min-height:0; overflow-y:auto; overscroll-behavior:contain; scroll-padding-block:16px; padding:16px 24px; isolation:isolate; }
+.ef-dialog-body>.ef-section { padding-block:12px; }
+.ef-dialog-body>.ef-section:first-child { padding-top:0; }
+.ef-dialog-body>.ef-section:last-child { padding-bottom:0; }
+.ef-dialog-body>.ef-section>header { margin-bottom:12px; }
+.ef-dialog-description { margin-bottom:12px; color:var(--ef-muted); font-size:13px; line-height:1.8; }
 .ef-dialog-footer { display:flex; flex-shrink:0; justify-content:flex-end; align-items:center; flex-wrap:wrap; gap:10px; padding:16px 24px; background:color-mix(in oklab,var(--ef-line) 30%,var(--ef-surface)); }
 /* Keep the scroll edges anchored to the fixed chrome, including nested account actions. */
 .ef-dialog-header,.ef-dialog-footer,.ef-account-dialog [data-auth-actions] { position:relative; z-index:1; }
@@ -253,6 +261,21 @@
 .ef-production-settings>.ef-field { max-width:360px; }
 .ef-confirm-dialog .ef-dialog-description { margin-bottom:0; }
 .ef-report-body,.ef-report-body .ef-stat strong { font-family:"Bender","Microsoft YaHei","PingFang SC",sans-serif; font-variant-numeric:tabular-nums; }
+.ef-report-body>.ef-section { padding:0; }
+.ef-report-body .ef-dialog-description { margin-bottom:12px; }
+.ef-report-body .ef-stats { gap:8px 12px; margin-bottom:12px; }
+.ef-report-body .ef-stat { padding:10px 0; }
+.ef-report-body .ef-result { margin-block:10px; }
+.ef-report-body .ef-result>header { flex-wrap:wrap; gap:4px 12px; padding:10px 12px 6px; }
+.ef-report-body .ef-shifts { grid-template-columns:minmax(0,1fr); padding:0 12px 6px; }
+.ef-report-body .ef-shift { display:grid; grid-template-columns:148px minmax(0,1fr); align-items:center; gap:6px 12px; padding:6px 0; }
+.ef-report-body .ef-shift+.ef-shift { border-top:1px solid var(--ef-line); }
+.ef-report-body .ef-shift-label { justify-content:flex-start; margin-bottom:0; }
+.ef-report-body .ef-shift>p { font-size:12px; line-height:1.5; }
+.ef-report-body .ef-details { padding:0 12px 6px; }
+.ef-report-body .ef-details summary { min-height:36px; padding-block:8px; line-height:20px; }
+.ef-operator-chip--compact { min-width:0; max-width:100%; gap:6px; padding:3px 8px 3px 3px; border-radius:5px; }
+.ef-operator-chip--compact .ef-operator-chip-name { min-width:0; overflow-wrap:anywhere; }
 .ef-shift-time { display:inline-block; flex-shrink:0; padding:2px 5px; border-radius:3px; color:var(--ef-ink); background:color-mix(in oklab,#edca50 20%,var(--ef-raised)); font-family:"Bender","Microsoft YaHei","PingFang SC",sans-serif; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; }
 .dark .ef-shift-time { color:#f4db86; background:color-mix(in oklab,#edca50 12%,var(--ef-raised)); }
 .ef-shift-label { align-items:center; gap:8px; flex-wrap:wrap; }
@@ -279,6 +302,16 @@
 .ef-roster-grid--compact .ef-roster-elite>[data-filter-select] { width:88px; max-width:88px; }
 .ef-roster-editor .ef-roster-toolbar { margin-bottom:12px; }
 .ef-roster-editor .ef-roster-filters { gap:8px; }
+.ef-skill-rarity-row { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:12px; }
+.ef-roster-top-actions { display:flex; align-items:center; gap:8px; }
+.ef-roster-upgrade-trigger[data-popup-open]>svg { transform:rotate(180deg); }
+.ef-roster-upgrade-positioner { z-index:50; }
+.ef-roster-upgrade-menu { width:min(300px,calc(100vw - 24px)); max-width:var(--available-width); max-height:var(--available-height); overflow-y:auto; padding:5px; border:1px solid var(--border); border-radius:10px; background:var(--popover); color:var(--popover-foreground); box-shadow:0 8px 28px #0002; outline:none; }
+.ef-roster-upgrade-label { padding:6px 10px; font-size:12px; color:var(--muted-foreground); }
+.ef-roster-upgrade-item { display:flex; flex-direction:column; align-items:flex-start; gap:3px; min-height:58px; padding:9px 10px; border-radius:6px; font-size:13px; line-height:1.5; cursor:pointer; outline:none; }
+.ef-roster-upgrade-item small { font-size:12px; color:var(--muted-foreground); }
+.ef-roster-upgrade-item[data-highlighted] { background:var(--accent); color:var(--accent-foreground); }
+.ef-roster-upgrade-item[data-disabled] { opacity:.5; cursor:not-allowed; }
 .ef-manual-picker-grid { --manual-picker-portrait-size:56px; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); justify-items:center; gap:4px 8px; }
 .ef-manual-choice { display:flex; flex-direction:column; align-items:center; gap:4px; width:100%; min-width:0; padding:4px 0; border-radius:4px; color:var(--ef-ink); }
 .ef-manual-choice:hover { background:color-mix(in oklab,var(--ef-line) 25%,transparent); }
@@ -445,6 +478,12 @@
   .ef-roster-grid--compact { grid-template-columns:repeat(3,minmax(0,1fr)); }
 }
 @media(max-width:640px) {
+  .ef-skill-rarity-row { gap:8px; }
+  .ef-skill-rarity-row>[data-skill-filter-row] { grid-template-columns:minmax(0,1fr); }
+  .ef-skill-rarity-row>[data-skill-filter-row]>span { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap; }
+  .ef-roster-top-actions { gap:6px; }
+  .ef-report-body .ef-shift { grid-template-columns:minmax(0,1fr); }
+  .ef-report-body .ef-details summary { min-height:44px; padding-block:12px; }
   .ef-roster-grid--compact { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .ef-roster-grid--compact .ef-roster-card>header { flex-wrap:wrap; }
   .ef-roster-grid--compact .ef-roster-identity { flex-basis:calc(100% - 60px); }
@@ -467,9 +506,8 @@
   .ef-data-tabs { gap:16px; }
   .ef-data-tabs button { min-height:44px; }
   .ef-dialog-header { padding:2px 8px 2px 16px; }
-  .ef-dialog-title { font-size:14px; }
   .ef-dialog-close { width:44px; height:44px; }
-  .ef-dialog-body { padding:16px; scroll-padding-block:16px; }
+  .ef-dialog-body { padding:12px 16px; scroll-padding-block:12px; }
   .ef-account-dialog-body [data-yeye-scroll=auto] { padding-top:16px; scroll-padding-block:16px; }
   .ef-dialog-header::after,.ef-dialog-footer::before,.ef-account-dialog [data-auth-actions]::before { height:16px; }
   .ef-dialog-footer { padding:14px 16px; }
