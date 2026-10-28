@@ -66,8 +66,8 @@ const secondRole = { ...role, roleId: "second-role", nickname: "第二个角色"
 const secondSnapshot = normalizeEndfieldSnapshot({ ...detail, base: { ...detail.base, roleId: secondRole.roleId, name: secondRole.nickname },
   chars: detail.chars.map((char, i) => i < 2 ? { ...char, charData: { ...char.charData, id: catalog[i + 2].id, name: catalog[i + 2].name } } : char) });
 secondSnapshot.inventory = inventory(secondRole, 900);
-const syncedRoster = catalog.slice(0, 2).map((op, i) => ({ name: op.name, elite: i + 1 }));
-const secondRoster = catalog.slice(2, 4).map((op, i) => ({ name: op.name, elite: i + 1 }));
+const syncedRoster = catalog.slice(0, 2).map((op, i) => ({ name: op.name, elite: i + 1, latestSpaceshipSkillNodes: [] }));
+const secondRoster = catalog.slice(2, 4).map((op, i) => ({ name: op.name, elite: i + 1, latestSpaceshipSkillNodes: [] }));
 const browser = await chromium.launch({ headless: true });
 const errors = [], requests = [];
 let accounts = [], delayedSync = null, releaseSync = null, failSync = false, badSnapshot = false, partialSnapshot = false, signedOut = false, failInventory = false;
@@ -116,9 +116,29 @@ try {
     assert.ok(Math.abs(tabs.x - content.x) < 2, "Tabs and content share the left edge");
   };
   const ready = () => page.locator('body[data-app-hydrated="true"]').waitFor();
-  const idle = () => page.locator('[data-endfield-skland][aria-busy="false"]').waitFor();
+  const syncDetails = page.getByRole("dialog", { name: "森空岛同步明细", exact: true });
+  const closeSyncDetails = async () => {
+    if (await syncDetails.isVisible()) {
+      await syncDetails.getByRole("button", { name: "关闭同步明细", exact: true }).click();
+      await syncDetails.waitFor({ state: "hidden" });
+    }
+  };
+  const idle = async () => {
+    await page.locator('[data-endfield-skland][aria-busy="false"]').waitFor();
+    await closeSyncDetails();
+  };
+  const inspectSyncDetails = async (texts) => {
+    await page.getByRole("button", { name: "最近同步明细", exact: true }).click();
+    for (const text of texts) await expect(syncDetails).toContainText(text);
+    await closeSyncDetails();
+  };
   const roster = () => page.evaluate(key => JSON.parse(globalThis.localStorage.getItem(key)).operators, STORAGE_KEY);
-  const profile = name => page.locator(".ef-skland-profile").getByRole("heading", { name, exact: true }).waitFor();
+  const profile = async name => {
+    const heading = page.locator(".ef-skland-profile").getByRole("heading", { name, exact: true, includeHidden: true });
+    await heading.waitFor({ state: "attached" });
+    await idle();
+    await expect(heading).toBeVisible();
+  };
   const checkSearchLayout = async label => {
     const input = page.getByLabel(label, { exact: true });
     const searchBox = await input.boundingBox();
@@ -140,19 +160,18 @@ try {
   await profile(role.nickname); await idle();
   assert.equal(await page.locator("[data-skland-login-panel]").count(), 0, "Sign-in automatically loads the dashboard and hides login");
   await expect.poll(roster).toEqual(syncedRoster);
-  await page.locator("[data-skland-sync-status]").getByText(/已同步 2 名/).waitFor();
-  await page.locator("[data-skland-sync-status]").getByText(/暂未支持.*未知测试干员/).waitFor();
-  await page.locator("[data-skland-sync-status]").getByText(/无基建技能.*管理员/).waitFor();
+  await inspectSyncDetails(["可排班干员 0 → 2 名", "未知测试干员", "暂未支持"]);
+  assert.equal((await roster()).some(operator => operator.name === "管理员"), false, "Operators without ship skills stay outside the scheduling roster");
   assert.equal(await page.getByRole("heading", { name: "用于基建排班", exact: true }).count(), 0);
   assert.equal(await page.getByRole("button", { name: "导入排班名单", exact: true }).count(), 0);
   const controls = page.locator(".ef-skland-controls");
   assert.equal(await controls.locator(".ef-actions>.ef-action--sm").count(), 3);
-  assert.equal((await page.getByRole("button", { name: "刷新数据", exact: true }).textContent()).trim(), "");
+  assert.equal((await page.getByRole("button", { name: "刷新数据", exact: true }).textContent()).trim(), "同步数据");
   const accountBox = await page.getByRole("combobox", { name: "森空岛账号", exact: true }).boundingBox();
   const roleBox = await page.getByRole("combobox", { name: "角色与服务器", exact: true }).boundingBox();
   const actionsBox = await controls.locator(".ef-actions").boundingBox();
   assert.ok(Math.abs(accountBox.y - roleBox.y) < 1 && roleBox.x >= accountBox.x + accountBox.width, "Compact selectors sit side by side");
-  assert.ok(roleBox.x + roleBox.width <= actionsBox.x, "Both selectors sit to the left of the three actions");
+  assert.ok(actionsBox.y >= accountBox.y + accountBox.height, "Sync actions sit below the account and role selectors");
   assert.equal(await page.getByRole("combobox", { name: "森空岛账号", exact: true }).evaluate(el => globalThis.getComputedStyle(el).fontSize), "12px");
   assert.ok((await page.locator(".ef-skland-profile").boundingBox()).x < accountBox.x, "Profile sits at the left of the header");
   await page.waitForFunction(key => JSON.parse(globalThis.localStorage.getItem(key)).options.levels.center === 4, STORAGE_KEY);
@@ -179,9 +198,9 @@ try {
   await page.getByText("没有符合条件的物品。", { exact: true }).waitFor();
   await page.getByRole("button", { name: "清空搜索", exact: true }).click();
   assert.equal(await page.getByLabel("搜索仓库物品", { exact: true }).evaluate(el => el === globalThis.document.activeElement), true, "Clear restores search focus");
-  await choose("物品分类", "干员经验");
+  await page.getByRole("tablist", { name: "物品分类", exact: true }).getByRole("tab", { name: "干员经验", exact: true }).click();
   assert.equal(await page.locator("[data-material-id]").count(), 5);
-  await choose("物品分类", "全部物品");
+  await page.getByRole("tablist", { name: "物品分类", exact: true }).getByRole("tab", { name: "全部物品", exact: true }).click();
   await page.getByRole("tab", { name: "干员状态", exact: true }).click();
   await checkSearchLayout("搜索干员");
   assert.equal(await page.getByRole("heading", { name: /^干员状态/ }).count(), 0);
@@ -197,7 +216,7 @@ try {
   assert.equal(await page.getByRole("heading", { name: "帝江号设施与生产", exact: true }).count(), 0);
   assert.equal(await page.locator(".ef-data-card").count(), 5);
   assert.equal(await page.getByRole("heading", { name: "会客室 · Lv.1", exact: true }).count(), 0, "The empty reception placeholder is hidden when the clue room is present");
-  assert.equal(await page.locator(".ef-ship-crew .ef-operator-skill-stage").textContent(), "1/4", "Ship crew uses snapshot progress independently of the local scheduling roster");
+  assert.deepEqual(await page.locator(".ef-ship-crew .ef-operator-skill-stage").allTextContents(), ["1/4", "2/4"], "Both crew members use snapshot progress independently of the local scheduling roster");
   assert.deepEqual(await page.locator(".ef-ship-crew > div > span:not(.ef-operator-portrait) small").allTextContents(), [
     "心情 34.49% · 信赖 103%（亲近）", "心情 50% · 信赖 132%（亲近）",
   ], "Ship crew sorts by mood and uses the correct mood and trust scales");
@@ -225,7 +244,7 @@ try {
   await page.getByRole("link", { name: "自动排班", exact: true }).click();
   await expect(page.getByRole("button", { name: "生成排班", exact: true })).toBeEnabled();
   assert.equal(await page.getByLabel("参与排班的干员", { exact: true }).locator(".ef-operator-chip").count(), 2, "Synced operators are visible on the scheduling page");
-  await page.getByRole("link", { name: "森空岛同步", exact: true }).click(); await idle();
+  await page.getByLabel("森空岛同步", { exact: true }).click(); await idle();
   await choose("角色与服务器", `${secondRole.nickname} · ${secondRole.serverName}`); await profile(secondRole.nickname); await idle();
   await expect.poll(roster).toEqual(secondRoster);
   await choose("角色与服务器", `${role.nickname} · ${role.serverName}`); await profile(role.nickname); await idle();
@@ -305,14 +324,14 @@ try {
   assert.ok((await page.locator(".ef-sync-note").boundingBox()).y >= operatorsBottom.y + operatorsBottom.height, "Operator visibility explanation follows the cards");
   const partialRoster = [{ ...secondRoster[0], elite: 4 }, secondRoster[1]];
   await expect.poll(roster).toEqual(partialRoster);
-  await page.locator("[data-skland-sync-status]").getByText(/已保留该角色此前同步/).waitFor();
+  await inspectSyncDetails(["本次名单不完整，仅更新已返回的干员，未返回的原有干员仍保留。"]);
   await page.getByRole("tab", { name: "武器状态", exact: true }).click();
   await page.getByText("完整武器仓库暂未获取，仅显示已公开干员装备的武器。", { exact: true }).waitFor();
   const weaponsBottom = await page.locator(".ef-data-cards").boundingBox();
   assert.ok((await page.locator(".ef-sync-note").boundingBox()).y >= weaponsBottom.y + weaponsBottom.height, "Weapon source explanation follows the cards");
   const beforeForeignPartial = await page.evaluate(key => JSON.parse(globalThis.localStorage.getItem(key)), STORAGE_KEY);
   await choose("森空岛账号", role.nickname); await profile(role.nickname); await idle();
-  await page.locator("[data-skland-sync-status]").getByText(/尚未替换排班名单和设施配置/).waitFor();
+  await inspectSyncDetails(["新账号返回的名单不完整，原名单和设施均已保留。"]);
   assert.deepEqual(await page.evaluate(key => JSON.parse(globalThis.localStorage.getItem(key)), STORAGE_KEY), beforeForeignPartial, "Another account's partial response cannot mix rosters or facility configuration");
   await choose("森空岛账号", secondRole.nickname); await profile(secondRole.nickname); await idle();
   partialSnapshot = false;
@@ -350,9 +369,10 @@ try {
   await pendingLogoutSync;
   await page.locator("[data-sidebar-account-trigger]").click();
   await page.getByRole("menuitem", { name: "退出登录", exact: true }).click();
-  await page.getByRole("heading", { name: "登录森空岛", exact: true }).waitFor();
+  await page.waitForURL(`${origin}/`);
   const releaseAfterLogout = releaseSync; delayedSync = null;
-  releaseAfterLogout(); await idle();
+  releaseAfterLogout();
+  await page.getByLabel("森空岛同步", { exact: true }).click(); await idle();
   assert.equal(await page.locator("[data-skland-data]").count(), 0, "Website logout clears account data");
   assert.deepEqual(await roster(), syncedRoster, "Website logout preserves the local roster");
   await page.getByRole("heading", { name: "登录森空岛", exact: true }).waitFor();

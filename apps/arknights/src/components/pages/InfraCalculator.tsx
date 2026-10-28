@@ -370,22 +370,10 @@ export function InfraCalculator(props: InfraCalculatorProps) {
     onClearResultNotice, onDismissResultClearWarning, allowReplacementOperatorSort = false, highlightNoLayoutSkill = false,
   } = props;
 
-  // 一图流与列表的产物来源：按当前班次的 MAA 产物算好（必传，缺失会显示成布局产物）。
-  const activeRoomProducts = useMemo(() => {
-    const products = new Map<string, import("@riic/arknights-domain/types").RoomProduct>();
-    (activePlan?.rooms?.trading ?? []).forEach((room, index) => {
-      if (!room.product) return;
-      const order = room.product === "Originium Shard" || room.product === "Orundum" ? "originium" : "gold";
-      products.set(`trade_${index + 1}`, { trade: { order } });
-    });
-    (activePlan?.rooms?.manufacture ?? []).forEach((room, index) => {
-      if (!room.product) return;
-      const recipe = room.product === "Battle Record" || room.product === "battle_record" ? "battle_record"
-        : room.product === "Originium Shard" || room.product === "originium" ? "originium" : "gold";
-      products.set(`manu_${index + 1}`, { factory: { recipe } });
-    });
-    return products;
-  }, [activePlan]);
+  // 解析与排班行一起按需加载，避免首屏重复携带 MAA 产物转换逻辑。
+  const activeRoomProducts = useMemo(() => new Map(
+    rows.flatMap(row => row.roomProduct ? [[row.roomId, row.roomProduct] as const] : []),
+  ), [rows]);
 
   const eliteByOperator = useMemo(() => {
     const map = new Map<string, number>();

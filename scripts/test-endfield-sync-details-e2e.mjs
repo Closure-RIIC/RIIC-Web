@@ -8,7 +8,7 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-// Loopback-only fixtures exercise the unchanged administrator gate. No login bypass or real accounts.
+// Loopback-only account fixtures exercise public pages and authenticated synchronization.
 const account = createServer((request, response) => {
   if (!(request.headers.cookie ?? '').includes('better-auth.session_token=sync-fixture')) { response.writeHead(403).end(); return; }
   if (request.url.startsWith('/api/platform/endfield-access')) { response.writeHead(204).end(); return; }
@@ -35,7 +35,7 @@ try {
   let ready = false;
   for (let attempt=0; attempt<120; attempt++) {
     if (vite.exitCode !== null) throw new Error(log);
-    try { const response=await fetch(origin,{signal:AbortSignal.timeout(1000)}); assert.equal(response.status,404,'Anonymous requests must still be rejected'); ready=true; break; } catch { await delay(250); }
+    try { const response=await fetch(origin,{signal:AbortSignal.timeout(1000)}); assert.equal(response.status,200,'Public pages load without a website session'); ready=true; break; } catch { await delay(250); }
   }
   assert.ok(ready, log);
   const screenshotDirectory = path.resolve(process.env.ENDFIELD_SYNC_SCREENSHOT_DIR || '.tmp/endfield-sync-details-e2e');

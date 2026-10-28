@@ -7,7 +7,7 @@
 | `main` | production | `riic-endfield` | `/srv/riic-endfield` | 4186 | existing production configuration |
 | `develop` | development | `riic-endfield-dev` | `/srv/riic-endfield-dev` | 4286 | `http://127.0.0.1:4275` |
 
-Production continues to use the existing administrator-only ingress at `dj.riic.autos`. Development listens only on loopback; this setup does not add public DNS, an ingress route, or change access policy. The runtime administrator gate remains active in both environments.
+Production serves public pages at `dj.riic.autos`, with `endfield.riic.autos` redirecting there. Both applications list Arknights and Endfield in the sidebar game switcher. Development listens only on loopback. Endfield defaults to public access; `ENDFIELD_ACCESS_MODE=admin` retains the optional administrator preview. Account and Skland APIs still validate sessions and request origins independently.
 
 ## One-time server setup
 
@@ -21,13 +21,15 @@ The runner first checks and safely extracts the complete CI artifact, then uses 
 
 Existing servers set up with `setup-endfield-deploy.sh` need no installer change for incremental transfer. Both the runner and upload server need rsync, GNU tar, gzip with `--rsyncable`, and Python 3.12 or newer. Existing SSH host verification and the non-root upload account remain required.
 
-Verification checks the running systemd process's actual release directory and the expected anonymous 404 response from the administrator gate. Production receives twelve additional samples over sixty seconds; development receives three. A failure restores the previous release and restarts the service. This verifies the running version and access boundary; authenticated product acceptance is still performed by the user. Prior releases are retained for rollback.
+Verification checks the running systemd process's actual release directory and the access mode recorded in the artifact. New artifacts contain `accessMode: "public"` and must serve `/skills` with HTTP 200, HTML content and the Endfield application shell. Legacy artifacts without this field retain the administrator-preview 404 check, so they remain valid rollback targets. Production receives twelve additional samples over sixty seconds; development receives three. A failure restores the previous release and restarts the service. Authenticated product acceptance is still performed by the user.
+
+Before the first public release, update the root-owned `/usr/local/sbin/riic-endfield-deploy` from this repository; older installers reject the new metadata. Remove the site-wide administrator `auth_request` from the public ingress while preserving TLS, client-IP handling, body limits and the Skland bridge's same-origin check. See [access and preview configuration](../deploy/ENDFIELD_PREVIEW.md). Do not use `ENDFIELD_ACCESS_MODE=admin` for a public artifact: its health check will reject the mismatch.
 
 ## Validation
 
 - `python deploy/endfield-deploy.test.py` checks safe extraction and release identity.
 - `python3 deploy/endfield-transfer.test.py` on Linux runs the actual transfer script against isolated local SSH fixtures and real rsync. It covers incremental transfer, deletions, interrupted/restarted transfers, missing cache, checksum mismatch, stale commits, and rejected cache links. It never connects to a server or switches a real service.
-- `node scripts/test-endfield-access.mjs` validates the built runtime's administrator boundary with isolated account fixtures.
+- `node scripts/test-endfield-access.mjs` validates anonymous and ordinary-user access, authenticated API boundaries, account-service outages and the optional administrator preview with isolated account fixtures.
 - For the sidebar regression, start Arknights on 5194 and Endfield on 5196 with `PLATFORM_API_ORIGIN=http://127.0.0.1:5197`, then run `node scripts/test-sidebar-alignment-e2e.mjs`. The script starts its own local account fixture on 5197 and checks both languages, signed-in/anonymous footer layouts, desktop collapse/expand and the mobile drawer. It never uses a real account.
 
 No database migrations, dependency installation or builds run in the Endfield deployment job. Both archives have seven-day retention; an expired or missing Endfield archive requires a new full verification run.

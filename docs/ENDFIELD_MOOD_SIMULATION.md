@@ -217,18 +217,18 @@ effects.effMap[cat] += effect.value * 100;
 
 ## 8. 访问门禁与本地开发
 
-生产设计是“管理员预览”：每个页面、API 和静态请求都会调用账号服务的
-`/api/platform/endfield-access`，只有数据库中的有效管理员得到 204，否则返回
-`404 Not Found`（`Cache-Control: private, no-store`）。
+终末地默认公开访问，页面与静态资源不依赖网站登录或账号服务。账号操作和森空岛
+同步仍由各 API 校验登录、来源与账号归属。两站侧边栏顶部均可切换游戏。
 
-本地开发额外规则（`apps/endfield/src/server/admin-access.ts`）：
+设置 `ENDFIELD_ACCESS_MODE=admin` 可保留管理员预览，此模式通过账号服务的
+`/api/platform/endfield-access` 校验当前管理员权限，无权限时返回私有、不可缓存的
+404。仅在该预览模式下，本地开发支持以下例外：
 
 - `NODE_ENV !== "production"` 且 `APP_DEPLOYMENT_ENV !== "production"`；
 - 没有配置 `PLATFORM_API_ORIGIN` / `ENDFIELD_ACCOUNT_ORIGIN`；
 - 请求 Host 是 `127.0.0.1` / `localhost` / `::1`；
 
-同时满足时直接放行，保证 `npm run dev:endfield` 后本机可访问。配置了账号服务或
-生产构建时，门禁逻辑完全不变，真实管理员账号仍按原路径校验。
+同时满足时直接放行；配置账号服务或生产构建时，管理员预览仍按原路径校验。
 
 ## 9. 已知限制与排查清单
 

@@ -135,4 +135,22 @@ test("rows carry the shift's own product label instead of the layout's", () => {
   // 制造站按房间分组解析，不能落空、也不能被当成贸易产物
   assert.equal(labelOf("manu_1"), "作战记录");
   assert.equal(labelOf("manu_2"), "源石碎片");
+  assert.deepEqual(rows.find(row => row.roomId === "trade_1")?.roomProduct, { trade: { order: "originium" } });
+  assert.deepEqual(rows.find(row => row.roomId === "manu_1")?.roomProduct, { factory: { recipe: "battle_record" } });
+  assert.deepEqual(rows.find(row => row.roomId === "manu_2")?.roomProduct, { factory: { recipe: "originium" } });
+});
+
+test("missing shift products do not inherit layout products in schedule controls", () => {
+  const productLayout: BaseBlueprint = {
+    template: "243", drone_cap: 235, scenario: {},
+    rooms: [
+      { id: "trade_1", kind: "trade_post", level: 3, product: { trade: { order: "gold" } } },
+      { id: "manu_1", kind: "factory", level: 3, product: { factory: { recipe: "gold" } } },
+    ],
+  };
+  const plan: MaaPlan = { name: "无产物班次", rooms: { trading: [{ operators: [] }], manufacture: [{ operators: [] }] } };
+  for (const rows of [planToRows(plan, undefined, productLayout), planToRows(undefined, undefined, productLayout)]) {
+    assert.equal(rows.length, 2);
+    assert.ok(rows.every(row => row.roomProduct === undefined));
+  }
 });

@@ -127,13 +127,37 @@ try {
   await page.locator('body[data-app-hydrated="true"]').waitFor();
   await expect(avatar).toHaveCount(0);
   await page.locator("[data-game-switcher]").click();
-  await expect(page.getByRole("menuitem", { name: "终末地", exact: true })).toHaveCount(0);
-  await page.goto(`${endfield}/`);
+  await page.getByRole("menuitem", { name: "终末地", exact: true }).click();
   await page.waitForURL(`${endfield}/`);
   await page.locator('body[data-app-hydrated="true"]').waitFor();
   await expect(avatar).toHaveCount(0);
+  for (const locale of ["zh", "en"]) {
+    await context.addCookies([
+      { name: "riic-locale", value: locale, url: arknights },
+      { name: "riic-endfield-locale", value: locale, url: endfield },
+    ]);
+    for (const width of [1440, 390]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const [source, target, label] of [
+        [arknights, endfield, locale === "en" ? "Endfield" : "终末地"],
+        [endfield, arknights, locale === "en" ? "Arknights" : "明日方舟"],
+      ]) {
+        await page.goto(`${source}/skills`);
+        await page.locator('body[data-app-hydrated="true"]').waitFor();
+        if (width < 768) await page.locator('[data-slot="sidebar-trigger"]:visible').first().click();
+        await page.locator('[data-game-switcher]:visible').click();
+        await expect(page.getByRole("menuitem")).toHaveCount(2);
+        const destination = page.getByRole("menuitem", { name: label, exact: true });
+        await expect(destination).toHaveAttribute("href", `${target}/`);
+        await destination.click();
+        await page.waitForURL(`${target}/`);
+        await page.locator('body[data-app-hydrated="true"]').waitFor();
+        await expect(avatar).toHaveCount(0);
+      }
+    }
+  }
   assert.deepEqual(errors, [], "No runtime or hydration errors");
-  console.log("Passed: SSR/no-store, no duplicate mount request, refresh continuity, stale response ordering, both sign-out menus, failed logout preserves account, logout wins over stale refresh, reload and bidirectional navigation.");
+  console.log("Passed: SSR/no-store, no duplicate mount request, refresh continuity, stale response ordering, both sign-out menus, failed logout preserves account, logout wins over stale refresh, reload and anonymous bidirectional navigation in Chinese/English on desktop/mobile.");
   await context.close();
 } finally {
   await browser.close();

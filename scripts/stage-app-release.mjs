@@ -33,5 +33,6 @@ await writeFile(path.join(output, "package.json"), JSON.stringify({
 }, null, 2) + "\n");
 await writeFile(path.join(output, ".release-artifact.json"), JSON.stringify({
   formatVersion: 1, kind: `riic-${app}`, releaseSha, releaseTreeSha,
+  ...(app === "endfield" ? { accessMode: "public" } : {}),
 }, null, 2) + "\n");
 process.stdout.write(`Staged independent ${app} release at ${output}\n`);
