@@ -9,11 +9,7 @@ import { Select } from "@base-ui/react/select";
 import { DroneIcon } from "@/components/DroneIcon";
 import { RecyclingRoomNotice } from "@/components/RecyclingRoomNotice";
 
-import {
-  factoryRecipeFor,
-  maxRoomLevel,
-  tradeOrderFor,
-} from "@riic/arknights-domain/blueprint";
+import { maxRoomLevel } from "@riic/arknights-domain/blueprint";
 import { AnimatedNumber, AnimatedText } from "@/components/AnimatedText";
 import { LevelDiamonds, OperatorSlot, roomVisualFor } from "@/components";
 import { Button } from "@/components/ui/button";
@@ -64,7 +60,8 @@ export interface CompactScheduleViewProps {
   droneTargetRoomId?: string | null;
   onDroneTargetChange?: (row: RoomRow) => void;
   onManualSkillEfficiencyChange?: (row: RoomRow, value: number | null) => void;
-  roomProducts?: ReadonlyMap<string, RoomProduct>;
+  /** 当前班次各房间的产物；必传，缺失会让图标回退到布局订单而显示错误。 */
+  roomProducts: ReadonlyMap<string, RoomProduct>;
   onFactoryRecipeChange?: (roomId: string, recipe: import("@riic/arknights-domain/blueprint").FactoryRecipe) => void;
   onTradeOrderChange?: (roomId: string, order: import("@riic/arknights-domain/blueprint").TradeOrder) => void;
   compactProductControls?: boolean;
@@ -185,7 +182,7 @@ function CompactRoomCard({
   droneTargetRoomId?: string | null;
   onDroneTargetChange?: (row: RoomRow) => void;
   onManualSkillEfficiencyChange?: (row: RoomRow, value: number | null) => void;
-  roomProducts?: ReadonlyMap<string, RoomProduct>;
+  roomProducts: ReadonlyMap<string, RoomProduct>;
   onFactoryRecipeChange?: (roomId: string, recipe: import("@riic/arknights-domain/blueprint").FactoryRecipe) => void;
   onTradeOrderChange?: (roomId: string, order: import("@riic/arknights-domain/blueprint").TradeOrder) => void;
   compactProductControls?: boolean;
@@ -243,9 +240,12 @@ function CompactRoomCard({
       ) : null}
       {(isTrade || isFactory) && <div className="ml-auto flex shrink-0 items-center gap-1.5" style={{ marginRight: onIssue ? "2.25rem" : undefined }} data-compact-room-actions>
         {isTrade ? (() => {
-          const product = roomProducts?.get(row.roomId);
-          const order = product && "trade" in product ? product.trade.order : tradeOrderFor(layoutRoom!);
-          const label = order === "gold" ? intl("components_CompactScheduleView.lmdOrder") : order === "originium" ? intl("components_CompactScheduleView.originiumOrder") : order;
+          // 产物只认这一班真正的值：roomProducts 由排班页按当前班次算好、必传，
+          // 读不到就说明这一班没有产物，不再用布局产物占位。
+          const product = roomProducts.get(row.roomId);
+          const order = product && "trade" in product ? product.trade.order : undefined;
+          if (!order) return null;
+          const label = order === "gold" ? intl("components_CompactScheduleView.lmdOrder") : intl("components_CompactScheduleView.originiumOrder");
           const iconUrl = order === "originium" ? PRODUCT_ICON_URLS.orundum : PRODUCT_ICON_URLS.lmdOrders;
           return compactProductControls && onTradeOrderChange ? (
             <CompactProductSelect
@@ -262,8 +262,9 @@ function CompactRoomCard({
             </div>
           );
         })() : isFactory ? (() => {
-          const product = roomProducts?.get(row.roomId);
-          const recipe = product && "factory" in product ? product.factory.recipe : factoryRecipeFor(layoutRoom!);
+          const product = roomProducts.get(row.roomId);
+          const recipe = product && "factory" in product ? product.factory.recipe : undefined;
+          if (!recipe) return null;
           const label = recipe === "all" ? intl("components_CompactScheduleView.auto") : recipe === "gold" ? intl("components_CompactScheduleView.pureGold") : recipe === "battle_record" ? intl("components_CompactScheduleView.battleRecord") : recipe === "originium" ? intl("components_CompactScheduleView.originiumShard") : recipe;
           const iconUrl = recipe === "gold" ? PRODUCT_ICON_URLS.gold : recipe === "battle_record" ? PRODUCT_ICON_URLS.experience : recipe === "originium" ? PRODUCT_ICON_URLS.shards : undefined;
           return compactProductControls && onFactoryRecipeChange ? (

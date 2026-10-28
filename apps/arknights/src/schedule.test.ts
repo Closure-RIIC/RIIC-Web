@@ -104,3 +104,35 @@ test("omits unavailable efficiency and marks Lancet-2 when its power room omits 
   assert.equal(presentRoomEfficiency("power", lancetPower?.efficiency), null);
   assert.equal(lancetPower?.operatorSlots[0]?.portraitAlert, "missing-power-efficiency");
 });
+
+test("rows carry the shift's own product label instead of the layout's", () => {
+  const productLayout: BaseBlueprint = {
+    template: "243",
+    drone_cap: 235,
+    scenario: {},
+    rooms: [
+      { id: "trade_1", kind: "trade_post", level: 3, product: { trade: { order: "gold" } } },
+      { id: "manu_1", kind: "factory", level: 3, product: { factory: { recipe: "gold" } } },
+      { id: "manu_2", kind: "factory", level: 3, product: { factory: { recipe: "gold" } } },
+    ],
+  };
+  const productPlan: MaaPlan = {
+    name: "第一班",
+    rooms: {
+      trading: [{ product: "Originium Shard", operators: [] }],
+      manufacture: [
+        { product: "Battle Record", operators: [] },
+        { product: "Originium Shard", operators: [] },
+      ],
+    },
+  };
+
+  const rows = planToRows(productPlan, undefined, productLayout);
+  const labelOf = (roomId: string) => rows.find((row) => row.roomId === roomId)?.product;
+
+  // 贸易站读到的是这一班的开采协力，而不是布局里的龙门商法
+  assert.equal(labelOf("trade_1"), "开采协力");
+  // 制造站按房间分组解析，不能落空、也不能被当成贸易产物
+  assert.equal(labelOf("manu_1"), "作战记录");
+  assert.equal(labelOf("manu_2"), "源石碎片");
+});
