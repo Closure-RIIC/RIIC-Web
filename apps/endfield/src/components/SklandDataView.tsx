@@ -7,7 +7,7 @@ import { SklandProgress } from "./SklandProgress";
 import { SklandInventory } from "./SklandInventory";
 import { Tabs, CompactTabsList, TabsTrigger, TabsContent } from "@riic/ui-primitives/tabs";
 import { SearchInput } from "@riic/ui-primitives/search-input";
-import { quantity } from "@riic/endfield-skland/presentation";
+import { physicalStrengthPercent, quantity, shipFavorability, shipRoomsForDisplay, sortShipCrewByMood } from "@riic/endfield-skland/presentation";
 import { operatorData, weaponData } from "@riic/endfield-data";
 import { GameArtwork, OperatorPortrait } from "./GameArtwork";
 
@@ -16,6 +16,7 @@ const items = (value: DetailValue | undefined) => Array.isArray(value) ? value :
 const nameOf = (value: DetailValue | undefined) => typeof value === "string" || typeof value === "number" ? String(value) : "";
 const imageUrl = (value: DetailValue | undefined) => typeof value === "string" && /^https:\/\//.test(value) ? value : undefined;
 const countOf = (value: DetailValue) => Array.isArray(value) ? value.length : value && typeof value === "object" ? Object.keys(value).length : 0;
+const favorabilityLevels = { friendly: { zh: "友好", en: "Friendly" }, close: { zh: "亲近", en: "Close" }, trusted: { zh: "信任", en: "Trusted" } } as const;
 
 function Disclosure({ title, count, children }: { title: string; count?: number; children: ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -111,7 +112,7 @@ export function SklandDataView({ snapshot }: { snapshot: EndfieldSnapshot }) {
     const char = record(item), profile = record(char.charData), display = operatorData(nameOf(profile.id));
     return [nameOf(profile.name), nameOf(char.name), display?.enName].join(" ").toLowerCase().includes(search.trim().toLowerCase());
   });
-  const rooms = items(record(data.spaceShip).rooms);
+  const rooms = shipRoomsForDisplay(items(record(data.spaceShip).rooms));
   const fullWeapons = snapshot.weapons?.status === "ready";
   // An unavailable calculator list must never masquerade as an empty inventory.
   const equipped = allChars.flatMap(item => {
@@ -185,9 +186,13 @@ export function SklandDataView({ snapshot }: { snapshot: EndfieldSnapshot }) {
         {!rooms.length ? <p className="ef-muted">{t("森空岛暂未返回帝江号数据。", "No ship data returned.")}</p> : <div className="ef-data-cards">{rooms.map((item, i) => {
           const room = record(item);
           return <article className="ef-data-card" key={nameOf(room.id) || i}><header><h3>{nameOf(room.name) || roomNames[nameOf(room.type)] || t("设施", "Facility")} · Lv.{nameOf(room.level)}</h3></header>
-            <div className="ef-ship-crew">{items(room.chars).map((item, index) => {
+            <div className="ef-ship-crew">{sortShipCrewByMood(items(room.chars)).map((item, index) => {
               const char = record(item), id = nameOf(char.charId), op = operatorData(id), name = (locale === "en" ? op?.enName : op?.name) || names.get(id) || id;
-              return <div key={index}><OperatorPortrait name={op?.id || id} size={40} elite={snapshot.characters.find(operator => operator.id === id)?.elite ?? null} /><span>{name}<small>{t("心情", "Mood")} {nameOf(char.physicalStrength) || "—"} · {t("信赖", "Trust")} {nameOf(char.favorability) || "—"}</small></span></div>;
+              const mood = physicalStrengthPercent(char.physicalStrength) ?? "—";
+              const favorability = shipFavorability(char.favorability);
+              const level = favorability ? favorabilityLevels[favorability.level][locale] : "";
+              const trust = favorability ? (locale === "zh" ? `${favorability.percent}（${level}）` : `${favorability.percent} (${level})`) : "—";
+              return <div key={index}><OperatorPortrait name={op?.id || id} size={40} elite={snapshot.characters.find(operator => operator.id === id)?.elite ?? null} /><span>{name}<small>{t("心情", "Mood")} {mood} · {t("信赖", "Trust")} {trust}</small></span></div>;
             })}</div>
             <DataFields value={Object.fromEntries(Object.entries(room).filter(([key]) => !["id", "name", "type", "level", "chars"].includes(key)))} names={names} />
           </article>;

@@ -272,6 +272,7 @@ export function MowerSchedulePage({ operbox = null }: { operbox?: OperBoxEntry[]
       </div>
       <ScheduleBoard
         rows={board.rows} layout={board.layout} activeShift={active + 1} planRevision={`mower-${active}`}
+        roomProducts={board.products}
         eliteByOperator={eliteByOperator} levelByOperator={levelByOperator} searchQuery={scheduleQuery}
         shiftTabsSlot={(
           <Tabs value={String(active)} onValueChange={(value) => setActive(Number(value))} className="min-w-0 max-w-full">

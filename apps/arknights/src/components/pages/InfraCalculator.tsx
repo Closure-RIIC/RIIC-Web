@@ -370,6 +370,11 @@ export function InfraCalculator(props: InfraCalculatorProps) {
     onClearResultNotice, onDismissResultClearWarning, allowReplacementOperatorSort = false, highlightNoLayoutSkill = false,
   } = props;
 
+  // 解析与排班行一起按需加载，避免首屏重复携带 MAA 产物转换逻辑。
+  const activeRoomProducts = useMemo(() => new Map(
+    rows.flatMap(row => row.roomProduct ? [[row.roomId, row.roomProduct] as const] : []),
+  ), [rows]);
+
   const eliteByOperator = useMemo(() => {
     const map = new Map<string, number>();
     for (const entry of operbox ?? []) {
@@ -723,6 +728,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
               shiftInfoSlot={scheduleResult ? renderPlanActions("desktop") : undefined}
               onIssue={showFeedback ? onMarkIssue : undefined}
               feedbackDisabled={feedbackDisabledForSampleBox}
+              roomProducts={activeRoomProducts}
               onFactoryRecipeChange={onFactoryRecipeChange}
               onTradeOrderChange={onTradeOrderChange}
               sortRoomId={allowReplacementOperatorSort ? sortRoomId : null}
