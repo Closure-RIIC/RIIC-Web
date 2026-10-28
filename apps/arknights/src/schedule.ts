@@ -1,6 +1,6 @@
 import type { BuildingSkillPresentation } from "./operatorPortraits";
 import { maaRoomAutofill } from "./schedule-autofill.ts";
-import type { BaseBlueprint, BlueprintRoom, MaaOperatorSlot, MaaPlan, MaaRoom, MaaRooms, RoomEfficiency, RoomKind, RotationShift, TrainingRoomShift } from "@riic/arknights-domain/types";
+import type { BaseBlueprint, BlueprintRoom, MaaOperatorSlot, MaaPlan, MaaRoom, MaaRooms, RoomEfficiency, RoomKind, RoomProduct, RotationShift, TrainingRoomShift } from "@riic/arknights-domain/types";
 
 export type RoomGroup = keyof MaaRooms | "training" | "recycling";
 
@@ -13,6 +13,8 @@ export interface RoomRow {
   title: string;
   level?: number;
   product?: string;
+  /** 当前班次的产物，用于图标和编辑控件，不从布局默认值补齐。 */
+  roomProduct?: RoomProduct;
   operators: string[];
   operatorSlots: RoomOperatorSlot[];
   /** Fixed-position slots used by editors; unlike operatorSlots, empty gaps are preserved. */
@@ -129,6 +131,19 @@ function productLabel(value: unknown, group?: RoomGroup): string | undefined {
   if (group === "trading") return TRADE_PRODUCT_LABELS[value] ?? PRODUCT_LABELS[value] ?? value;
   if (group === "manufacture") return FACTORY_PRODUCT_LABELS[value] ?? PRODUCT_LABELS[value] ?? value;
   return PRODUCT_LABELS[value] ?? value;
+}
+
+function roomProductFor(value: string | undefined, group: RoomGroup): RoomProduct | undefined {
+  if (!value) return undefined;
+  if (group === "trading") {
+    return { trade: { order: value === "Originium Shard" || value === "Orundum" ? "originium" : "gold" } };
+  }
+  if (group === "manufacture") {
+    const recipe = value === "Battle Record" || value === "battle_record" ? "battle_record"
+      : value === "Originium Shard" || value === "originium" ? "originium" : "gold";
+    return { factory: { recipe } };
+  }
+  return undefined;
 }
 
 function operatorName(value: unknown): string {
@@ -411,6 +426,7 @@ export function planToRows(
         title: titleFor(group, index),
         level: levelMap.get(roomId),
         product: productLabel(room.product, group),
+        roomProduct: roomProductFor(room.product, group),
         operators,
         operatorSlots,
         autofill: maaRoomAutofill(room.autofill, {
