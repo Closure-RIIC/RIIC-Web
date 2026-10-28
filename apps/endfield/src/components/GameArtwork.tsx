@@ -58,7 +58,7 @@ export function EquippedWeapon({ name, compact = false }: { name: string; compac
     {!compact ? <span>{label}{weapon.level != null ? ` · Lv.${text(weapon.level)}` : ""}</span> : null}
   </span>;
 }
-export function OperatorChip({ name, showWeapon = true }: { name: string; showWeapon?: boolean }) {
+export function OperatorChip({ name, showWeapon = true, compact = false }: { name: string; showWeapon?: boolean; compact?: boolean }) {
   const { locale } = useWorkspace();
-  return <div className="ef-operator-chip"><OperatorPortrait name={name} size={36} /><span>{locale === "en" ? operatorData(name)?.enName || name : name}</span>{showWeapon ? <EquippedWeapon name={name} compact /> : null}</div>;
+  return <div className={`ef-operator-chip${compact ? " ef-operator-chip--compact" : ""}`}><OperatorPortrait name={name} size={compact ? 28 : 36} /><span className="ef-operator-chip-name">{locale === "en" ? operatorData(name)?.enName || name : name}</span>{showWeapon ? <EquippedWeapon name={name} compact /> : null}</div>;
 }

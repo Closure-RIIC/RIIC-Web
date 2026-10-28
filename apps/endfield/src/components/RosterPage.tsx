@@ -1,5 +1,6 @@
 import { Fragment, useState } from "react";
-import { Download, Check, Plus, X } from "lucide-react";
+import { Menu } from "@base-ui/react/menu";
+import { Download, Check, ChevronDown, Plus, X } from "lucide-react";
 import type { Operator } from "@riic/endfield-solver/model.mjs";
 import { Action, Notice, PageTitle, Section } from "@riic/endfield-ui";
 import { downloadJson, useWorkspace } from "../state";
@@ -75,7 +76,6 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
   const { workspace, update, t, locale, ready, storageError } = useWorkspace();
   const [query, setQuery] = useState("");
   const [onlyOwned, setOnlyOwned] = useState(false);
-  const [upgradeChoicesOpen, setUpgradeChoicesOpen] = useState(false);
   const [rarity, setRarity] = useState("all");
   const [room, setRoom] = useState("all");
   const [profession, setProfession] = useState("all");
@@ -114,7 +114,6 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
       const nodes = tiers.map(skill => skill.nodeId).sort((a, b) => (parseSkillNodeId(b)?.level ?? 0) - (parseSkillNodeId(a)?.level ?? 0));
       return { ...entry, elite: 4, latestSpaceshipSkillNodes: reconcileSkillNodes(tiers, nodes, 4) };
     }));
-    setUpgradeChoicesOpen(false);
   }
 
   /** 当前生效的节点：没有字段时按精英化回退，并收敛成每槽最高档。 */
@@ -164,27 +163,36 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
     {!skillsOnly && storageError ? <Notice error>{storageError}</Notice> : null}
     <>
       <SkillFilters rarity={rarity} profession={profession} room={room} tag={tag} onRarityChange={setRarity} onProfessionChange={setProfession}
-        onRoomChange={value => { setRoom(value); setTag("all"); }} onTagChange={setTag} facilityLabel={facilityLabel} />
+        onRoomChange={value => { setRoom(value); setTag("all"); }} onTagChange={setTag} facilityLabel={facilityLabel}
+        rarityActions={!skillsOnly && !picker ? <>
+          <SelectionButton size="sm" selected={onlyOwned} onSelectedChange={setOnlyOwned}>{t("仅已选", "Selected only")}</SelectionButton>
+          <Menu.Root modal={false}>
+            <Menu.Trigger render={<Button variant="outline" size="sm" className="ef-roster-upgrade-trigger min-h-9" />} disabled={!ready}
+              aria-label={t("全精4 · 技能全解锁", "Elite 4 · Unlock all skills")}>
+              {t("全精4", "Elite 4")}<ChevronDown aria-hidden className="size-3" />
+            </Menu.Trigger>
+            <Menu.Portal><Menu.Positioner side="bottom" align="end" sideOffset={6} collisionPadding={12} className="ef-roster-upgrade-positioner">
+              <Menu.Popup className="ef-roster-upgrade-menu" aria-label={t("选择升级范围", "Choose upgrade scope")}>
+                <Menu.Group>
+                  <Menu.GroupLabel className="ef-roster-upgrade-label">{t("全精4 · 技能全解锁", "Elite 4 · Unlock all skills")}</Menu.GroupLabel>
+                  <Menu.Item className="ef-roster-upgrade-item" disabled={!ready || selected.size === 0} onClick={() => maxRoster(false)}>
+                    <span>{t("仅升级已拥有干员", "Upgrade owned operators")}</span>
+                    <small>{selected.size ? t(`保留名单 · ${selected.size} 名干员`, `Keep roster · ${selected.size} operators`) : t("请先选择干员", "Select operators first")}</small>
+                  </Menu.Item>
+                  <Menu.Item className="ef-roster-upgrade-item" disabled={!ready} onClick={() => maxRoster(true)}>
+                    <span>{t("补齐全部干员并升级", "Add all operators and upgrade")}</span>
+                    <small>{t("加入所有可排班干员", "Add every schedulable operator")}</small>
+                  </Menu.Item>
+                </Menu.Group>
+              </Menu.Popup>
+            </Menu.Positioner></Menu.Portal>
+          </Menu.Root>
+        </> : undefined} />
       <SearchInput containerClassName="mt-3" label={t("搜索干员或技能", "Search operators or skills")} placeholder={t("搜索干员、技能名称或效果…", "Search operators, skill names or effects…")} value={query} onChange={e => setQuery(e.target.value)} onClear={() => setQuery("")} clearLabel={t("清空搜索", "Clear search")} />
     </>
     <Section>
       {!skillsOnly ? <div className="ef-roster-toolbar">
         <div className="ef-roster-filters">
-          {!picker ? <SelectionButton selected={onlyOwned} onSelectedChange={setOnlyOwned}>{t("仅已选", "Selected only")}</SelectionButton> : null}
-          {!picker ? <div className="flex flex-wrap items-center gap-2" onKeyDown={event => { if (event.key === "Escape") setUpgradeChoicesOpen(false); }}>
-            <Button type="button" variant="outline" disabled={!ready} aria-expanded={upgradeChoicesOpen}
-              onClick={() => setUpgradeChoicesOpen(value => !value)}>{t("全精4 · 技能全解锁", "Elite 4 · Unlock all skills")}</Button>
-            {upgradeChoicesOpen ? <div className="flex flex-wrap gap-2" role="group" aria-label={t("选择升级范围", "Choose upgrade scope")}>
-              <Button type="button" variant="outline" className="h-auto min-h-11 flex-col items-start gap-1 whitespace-normal px-3 py-2 shadow-sm" disabled={!ready || selected.size === 0} onClick={() => maxRoster(false)}>
-                <span>{t("仅改变已拥有的状态", "Upgrade owned operators only")}</span>
-                <small className="font-normal text-muted-foreground">{t("保留名单 · 全精4与技能全解锁", "Keep roster · Elite 4 and all skills")}</small>
-              </Button>
-              <Button type="button" variant="outline" className="h-auto min-h-11 flex-col items-start gap-1 whitespace-normal px-3 py-2 shadow-sm" disabled={!ready} onClick={() => maxRoster(true)}>
-                <span>{t("获取所有干员并且全精4", "Add all operators at elite 4")}</span>
-                <small className="font-normal text-muted-foreground">{t("加入全部干员 · 技能全解锁", "Full roster · All skills unlocked")}</small>
-              </Button>
-            </div> : null}
-          </div> : null}
           <Button type="button" variant="ghost" size="sm" disabled={rarity === "all" && profession === "all" && room === "all" && tag === "all"}
             onClick={() => { setRarity("all"); setProfession("all"); setRoom("all"); setTag("all"); }}><X aria-hidden />{t("清除选择", "Clear filters")}</Button>
           <span className="ef-roster-count ef-muted" role="status">{picker

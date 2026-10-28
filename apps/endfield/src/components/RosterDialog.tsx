@@ -50,7 +50,6 @@ export function RosterDialogProvider({ children }: { children: ReactNode }) {
         <Dialog.Backdrop className="ef-dialog-backdrop" />
         <DialogFrame className="ef-roster-dialog" bodyClassName="ef-roster-dialog-body" closeRef={close} initialFocus={close}
           title={t("我的干员", "My operators")} closeLabel={t("关闭我的干员", "Close my operators")}
-          description={t("勾选已拥有的干员并设置精英化阶段，修改会自动保存。", "Select your operators and elite stages. Changes are saved automatically.")}
           footer={<>
             <Action size="sm" icon={<RotateCcw />} disabled={!ready || !workspace.sklandRoster}
               title={workspace.sklandRoster ? t("恢复最近同步的干员、精英化与技能，保留设施设置。", "Restore the last synced operators, elite stages and skills; keep facility settings.") : t("请先前往森空岛完成一次完整同步。", "Complete a full Skland sync first.")}
