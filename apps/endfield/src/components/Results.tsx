@@ -141,10 +141,15 @@ function ResultDetails({ result, showWeapons }: { result: Result; showWeapons: b
     {result.center ? <>
       <div className="ef-stats">{Object.entries(result.scores).map(([key, value]) => <div className="ef-stat" key={key}><span>{key}</span><strong>{value.toFixed(2)}</strong><small>{t("等效小时 / 日", "effective h/day")}</small></div>)}</div>
       <article className="ef-result"><header><h3>{t("总控中枢", "Control center")}</h3><span className="ef-muted">{hour(result.center.hour)} {t("换班", "shift change")}</span></header>
-        <div className="ef-shifts">{(["a", "b"] as const).map((s, i) => <div className="ef-shift" key={s}><div className="ef-shift-label"><b>{s.toUpperCase()}</b><span className="ef-shift-time">{i ? `${hour(result.center!.hour)} — 24:00` : `00:00 — ${hour(result.center!.hour)}`}</span></div><div className="ef-crew">{result.center![s].map(n => <OperatorChip key={n} name={n} showWeapon={showWeapons} />)}</div></div>)}</div>
+        <div className="ef-shifts">{(["a", "b"] as const).map((s, i) => <div className="ef-shift" key={s}><div className="ef-shift-label"><b>{s.toUpperCase()}</b><span className="ef-shift-time">{i ? `${hour(result.center!.hour)} — 24:00` : `00:00 — ${hour(result.center!.hour)}`}</span></div><div className="ef-crew">{result.center![s].map(n => <OperatorChip key={n} name={n} showWeapon={showWeapons} compact />)}</div></div>)}</div>
       </article>
       {result.rooms.map(room => <article className="ef-result" key={room.key}><header><h3>{room.key} <span className="ef-muted">/ {room.category}</span></h3><span>{room.value.toFixed(2)} <small className="ef-muted">{t("等效小时 / 日", "effective h/day")}</small></span></header>
-        <div className="ef-shifts">{(["a", "b"] as const).map((s, i) => <div className="ef-shift" key={s}><div className="ef-shift-label"><b>{s.toUpperCase()}</b><span className={room.single ? undefined : "ef-shift-time"}>{room.single ? t(i ? "休息阶段" : "单班循环", i ? "Recovery" : "Single-shift cycle") : i ? `${hour(room.hour)} — 24:00` : `00:00 — ${hour(room.hour)}`}</span></div><div className="ef-crew">{room[s].map(n => <OperatorChip key={n} name={n} showWeapon={showWeapons} />)}</div>{room.single ? <p className="ef-muted">{t("工作 / 休息", "Work / rest")} <span className="ef-shift-time">{room.workHours?.toFixed(2)} / {room.restHours?.toFixed(2)} h</span></p> : null}</div>)}</div>
+        <div className="ef-shifts">{(["a", "b"] as const).map((s, i) => <div className="ef-shift" key={s}>
+          <div className="ef-shift-label"><b>{room.single ? t(i ? "休息" : "工作", i ? "Rest" : "Work") : s.toUpperCase()}</b>
+            <span className="ef-shift-time">{room.single ? `${(i ? room.restHours : room.workHours)?.toFixed(2) ?? "—"} h` : i ? `${hour(room.hour)} — 24:00` : `00:00 — ${hour(room.hour)}`}</span></div>
+          {room[s].length ? <div className="ef-crew">{room[s].map(n => <OperatorChip key={n} name={n} showWeapon={showWeapons} compact />)}</div>
+            : <p className="ef-muted">{room.single ? t("原班干员休息后继续生产", "The same crew returns after resting") : t("未安排干员", "No operators assigned")}</p>}
+        </div>)}</div>
         <details className="ef-details"><summary>{t("心情闭环与模拟", "Morale and simulation")}</summary>
           {!room.single ? <><p>A · {mood(room.moodA)}</p><p>B · {mood(room.moodB)}</p></> : null}
           <p>{room.converged ? t("模拟已收敛", "Simulation converged") : t("模拟未收敛", "Simulation did not converge")} · {room.days} {t("天", "days")}</p>
