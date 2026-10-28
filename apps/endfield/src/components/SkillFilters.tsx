@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { allSkills, operatorCatalog, type DisplaySkill } from "@riic/endfield-data";
 import { FilterRow } from "@riic/ui-primitives/filter-row";
 import { Tabs, TabsList, TabsTrigger } from "@riic/ui-primitives/tabs";
@@ -79,18 +80,22 @@ function FilterOptions({ label, value, onChange, options }: {
   </Tabs>;
 }
 
-export function SkillFilters({ rarity, profession, room, tag, onRarityChange, onProfessionChange, onRoomChange, onTagChange, facilityLabel }: {
+export function SkillFilters({ rarity, profession, room, tag, onRarityChange, onProfessionChange, onRoomChange, onTagChange, facilityLabel, rarityActions }: {
   rarity: string; profession: string; room: string; tag: string;
   onRarityChange: (value: string) => void; onProfessionChange: (value: string) => void;
   onRoomChange: (value: string) => void; onTagChange: (value: string) => void;
   facilityLabel: (value: string) => string;
+  rarityActions?: ReactNode;
 }) {
   const { t } = useWorkspace();
   const tags = room === "all" ? [] : tagsOf(room);
   return <div className="mt-3 grid min-w-0 gap-1" data-skill-filters>
-    <FilterRow label={t("星级", "Rarity")}>
-      <FilterOptions label={t("稀有度筛选", "Filter rarity")} value={rarity} onChange={onRarityChange} options={[6, 5, 4].map(n => ({ value: String(n), label: `${n}★` }))} />
-    </FilterRow>
+    <div className={rarityActions ? "ef-skill-rarity-row" : undefined}>
+      <FilterRow label={t("星级", "Rarity")}>
+        <FilterOptions label={t("稀有度筛选", "Filter rarity")} value={rarity} onChange={onRarityChange} options={[6, 5, 4].map(n => ({ value: String(n), label: `${n}★` }))} />
+      </FilterRow>
+      {rarityActions ? <div className="ef-roster-top-actions">{rarityActions}</div> : null}
+    </div>
     <FilterRow label={t("职业", "Profession")}>
       <FilterOptions label={t("职业筛选", "Filter profession")} value={profession} onChange={onProfessionChange} options={professions.map(value => ({ value, label: t(value, professionEnglish[value] ?? value) }))} />
     </FilterRow>

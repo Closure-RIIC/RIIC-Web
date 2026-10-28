@@ -32,19 +32,25 @@ function Navigation() {
   const { locale, t } = useWorkspace();
   const path = useRouterState({ select: s => s.location.pathname });
   const { setOpenMobile } = useSidebar();
-  const links = [
-    { to: "/" as const, label: t(...pageLabels["/"]), icon: Calculator },
-    { to: "/manual" as const, label: t(...pageLabels["/manual"]), icon: SquarePen },
-    { to: "/skills" as const, label: t(...pageLabels["/skills"]), icon: Search },
-    { to: "/skland" as const, label: t(...pageLabels["/skland"]), icon: Cloud },
+  const groups = [
+    { label: t("基建排班", "Base Scheduling"), links: [
+      { to: "/" as const, label: t(...pageLabels["/"]), icon: Calculator },
+      { to: "/manual" as const, label: t(...pageLabels["/manual"]), icon: SquarePen },
+    ] },
+    { label: t("技能Wiki", "Skill Wiki"), links: [
+      { to: "/skills" as const, label: t(...pageLabels["/skills"]), icon: Search },
+    ] },
+    { label: t("我的角色", "My Characters"), links: [
+      { to: "/skland" as const, label: t(...pageLabels["/skland"]), icon: Cloud },
+    ] },
   ];
   return <Sidebar collapsible="icon" mobileWidth="min(17rem, calc(100vw - 3rem))"><div className={nav.sidebar}>
     <SidebarHeader className={nav.header}><GameSwitcher game="endfield" locale={locale} targetOrigin={import.meta.env.VITE_ARKNIGHTS_ORIGIN} /><SidebarTrigger className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground" /></SidebarHeader>
-    <SidebarContent><SidebarGroup><SidebarGroupLabel>{t("帝江号", "Dijiang")}</SidebarGroupLabel><SidebarMenu>
-      {links.map(({ to, label, icon: Icon }) => <SidebarMenuItem key={to}><SidebarMenuButton
+    <SidebarContent>{groups.map(group => <SidebarGroup key={group.label}><SidebarGroupLabel>{group.label}</SidebarGroupLabel><SidebarMenu>
+      {group.links.map(({ to, label, icon: Icon }) => <SidebarMenuItem key={to}><SidebarMenuButton
         render={<Link to={to} preload={false} aria-label={label} aria-current={path === to ? "page" : undefined} onClick={() => setOpenMobile(false)} />}
         isActive={path === to} tooltip={label} className="ef-nav-link"><Icon /><span className={nav.copy}>{label}</span></SidebarMenuButton></SidebarMenuItem>)}
-    </SidebarMenu></SidebarGroup></SidebarContent>
+    </SidebarMenu></SidebarGroup>)}</SidebarContent>
     <SidebarFooter className={nav.footer}><AccountMenu /></SidebarFooter>
   </div></Sidebar>;
 }
