@@ -1229,14 +1229,18 @@ test("scheduled product changes require destructive confirmation and rerun with 
   });
   await page.route("**/api/plan", async (route) => {
     planRequests += 1;
+    const planData = structuredClone(productChangePlanData);
     if (planRequests === 2) {
       rerunPayload = route.request().postDataJSON() as Record<string, unknown>;
       await rerunGate;
+      for (const plan of planData.maa.plans) {
+        plan.rooms.trading[0].product = "Orundum";
+      }
     }
     await route.fulfill({
       status: 200,
       contentType: "application/json",
-      body: JSON.stringify({ success: true, data: productChangePlanData, requestId }),
+      body: JSON.stringify({ success: true, data: planData, requestId }),
     });
   });
   await seedV4Session(page, null);
@@ -1270,6 +1274,7 @@ test("scheduled product changes require destructive confirmation and rerun with 
   await expect(factoryControls.getByRole("button", { name: "贵金属" })).toHaveAttribute("aria-pressed", "true");
 
   const tradeControls = page.getByRole("group", { name: "贸易站 1 订单" });
+  await expect(tradeControls.getByRole("button", { name: "开采协力" })).toHaveAttribute("aria-pressed", "false");
   await tradeControls.getByRole("button", { name: "开采协力" }).click();
   await expect(confirmation).toContainText("贸易站 1 的贸易策略将切换为「开采协力」");
   await confirmation.getByRole("button", { name: "确认并重新排班" }).click();
