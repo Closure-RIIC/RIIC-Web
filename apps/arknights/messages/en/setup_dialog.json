@@ -39,7 +39,7 @@
   "scheduleMode": "Schedule mode",
   "sequentialRotation": "Sequential rotation (default)",
   "sequentialRotationDescription": "After one run finishes, MAA advances to the next shift.",
-  "timeRanges": "Time ranges",
+  "timeRanges": "Custom time ranges",
   "timeRangesDescription": "MAA selects the shift matching the current time.",
   "timelineHint": "Drag a boundary to adjust durations. Each step is 1 hour.",
   "firstShiftStarts": "First shift starts",

@@ -51,9 +51,9 @@ async function handle(request: Request, action: string) {
       return successResponse({
         ownerKey: websiteUserOwnerTag(owner),
         accounts: [
-          ...directAccounts.map(account => ({ id: account.accountId, label: account.roles[0]?.nickname || "终末地账号", source: "endfield" })),
-          ...store.accounts.filter(account => !directAccounts.some(item => item.session.userId === account.session.userId)).map((account, index) => ({
-            id: account.accountId, label: account.roles[0]?.nickname || `森空岛账号 ${index + 1}`, source: "arknights",
+          ...directAccounts.map(account => ({ id: account.accountId, label: account.roles[0]?.nickname || "", source: "endfield" })),
+          ...store.accounts.filter(account => !directAccounts.some(item => item.session.userId === account.session.userId)).map(account => ({
+            id: account.accountId, label: account.roles[0]?.nickname || "", source: "arknights",
           })),
         ],
       }, requestId);

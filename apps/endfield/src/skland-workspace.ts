@@ -2,6 +2,7 @@ import { parseRoster, type Operator, type Workspace } from "@riic/endfield-solve
 import type { DisplayOperator } from "@riic/endfield-data";
 import { endfieldFacilityLevels, matchEndfieldRoster, type EndfieldRole, type EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { withFacilityLevels } from "./scheduling-options.ts";
+import { SklandFeedbackError } from "./skland-feedback.ts";
 
 /** Non-secret identity only. A partial response may only extend its own saved roster. */
 export function sklandRosterSource(ownerKey: string, accountId: string, role: Pick<EndfieldRole, "serverId" | "roleId">): string {
@@ -40,7 +41,7 @@ export function rosterMatchTables(catalog: readonly DisplayOperator[]) {
 
 export function syncSklandWorkspace(current: Workspace, snapshot: EndfieldSnapshot, source: string, roleId: string,
   catalog: readonly DisplayOperator[]) {
-  if (snapshot.role.roleId !== roleId) throw new Error("森空岛返回的角色不匹配，请重新同步。 / Skland returned a different character; please retry.");
+  if (snapshot.role.roleId !== roleId) throw new SklandFeedbackError("SklandErrors.roleMismatch");
   const { schedulable, nonSchedulable } = rosterMatchTables(catalog);
   const matched = matchEndfieldRoster(snapshot, schedulable, nonSchedulable);
   // parseRoster carries `latestSpaceshipSkillNodes`（每槽最高档）next to `elite`.

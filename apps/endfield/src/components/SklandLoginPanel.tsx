@@ -7,10 +7,12 @@ import { PRIVACY_VERSION, TERMS_VERSION } from "@riic/platform/legal-policy";
 import { buildSklandAppOpenUrl } from "@riic/platform/skland-auth-url";
 import { nextSklandQrPollDelay } from "@riic/platform/skland-qr-polling";
 import { sklandApi, SklandRequestError } from "../skland-client";
+import { sklandErrorKey, type SklandFeedbackKey } from "../skland-feedback";
+import { sklandFeedbackText } from "../skland-feedback-text";
 import { useWorkspace } from "../state";
 
 const QrCode = lazy(() => import("qrcode.react").then(module => ({ default: module.QRCodeSVG })));
-const COPY_COMMAND = "copy(localStorage.getItem('SK_OAUTH_CRED_KEY')+','+localStorage.getItem('SK_TOKEN_CACHE_KEY')),console.log('已复制到粘贴板，回到网页粘贴')";
+const COPY_CREDENTIAL = "copy(localStorage.getItem('SK_OAUTH_CRED_KEY')+','+localStorage.getItem('SK_TOKEN_CACHE_KEY'))";
 const consent = () => ({ termsAccepted: true, privacyAccepted: true, termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION });
 export type EndfieldLogin = { accountId: string; roles: EndfieldRole[] };
 type Scan = { scanId: string; scanUrl: string; expiresAt: number };
@@ -21,6 +23,7 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
   renderDialog?: (body: ReactNode, actions: ReactNode) => ReactNode;
 }) {
   const { t } = useWorkspace();
+  const copyCommand = `${COPY_CREDENTIAL},console.log(${JSON.stringify(t("SklandLoginPanel.credentialCopied"))})`;
   const [method, setMethod] = useState<"qr" | "credential">("qr");
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
@@ -28,7 +31,7 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
   const [scan, setScan] = useState<Scan | null>(null);
   const [scanState, setScanState] = useState<"idle" | "waiting" | "scanned" | "expired">("idle");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<SklandFeedbackKey | "">("");
   const [copied, setCopied] = useState(false);
   const tabs = useId();
   const request = useRef<AbortController | null>(null);
@@ -70,7 +73,7 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
         if (!controller.signal.aborted) onAuthenticated(result);
       }
     } catch (cause) {
-      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : t("SklandLoginPanel.signInFailedPleaseRetry"));
+      if (!controller.signal.aborted) setError(sklandErrorKey(cause, "SklandLoginPanel.signInFailedPleaseRetry"));
     } finally {
       if (request.current === controller) { request.current = null; setBusy(false); }
     }
@@ -112,7 +115,7 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
         setScanState(value.status === "scanned" ? "scanned" : "waiting");
       } catch (cause) {
         if (stopped || active.signal.aborted) return;
-        setError(cause instanceof Error ? cause.message : "@login:pollFailed");
+        setError(sklandErrorKey(cause, "SklandLoginPanel.pollFailed"));
         failures++;
         if (cause instanceof SklandRequestError) {
           retryAfterSeconds = cause.retryAfterSeconds;
@@ -161,7 +164,7 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
         <div className="ef-login-instructions">
           <p className="ef-login-recommend"><ShieldCheck aria-hidden="true" /><span>{t("SklandLoginPanel.recommendedScanWithTheSklandAppToConnectYour")}</span></p>
           {policies}
-          {error ? <Notice error>{error === "@login:pollFailed" ? t("SklandLoginPanel.pollFailed") : error}</Notice> : null}
+          {error ? <Notice error>{sklandFeedbackText(error, t)}</Notice> : null}
           {scan ? <div className="ef-login-app"><ActionLink href={buildSklandAppOpenUrl()} target="_blank" rel="noreferrer" icon={<ExternalLink />}>{t("SklandLoginPanel.openSklandApp")}</ActionLink><p>{t("SklandLoginPanel.scanWithSklandDisplayThisCodeOnAnotherDevice")}</p></div> : null}
           {!renderDialog ? actions : null}
         </div>
@@ -176,19 +179,19 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
         <ol className="ef-credential-steps">
           <li><span>1</span><div><strong>{t("SklandLoginPanel.signInToSklandOnTheWeb")}</strong><p>{t("SklandLoginPanel.open")} <a href="https://www.skland.com/index" target="_blank" rel="noreferrer">www.skland.com/index</a> {t("SklandLoginPanel.andSignIn")}</p></div></li>
           <li><span>2</span><div><strong>{t("SklandLoginPanel.runTheCommandInTheF12Console")}</strong><p>{t("SklandLoginPanel.openTheDeveloperConsoleAndRunThisCommandTo")}</p>
-            <div className="ef-credential-command"><code title={COPY_COMMAND}>{COPY_COMMAND}</code><Action size="sm" icon={copied ? <Check /> : <Clipboard />} onClick={() => {
-              void navigator.clipboard.writeText(COPY_COMMAND).then(() => {
+            <div className="ef-credential-command"><code title={copyCommand}>{copyCommand}</code><Action size="sm" icon={copied ? <Check /> : <Clipboard />} onClick={() => {
+              void navigator.clipboard.writeText(copyCommand).then(() => {
                 if (!mounted.current) return; setCopied(true);
                 if (copyTimer.current) clearTimeout(copyTimer.current);
                 copyTimer.current = setTimeout(() => setCopied(false), 2000);
-              }).catch(() => { if (mounted.current) setError(t("SklandLoginPanel.copyFailedSelectAndCopyTheCommandManually")); });
+              }).catch(() => { if (mounted.current) setError("SklandLoginPanel.copyFailedSelectAndCopyTheCommandManually"); });
             }}>{copied ? t("SklandLoginPanel.copied") : t("SklandLoginPanel.copyCommand")}</Action></div>
           </div></li>
           <li><span>3</span><div><label htmlFor={`${tabs}-credential-input`}><strong>{t("SklandLoginPanel.pasteTheGeneratedCredential")}</strong></label><p>{t("SklandLoginPanel.useCredTokenItIsHeldBrieflyInMemory")}</p><input id={`${tabs}-credential-input`} type="password" placeholder={t("SklandLoginPanel.pasteCredToken")} autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={12288} value={credential} onChange={e => setCredential(e.target.value)} /></div></li>
         </ol>
         <div className="ef-credential-risk"><TriangleAlert aria-hidden="true" /><div><strong>{t("SklandLoginPanel.credentialsGrantAccountAccessDoNotShareThem")}</strong><p>{t("SklandLoginPanel.thisPageSyncsEndfieldCharactersOperatorProgressionAndShip")}</p></div></div>
         {policies}
-        {error ? <Notice error>{error === "@login:pollFailed" ? t("SklandLoginPanel.pollFailed") : error}</Notice> : null}
+        {error ? <Notice error>{sklandFeedbackText(error, t)}</Notice> : null}
         {!renderDialog ? actions : null}
       </form>}
     </div>

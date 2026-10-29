@@ -130,9 +130,9 @@ function ReproductionPanel({ state }: { state: DetailState }) {
 
       <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
         <div><dt className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.baseLayout")}</dt><dd className="mt-1 font-medium">{reproduction.layout?.template ?? (intl("app_admin_issues_issues_client.unavailable"))}</dd></div>
-        <div><dt className="text-xs text-muted-foreground">Operator Box</dt><dd className="font-number mt-1 font-medium">{reproduction.operbox ? (intl("app_admin_issues_issues_client.operators", { length: reproduction.operbox.length })) : (intl("app_admin_issues_issues_client.unavailable"))}</dd></div>
+        <div><dt className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.operatorBox")}</dt><dd className="font-number mt-1 font-medium">{reproduction.operbox ? (intl("app_admin_issues_issues_client.operators", { length: reproduction.operbox.length })) : (intl("app_admin_issues_issues_client.unavailable"))}</dd></div>
         <div><dt className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.rotationCount")}</dt><dd className="font-number mt-1 font-medium">{reproduction.rotationCount ?? (intl("app_admin_issues_issues_client.unavailable"))}</dd></div>
-        <div><dt className="text-xs text-muted-foreground">Fiammetta</dt><dd className="mt-1 font-medium">{reproduction.fiammettaEnabled === null ? (intl("app_admin_issues_issues_client.unavailable")) : reproduction.fiammettaEnabled ? (intl("app_admin_issues_issues_client.enabled")) : (intl("app_admin_issues_issues_client.disabled"))}</dd></div>
+        <div><dt className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.fiammetta")}</dt><dd className="mt-1 font-medium">{reproduction.fiammettaEnabled === null ? (intl("app_admin_issues_issues_client.unavailable")) : reproduction.fiammettaEnabled ? (intl("app_admin_issues_issues_client.enabled")) : (intl("app_admin_issues_issues_client.disabled"))}</dd></div>
       </dl>
       {reproduction.rotation ? <p className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.rotation")}{rotationDescription(reproduction.rotation, en)}</p> : null}
 
@@ -297,7 +297,7 @@ function RunRow({
         <div><dt className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.layout")}</dt><dd className="mt-1 font-medium">{item.layoutTemplate}</dd></div>
         <div><dt className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.operators2")}</dt><dd className="font-number mt-1 font-medium">{item.operatorCount}</dd></div>
         <div><dt className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.rotation2")}</dt><dd className="mt-1 font-medium">{item.rotation}</dd></div>
-        <div><dt className="text-xs text-muted-foreground">Fiammetta</dt><dd className="mt-1 font-medium">{item.fiammettaEnable ? (intl("app_admin_issues_issues_client.enabled")) : (intl("app_admin_issues_issues_client.disabled"))}</dd></div>
+        <div><dt className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.fiammetta")}</dt><dd className="mt-1 font-medium">{item.fiammettaEnable ? (intl("app_admin_issues_issues_client.enabled")) : (intl("app_admin_issues_issues_client.disabled"))}</dd></div>
         <div><dt className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.solverDuration")}</dt><dd className="font-number mt-1 font-medium">{item.durationMs === null ? "—" : `${item.durationMs} ms`}</dd></div>
       </dl>
       {expanded && detail ? <div className="mt-4"><ReproductionPanel state={detail} /></div> : null}
