@@ -7,6 +7,7 @@ import { adminPageClass } from "../admin-page";
 
 import { useCallback, useEffect, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
+import { useBlocker, useNavigate, useSearch } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -18,17 +19,27 @@ import { AppMotionProvider } from "@/components/MotionProvider";
 import { ReleaseDialog } from "@/components/changelog/ReleaseDialog";
 import { ReleaseEntry } from "@/components/changelog/ReleaseEntry";
 import { useAdminRequest } from "../admin-context";
-import type { AdminRelease, AdminReleaseList, ReleaseDraft } from "@riic/arknights-domain/releases/types";
+import type { AdminRelease, AdminReleaseList, ReleaseApplication, ReleaseDraft } from "@riic/arknights-domain/releases/types";
 import { parseReleaseDraft } from "@/releases/validation";
 import { ReleaseEditor } from "./release-editor";
 
-function emptyDraft(): ReleaseDraft {
-  return { version: "", date: new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 10), title: { zh: "", en: "" }, notify: true, sections: [] };
+function emptyDraft(application: ReleaseApplication): ReleaseDraft {
+  return { version: "", date: new Date(Date.now() + 8 * 3600_000).toISOString().slice(0, 10), title: { zh: "", en: "", tw: "" }, notify: application === "arknights", sections: [] };
 }
 type Confirmation = { action: "publish" | "withdraw" | "delete"; release: AdminRelease }
   | { action: "discard"; target: AdminRelease | null };
 
 export function ChangelogManager() {
+  const application = useSearch({ strict: false, select: search => search.application === "endfield" ? "endfield" : "arknights" });
+  const navigate = useNavigate();
+  return <ChangelogWorkspace key={application} application={application}
+    onApplicationChange={value => { void navigate({ to: ".", search: previous => ({ ...previous, application: value }) }); }} />;
+}
+
+function ChangelogWorkspace({ application, onApplicationChange }: {
+  application: ReleaseApplication; onApplicationChange: (application: ReleaseApplication) => void;
+}) {
+  const api = application === "endfield" ? "/api/endfield/admin/releases" : "/api/admin/releases";
   const requestAdminData = useAdminRequest();
   const t = useTranslations("AdminChangelog");
   // Language changes update copy without reloading or overwriting in-progress work.
@@ -40,7 +51,7 @@ export function ChangelogManager() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<AdminRelease | null>(null);
-  const [draft, setDraft] = useState<ReleaseDraft>(emptyDraft);
+  const [draft, setDraft] = useState<ReleaseDraft>(() => emptyDraft(application));
   const [initial, setInitial] = useState(() => JSON.stringify(draft));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -48,22 +59,18 @@ export function ChangelogManager() {
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [preview, setPreview] = useState<{ mode: "page" | "popup"; draft: ReleaseDraft } | null>(null);
   const dirty = JSON.stringify(draft) !== initial;
+  const blocker = useBlocker({ shouldBlockFn: () => dirty || busy, enableBeforeUnload: dirty || busy, withResolver: true });
+  const applicationLabel = t(`applications.${application}`);
   const environment = data ? t(`environment.${data.environment}`) : "";
   const load = useCallback(async () => {
     setLoading(true);
-    try { setData(await requestAdminData<AdminReleaseList>("/api/admin/releases", undefined, languageEffectRef.current.t("loadError"))); }
+    try { setData(await requestAdminData<AdminReleaseList>(api, undefined, languageEffectRef.current.t("loadError"))); }
     catch (cause) { setError(cause instanceof Error ? cause.message : languageEffectRef.current.t("loadError")); }
     finally { setLoading(false); }
-  }, [requestAdminData]);
+  }, [requestAdminData, api]);
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => {
-    if (!dirty) return;
-    const preventLoss = (event: BeforeUnloadEvent) => { event.preventDefault(); };
-    window.addEventListener("beforeunload", preventLoss);
-    return () => window.removeEventListener("beforeunload", preventLoss);
-  }, [dirty]);
   function edit(record: AdminRelease | null) {
-    const next = record ? structuredClone(record.draft) : emptyDraft();
+    const next = record ? structuredClone(record.draft) : emptyDraft(application);
     setSelected(record); setDraft(next); setInitial(JSON.stringify(next));
     setError(""); setMessage("");
   }
@@ -84,7 +91,7 @@ export function ChangelogManager() {
     catch (cause) { setError(cause instanceof Error ? cause.message : t("invalidContent")); return; }
     setBusy(true);
     try {
-      const result = await requestAdminData<{ release: AdminRelease }>(selected ? `/api/admin/releases/${selected.id}` : "/api/admin/releases", {
+      const result = await requestAdminData<{ release: AdminRelease }>(selected ? `${api}/${selected.id}` : api, {
         method: selected ? "PATCH" : "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(selected ? { action: "save", revision: selected.revision, draft: value } : value),
       }, t("saveError"));
@@ -94,12 +101,13 @@ export function ChangelogManager() {
     finally { setBusy(false); }
   }
   async function confirmAction() {
+    if (blocker.status === "blocked") { blocker.proceed(); return; }
     if (!confirmation) return;
     if (confirmation.action === "discard") { edit(confirmation.target); setConfirmation(null); return; }
     const { action, release } = confirmation;
     setBusy(true); setError(""); setMessage("");
     try {
-      const result = await requestAdminData<{ release: AdminRelease | null }>(`/api/admin/releases/${release.id}`, {
+      const result = await requestAdminData<{ release: AdminRelease | null }>(`${api}/${release.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, revision: release.revision }),
       }, t("actionError"));
       updateRecord(result.release, release.id);
@@ -112,18 +120,24 @@ export function ChangelogManager() {
     try { setPreview({ mode, draft: parseReleaseDraft(draft) }); setError(""); }
     catch (cause) { setError(cause instanceof Error ? cause.message : t("fillRelease")); }
   }
-  const filtered = data?.releases.filter((record) => `${record.draft.version} ${record.draft.title.zh} ${record.draft.title.en}`.toLowerCase().includes(query.trim().toLowerCase())) ?? [];
+  const filtered = data?.releases.filter((record) => `${record.draft.version} ${record.draft.title.zh} ${record.draft.title.tw ?? ""} ${record.draft.title.en}`.toLowerCase().includes(query.trim().toLowerCase())) ?? [];
   const publishChanged = selected?.published && JSON.stringify(selected.draft) !== JSON.stringify(selected.published);
   return (
     <AppMotionProvider>
-      <main id="admin-content" className={adminPageClass} data-admin-changelog>
+      <main id="admin-content" className={adminPageClass} data-admin-changelog data-release-application={application}>
         <header className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-2">
-            <div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-semibold">{t("title")}</h1>{data ? <Badge variant="outline">{environment}</Badge> : null}</div>
+            <div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-semibold">{t("title")}</h1><Badge variant="outline">{applicationLabel}</Badge>{data ? <Badge variant="outline">{environment}</Badge> : null}</div>
             <p className="text-sm leading-6 text-muted-foreground">{t("description")}</p>
           </div>
           <Button disabled={busy || !data} onClick={() => choose(null)}>{t("newRelease")}</Button>
         </header>
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t("application")}>
+          {(["arknights", "endfield"] as const).map(value => <Button key={value} variant={application === value ? "default" : "outline"}
+            aria-pressed={application === value} disabled={busy} onClick={() => { if (application !== value) onApplicationChange(value); }}>
+            {t(`applications.${value}`)}
+          </Button>)}
+        </div>
         {error ? <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{error}</p> : null}
         {message ? <p role="status" className="text-sm">{message}</p> : null}
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(260px,1fr)_minmax(0,2fr)]">
@@ -152,11 +166,11 @@ export function ChangelogManager() {
               <h2 className="font-semibold">{selected ? t("editRelease") : t("newRelease")}</h2>
               <span className="text-xs text-muted-foreground">{dirty ? t("unsavedChanges") : publishChanged ? t("savedNotPublished") : ""}</span>
             </div>
-            <ReleaseEditor draft={draft} onChange={setDraft} versionLocked={Boolean(selected?.firstPublishedAt)} disabled={busy || !data} />
+            <ReleaseEditor draft={draft} onChange={setDraft} versionLocked={Boolean(selected?.firstPublishedAt)} disabled={busy || !data} showNotificationSettings={application === "arknights"} />
             <div className="flex flex-wrap gap-2 border-t pt-5">
               <Button type="submit" disabled={busy || !data}>{busy ? t("saving") : t("saveDraft")}</Button>
               <Button type="button" variant="outline" disabled={busy || !data} onClick={() => showPreview("page")}>{t("previewPage")}</Button>
-              <Button type="button" variant="outline" disabled={busy || !data} onClick={() => showPreview("popup")}>{t("previewPopup")}</Button>
+              {application === "arknights" ? <Button type="button" variant="outline" disabled={busy || !data} onClick={() => showPreview("popup")}>{t("previewPopup")}</Button> : null}
             </div>
             {selected ? <div className="flex flex-wrap items-center gap-2">
               <Button type="button" disabled={busy || dirty} onClick={() => setConfirmation({ action: "publish", release: selected })}>{t("publish")}</Button>
@@ -167,10 +181,10 @@ export function ChangelogManager() {
           </form>
         </div>
       </main>
-      <Dialog open={Boolean(confirmation)} onOpenChange={(open) => { if (!open && !busy) setConfirmation(null); }}>
+      <Dialog open={Boolean(confirmation) || blocker.status === "blocked"} onOpenChange={(open) => { if (!open && !busy) { setConfirmation(null); if (blocker.status === "blocked") blocker.reset(); } }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{confirmation?.action === "publish" ? t("publishTo", { environment })
+            <DialogTitle>{confirmation?.action === "publish" ? t("publishTo", { environment, application: applicationLabel })
               : confirmation?.action === "withdraw" ? t("withdrawQuestion")
               : confirmation?.action === "delete" ? t("deleteQuestion")
               : t("discardQuestion")}</DialogTitle>
@@ -179,7 +193,7 @@ export function ChangelogManager() {
               : t("irreversibleDescription")}</DialogDescription>
           </DialogHeader>
           <DialogFooter className="max-sm:flex-col-reverse">
-            <Button variant="outline" size="dialog" className="max-sm:w-full" disabled={busy} onClick={() => setConfirmation(null)}>{t("cancel")}</Button>
+            <Button variant="outline" size="dialog" className="max-sm:w-full" disabled={busy} onClick={() => { setConfirmation(null); if (blocker.status === "blocked") blocker.reset(); }}>{t("cancel")}</Button>
             <Button size="dialog" className="max-sm:w-full" disabled={busy} onClick={() => void confirmAction()}>{t("confirm")}</Button>
           </DialogFooter>
         </DialogContent>

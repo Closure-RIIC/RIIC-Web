@@ -6,15 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, CompactTabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
 import type { ReleaseDraft, ReleaseSection, ReleaseText } from "@riic/arknights-domain/releases/types";
 import { RELEASE_KINDS, RELEASE_LIMITS } from "@/releases/validation";
 
 const SECTION_KEYS = { added: "sectionNew", improved: "sectionImproved", fixed: "sectionFixed" } as const;
 
-export function ReleaseEditor({ draft, onChange, versionLocked, disabled }: {
-  draft: ReleaseDraft; onChange: (draft: ReleaseDraft) => void; versionLocked: boolean; disabled: boolean;
+export function ReleaseEditor({ draft, onChange, versionLocked, disabled, showNotificationSettings = true }: {
+  draft: ReleaseDraft; onChange: (draft: ReleaseDraft) => void; versionLocked: boolean; disabled: boolean; showNotificationSettings?: boolean;
 }) {
   const t = useTranslations("ReleaseEditor");
   const [language, setLanguage] = useState<"zh" | "tw" | "en">("zh");
@@ -41,19 +41,19 @@ export function ReleaseEditor({ draft, onChange, versionLocked, disabled }: {
             onChange={(event) => onChange({ ...draft, date: event.target.value })} />
         </div>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
+      {showNotificationSettings ? <div className="flex flex-wrap items-center gap-3">
         <Toggle variant="outline" pressed={draft.notify} onPressedChange={(notify) => onChange({ ...draft, notify })}
           className="h-11 px-4" aria-label={t("notifyInPopup")}>
           {draft.notify ? t("popupOn") : t("popupOff")}
         </Toggle>
         <p className="text-xs leading-5 text-muted-foreground">{t("notificationHint")}</p>
-      </div>
+      </div> : null}
       <Tabs value={language} onValueChange={(value) => setLanguage(value as "zh" | "tw" | "en")}>
-        <TabsList aria-label={t("contentLanguage")} className="h-11">
+        <CompactTabsList aria-label={t("contentLanguage")} className="min-h-11">
           <TabsTrigger value="zh">{t("chinese")}</TabsTrigger>
           <TabsTrigger value="tw">{t("traditionalOptional")}</TabsTrigger>
           <TabsTrigger value="en">{t("englishOptional")}</TabsTrigger>
-        </TabsList>
+        </CompactTabsList>
       <TabsContent value={language} className="space-y-6 pt-3">
       {language !== "zh" ? <p className="text-xs text-muted-foreground">{t("englishFallback")}</p> : null}
       <div className="space-y-2">

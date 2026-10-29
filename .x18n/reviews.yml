@@ -1,6 +1,8 @@
 # yaml-language-server: $schema=https://x18n.dev/schema/reviews.json
 x18n: 1
 sources:
+  AccountMenu.docs:
+    en: 1cda631b98ed9b
   components_pages_ManualSchedulePage.importMaaScheduleQuestion:
     en: b66e29269a52c
   components_pages_ManualSchedulePage.importScheduleFile:

@@ -36,5 +36,6 @@
   "pasteCredToken": "粘贴 cred,token",
   "credentialsGrantAccountAccessDoNotShareThem": "凭证等同登录权限，请勿发送给任何人",
   "thisPageSyncsEndfieldCharactersOperatorProgressionAndShip": "本站仅同步终末地角色、干员练度与帝江号设施；凭证不会写入本地名单或导出文件。",
-  "pollFailed": "登录查询失败，将继续重试。"
+  "pollFailed": "登录查询失败，将继续重试。",
+  "termsSentenceEnd": "。"
 }

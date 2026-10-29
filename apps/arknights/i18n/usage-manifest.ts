@@ -1418,242 +1418,257 @@ export const references = [
   {
     "key": "AdminChangelog.actionError",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:104"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:112"
   },
   {
     "key": "AdminChangelog.actionFailed",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:108"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:116"
+  },
+  {
+    "key": "AdminChangelog.application",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:135"
+  },
+  {
+    "key": "AdminChangelog.applications.arknights",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:63"
+  },
+  {
+    "key": "AdminChangelog.applications.endfield",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:63"
   },
   {
     "key": "AdminChangelog.cancel",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:182"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:196"
   },
   {
     "key": "AdminChangelog.confirm",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:183"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:197"
   },
   {
     "key": "AdminChangelog.deletedMessage",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:107"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:115"
   },
   {
     "key": "AdminChangelog.deleteDraft",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:164"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:178"
   },
   {
     "key": "AdminChangelog.deleteQuestion",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:175"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:189"
   },
   {
     "key": "AdminChangelog.description",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:123"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:131"
   },
   {
     "key": "AdminChangelog.discardQuestion",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:176"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:190"
   },
   {
     "key": "AdminChangelog.draft",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:141"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:155"
   },
   {
     "key": "AdminChangelog.draftSaved",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:92"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:99"
   },
   {
     "key": "AdminChangelog.editRelease",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:152"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:166"
   },
   {
     "key": "AdminChangelog.environment.development",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:51"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:64"
   },
   {
     "key": "AdminChangelog.environment.local",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:51"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:64"
   },
   {
     "key": "AdminChangelog.environment.production",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:51"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:64"
   },
   {
     "key": "AdminChangelog.fillRelease",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:113"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:121"
   },
   {
     "key": "AdminChangelog.invalidContent",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:84"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:91"
   },
   {
     "key": "AdminChangelog.irreversibleDescription",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:179"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:193"
   },
   {
     "key": "AdminChangelog.loadError",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:54"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:67"
   },
   {
     "key": "AdminChangelog.newRelease",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:125"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:133"
   },
   {
     "key": "AdminChangelog.noMatchingReleases",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:137"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:151"
   },
   {
     "key": "AdminChangelog.previewDescription",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:190"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:204"
   },
   {
     "key": "AdminChangelog.previewPage",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:158"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:172"
   },
   {
     "key": "AdminChangelog.previewPopup",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:159"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:173"
   },
   {
     "key": "AdminChangelog.publish",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:162"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:176"
   },
   {
     "key": "AdminChangelog.publishDescription",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:177"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:191"
   },
   {
     "key": "AdminChangelog.published",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:141"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:155"
   },
   {
     "key": "AdminChangelog.publishedMessage",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:106"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:114"
   },
   {
     "key": "AdminChangelog.publishTo",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:173"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:187"
   },
   {
     "key": "AdminChangelog.refresh",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:133"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:147"
   },
   {
     "key": "AdminChangelog.releaseList",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:130"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:144"
   },
   {
     "key": "AdminChangelog.releasePreview",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:190"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:204"
   },
   {
     "key": "AdminChangelog.saveBeforePublishing",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:165"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:179"
   },
   {
     "key": "AdminChangelog.savedNotPublished",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:153"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:167"
   },
   {
     "key": "AdminChangelog.saveDraft",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:157"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:171"
   },
   {
     "key": "AdminChangelog.saveError",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:90"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:97"
   },
   {
     "key": "AdminChangelog.saveFailed",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:93"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:100"
   },
   {
     "key": "AdminChangelog.saving",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:157"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:171"
   },
   {
     "key": "AdminChangelog.searchPlaceholder",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:132"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:146"
   },
   {
     "key": "AdminChangelog.searchReleases",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:132"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:146"
   },
   {
     "key": "AdminChangelog.title",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:122"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:130"
   },
   {
     "key": "AdminChangelog.unpublishedChanges",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:144"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:158"
   },
   {
     "key": "AdminChangelog.unsavedChanges",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:153"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:167"
   },
   {
     "key": "AdminChangelog.withdraw",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:163"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:177"
   },
   {
     "key": "AdminChangelog.withdrawDescription",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:178"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:192"
   },
   {
     "key": "AdminChangelog.withdrawn",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:141"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:155"
   },
   {
     "key": "AdminChangelog.withdrawnMessage",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:107"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:115"
   },
   {
     "key": "AdminChangelog.withdrawQuestion",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:174"
+    "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:188"
   },
   {
     "key": "adminReviewer.confirm",
@@ -2733,22 +2748,22 @@ export const references = [
   {
     "key": "AK_app_admin_preview_preview_data.sampleBaseline",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:138"
+    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:140"
   },
   {
     "key": "AK_app_admin_preview_preview_data.sampleCurrentVersion",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:137"
+    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:139"
   },
   {
     "key": "AK_app_admin_preview_preview_data.sampleExpiredSession",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:99"
+    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:101"
   },
   {
     "key": "AK_app_admin_preview_preview_data.sampleIncompleteLayoutInput",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:98"
+    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:100"
   },
   {
     "key": "AK_app_admin_preview_preview_data.sampleSuspendedAccount",
@@ -2763,7 +2778,7 @@ export const references = [
   {
     "key": "AK_app_admin_preview_preview_data.thisActionIsUnavailableInTheLocalPreview",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:43"
+    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:44"
   },
   {
     "key": "AK_app_admin_preview_preview_data.tradingStationOperatorOrderDiffersAfterExport",

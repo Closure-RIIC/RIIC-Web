@@ -36,5 +36,6 @@
   "pasteCredToken": "Paste cred,token",
   "credentialsGrantAccountAccessDoNotShareThem": "Credentials grant account access. Do not share them.",
   "thisPageSyncsEndfieldCharactersOperatorProgressionAndShip": "This page syncs Endfield characters, operator progression and ship facilities. Credentials are excluded from local rosters and exports.",
-  "pollFailed": "Could not check sign-in status. Retrying."
+  "pollFailed": "Could not check sign-in status. Retrying.",
+  "termsSentenceEnd": "."
 }

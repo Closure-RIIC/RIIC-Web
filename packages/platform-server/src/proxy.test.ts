@@ -38,4 +38,7 @@ test("Endfield release writes use the browser origin through a trusted compatibi
     assert.equal(endfieldWriteOriginAllowed(make(headers), true), false);
   }
   assert.equal(endfieldWriteOriginAllowed(new Request("https://dj.riic.autos/api/endfield/admin/releases", { method: "POST", headers: { origin: "https://dj.riic.autos" } }), false), true);
+  const workbench = { origin: "https://riic.autos", "x-forwarded-host": "riic.autos", "x-forwarded-proto": "https" };
+  assert.equal(endfieldWriteOriginAllowed(make(workbench), true), true, "the shared workbench may manage Endfield through its own origin");
+  assert.equal(endfieldWriteOriginAllowed(make({ ...workbench, origin: "https://evil.test" }), true), false);
 });
