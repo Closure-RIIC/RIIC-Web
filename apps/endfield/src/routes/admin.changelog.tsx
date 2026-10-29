@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { withMessages } from "../i18n/features-client";
-import { ChangelogAdminPage } from "../components/ChangelogAdminPage";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { getChangelogWorkbench } from "../server/changelog-workbench";
 
-const TranslatedRouteComponent = withMessages(ChangelogAdminPage, "apps/endfield/src/routes/admin.changelog.tsx");
-export const Route = createFileRoute("/admin/changelog")({ component: TranslatedRouteComponent });
+export const Route = createFileRoute("/admin/changelog")({
+  beforeLoad: async () => { throw redirect({ href: await getChangelogWorkbench(), replace: true }); },
+});

@@ -39,6 +39,7 @@ export function createAdminPreviewRequest(isAdmin: boolean, en: AppLocale): Admi
     sections: [{ kind: "fixed", items: [{ zh: "MAA 导出的无人机与菲亚梅塔统一使用 pre 顺序。", en: "MAA exports use pre order for drones and Fiammetta." }] }],
   };
   const releases: AdminRelease[] = [{ id: "preview-release-1", draft, published: structuredClone(draft), firstPublishedAt: date(6), publishedAt: date(6), updatedAt: date(6), revision: 1 }];
+  const endfieldReleases: AdminRelease[] = [];
   const success = (data: unknown) => Response.json({ success: true, data, requestId: "local-preview" });
   const failure = (status = 400) => Response.json({ success: false, error: { code: "PREVIEW_ONLY", message: uiText.text(en, "thisActionIsUnavailableInTheLocalPreview") } }, { status });
   const metrics = (): AdminSolverMetricsData => ({
@@ -67,8 +68,9 @@ export function createAdminPreviewRequest(isAdmin: boolean, en: AppLocale): Admi
     const path = url.pathname;
     const method = init?.method ?? (input instanceof Request ? input.method : "GET");
     const body = typeof init?.body === "string" ? JSON.parse(init.body) : {};
-    if (!path.startsWith("/api/admin/")) return failure(404);
-    if (!isAdmin && ["/api/admin/users", "/api/admin/releases", "/api/admin/skill-annotations"].some(prefix => path.startsWith(prefix))) return failure(403);
+    const releaseRoute = /^(\/api\/(?:endfield\/)?admin\/releases)(?:\/([^/]+))?$/.exec(path);
+    if (!path.startsWith("/api/admin/") && !releaseRoute) return failure(404);
+    if (!isAdmin && (releaseRoute || ["/api/admin/users", "/api/admin/skill-annotations"].some(prefix => path.startsWith(prefix)))) return failure(403);
 
     if (path === "/api/admin/users" && method === "GET") {
       const query = (url.searchParams.get("q") ?? "").toLocaleLowerCase();
@@ -138,14 +140,15 @@ export function createAdminPreviewRequest(isAdmin: boolean, en: AppLocale): Admi
         { id: "preview-baseline", label: uiText.text(en, "sampleBaseline"), executableSha256: "b".repeat(64), createdAt: date(96) },
       ], worker: { at: date() } });
     }
-    if (path === "/api/admin/releases" && method === "GET") return success({ environment: "local", releases });
-    if (path === "/api/admin/releases" && method === "POST") {
-      const release: AdminRelease = { id: `preview-release-${releases.length + 1}`, draft: body, published: null, firstPublishedAt: null, publishedAt: null, updatedAt: date(), revision: 1 };
-      releases.unshift(release);
+    const siteReleases = releaseRoute?.[1] === "/api/endfield/admin/releases" ? endfieldReleases : releases;
+    if (releaseRoute && !releaseRoute[2] && method === "GET") return success({ environment: "local", releases: siteReleases });
+    if (releaseRoute && !releaseRoute[2] && method === "POST") {
+      const release: AdminRelease = { id: `preview-${siteReleases === endfieldReleases ? "endfield-" : ""}release-${siteReleases.length + 1}`, draft: body, published: null, firstPublishedAt: null, publishedAt: null, updatedAt: date(), revision: 1 };
+      siteReleases.unshift(release);
       return success({ release });
     }
-    if (path.startsWith("/api/admin/releases/") && method === "PATCH" && body.action === "save") {
-      const release = releases.find(release => path.endsWith("/" + release.id));
+    if (releaseRoute?.[2] && method === "PATCH" && body.action === "save") {
+      const release = siteReleases.find(release => release.id === releaseRoute[2]);
       if (!release) return failure(404);
       release.draft = body.draft; release.revision++; release.updatedAt = date();
       return success({ release });

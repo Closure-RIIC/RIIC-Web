@@ -1,21 +1,23 @@
 # 终末地更新日志管理
 
-终末地管理员登录后，从侧边栏「更新日志管理」或公开日志页进入 `/admin/changelog`。此入口使用现有网站账号和管理员权限；普通账号只能阅读 `/changelog`。
+两站共用方舟的 `/admin/changelog` 工作台，通过「明日方舟／终末地」切换管理站点。终末地侧边栏的「更新日志管理」及旧地址 `/admin/changelog` 会跳转到方舟的 `/admin/changelog?application=endfield`，自动选择终末地；公开日志页不再显示管理按钮。工作台继续使用现有网站账号和管理员权限，普通账号只能阅读公开日志。
 
 ## 填写与发布
 
-1. 新建日志，填写三段数字版本号、北京时间发布日期、标题及新增／优化／修复条目。
-2. 简体中文必填，台湾繁体和英文选填；未填写的译文回退至简体中文。预览使用当前编辑语言。
-3. 保存草稿，再点击发布。保存草稿不会改变已发布内容；公开页面只读取发布快照。
+1. 先选择管理站点，再新建日志，填写三段数字版本号、北京时间发布日期、标题及新增／优化／修复条目。
+2. 简体中文必填，台湾繁体和英文选填；未填写的译文回退至简体中文。预览使用当前界面语言。
+3. 保存草稿，再点击发布，并核对确认框中的站点和环境。保存草稿不会改变已发布内容；公开页面只读取发布快照。
 4. 已发布的版本号不能更改。撤回会隐藏公开日志并保留草稿，只有从未发布的草稿允许删除。日期未到的日志不能提前发布。
 
-切换日志或离开页面时会提示未保存的内容。并发编辑返回冲突并保留输入，需要刷新列表、核对后重新选择最新记录。
+切换站点、切换日志或离开页面时会提示未保存的内容。并发编辑返回冲突并保留输入，需要刷新列表、核对后重新选择最新记录。
 
 最初的开发预览记录仍作为静态历史展示；此后的更新可从后台维护，无需修改代码。终末地当前只在日志页面展示更新，不自动弹窗。
 
 ## 数据与部署
 
 `app.release_note` 通过 `application + environment + version` 唯一索引隔离日志。原有方舟入口固定使用 `arknights`，终末地入口固定使用 `endfield`。客户端不能提交站点或环境来改变查询范围；缓存和修订号检查也包含站点范围。
+
+工作台合并只改变管理入口，沿用方舟的 `/api/admin/releases` 和终末地的 `/api/endfield/admin/releases`，无需新迁移或搬移已有日志。终末地跳转目标使用 `VITE_ARKNIGHTS_ORIGIN`，兼容 `ENDFIELD_ACCOUNT_ORIGIN`；非默认部署需配置同一环境的方舟公开地址，不能使用平台服务的内部地址。
 
 新增迁移为 `drizzle/0028_endfield_release_notes.sql`，由 Drizzle 生成。既有记录的 `application` 默认为 `arknights`，草稿和公开快照保持原样。
 
@@ -35,3 +37,4 @@
 - `node --experimental-strip-types --experimental-test-module-mocks --test apps/arknights/src/server/public-data-api.test.ts apps/arknights/src/server/public-data-cache.test.ts`。
 - 为迁移后的隔离测试数据库设置 `AUTH_INTEGRATION_DATABASE_URL`，执行 `node --experimental-strip-types --import ./scripts/register-hooks.mjs --test apps/arknights/src/server/release-notes.integration.test.mjs`，覆盖两站同版本、越权 ID、草稿隔离、发布快照、并发冲突和管理员权限。
 - 两站和平台构建完成后，可在同一隔离本地数据库运行 `node scripts/test-endfield-changelog-e2e.mjs`。脚本启动自己的本地服务、使用临时账号完成真实登录与编辑发布，并清理自建记录；不访问线上数据库。
+- 无数据库的交互回归：运行 `node scripts/start-admin-preview.mjs 5205`，在 5206 启动终末地开发服务并设置 `VITE_ARKNIGHTS_ORIGIN=http://127.0.0.1:5205`，再执行 `node scripts/test-changelog-workbench-preview-e2e.mjs`。覆盖站点切换、草稿保护与隔离、三语、发布目标确认、移动端和旧地址跳转；不替代真实数据库发布测试。
