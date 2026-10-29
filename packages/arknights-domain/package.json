@@ -66,7 +66,8 @@
     "./messages/zh-TW/rotation_settings.json": "./messages/zh-TW/rotation_settings.json",
     "./messages/en/RotationLabels.json": "./messages/en/RotationLabels.json",
     "./messages/en/efficiency.json": "./messages/en/efficiency.json",
-    "./messages/en/rotation_settings.json": "./messages/en/rotation_settings.json"
+    "./messages/en/rotation_settings.json": "./messages/en/rotation_settings.json",
+    "./releases/validation": "./src/releases/validation.ts"
   },
   "dependencies": {
     "@riic/contracts": "*",

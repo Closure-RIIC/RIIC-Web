@@ -1,7 +1,7 @@
 import { useEndfieldLanguage } from "../i18n/client";
 import { type CSSProperties, type ReactNode } from "react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
-import { Calculator, SquarePen, Search, Cloud } from "lucide-react";
+import { Calculator, SquarePen, Search, Cloud, BookOpenCheck } from "lucide-react";
 import { Sidebar, SidebarProvider, SidebarInset, SidebarHeader, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger, useSidebar } from "@riic/ui-primitives/sidebar";
 import { TooltipProvider } from "@riic/ui-primitives/tooltip";
 import { PageScrollbar } from "@riic/ui-primitives/page-scrollbar";
@@ -31,6 +31,7 @@ function AccountMenu() {
 }
 function Navigation() {
   const { locale, t } = useWorkspace();
+  const { isAdmin } = useAccount();
   const path = useRouterState({ select: s => s.location.pathname });
   const { setOpenMobile } = useSidebar();
   const groups = [
@@ -44,6 +45,9 @@ function Navigation() {
     { label: t("AppShell.myCharacters"), links: [
       { to: "/skland" as const, label: t(pageLabels["/skland"]), icon: Cloud },
     ] },
+    ...(isAdmin ? [{ label: t("Navigation.changelogAdmin"), links: [
+      { to: "/admin/changelog" as const, label: t("Navigation.changelogAdmin"), icon: BookOpenCheck },
+    ] }] : []),
   ];
   return <Sidebar collapsible="icon" mobileWidth="min(17rem, calc(100vw - 3rem))"><div className={nav.sidebar}>
     <SidebarHeader className={nav.header}><GameSwitcher game="endfield" locale={locale} targetOrigin={import.meta.env.VITE_ARKNIGHTS_ORIGIN} /><SidebarTrigger className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground" /></SidebarHeader>

@@ -17,6 +17,7 @@ export type ReleaseNote = {
   sections: ReleaseSection[];
 };
 
+export type ReleaseApplication = "arknights" | "endfield";
 export type ReleaseEnvironment = "production" | "development" | "local";
 export type ReleaseDraft = ReleaseNote & { notify: boolean };
 export type ReleaseFeed = { environment: ReleaseEnvironment; releases: ReleaseDraft[] };

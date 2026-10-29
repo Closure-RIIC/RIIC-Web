@@ -7,5 +7,6 @@
   "settings": "Settings",
   "docs": "Docs",
   "changelog": "Changelog",
-  "siteTitle": "Dijiang Infrastructure Terminal"
+  "siteTitle": "Dijiang Infrastructure Terminal",
+  "changelogAdmin": "Manage changelog"
 }
