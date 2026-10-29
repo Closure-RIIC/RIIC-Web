@@ -1,0 +1,11 @@
+{
+  "general": "綜合",
+  "systemCombination": "體系組合",
+  "smallCombination": "小型組合",
+  "unknown": "未知",
+  "noAdditionalTraining": "無需額外培養",
+  "useSkillUnlockRequirement": "按技能解鎖要求",
+  "targetNeedsReview": "目標待核對",
+  "elite": "精",
+  "basicGoal": "基礎目標"
+}

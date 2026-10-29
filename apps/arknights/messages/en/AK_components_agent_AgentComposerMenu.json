@@ -1,0 +1,7 @@
+{
+  "attachmentsAndPersona": "Attachments and persona{count, plural, =0 {} one {, # attachment} other {, # attachments}}",
+  "attachmentsAndPersona2": "Attachments and persona",
+  "addAttachment": "Add attachment",
+  "upTo4Attachments8MbEach": "Up to 4 attachments · 8 MB each",
+  "persona": "Persona"
+}

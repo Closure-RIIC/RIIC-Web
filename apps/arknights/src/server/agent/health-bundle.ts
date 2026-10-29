@@ -1,4 +1,10 @@
 import { z } from "zod";
+import { registerMessages } from "@riic/arknights-domain/i18n/localize";
+import healthAdviceMessages from "../../../messages/zh-CN/AK_account_health_advice.json" with { type: "json" };
+
+// Agent tool output uses canonical Chinese. Load its one server-side catalog
+// explicitly; a tool request may run without any page/React loader beforehand.
+registerMessages("zh-CN", { AK_account_health_advice: healthAdviceMessages });
 
 import { extractAccountHealthInput, type AccountHealthInput, type HealthDailyReport, type TrainingOperator } from "../../account-health-input.ts";
 import { buildHealthAdvice, holdsDurinGroup, type HealthAdviceReport } from "../../account-health-advice.ts";
@@ -46,7 +52,7 @@ export function buildHealthBundle(input: {
     report: input.report ? { days: input.report.days, source: "game-report" } : undefined,
     demand: input.demand,
   });
-  const advice = buildHealthAdvice(health, holdsDurinGroup(input.operators?.items, input.operators?.source), "zh");
+  const advice = buildHealthAdvice(health, holdsDurinGroup(input.operators?.items, input.operators?.source), "zh-CN");
   return {
     health, advice,
     dataSources: {

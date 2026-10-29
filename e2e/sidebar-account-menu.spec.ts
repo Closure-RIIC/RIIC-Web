@@ -27,7 +27,7 @@ for (const width of [1440, 375]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/account-health");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
-    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     const footer = page.locator("[data-sidebar-account-footer]");
     const trigger = footer.locator("[data-sidebar-account-trigger]");
     await expect(trigger).toContainText(user.name);
@@ -73,25 +73,25 @@ for (const width of [1440, 375]) {
     expect(await shell!.evaluate(node => node.isConnected)).toBe(true);
     await expect(page.locator('[data-primary-navigation-page="calculator"][aria-current="page"]')).toHaveCount(0);
     if (width < 768) {
-      await expect(page.getByRole("dialog", { name: "Sidebar" })).toHaveCount(0);
-      await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+      await expect(page.getByRole("dialog", { name: /^(侧边栏|側邊欄|Sidebar)$/ })).toHaveCount(0);
+      await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     } else {
       await expect(footer).toBeVisible();
     }
     await footer.getByRole("button", { name: "设置", exact: true }).click();
     await expect(page).toHaveURL(/\/settings$/);
-    if (width < 768) await expect(page.getByRole("dialog", { name: "Sidebar" })).toHaveCount(0);
+    if (width < 768) await expect(page.getByRole("dialog", { name: /^(侧边栏|側邊欄|Sidebar)$/ })).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "账号管理", exact: true })).toHaveCount(0);
     await expect(page.locator("[data-account-action-cards]")).toBeVisible();
     const accountAvatar = page.locator("[data-website-account-avatar]");
     await expect(accountAvatar).toBeVisible();
-    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     await expect(footer.locator("[data-sidebar-account-avatar]")).toHaveAttribute("data-account-orb-color", (await accountAvatar.getAttribute("data-account-orb-color"))!);
     expect(await footer.evaluate(node => node.getBoundingClientRect().bottom <= window.innerHeight)).toBe(true);
     await footer.getByRole("link", { name: "Docs", exact: true }).click();
     await expect(page).toHaveURL(/\/docs$/);
     await expect(page.locator("[data-docs-home]")).toBeVisible();
-    if (width < 768) await expect(page.getByRole("dialog", { name: "Sidebar" })).toHaveCount(0);
+    if (width < 768) await expect(page.getByRole("dialog", { name: /^(侧边栏|側邊欄|Sidebar)$/ })).toHaveCount(0);
   });
 
   test(`account menu switches language and persists it after reload at ${width}px`, async ({ page }) => {
@@ -100,23 +100,26 @@ for (const width of [1440, 375]) {
     await page.goto("/settings");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     await expect(page.locator(".workbench-footer [data-help-link]")).toHaveCount(0);
-    await expect(page.locator(".workbench-footer").getByRole("button", { name: /^(中文|EN)$/ })).toHaveCount(0);
-    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    await expect(page.locator(".workbench-footer").getByRole("button", { name: /^(简体中文|繁體中文（台灣）|English)$/ })).toHaveCount(0);
+    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     await page.locator("[data-sidebar-account-trigger]").click();
     const menu = page.locator("[data-sidebar-account-menu]");
-    await expect(menu.getByRole("menuitemradio", { name: "中文", exact: true })).toBeChecked();
-    await menu.getByRole("menuitemradio", { name: "EN", exact: true }).click();
+    await expect(menu.getByRole("menuitemradio")).toHaveCount(3);
+    await expect(menu.getByRole("menuitemradio", { name: "简体中文", exact: true })).toBeChecked();
+    await menu.getByRole("menuitemradio", { name: "繁體中文（台灣）", exact: true }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", "zh-TW");
+    await menu.getByRole("menuitemradio", { name: "English", exact: true }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
-    await expect(menu.getByRole("menuitemradio", { name: "EN", exact: true })).toBeChecked();
+    await expect(menu.getByRole("menuitemradio", { name: "English", exact: true })).toBeChecked();
     await expect(page).toHaveURL(/\/settings$/);
 
     await page.reload();
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
-    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     await page.locator("[data-sidebar-account-trigger]").click();
-    await expect(menu.getByRole("menuitemradio", { name: "EN", exact: true })).toBeChecked();
-    await menu.getByRole("menuitemradio", { name: "中文", exact: true }).click();
+    await expect(menu.getByRole("menuitemradio", { name: "English", exact: true })).toBeChecked();
+    await menu.getByRole("menuitemradio", { name: "简体中文", exact: true }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-CN");
   });
 }
@@ -127,7 +130,7 @@ test("collapsed footer stays keyboard accessible and hides restricted payment pl
   await page.route("**/api/account/feature-access", route => route.fulfill({ json: { agent: false, billing: false } }));
   await page.goto("/account-health");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
-  await page.locator('[data-slot="sidebar"]').getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.locator('[data-slot="sidebar"]').getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   const footer = page.locator("[data-sidebar-account-footer]");
   await expect(footer).toHaveAttribute("data-compact", "true");
   const alignment = await page.locator('[data-slot="sidebar-inner"]').evaluate(root => {
@@ -147,9 +150,12 @@ test("collapsed footer stays keyboard accessible and hides restricted payment pl
   await expect(menu.getByRole("menuitem")).toHaveText(["Changelog", "Sign out"]);
   await expect(page.locator('[data-primary-navigation-page="billing"]')).toHaveCount(0);
   await page.keyboard.press("Home");
-  await expect(menu.getByRole("menuitemradio", { name: "中文", exact: true })).toBeFocused();
+  await expect(menu.getByRole("menuitemradio", { name: "简体中文", exact: true })).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  await expect(menu.getByRole("menuitemradio", { name: "EN", exact: true })).toBeChecked();
+  await expect(menu.getByRole("menuitemradio", { name: "繁體中文（台灣）", exact: true })).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(menu.getByRole("menuitemradio", { name: "English", exact: true })).toBeFocused();
+  await expect(menu.getByRole("menuitemradio", { name: "English", exact: true })).toBeChecked();
   await page.keyboard.press("ArrowDown");
   await expect(menu.getByRole("menuitem", { name: "Changelog", exact: true }).locator("[data-account-menu-highlight]")).toHaveCount(1);
   await page.keyboard.press("ArrowDown");
@@ -160,13 +166,15 @@ test("collapsed footer stays keyboard accessible and hides restricted payment pl
   await expect(footer.getByRole("link", { name: "Docs", exact: true })).toBeVisible();
 });
 
-test("anonymous footer opens login directly without a menu and restores focus", async ({ page }) => {
+test("anonymous footer offers all languages before login and restores focus", async ({ page }) => {
   await prepare(page);
   await mockAnonymousWebsiteSession(page);
   await page.goto("/account-health");
   const trigger = page.locator("[data-sidebar-account-trigger]");
   await expect(trigger).toContainText("未登录");
   await trigger.click();
+  await expect(page.locator("[data-sidebar-account-menu]").getByRole("menuitemradio")).toHaveText(["简体中文", "繁體中文（台灣）", "English"]);
+  await page.locator("[data-sidebar-sign-in]").click();
   await expect(page.locator("[data-sidebar-account-menu]")).toHaveCount(0);
   const dialog = page.getByRole("dialog", { name: "登录网站账号", exact: true });
   await expect(dialog).toBeVisible();
@@ -264,7 +272,7 @@ test.describe("touch account avatar", () => {
   test("tapping the avatar opens the menu without starting a hover animation", async ({ page }) => {
     await prepare(page);
     await page.goto("/account-health");
-    await page.getByRole("button", { name: "Toggle Sidebar" }).tap();
+    await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).tap();
     const avatar = page.locator("[data-sidebar-account-avatar]");
     await expect(avatar).toHaveAttribute("data-fluid-orb-motion", "still");
     await avatar.tap();

@@ -1,0 +1,8 @@
+{
+  "openFullResolutionImage": "Open full-resolution image: {title}",
+  "fullSize": "FULL SIZE",
+  "screenshot": "Screenshot: {title}",
+  "screenshotPlaceholder": "Screenshot placeholder: {title}",
+  "screenshot2": "Screenshot {slot}",
+  "replaceLaterWith": "Replace later with: "
+}

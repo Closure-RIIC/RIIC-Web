@@ -1,8 +1,18 @@
 "use client";
+
+import { lazyWithMessages } from "@/i18n/features-client";
+import { useLocale as useRawLocale } from "use-intl";
+import { createLocalizer as createRawLocalizer, richValue } from "@riic/arknights-domain/i18n/localize";
+import type RawMessages from "../messages/zh-CN/AK_Raw_setup_dialog.json";
+const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_setup_dialog");
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../messages/zh-CN/AK_setup_dialog.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_setup_dialog");
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_setup_dialog } from "./i18n/helpers/setup_dialog.ts";
 import { useTranslations, useLocale } from "use-intl";
 
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Database, ExternalLink, FileJson, ListChecks, Play, ScanLine, Trash2, Upload } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -40,7 +50,7 @@ import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, R
 import type { MaaIssue } from "@riic/arknights-domain/maa-review";
 
 const CLIENT_SKLAND_ENABLED = process.env.APP_CLIENT_SKLAND_ENABLED === "1";
-const ManualOperboxPicker = lazy(() => import("@/components/setup/ManualOperboxPicker").then((module) => ({ default: module.ManualOperboxPicker })));
+const ManualOperboxPicker = lazyWithMessages(() => import("@/components/setup/ManualOperboxPicker").then((module) => ({ default: module.ManualOperboxPicker })), "apps/arknights/src/components/setup/ManualOperboxPicker.tsx");
 
 const SETUP_STEP_ORDER: SetupStep[] = ["box", "layout", "facilities"];
 const PANEL_TRANSITION = { type: "spring", stiffness: 420, damping: 38, mass: 0.55 } as const;
@@ -102,16 +112,16 @@ type SetupDialogProps = {
   onSkip: () => void;
 };
 
-function sourceLabel(source: BoxSource, en: boolean): string {
+function sourceLabel(source: BoxSource, en: AppLocale): string {
   if (CLIENT_SKLAND_ENABLED && source === "skland") return localize_setup_dialog.text(en, "skland");
   if (source === "maa") return localize_setup_dialog.text(en, "maaImport");
   return localize_setup_dialog.text(en, "243FullE2Sample");
 }
 
-function formatSyncTime(timestamp: number | null | undefined, en: boolean): string {
+function formatSyncTime(timestamp: number | null | undefined, en: AppLocale): string {
   const date = timestamp && Number.isFinite(timestamp) ? new Date(timestamp * 1000) : null;
   if (!date || Number.isNaN(date.getTime())) return localize_setup_dialog.text(en, "notSynced");
-  return new Intl.DateTimeFormat((en ? "en-US" : "zh-CN"), { dateStyle: "short", timeStyle: "short" }).format(date);
+  return new Intl.DateTimeFormat((en === "en" ? "en-US" : "zh-CN"), { dateStyle: "short", timeStyle: "short" }).format(date);
 }
 
 export function SetupDialog({
@@ -169,9 +179,10 @@ export function SetupDialog({
   onFinish,
   onSkip,
 }: SetupDialogProps) {
+  const rawLocale = useRawLocale();
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const { data: websiteSession } = useWebsiteSession();
   const [maaReview, setMaaReview] = useState<{ rows: Record<string, unknown>[]; issues: MaaIssue[]; name: string } | null>(null);
   const [maaChoices, setMaaChoices] = useState<Record<number, number>>({});
@@ -254,7 +265,7 @@ export function SetupDialog({
   const persistedDataLabel = fileName || sourceLabel(boxSource, en);
   const currentDataLabel = CLIENT_SKLAND_ENABLED && boxSource === "skland" && !sklandSnapshot
     ? (intl("setup_dialog.lastSyncedSklandData"))
-    : en && persistedDataLabel === "243 全精二示例"
+    : en === "en" && persistedDataLabel === "243 全精二示例"
       ? "243 full E2 sample"
       : persistedDataLabel;
   const reducedMotion = useReducedMotion();
@@ -515,9 +526,9 @@ export function SetupDialog({
                           className="inline-flex min-h-11 w-fit items-center gap-2 rounded-[4px] px-2 text-sm font-medium underline underline-offset-4 outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <Play className="size-4 shrink-0" aria-hidden="true" />
-                          {en ? "How to get box.json with MAA · Video tutorial" : "如何用 MAA 获取 box.json · 视频教程"}
+                          {uiText.text(en, "howToGetBoxJsonWithMaaVideo")}
                           <ExternalLink className="size-3.5 shrink-0" aria-hidden="true" />
-                          <span className="sr-only">{en ? " (opens in a new tab)" : "（新标签页打开）"}</span>
+                          <span className="sr-only">{uiText.text(en, "opensInANewTab")}</span>
                         </a>
                         {!websiteSession ? (
                           <Alert>
@@ -599,15 +610,15 @@ export function SetupDialog({
                       </TabsContent>
                     </Tabs>
                     {inputMode === "maa" && maaReview ? (
-                      <section ref={maaReviewRef} tabIndex={-1} className="mt-3 grid gap-2.5 rounded-lg border border-amber-500/35 bg-amber-50/60 p-3 outline-none dark:bg-amber-950/15" aria-label="导入异常确认">
-                        <div className="flex items-baseline justify-between gap-3"><h3 className="font-semibold">发现 {maaReview.issues.length} 项异常练度</h3><span className="text-xs text-muted-foreground">请选择修正方案</span></div>
-                        <p className="text-sm text-muted-foreground">确认后才会导入；取消会保留原来的 Box。</p>
-                        <p className="text-xs text-muted-foreground">星级会根据干员数据自动匹配，原 JSON 中填写的星级不一致时将自动修正。</p>
+                      <section ref={maaReviewRef} tabIndex={-1} className="mt-3 grid gap-2.5 rounded-lg border border-amber-500/35 bg-amber-50/60 p-3 outline-none dark:bg-amber-950/15" aria-label={rawText.text(rawLocale, "reviewImportIssues")}>
+                        <div className="flex items-baseline justify-between gap-3"><h3 className="font-semibold">{rawText.rich(rawLocale, "invalidTrainingEntriesFound", { part1: richValue((maaReview.issues.length)) })}</h3><span className="text-xs text-muted-foreground">{rawText.text(rawLocale, "chooseACorrection")}</span></div>
+                        <p className="text-sm text-muted-foreground">{rawText.text(rawLocale, "importStartsOnlyAfterConfirmationCancelingPreservesYourCurrent")}</p>
+                        <p className="text-xs text-muted-foreground">{rawText.text(rawLocale, "rarityIsMatchedAgainstOperatorDataAutomaticallyIncorrectRarity")}</p>
                         {maaReview.issues.map(issue => (
                           <fieldset key={issue.index} className="grid gap-2 rounded-md border bg-background p-2.5">
-                            <legend className="px-1 text-sm font-semibold tracking-normal">{issue.name}（{issue.rarity}星）</legend>
-                            <p className="text-xs font-medium text-muted-foreground">原始数据：精{String(issue.elite)} · {String(issue.level)}级，超出合法范围</p>
-                            <div className="flex flex-wrap gap-1.5" role="group" aria-label={`${issue.name}的修正方案`}>
+                            <legend className="px-1 text-sm font-semibold tracking-normal">{rawText.rich(rawLocale, "label", { part1: richValue((issue.name)), part2: richValue((issue.rarity)) })}</legend>
+                            <p className="text-xs font-medium text-muted-foreground">{rawText.rich(rawLocale, "originalELvOutsideTheValidRange", { part1: richValue((String(issue.elite))), part2: richValue((String(issue.level))) })}</p>
+                            <div className="flex flex-wrap gap-1.5" role="group" aria-label={rawText.text(rawLocale, "correctionFor", { name: issue.name })}>
                               {issue.choices.map((choice, index) => {
                                 const selected = maaChoices[issue.index] === index;
                                 const color = !choice.own || (choice.elite === 0 && choice.level === 1) ? "#71717A" : choice.elite === 2 ? "#FFD800" : choice.elite === 1 ? "#B8F03A" : "#22BBFF";
@@ -632,19 +643,17 @@ export function SetupDialog({
                         ))}
                         {reviewError ? <p role="alert" className="text-sm text-destructive">{reviewError}</p> : null}
                         <div className="flex flex-wrap justify-between gap-2">
-                          <SetupActionButton type="button" variant="outline" disabled={reviewBusy} onClick={applyRecommendedMaaChoices}>一键采用推荐方案</SetupActionButton>
+                          <SetupActionButton type="button" variant="outline" disabled={reviewBusy} onClick={applyRecommendedMaaChoices}>{rawText.text(rawLocale, "useAllRecommendedCorrections")}</SetupActionButton>
                           <div className="flex gap-2">
-                          <SetupActionButton type="button" variant="outline" disabled={reviewBusy} onClick={() => setMaaReview(null)}>取消本次导入</SetupActionButton>
-                          <SetupActionButton type="button" disabled={reviewBusy || maaReview.issues.some(issue => maaChoices[issue.index] === undefined)} onClick={() => void confirmMaaReview()}>{reviewBusy ? "正在导入…" : "确认选择并导入"}</SetupActionButton>
+                          <SetupActionButton type="button" variant="outline" disabled={reviewBusy} onClick={() => setMaaReview(null)}>{rawText.text(rawLocale, "cancelImport")}</SetupActionButton>
+                          <SetupActionButton type="button" disabled={reviewBusy || maaReview.issues.some(issue => maaChoices[issue.index] === undefined)} onClick={() => void confirmMaaReview()}>{reviewBusy ? rawText.text(rawLocale, "importing") : rawText.text(rawLocale, "confirmAndImport")}</SetupActionButton>
                           </div>
                         </div>
                       </section>
                     ) : null}
                     {inputError ? <p id="setup-box-error" className="mt-3 text-sm text-destructive" role="alert">{inputError}</p> : null}
                     {inputMode === "maa" && boxSource === "maa" && hasBox && !maaReview && !inputError ? (
-                      <p className="mt-3 rounded-md border border-emerald-500/25 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300" role="status">
-                        MAA Box 已导入 {operbox?.length ?? 0} 名干员，其中已拥有 {importedOwnedCount} 名。
-                      </p>
+                      <p className="mt-3 rounded-md border border-emerald-500/25 bg-emerald-500/5 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300" role="status">{rawText.rich(rawLocale, "importedOperatorsFromTheMaaRosterOwned", { part1: richValue((operbox?.length ?? 0)), part2: richValue((importedOwnedCount)) })}</p>
                     ) : null}
                   </section>
                 ) : null}
@@ -869,7 +878,7 @@ export function SetupDialog({
           <DialogHeader>
             <DialogTitle>{intl("setup_dialog.clearLocalData2")}</DialogTitle>
             <DialogDescription>
-              {localize_setup_dialog.text(en, "additional1", { choice1: ((en)) && (CLIENT_SKLAND_ENABLED) ? "yes" : "no", choice2: (!(en)) && (CLIENT_SKLAND_ENABLED) ? "yes" : "no" })}
+              {localize_setup_dialog.text(en, "additional1", { choice2: ((CLIENT_SKLAND_ENABLED) ? ("yes") : ("no")) })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

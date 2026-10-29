@@ -1,4 +1,9 @@
 "use client";
+
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_auth_WebsiteAccountDialog.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_auth_WebsiteAccountDialog");
+
 import { useLocale, useTranslations } from "use-intl";
 import { useState } from "react";
 import { WebsiteAuthContent } from "@riic/shell/WebsiteAuthDialog";
@@ -15,7 +20,7 @@ export function WebsiteAccountDialog({ open, onOpenChange, onSessionChanged, res
   const locale = useLocale();
   const [title, setTitle] = useState("");
   return <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogContent data-website-account-dialog finalFocus={false} closeLabel={locale === "en" ? "Close" : "关闭"}
+    <DialogContent data-website-account-dialog finalFocus={false} closeLabel={uiText.text(locale, "close")}
       className={websiteAuthDialogClassName}>
       <DialogHeader className="sr-only">
         <DialogTitle>{title || intl(resetToken === undefined ? "components_auth_WebsiteAccountDialog.websiteAccountSignIn" : "app_account_reset_password_reset_client.resetPassword")}</DialogTitle>

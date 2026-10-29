@@ -11,11 +11,14 @@
     "better-auth": "^1.7.12"
   },
   "dependencies": {
+    "@riic/contracts": "*",
     "@riic/ui-primitives": "*",
     "@riic/arknights-domain": "*"
   },
   "version": "0.0.0",
   "exports": {
+    "./LanguageProvider": "./LanguageProvider.tsx",
+    "./route-resources": "./route-resources.ts",
     "./account-orb": "./account-orb.ts",
     "./AppSidebar.module.css": "./AppSidebar.module.css",
     "./FilingLinks": "./FilingLinks.tsx",
@@ -36,7 +39,25 @@
     "./auth/password-input": "./auth/password-input.tsx",
     "./auth/otp-input": "./auth/otp-input.tsx",
     "./auth/password-strength": "./auth/password-strength.tsx",
-    "./auth/wizard-steps": "./auth/wizard-steps.tsx"
+    "./auth/wizard-steps": "./auth/wizard-steps.tsx",
+    "./messages/zh-CN/Account.json": "./messages/zh-CN/Account.json",
+    "./messages/zh-CN/AccountMenu.json": "./messages/zh-CN/AccountMenu.json",
+    "./messages/zh-CN/AccountRecords.json": "./messages/zh-CN/AccountRecords.json",
+    "./messages/zh-CN/Interface.json": "./messages/zh-CN/Interface.json",
+    "./messages/zh-CN/Shell_GameSwitcher.json": "./messages/zh-CN/Shell_GameSwitcher.json",
+    "./messages/zh-CN/Shell_auth_WebsiteAuthDialog.json": "./messages/zh-CN/Shell_auth_WebsiteAuthDialog.json",
+    "./messages/zh-TW/Account.json": "./messages/zh-TW/Account.json",
+    "./messages/zh-TW/AccountMenu.json": "./messages/zh-TW/AccountMenu.json",
+    "./messages/zh-TW/AccountRecords.json": "./messages/zh-TW/AccountRecords.json",
+    "./messages/zh-TW/Interface.json": "./messages/zh-TW/Interface.json",
+    "./messages/zh-TW/Shell_GameSwitcher.json": "./messages/zh-TW/Shell_GameSwitcher.json",
+    "./messages/zh-TW/Shell_auth_WebsiteAuthDialog.json": "./messages/zh-TW/Shell_auth_WebsiteAuthDialog.json",
+    "./messages/en/Account.json": "./messages/en/Account.json",
+    "./messages/en/AccountMenu.json": "./messages/en/AccountMenu.json",
+    "./messages/en/AccountRecords.json": "./messages/en/AccountRecords.json",
+    "./messages/en/Interface.json": "./messages/en/Interface.json",
+    "./messages/en/Shell_GameSwitcher.json": "./messages/en/Shell_GameSwitcher.json",
+    "./messages/en/Shell_auth_WebsiteAuthDialog.json": "./messages/en/Shell_auth_WebsiteAuthDialog.json"
   },
   "sideEffects": [
     "**/*.css"

@@ -7,11 +7,11 @@ import { formatClock, formatDuration } from "../step/step-engine.ts";
 
 export function StepLog({ log, startHour, onClear }: { log: StepLogEntry[]; startHour: number; onClear: () => void }) {
   const { t } = useWorkspace();
-  return <Section title={t("事件日志", "Event log")} actions={<Action id="logClearBtn" size="sm" icon={<Trash2 />} disabled={!log.length} onClick={onClear}>{t("清空", "Clear")}</Action>}>
-    <ScrollArea id="logList" className="ef-step-log" viewportProps={{ "aria-label": t("事件日志", "Event log") }}>
+  return <Section title={t("StepPanels.eventLog")} actions={<Action id="logClearBtn" size="sm" icon={<Trash2 />} disabled={!log.length} onClick={onClear}>{t("StepPanels.clear")}</Action>}>
+    <ScrollArea id="logList" className="ef-step-log" viewportProps={{ "aria-label": t("StepPanels.eventLog") }}>
       {log.length ? log.map((entry, index) => <div className="ef-step-log-entry" data-event={entry.type} key={index}>
         <time>{formatClock(entry.tSec, startHour)}</time><span>{entry.text.replace(/^[^\p{L}\p{N}]+/u, "")}</span>
-      </div>) : <p className="ef-muted">{t("暂无事件", "No events yet")}</p>}
+      </div>) : <p className="ef-muted">{t("StepPanels.noEventsYet")}</p>}
     </ScrollArea>
   </Section>;
 }
@@ -30,15 +30,15 @@ export function StepStats({ view, rooms }: { view: StepView; rooms: StepRoom[] }
     });
   });
   return <div id="statsArea">
-    <p className="ef-muted">{t("产出单位为等效小时；均产按有效工作时长计算。", "Output is measured in effective hours; average rate uses active work time.")}</p>
+    <p className="ef-muted">{t("StepPanels.outputIsMeasuredInEffectiveHoursAverageRateUses")}</p>
     <ScrollArea direction="both" className="ef-table-wrap"><table className="ef-table">
-      <caption className="sr-only">{t("设施产出统计", "Facility production statistics")}</caption>
-      <thead><tr><th>{t("舱室 / 产物", "Facility / product")}</th><th>{t("累计产出", "Total output")}</th><th>{t("均产 / h", "Average / h")}</th><th>{t("有效工作", "Active work")}</th></tr></thead>
+      <caption className="sr-only">{t("StepPanels.facilityProductionStatistics")}</caption>
+      <thead><tr><th>{t("StepPanels.facilityProduct")}</th><th>{t("StepPanels.totalOutput")}</th><th>{t("StepPanels.averageH")}</th><th>{t("StepPanels.activeWork")}</th></tr></thead>
       <tbody>{rows}</tbody>
     </table></ScrollArea>
-    <details className="ef-details ef-step-mood-stats"><summary>{t("干员心情统计", "Operator morale statistics")}</summary>
+    <details className="ef-details ef-step-mood-stats"><summary>{t("StepPanels.operatorMoraleStatistics")}</summary>
       <ScrollArea direction="both" className="ef-table-wrap"><table className="ef-table">
-        <thead><tr><th>{t("干员", "Operator")}</th><th>{t("最低", "Minimum")}</th><th>{t("最高", "Maximum")}</th><th>{t("当前", "Current")}</th></tr></thead>
+        <thead><tr><th>{t("StepPanels.operator")}</th><th>{t("StepPanels.minimum")}</th><th>{t("StepPanels.maximum")}</th><th>{t("StepPanels.current")}</th></tr></thead>
         <tbody>{view.ops.map(op => {
           let minimum = op.mood;
           let maximum = op.mood;

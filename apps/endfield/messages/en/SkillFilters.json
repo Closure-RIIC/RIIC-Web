@@ -1,0 +1,13 @@
+{
+  "all": "All",
+  "rarity": "Rarity",
+  "filterRarity": "Filter rarity",
+  "profession": "Profession",
+  "filterProfession": "Filter profession",
+  "workRoom": "Work room",
+  "filterFacility": "Filter facility",
+  "skillTags": "Skill tags",
+  "filterSkillTags": "Filter skill tags",
+  "chooseAWorkRoomFirst": "Choose a work room first",
+  "noSkillTagsForThisRoom": "No skill tags for this room"
+}

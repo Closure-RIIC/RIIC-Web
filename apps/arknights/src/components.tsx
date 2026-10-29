@@ -1,3 +1,8 @@
+const GROUP_LABEL_KEYS = {"control":"group_control","trading":"group_trading","manufacture":"group_manufacture","power":"group_power","dormitory":"group_dormitory","meeting":"group_meeting","hire":"group_hire","processing":"group_processing","training":"group_training","recycling":"group_recycling","recycle":"group_recycle","functional":"group_functional"} as const;
+import { lazyWithMessages } from "@/i18n/features-client";
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../messages/zh-CN/AK_components.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components");
 import { localize as localize_components } from "./i18n/helpers/components.ts";
 import { useTranslations, useLocale } from "use-intl";
 import {
@@ -11,7 +16,7 @@ import {
   Smile,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { CSSProperties, lazy, ReactElement, ReactNode, Suspense, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, ReactElement, ReactNode, Suspense, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { AnimatedNumber, AnimatedText } from "@/components/AnimatedText";
 import { CachedScheduleView } from "@/components/CachedScheduleView";
@@ -36,11 +41,10 @@ import { cn } from "@/lib/utils";
 import { localizedBuildingSkill, localizedOperatorName, localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 import {
-  BUILDING_SKILL_ENHANCED_WORD,
+  buildingSkillUnlockSuffix,
   buildingSkillUnlockLabel,
-  buildingSkillUnlockLabelEnglish,
   buildingSkillUnlockPrefix,
-  operatorProfessionLabelEnglishForCode,
+  operatorProfessionLabel,
   operatorProfessionPresentationForCode,
 } from "@/operator-presentation";
 import { roomVisualFor } from "@/room-visuals";
@@ -103,9 +107,9 @@ import {
   RoomProduct,
 } from "@riic/arknights-domain/types";
 
-const OperatorSkillTooltip = lazy(() => import("@/components/OperatorSkillTooltip").then((module) => ({
+const OperatorSkillTooltip = lazyWithMessages(() => import("@/components/OperatorSkillTooltip").then((module) => ({
   default: module.OperatorSkillTooltip,
-})));
+})), "apps/arknights/src/components/OperatorSkillTooltip.tsx");
 
 function CompactScheduleLoading({ rows }: { rows: RoomRow[] }) {
   const intl = useTranslations();
@@ -577,7 +581,7 @@ export function ShiftTabs({
 }) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const plans = maaJson?.plans ?? [];
 
   if (plans.length === 0) {
@@ -591,26 +595,18 @@ export function ShiftTabs({
   const labelForShift = (index: number) => {
     const shift = rotation?.shifts[index];
     const durationHours = shift?.duration_hours ?? durations?.[index];
-    return localize_components.text(en, "additional1", {
-      value1: en ? String(index + 1) : "",
-      choice2: en && durationHours !== undefined ? "yes" : "no",
-      value3: en && durationHours !== undefined ? String(compactNumber(durationHours)) : "",
-      choice4: !en && durationHours !== undefined ? "yes" : "no",
-      value5: !en && durationHours !== undefined ? String(index + 1) : "",
-      value6: !en && durationHours !== undefined ? String(compactNumber(durationHours)) : "",
-      value7: !en && durationHours === undefined ? String(shiftTabLabel(shift, index)) : "",
-    });
+    return localize_components.text(en, "additional1", { hasDuration: durationHours !== undefined ? "yes" : "no", index: index + 1, hours: durationHours !== undefined ? compactNumber(durationHours) : "", label: shiftTabLabel(shift, index, en) });
   };
 
   if (control === "select") {
     return (
       <label className="flex min-w-0 items-center">
-        <span className="sr-only">{en ? "Shift" : "班次"}</span>
+        <span className="sr-only">{uiText.text(en, "shift")}</span>
         <select
           value={String(active)}
           onChange={(event) => onChange(Number(event.target.value))}
           className="h-9 max-w-full rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          aria-label={en ? "Shift" : "班次"}
+          aria-label={uiText.text(en, "shift")}
         >
           {plans.map((plan, index) => {
             const label = labelForShift(index);
@@ -636,8 +632,7 @@ export function ShiftTabs({
         {plans.map((plan, index) => {
           const shift = rotation?.shifts[index];
           const label = labelForShift(index);
-          const originalTeamSummary = shiftTeamSummary(shift, rotation?.profile ?? DEFAULT_ROTATION_PROFILE);
-          const teamSummary = en && originalTeamSummary ? originalTeamSummary.replaceAll("主力", "Main").replaceAll("替补", "Backup").replaceAll("上班", "working").replaceAll("休息", "resting") : originalTeamSummary;
+          const teamSummary = shiftTeamSummary(shift, rotation?.profile ?? DEFAULT_ROTATION_PROFILE, en);
           const customLabel = labels?.[index];
           return (
             <TabsTrigger
@@ -660,7 +655,7 @@ function compactNumber(value: number, digits = 1): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(digits).replace(/\.?0+$/, "");
 }
 
-const LazyPlanTelemetry = lazy(() => import("./components/PlanTelemetry").then((module) => ({ default: module.PlanTelemetry })));
+const LazyPlanTelemetry = lazyWithMessages(() => import("./components/PlanTelemetry").then((module) => ({ default: module.PlanTelemetry })), "apps/arknights/src/components/PlanTelemetry.tsx");
 
 export function PlanTelemetry(props: Parameters<typeof import("./components/PlanTelemetry").PlanTelemetry>[0]) {
   return <Suspense fallback={null}><LazyPlanTelemetry {...props} /></Suspense>;
@@ -969,9 +964,7 @@ function BuildingSkillBadge({
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
   const displaySkill = localizedBuildingSkill(skill.id, locale, skill, gameCatalog);
-  const unlockLabel = locale === "en"
-    ? buildingSkillUnlockLabelEnglish(skill.elite, skill.level, skill.enhanced)
-    : buildingSkillUnlockLabel(skill.elite, skill.level, skill.enhanced);
+  const unlockLabel = buildingSkillUnlockLabel(skill.elite, skill.level, skill.enhanced, locale);
   if (!interactive) {
     return (
       <span
@@ -990,7 +983,7 @@ function BuildingSkillBadge({
           <button
             type="button"
             className="absolute right-0 top-0 z-10 flex size-10 items-center justify-center border-b border-l border-white/22 bg-black/76 text-white outline-none transition-colors hover:bg-black/88 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#FFD800] max-sm:size-11"
-            aria-label={intl("components.infrastructureSkillS", { index: skill.index, name: (locale === "en") ? (displaySkill.name) : "", unlockLabel: unlockLabel, nameValue: (locale === "en") ? "" : (skill.name) })}
+            aria-label={intl("components.infrastructureSkillS", { index: skill.index, unlockLabel, nameValue: displaySkill.name })}
             onFocus={() => setOpen(true)}
             onBlur={() => setOpen(false)}
             onClick={() => setOpen(true)}
@@ -1010,8 +1003,8 @@ function BuildingSkillBadge({
             unlockLabel
           ) : skill.enhanced ? (
             <>
-              <span>{buildingSkillUnlockPrefix(skill.elite, skill.level)}</span>
-              <span className="text-[#22BBFF]">{BUILDING_SKILL_ENHANCED_WORD}</span>
+              <span>{buildingSkillUnlockPrefix(skill.elite, skill.level, locale)}</span>
+              <span className="text-[#22BBFF]">{buildingSkillUnlockSuffix(true, locale)}</span>
             </>
           ) : (
             unlockLabel
@@ -1127,7 +1120,7 @@ export function OperatorSlot({
   const identity = slot?.name ?? (autofill ? "autofill" : "empty");
   const suppressNativeTitles = showSkillTooltip && slot !== undefined;
   const profession = slot ? operatorProfessionPresentationForCode(slot.profession) : undefined;
-  const professionLabelEnglish = slot ? operatorProfessionLabelEnglishForCode(slot.profession) : undefined;
+  const professionLabel = slot ? operatorProfessionLabel(slot.profession, locale) : undefined;
   const enterX = shouldReduceMotion ? 0 : shiftDirection * 6;
   const exitX = shouldReduceMotion ? 0 : shiftDirection * -4;
   const unavailableLabel = intl("components.slotLocked");
@@ -1195,7 +1188,7 @@ export function OperatorSlot({
                     src={profession.icon}
                     alt=""
                     aria-hidden="true"
-                    title={suppressNativeTitles ? undefined : intl("components.profession", { value1: (locale === "en") ? (professionLabelEnglish ?? "Unknown") : "", label: (locale === "en") ? "" : (profession.label) })}
+                    title={suppressNativeTitles ? undefined : intl("components.profession", { label: professionLabel ?? profession.label })}
                     className="absolute left-0 top-0 z-10 h-[25%] w-auto"
                   />
                 ) : null}
@@ -1218,7 +1211,7 @@ export function OperatorSlot({
                     data-elite-variant={eliteBadgeVariant}
                   />
                 ) : null}
-                {rarity ? <span className="pointer-events-none absolute bottom-0 right-0 z-20 leading-none text-[#FFD800]" style={{ fontSize: "calc(var(--operator-slot-size) * .16)", textShadow: "0 1px 2px #000" }} aria-label={`${rarity}星`} data-operator-rarity={rarity}>{"★".repeat(Math.min(6, rarity))}</span> : null}
+                {rarity ? <span className="pointer-events-none absolute bottom-0 right-0 z-20 leading-none text-[#FFD800]" style={{ fontSize: "calc(var(--operator-slot-size) * .16)", textShadow: "0 1px 2px #000" }} aria-label={intl("components.starRating", { rarity })} data-operator-rarity={rarity}>{"★".repeat(Math.min(6, rarity))}</span> : null}
                 {elite === undefined && typeof currentMorale === "number" ? (
                   <span
                     className="absolute bottom-0.5 left-0.5 flex items-center gap-0.5 whitespace-nowrap rounded-sm bg-black/72 px-1 py-0.5 text-xs font-normal leading-none text-white shadow-[0_1px_3px_rgba(0,0,0,0.5)] [&_svg]:size-2.5 max-sm:bottom-0.5 max-sm:left-0.5 max-sm:px-0.5 max-sm:[&_svg]:size-2.5"
@@ -1362,7 +1355,7 @@ export function ScheduleBoard({
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const rows = useMemo(() => layout.template === "Mower" ? sourceRows : withRecyclingRoom(sourceRows), [layout.template, sourceRows]);
   const [hiddenGroups, setHiddenGroups] = useState<Record<string, boolean>>({});
@@ -1481,7 +1474,8 @@ export function ScheduleBoard({
           {rowGroups.map((group) => {
         const visual = roomVisualFor(group.rows[0]?.group ?? "default");
         const firstGroup = group.rows[0]?.group ?? "";
-        const displayGroupLabel = en ? ({ control: "Control Center", trading: "Trading Posts", manufacture: "Factories", power: "Power Plants", dormitory: "Dormitories", meeting: "Reception Room", hire: "Office", processing: "Workshop", training: "Training Room", recycling: "Recycling Station", recycle: "Recycling Station" }[firstGroup] ?? (group.label === "功能设施" ? "Functional Facilities" : group.label)) : group.label;
+        const groupKey = GROUP_LABEL_KEYS[firstGroup as keyof typeof GROUP_LABEL_KEYS];
+        const displayGroupLabel = group.label === "功能设施" ? uiText.text(locale, "group_functional") : groupKey ? uiText.text(locale, groupKey) : group.label;
         const groupStyle = {
           "--room-accent": visual.accent,
         } as CSSProperties;
@@ -1603,7 +1597,7 @@ export function ScheduleBoard({
                                   variant="ghost"
                                   size="icon-sm"
                                   aria-pressed={sortRoomId === row.roomId}
-                                  aria-label={sortRoomId === row.roomId ? "退出调整顺序" : "调整干员顺序"}
+                                  aria-label={sortRoomId === row.roomId ? intl("Common.sortDone") : intl("Common.sortOperators")}
                                   className={cn(
                                     "h-7 w-7 border text-white hover:text-white",
                                     sortRoomId === row.roomId
@@ -1743,7 +1737,7 @@ export function ScheduleBoard({
                             variant="ghost"
                             size="icon-sm"
                             className="border border-white/10 bg-[#3C3C3C]/55 text-white/70 hover:bg-[#4B4B4B] hover:text-white disabled:cursor-not-allowed disabled:opacity-45 max-sm:size-11"
-                            aria-label={intl("components.reportScheduleIssue", { value1: (en) ? (localizedRoomTitle(row.title, row.group, locale, gameCatalog)) : "", title: (en) ? "" : (row.title) })}
+                            aria-label={intl("components.reportScheduleIssue", { title: localizedRoomTitle(row.title, row.group, locale, gameCatalog) })}
                             disabled={feedbackDisabled}
                             onClick={() => onIssue(row)}
                           >
@@ -1767,7 +1761,7 @@ export function ScheduleBoard({
       })}
           </>
 
-  ), [simulation, highlightNoLayoutSkill, noRoomSkillOperators, rowGroups, en, layout, collapsedGroups, hiddenGroups, intl, locale, gameCatalog,
+  ), [simulation, highlightNoLayoutSkill, noRoomSkillOperators, rowGroups, layout, collapsedGroups, hiddenGroups, intl, locale, gameCatalog,
     onSortToggle, sortRoomId, renderListRoomActions, shiftDirection, onFactoryRecipeChange,
     onTradeOrderChange, eliteByOperator, levelByOperator, onSlotClick, sortSelection, roomProducts,
     onSortSlotClick, onIssue, feedbackDisabled, normalizedQuery, onClearRoom, onManualSkillEfficiencyChange]);

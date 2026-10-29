@@ -1,0 +1,21 @@
+{
+  "lmdOrder": "LMD Order",
+  "originiumOrder": "Originium Order",
+  "auto": "Auto",
+  "pureGold": "Pure Gold",
+  "battleRecord": "Battle Record",
+  "originiumShard": "Originium Shard",
+  "awaitingSchedule": "Awaiting schedule",
+  "droneAcceleration": "{roomTitle} drone acceleration",
+  "drones": "Drones",
+  "disableDroneAcceleration": "Disable drone acceleration for this shift",
+  "useDronesForShift": "Use drones here for this shift",
+  "clearRoom": "Clear {roomTitle}",
+  "clear": "Clear",
+  "clearThisFacility": "Clear this facility",
+  "reportScheduleIssue": "{roomTitle} report schedule issue",
+  "sampleBoxDataCannotSubmitFeedback": "Sample BOX data cannot submit feedback",
+  "reportScheduleIssue2": "Report schedule issue",
+  "noLayoutRoomsToDisplay": "No layout rooms to display.",
+  "recipe": "Unspecified recipe"
+}

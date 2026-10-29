@@ -1,5 +1,10 @@
 "use client";
 
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_workbench_GachaHistoryRoute.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_workbench_GachaHistoryRoute");
+
+
 import { useLocale } from "use-intl";
 import { Link } from "@tanstack/react-router";
 import GachaHistoryPage from "@/components/pages/GachaHistoryPage";
@@ -13,11 +18,11 @@ import { SetupActionButton } from "@/components/setup/SetupActionButton";
 export function GachaHistoryRoute() {
   const { account, skland: center } = useWorkbench();
   const { data: session } = useWebsiteSession();
-  const en = useLocale() === "en";
+  const en = useLocale();
   if (account.pending) return <Skeleton className="h-64 w-full" />;
   if (!account.authenticated) return <main className="w-full min-w-0 space-y-5 pt-5" data-gacha-login-required>
-    <WorkbenchPageHeading page="gacha">{en ? "Gacha Analysis" : "抽卡分析"}</WorkbenchPageHeading>
-    <p className="text-sm text-muted-foreground">{en ? "Sign in to your website account, then scan to authorize access to headhunting history." : "请先登录网站账号，再扫码授权读取寻访记录。"}</p>
+    <WorkbenchPageHeading page="gacha">{uiText.text(en, "gachaAnalysis")}</WorkbenchPageHeading>
+    <p className="text-sm text-muted-foreground">{uiText.text(en, "signInToYourWebsiteAccountThenScan")}</p>
     <WebsiteAccountPanel onSessionChanged={account.onSessionChanged} />
   </main>;
   const skland = center?.skland;
@@ -25,9 +30,9 @@ export function GachaHistoryRoute() {
   const activeAccount = skland?.accounts.find((item) => item.accountId === skland.activeAccountId) ?? skland?.accounts[0];
   const role = activeAccount?.roles.find((item) => item.uid === activeAccount.selectedUid) ?? activeAccount?.roles[0];
   if (!skland || !activeAccount || !role) return <main className="w-full min-w-0 space-y-5 pt-5" data-gacha-history>
-    <WorkbenchPageHeading page="gacha">{en ? "Gacha Analysis" : "抽卡分析"}</WorkbenchPageHeading>
-    <p className="text-sm text-muted-foreground">{en ? "Select an account in Skland Sync to view its headhunting archive. Saved cloud records are retained." : "请先在森空岛同步登录并选择账号，寻访记录将跟随该账号显示。已有云端记录会继续保留。"}</p>
-    <SetupActionButton nativeButton={false} variant="outline" className="!min-w-0" render={<Link to="/skland" />}>{en ? "Go to Skland Sync" : "前往森空岛同步"}</SetupActionButton>
+    <WorkbenchPageHeading page="gacha">{uiText.text(en, "gachaAnalysis")}</WorkbenchPageHeading>
+    <p className="text-sm text-muted-foreground">{uiText.text(en, "selectAnAccountInSklandSyncToView")}</p>
+    <SetupActionButton nativeButton={false} variant="outline" className="!min-w-0" render={<Link to="/skland" />}>{uiText.text(en, "goToSklandSync")}</SetupActionButton>
   </main>;
   const snapshot = skland.snapshot?.player.uid === role.uid ? skland.snapshot : null;
   if (!snapshot && !skland.error) return <Skeleton className="h-64 w-full" />;

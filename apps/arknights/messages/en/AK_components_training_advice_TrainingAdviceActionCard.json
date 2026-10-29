@@ -1,0 +1,5 @@
+{
+  "unblockOperator": "Unblock operator",
+  "hideThisOperator": "Hide this operator",
+  "blockAction": "{action, select, unblock {Unblock} other {Block}} {name}"
+}

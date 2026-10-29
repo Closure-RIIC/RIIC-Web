@@ -1,0 +1,16 @@
+{
+  "tutorialProgress": "Tutorial progress",
+  "stepOf": "Step {value1} of {length}",
+  "complete": "complete",
+  "tutorialProgressPageOf": "Tutorial progress: page {value1} of {length}",
+  "tutorialStepNavigation": "Tutorial step navigation",
+  "selectAStepToJumpDirectlySwipeHorizontallyOn": "Select a step to jump directly. Swipe horizontally on narrow screens.",
+  "swipeToViewAllSteps": "Swipe to view all steps",
+  "step": "Step {value1}: {title}. {summary}",
+  "current": "CURRENT",
+  "tutorialPagination": "Tutorial pagination",
+  "previous": "Previous",
+  "page": "Page {value1} / {length}",
+  "finishAndReturn": "Finish and return",
+  "next": "Next"
+}

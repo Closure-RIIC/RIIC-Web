@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("cookie locale renders on the server, while switching preserves filters and search", async ({ page, context, baseURL }) => {
-  // The account language menu is available to signed-in users; anonymous clicks open sign-in.
+  // Exercise the signed-in path; anonymous language selection is covered by the account menu tests.
   await installMockSessionRefresh(page);
   await page.route("**/api/auth/get-session", route => route.fulfill({ json: {
     user: { id: "language-test-user", name: "Language test", email: "language@example.test" },
@@ -59,21 +59,21 @@ test("mobile has four bounded rows and room changes clear the tag", async ({ pag
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
-for (const locale of ["zh", "en"] as const) {
+for (const locale of ["zh", "zh-TW", "en"] as const) {
   test(`${locale} mobile skill details load on demand and close normally`, async ({ page, context, baseURL }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await context.addCookies([{ name: "riic-locale", value: locale, url: baseURL! }]);
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto("/skills");
-    const skill = page.getByRole("button", { name: locale === "en" ? /^View skill S/ : /^查看技能 S/ }).first();
+    const skill = page.getByRole("button", { name: locale === "en" ? /^View skill S/ : locale === "zh-TW" ? /^檢視技能 S/ : /^查看技能 S/ }).first();
     await expect(skill).toBeVisible();
     await skill.click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole("heading")).not.toHaveText("");
     await expect(dialog.locator("p").first()).not.toHaveText("");
-    await dialog.getByRole("button", { name: "Close", exact: true }).click();
+    await dialog.getByRole("button", { name: locale === "en" ? "Close" : locale === "zh-TW" ? "關閉" : "关闭", exact: true }).click();
     await expect(dialog).toHaveCount(0);
     await expect(skill).toBeVisible();
     expect(errors).toEqual([]);

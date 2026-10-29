@@ -1,0 +1,15 @@
+{
+  "operatorsControlCenterLv": "{value1} 名幹員 · 總控中樞 Lv.{value2}",
+  "sklandSync": "森空島同步",
+  "editRoster": "編輯名單",
+  "searching": "正在搜尋…",
+  "generateSchedule": "生成排班",
+  "schedulingOperators": "參與排班的幹員",
+  "viewAll": "檢視全部 {value1} 名",
+  "readyForTheNextProductionCycle": "準備下一輪生產",
+  "setUpYourOperators": "先配置你的幹員",
+  "chooseProductionAndPrioritiesInProductionSetupThenGenerate": "在生產配置中選擇產物與排班目標，生成後在這裡檢視全艦安排。",
+  "signInToSklandToSyncOperatorsEliteStages": "登入森空島自動同步幹員、精英化階段和設施等級，也可點選“編輯名單”手動配置。",
+  "adjustFacilityLevels": "調整設施等級",
+  "openSklandSync": "前往森空島同步"
+}

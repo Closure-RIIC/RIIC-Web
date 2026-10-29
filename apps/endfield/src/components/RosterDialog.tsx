@@ -1,4 +1,5 @@
-import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentPropsWithRef, type ReactNode } from "react";
+import { lazyWithMessages } from "../i18n/features-client";
+import { createContext, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentPropsWithRef, type ReactNode } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { Dialog } from "@base-ui/react/dialog";
 import { Download, RotateCcw } from "lucide-react";
@@ -7,7 +8,7 @@ import { downloadJson, useWorkspace } from "../state";
 import { DialogFrame } from "./DialogFrame";
 import { restoreSklandRoster } from "../skland-workspace";
 
-const RosterContent = lazy(() => import("./RosterPage").then(module => ({ default: module.RosterPage })));
+const RosterContent = lazyWithMessages(() => import("./RosterPage").then(module => ({ default: module.RosterPage })), "apps/endfield/src/components/RosterPage.tsx");
 const RosterDialogContext = createContext<{ openRoster: (trigger?: HTMLElement) => void; rosterOpen: boolean } | null>(null);
 
 export function useRosterDialog() {
@@ -49,20 +50,20 @@ export function RosterDialogProvider({ children }: { children: ReactNode }) {
       <Dialog.Portal>
         <Dialog.Backdrop className="ef-dialog-backdrop" />
         <DialogFrame className="ef-roster-dialog" bodyClassName="ef-roster-dialog-body" closeRef={close} initialFocus={close}
-          title={t("我的干员", "My operators")} closeLabel={t("关闭我的干员", "Close my operators")}
+          title={t("RosterDialog.myOperators")} closeLabel={t("RosterDialog.closeMyOperators")}
           footer={<>
             <Action size="sm" icon={<RotateCcw />} disabled={!ready || !workspace.sklandRoster}
-              title={workspace.sklandRoster ? t("恢复最近同步的干员、精英化与技能，保留设施设置。", "Restore the last synced operators, elite stages and skills; keep facility settings.") : t("请先前往森空岛完成一次完整同步。", "Complete a full Skland sync first.")}
-              onClick={() => update(restoreSklandRoster)}>{t("恢复森空岛数据", "Restore Skland data")}</Action>
-            <Action size="sm" variant="dark" icon={<Download />} disabled={!ready} onClick={() => downloadJson("endfield-roster.json", { operators: workspace.operators })}>{t("导出名单", "Export roster")}</Action>
-            <Dialog.Close className={actionClassName({ size: "sm", variant: "yellow" })}><ActionContent>{t("完成", "Done")}</ActionContent></Dialog.Close>
+              title={workspace.sklandRoster ? t("RosterDialog.restoreTheLastSyncedOperatorsEliteStagesAndSkills") : t("RosterDialog.completeAFullSklandSyncFirst")}
+              onClick={() => update(restoreSklandRoster)}>{t("RosterDialog.restoreSklandData")}</Action>
+            <Action size="sm" variant="dark" icon={<Download />} disabled={!ready} onClick={() => downloadJson("endfield-roster.json", { operators: workspace.operators })}>{t("RosterDialog.exportRoster")}</Action>
+            <Dialog.Close className={actionClassName({ size: "sm", variant: "yellow" })}><ActionContent>{t("RosterDialog.done")}</ActionContent></Dialog.Close>
           </>} finalFocus={() => {
           if (trigger.current?.isConnected && trigger.current.getClientRects().length) return trigger.current;
           return document.querySelector<HTMLElement>("[data-endfield-mobile-navigation]")?.getClientRects().length
             ? document.querySelector<HTMLElement>("[data-endfield-mobile-navigation]")
             : document.querySelector<HTMLElement>("[data-roster-edit]");
         }}>
-            <Suspense fallback={<p className="ef-muted" role="status">{t("正在加载干员…", "Loading operators…")}</p>}>
+            <Suspense fallback={<p className="ef-muted" role="status">{t("RosterDialog.loadingOperators")}</p>}>
               {open ? <RosterContent embedded /> : null}
             </Suspense>
         </DialogFrame>

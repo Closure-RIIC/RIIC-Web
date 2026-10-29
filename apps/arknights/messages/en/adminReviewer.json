@@ -1,0 +1,8 @@
+{
+  "grant": "Grant reviewer",
+  "revoke": "Revoke reviewer",
+  "eligible": "Only verified, active accounts can become reviewers.",
+  "grantDescription": "{name} ({email}) will only have access to Overview and Solver issues. Any existing administrator access to other sections will be removed.",
+  "revokeDescription": "{name} ({email}) will immediately lose access to the administration area.",
+  "confirm": "Confirm reviewer"
+}

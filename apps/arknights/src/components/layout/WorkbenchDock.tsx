@@ -1,12 +1,13 @@
 "use client";
 
-import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { lazyWithMessages } from "@/i18n/features-client";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Keyboard } from "lucide-react";
 import { useTranslations } from "use-intl";
 import styles from "./WorkbenchDock.module.css";
 
-const ShortcutGuideDialog = lazy(() => import("@/components").then((module) => ({ default: module.ShortcutGuideDialog })));
+const ShortcutGuideDialog = lazyWithMessages(() => import("@/components").then((module) => ({ default: module.ShortcutGuideDialog })), "apps/arknights/src/components.tsx");
 
 function CalculatorShortcuts() {
   const intl = useTranslations();

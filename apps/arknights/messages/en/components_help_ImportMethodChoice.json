@@ -1,0 +1,11 @@
+{
+  "chooseAnImportMethod": "Choose an import method",
+  "chooseTheMethodYouUseOnlyItsInstructionsWill": "Choose the method you use. Only its instructions will appear below, and you can switch at any time.",
+  "currentlyShown": "Currently shown",
+  "chooseThisMethod": "Choose this method",
+  "selected": "SELECTED",
+  "selectedItsInstructionsAreShownBelow": "{selectedLabel} selected. Its instructions are shown below.",
+  "noImportMethodSelected": "No import method selected.",
+  "chooseMaaOrSklandFirst": "Choose MAA or Skland first",
+  "screenshotsAndInstructionsForThatMethodWillAppearHere": "Screenshots and instructions for that method will appear here."
+}

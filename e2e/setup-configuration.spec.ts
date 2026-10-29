@@ -20,7 +20,7 @@ test.beforeEach(async ({ page }) => {
 
 test("closing an unchanged setup session does not require confirmation", async ({ page }) => {
   const dialog = page.locator("[data-setup-dialog]");
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(page.getByRole("dialog", { name: "关闭排班设置？", exact: true })).toHaveCount(0);
 });
@@ -36,13 +36,13 @@ for (const change of ["layout", "rotation"] as const) {
       await page.getByRole("option", { name: /一天两换/ }).click();
     }
     await expect(dialog.getByText("配置已修改", { exact: true })).toBeVisible();
-    await dialog.getByRole("button", { name: "Close", exact: true }).click();
+    await dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     const confirmation = page.getByRole("dialog", { name: "关闭排班设置？", exact: true });
     await expect(confirmation).toBeVisible();
     await confirmation.getByRole("button", { name: "继续编辑", exact: true }).click();
     await expect(confirmation).toHaveCount(0);
     await expect(dialog).toBeVisible();
-    await dialog.getByRole("button", { name: "Close", exact: true }).click();
+    await dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await confirmation.getByRole("button", { name: "关闭设置", exact: true }).click();
     await expect(dialog).toHaveCount(0);
   });

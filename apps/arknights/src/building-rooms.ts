@@ -1,3 +1,5 @@
+import operatorAliases from "./generated/i18n/operator-aliases.json" with { type: "json" };
+const names: Readonly<Record<string, readonly string[]>> = operatorAliases;
 const OPERATOR_PINYIN_ALIASES: Readonly<Record<string, readonly string[]>> = {
   "仇白": ["qiubai"],
 };
@@ -91,6 +93,7 @@ export interface OperatorFilters {
   profession?: number | null;
   englishNames?: Readonly<Record<string, string>>;
   pinyinNames?: Readonly<Record<string, readonly string[]>>;
+  translatedSkills?: Readonly<Record<string, SkillRecord>>;
 }
 
 export function operatorMatchesRoom(
@@ -117,13 +120,13 @@ export function operatorMatchesTag(
 export function operatorMatchesNameContains(name: string, query: string): boolean {
   const normalizedQuery = query.trim().toLocaleLowerCase("zh-CN");
   if (!normalizedQuery) return true;
-  return name.toLocaleLowerCase("zh-CN").includes(normalizedQuery);
+  return [name, ...(names[name] ?? [])].some(value => value.toLocaleLowerCase("zh-CN").includes(normalizedQuery));
 }
 
 function operatorNameMatchesQuery(name: string, query: string, pinyinNames?: OperatorFilters["pinyinNames"]): boolean {
   const normalizedQuery = query.trim().toLocaleLowerCase("zh-CN");
   if (!normalizedQuery) return true;
-  if (name.toLocaleLowerCase("zh-CN").includes(normalizedQuery)) return true;
+  if (operatorMatchesNameContains(name, normalizedQuery)) return true;
   return (pinyinNames?.[name] ?? []).some((value) => value.includes(normalizedQuery))
     || Boolean(pinyinNames && (OPERATOR_PINYIN_ALIASES[name] ?? []).some((alias) => alias.includes(normalizedQuery)));
 }
@@ -136,6 +139,7 @@ export function operatorMatchesQuery(
   skillLookup: SkillRecordLookup,
   englishNames?: Readonly<Record<string, string>>,
   pinyinNames?: OperatorFilters["pinyinNames"],
+  translatedSkills?: OperatorFilters["translatedSkills"],
 ): boolean {
   const normalizedQuery = query.trim().toLocaleLowerCase("zh-CN");
   if (!normalizedQuery) return true;
@@ -143,12 +147,10 @@ export function operatorMatchesQuery(
   const englishName = englishNames?.[name];
   if (englishName?.toLocaleLowerCase("en-US").includes(normalizedQuery.toLocaleLowerCase("en-US"))) return true;
   return skillIds.some((id) => {
-    const skill = skillLookup(id);
-    if (!skill) return false;
-    return (
+    return [skillLookup(id), translatedSkills?.[id]].some(skill => skill && (
       (skill.name ?? "").toLocaleLowerCase("zh-CN").includes(normalizedQuery)
-      || (skill.description ?? "").toLocaleLowerCase("zh-CN").includes(normalizedQuery)
-    );
+      || (skill.description ?? "").replace(/<[^>]*>/g, "").toLocaleLowerCase("zh-CN").includes(normalizedQuery)
+    ));
   });
 }
 
@@ -170,7 +172,7 @@ export function filterOperators<T extends OperatorWithSkills>(
         &&
         operatorMatchesRoom(skillIds, room)
         && operatorMatchesTag(skillIds, room, tag, skillLookup)
-        && operatorMatchesQuery(operator.name, skillIds, query, skillLookup, filters.englishNames, filters.pinyinNames)
+        && operatorMatchesQuery(operator.name, skillIds, query, skillLookup, filters.englishNames, filters.pinyinNames, filters.translatedSkills)
       );
     })
     .sort((left, right) => {

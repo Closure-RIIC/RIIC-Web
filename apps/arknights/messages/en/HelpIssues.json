@@ -1,0 +1,9 @@
+{
+  "unexpected-operatorsTitle": "The result includes operators I do not own",
+  "saved-boxTitle": "The setup dialog opens at step 2",
+  "saved-boxBody": "A Box is already saved in this browser. Select step 1, “Operator Data”, at the top of the dialog to return to source selection.",
+  "box-not-appliedTitle": "I changed the Box, but the result did not change",
+  "box-not-appliedBody": "Make sure the current data is no longer the max-level sample. Select “Finish”, return to the calculator, and generate again. Existing results do not update automatically.",
+  "busyTitle": "Too many requests or concurrency limit reached",
+  "busyBody": "Stop clicking repeatedly and wait as instructed. If the service remains busy, try again later. Your imported Box stays in the browser."
+}

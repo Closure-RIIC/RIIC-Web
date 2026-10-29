@@ -1,7 +1,9 @@
 "use client";
+
+import { lazyWithMessages } from "@/i18n/features-client";
 import { useTranslations, useLocale } from "use-intl";
 
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 
 import { InfraTechnicalCard } from "@/components/InfraTechnicalCard";
 import {
@@ -27,9 +29,9 @@ import {
   trainingScaleLabel,
 } from "./presentation";
 
-const OperatorSkillTooltip = lazy(() => import("@/components/OperatorSkillTooltip").then((module) => ({
+const OperatorSkillTooltip = lazyWithMessages(() => import("@/components/OperatorSkillTooltip").then((module) => ({
   default: module.OperatorSkillTooltip,
-})));
+})), "apps/arknights/src/components/OperatorSkillTooltip.tsx");
 
 const STATE_CLASSES: Record<string, string> = {
   complete: "border-emerald-400/60 bg-emerald-400/10 text-emerald-300",
@@ -43,7 +45,7 @@ function MemberRow({ member }: { member: TrainingAdviceMember }) {
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
   const isReady = member.progress === "ready";
   const isMissing = member.progress === "missing";
   // 就绪：浅灰背景；需培养（需精2 等）：琥珀色边框与状态字同色；缺失保持原样。
@@ -73,7 +75,7 @@ function MemberRow({ member }: { member: TrainingAdviceMember }) {
   const hasSkills = operatorBuildingSkillList(member.operator).length > 0;
   const professionCode = operatorProfessionFor(member.operator);
   const profession = operatorProfessionPresentation(member.operator);
-  const professionLabel = en
+  const professionLabel = en === "en"
     ? operatorProfessionLabelEnglishForCode(professionCode)
     : profession?.label;
   const professionHeader = profession && professionLabel ? (
@@ -124,7 +126,7 @@ function MemberRow({ member }: { member: TrainingAdviceMember }) {
 export function TrainingCombinationCard({ combination }: { combination: TrainingCombination }) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   return (
     <InfraTechnicalCard
       group={trainingProductGroup(combination.product)}

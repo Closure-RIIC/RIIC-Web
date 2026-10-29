@@ -60,28 +60,28 @@ function ActivitySurface({ activity, onDismiss }: {
   const expanded = peek || hovered || focused || !running;
   const status = running ? "running" : activity.phase === "success" ? "done" : activity.phase === "warning" ? "pending" : "failed";
   const manual = activity.kind === "manual" || activity.kind === "evaluation";
-  const title = activity.kind === "roster" ? t("先配置我的干员", "Set up your operators") : activity.kind === "account" ? activity.title : activity.kind === "skland"
-    ? activity.status.blocked ? t("森空岛同步需要确认", "Skland sync needs attention") : t("森空岛同步完成", "Skland sync complete")
+  const title = activity.kind === "roster" ? t("WorkspaceLiveActivity.setUpYourOperators") : activity.kind === "account" ? activity.title : activity.kind === "skland"
+    ? activity.status.blocked ? t("WorkspaceLiveActivity.sklandSyncNeedsAttention") : t("WorkspaceLiveActivity.sklandSyncComplete")
     : running
-    ? manual ? t("正在评估方案", "Evaluating schedule") : t("正在生成排班", "Generating schedule")
+    ? manual ? t("WorkspaceLiveActivity.evaluatingSchedule") : t("WorkspaceLiveActivity.generatingSchedule")
     : activity.phase === "success"
-      ? manual ? t("方案评估完成", "Evaluation complete") : t("排班已生成", "Schedule generated")
-      : activity.problem === "empty" ? t("未找到可用方案", "No schedule found")
-        : activity.problem === "verification" ? t("方案校验未通过", "Schedule validation failed")
-          : manual ? t("方案评估失败", "Evaluation failed") : t("排班生成失败", "Scheduling failed");
-  const stage = activity.kind === "skland" || activity.kind === "account" || activity.kind === "roster" ? "" : activity.stage === "preparing" ? t("准备干员与设施配置", "Preparing operators and facilities")
+      ? manual ? t("WorkspaceLiveActivity.evaluationComplete") : t("WorkspaceLiveActivity.scheduleGenerated")
+      : activity.problem === "empty" ? t("WorkspaceLiveActivity.noScheduleFound")
+        : activity.problem === "verification" ? t("WorkspaceLiveActivity.scheduleValidationFailed")
+          : manual ? t("WorkspaceLiveActivity.evaluationFailed") : t("WorkspaceLiveActivity.schedulingFailed");
+  const stage = activity.kind === "skland" || activity.kind === "account" || activity.kind === "roster" ? "" : activity.stage === "preparing" ? t("WorkspaceLiveActivity.preparingOperatorsAndFacilities")
     : activity.stage === "searching"
-      ? manual ? t("模拟生产与心情循环", "Simulating production and morale") : t("搜索班组与换班时间", "Searching crews and shift times")
-      : t("校验人员、工位与产出", "Checking crew, capacity and output");
-  const description = activity.kind === "roster" ? t("选择已拥有的干员后即可安排班次。", "Select your operators to start assigning shifts.") : activity.kind === "account" ? activity.description : activity.kind === "skland" ? <SklandSyncSummary status={activity.status} /> : running ? stage
+      ? manual ? t("WorkspaceLiveActivity.simulatingProductionAndMorale") : t("WorkspaceLiveActivity.searchingCrewsAndShiftTimes")
+      : t("WorkspaceLiveActivity.checkingCrewCapacityAndOutput");
+  const description = activity.kind === "roster" ? t("WorkspaceLiveActivity.selectYourOperatorsToStartAssigningShifts") : activity.kind === "account" ? activity.description : activity.kind === "skland" ? <SklandSyncSummary status={activity.status} /> : running ? stage
     : activity.phase === "success"
-      ? activity.limited ? t("已生成当前搜索范围内的方案，详情见报告。", "A candidate is ready within the search budget. See the full report.")
-        : t("人员、工位与产出校验通过，可以查看结果。", "Crew, capacity and output checked. Your result is ready.")
-      : activity.problem === "empty" ? t("请检查名单、设施配置或调整搜索预算。", "Check your roster and facilities, or adjust the search budget.")
+      ? activity.limited ? t("WorkspaceLiveActivity.aCandidateIsReadyWithinTheSearchBudgetSee")
+        : t("WorkspaceLiveActivity.crewCapacityAndOutputCheckedYourResultIsReady")
+      : activity.problem === "empty" ? t("WorkspaceLiveActivity.checkYourRosterAndFacilitiesOrAdjustTheSearch")
         : activity.kind === "evaluation" && activity.error ? <div>{activity.error.split("；").map((message, index) => <p key={index}>{message}</p>)}</div>
-          : activity.error || t("请检查配置后重试。", "Check your setup and try again.");
+          : activity.error || t("WorkspaceLiveActivity.checkYourSetupAndTryAgain");
   const elapsed = activity.kind === "skland" || activity.kind === "account" || activity.kind === "roster" ? null : running ? Math.max(activity.elapsedMs, now - activity.startedAt, 0) : activity.elapsedMs;
-  const elapsedLabel = elapsed === null ? null : t(`${(elapsed / 1000).toFixed(running ? 0 : 1)} 秒`, `${(elapsed / 1000).toFixed(running ? 0 : 1)}s`);
+  const elapsedLabel = elapsed === null ? null : t("WorkspaceLiveActivity.s", { value1: (elapsed / 1000).toFixed(running ? 0 : 1) });
   const transition = reduceMotion ? { duration: 0 } : { duration: 0.38, ease: MOTION_EASE_OUT };
 
   useEffect(() => {
@@ -174,11 +174,11 @@ function ActivitySurface({ activity, onDismiss }: {
         {activity.kind === "roster" ? <button type="button" aria-haspopup="dialog" onClick={() => {
           openRoster(document.querySelector<HTMLElement>("[data-manual-slot]") ?? undefined);
           onDismiss(activity);
-        }}>{t("配置干员", "Set up operators")}</button> : null}
-        {activity.kind === "skland" && sklandSyncReport ? <button type="button" aria-haspopup="dialog" onClick={() => { setSklandSyncDetailsOpen(true); onDismiss(activity); }}>{t("查看明细", "View details")}</button> : null}
-        {activity.phase === "error" ? <button type="button" onClick={activity.kind === "evaluation" ? activity.retry : retrySolve}>{t("重试", "Retry")}</button> : null}
+        }}>{t("WorkspaceLiveActivity.setUpOperators")}</button> : null}
+        {activity.kind === "skland" && sklandSyncReport ? <button type="button" aria-haspopup="dialog" onClick={() => { setSklandSyncDetailsOpen(true); onDismiss(activity); }}>{t("WorkspaceLiveActivity.viewDetails")}</button> : null}
+        {activity.phase === "error" ? <button type="button" onClick={activity.kind === "evaluation" ? activity.retry : retrySolve}>{t("WorkspaceLiveActivity.retry")}</button> : null}
         <button type="button" onClick={() => onDismiss(activity)}
-          aria-label={activity.kind === "roster" ? t("关闭干员配置提示", "Dismiss roster notification") : activity.kind === "account" ? t("关闭账号提示", "Dismiss account notification") : activity.kind === "skland" ? t("关闭同步提示", "Dismiss sync notification") : t("关闭求解提示", "Dismiss solver notification")}>{t("收起", "Dismiss")}</button>
+          aria-label={activity.kind === "roster" ? t("WorkspaceLiveActivity.dismissRosterNotification") : activity.kind === "account" ? t("WorkspaceLiveActivity.dismissAccountNotification") : activity.kind === "skland" ? t("WorkspaceLiveActivity.dismissSyncNotification") : t("WorkspaceLiveActivity.dismissSolverNotification")}>{t("WorkspaceLiveActivity.dismiss")}</button>
       </div>
     </motion.div>
   </motion.aside>;
@@ -188,12 +188,12 @@ function SklandSyncSummary({ status }: { status: SklandSyncStatus }) {
   const { t } = useWorkspace();
   return <div>
     <p>{status.blocked === "partial"
-      ? t("当前角色的干员数据不完整，尚未替换排班名单和设施配置。请在森空岛公开完整干员数据后刷新。", "This character's roster is incomplete. The previous roster and facilities were kept. Make the full roster public in Skland, then refresh.")
+      ? t("WorkspaceLiveActivity.thisCharacterSRosterIsIncompleteThePreviousRoster")
       : status.blocked === "unsupported"
-        ? t("当前干员均未被排班数据识别，已保留原名单和设施配置。", "None of these operators are recognized by the scheduler. The previous roster and facilities were kept.")
-        : t(`已同步 ${status.count} 名可排班干员及精英化阶段。`, `Synced ${status.count} schedulable operators and their elite stages.`)}</p>
-    {status.partial && !status.blocked ? <p>{t("本次仅返回部分干员，已保留该角色此前同步的其余名单。", "Only part of the roster was returned. Other operators previously saved for this character were retained.")}</p> : null}
-    {!status.facilitiesApplied && !status.blocked ? <p>{t("设施数据不完整，已保留原设施配置，请在排班前确认等级。", "Facility data is incomplete. The previous setup was kept; check facility levels before scheduling.")}</p> : null}
-    {status.unsupported.length ? <p>{t("暂未支持，未纳入排班：", "Not yet supported; excluded from scheduling: ")}{status.unsupported.join("、")}</p> : null}
+        ? t("WorkspaceLiveActivity.noneOfTheseOperatorsAreRecognizedByTheScheduler")
+        : t("WorkspaceLiveActivity.syncedSchedulableOperatorsAndTheirEliteStages", { value1: status.count })}</p>
+    {status.partial && !status.blocked ? <p>{t("WorkspaceLiveActivity.onlyPartOfTheRosterWasReturnedOtherOperators")}</p> : null}
+    {!status.facilitiesApplied && !status.blocked ? <p>{t("WorkspaceLiveActivity.facilityDataIsIncompleteThePreviousSetupWasKept")}</p> : null}
+    {status.unsupported.length ? <p>{t("WorkspaceLiveActivity.notYetSupportedExcludedFromScheduling")}{status.unsupported.join("、")}</p> : null}
   </div>;
 }

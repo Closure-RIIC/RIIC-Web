@@ -1,0 +1,9 @@
+{
+  "unexpected-operatorsTitle": "结果里有我没有的干员",
+  "saved-boxTitle": "配置弹窗直接到了第 2 步",
+  "saved-boxBody": "浏览器已保存过 Box。点弹窗顶部第 1 步「干员数据」，即可回到数据来源选择。",
+  "box-not-appliedTitle": "换过 Box，结果却没变化",
+  "box-not-appliedBody": "确认当前数据不再是全精二示例，点「完成」保存后回到计算器重新生成；旧方案不会自动更新。",
+  "busyTitle": "提示请求过多或并发已满",
+  "busyBody": "停止连续点击，按提示等待；仍繁忙时换一个时间段。已导入的 Box 会保存在浏览器，不用重新导入。"
+}

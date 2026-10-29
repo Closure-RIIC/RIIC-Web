@@ -76,7 +76,7 @@ for (const size of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { 
     await expect(page.getByRole('button', { name: '添加附件', exact: true })).toBeVisible();
     await page.getByRole('button', { name: '人格卡：可露希尔', exact: true }).click();
     await expect(page.getByRole('dialog', { name: '人格卡', exact: true })).toBeVisible();
-    await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
+    await page.getByRole('dialog').getByRole('button', { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await page.getByRole('button', { name: '新对话', exact: true }).click();
     await expect(input).toHaveValue('');
     await expect(page.locator('[data-speaker="assistant"]')).toHaveCount(0);

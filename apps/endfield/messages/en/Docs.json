@@ -1,0 +1,22 @@
+{
+  "endfieldDocs": "Endfield docs",
+  "fromYourRosterToTheNextShift": "From your roster to the next shift.",
+  "yourFirstSchedule": "Your first schedule",
+  "useEditRosterToFilterAndSelectYourOperators": "Use Edit roster to filter and select your operators and elite stages. Newly selected operators start at elite 0.",
+  "sklandSyncUpdatesFacilityLevelsAutomaticallyYouCanAlso": "Skland sync updates facility levels automatically; you can also adjust them in manual scheduling. Open Production setup to choose production types, growth plots and central assistance, and drag the four goal cards to set priorities. Changes are saved automatically; production choices are shared with manual scheduling.",
+  "setUpYourRoster": "Set up your roster →",
+  "readingResults": "Reading results",
+  "theFacilityOverviewShowsBothShiftsAndTheirTimes": "The facility overview shows both shifts and their times: shift A starts at 00:00; shift B runs from the changeover to 24:00. Single-shift schedules show work and rest durations. Open Full report for morale cycles, simulations and export.",
+  "outputIsExpressedAsEffectiveHoursPerDayNot": "Output is expressed as effective hours per day, not item counts. Verification checks crew, capacity and recalculated output, not global optimality. A budget-limited result is the best candidate found in that search.",
+  "sklandSync": "Skland sync",
+  "openSklandSyncAndSignInWithQrOr": "Open Skland sync and sign in with QR or a credential, or reuse an Arknights Skland account. View your profile, sanity, daily missions, battle pass, operators, weapons, inventory and ship. Use Add account to connect another account; saved connections restore after refresh.",
+  "syncUpdatesOperatorsEliteStagesAndValidFacilityLevels": "Sync updates operators, elite stages and valid facility levels, adjusting growth plots and manual slots while retaining production choices. A complete roster from another account or character replaces the old roster and clears its manual plan. Partial data for the same character keeps omitted operators; incomplete data from a new character keeps the previous setup and asks you to make the full roster public. Incomplete facilities keep their previous levels. Operators without ship skills or current solver support are listed separately and excluded from scheduling.",
+  "openSklandSync": "Open Skland sync →",
+  "faq": "FAQ",
+  "willSwitchingGamesEraseMyRoster": "Will switching games erase my roster?",
+  "eachGameKeepsSeparateLocalDraftsThisEndfieldRoster": "Each game keeps separate local drafts. This Endfield roster is stored in your browser and can be exported as JSON. It is not automatically uploaded to your account.",
+  "whyWasNoResultGenerated": "Why was no result generated?",
+  "checkThatYouHaveEnoughOperatorsForBothShifts": "Check that you have enough operators for both shifts and suitable facilities in manual scheduling. Search defaults to 5 seconds and 200,000 nodes; increase the budget in Settings → Scheduling search when needed.",
+  "canIImportAnArknightsFile": "Can I import an Arknights file?",
+  "noSelectEndfieldOperatorsInEditRosterSklandSync": "No. Select Endfield operators in Edit roster. Skland sync can reuse an account connected in Arknights to view Endfield data."
+}

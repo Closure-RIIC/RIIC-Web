@@ -181,7 +181,7 @@ for (const width of [1440, 375]) {
     await expect.poll(() => sentPageContext).toBeNull();
     await shareToggle.check();
 
-    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     await page.getByRole("button", { name: "账号体检", exact: true }).click();
     await expect(page).toHaveURL(/\/account-health$/);
     await expect(shortcuts).toHaveCount(0);
@@ -201,12 +201,12 @@ for (const width of [1440, 375]) {
     await expect(dock).toBeVisible();
     await expect(dock).toHaveAttribute("aria-expanded", "false");
 
-    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
+    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i, exact: true }).click();
     await page.locator('[data-primary-navigation-page="agent"]').click();
     await expect(page).toHaveURL(/\/agent$/);
     await expect(dock).toHaveCount(0);
     await expect(page.locator("[data-workbench-shell]")).not.toHaveAttribute("data-agent-docked", "true");
-    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar", exact: true }).click();
+    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i, exact: true }).click();
     await page.locator('[data-primary-navigation-page="account-health"]').click();
     await expect(page).toHaveURL(/\/account-health$/);
     await expect(dock).toBeVisible();
@@ -336,7 +336,7 @@ test("Persona portraits keep Closure fixed and persist uploaded persona avatars"
   await avatarInput.setInputFiles({ name: "invalid.svg", mimeType: "image/svg+xml", buffer: Buffer.from("<svg/>") });
   await expect(page.getByRole("dialog").getByRole("alert")).toContainText("PNG、JPEG 或 WebP");
   await expect(preview.locator("img")).toHaveAttribute("src", customAvatar!);
-  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await page.reload();
   await openAgentHistory(page, "你好");
   await expect(assistantAvatar.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
@@ -518,7 +518,7 @@ for (const width of [1440, 375]) {
     await page.goto("/account-health");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     const workbenchBounds = await page.locator("[data-account-health-page]").boundingBox();
-    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     const group = page.locator('[data-slot="sidebar-group"]').filter({ hasText: "智能助理" });
     await group.getByRole("button", { name: "可露希尔助理", exact: true }).click();
     await expect(page).toHaveURL(/\/agent$/);

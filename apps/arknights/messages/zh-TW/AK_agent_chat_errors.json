@@ -1,0 +1,5 @@
+{
+  "theModelResponseTimedOutYouCanRetry": "模型響應超時，請稍後重試。你的問題和附件仍保留在對話中。",
+  "theReplyWasInterruptedTheReceivedTextIs": "回答中途斷開，已收到的內容仍然保留，可以重試這條問題。",
+  "theAssistantIsTemporarilyUnavailablePleaseTryAgain": "助理服務暫時不可用，請稍後重試或切換模型。"
+}

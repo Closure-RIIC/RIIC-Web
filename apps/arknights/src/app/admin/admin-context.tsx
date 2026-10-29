@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useCallback, useContext, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, type ReactNode } from "react";
+import { useTranslations } from "use-intl";
 import { requestAdminData } from "@/lib/admin-request";
 
 export type AdminFetch = typeof fetch;
@@ -27,7 +28,10 @@ export function useAdminHref() {
 
 export function useAdminRequest() {
   const request = useAdminFetch();
+  const text = useTranslations("Common");
+  const textRef = useRef(text);
+  useEffect(() => { textRef.current = text; }, [text]);
   return useCallback(<T,>(url: string, init?: RequestInit, fallback: string | boolean = false) =>
-    requestAdminData<T>(url, init, typeof fallback === "string" ? fallback : fallback ? "Request failed" : "请求失败", request),
+    requestAdminData<T>(url, init, typeof fallback === "string" && !["zh-CN", "zh-TW", "en"].includes(fallback) ? fallback : textRef.current("requestFailed"), request),
   [request]);
 }

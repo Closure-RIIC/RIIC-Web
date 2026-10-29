@@ -1,10 +1,12 @@
 "use client";
+
+import { lazyWithMessages } from "@/i18n/features-client";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 import { localize as localize_components_pages_MasteryPlanner } from "../../i18n/helpers/components_pages_MasteryPlanner.ts";
 
 import { useTranslations, useLocale } from "use-intl";
 
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { Settings2, Timer } from "lucide-react";
 import { calculateMastery, eligibleMasteryTargets, normalizeMasteryBox, availableMasteryEnvironments, formatMasteryTime, MASTERY_ENVIRONMENTS, type MasteryInput, type MasteryResult } from "@/mastery";
 import { masteryClipboard, masteryInstructions } from "@/mastery-presentation";
@@ -21,8 +23,8 @@ import { useGameCatalog } from "@/i18n/game-data-client";
 import catalog from "@riic/arknights-domain/generated/arkntools/operator-catalog.json";
 import type { OperBoxEntry } from "@riic/arknights-domain/types";
 
-const TargetPicker = lazy(() => import("@/components/mastery/MasteryTargetPicker").then((m) => ({default:m.MasteryTargetPicker})));
-const TrainerSkillTooltip = lazy(() => import("@/components/OperatorSkillTooltip").then((m) => ({ default: m.OperatorSkillTooltip })));
+const TargetPicker = lazyWithMessages(() => import("@/components/mastery/MasteryTargetPicker").then((m) => ({default:m.MasteryTargetPicker})), "apps/arknights/src/components/mastery/MasteryTargetPicker.tsx");
+const TrainerSkillTooltip = lazyWithMessages(() => import("@/components/OperatorSkillTooltip").then((m) => ({ default: m.OperatorSkillTooltip })), "apps/arknights/src/components/OperatorSkillTooltip.tsx");
 
 function TargetPickerLoading({ onClose }: { onClose: () => void }) {
   const intl = useTranslations("components_mastery_MasteryTargetPicker");
@@ -56,7 +58,7 @@ export function MasteryPlanner({ operbox, sourceName, requiresAccount, pending, 
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [current, setCurrent] = useState<0 | 1 | 2>(0);
@@ -97,7 +99,7 @@ export function MasteryPlanner({ operbox, sourceName, requiresAccount, pending, 
   }, [scrollRequested, calculation.result, pickerOpen, pickerRequested]);
   const displayName = (name: string) => localizedOperatorName(name,locale,gameCatalog);
   const conditions = intl("components_pages_MasteryPlanner.assumesSufficientMoraleMaterialsAndTrainingRoomLevelEnvironment");
-  const activeEnvironment = environmentKeys.map((key) => `${en ? MASTERY_ENVIRONMENTS[key]!.english : MASTERY_ENVIRONMENTS[key]!.label} ${input.environment[key]}`).join(" · ");
+  const activeEnvironment = environmentKeys.map((key) => `${localize_components_pages_MasteryPlanner.text(en, `environment_${key}` as keyof typeof import("../../../messages/zh-CN/components_pages_MasteryPlanner.json"))} ${input.environment[key]}`).join(" · ");
   const settingsSummary = `${intl("components_pages_MasteryPlanner.controlBonus")} ${controlBonus ? "+5%" : "0%"} · ${intl("components_pages_MasteryPlanner.buffer")} ${bufferMinutes} ${intl("components_pages_MasteryPlanner.min")}${activeEnvironment ? ` · ${activeEnvironment}` : ""}`;
   const clipboardText = plan && selected ? [masteryClipboard(plan,displayName(selected.name),en,displayName),settingsSummary,conditions].join("\n") : null;
   const currentCopyFeedback = clipboardText !== null && copyFeedback?.text === clipboardText ? copyFeedback : null;
@@ -125,7 +127,7 @@ export function MasteryPlanner({ operbox, sourceName, requiresAccount, pending, 
           {selected && meta ? <div className="mt-4 flex items-center gap-3"><OperatorIdentity name={selected.name} portrait={meta.portrait}><span className="text-xs text-muted-foreground">{selected.rarity}★ · {intl("components_pages_MasteryPlanner.elite2")}</span></OperatorIdentity></div> : null}
         </div>
         <SetupActionButton className="max-md:!h-auto max-md:min-h-11 max-md:!min-w-0 max-md:max-w-36 max-md:whitespace-normal max-md:!px-3 max-md:py-2" disabled={pending || (!requiresAccount && !eligible.length)} onClick={() => { if (requiresAccount) onRequestAccount(); else setPickerOpen(true); }}>
-          {localize_components_pages_MasteryPlanner.text(en, "additional1", { choice1: ((en)) && (selected) ? "yes" : "no", choice2: (!(en)) && (selected) ? "yes" : "no" })}
+          {localize_components_pages_MasteryPlanner.text(en, "additional1", { choice2: ((selected) ? ("yes") : ("no")) })}
         </SetupActionButton>
       </div>
       {!requiresAccount && !pending && !eligible.length ? <p className="text-sm text-muted-foreground">{intl("components_pages_MasteryPlanner.yourBoxHasNoOwnedE2OperatorsImportOr")}</p> : null}
@@ -144,7 +146,7 @@ export function MasteryPlanner({ operbox, sourceName, requiresAccount, pending, 
         <SetupActionButton className="mt-2 md:hidden" variant={controlBonus ? "default" : "outline"} aria-pressed={controlBonus} onClick={() => setControlBonus((value) => !value)}>{intl("components_pages_MasteryPlanner.controlCenterBonus", { bonus: controlBonus ? 5 : 0 })}</SetupActionButton>
         <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <label className="grid gap-2 text-xs">{intl("components_pages_MasteryPlanner.handoffBufferMinutes")}<Input type="number" min={0} step={0.5} value={Number.isFinite(bufferMinutes) ? bufferMinutes : ""} onChange={(e) => setBufferMinutes(e.target.valueAsNumber)} /></label>
-          {environmentKeys.map((key) => <label key={key} className="grid gap-2 text-xs">{en ? MASTERY_ENVIRONMENTS[key]!.english : MASTERY_ENVIRONMENTS[key]!.label}<Input type="number" min={0} max={MASTERY_ENVIRONMENTS[key]!.max ?? 10000} step={1} value={Number.isFinite(environment[key] ?? 0) ? environment[key] ?? 0 : ""} onChange={(e) => setEnvironment((previous) => ({...previous,[key]:e.target.valueAsNumber}))} /></label>)}
+          {environmentKeys.map((key) => <label key={key} className="grid gap-2 text-xs">{localize_components_pages_MasteryPlanner.text(en, `environment_${key}` as keyof typeof import("../../../messages/zh-CN/components_pages_MasteryPlanner.json"))}<Input type="number" min={0} max={MASTERY_ENVIRONMENTS[key]!.max ?? 10000} step={1} value={Number.isFinite(environment[key] ?? 0) ? environment[key] ?? 0 : ""} onChange={(e) => setEnvironment((previous) => ({...previous,[key]:e.target.valueAsNumber}))} /></label>)}
         </div>
         <p className="mt-3 text-xs leading-5 text-muted-foreground">{intl("components_pages_MasteryPlanner.environmentCountsReferToOperatorsActuallyStationedInThe")}</p>
       </details>
@@ -181,7 +183,7 @@ export function MasteryPlanner({ operbox, sourceName, requiresAccount, pending, 
             const operator = normalizedBox.find((o) => o.id === segment.trainerId);
             const portrait = catalog.find((o) => o.id === segment.trainerId)?.portrait;
             return <MasteryTrainerTooltip key={`${segment.trainerId}:${i}`} name={segment.trainerName} currentElite={operator?.elite} currentLevel={operator?.level} highlightedSkillIds={segment.skillIds}
-              trigger={<button type="button" className="flex min-h-11 min-w-0 max-w-full items-center gap-2.5 border border-white/10 bg-white/10 p-2 text-left outline-none transition-colors hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[#FFD800] motion-reduce:transition-none" aria-label={intl("components_pages_MasteryPlanner.showInfrastructureSkills", { value1: (en) ? (displayName(segment.trainerName)) : "", trainerName: (en) ? "" : (segment.trainerName) })}>
+              trigger={<button type="button" className="flex min-h-11 min-w-0 max-w-full items-center gap-2.5 border border-white/10 bg-white/10 p-2 text-left outline-none transition-colors hover:bg-white/15 focus-visible:ring-2 focus-visible:ring-[#FFD800] motion-reduce:transition-none" aria-label={intl("components_pages_MasteryPlanner.showInfrastructureSkills", { trainerName: displayName(segment.trainerName) })}>
                 <span className="size-12 shrink-0 overflow-hidden border border-white/10 bg-[#272A2B]">{portrait ? <img src={portrait} alt="" className="size-full object-cover" loading="lazy" decoding="async" /> : null}</span>
                 <span className="min-w-0 truncate text-sm text-white/85">{displayName(segment.trainerName)}</span>
                 <span className="shrink-0 border border-white/10 bg-white/5 px-1.5 py-0.5 text-xs text-white/65">{intl("components_pages_MasteryPlanner.trainer")}</span>

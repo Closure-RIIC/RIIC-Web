@@ -1156,8 +1156,8 @@ export async function navigateToPrimaryPage(
   mobile: boolean,
 ) {
   if (mobile) {
-    await page.locator("[data-app-topbar]").getByRole("button", { name: "Toggle Sidebar" }).click();
-    await expect(page.getByRole("dialog", { name: "Sidebar" })).toBeVisible();
+    await page.locator("[data-app-topbar]").getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
+    await expect(page.getByRole("dialog", { name: /^(侧边栏|側邊欄|Sidebar)$/ })).toBeVisible();
   }
   await expect(page.locator("[data-agent-history-toggle]")).toHaveCount(1);
   await (await sidebarNavigation(page, destination.name)).click();
@@ -1165,7 +1165,7 @@ export async function navigateToPrimaryPage(
   await expect(page.locator(destination.root)).toBeVisible({ timeout: 45_000 });
   await expect(page.locator('[data-navigation-pending]')).toHaveCount(0);
   if (mobile) {
-    await expect(page.getByRole("dialog", { name: "Sidebar" })).toHaveCount(0);
+    await expect(page.getByRole("dialog", { name: /^(侧边栏|側邊欄|Sidebar)$/ })).toHaveCount(0);
     await expect(page.locator('[data-slot="dialog-overlay"]')).toHaveCount(0);
   }
 }

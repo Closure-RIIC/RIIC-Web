@@ -1,4 +1,6 @@
 "use client";
+
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_components_UpgradeSimulationDialog } from "../i18n/helpers/components_UpgradeSimulationDialog.ts";
 import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
@@ -16,10 +18,10 @@ import { hasOperboxEliteStateChange } from "@/upgrade-simulation";
 
 type Metric = "trade" | "manufacture" | "power";
 
-const METRICS: Array<{ key: Metric; en: string; zh: string }> = [
-  { key: "trade", en: messageRecord("en", "components_UpgradeSimulationDialog_content").value, zh: messageRecord("zh", "components_UpgradeSimulationDialog_content").value },
-  { key: "manufacture", en: messageRecord("en", "components_UpgradeSimulationDialog_content2").value, zh: messageRecord("zh", "components_UpgradeSimulationDialog_content2").value },
-  { key: "power", en: messageRecord("en", "components_UpgradeSimulationDialog_content3").value, zh: messageRecord("zh", "components_UpgradeSimulationDialog_content3").value },
+const METRICS: Array<{ key: Metric; content: "components_UpgradeSimulationDialog_content" | "components_UpgradeSimulationDialog_content2" | "components_UpgradeSimulationDialog_content3" }> = [
+  { key: "trade", content: "components_UpgradeSimulationDialog_content" as const },
+  { key: "manufacture", content: "components_UpgradeSimulationDialog_content2" as const },
+  { key: "power", content: "components_UpgradeSimulationDialog_content3" as const },
 ];
 
 function metric(value: number | null | undefined) {
@@ -28,7 +30,7 @@ function metric(value: number | null | undefined) {
     : "—";
 }
 
-function delta(before: number | null | undefined, after: number | null | undefined, en: boolean) {
+function delta(before: number | null | undefined, after: number | null | undefined, en: AppLocale) {
   if (typeof before !== "number" || typeof after !== "number") return "—";
   const value = Math.round((after - before) * 10) / 10;
   return value === 0 ? (localize_components_UpgradeSimulationDialog.text(en, "noChange")) : `${value > 0 ? "+" : ""}${value.toFixed(1).replace(/\.?0+$/, "")}%`;
@@ -57,7 +59,7 @@ export function UpgradeSimulationDialog({
 }) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [trial, setTrial] = useState<PublicPlanData | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,11 +158,11 @@ export function UpgradeSimulationDialog({
                     </p>
                   </div>
                   <dl className="grid w-full grid-cols-3 divide-x divide-primary/15 border border-primary/15 bg-background sm:w-auto">
-                    {METRICS.map(({ key, en: englishLabel, zh }) => {
+                    {METRICS.map(({ key, content }) => {
                       const change = delta(baseline.rotation.daily[key], trial.rotation.daily[key], en);
                       return (
                         <div key={key} className="min-w-24 px-3 py-1.5">
-                          <dt className="text-[11px] text-muted-foreground">{en ? englishLabel : zh}</dt>
+                          <dt className="text-[11px] text-muted-foreground">{messageRecord(en, content).value}</dt>
                           <dd className="font-number text-base font-semibold">{metric(trial.rotation.daily[key])}</dd>
                           <span className={cn("block text-[11px] font-medium", change.startsWith("+") ? "text-emerald-700" : change.startsWith("-") ? "text-red-700" : "text-muted-foreground")}>
                             {intl("components_UpgradeSimulationDialog.vsCurrent", { change: change })}

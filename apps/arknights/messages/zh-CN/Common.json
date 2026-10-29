@@ -1,0 +1,15 @@
+{
+  "language": "Language / 语言",
+  "missingSkillName": "基建技能",
+  "missingSkillText": "暂无英文资料。",
+  "consentFeedback": "我同意提交以上{kind, select, performance {性能} other {排班问题}}信息和私有复现快照。",
+  "sortDone": "退出调整顺序",
+  "sortOperators": "调整干员顺序",
+  "signedInAccount": "已登录账号",
+  "unknownOperator": "未知干员",
+  "personalBoxRequired": "当前排班缺少可提交的个人干员 Box，请重新导入后生成排班。",
+  "copiedTraining": "作业练度（非个人干员池）",
+  "tradeStrategy": "贸易策略",
+  "factoryRecipe": "制造配方",
+  "requestFailed": "请求失败，请稍后重试。"
+}

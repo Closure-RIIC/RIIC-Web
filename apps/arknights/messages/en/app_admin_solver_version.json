@@ -1,0 +1,16 @@
+{
+  "unavailable": "Unavailable",
+  "solverVersion": "Solver version",
+  "buildIdentityAndProtocolCapabilitiesCurrentlyRunningOnThe": "Build identity and protocol capabilities currently running on the production worker",
+  "running": "Running",
+  "notReady": "Not ready",
+  "workerPingDidNotReturnAValidSolverExecutable": "Worker ping did not return a valid solver_executable_sha256",
+  "fullWorkerFingerprint": "Full worker fingerprint",
+  "buildCommitProtocolVersionsAndPlanContract": "Build commit, protocol versions, and plan contract",
+  "expand": "Expand",
+  "collapse": "Collapse",
+  "buildIdentity": "Build identity",
+  "protocolCapabilities": "Protocol capabilities",
+  "planContract": "Plan contract",
+  "theWorkerDidNotReturnPerVersionContractFingerprints": "The worker did not return per-version contract fingerprints."
+}

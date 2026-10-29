@@ -16,9 +16,9 @@ import { authClient } from "./client";
 import { evaluatePasswordStrength, isStrongPassword } from "@riic/arknights-domain/password-strength";
 
 function ResetPasswordStrength({ value, id }: { value: string; id: string }) {
-  const intl = useTranslations();
+  const intl = useTranslations("Account");
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const strength = useMemo(() => evaluatePasswordStrength(value), [value]);
   const labels = messageRecord(en, "app_account_reset_password_reset_client_labels");
   const tone = strength.score === 0
@@ -66,9 +66,9 @@ export function ResetPasswordForm({ token, onSignIn, onForgotPassword, active = 
   hideHeading?: boolean;
   onTitleChange?: (title: string) => void;
 }) {
-  const intl = useTranslations();
+  const intl = useTranslations("Account");
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [password, setPassword] = useState("");
   const [passwordStrengthError, setPasswordStrengthError] = useState<string | null>(null);
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -153,7 +153,7 @@ export function ResetPasswordForm({ token, onSignIn, onForgotPassword, active = 
             }
             if (confirmPasswordError) {
               const error = passwordConfirmationError(nextPassword, confirmPassword);
-              setConfirmPasswordError(en && error ? (confirmPassword ? "The passwords do not match." : "Enter the password again.") : error);
+              setConfirmPasswordError(en === "en" && error ? (confirmPassword ? "The passwords do not match." : "Enter the password again.") : error);
             }
           }}
           onBlur={() => {
@@ -186,12 +186,12 @@ export function ResetPasswordForm({ token, onSignIn, onForgotPassword, active = 
             setConfirmPassword(nextConfirmation);
             if (confirmPasswordError) {
               const error = passwordConfirmationError(password, nextConfirmation);
-              setConfirmPasswordError(en && error ? (nextConfirmation ? "The passwords do not match." : "Enter the password again.") : error);
+              setConfirmPasswordError(en === "en" && error ? (nextConfirmation ? "The passwords do not match." : "Enter the password again.") : error);
             }
           }}
           onBlur={() => {
             const error = passwordConfirmationError(password, confirmPassword);
-            setConfirmPasswordError(en && error ? (confirmPassword ? "The passwords do not match." : "Enter the password again.") : error);
+            setConfirmPasswordError(en === "en" && error ? (confirmPassword ? "The passwords do not match." : "Enter the password again.") : error);
           }}
           autoComplete="new-password"
           placeholder={intl("app_account_reset_password_reset_client.enterTheNewPasswordAgain")}

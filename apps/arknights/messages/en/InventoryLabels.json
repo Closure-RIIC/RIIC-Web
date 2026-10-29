@@ -1,0 +1,10 @@
+{
+  "quantityFor": "Enter quantity of {name}",
+  "materials": "Upgrade materials",
+  "upgrades": "Modules, chips and skill summaries",
+  "other": "Other",
+  "permits": "Headhunting permits × {count}",
+  "elite": "E{level}",
+  "level": "Lv. {level}",
+  "loadFailed": "Could not load inventory. Try again later."
+}

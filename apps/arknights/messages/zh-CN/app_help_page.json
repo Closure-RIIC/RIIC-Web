@@ -1,0 +1,13 @@
+{
+  "helpTopics": "帮助入口",
+  "firstImport": "第一次导入",
+  "importYourOperatorBoxStepByStep": "查看完整的干员 Box 图文步骤",
+  "openTutorial": "打开教程",
+  "commonIssue": "常见问题",
+  "switchToTheOperatorsYouActuallyOwn": "切换成自己实际拥有的干员",
+  "viewSteps": "查看步骤",
+  "stillNotWorking": "仍然不对？",
+  "recordTheCurrentBoxSourceOwnedOperatorCountBase": "记录当前 Box 来源、拥有干员数量、布局类型和错误码，再提交反馈。不要公开账号密码、验证码或完整登录凭据。",
+  "checkTheCalculator": "返回计算器检查",
+  "reportAnIssue": "提交问题反馈"
+}

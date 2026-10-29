@@ -1,0 +1,8 @@
+{
+  "unknown": "Unknown",
+  "title": "Recycling Station",
+  "manualOnly": "Manual only · Excluded from output and export",
+  "unconfigured": "Not configured · 2 slots",
+  "noUpstreamData": "Skland data unavailable",
+  "unknownSlots": "2 operator slots, occupancy unknown"
+}

@@ -1,0 +1,15 @@
+{
+  "setUpYourRosterBeforeStarting": "Set up your roster before starting.",
+  "enableAtLeastOneFacility": "Enable at least one facility.",
+  "assignOperatorsInTheEditorBeforeStarting": "Assign operators in the editor before starting.",
+  "assistanceTargetDayAssist": "Assistance target · Day {value1} · Assist {value2}",
+  "chooseAssistanceTarget": "Choose assistance target",
+  "loadingLocalConfiguration": "Loading local configuration…",
+  "showResults": "Show results",
+  "resetSimulation": "Reset simulation",
+  "assignOperatorsThenChooseShowResults": "Assign operators, then choose Show results.",
+  "simulationSettings": "Simulation settings",
+  "eventsAndStatistics": "Events and statistics",
+  "simulationStatistics": "Simulation statistics",
+  "notStarted": "Not started"
+}

@@ -4,6 +4,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
+import { i18nDevJsonModules } from "../../scripts/vite-i18n-json.ts";
 
 export default defineConfig({
   root: fileURLToPath(new URL(".", import.meta.url)),
@@ -18,7 +19,7 @@ export default defineConfig({
   },
   server: { host: "127.0.0.1", port: 5176, strictPort: true, fs: { allow: [fileURLToPath(new URL("../..", import.meta.url))] } },
   worker: { format: "es" },
-  plugins: [{
+  plugins: [i18nDevJsonModules(), {
     name: "endfield-development-dependency-cache",
     apply: "serve",
     config(config) { return { cacheDir: `node_modules/.vite/dev-${config.server?.port ?? 5176}` }; },

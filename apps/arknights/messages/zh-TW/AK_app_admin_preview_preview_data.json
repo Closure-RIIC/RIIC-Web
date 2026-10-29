@@ -1,0 +1,13 @@
+{
+  "sampleSuspendedAccount": "演示：帳戶已暫停",
+  "thisActionIsUnavailableInTheLocalPreview": "此操作暫未接入本地演示，未傳送真實請求。",
+  "sampleIncompleteLayoutInput": "演示：佈局輸入不完整",
+  "sampleExpiredSession": "演示：登入會話已過期",
+  "sampleCurrentVersion": "演示：當前版本",
+  "sampleBaseline": "演示：對照版本",
+  "tradingStationOperatorOrderDiffersAfterExport": "貿易站匯出後的幹員順序與排班展示不同。",
+  "aManufacturingRotationLeavesASlotEmpty": "製造站輪換後有一個位置留空，希望核對替換排班。",
+  "compareFiammettaTargetAssignmentAcrossShifts": "需要比較不同班次的菲亞梅塔充能目標。",
+  "reviewDormitoryAutofillInTheDownloadedPlan": "已確認宿舍自動填充設定與下載檔案一致。",
+  "theSolveTookLongerAfterChangingTheLayout": "調整佈局後求解耗時變長，需要檢視執行記錄。"
+}

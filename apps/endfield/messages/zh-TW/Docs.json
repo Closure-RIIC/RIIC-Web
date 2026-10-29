@@ -1,0 +1,22 @@
+{
+  "endfieldDocs": "終末地使用說明",
+  "fromYourRosterToTheNextShift": "從名單到下一輪換班。",
+  "yourFirstSchedule": "第一次排班",
+  "useEditRosterToFilterAndSelectYourOperators": "點選首頁“編輯名單”，篩選並勾選已有幹員，填寫精英化階段。新勾選的幹員預設精英化 0。",
+  "sklandSyncUpdatesFacilityLevelsAutomaticallyYouCanAlso": "森空島同步會自動更新設施等級，也可在手動排班中調整。首頁點選“生產配置”，設定製造產物、培養位分配與中樞助力，並拖動四張目標卡調整優先順序。修改自動儲存，生產配置與手動排班共用。",
+  "setUpYourRoster": "開始配置幹員 →",
+  "readingResults": "如何閱讀結果",
+  "theFacilityOverviewShowsBothShiftsAndTheirTimes": "設施總覽中同時展示兩班頭像與各自時間：A 班從 00:00 工作到換班時刻，B 班接續到 24:00。單班顯示工作和休息時長。點選“詳細報告”檢視心情閉環、模擬結果或匯出方案。",
+  "outputIsExpressedAsEffectiveHoursPerDayNot": "產出使用等效小時 / 日，不等同於物品數量。校驗通過表示人員、工位和重算結果一致，不代表全域性最優。搜尋達到預算上限時，結果僅是已搜尋範圍內的候選。",
+  "sklandSync": "森空島同步",
+  "openSklandSyncAndSignInWithQrOr": "開啟側邊欄“森空島同步”，掃碼登入或匯入憑證，也可複用方舟已連線的森空島帳號。登入後自動展示角色資訊、理智、每日任務、通行證、幹員與武器狀態、倉庫背包和帝江號。通過“新增帳號”連線其他帳號，已連線帳號重新整理後自動恢復。",
+  "syncUpdatesOperatorsEliteStagesAndValidFacilityLevels": "同步會自動更新幹員名單、精英化階段和可用的設施等級，並按新容量調整培養位和手動班表；製造產物會保留。切換帳號或角色後，完整名單會替換舊名單並清空舊手動班表。同一角色的資料不完整時保留未返回的幹員；新角色資料不完整時保留原排班配置，並提示補全公開資料。設施資料不完整時保留原等級。無基建技能和暫未支援的幹員會單獨提示，不納入排班。",
+  "openSklandSync": "開啟森空島同步 →",
+  "faq": "常見問題",
+  "willSwitchingGamesEraseMyRoster": "切換遊戲會丟失名單嗎？",
+  "eachGameKeepsSeparateLocalDraftsThisEndfieldRoster": "兩個遊戲的草稿分別儲存在各自域名的本地儲存中。當前終末地名單儲存在這臺瀏覽器中，可匯出 JSON 備份。它不會自動上傳到帳號雲端。",
+  "whyWasNoResultGenerated": "為什麼沒有生成結果？",
+  "checkThatYouHaveEnoughOperatorsForBothShifts": "先檢查兩班人員是否足夠、手動排班中的設施配置是否合適。搜尋預設使用 5 秒、20 萬節點；需要時可在設定頁“排班搜尋”中增加預算。",
+  "canIImportAnArknightsFile": "可以使用明日方舟的匯入檔案嗎？",
+  "noSelectEndfieldOperatorsInEditRosterSklandSync": "不能。請在“編輯名單”中選擇終末地幹員。森空島同步可以複用方舟已連線的帳號來檢視終末地資料。"
+}

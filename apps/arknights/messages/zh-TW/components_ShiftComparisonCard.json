@@ -1,0 +1,23 @@
+{
+  "unassigned": "未進駐",
+  "unknownFacility": "未知設施",
+  "from": "從",
+  "moveOut": "換出",
+  "moveInto": "換入",
+  "none": "無",
+  "shiftChangeSummary": "換班動作摘要",
+  "label": "、",
+  "currentRoom": "當前房間",
+  "targetRoom": "目標房間",
+  "operatorAdjustments": "{value2}幹員調整",
+  "operator": "幹員",
+  "operatorRoomAdjustmentsGroupedByAction": "按操作分組的幹員房間調整",
+  "currentStateMatch": "當前狀態匹配",
+  "closestToShift": "最接近第 <shiftNumber>{number}</shiftNumber> 班",
+  "nonDormitoryMatch": "非宿舍匹配",
+  "nonDormitoryFacilityMatchPercentage": "非宿舍設施匹配百分比",
+  "currentNonDormitoryAssignmentsMatchThisShiftExactly": "當前非宿舍進駐與排班完全一致",
+  "noNonDormitoryOperatorNeedsToMoveInMove": "非宿舍設施無需換入、換出或調整房間。",
+  "additional1": "{count} 人",
+  "additional2": "{count} 人"
+}

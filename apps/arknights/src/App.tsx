@@ -1,4 +1,12 @@
 "use client";
+
+
+import { lazyWithMessages } from "@/i18n/features-client";
+import { useLocale as useRawLocale } from "use-intl";
+import { createLocalizer as createRawLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type RawMessages from "../messages/zh-CN/AK_Raw_App.json";
+const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_App");
+import type { AppLocale } from "@riic/contracts/locale";
 import { withDefaultDormAutofill } from "./automatic-dorm-defaults";
 import { localize as localize_App } from "./i18n/helpers/App.ts";
 import { useTranslations, useLocale } from "use-intl";
@@ -6,7 +14,6 @@ import { useTranslations, useLocale } from "use-intl";
 import { Link } from "@tanstack/react-router";
 import { useRenderedPathname, useRouter, useSearchParams } from "@/navigation";
 import {
-  lazy,
   Suspense,
   useCallback,
   useEffect,
@@ -61,10 +68,8 @@ import {
 import {
   buildBlueprint,
   computePowerBudget,
-  FACTORY_RECIPE_OPTIONS,
   FactoryRecipe,
   PRESETS,
-  TRADE_ORDER_OPTIONS,
   TradeOrder,
   updateFactoryRecipe,
   updateRoomLevel,
@@ -149,23 +154,23 @@ function bindingSummaryFromSession(session: Pick<SklandSessionData, "accounts" |
 const loadWebsiteAccountDialog = () => import("@/components/auth/WebsiteAccountDialog");
 const loadSetupDialog = () => import("./setup-dialog");
 const loadComponents = () => import("./components");
-const SklandTrainingSyncBridge = lazy(() => import("@/components/workbench/SklandTrainingSyncBridge"));
-const AgentFloatingWidget = lazy(() => import("@/components/agent/AgentFloatingWidget").then((module) => ({ default: module.AgentFloatingWidget })));
-const ReleaseAnnouncement = lazy(() => import("@/components/changelog/ReleaseAnnouncement").then((module) => ({
+const SklandTrainingSyncBridge = lazyWithMessages(() => import("@/components/workbench/SklandTrainingSyncBridge"), "apps/arknights/src/components/workbench/SklandTrainingSyncBridge.tsx");
+const AgentFloatingWidget = lazyWithMessages(() => import("@/components/agent/AgentFloatingWidget").then((module) => ({ default: module.AgentFloatingWidget })), "apps/arknights/src/components/agent/AgentFloatingWidget.tsx");
+const ReleaseAnnouncement = lazyWithMessages(() => import("@/components/changelog/ReleaseAnnouncement").then((module) => ({
   default: module.ReleaseAnnouncement,
-})));
+})), "apps/arknights/src/components/changelog/ReleaseAnnouncement.tsx");
 
-const WebsiteAccountDialog = lazy(() => loadWebsiteAccountDialog().then((module) => ({
+const WebsiteAccountDialog = lazyWithMessages(() => loadWebsiteAccountDialog().then((module) => ({
   default: module.WebsiteAccountDialog,
-})));
-const SetupDialog = lazy(() => loadSetupDialog().then((module) => ({ default: module.SetupDialog })));
-const IssueNoteModal = lazy(() => import("@/components/ScheduleFeedbackDialogs").then((module) => ({ default: module.IssueNoteModal })));
-const ProductChangeConfirmModal = lazy(() => import("@/components/ScheduleFeedbackDialogs").then((module) => ({
+})), "apps/arknights/src/components/auth/WebsiteAccountDialog.tsx");
+const SetupDialog = lazyWithMessages(() => loadSetupDialog().then((module) => ({ default: module.SetupDialog })), "apps/arknights/src/setup-dialog.tsx");
+const IssueNoteModal = lazyWithMessages(() => import("@/components/ScheduleFeedbackDialogs").then((module) => ({ default: module.IssueNoteModal })), "apps/arknights/src/components/ScheduleFeedbackDialogs.tsx");
+const ProductChangeConfirmModal = lazyWithMessages(() => import("@/components/ScheduleFeedbackDialogs").then((module) => ({
   default: module.ProductChangeConfirmModal,
-})));
-const ManualDraftReplaceDialog = lazy(() => import("@/components/ManualDraftReplaceDialog").then((module) => ({
+})), "apps/arknights/src/components/ScheduleFeedbackDialogs.tsx");
+const ManualDraftReplaceDialog = lazyWithMessages(() => import("@/components/ManualDraftReplaceDialog").then((module) => ({
   default: module.ManualDraftReplaceDialog,
-})));
+})), "apps/arknights/src/components/ManualDraftReplaceDialog.tsx");
 type ProductChange =
   | { type: "factory"; roomId: string; recipe: FactoryRecipe }
   | { type: "trade"; roomId: string; order: TradeOrder };
@@ -206,7 +211,7 @@ function parseLayoutJson(value: unknown): BaseBlueprint | null {
   return { ...layout, drone_cap: Number(layout.drone_cap ?? 0), scenario: layout.scenario, rooms: rooms as BlueprintRoom[] } as BaseBlueprint;
 }
 
-function layoutValidationError(layout: BaseBlueprint, en = false): string | null {
+function layoutValidationError(layout: BaseBlueprint, en: AppLocale = "zh-CN"): string | null {
   if (!layout.rooms.some((room) => room.kind === "control_center")) return localize_App.text(en, "theLayoutMustIncludeAControlCenter");
   const invalid = layout.rooms.find((room) => {
     const maxLevel = room.kind === "control_center" || room.kind === "dormitory" ? 5 : 3;
@@ -258,8 +263,12 @@ function mergeSklandLayout(current: BaseBlueprint, suggestion: BaseBlueprint): B
 }
 
 function WorkbenchAppContent({ children }: { children: ReactNode }) {
+  const rawLocale = useRawLocale();
   const intl = useTranslations();
   const locale = useLocale();
+  // Language changes update copy without reloading or overwriting in-progress work.
+  const languageEffectRef = useRef({ locale, intl });
+  useEffect(() => { languageEffectRef.current = { locale, intl }; }, [locale, intl]);
   const pathname = useRenderedPathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -285,6 +294,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const restoredLocalSession = useRef(false);
   const [onboardingPreference, setOnboardingPreference] = useState<OnboardingPreference>("active");
   const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS);
+  useEffect(() => {
+    if (!userSettings.loadEnglishResources || languageEffectRef.current.locale === "zh-CN") return;
+    // Legacy setting now controls optional preloading, never language availability.
+    void import("./i18n/messages").then(({ loadMessages }) => loadMessages(languageEffectRef.current.locale, ["ArknightsGameData"])).catch(() => {});
+  }, [userSettings.loadEnglishResources]);
   const [floatingAgentMinimized, setFloatingAgentMinimized] = useState(false);
   const showFloatingAgent = hasRestoredSession && agentAllowed && userSettings.showFloatingAgent
     && page !== "agent" && page !== "account" && page !== "gacha";
@@ -764,7 +778,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         setLayout(restoredLayout);
         const restoreAsLocalImport = !CLIENT_SKLAND_ENABLED && restored.boxSource === "skland";
         const restoredBoxSource = restoreAsLocalImport ? "maa" : restored.boxSource;
-        const restoredSourceName = restoreAsLocalImport ? (intl("App.savedOperatorData")) : restored.sourceName;
+        const restoredSourceName = restoreAsLocalImport ? (languageEffectRef.current.intl("App.savedOperatorData")) : restored.sourceName;
         const restoredLayoutSource = CLIENT_SKLAND_ENABLED ? restored.layoutSource : "local";
         setOperbox(restoredOperbox);
         setFileName(restoredSourceName);
@@ -784,11 +798,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         initialLocalLayoutBackup.current = CLIENT_SKLAND_ENABLED ? restored.localLayoutBackup : null;
       }
     } catch {
-      setStorageNotice(displayError("AIC-LOCAL-7001", intl("App.theBrowserCouldNotReadLocalDataButSchedules")));
+      setStorageNotice(displayError("AIC-LOCAL-7001", languageEffectRef.current.intl("App.theBrowserCouldNotReadLocalDataButSchedules")));
     } finally {
       setHasRestoredSession(true);
     }
-  }, [intl, locale, setBoxSource, setLayoutDirty, setOperbox]);
+  }, [setBoxSource, setLayoutDirty, setOperbox]);
 
   // 将 agent 生成的排班产物注入工作台：复用会话恢复路径设置全部状态，
   // 使班次切换、手动排班导入、效率视图等现有功能立即可用。
@@ -893,7 +907,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     } catch {
       reportPersistenceFailure();
     }
-  }, [hasRestoredSession, preset, layout, operbox, fileName, boxSource, layoutDirty, layoutSource, localLayoutBackup, rotationProfile, fiammettaEnabled, result, activeShift, locale]);
+  }, [hasRestoredSession, preset, layout, operbox, fileName, boxSource, layoutDirty, layoutSource, localLayoutBackup, rotationProfile, fiammettaEnabled, result, activeShift]);
 
   useEffect(() => {
     let cancelled = false;
@@ -909,18 +923,18 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
           setApiError(null);
         } else {
           setCliReady(false);
-          setApiError(displayError("AIC-PLAN-3001", intl("App.theSchedulingServiceIsTemporarilyUnavailableTryAgainLater"), true));
+          setApiError(displayError("AIC-PLAN-3001", languageEffectRef.current.intl("App.theSchedulingServiceIsTemporarilyUnavailableTryAgainLater"), true));
         }
       })
       .catch((error) => {
         if (cancelled) return;
         setCliReady(false);
-        setApiError(toDisplayError(error, intl("App.theSchedulingServiceIsTemporarilyUnavailableTryAgainLater")));
+        setApiError(toDisplayError(error, languageEffectRef.current.intl("App.theSchedulingServiceIsTemporarilyUnavailableTryAgainLater")));
       });
     return () => {
       cancelled = true;
     };
-  }, [intl, hasRestoredSession, locale]);
+  }, [hasRestoredSession]);
 
   useEffect(() => {
     if (
@@ -1059,7 +1073,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       })
       .catch((error) => {
         if (cancelled || !sklandRestoreGuard.current.isCurrent(generation)) return;
-        setSklandError(toDisplayError(error, intl("App.couldNotRestoreTheSklandSessionRefreshAndTry")));
+        setSklandError(toDisplayError(error, languageEffectRef.current.intl("App.couldNotRestoreTheSklandSessionRefreshAndTry")));
       })
       .finally(() => {
         if (sklandFullRestore.current === restore) sklandFullRestorePending.current = false;
@@ -1068,7 +1082,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [intl, hasRestoredSession, locale, page, setBoxSource, setOperbox, setupOpen, websiteAuthReloadKey, websiteSessionPending, websiteUserId]);
+  }, [hasRestoredSession, page, setBoxSource, setOperbox, setupOpen, websiteAuthReloadKey, websiteSessionPending, websiteUserId]);
 
   useEffect(() => {
     if (
@@ -1093,7 +1107,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         setSklandError(null);
       })
       .catch((error) => {
-        if (!cancelled) setSklandError(toDisplayError(error, intl("App.couldNotLoadTheStatusCenterTryAgainLater")));
+        if (!cancelled) setSklandError(toDisplayError(error, languageEffectRef.current.intl("App.couldNotLoadTheStatusCenterTryAgainLater")));
       })
       .finally(() => {
         statusLoadingAccount.current = null;
@@ -1102,7 +1116,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [intl, activeSklandAccount, locale, page, sklandError, sklandSessionLoading, sklandStatusReloadKey, sklandStatusSnapshot]);
+  }, [activeSklandAccount, page, sklandError, sklandSessionLoading, sklandStatusReloadKey, sklandStatusSnapshot]);
 
   async function handleFile(file: File, signal?: AbortSignal): Promise<void> {
     try {
@@ -1260,7 +1274,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     if (planRetryCountdown > 0) return false;
     planClickAtRef.current = performance.now();
     trackTelemetry({ type: "interaction", name: "plan_click", page: "calculator" });
-    const layoutError = layoutValidationError(planLayout, locale === "en");
+    const layoutError = layoutValidationError(planLayout, locale);
     if (layoutError) {
       setApiError(displayError("AIC-LAYOUT-1201", layoutError));
       return false;
@@ -1581,21 +1595,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       return;
     }
     if (!operbox || boxSource === "sample") {
-      setApiError(displayError("AIC-FEEDBACK-4001", "当前排班缺少可提交的个人干员 Box，请重新导入后生成排班。"));
+      setApiError(displayError("AIC-FEEDBACK-4001", intl("Common.personalBoxRequired")));
       return;
     }
 
-    const environment = locale === "en" ? [
-      `Solve time: ${Math.round(result.durationMs)} ms`,
-      `Shift: ${activeShift + 1}`,
-      `Rotation: ${rotationProfile}`,
-      `Layout: ${preset.label}`,
-    ].join("; ") : [
-      `求解耗时：${Math.round(result.durationMs)} ms`,
-      `班次：${activeShift + 1}`,
-      `换班方式：${rotationProfile}`,
-      `布局：${preset.label}`,
-    ].join("；");
+    const environment = intl("App.environmentDetails", { duration: Math.round(result.durationMs), shift: activeShift + 1, rotation: rotationProfile, layout: preset.label });
     const note = `${issueDraftNote.trim()}\n\n[${intl("App.environment")}] ${environment}`;
     const reproduction = {
       layout: structuredClone(layout),
@@ -1696,14 +1700,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   function productChangeLabel(change: ProductChange) {
-    if (locale === "en") {
-      if (change.type === "factory") return ({ gold: "Precious Metals", battle_record: "Battle Records", originium: "Originium Shards" } as Partial<Record<FactoryRecipe, string>>)[change.recipe] ?? change.recipe;
-      return ({ gold: "LMD Orders", originium: "Orundum Orders" } as const)[change.order];
-    }
     if (change.type === "factory") {
-      return FACTORY_RECIPE_OPTIONS.find((option) => option.value === change.recipe)?.label;
+      const key = { gold: "pureGold", battle_record: "battleRecord", originium: "originiumShard", all: "recipe" } as const;
+      return intl(`components_CompactScheduleView.${key[change.recipe]}`);
     }
-    return TRADE_ORDER_OPTIONS.find((option) => option.value === change.order)?.label;
+    return intl(change.order === "gold" ? "components_CompactScheduleView.lmdOrder" : "components_CompactScheduleView.originiumOrder");
   }
 
   function showResultClearNotice(label: string | undefined) {
@@ -1854,7 +1855,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     } catch (error) {
       if (signal?.aborted) throw error;
       setInputErrorCode("AIC-LAYOUT-1201");
-      throw new Error(localize_App.text(locale, "additional4", { choice1: ((locale === "en")) && (error instanceof Error) ? "yes" : "no", value2: ((locale === "en") && (error instanceof Error)) ? String(error.message) : "", choice3: (!(locale === "en")) && (error instanceof Error) ? "yes" : "no", value4: (!(locale === "en") && (error instanceof Error)) ? String(error.message) : "" }), { cause: error });
+      throw new Error(localize_App.text(locale, "additional4", { choice3: ((error instanceof Error) ? ("yes") : ("no")), value4: (((error instanceof Error)) ? (String(error.message)) : ("")) }), { cause: error });
     }
   }
 
@@ -2364,7 +2365,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     manual: {
       layout,
       operbox: manualPosterBox ?? (accountCanUseCurrentBox ? operbox : null),
-      sourceName: manualPosterBox ? "作业练度（非个人干员池）" : accountCanUseCurrentBox ? fileName : null,
+      sourceName: manualPosterBox ? intl("Common.copiedTraining") : accountCanUseCurrentBox ? fileName : null,
       onPosterWorkingBoxChange: setManualPosterBox,
       shiftDurations: manualShiftDurations,
       shiftStartTime: manualShiftStartTime,
@@ -2580,7 +2581,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
             const error = activity?.error;
             if (!error) return;
             void Promise.all([import("./download"), import("./solver-diagnostic")])
-              .then(([{ copyText }, { formatSolverDiagnostic }]) => copyText(formatSolverDiagnostic(error, locale === "en")));
+              .then(([{ copyText }, { formatSolverDiagnostic }]) => copyText(formatSolverDiagnostic(error, locale)));
           }}
         />
 
@@ -2638,7 +2639,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
               decoding="async"
               className="block h-5 w-14 -translate-y-0.5 object-contain sm:h-[23px] sm:w-16"
             />
-            {locale === "en" ? null : <span className="block leading-none">提供云计算服务</span>}
+            {locale === "en" ? null : <span className="block leading-none">{rawText.text(rawLocale, "cloudComputingProvidedBy")}</span>}
           </a>
         </div>
       </footer> : null}
@@ -2674,7 +2675,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         onOpenChange={handleSetupOpenChange}
         operbox={setupMode === "manual" && manualPosterBox ? manualPosterBox : operbox}
         boxSource={setupMode === "manual" && manualPosterBox ? "sample" : boxSource}
-        fileName={setupMode === "manual" && manualPosterBox ? "作业练度（非个人干员池）" : fileName}
+        fileName={setupMode === "manual" && manualPosterBox ? intl("Common.copiedTraining") : fileName}
         inputMode={inputMode}
         onInputModeChange={setInputMode}
         maaPaste={maaPaste}
@@ -2733,7 +2734,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       {productModalMounted ? <Suspense fallback={null}><ProductChangeConfirmModal
         open={Boolean(pendingProductChange)}
         roomLabel={rows.find((row) => row.roomId === pendingProductChange?.roomId)?.title ?? pendingProductChange?.roomId ?? (intl("App.currentFacility"))}
-        changeKind={pendingProductChange?.type === "trade" ? "贸易策略" : "制造配方"}
+        changeKind={pendingProductChange?.type === "trade" ? intl("Common.tradeStrategy") : intl("Common.factoryRecipe")}
         nextValueLabel={pendingProductChange ? productChangeLabel(pendingProductChange) ?? (intl("App.newSetting")) : (intl("App.newSetting"))}
         busy={loading && Boolean(pendingProductChange)}
         onConfirm={() => void confirmScheduleProductChange()}

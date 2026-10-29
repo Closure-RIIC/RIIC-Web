@@ -1,0 +1,12 @@
+{
+  "control": "控制中枢",
+  "power": "发电站",
+  "manu": "制造站",
+  "trade": "贸易站",
+  "dorm": "宿舍",
+  "hire": "办公室",
+  "meet": "会客室",
+  "train": "训练室",
+  "workshop": "加工站",
+  "recycle": "回收站"
+}

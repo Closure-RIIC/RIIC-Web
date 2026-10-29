@@ -1,4 +1,6 @@
 "use client";
+
+import type { AppLocale } from "@riic/contracts/locale";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { CheckCircle2, LoaderCircle, MailCheck } from "lucide-react";
@@ -22,16 +24,14 @@ type AuthStep = "details" | "verify" | "complete" | "session";
 const AUTH_INPUT_CLASS = "border-border bg-background shadow-none";
 const AUTH_PASSWORD_TOGGLE_CLASS = "text-muted-foreground hover:text-foreground";
 
-const WEBSITE_ACCOUNT_NAME_HINT_EN = authText.text("en", "nameHint");
-
-function localizedWebsiteAccountName(value: unknown, en: boolean) {
+function localizedWebsiteAccountName(value: unknown, en: AppLocale) {
   const result = validateWebsiteAccountName(value);
-  return en && result.error ? { ...result, error: WEBSITE_ACCOUNT_NAME_HINT_EN } : result;
+  return result.error ? { ...result, error: authText.text(en, "nameHint") } : result;
 }
 
-function localizedPasswordConfirmationError(password: string, confirmation: string, en: boolean): string | null {
+function localizedPasswordConfirmationError(password: string, confirmation: string, en: AppLocale): string | null {
   const error = passwordConfirmationError(password, confirmation);
-  if (!error || !en) return error;
+  if (!error) return null;
   return authText.text(en, confirmation ? "passwordMismatch" : "passwordRepeat");
 }
 
@@ -44,9 +44,9 @@ export function WebsiteAuthForm({ onAuthenticated, legalOrigin = "", initialMode
   hideHeading?: boolean;
   onTitleChange?: (title: string) => void;
 }) {
-  const intl = useTranslations();
+  const intl = useTranslations("Account");
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const modeCopy = messageRecord(en, "components_auth_WebsiteAccountPanel_labels");
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [step, setStep] = useState<AuthStep>("details");

@@ -1,15 +1,17 @@
-import { lazy, Suspense, type ComponentProps, type CSSProperties, type ReactNode } from "react";
+import { lazyWithMessages } from "../i18n/features-client";
+import type { MessageTranslator } from "../i18n/types";
+import { gameLabel } from "../i18n/game-labels";
+import { Suspense, type ComponentProps, type CSSProperties, type ReactNode } from "react";
 import { workbenchArtwork } from "@riic/endfield-data";
 import { useWorkspace } from "../state";
 import { FacilityIcon, ProductionIcon } from "./GameArtwork";
 
-const DijiangBackdrop = lazy(() => import("./DijiangBackdrop").then(module => ({ default: module.DijiangBackdrop })));
+const DijiangBackdrop = lazyWithMessages(() => import("./DijiangBackdrop").then(module => ({ default: module.DijiangBackdrop })), "apps/endfield/src/components/DijiangBackdrop.tsx");
 
 export type FacilityKind = "center" | "guest" | "grow" | "mfg1" | "mfg2";
 
-export function categoryLabel(category: string, t: (zh: string, en: string) => string) {
-  const labels: Record<string, string> = { 线索: "Clues", 干员经验: "Operator EXP", 武器经验: "Weapon EXP", 培养: "Growth" };
-  return t(category, labels[category] ?? category);
+export function categoryLabel(category: string, t: MessageTranslator) {
+  return gameLabel(t, category);
 }
 
 export function FacilityBoard({ children, className = "", ...props }: ComponentProps<"div">) {
@@ -25,7 +27,7 @@ export function FacilityCard({ kind, label, level, category, actions, children }
 }) {
   const { workspace, t } = useWorkspace();
   const facility = workbenchArtwork.facilities[kind === "mfg1" || kind === "mfg2" ? "mfg" : kind];
-  const levelLabel = t(`设施等级 ${level}`, `Facility level ${level}`);
+  const levelLabel = t("FacilityCard.facilityLevel", { value1: level });
   const productCategories = kind === "grow"
     ? Object.entries(workspace.options.grow).filter(([, slots]) => slots > 0).map(([growthKind]) => growthKind)
     : category ? [category] : [];

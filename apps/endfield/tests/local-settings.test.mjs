@@ -22,8 +22,9 @@ test("Endfield cleanup only removes its own keys and handles corrupt archives", 
   assert.deepEqual([...session], [["unrelated", "keep"]]);
 });
 test("Endfield uses its own language after migration, regardless of the Arknights cookie", () => {
-  assert.equal(readEndfieldLocale(""), "zh");
+  assert.equal(readEndfieldLocale(""), "zh-CN");
   assert.equal(readEndfieldLocale("riic-locale=en"), "en");
-  assert.equal(readEndfieldLocale("riic-locale=en;riic-endfield-locale=zh"), "zh");
+  assert.equal(readEndfieldLocale("riic-locale=en;riic-endfield-locale=zh"), "zh-CN");
   assert.equal(readEndfieldLocale("riic-endfield-locale=en; riic-locale=zh"), "en");
+  assert.equal(readEndfieldLocale("riic-endfield-locale=zh-Hant; riic-locale=en"), "zh-TW");
 });

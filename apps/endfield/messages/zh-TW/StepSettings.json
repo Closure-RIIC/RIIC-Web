@@ -1,0 +1,12 @@
+{
+  "timeRange": "時間範圍",
+  "duration": "模擬時長",
+  "startHour": "起點（小時）",
+  "chartSampling": "曲線取樣",
+  "startingMoraleAndWorkStatus": "初始心情與工作狀態",
+  "onlyTheActiveShiftCanStartWorkingUncheckedOperators": "僅當前班次的幹員可以起始工作；未勾選時從休息狀態開始。",
+  "morale": "心情 %",
+  "startWorking": "起始工作",
+  "assignOperatorsInTheEditorFirst": "請先在編輯檢視安排幹員。",
+  "moraleAssistance": "心情恢復助力"
+}

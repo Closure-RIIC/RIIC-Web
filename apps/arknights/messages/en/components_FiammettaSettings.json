@@ -1,0 +1,8 @@
+{
+  "fiammettaMoraleRecovery": "Fiammetta morale recovery",
+  "chooseAMoraleRecoveryTargetSeparatelyForEveryManual": "Choose a morale recovery target separately for every manual shift.",
+  "whenEnabledScheduleRequestsUseFiammettaForMoraleRecovery": "When enabled, schedule requests use Fiammetta for morale recovery.",
+  "enabled": "Enabled",
+  "disabled": "Disabled",
+  "fiammettaIsNotOwnedInTheCurrentBoxSo": "Fiammetta is not owned in the current BOX, so this option is unavailable."
+}

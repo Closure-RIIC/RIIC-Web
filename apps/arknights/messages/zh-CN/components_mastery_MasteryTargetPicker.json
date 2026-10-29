@@ -1,0 +1,9 @@
+{
+  "chooseATrainee": "选择专精干员",
+  "ownedE2OperatorsInYourCurrentBoxThisSelection": "当前 Box 中已拥有的 {length} 名精二干员。选择不会修改 Box。",
+  "select": "选择{name}",
+  "e2": "精二",
+  "noMatchingOwnedE2Operators": "没有符合条件的已拥有精二干员。",
+  "cancel": "取消",
+  "useThisOperator": "选择这名干员"
+}

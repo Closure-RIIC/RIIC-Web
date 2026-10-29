@@ -1,7 +1,10 @@
+import type WorkspaceErrors from "../messages/zh-CN/WorkspaceErrors.json";
+type WorkspaceError = keyof typeof WorkspaceErrors;
 import { createContext, useCallback, useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import { DEFAULT_OPTIONS, STORAGE_KEY, manualTemplate, parseWorkspace, type Assignment, type Result, type Workspace } from "@riic/endfield-solver/model.mjs";
 import type { EndfieldSnapshot } from "@riic/endfield-skland/model";
-import { ENDFIELD_LOCALE_COOKIE, DISPLAY_STORAGE_KEY, readEndfieldColorMode, readEndfieldLocale, clearEndfieldStorage } from "./local-settings";
+import { DISPLAY_STORAGE_KEY, readEndfieldColorMode, clearEndfieldStorage } from "./local-settings";
+import { useEndfieldLanguage } from "./i18n/client";
 import { completeSolverActivity, type ManualEvaluationActivity, type SolverActivity, type SolverMessage } from "./solver-activity";
 import type { SklandSyncReport } from "./skland-sync-report";
 import type { SklandSyncActivity, SklandSyncStatus } from "./skland-workspace";
@@ -14,13 +17,13 @@ function useWorkspaceState() {
   const [workspace, setWorkspace] = useState<Workspace>(() => ({ version: 1, operators: [], options: structuredClone(DEFAULT_OPTIONS) }));
   const workspaceRef = useRef(workspace);
   const [ready, setReady] = useState(false);
-  const [storageError, setStorageError] = useState("");
-  const [locale, updateLocale] = useState<"zh" | "en">("zh");
+  const [storageError, setStorageError] = useState<WorkspaceError | "">("");
+  const { locale, setLocale, t } = useEndfieldLanguage();
   const [colorMode, updateColorMode] = useState<"light" | "dark">("light");
   const [showImages, updateShowImages] = useState(true);
   const [showDijiangBackdrop, updateShowDijiangBackdrop] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
-  const [resultStorageError, setResultStorageError] = useState("");
+  const [resultStorageError, setResultStorageError] = useState<WorkspaceError | "">("");
   // Display-only, tab-lifetime data; never written into the solver workspace/storage.
   const [sklandSnapshot, setSklandSnapshot] = useState<EndfieldSnapshot | null>(null);
   const [busy, setBusy] = useState(false);
@@ -71,9 +74,8 @@ function useWorkspaceState() {
         setResult(restoreResultCache(localStorage.getItem(RESULT_STORAGE_KEY), restored));
       }
     }
-    catch { setStorageError("本地存档无法读取，未覆盖原文件。请导出备份后重新导入。 / Cannot restore local data; the saved copy has not been overwritten."); }
+    catch { setStorageError("restore"); }
     // Migrate once; subsequent language choices belong to Endfield only, even on localhost.
-    setLocale(readEndfieldLocale(document.cookie));
     try {
       updateColorMode(readEndfieldColorMode(localStorage.getItem("riic-color-mode")));
       const display = JSON.parse(localStorage.getItem(DISPLAY_STORAGE_KEY) ?? "{}");
@@ -84,9 +86,6 @@ function useWorkspaceState() {
     return () => { worker.current?.terminate(); if (timeout.current) clearTimeout(timeout.current); };
   }, []);
   useEffect(() => {
-    document.documentElement.lang = locale === "zh" ? "zh-CN" : "en";
-  }, [locale]);
-  useEffect(() => {
     if (!ready) return;
     document.documentElement.classList.toggle("dark", colorMode === "dark");
     document.documentElement.style.colorScheme = colorMode;
@@ -94,7 +93,6 @@ function useWorkspaceState() {
   // Restore this site's preferences after tab or history navigation.
   useEffect(() => {
     const restorePreferences = () => {
-      updateLocale(readEndfieldLocale(document.cookie));
       try {
         updateColorMode(readEndfieldColorMode(localStorage.getItem("riic-color-mode")));
         const display = JSON.parse(localStorage.getItem(DISPLAY_STORAGE_KEY) ?? "{}");
@@ -117,7 +115,7 @@ function useWorkspaceState() {
     const id = setTimeout(() => {
       if (skipSave.current) return;
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(workspace)); }
-      catch { setStorageError("无法保存到本机，请导出名单。 / Local storage unavailable; export your roster."); }
+      catch { setStorageError("save"); }
     }, 250);
     return () => clearTimeout(id);
   }, [ready, storageError, workspace]);
@@ -129,7 +127,7 @@ function useWorkspaceState() {
       else localStorage.removeItem(RESULT_STORAGE_KEY);
       setResultStorageError("");
     } catch {
-      setResultStorageError("求解结果暂时只能保留在当前页面会话，无法保存到本机。 / Result is available in this session but could not be saved locally.");
+      setResultStorageError("result");
     }
   }, [ready, storageError, workspace, result]);
   // Persist before cross-app navigation as well as before closing the tab.
@@ -169,7 +167,7 @@ function useWorkspaceState() {
   }
   function repairStorage() {
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(workspace)); skipSave.current = false; setStorageError(""); }
-    catch { setStorageError("无法保存到本机，请导出名单。 / Local storage unavailable; export your roster."); }
+    catch { setStorageError("save"); }
   }
   function run(assignments?: Assignment[]) {
     cancel(); setResult(null);
@@ -179,9 +177,9 @@ function useWorkspaceState() {
       phase: "running", stage: "preparing", startedAt: Date.now(), elapsedMs: 0,
     };
     setActivity(started);
-    const fail = (message: string) => {
+    const fail = (message: string, errorCode?: SolverActivity["errorCode"]) => {
       stopWorker();
-      setActivity({ ...started, phase: "error", problem: "worker", error: message, elapsedMs: Date.now() - started.startedAt });
+      setActivity({ ...started, phase: "error", problem: "worker", error: message, errorCode, elapsedMs: Date.now() - started.startedAt });
     };
     try {
       const instance = new Worker(new URL("./solver.worker.ts", import.meta.url), { type: "module" });
@@ -200,19 +198,14 @@ function useWorkspaceState() {
           fail(message.error);
         }
       };
-      instance.onerror = () => { if (worker.current === instance) fail("求解进程异常，请重试。 / Solver worker failed; please retry."); };
+      instance.onerror = () => { if (worker.current === instance) fail("", "workerFailed"); };
       timeout.current = setTimeout(() => {
-        if (worker.current === instance) fail("搜索超时，已释放计算资源。请减少名单或调整配置。 / Search timed out; try a smaller roster.");
+        if (worker.current === instance) fail("", "timeout");
       }, workspace.options.time + 10000);
       instance.postMessage({ input: workspace, assignments });
-    } catch { fail("无法启动求解进程。 / Unable to start the solver."); }
+    } catch { fail("", "workerStart"); }
   }
   function retrySolve() { if (!worker.current) run(lastAssignments.current); }
-  function setLocale(next: "zh" | "en") {
-    updateLocale(next);
-    document.documentElement.lang = next === "zh" ? "zh-CN" : "en";
-    document.cookie = `${ENDFIELD_LOCALE_COOKIE}=${next}; Path=/; Max-Age=31536000; SameSite=Lax${location.protocol === "https:" ? "; Secure" : ""}`;
-  }
   function setColorMode(next: "light" | "dark") {
     updateColorMode(next);
     try { localStorage.setItem("riic-color-mode", next); } catch { /* Current tab still works. */ }
@@ -234,11 +227,11 @@ function useWorkspaceState() {
       location.reload();
     } catch {
       // Do not let pagehide silently put a deleted archive back.
-      setStorageError("无法清除全部本地数据，请导出配置后重试。 / Could not clear all local data; export your setup before retrying.");
-      throw new Error("无法清除全部本地数据，请检查浏览器存储权限。 / Could not clear local data; check browser storage permissions.");
+      setStorageError("clear");
+      throw new Error(t("WorkspaceErrors.clearPermission"));
     }
   }
-  return { workspace, update, ready, storageError, resultStorageError, sklandSyncReport, setSklandSyncReport, sklandSyncDetailsOpen, setSklandSyncDetailsOpen, repairStorage, clearLocalData, clearResult, locale, setLocale, colorMode, setColorMode, showImages, setShowImages, showDijiangBackdrop, setShowDijiangBackdrop, result, sklandSnapshot, setSklandSnapshot, sklandSyncActivity, reportSklandSync, setSklandSyncActivity, busy, activity, manualEvaluationActivity, reportManualEvaluationError, retrySolve, run, cancel, t: (zh: string, en: string) => locale === "zh" ? zh : en };
+  return { workspace, update, ready, storageError: storageError ? t(`WorkspaceErrors.${storageError}`) : "", resultStorageError: resultStorageError ? t(`WorkspaceErrors.${resultStorageError}`) : "", sklandSyncReport, setSklandSyncReport, sklandSyncDetailsOpen, setSklandSyncDetailsOpen, repairStorage, clearLocalData, clearResult, locale, setLocale, colorMode, setColorMode, showImages, setShowImages, showDijiangBackdrop, setShowDijiangBackdrop, result, sklandSnapshot, setSklandSnapshot, sklandSyncActivity, reportSklandSync, setSklandSyncActivity, busy, activity: activity?.errorCode ? { ...activity, error: t(`WorkspaceErrors.${activity.errorCode}`) } : activity, manualEvaluationActivity: manualEvaluationActivity ? { ...manualEvaluationActivity, error: manualEvaluationActivity.error === "@evaluation:failed" ? t("WorkspaceErrors.evaluationFailed") : manualEvaluationActivity.error === "@evaluation:timeout" ? t("WorkspaceErrors.evaluationTimeout") : manualEvaluationActivity.error === "@evaluation:start" ? t("WorkspaceErrors.evaluationStart") : manualEvaluationActivity.error } : null, reportManualEvaluationError, retrySolve, run, cancel, t };
 }
 const Context = createContext<ReturnType<typeof useWorkspaceState> | null>(null);
 export function WorkspaceProvider({ children }: { children: ReactNode }) { const value = useWorkspaceState(); return <Context.Provider value={value}>{children}</Context.Provider>; }

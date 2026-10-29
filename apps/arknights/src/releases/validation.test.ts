@@ -69,3 +69,10 @@ test("bootstrap SQL contains the validated historical fixtures once, not an ongo
   assert.deepEqual(notes, releaseHistory.map((note, index) => ({ ...note, notify: index === 0 })));
   for (const note of notes) assert.doesNotThrow(() => parseReleaseDraft(note));
 });
+
+test("Taiwanese release text survives validation while historical releases retain their source", async () => {
+  const { releaseText } = await import("@riic/arknights-domain/releases/types");
+  const draft = parseReleaseDraft({ ...valid, notify: false, title: { zh: "更新", tw: "更新內容", en: "Update" } });
+  assert.equal(releaseText(draft.title, "zh-TW"), "更新內容");
+  assert.equal(releaseText({ zh: "历史记录", en: "History" }, "zh-TW"), "历史记录");
+});

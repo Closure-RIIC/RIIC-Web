@@ -1,0 +1,13 @@
+{
+  "syncAnAccountFromSklandFirst": "请先通过森空岛同步账号。",
+  "theOriginalAccountAuthorizationExpiredReauthorizeOnTheSkland": "原账号授权已失效，请到森空岛同步页重新授权。",
+  "sklandDidNotReturnTheFullRosterSoOwnership": "森空岛未返回完整干员名单，无法准确恢复拥有状态。已保留本地配置，请公开完整干员数据后重试。",
+  "theAccountChangedRetry": "账号已切换，请重新操作。",
+  "accountDataCannotBeRestoredLocalSettingsWereKept": "账号数据无法恢复，已保留本地配置。",
+  "restoredYourActualOperatorsSkillsAndFacilityLevels": "已恢复账号实际干员练度、技能与设施等级。",
+  "restoredYourActualOperatorsAndSkillsSklandFacilityData": "已恢复账号实际干员练度与技能。森空岛设施数据不完整，保留当前设施等级，可在上方手动调整。",
+  "restoreFailedRetry": "恢复失败，请重试。",
+  "restoring": "正在恢复…",
+  "restoreActualAccount": "恢复账号实际配置",
+  "restoreActualOperatorsAndSkillsFromSklandAndClear": "从森空岛恢复实际干员练度与技能，清除手动排班草稿。设施数据完整时恢复等级，否则保留当前等级；生产偏好保留。"
+}

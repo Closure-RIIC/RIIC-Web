@@ -1,5 +1,12 @@
 "use client";
 
+import { lazyWithMessages } from "@/i18n/features-client";
+import { useLocale as useRawLocale } from "use-intl";
+import { createLocalizer as createRawLocalizer, richValue } from "@riic/arknights-domain/i18n/localize";
+import type RawMessages from "../messages/zh-CN/AK_Raw_skland_components.json";
+const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_skland_components");
+
+
 import { lazy, Suspense } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { useCallback, useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent } from "react";
@@ -31,9 +38,10 @@ const LazyQrCode = lazy(() => import("qrcode.react").then((module) => ({ default
 function QRCodeSVG(props: React.ComponentProps<typeof LazyQrCode>) {
   return <ClientOnly><Suspense fallback={null}><LazyQrCode {...props} /></Suspense></ClientOnly>;
 }
-const LazyCredentialPanel = lazy(() => import("@/skland-credential-panel").then((module) => ({ default: module.SklandCredentialPanel })));
+const LazyCredentialPanel = lazyWithMessages(() => import("@/skland-credential-panel").then((module) => ({ default: module.SklandCredentialPanel })), "apps/arknights/src/skland-credential-panel.tsx");
 function SklandCredentialPanel(props: React.ComponentProps<typeof LazyCredentialPanel>) {
-  const fallback = <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-muted-foreground" role="status"><LoaderCircle className="animate-spin motion-reduce:animate-none" />正在加载凭证导入…</div>;
+  const rawLocale = useRawLocale();
+  const fallback = <div className="flex min-h-32 items-center justify-center gap-2 text-sm text-muted-foreground" role="status">{rawText.rich(rawLocale, "loadingCredentialImport", { part1: richValue((<LoaderCircle className="animate-spin motion-reduce:animate-none" />)) })}</div>;
   return <ClientOnly fallback={fallback}><Suspense fallback={fallback}><LazyCredentialPanel {...props} /></Suspense></ClientOnly>;
 }
 
@@ -57,6 +65,9 @@ export function SklandLoginPanel({
   className,
   dialogPresentation = false,
 }: SklandLoginPanelProps) {
+  const rawLocale = useRawLocale();
+  const localeRef = useRef(rawLocale);
+  useEffect(() => { localeRef.current = rawLocale; }, [rawLocale]);
   const sklandAppOpenUrl = buildSklandAppOpenUrl();
   const [authMethod, setAuthMethod] = useState<AuthMethod>("qr");
   const [scanId, setScanId] = useState<string | null>(null);
@@ -97,7 +108,7 @@ export function SklandLoginPanel({
         setScanState("waiting");
       } catch (error) {
         if (!mountedRef.current) return;
-        const detail = toDisplayError(error, "二维码生成失败，请稍后重试。");
+        const detail = toDisplayError(error, rawText.text(localeRef.current, "qrFailed"));
         setScanState("idle");
         setScanError(`${detail.message}（${detail.code}${detail.requestId ? ` · ${detail.requestId}` : ""}）`);
       }
@@ -224,7 +235,7 @@ export function SklandLoginPanel({
         setScanError(null);
       } catch (error) {
         if (cancelled || controller.signal.aborted) return;
-        const detail = toDisplayError(error, "登录状态查询失败，将继续重试。");
+        const detail = toDisplayError(error, rawText.text(localeRef.current, "pollFailed"));
         setScanError(`${detail.message}（${detail.code}${detail.requestId ? ` · ${detail.requestId}` : ""}）`);
         failedAttempts += 1;
         retryAfterSeconds = detail.retryAfterSeconds;
@@ -302,14 +313,14 @@ export function SklandLoginPanel({
   }
 
   const pageStatusText = scanState === "loading"
-    ? preparingSlow ? "正在连接登录服务，请稍候…" : "正在生成二维码…"
+    ? preparingSlow ? rawText.text(rawLocale, "connecting") : rawText.text(rawLocale, "generating")
     : scanState === "scanned"
-      ? "已扫码，正在等待森空岛 App 确认并完成登录…"
+      ? rawText.text(rawLocale, "scanned")
       : scanState === "expired"
-        ? dialogPresentation ? "二维码已过期，请重新生成。" : "二维码已过期，正在刷新…"
+        ? dialogPresentation ? rawText.text(rawLocale, "expired") : rawText.text(rawLocale, "refreshing")
         : scanUrl
-          ? "请使用森空岛 App 扫描二维码"
-          : dialogPresentation ? "准备好后生成二维码。" : "勾选下方两项授权后显示二维码";
+          ? rawText.text(rawLocale, "scanPrompt")
+          : dialogPresentation ? rawText.text(rawLocale, "readyPrompt") : rawText.text(rawLocale, "consentPrompt");
 
   return (
     <Card
@@ -322,11 +333,11 @@ export function SklandLoginPanel({
       <div className="grid gap-6 px-5 py-6 sm:px-8 sm:py-8">
         {!configured ? (
           <Alert>
-            <AlertDescription>{disabledReason ?? "当前未开放森空岛登录，可继续使用 MAA 导入。"}</AlertDescription>
+            <AlertDescription>{disabledReason ?? rawText.text(rawLocale, "sklandSignInIsCurrentlyUnavailableYouCanContinue")}</AlertDescription>
           </Alert>
         ) : (
           <div>
-            <div className="mx-auto grid min-h-11 w-full max-w-xl grid-cols-2 rounded-lg bg-muted p-1 text-muted-foreground" role="tablist" aria-label="森空岛登录方式">
+            <div className="mx-auto grid min-h-11 w-full max-w-xl grid-cols-2 rounded-lg bg-muted p-1 text-muted-foreground" role="tablist" aria-label={rawText.text(rawLocale, "sklandSignInMethod")}>
               {(["qr", "credential"] as const).map((method) => (
                 <button
                   key={method}
@@ -343,7 +354,7 @@ export function SklandLoginPanel({
                   onClick={() => setAuthMethod(method)}
                   onKeyDown={handleAuthTabKeyDown}
                 >
-                  {method === "qr" ? <><ScanLine />扫码登录</> : <><KeyRound />凭证导入</>}
+                  {method === "qr" ? <>{rawText.rich(rawLocale, "qrSignIn", { part1: richValue((<ScanLine />)) })}</> : <>{rawText.rich(rawLocale, "importCredential", { part1: richValue((<KeyRound />)) })}</>}
                 </button>
               ))}
             </div>
@@ -354,7 +365,7 @@ export function SklandLoginPanel({
                 <div className="order-2 grid gap-4 md:order-1">
                   <p className="flex items-start gap-2 text-sm leading-6 text-muted-foreground">
                     <ShieldCheck className="mt-1 size-4 shrink-0 text-emerald-600" aria-hidden="true" />
-                    <span>推荐方式。打开森空岛 App 扫描二维码，确认后同步当前角色的干员、基建与状态中心数据。</span>
+                    <span>{rawText.text(rawLocale, "recommendedScanTheQrCodeWithTheSklandApp")}</span>
                   </p>
                   <SklandPolicyConsent
                     termsAccepted={termsAccepted}
@@ -370,12 +381,8 @@ export function SklandLoginPanel({
                         render={<a data-motion-pressable href={sklandAppOpenUrl} target="_blank" rel="noreferrer" />}
                         size={dialogPresentation ? "dialog" : "default"}
                         className="w-full"
-                      >
-                        <ExternalLink />打开森空岛 App
-                      </Button>
-                      <p className="text-pretty text-center text-xs leading-5 text-muted-foreground">
-                        请用森空岛扫描二维码；必要时可在另一台设备展示。
-                      </p>
+                      >{rawText.rich(rawLocale, "openSklandApp", { part1: richValue((<ExternalLink />)) })}</Button>
+                      <p className="text-pretty text-center text-xs leading-5 text-muted-foreground">{rawText.text(rawLocale, "scanWithSklandDisplayThisCodeOnAnotherDevice")}</p>
                     </div>
                   ) : null}
                   {!scanUrl || scanState === "expired" || scanError ? (
@@ -388,7 +395,7 @@ export function SklandLoginPanel({
                       onClick={() => void createQr()}
                     >
                       {scanState === "loading" ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
-                      {scanState === "idle" && !scanError ? "生成登录二维码" : "重新生成二维码"}
+                      {scanState === "idle" && !scanError ? rawText.text(rawLocale, "generateLoginQrCode") : rawText.text(rawLocale, "generateANewQrCode")}
                     </Button>
                   ) : null}
                 </div>
@@ -409,9 +416,9 @@ export function SklandLoginPanel({
                         bgColor="#FFFFFF"
                         fgColor="#000000"
                         className="size-full"
-                        title="森空岛登录二维码"
+                        title={rawText.text(rawLocale, "sklandLoginQrCode")}
                         role="img"
-                        aria-label="森空岛登录二维码"
+                        aria-label={rawText.text(rawLocale, "sklandLoginQrCode")}
                       />
                     ) : scanState === "loading" ? (
                       <LoaderCircle

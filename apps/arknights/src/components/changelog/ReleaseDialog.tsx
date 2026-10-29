@@ -1,5 +1,6 @@
 "use client";
 
+import { releaseText } from "@riic/arknights-domain/releases/types";
 import { Link } from "@tanstack/react-router";
 import { useLocale, useTranslations } from "use-intl";
 import { useRef } from "react";
@@ -17,7 +18,7 @@ export function ReleaseDialog({ open, onOpenChange, release: latestRelease, show
 }) {
   const t = useTranslations("ReleaseDialog");
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const dismissRef = useRef<HTMLButtonElement>(null);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -30,7 +31,7 @@ export function ReleaseDialog({ open, onOpenChange, release: latestRelease, show
         <DialogHeader>
           <DialogTitle>{t("whatsNew")} <span className="font-number">v{latestRelease.version}</span></DialogTitle>
           <DialogDescription>
-            {latestRelease.title[en ? "en" : "zh"] || latestRelease.title.zh} · <time dateTime={latestRelease.date} className="font-number">{latestRelease.date}</time>
+            {releaseText(latestRelease.title, en)} · <time dateTime={latestRelease.date} className="font-number">{latestRelease.date}</time>
           </DialogDescription>
         </DialogHeader>
         <ScrollArea className="min-h-0" viewportClassName="overscroll-contain">

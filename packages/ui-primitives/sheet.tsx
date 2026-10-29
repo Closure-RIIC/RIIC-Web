@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { usePrimitiveLabels } from "./labels"
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
 import { motion, type HTMLMotionProps } from "motion/react"
 
@@ -62,6 +63,7 @@ function SheetContent({
   const closedX = side === "right" ? "100%" : side === "left" ? "-100%" : 0
   const closedY = side === "top" ? "-100%" : side === "bottom" ? "100%" : 0
 
+  const labels = usePrimitiveLabels()
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -103,7 +105,7 @@ function SheetContent({
           >
             <XIcon
             />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{labels.close}</span>
           </SheetPrimitive.Close>
         )}
       </SheetPrimitive.Popup>

@@ -1,3 +1,4 @@
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_skland_status_metrics } from "./i18n/helpers/skland_status_metrics.ts";
 import type {
   SklandInfrastructureRoom,
@@ -22,15 +23,15 @@ export interface SklandStatusMetric {
 
 export function sklandTradingOrderRewardLabel(
   order: SklandTradingOrder,
-  en = false
+  en: AppLocale = "zh-CN"
 ): "合成玉" | "龙门币" | "Orundum" | "LMD" {
   const isOrundum = order.reward.type === "orundum"
     || order.delivery.some((item) => item.type === "originium_shard");
-  if (en) return isOrundum ? "Orundum" : "LMD";
+  if (en === "en") return isOrundum ? "Orundum" : "LMD";
   return isOrundum ? "合成玉" : "龙门币";
 }
 
-export function formatDashboardDuration(seconds: number, en = false): string {
+export function formatDashboardDuration(seconds: number, en: AppLocale = "zh-CN"): string {
   const safe = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0));
   if (safe <= 0) return localize_skland_status_metrics.text(en, "complete");
   if (safe < 60) return localize_skland_status_metrics.text(en, "under1Minute");
@@ -42,7 +43,7 @@ export function formatDashboardDuration(seconds: number, en = false): string {
   return localize_skland_status_metrics.text(en, "m", { value1: Math.max(1, minutes) });
 }
 
-function until(timestamp: number | null | undefined, now: number, fallback: string, en = false): string {
+function until(timestamp: number | null | undefined, now: number, fallback: string, en: AppLocale = "zh-CN"): string {
   if (!timestamp || timestamp <= 0) return fallback;
   return formatDashboardDuration(timestamp - now, en);
 }
@@ -81,7 +82,7 @@ function fractionMetric(
   return { id, label, value: String(current), total: total === null ? "—" : String(total), hint, tone, visual };
 }
 
-export function deriveSklandBuildingMetrics(snapshot: SklandStatusSnapshot, now: number, en = false): SklandStatusMetric[] {
+export function deriveSklandBuildingMetrics(snapshot: SklandStatusSnapshot, now: number, en: AppLocale = "zh-CN"): SklandStatusMetric[] {
   const { infrastructure } = snapshot;
   const trading = sumProduction(infrastructure.rooms, "trading");
   const manufacture = sumProduction(infrastructure.rooms, "manufacture");
@@ -120,11 +121,7 @@ export function deriveSklandBuildingMetrics(snapshot: SklandStatusSnapshot, now:
       label: localize_skland_status_metrics.text(en, "clueCollection"),
       value: sharingClues ? (localize_skland_status_metrics.text(en, "sharing")) : String(clueCount),
       total: sharingClues ? null : "7",
-      hint: sharingClues
-        ? localize_skland_status_metrics.text(en, "sharingEndsIn", { value1: (en) ? (until(meeting?.group === "meeting" ? meeting.clue.shareCompleteTime : null, now, "progress", true)) : "", value2: (en) ? "" : (until(meeting?.group === "meeting" ? meeting.clue.shareCompleteTime : null, now, "交流进行中")) })
-        : meeting
-          ? localize_skland_status_metrics.text(en, "cluesPlaced", { clueCount: clueCount })
-          : localize_skland_status_metrics.text(en, "receptionRoomDataNotProvided"),
+      hint: sharingClues ? localize_skland_status_metrics.text(en, "sharingEndsIn", { value2: until(meeting?.group === "meeting" ? meeting.clue.shareCompleteTime : null, now, localize_skland_status_metrics.text(en, "sharing"), en) }) : (meeting ? localize_skland_status_metrics.text(en, "cluesPlaced", { clueCount }) : localize_skland_status_metrics.text(en, "receptionRoomDataNotProvided")),
       tone: "orange",
       visual: "clue",
     },

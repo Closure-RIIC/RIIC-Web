@@ -127,10 +127,10 @@ function selectElement(label: string, value: number, onChange: (value: number) =
   </div>;
 }
 
-function inventoryLabel(itemId: string, t: ReturnType<typeof useTranslations>) {
-  if (itemId === "4001") return t("lmd");
-  if (itemId === "3003") return t("redGold");
-  return plannerData.items[itemId]?.name ?? itemId;
+function inventoryLabel(itemId: string, translate: ReturnType<typeof useTranslations<"TrainingPlanner">>, itemNames: Record<string, string>) {
+  if (itemId === "4001") return translate("lmd");
+  if (itemId === "3003") return translate("redGold");
+  return itemNames[itemId] ?? plannerData.items[itemId]?.name ?? itemId;
 }
 
 export function TrainingPlanner() {
@@ -182,7 +182,7 @@ export function TrainingPlanner() {
   }).sort((left, right) => right.rarity - left.rarity || right.order - left.order), [operbox]);
   const filteredRoster = useMemo(() => {
     const source = pickerTab === "box" ? currentRoster : roster;
-    const normalized = query.trim().toLocaleLowerCase(locale === "en" ? "en-US" : "zh-CN");
+    const normalized = query.trim().toLocaleLowerCase(locale);
     return source.filter((operator) => (
       !isTrainingFullyComplete(operator.rarity, statusById.get(operator.id), plannerData.operators[operator.id])
       && (rarity === "all" || operator.rarity === Number(rarity))
@@ -190,7 +190,7 @@ export function TrainingPlanner() {
       && (!normalized
         || operator.id.toLocaleLowerCase("en-US").includes(normalized)
         || operator.name.toLocaleLowerCase("zh-CN").includes(normalized)
-        || localizedOperatorName(operator.name, locale, gameCatalog).toLocaleLowerCase(locale === "en" ? "en-US" : "zh-CN").includes(normalized))
+        || localizedOperatorName(operator.name, locale, gameCatalog).toLocaleLowerCase(locale).includes(normalized))
     ));
   }, [currentRoster, gameCatalog, locale, pickerTab, profession, query, rarity, roster, statusById]);
 
@@ -295,8 +295,8 @@ export function TrainingPlanner() {
   useEffect(() => () => onPageContextChange("training-planner", null), [onPageContextChange]);
 
   const visibleMaterials = MATERIAL_IDS.filter((id) => (
-    !materialQuery.trim() || inventoryLabel(id, t).toLocaleLowerCase(locale === "en" ? "en-US" : "zh-CN")
-      .includes(materialQuery.trim().toLocaleLowerCase(locale === "en" ? "en-US" : "zh-CN"))
+    !materialQuery.trim() || inventoryLabel(id, t, gameCatalog.itemNames).toLocaleLowerCase(locale)
+      .includes(materialQuery.trim().toLocaleLowerCase(locale))
   ));
   const countFor = (id: string) => Math.max(0, Math.floor(stock[id] ?? 0));
 
@@ -458,8 +458,8 @@ export function TrainingPlanner() {
                 const item = plannerData.items[id];
                 return <label key={id} className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_6rem] items-center gap-2 border-b border-border/70 py-2">
                   {item?.icon ? <img src={item.icon} alt="" width={36} height={36} className="size-9 object-contain" /> : <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />}
-                  <span className="min-w-0 text-xs leading-5">{inventoryLabel(id, t)}<span className="block text-muted-foreground">{t("stock")}</span></span>
-                  <Input type="number" min={0} step={1} inputMode="numeric" className="h-9 px-2 text-right font-number text-xs" value={countFor(id)} onChange={(event) => setInventoryCount(id, event.target.value)} aria-label={`${inventoryLabel(id, t)} ${t("stock")}`} />
+                  <span className="min-w-0 text-xs leading-5">{inventoryLabel(id, t, gameCatalog.itemNames)}<span className="block text-muted-foreground">{t("stock")}</span></span>
+                  <Input type="number" min={0} step={1} inputMode="numeric" className="h-9 px-2 text-right font-number text-xs" value={countFor(id)} onChange={(event) => setInventoryCount(id, event.target.value)} aria-label={`${inventoryLabel(id, t, gameCatalog.itemNames)} ${t("stock")}`} />
                 </label>;
               })}
             </div>
@@ -478,8 +478,8 @@ export function TrainingPlanner() {
                     if (!item) return null;
                     return <label key={id} className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_5.5rem] items-center gap-2 border-b border-border/70 py-1.5">
                       {item.icon ? <img src={item.icon} alt="" width={36} height={36} loading="lazy" className="size-9 object-contain" /> : <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />}
-                      <span className="min-w-0 break-words text-xs leading-4">{item.name}</span>
-                      <Input type="number" min={0} step={1} inputMode="numeric" className="h-9 px-2 text-right font-number text-xs" value={countFor(id)} onChange={(event) => setInventoryCount(id, event.target.value)} aria-label={`${item.name} ${t("stock")}`} />
+                      <span className="min-w-0 break-words text-xs leading-4">{gameCatalog.itemNames[id] ?? item.name}</span>
+                      <Input type="number" min={0} step={1} inputMode="numeric" className="h-9 px-2 text-right font-number text-xs" value={countFor(id)} onChange={(event) => setInventoryCount(id, event.target.value)} aria-label={`${gameCatalog.itemNames[id] ?? item.name} ${t("stock")}`} />
                     </label>;
                   })}
                 </div>
@@ -537,7 +537,7 @@ export function TrainingPlanner() {
               {result.crafts.map((craft, index) => <div key={`${craft.id}-${index}`} className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] gap-2 border-b border-border/70 py-2">
                 {craft.icon ? <img src={craft.icon} alt="" width={36} height={36} className="size-9 object-contain" /> : <PackageOpen className="m-2 size-5 text-muted-foreground" aria-hidden="true" />}
                 <div className="min-w-0">
-                  <p className="break-words text-xs font-medium">{craft.name} ×{numberText(craft.count)}</p>
+                  <p className="break-words text-xs font-medium">{gameCatalog.itemNames[craft.id] ?? craft.name} ×{numberText(craft.count)}</p>
                   <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{t("craftEntry", { count: craft.count, facility: craft.facility === "WORKSHOP" ? t("workshop") : t("manufacture"), level: craft.level })}</p>
                   <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{t("craftCost", { count: numberText(craft.lmd) })}</p>
                 </div>

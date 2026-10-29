@@ -10,8 +10,34 @@
       "SpaceshipCharSkillTable",
       "SpaceshipSkillTable",
       "I18nTextTable_CN",
-      "I18nTextTable_EN"
-    ]
+      "I18nTextTable_EN",
+      "I18nTextTable_TC"
+    ],
+    "inputs": {
+      "CharacterTable": "597eb376f6f7deeb5a8f6bf83d788dc0a0d99cb7aa3cf5695a2c5a6664f08c66",
+      "CharGrowthTable": "89a5d8eae6145593490665dcd0ecd0861639793648773dc021491324fccd665a",
+      "WeaponBasicTable": "87c302358dc81128b6fd29ea25dd07f2c56222aa5bb8407caa9417865876605f",
+      "ItemTable": "f1bc4576941eeee90fd33413a397c2855266369a2c7acf55dc828f414558d494",
+      "SpaceshipCharSkillTable": "d2426832dbe36a21bc028a996e511dc9ba00696b3f149298a71780d9b24b2804",
+      "SpaceshipSkillTable": "d5587703438cea0c7eac40baf47b9be01da5e230962a2d68810e35f75223c6bc",
+      "I18nTextTable_CN": "0586e66127baeea43153b094218c1159de4dcc88b6d2248657c008ec7b001a25",
+      "I18nTextTable_EN": "8712569337ea686c8e4faf400f8d71e9bc32056699afbd2de6820a246eb4d0d6",
+      "I18nTextTable_TC": "ec3b563849da055ecf7c598cc9eb30baef792a3ae61e1ecf479664eb536ac6c7"
+    }
+  },
+  "translations": {
+    "outputs": {
+      "catalog.json": "613c1380afd4a96b04d1e28bb254a01e4482608c4ef2dd9b9442cceec6ae5b01",
+      "metadata.json": "b52478c3b4f3e6f37c8e9a3dbc0b91b92817dfa824865a7e1ad8cd86850ce48f",
+      "messages/zh-CN/EndfieldGameData.json": "fd9047639e6845c3adb210c852e6bd0d7a28e2e105b8b90191e45a641ca7edf5",
+      "messages/zh-TW/EndfieldGameData.json": "b22d19cec35098f5d380a1586722b8300beb0192c924a40799e3f47b542e34ef",
+      "messages/en/EndfieldGameData.json": "8fa1397f568de8a2887ee9bdc262f8c2c475bd8a9ab71016a7bb39ebc447bcb4",
+      "workbench.json": "bf3ff6400ba058d5660f9a4224b8c2cb5c43e9acef4e5ff2b36bec8308cccd2e"
+    },
+    "zh-TW": {
+      "textTable": "I18nTextTable_TC",
+      "siteDefinedLabels": "OpenCC cn→twp; reviewed separately from upstream game text"
+    }
   },
   "assets": {
     "repository": "https://github.com/555me/EndfieldAssets",

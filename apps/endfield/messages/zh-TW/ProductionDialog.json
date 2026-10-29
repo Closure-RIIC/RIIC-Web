@@ -1,0 +1,8 @@
+{
+  "productionSetup": "生產配置",
+  "closeProductionSetup": "關閉生產配置",
+  "adjustFacilityLevelsProductionAndGrowthPlotsOrRestore": "調整各艙室等級、製造產物與培養位分配；也可恢復帳號實際配置。修改自動儲存並用於排班。",
+  "done": "完成",
+  "schedulingPriorities": "排班目標",
+  "enableCentralAssistance2PointsDay": "啟用中樞助力（每日 2 點）"
+}

@@ -1,0 +1,22 @@
+{
+  "checkingAssistantAccess": "正在檢查助理狀態…",
+  "signInToChatWithClosure": "登入後即可和可露希爾對話。",
+  "addCreditsToStartAConversation": "準備積分後即可開始對話。",
+  "theAssistantIsTemporarilyUnavailable": "助理暫時不可用，請稍後再試。",
+  "signIn": "登入網站帳號",
+  "viewCredits": "檢視積分",
+  "showFloatingAssistant": "顯示懸浮助理",
+  "hideFloatingAssistant": "隱藏懸浮助理",
+  "assistant": "助理",
+  "closureAssistant": "可露希爾助理",
+  "openingConversation": "正在開啟對話…",
+  "whatWouldYouLikeToAskAboutThis": "博士，這頁有什麼想問的？",
+  "askClosureAboutThisPage": "點選檢視可露希爾助理",
+  "minimizeFloatingAssistant": "收起懸浮助理",
+  "closeClosureAssistant": "收起可露希爾助理",
+  "openClosureAssistant": "開啟可露希爾助理",
+  "closeAssistant": "收起助理",
+  "askClosure": "和可露希爾聊聊",
+  "conversationLoadFailed": "對話載入失敗，請重新整理頁面後再試。",
+  "refreshPage": "重新整理頁面"
+}

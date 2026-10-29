@@ -1,0 +1,19 @@
+{
+  "somethingWentWrongTryAgainLater": "操作失败，请稍后重试。",
+  "restoringWebsiteAccount": "正在恢复网站账号",
+  "emailVerified": "邮箱已验证",
+  "signingOut": "正在退出…",
+  "signOutOnThisDevice": "退出当前设备",
+  "signedInDevices": "登录设备",
+  "thisSessionSigningOutEverywhereRevokesDatabaseSessionsAnd": "当前会话{value2}。退出全部设备会撤销数据库 Session，并清除当前浏览器保存的第三方账号凭据。",
+  "revokingSessions": "正在撤销 Session…",
+  "signOutEverywhere": "退出全部设备",
+  "deleteAccountPermanently": "永久注销账号",
+  "yourAccountAndAllSessionsWillBeDeletedImmediately": "账号与全部 Session 会立即删除。请输入当前密码确认，此操作不可撤销。",
+  "currentPassword": "当前密码",
+  "showCurrentPassword": "显示当前密码",
+  "alsoClearThisBrowserSLocalWorkspaceAfterDeletion": "注销成功后同时清除当前浏览器的本地工作区",
+  "deleting": "正在注销…",
+  "account": "账号管理",
+  "signIn": "登录"
+}

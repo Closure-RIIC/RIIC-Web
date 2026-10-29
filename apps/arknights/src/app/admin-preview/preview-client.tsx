@@ -1,5 +1,10 @@
 "use client";
 
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_app_admin_preview_preview_client.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_app_admin_preview_preview_client");
+
+
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { usePathname, useRouter } from "@/navigation";
@@ -22,11 +27,11 @@ export function AdminPreview({ children }: { children: ReactNode }) {
   const request = useMemo(() => {
     // Resetting the preview replaces the complete in-memory data store.
     void generation;
-    return createAdminPreviewRequest(isAdmin, locale === "en");
+    return createAdminPreviewRequest(isAdmin, locale);
   }, [isAdmin, locale, generation]);
   return <PreviewRole.Provider value={isAdmin}>
     <AdminDataProvider request={request} basePath="/admin-preview">
-      <AdminShell isAdmin={isAdmin} name={locale === "en" ? "RIIC preview" : "罗德岛 · 演示账户"} basePath="/admin-preview">
+      <AdminShell isAdmin={isAdmin} name={uiText.text(locale, "riicPreview")} basePath="/admin-preview">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-amber-200/60 bg-amber-50/60 px-4 py-3 text-amber-950 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-start gap-2"><FlaskConical className="mt-0.5 size-4 shrink-0" aria-hidden="true" /><div><p className="text-xs font-semibold">{t("preview")}</p><p className="mt-1 text-xs leading-5">{t("previewHint")}</p></div></div>
           <div className="flex items-center gap-2">

@@ -26,7 +26,7 @@ test("article back-to-top works in the inner viewport and language persists", as
   await expect.poll(() => scroll.evaluate(element => element.scrollTop)).toBe(0);
   await expect(page.locator("#docs-content")).toBeFocused();
   await page.getByRole("button", { name: "展开或收起目录" }).click();
-  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await page.getByRole("button", { name: "English", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await page.reload();
   await expect(page.getByRole("heading", { name: "Your first import", exact: true })).toBeVisible();

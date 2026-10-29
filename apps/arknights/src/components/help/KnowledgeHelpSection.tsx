@@ -1,15 +1,13 @@
 "use client";
 
-import { useLocale } from "use-intl";
+import { useTranslations } from "use-intl";
 import { BookOpen, ExternalLink } from "lucide-react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionPanel } from "@/components/ui/accordion";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
-import { helpKnowledgeText } from "@/i18n/helpers/help_knowledge";
 import { KNOWLEDGE_REPOSITORY, KNOWLEDGE_USAGE_URL, KNOWLEDGE_FAQS } from "@/help-knowledge";
 
 export function KnowledgeHelpSection() {
-  const en = useLocale() === "en";
-  const t = (key: Parameters<typeof helpKnowledgeText.text>[1], values?: Record<string, string | number>) => helpKnowledgeText.text(en, key, values);
+  const t = useTranslations("help_knowledge");
   return <section id="base-knowledge" className="scroll-mt-6 space-y-6 border-y border-border py-6" aria-labelledby="knowledge-help-title" data-help-knowledge>
     <header className="space-y-3">
       <h2 id="knowledge-help-title" className="flex items-center gap-2.5 text-lg font-semibold">

@@ -1,0 +1,6 @@
+{
+  "movedToPriority": "{value1}已移至第 {value2} 优先级。",
+  "dragCardsToReorderEarlierGoalsTakePriorityYou": "拖动卡片调整顺序，靠前的目标优先满足。也可聚焦卡片后使用方向键排序。",
+  "schedulingPriorities": "排班目标优先级",
+  "reorderPriority": "调整{value1}优先级，当前第 {value2}"
+}

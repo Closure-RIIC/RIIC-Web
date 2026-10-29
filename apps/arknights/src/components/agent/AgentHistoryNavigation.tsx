@@ -1,5 +1,10 @@
 "use client";
 
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_agent_AgentHistoryNavigation.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_agent_AgentHistoryNavigation");
+
+
 import { useId } from "react";
 import { ChevronDown, Loader2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -9,14 +14,14 @@ import { useAgentRunningConversations } from "./AgentRuntimeProvider";
 import { SidebarMenuAction, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, useSidebar } from "@/components/ui/sidebar";
 
 export function AgentHistoryNavigation({ active }: { active: boolean }) {
-  const en = useLocale() === "en";
+  const en = useLocale();
   const { ready, owner, history, store, error } = useAgentHistory();
   const runningIds = useAgentRunningConversations(owner);
   const { state, isMobile, setOpenMobile } = useSidebar();
   const contentId = useId();
   if (!ready || !owner) return null;
   const expanded = history.expanded && (isMobile || state !== "collapsed");
-  const label = expanded ? (en ? "Collapse chat history" : "折叠对话历史") : (en ? "Expand chat history" : "展开对话历史");
+  const label = expanded ? (uiText.text(en, "collapseChatHistory")) : (uiText.text(en, "expandChatHistory"));
   return <>
     <SidebarMenuAction data-agent-history-toggle aria-label={label} title={label} aria-expanded={expanded} aria-controls={contentId} onClick={store.toggleExpanded}>
       <ChevronDown aria-hidden="true" className={`transition-transform motion-reduce:transition-none ${expanded ? "" : "-rotate-90"}`} />
@@ -29,11 +34,11 @@ export function AgentHistoryNavigation({ active }: { active: boolean }) {
             if (isMobile) setOpenMobile(false);
           }}>
             <span className="min-w-0 truncate">{conversation.title}</span>
-            {runningIds.includes(conversation.id) ? <span data-agent-history-loading={conversation.id} role="status" aria-label={en ? "Generating reply" : "正在生成回复"}><Loader2 aria-hidden="true" /></span> : null}
+            {runningIds.includes(conversation.id) ? <span data-agent-history-loading={conversation.id} role="status" aria-label={uiText.text(en, "generatingReply")}><Loader2 aria-hidden="true" /></span> : null}
           </SidebarMenuSubButton>
         </SidebarMenuSubItem>)}
       </SidebarMenuSub>
-      <p className="px-4 py-1 text-[10px] leading-4 text-muted-foreground">{error ? (en ? "History could not be saved. Keep this page open." : "历史记录未能保存，请暂勿关闭页面。") : history.conversations.length ? (en ? "This browser · latest 5 chats" : "此浏览器 · 保留最近 5 个对话") : (en ? "Your chats will appear here." : "开始对话后会自动保存")}</p>
+      <p className="px-4 py-1 text-[10px] leading-4 text-muted-foreground">{error ? (uiText.text(en, "historyCouldNotBeSavedKeepThisPage")) : history.conversations.length ? (uiText.text(en, "thisBrowserLatest5Chats")) : (uiText.text(en, "yourChatsWillAppearHere"))}</p>
     </div>
   </>;
 }

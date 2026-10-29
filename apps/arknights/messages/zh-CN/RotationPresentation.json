@@ -1,0 +1,11 @@
+{
+  "seconds": "{seconds} 秒",
+  "main": "主力",
+  "backup": "替补",
+  "shift": "第 {index} 班",
+  "shiftDuration": "第 {index} 班 · {hours}h",
+  "resting": "{team} 休息",
+  "working": "{team} 上班",
+  "teams": "{active} 上班 · {resting} 休息",
+  "manualDuration": "{hours, plural, =0 {} other {#小时}}{minutes, plural, =0 {} other {#分钟}}"
+}

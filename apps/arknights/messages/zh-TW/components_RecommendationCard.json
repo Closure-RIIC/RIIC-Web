@@ -1,0 +1,17 @@
+{
+  "general": "綜合",
+  "trainingAdvice": "培養建議",
+  "notOwned": "未擁有",
+  "progressUnknown": "練度未知",
+  "eliteStage": "精{elite, select, 0 {零} 1 {一} 2 {二} other {未知}}",
+  "promoteTo": "升至{target}",
+  "promotionTarget": "目標精英階段",
+  "currentProgress": "目前{elite} {level}級（{rarity}★）",
+  "currentAndTarget": "目前{current} · 目標{target}",
+  "currentStage": "目前{current}",
+  "unranked": "未分級",
+  "unknownOperator": "未知幹員",
+  "noDetailsAvailable": "暫無具體說明",
+  "operatorBaseSkillsTargetHighlighted": "幹員基建技能 · 已標出本次目標",
+  "operatorBaseSkills": "該幹員的基建技能"
+}

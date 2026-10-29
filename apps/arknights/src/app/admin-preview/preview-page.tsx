@@ -1,6 +1,7 @@
 "use client";
 
-import { lazy, Suspense } from "react";
+import { lazyWithMessages } from "@/i18n/features-client";
+import { Suspense } from "react";
 import { Link } from "@tanstack/react-router";
 import { useTranslations } from "use-intl";
 import { AdminPageHeader, adminPageClass } from "../admin/admin-page";
@@ -12,10 +13,10 @@ import { usePreviewAdmin } from "./preview-client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const Loading = () => <div className={adminPageClass}><Skeleton className="h-64 w-full" /></div>;
-const Issues = lazy(() => import("../admin/issues/issues-client").then(module => ({ default: module.AdminIssues })));
-const Quality = lazy(() => import("../admin/quality/quality-client").then(module => ({ default: module.QualityWorkbench })));
-const Skills = lazy(() => import("../admin/skills/skill-annotations-client").then(module => ({ default: module.SkillAnnotationManager })));
-const Changelog = lazy(() => import("../admin/changelog/changelog-manager").then(module => ({ default: module.ChangelogManager })));
+const Issues = lazyWithMessages(() => import("../admin/issues/issues-client").then(module => ({ default: module.AdminIssues })), "apps/arknights/src/app/admin/issues/issues-client.tsx");
+const Quality = lazyWithMessages(() => import("../admin/quality/quality-client").then(module => ({ default: module.QualityWorkbench })), "apps/arknights/src/app/admin/quality/quality-client.tsx");
+const Skills = lazyWithMessages(() => import("../admin/skills/skill-annotations-client").then(module => ({ default: module.SkillAnnotationManager })), "apps/arknights/src/app/admin/skills/skill-annotations-client.tsx");
+const Changelog = lazyWithMessages(() => import("../admin/changelog/changelog-manager").then(module => ({ default: module.ChangelogManager })), "apps/arknights/src/app/admin/changelog/changelog-manager.tsx");
 
 export function PreviewPage({ section }: { section: string }) {
   return <Suspense fallback={<Loading />}><PreviewContent section={section} /></Suspense>;

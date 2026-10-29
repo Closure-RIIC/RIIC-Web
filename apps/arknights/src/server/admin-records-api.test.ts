@@ -34,8 +34,8 @@ test("admin issue UI explains every reproduction availability state", async () =
   const source = await readFile(new URL("../app/admin/issues/issues-client.tsx", import.meta.url), "utf8");
   const namespace = "app_admin_issues_issues_client_labels";
   assert.equal(source.includes(namespace), true);
-  const catalogs = await Promise.all(["zh", "en"].map(async (locale) =>
-    JSON.parse(await readFile(new URL(`../../messages/records/${locale}.json`, import.meta.url), "utf8")),
+  const catalogs = await Promise.all(["zh-CN", "zh-TW", "en"].map(async (locale) =>
+    JSON.parse(await readFile(new URL(`../../messages/${locale}/records.json`, import.meta.url), "utf8")),
   ));
   for (const reason of [
     "expired",

@@ -1,0 +1,12 @@
+{
+  "timeRange": "Time range",
+  "duration": "Duration",
+  "startHour": "Start hour",
+  "chartSampling": "Chart sampling",
+  "startingMoraleAndWorkStatus": "Starting morale and work status",
+  "onlyTheActiveShiftCanStartWorkingUncheckedOperators": "Only the active shift can start working. Unchecked operators start resting.",
+  "morale": "Morale %",
+  "startWorking": "Start working",
+  "assignOperatorsInTheEditorFirst": "Assign operators in the editor first.",
+  "moraleAssistance": "Morale assistance"
+}

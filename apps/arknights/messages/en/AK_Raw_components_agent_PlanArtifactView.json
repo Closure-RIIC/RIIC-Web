@@ -1,0 +1,17 @@
+{
+  "layout": "Layout <part1></part1>",
+  "solvedInMs": "Solved in <part1></part1> ms",
+  "switchShifts": "Switch shifts",
+  "shift": "Shift <part1></part1><part2></part2>",
+  "trainingRecommendations": "Training recommendations: <part1></part1>",
+  "control": "Control Center",
+  "trading": "Trading Post",
+  "manufacture": "Factory",
+  "power": "Power Plant",
+  "dormitory": "Dormitory",
+  "meeting": "Reception Room",
+  "hire": "Office",
+  "processing": "Workshop",
+  "elite2": "E2",
+  "unassigned": "(No operators assigned)"
+}

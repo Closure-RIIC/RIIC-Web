@@ -34,6 +34,7 @@
     "./drone-production": "./src/drone-production.ts",
     "./feedback-record": "./src/feedback-record.ts",
     "./http-api": "./src/http-api.ts",
+    "./html-compression": "./src/html-compression.ts",
     "./http/account/data-consent/route": "./src/http/account/data-consent/route.ts",
     "./http/account/session/extend/route": "./src/http/account/session/extend/route.ts",
     "./http/auth/[...all]/route": "./src/http/auth/[...all]/route.ts",

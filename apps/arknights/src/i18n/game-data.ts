@@ -1,28 +1,22 @@
 import { localize as localize_Common } from "./helpers/Common.ts";
-import type { EnglishCatalog } from "./game-catalog";
+import type { GameCatalog } from "./game-catalog";
 import type { AppLocale } from "@riic/arknights-domain/i18n/config";
 
 // Game text is data: keep upstream records and manual overrides out of UI messages.
-let request: Promise<EnglishCatalog> | null = null;
-
-export function loadGameCatalog() {
-  request ??= import("./game-catalog").then(({ ENGLISH_CATALOG }) => ENGLISH_CATALOG).catch((error) => { request = null; throw error; });
-  return request;
-}
-export function localizedOperatorName(name: string, locale: AppLocale, catalog: EnglishCatalog | null) {
-  return locale === "en" ? catalog?.operatorNames[name] ?? name : name;
+export function localizedOperatorName(name: string, locale: AppLocale, catalog: GameCatalog | null) {
+  return locale !== "zh-CN" ? catalog?.operatorNames[name] ?? name : name;
 }
 
-export function localizedRoomTitle(title: string, group: string, locale: AppLocale, catalog: EnglishCatalog | null) {
-  if (locale !== "en") return title;
+export function localizedRoomTitle(title: string, group: string, locale: AppLocale, catalog: GameCatalog | null) {
+  if (locale === "zh-CN") return title;
   const label = catalog?.roomLabels[group];
   if (!label) return title;
   const index = title.match(/\d+\s*$/)?.[0]?.trim();
   return index ? `${label} ${index}` : label;
 }
 
-export function localizedBuildingSkill<T extends { name: string; description: string; descriptionRich?: string }>(id: string, locale: AppLocale, fallback: T, catalog: EnglishCatalog | null): T {
-  if (locale !== "en") return fallback;
+export function localizedBuildingSkill<T extends { name: string; description: string; descriptionRich?: string }>(id: string, locale: AppLocale, fallback: T, catalog: GameCatalog | null): T {
+  if (locale === "zh-CN") return fallback;
   if (!catalog) return fallback;
   const translated = catalog.buildingSkills[id];
   return translated

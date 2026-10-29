@@ -61,7 +61,7 @@ test("public help links preserve search state and mobile legal pages hydrate", a
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/terms");
   await expect(page.locator("h1")).toBeVisible();
-  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await page.getByRole("button", { name: "English", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.locator("h1")).toContainText("Terms");
   expect(errors).toEqual([]);

@@ -28,17 +28,17 @@ type RotationSettingsProps = {
 export function RotationSettings({ value, onChange }: RotationSettingsProps) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [query, setQuery] = useState<string | null>(null);
   const rotationComboboxOptions = ROTATION_OPTIONS.map((option) => ({
     value: option.profile,
     label: `${rotationText.text(en, option.profile)} · ${option.durations.join("/")}`,
   }));
   const selectedComboboxOption = rotationComboboxOptions.find((option) => option.value === value) ?? null;
-  const normalizedQuery = query?.trim().toLocaleLowerCase((locale === "en" ? "en-US" : "zh-CN")) ?? "";
+  const normalizedQuery = query?.trim().toLocaleLowerCase((locale)) ?? "";
   const filteredOptions = normalizedQuery
     ? rotationComboboxOptions.filter((option) => option.label
-      .toLocaleLowerCase((locale === "en" ? "en-US" : "zh-CN"))
+      .toLocaleLowerCase((locale))
       .includes(normalizedQuery))
     : rotationComboboxOptions;
 

@@ -1,0 +1,8 @@
+{
+  "unknown": "未知",
+  "title": "回收站",
+  "manualOnly": "僅手動配置 · 不計產量、不匯出",
+  "unconfigured": "待配置 · 2 個幹員位",
+  "noUpstreamData": "森空島暫未提供資料",
+  "unknownSlots": "2 個幹員位，入駐情況未知"
+}

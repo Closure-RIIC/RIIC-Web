@@ -27,7 +27,7 @@ export function WizardSteps({
   label,
   className = "",
 }: WizardStepsProps) {
-  const intl = useTranslations();
+  const intl = useTranslations("Account");
 
   const accessibleLabel = label ?? (intl("components_interior_wizard_steps.setupSteps"));
   const currentIndex = Math.max(0, steps.findIndex((step) => step.id === value));

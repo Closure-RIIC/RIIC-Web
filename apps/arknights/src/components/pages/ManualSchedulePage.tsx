@@ -1,8 +1,19 @@
 "use client";
+
+
+import { lazyWithMessages } from "@/i18n/features-client";
+import { useLocale as useRawLocale } from "use-intl";
+import { createLocalizer as createRawLocalizer, richValue } from "@riic/arknights-domain/i18n/localize";
+import type RawMessages from "../../../messages/zh-CN/AK_Raw_components_pages_ManualSchedulePage.json";
+const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_components_pages_ManualSchedulePage");
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_pages_ManualSchedulePage.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_pages_ManualSchedulePage");
+import type { AppLocale } from "@riic/contracts/locale";
 import { useTranslations, useLocale } from "use-intl";
 
 import { ArrowLeft, Download, Ellipsis, Search, Settings2, Sparkles, Trash2, Upload, X } from "lucide-react";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import type { FactoryRecipe, TradeOrder } from "@riic/arknights-domain/blueprint";
@@ -76,16 +87,16 @@ import { manualEditableRooms, withRecyclingRoom } from "@/recycling-room";
 import type { BaseBlueprint, MaaJson, MaaOperatorSlot, MaaRoom, OperBoxEntry } from "@riic/arknights-domain/types";
 import { DEFAULT_MANUAL_SHIFT_START_TIME } from "@/manual-schedule-config";
 
-const ScrollArea = lazy(() => import("@/components/ui/scroll-area").then((module) => ({ default: module.ScrollArea })));
-const PosterWorkbench = lazy(() => import("@/components/schedule-poster/PosterWorkbench"));
-const MoodSimulationPanel = lazy(() => import("@/components/manual-mood/MoodSimulationPanel"));
-const OperatorRarityFilter = lazy(() => import("@/components/operators/OperatorPickerParts").then(module => ({ default: module.OperatorRarityFilter })));
-const OperatorSearch = lazy(() => import("@/components/operators/OperatorPickerParts").then(module => ({ default: module.OperatorSearch })));
-const Pagination = lazy(() => import("@/components/skill-query/Pagination").then(module => ({ default: module.Pagination })));
-const SkillFilterRow = lazy(() => import("@/components/skill-query/SkillFilterRow").then(module => ({ default: module.SkillFilterRow })));
-const SkillRoomTagBar = lazy(() => import("@/components/skill-query/SkillRoomTagBar").then(module => ({ default: module.SkillRoomTagBar })));
-const SkillTagBar = lazy(() => import("@/components/skill-query/SkillTagBar").then(module => ({ default: module.SkillTagBar })));
-const MaaImportDialog = lazy(() => import("@/components/MaaImportDialog").then(module => ({ default: module.MaaImportDialog })));
+const ScrollArea = lazyWithMessages(() => import("@/components/ui/scroll-area").then((module) => ({ default: module.ScrollArea })), "apps/arknights/src/components/ui/scroll-area.tsx");
+const PosterWorkbench = lazyWithMessages(() => import("@/components/schedule-poster/PosterWorkbench"), "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx");
+const MoodSimulationPanel = lazyWithMessages(() => import("@/components/manual-mood/MoodSimulationPanel"), "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx");
+const OperatorRarityFilter = lazyWithMessages(() => import("@/components/operators/OperatorPickerParts").then(module => ({ default: module.OperatorRarityFilter })), "apps/arknights/src/components/operators/OperatorPickerParts.tsx");
+const OperatorSearch = lazyWithMessages(() => import("@/components/operators/OperatorPickerParts").then(module => ({ default: module.OperatorSearch })), "apps/arknights/src/components/operators/OperatorPickerParts.tsx");
+const Pagination = lazyWithMessages(() => import("@/components/skill-query/Pagination").then(module => ({ default: module.Pagination })), "apps/arknights/src/components/skill-query/Pagination.tsx");
+const SkillFilterRow = lazyWithMessages(() => import("@/components/skill-query/SkillFilterRow").then(module => ({ default: module.SkillFilterRow })), "apps/arknights/src/components/skill-query/SkillFilterRow.tsx");
+const SkillRoomTagBar = lazyWithMessages(() => import("@/components/skill-query/SkillRoomTagBar").then(module => ({ default: module.SkillRoomTagBar })), "apps/arknights/src/components/skill-query/SkillRoomTagBar.tsx");
+const SkillTagBar = lazyWithMessages(() => import("@/components/skill-query/SkillTagBar").then(module => ({ default: module.SkillTagBar })), "apps/arknights/src/components/skill-query/SkillTagBar.tsx");
+const MaaImportDialog = lazyWithMessages(() => import("@/components/MaaImportDialog").then(module => ({ default: module.MaaImportDialog })), "apps/arknights/src/components/MaaImportDialog.tsx");
 const MANUAL_PICKER_PAGE_SIZE = 24;
 const ROOM_GROUP_TO_SKILL_PREFIX: Readonly<Partial<Record<RoomRow["group"], BuildingRoomPrefix>>> = {
   control: "control",
@@ -197,13 +208,13 @@ function ManualOperatorChoice({
   selected: boolean;
   selectionNumber?: number;
   assignmentLabel?: string;
-  en: boolean;
+  en: AppLocale;
   tooltipDisabled: boolean;
   onChoose: () => void;
 }) {
   const intl = useTranslations();
   const gameCatalog = useGameCatalog();
-  const displayName = localizedOperatorName(operator.name, en ? "en" : "zh", gameCatalog);
+  const displayName = localizedOperatorName(operator.name, en, gameCatalog);
   const presentation = operatorPresentationFor({ name: operator.name, id: operator.id });
   return (
     <div
@@ -235,7 +246,6 @@ function ManualOperatorChoice({
     </div>
   );
 }
-
 export function ManualSchedulePage({
   persistDraft = true,
   initialPosterDocument,
@@ -275,11 +285,15 @@ export function ManualSchedulePage({
   showMower = false,
   recyclingRoomLevel = 3,
 }: ManualSchedulePageProps) {
+  const rawLocale = useRawLocale();
   const intl = useTranslations();
   const skillFilters = useTranslations("SkillFilters");
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
+  // Language changes update copy without reloading or overwriting in-progress work.
+  const languageEffectRef = useRef({ intl, en });
+  useEffect(() => { languageEffectRef.current = { intl, en }; }, [intl, en]);
   const [draft, setDraft] = useState<ManualScheduleDraft>(() => createManualScheduleDraft(shiftDurations, shiftStartTime, scheduleMode));
   useEffect(() => { onDraftChange?.(draft); }, [draft, onDraftChange]);
   useEffect(() => {
@@ -428,11 +442,11 @@ export function ManualSchedulePage({
         if (cachedEvaluation) onRestoreEvaluation(cachedEvaluation);
       }
     } catch {
-      setStorageWarning(intl("components_pages_ManualSchedulePage.theManualDraftCouldNotBeRestored"));
+      setStorageWarning(languageEffectRef.current.intl("components_pages_ManualSchedulePage.theManualDraftCouldNotBeRestored"));
     }
     if (initialDraft) onInitialDraftConsumed();
     setRestored(true);
-  }, [intl, initialDraft, initialPosterDocument, layout, onFiammettaEnabledChange, onInitialDraftConsumed, onRestoreEvaluation, onScheduleModeChange, onShiftDurationsChange, onShiftStartTimeChange, operbox, ownedOperators, persistDraft, restored, restorationReady]);
+  }, [initialDraft, initialPosterDocument, layout, onFiammettaEnabledChange, onInitialDraftConsumed, onRestoreEvaluation, onScheduleModeChange, onShiftDurationsChange, onShiftStartTimeChange, operbox, ownedOperators, persistDraft, restored, restorationReady]);
 
   useEffect(() => {
     if (!restored) return;
@@ -461,9 +475,9 @@ export function ManualSchedulePage({
       persistManualScheduleDraft(window.localStorage, draft);
       setStorageWarning(null);
     } catch {
-      setStorageWarning(intl("components_pages_ManualSchedulePage.changesRemainAvailableForThisVisitButCouldNot"));
+      setStorageWarning(languageEffectRef.current.intl("components_pages_ManualSchedulePage.changesRemainAvailableForThisVisitButCouldNot"));
     }
-  }, [intl, canPersistDraft, draft, en, restored]);
+  }, [canPersistDraft, draft, restored]);
 
   useEffect(() => {
     if (!restored || !posterDocument) return;
@@ -564,10 +578,11 @@ export function ManualSchedulePage({
       pickerSkillTag,
       pickerQuery,
       (skillId) => BUILDING_SKILL_CATALOG[skillId],
+      { translatedSkills: gameCatalog.buildingSkills },
     )
       .filter((operator) => pickerRarity === null || operator.box.rarity === pickerRarity)
       .map((operator) => operator.box);
-  }, [assignedOperatorNames, ownedOperators, picker?.kind, pickerQuery, pickerRarity, pickerRoomFilter, pickerSkillTag]);
+  }, [assignedOperatorNames, ownedOperators, picker?.kind, pickerQuery, pickerRarity, pickerRoomFilter, pickerSkillTag, gameCatalog]);
   const previousShiftOperatorNames = useMemo(() => new Set(
     activeShift > 0
       ? Object.entries(draft.shifts[activeShift - 1]?.rooms ?? {})
@@ -911,7 +926,7 @@ export function ManualSchedulePage({
     try {
       await (mode === "native" ? onEvaluate : onPaperEvaluate)({ draft, operbox });
       setEvaluatedKey(JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, mode]));
-    } catch (error) { setCalculationError(error instanceof Error ? error.message : "计算失败。"); }
+    } catch (error) { setCalculationError(error instanceof Error ? error.message : "@manual:calculationFailed"); }
   }
 
   async function prepareMaaImport(file: File, signal: AbortSignal) {
@@ -947,7 +962,7 @@ export function ManualSchedulePage({
       });
     } catch (error) {
       signal.throwIfAborted();
-      throw new Error(showMower ? intl("components_pages_ManualSchedulePage.invalidMowerOrMaaSchedule") : en
+      throw new Error(showMower ? intl("components_pages_ManualSchedulePage.invalidMowerOrMaaSchedule") : en === "en"
         ? intl("components_pages_ManualSchedulePage.invalidMaaSchedule")
         : error instanceof Error ? error.message : intl("components_pages_ManualSchedulePage.invalidMaaSchedule"), { cause: error });
     }
@@ -1139,7 +1154,7 @@ export function ManualSchedulePage({
         </div>
       </div>
 
-      {externalNames.length ? <p className="mb-3 text-xs text-muted-foreground">作业示例练度（非个人持有）：{externalNames.join("、")}。可在 Box 与排班设置中调整练度。</p> : null}
+      {externalNames.length ? <p className="mb-3 text-xs text-muted-foreground">{rawText.rich(rawLocale, "exampleTrainingLevelsFromThisScheduleNotPersonalOwnership", { part1: richValue((externalNames.join("、"))) })}</p> : null}
       <ManualProductionSummary
         result={result}
         activeShift={activeShift}
@@ -1155,7 +1170,7 @@ export function ManualSchedulePage({
         )}
       />
 
-      {calculationError ? <p role="alert" className="mb-3 text-sm text-destructive">{calculationError}</p> : null}
+      {calculationError ? <p role="alert" className="mb-3 text-sm text-destructive">{calculationError === "@manual:calculationFailed" ? rawText.text(rawLocale, "calculationFailed") : calculationError}</p> : null}
       {storageWarning ? <p className="mb-3 text-sm text-amber-700" role="status">{storageWarning}</p> : null}
 
       {restored && <Suspense fallback={<Skeleton className="mt-8 h-48 w-full" />}>
@@ -1166,7 +1181,7 @@ export function ManualSchedulePage({
             ? <Suspense fallback={<Skeleton className="h-64 w-full" />}><PosterWorkbench document={posterDocument}
               onChange={updatePoster} onImport={importPoster} onSelect={selectPosterSlot}
               result={result} pending={evaluationPending} onCalculate={calculateSchedule} /></Suspense>
-            : posterLoadError ? <div role="alert" className="space-y-2"><p>{posterLoadError}</p><Button onClick={() => { void ensurePosterReady(); }}>{en ? "Retry" : "重试"}</Button></div>
+            : posterLoadError ? <div role="alert" className="space-y-2"><p>{posterLoadError}</p><Button onClick={() => { void ensurePosterReady(); }}>{uiText.text(en, "retry")}</Button></div>
               : <Skeleton className="h-64 w-full" /> : null}
           settingsOpen={moodSettingsOpen} onSettingsOpenChange={setMoodSettingsOpen}
           fiammettaEnabled={fiammettaEnabled} onFiammettaEnabledChange={onFiammettaEnabledChange}
@@ -1201,8 +1216,8 @@ export function ManualSchedulePage({
       <Dialog open={Boolean(picker)} onOpenChange={(open) => { if (!open) setPicker(null); }}>
         <DialogContent className="grid max-h-[min(820px,calc(100svh-1rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:w-[calc(100vw-2rem)] sm:max-w-[min(960px,calc(100vw-2rem))]">
           <DialogHeader>
-            <DialogTitle>{picker?.kind === "poster-hanger" ? "选择宿舍挂件干员" : picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.fiammettaMoraleTarget")) : (intl("components_pages_ManualSchedulePage.assign", { value1: (en) ? (selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.room")) : "", value2: (en) ? "" : (selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.facility")) }))}</DialogTitle>
-            <DialogDescription>{picker?.kind === "poster-hanger" ? "仅用于作业图展示，不会加入宿舍排班或参与效率计算。" : picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.thisTargetIsStoredOnlyForTheActiveShift")) : (intl("components_pages_ManualSchedulePage.onlyOwnedOperatorsInTheCurrentBoxAreShown"))}</DialogDescription>
+            <DialogTitle>{picker?.kind === "poster-hanger" ? rawText.text(rawLocale, "chooseADormitoryDecorationOperator") : picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.fiammettaMoraleTarget")) : (intl("components_pages_ManualSchedulePage.assign", { value2: en === "en" ? (((selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.room")))) : (((selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.facility")))) }))}</DialogTitle>
+            <DialogDescription>{picker?.kind === "poster-hanger" ? rawText.text(rawLocale, "usedOnlyInTheSchedulePosterThisOperatorIs") : picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.thisTargetIsStoredOnlyForTheActiveShift")) : (intl("components_pages_ManualSchedulePage.onlyOwnedOperatorsInTheCurrentBoxAreShown"))}</DialogDescription>
           </DialogHeader>
           <SkeletonSuspense className="min-h-0 [&>[data-skeleton-swap-content]]:grid [&>[data-skeleton-swap-content]]:min-h-0" fallback={<div className="grid min-h-64 content-start gap-3 px-5 pb-5 sm:px-7"><Skeleton className="h-11" /><Skeleton className="h-24" /><div className="grid grid-cols-4 gap-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-20" />)}</div></div>}>
           <ScrollArea className="min-h-0" viewportClassName="overflow-x-hidden" viewportProps={{ ref: pickerScrollContainerRef, onScroll: handlePickerScroll }}>
@@ -1246,7 +1261,7 @@ export function ManualSchedulePage({
 
             {picker?.kind === "poster-hanger" ? (
               <div className="flex justify-end">
-                <Button type="button" variant="destructive" size="sm" className="px-2 text-xs max-sm:min-h-8" onClick={() => chooseOperator(null)}><Trash2 />清空挂件位</Button>
+                <Button type="button" variant="destructive" size="sm" className="px-2 text-xs max-sm:min-h-8" onClick={() => chooseOperator(null)}>{rawText.rich(rawLocale, "clearDecorationSlot", { part1: richValue((<Trash2 />)) })}</Button>
               </div>
             ) : null}
 
@@ -1419,7 +1434,7 @@ export function ManualSchedulePage({
 
       <Dialog open={Boolean(pendingMove)} onOpenChange={(open) => { if (!open) setPendingMove(null); }}>
         <DialogContent className="max-w-[min(480px,calc(100vw-2rem))]">
-          <DialogHeader><DialogTitle>{intl("components_pages_ManualSchedulePage.moveThisOperator")}</DialogTitle><DialogDescription>{intl("components_pages_ManualSchedulePage.isAlreadyAssignedToMoveThemToAndLeave", { value1: (en) ? (pendingMove?.operator ?? intl("components_pages_ManualSchedulePage.thisOperator")) : "", previousRoomTitle: previousRoomTitle, nextRoomTitle: nextRoomTitle, value4: (en) ? "" : (pendingMove?.operator ?? intl("components_pages_ManualSchedulePage.thisOperator")) })}</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{intl("components_pages_ManualSchedulePage.moveThisOperator")}</DialogTitle><DialogDescription>{intl("components_pages_ManualSchedulePage.isAlreadyAssignedToMoveThemToAndLeave", { previousRoomTitle: previousRoomTitle, nextRoomTitle: nextRoomTitle, value4: ((pendingMove?.operator ?? intl("components_pages_ManualSchedulePage.thisOperator"))) })}</DialogDescription></DialogHeader>
           <DialogFooter><Button type="button" variant="ghost" onClick={() => setPendingMove(null)}>{intl("components_pages_ManualSchedulePage.cancel")}</Button><Button type="button" onClick={confirmMove}>{intl("components_pages_ManualSchedulePage.moveOperator")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>

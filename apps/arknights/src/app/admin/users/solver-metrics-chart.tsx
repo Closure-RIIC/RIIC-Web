@@ -1,4 +1,6 @@
 "use client";
+
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_app_admin_users_solver_metrics_chart } from "../../../i18n/helpers/app_admin_users_solver_metrics_chart.ts";
 
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
@@ -14,7 +16,7 @@ import {
 import type { AdminSolverMetricsData } from "@riic/arknights-domain/types";
 import { useLocale } from "use-intl";
 
-function chartConfig(en: boolean): ChartConfig { return {
+function chartConfig(en: AppLocale): ChartConfig { return {
   successCount: {
     label: localize_app_admin_users_solver_metrics_chart.text(en, "success"),
     theme: {
@@ -42,9 +44,9 @@ export function AdminSolverMetricsChart({
   trend: AdminSolverMetricsData["solver"]["trend"];
 }) {
   const locale = useLocale();
-  const en = locale === "en";
-  const axisTimeFormatter = new Intl.DateTimeFormat((locale === "en" ? "en-US" : "zh-CN"), { hour: "2-digit", minute: "2-digit" });
-  const tooltipTimeFormatter = new Intl.DateTimeFormat((locale === "en" ? "en-US" : "zh-CN"), { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  const en = locale;
+  const axisTimeFormatter = new Intl.DateTimeFormat((locale), { hour: "2-digit", minute: "2-digit" });
+  const tooltipTimeFormatter = new Intl.DateTimeFormat((locale), { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
   return (
     <ChartContainer
       config={chartConfig(en)}

@@ -1,0 +1,33 @@
+{
+  "title": "Diagnostic logs",
+  "description": "Events are grouped by cause without deleting the original logs. Event counts are not solver failure rates or affected-user counts. Consult records and archives for historical events.",
+  "refresh": "Refresh",
+  "window": "Time range",
+  "hour": "Last hour",
+  "day": "Last day",
+  "category": "Category",
+  "all": "All",
+  "loading": "Reading diagnostic logs…",
+  "loadFailed": "Could not read diagnostic logs. Please try again later.",
+  "timezone": "China Standard Time",
+  "occurrences": "Events",
+  "groups": "Groups",
+  "unconfigured": "Persistent diagnostics storage is not configured. An empty list does not mean there are no errors.",
+  "truncated": "The read limit was reached; this is a partial result. Original logs are retained. Select a shorter period or inspect the server archive.",
+  "code": "Error code",
+  "route": "Endpoint",
+  "reason": "Reason",
+  "count": "Count",
+  "empty": "No matching diagnostic events in this period. Collection starts when this feature is deployed.",
+  "recent": "Show recent individual diagnostic entries",
+  "recentHint": "Shows up to the latest one hundred entries in this period, then filters by category. Earlier entries remain in server logs. Sensitive content is redacted.",
+  "categories": {
+    "fault": "Service fault",
+    "solver": "Solver",
+    "validation": "Validation",
+    "authentication": "Authentication",
+    "consent": "Policy consent",
+    "rate_limit": "Rate limit / duplicate task",
+    "not_found": "Record not found"
+  }
+}

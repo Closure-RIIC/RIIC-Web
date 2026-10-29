@@ -1,4 +1,15 @@
 "use client";
+
+import { lazyWithMessages } from "@/i18n/features-client";
+import { useLocale as useRawLocale } from "use-intl";
+import { createLocalizer as createRawLocalizer, richValue } from "@riic/arknights-domain/i18n/localize";
+import type RawMessages from "../../../messages/zh-CN/AK_Raw_components_pages_SklandStatus.json";
+const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_components_pages_SklandStatus");
+import type { AppLocale } from "@riic/contracts/locale";
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_pages_SklandStatus.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_pages_SklandStatus");
+
 import { localize as localize_components_pages_SklandStatus } from "../../i18n/helpers/components_pages_SklandStatus.ts";
 import { useTranslations, useLocale } from "use-intl";
 import { usePathname } from "@/navigation";
@@ -6,7 +17,7 @@ import { Link } from "@tanstack/react-router";
 import { sklandTabHref, sklandTabFromPathname } from "@/workbench-routes";
 import { messageRecord } from "@/i18n/translate";
 
-import { lazy, Suspense, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -52,7 +63,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-const InventoryPage = lazy(() => import("@/components/pages/InventoryPage"));
+const InventoryPage = lazyWithMessages(() => import("@/components/pages/InventoryPage"), "apps/arknights/src/components/pages/InventoryPage.tsx");
 import { Skeleton } from "@/components/ui/skeleton";
 import { SkeletonRouteFallback } from "@/components/ui/skeleton-swap";
 import { HoldToConfirm } from "@/components/ui/hold-to-confirm";
@@ -72,7 +83,7 @@ import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 import { operatorPortraitFor, operatorProfessionFor } from "@/operatorPortraits";
 import { roomGridTone } from "@/schedule-view-presentation";
-const SklandLoginPanel = lazy(() => import("@/skland-components").then((module) => ({ default: module.SklandLoginPanel })));
+const SklandLoginPanel = lazyWithMessages(() => import("@/skland-components").then((module) => ({ default: module.SklandLoginPanel })), "apps/arknights/src/skland-components.tsx");
 import {
   deriveSklandBuildingMetrics,
   sklandTradingOrderRewardLabel,
@@ -91,34 +102,12 @@ import type {
 } from "@riic/arknights-domain/types";
 import { deriveSklandBindingState } from "@riic/arknights-domain/skland-binding-state";
 
-const ROOM_LABELS: Record<SklandInfrastructureRoom["group"], string> = {
-  control: "控制中枢",
-  trading: "贸易站",
-  manufacture: "制造站",
-  power: "发电站",
-  dormitory: "宿舍",
-  meeting: "会客室",
-  hire: "人力办公室",
-  processing: "加工站",
-  training: "训练室",
-};
-
-const ROOM_LABELS_ENGLISH: Record<SklandInfrastructureRoom["group"], string> = {
-  control: "Control Center",
-  trading: "Trading Post",
-  manufacture: "Factory",
-  power: "Power Plant",
-  dormitory: "Dormitory",
-  meeting: "Reception Room",
-  hire: "HR Office",
-  processing: "Workshop",
-  training: "Training Room",
-};
+const ROOM_KEYS = {"control":"control","trading":"trading","manufacture":"manufacture","power":"power","dormitory":"dormitory","meeting":"meeting","hire":"hire","processing":"processing","training":"training"} as const;
 
 const INITIAL_LIST_LIMIT = 60;
-const RARITY_OPTIONS = [
-  { value: "all", label: "全部星级" },
-  ...[6, 5, 4, 3, 2, 1].map((value) => ({ value: String(value), label: `${value} 星` })),
+const rarityOptions = (locale: AppLocale) => [
+  { value: "all", label: rawText.text(locale, "allRarities") },
+  ...[6, 5, 4, 3, 2, 1].map((value) => ({ value: String(value), label: rawText.text(locale, "rarityStars", { value }) })),
 ];
 
 type FilterOption = {
@@ -139,7 +128,7 @@ function OperatorFilterCombobox({
 }) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [query, setQuery] = useState<string | null>(null);
   const selected = options.find((option) => option.value === value) ?? null;
 
@@ -162,9 +151,9 @@ function OperatorFilterCombobox({
         }
       }}
     >
-      <ComboboxInput className="font-number h-11 w-full" aria-label={label} placeholder={intl("components_pages_SklandStatus.search", { value1: (en) ? (label.toLocaleLowerCase("en-US")) : "", label: (en) ? "" : (label) })} />
+      <ComboboxInput className="font-number h-11 w-full" aria-label={label} placeholder={intl("components_pages_SklandStatus.search", { label: en === "en" ? (((label.toLocaleLowerCase("en-US")))) : (((label))) })} />
       <ComboboxContent>
-        <ComboboxEmpty>{intl("components_pages_SklandStatus.noMatching", { value1: (en) ? (label.toLocaleLowerCase("en-US")) : "", label: (en) ? "" : (label) })}</ComboboxEmpty>
+        <ComboboxEmpty>{intl("components_pages_SklandStatus.noMatching", { label: en === "en" ? (((label.toLocaleLowerCase("en-US")))) : (((label))) })}</ComboboxEmpty>
         <ComboboxList>
           {(option) => (
             <ComboboxItem key={option.value} value={option} className="font-number">
@@ -176,7 +165,6 @@ function OperatorFilterCombobox({
     </Combobox>
   );
 }
-
 export interface SklandStatusProps {
   scheduleSnapshot: SklandScheduleSnapshot | null;
   snapshot: SklandStatusSnapshot | null;
@@ -202,8 +190,8 @@ export interface SklandStatusProps {
   onCopyUid: (uid: string) => void;
 }
 
-function credentialExpiryLabel(timestamp: number, en = false): string {
-  return new Intl.DateTimeFormat((en ? "en-US" : "zh-CN"), {
+function credentialExpiryLabel(timestamp: number, en: AppLocale = "zh-CN"): string {
+  return new Intl.DateTimeFormat((en === "en" ? "en-US" : "zh-CN"), {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(timestamp));
@@ -219,13 +207,14 @@ function SklandDataControls({
   onDeleteAllData: () => Promise<void>;
 }) {
   const intl = useTranslations();
+  const locale = useLocale();
 
   return (
     <section className="grid gap-3 pt-2" data-skland-data-controls>
       <div>
         <h2 className="text-sm font-semibold">{intl("components_pages_SklandStatus.dataManagement")}</h2>
         <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground" data-ui-number-font>
-          {intl.rich("components_pages_SklandStatus.rich1", { value1: () => (credentialExpiryLabel(account.credentialExpiresAt, true)), value2: () => (credentialExpiryLabel(account.credentialExpiresAt)) })}
+          {intl.rich("components_pages_SklandStatus.rich1", { value2: () => credentialExpiryLabel(account.credentialExpiresAt, locale) })}
         </p>
       </div>
       <HoldToConfirm
@@ -241,19 +230,18 @@ function SklandDataControls({
     </section>
   );
 }
-
-function formatDateTime(timestamp: number | null, en = false): string {
+function formatDateTime(timestamp: number | null, en: AppLocale = "zh-CN"): string {
   const date = timestamp !== null && timestamp > 0 && Number.isFinite(timestamp)
     ? new Date(timestamp * 1000)
     : null;
   if (!date || Number.isNaN(date.getTime())) return localize_components_pages_SklandStatus.text(en, "notProvided");
-  return new Intl.DateTimeFormat((en ? "en-US" : "zh-CN"), {
+  return new Intl.DateTimeFormat((en === "en" ? "en-US" : "zh-CN"), {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(date);
 }
 
-function formatCompactDateTime(timestamp: number | null, en = false): string {
+function formatCompactDateTime(timestamp: number | null, en: AppLocale = "zh-CN"): string {
   const date = timestamp !== null && timestamp > 0 && Number.isFinite(timestamp)
     ? new Date(timestamp * 1000)
     : null;
@@ -264,15 +252,15 @@ function formatCompactDateTime(timestamp: number | null, en = false): string {
   return `${date.getFullYear()}.${date.getMonth() + 1}.${date.getDate()} ${time}`;
 }
 
-function formatDate(timestamp: number | null, en = false): string {
+function formatDate(timestamp: number | null, en: AppLocale = "zh-CN"): string {
   const date = timestamp !== null && timestamp > 0 && Number.isFinite(timestamp)
     ? new Date(timestamp * 1000)
     : null;
   if (!date || Number.isNaN(date.getTime())) return localize_components_pages_SklandStatus.text(en, "notProvided");
-  return new Intl.DateTimeFormat((en ? "en-US" : "zh-CN"), { dateStyle: "medium" }).format(date);
+  return new Intl.DateTimeFormat((en === "en" ? "en-US" : "zh-CN"), { dateStyle: "medium" }).format(date);
 }
 
-function formatDuration(seconds: number, en = false): string {
+function formatDuration(seconds: number, en: AppLocale = "zh-CN"): string {
   const safeSeconds = Number.isFinite(seconds) ? Math.max(0, seconds) : 0;
   if (!safeSeconds) return localize_components_pages_SklandStatus.text(en, "complete");
   const hours = Math.floor(safeSeconds / 3600);
@@ -291,8 +279,8 @@ function useMinuteTimestamp(baseTimestamp: number): number {
   return baseTimestamp + elapsedMinutes * 60;
 }
 
-function roomLabel(room: SklandInfrastructureRoom, en = false): string {
-  const base = en ? ROOM_LABELS_ENGLISH[room.group] : ROOM_LABELS[room.group];
+function roomLabel(room: SklandInfrastructureRoom, en: AppLocale = "zh-CN"): string {
+  const base = rawText.text(en, ROOM_KEYS[room.group]);
   return ["control", "meeting", "hire", "processing", "training"].includes(room.group) ? base : `${base} ${room.index + 1}`;
 }
 
@@ -300,7 +288,7 @@ function roomMaxLevel(room: SklandInfrastructureRoom): number {
   return room.group === "control" || room.group === "dormitory" ? 5 : 3;
 }
 
-function professionLabel(profession: string, en = false): string {
+function professionLabel(profession: string, en: AppLocale = "zh-CN"): string {
   return (messageRecord(en, "components_pages_SklandStatus_labels"))[profession] ?? profession;
 }
 
@@ -347,7 +335,6 @@ function ProgressMeter({
     </div>
   );
 }
-
 function OverviewTab({
   snapshot,
   onContinueSetup,
@@ -360,7 +347,7 @@ function OverviewTab({
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
   const { infrastructure, player, progress } = snapshot;
   const fullProductionRooms = infrastructure.rooms.filter(
     (room) =>
@@ -482,7 +469,7 @@ function OverviewTab({
                 ? (intl("components_pages_SklandStatus.sklandDidNotProvideSanityStatus"))
                 : player.sanity.current >= player.sanity.max
                   ? (intl("components_pages_SklandStatus.sanityIsFull"))
-                  : intl("components_pages_SklandStatus.fullRecovery", { value1: (en) ? (formatDateTime(player.sanity.completeRecoveryTime, true)) : "", value2: (en) ? "" : (formatDateTime(player.sanity.completeRecoveryTime)) })}
+                  : intl("components_pages_SklandStatus.fullRecovery", { value2: formatDateTime(player.sanity.completeRecoveryTime, en) })}
             </p>
           </div>
         </OverviewTechnicalCard>
@@ -501,7 +488,7 @@ function OverviewTab({
             <p className="font-number mt-auto pt-4 text-xs text-white/58">
               {dronesFull
                 ? (intl("components_pages_SklandStatus.dronesAreAtCapacity"))
-                : intl("components_pages_SklandStatus.nextRecoveryInAbout", { value1: (en) ? (formatDuration(infrastructure.labor.remainSecs, true)) : "", value2: (en) ? "" : (formatDuration(infrastructure.labor.remainSecs)) })}
+                : intl("components_pages_SklandStatus.nextRecoveryInAbout", { value2: formatDuration(infrastructure.labor.remainSecs, en) })}
             </p>
           </div>
         </OverviewTechnicalCard>
@@ -628,7 +615,7 @@ function OverviewTab({
 function RoomCard({ room }: { room: SklandInfrastructureRoom }) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const productionRoom = room.group === "trading" || room.group === "manufacture" ? room : null;
   const isAuxiliaryRoom = ["meeting", "training", "hire", "processing"].includes(room.group);
   const hasRoomDetails = productionRoom !== null || room.group === "hire";
@@ -731,7 +718,7 @@ function RoomCard({ room }: { room: SklandInfrastructureRoom }) {
               key={`${room.key}-${operator.id}`}
               slot={{
                 name: operator.name,
-                label: intl("components_pages_SklandStatus.working", { name: operator.name, value2: (en) ? (formatDuration(operator.workTime, true)) : "", value3: (en) ? "" : (formatDuration(operator.workTime)) }),
+                label: intl("components_pages_SklandStatus.working", { name: operator.name, value3: formatDuration(operator.workTime, en) }),
                 portrait: operatorPortraitFor(operator.name, operator.id),
                 profession: operatorProfessionFor(operator.name),
               }}
@@ -850,7 +837,7 @@ function LayoutSyncControl({
 }) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { infrastructure } = snapshot;
 
@@ -861,7 +848,7 @@ function LayoutSyncControl({
 
   const hasSuggestion = Boolean(infrastructure.layoutSuggestion);
   const status = hasSuggestion
-    ? intl("components_pages_SklandStatus.sklandLayout", { value1: (en) ? (infrastructure.layoutLabel ?? "Unrecognized") : "", value2: (en) ? "" : (infrastructure.layoutLabel ?? "未识别") })
+    ? intl("components_pages_SklandStatus.sklandLayout", { value2: en === "en" ? (((infrastructure.layoutLabel ?? "Unrecognized"))) : (((infrastructure.layoutLabel ?? rawText.text(en, "unknownLayout")))) })
     : intl("components_pages_SklandStatus.noSyncableLayoutRecognized");
 
   return (
@@ -927,7 +914,7 @@ function InfrastructureTab({ snapshot }: { snapshot: SklandStatusSnapshot }) {
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
   const { infrastructure } = snapshot;
   const now = useMinuteTimestamp(infrastructure.currentTs);
   const buildingMetrics = useMemo(() => deriveSklandBuildingMetrics(snapshot, now, en), [en, snapshot, now]);
@@ -1062,40 +1049,38 @@ export function SklandInfrastructureLayout({ rooms }: { rooms: SklandInfrastruct
 }
 
 function OperatorCard({ operator }: { operator: SklandOperatorStatus }) {
+  const rawLocale = useRawLocale();
+  const gameCatalog = useGameCatalog();
   return (
     <article className="[content-visibility:auto] [contain-intrinsic-size:16rem] border-t border-border/70 pt-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
-            <h4 className="truncate font-medium">{operator.name}</h4>
-            {operator.isAssist ? <Badge variant="secondary">助战</Badge> : null}
+            <h4 className="truncate font-medium">{localizedOperatorName(operator.name, rawLocale, gameCatalog)}</h4>
+            {operator.isAssist ? <Badge variant="secondary">{rawText.text(rawLocale, "supportUnit")}</Badge> : null}
           </div>
           <p className="font-number mt-1 text-xs text-muted-foreground">
-            {operator.rarity}★ · {professionLabel(operator.profession)} / {operator.subProfessionName}
+            {operator.rarity}★ · {professionLabel(operator.profession, rawLocale)} / {operator.subProfessionName}
           </p>
         </div>
-        <Badge variant="outline" className="font-number">精 {operator.elite} Lv.{operator.level}</Badge>
+        <Badge variant="outline" className="font-number">{rawText.rich(rawLocale, "eLv", { part1: richValue((operator.elite)), part2: richValue((operator.level)) })}</Badge>
       </div>
       <dl className="mt-3 grid grid-cols-3 gap-2 text-xs">
-        <div><dt className="text-muted-foreground">潜能</dt><dd className="font-number mt-0.5 font-medium">{operator.potential}</dd></div>
-        <div><dt className="text-muted-foreground">信赖</dt><dd className="font-number mt-0.5 font-medium">{operator.favorPercent}%</dd></div>
-        <div><dt className="text-muted-foreground">技能</dt><dd className="font-number mt-0.5 font-medium">Lv.{operator.mainSkillLevel}</dd></div>
+        <div><dt className="text-muted-foreground">{rawText.text(rawLocale, "potential")}</dt><dd className="font-number mt-0.5 font-medium">{operator.potential}</dd></div>
+        <div><dt className="text-muted-foreground">{rawText.text(rawLocale, "trust")}</dt><dd className="font-number mt-0.5 font-medium">{operator.favorPercent}%</dd></div>
+        <div><dt className="text-muted-foreground">{rawText.text(rawLocale, "skill")}</dt><dd className="font-number mt-0.5 font-medium">Lv.{operator.mainSkillLevel}</dd></div>
       </dl>
       <details className="mt-3 text-xs">
-        <summary className="cursor-pointer font-medium text-primary">专精、模组与皮肤</summary>
+        <summary className="cursor-pointer font-medium text-primary">{rawText.text(rawLocale, "masteryModulesAndOutfits")}</summary>
         <div className="mt-2 grid gap-1.5 leading-5 text-muted-foreground">
-          <p className="font-number">
-            专精：{operator.skills.length
+          <p className="font-number">{rawText.rich(rawLocale, "mastery", { part1: richValue((operator.skills.length
               ? operator.skills.map((skill) => `S${skill.index} M${skill.specializeLevel}`).join(" · ")
-              : "森空岛暂未提供"}
-          </p>
-          <p className="font-number">
-            模组：{operator.modules.length
-              ? operator.modules.map((module) => `${module.name} Lv.${module.level}${module.isDefault ? "（使用中）" : ""}`).join(" · ")
-              : "无"}
-          </p>
-          <p>当前皮肤：{operator.currentSkinName ?? "默认服装"}</p>
-          <p className="font-number">获得时间：{formatDate(operator.acquiredAt)}</p>
+              : rawText.text(rawLocale, "notProvidedSkland"))) })}</p>
+          <p className="font-number">{rawText.rich(rawLocale, "module", { part1: richValue((operator.modules.length
+              ? operator.modules.map((module) => `${module.name} Lv.${module.level}${module.isDefault ? rawText.text(rawLocale, "using") : ""}`).join(" · ")
+              : rawText.text(rawLocale, "none"))) })}</p>
+          <p>{rawText.rich(rawLocale, "currentOutfit", { part1: richValue((operator.currentSkinName ?? rawText.text(rawLocale, "defaultOutfit"))) })}</p>
+          <p className="font-number">{rawText.rich(rawLocale, "obtained", { part1: richValue((formatDate(operator.acquiredAt, rawLocale))) })}</p>
         </div>
       </details>
     </article>
@@ -1103,21 +1088,25 @@ function OperatorCard({ operator }: { operator: SklandOperatorStatus }) {
 }
 
 function SkinCard({ skin }: { skin: SklandOwnedSkin }) {
+  const rawLocale = useRawLocale();
+  const gameCatalog = useGameCatalog();
   return (
     <article className="[content-visibility:auto] border-t border-border/70 pt-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h4 className="font-medium">{skin.name}</h4>
-          <p className="mt-1 text-xs text-muted-foreground">{skin.operatorName} · {skin.brandId}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{localizedOperatorName(skin.operatorName, rawLocale, gameCatalog)} · {skin.brandId}</p>
         </div>
-        {skin.isCurrent ? <Badge variant="secondary">使用中</Badge> : null}
+        {skin.isCurrent ? <Badge variant="secondary">{rawText.text(rawLocale, "inUse")}</Badge> : null}
       </div>
-      <p className="font-number mt-3 text-xs text-muted-foreground">获得于 {formatDate(skin.obtainedAt)}</p>
+      <p className="font-number mt-3 text-xs text-muted-foreground">{rawText.rich(rawLocale, "obtained2", { part1: richValue((formatDate(skin.obtainedAt, rawLocale))) })}</p>
     </article>
   );
 }
 
 export function OperatorsTab({ snapshot }: { snapshot: SklandStatusSnapshot }) {
+  const rawLocale = useRawLocale();
+  const gameCatalog = useGameCatalog();
   const [query, setQuery] = useState("");
   const [rarity, setRarity] = useState("all");
   const [profession, setProfession] = useState("all");
@@ -1125,20 +1114,20 @@ export function OperatorsTab({ snapshot }: { snapshot: SklandStatusSnapshot }) {
   const [skinLimit, setSkinLimit] = useState(INITIAL_LIST_LIMIT);
   const professions = useMemo(
     () => [...new Set(snapshot.operators.map((operator) => operator.profession))]
-      .sort((left, right) => professionLabel(left).localeCompare(professionLabel(right), "zh-CN")),
-    [snapshot.operators]
+      .sort((left, right) => professionLabel(left, rawLocale).localeCompare(professionLabel(right, rawLocale), rawLocale)),
+    [snapshot.operators, rawLocale]
   );
   const professionOptions = useMemo(
     () => [
-      { value: "all", label: "全部职业" },
-      ...professions.map((value) => ({ value, label: professionLabel(value) })),
+      { value: "all", label: rawText.text(rawLocale, "allProfessions") },
+      ...professions.map((value) => ({ value, label: professionLabel(value, rawLocale) })),
     ],
-    [professions]
+    [professions, rawLocale]
   );
   const filteredOperators = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("zh-CN");
     return snapshot.operators
-      .filter((operator) => !normalizedQuery || operator.name.toLocaleLowerCase("zh-CN").includes(normalizedQuery))
+      .filter((operator) => !normalizedQuery || [operator.name, localizedOperatorName(operator.name, rawLocale, gameCatalog)].some(name => name.toLocaleLowerCase(rawLocale).includes(normalizedQuery)))
       .filter((operator) => rarity === "all" || operator.rarity === Number(rarity))
       .filter((operator) => profession === "all" || operator.profession === profession)
       .sort((left, right) =>
@@ -1147,17 +1136,17 @@ export function OperatorsTab({ snapshot }: { snapshot: SklandStatusSnapshot }) {
         || right.level - left.level
         || left.name.localeCompare(right.name, "zh-CN")
       );
-  }, [profession, query, rarity, snapshot.operators]);
+  }, [profession, query, rarity, snapshot.operators, rawLocale, gameCatalog]);
   const filteredSkins = useMemo(() => {
     const normalizedQuery = query.trim().toLocaleLowerCase("zh-CN");
     return snapshot.skins
       .filter((skin) =>
         !normalizedQuery
         || skin.name.toLocaleLowerCase("zh-CN").includes(normalizedQuery)
-        || skin.operatorName.toLocaleLowerCase("zh-CN").includes(normalizedQuery)
+        || [skin.operatorName, localizedOperatorName(skin.operatorName, rawLocale, gameCatalog)].some(name => name.toLocaleLowerCase(rawLocale).includes(normalizedQuery))
       )
       .sort((left, right) => right.obtainedAt - left.obtainedAt || left.name.localeCompare(right.name, "zh-CN"));
-  }, [query, snapshot.skins]);
+  }, [query, snapshot.skins, rawLocale, gameCatalog]);
 
   function updateQuery(value: string) {
     setQuery(value);
@@ -1174,21 +1163,21 @@ export function OperatorsTab({ snapshot }: { snapshot: SklandStatusSnapshot }) {
             value={query}
             onChange={(event) => updateQuery(event.target.value)}
             className="h-11 pl-9"
-            placeholder="搜索干员或皮肤"
-            aria-label="搜索干员或皮肤"
+            placeholder={rawText.text(rawLocale, "searchOperatorsOrOutfits")}
+            aria-label={rawText.text(rawLocale, "searchOperatorsOrOutfits")}
           />
         </label>
         <OperatorFilterCombobox
-          label="星级"
+          label={rawText.text(rawLocale, "rarity")}
           value={rarity}
-          options={RARITY_OPTIONS}
+          options={rarityOptions(rawLocale)}
           onValueChange={(value) => {
             setRarity(value);
             setOperatorLimit(INITIAL_LIST_LIMIT);
           }}
         />
         <OperatorFilterCombobox
-          label="职业"
+          label={rawText.text(rawLocale, "profession")}
           value={profession}
           options={professionOptions}
           onValueChange={(value) => {
@@ -1201,12 +1190,8 @@ export function OperatorsTab({ snapshot }: { snapshot: SklandStatusSnapshot }) {
       <Tabs defaultValue="operators">
         <div className="min-w-0 pb-1">
           <TabsList data-yeye-scroll={undefined} variant="line" className="max-w-full flex-wrap">
-            <TabsTrigger value="operators" className="h-10 px-4">
-              <UsersRound />干员 <span className="font-number">{filteredOperators.length}</span>
-            </TabsTrigger>
-            <TabsTrigger value="skins" className="h-10 px-4">
-              <Shirt />皮肤 <span className="font-number">{filteredSkins.length}</span>
-            </TabsTrigger>
+            <TabsTrigger value="operators" className="h-10 px-4">{rawText.rich(rawLocale, "operators", { part1: richValue((<UsersRound />)), part2: richValue((<span className="font-number">{filteredOperators.length}</span>)) })}</TabsTrigger>
+            <TabsTrigger value="skins" className="h-10 px-4">{rawText.rich(rawLocale, "outfits", { part1: richValue((<Shirt />)), part2: richValue((<span className="font-number">{filteredSkins.length}</span>)) })}</TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="operators" className="pt-3">
@@ -1223,12 +1208,10 @@ export function OperatorsTab({ snapshot }: { snapshot: SklandStatusSnapshot }) {
                   className="mt-6 h-11 w-full"
                   variant="outline"
                   onClick={() => setOperatorLimit((current) => current + INITIAL_LIST_LIMIT)}
-                >
-                  显示更多干员
-                </Button>
+                >{rawText.text(rawLocale, "showMoreOperators")}</Button>
               ) : null}
             </>
-          ) : <p className="py-12 text-center text-sm text-muted-foreground">没有符合筛选条件的干员。</p>}
+          ) : <p className="py-12 text-center text-sm text-muted-foreground">{rawText.text(rawLocale, "noOperatorsMatchTheseFilters")}</p>}
         </TabsContent>
         <TabsContent value="skins" className="pt-3">
           {filteredSkins.length ? (
@@ -1242,12 +1225,10 @@ export function OperatorsTab({ snapshot }: { snapshot: SklandStatusSnapshot }) {
                   className="mt-6 h-11 w-full"
                   variant="outline"
                   onClick={() => setSkinLimit((current) => current + INITIAL_LIST_LIMIT)}
-                >
-                  显示更多皮肤
-                </Button>
+                >{rawText.text(rawLocale, "showMoreOutfits")}</Button>
               ) : null}
             </>
-          ) : <p className="py-12 text-center text-sm text-muted-foreground">森空岛暂未提供皮肤数据。</p>}
+          ) : <p className="py-12 text-center text-sm text-muted-foreground">{rawText.text(rawLocale, "sklandHasNotProvidedOutfitDataYet")}</p>}
         </TabsContent>
       </Tabs>
     </div>
@@ -1275,6 +1256,8 @@ function ProgressSection({
 }
 
 export function ProgressTab({ snapshot }: { snapshot: SklandStatusSnapshot }) {
+  const rawLocale = useRawLocale();
+  const gameCatalog = useGameCatalog();
   const { player, progress } = snapshot;
   const now = useMinuteTimestamp(snapshot.infrastructure.currentTs);
   return (
@@ -1282,129 +1265,127 @@ export function ProgressTab({ snapshot }: { snapshot: SklandStatusSnapshot }) {
       <section className="grid gap-4 md:grid-cols-[minmax(0,1.2fr)_minmax(18rem,0.8fr)]">
         <Card className="surface-shadow ring-0">
           <CardHeader>
-            <CardDescription>博士档案</CardDescription>
+            <CardDescription>{rawText.text(rawLocale, "doctorProfile")}</CardDescription>
             <CardTitle>{player.nickname}</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3 text-sm">
             <dl className="grid grid-cols-2 gap-3 text-xs">
-              <div><dt className="text-muted-foreground">注册时间</dt><dd className="font-number mt-1 font-medium">{formatDate(player.registerTs)}</dd></div>
-              <div><dt className="text-muted-foreground">主线进度</dt><dd className="font-number mt-1 font-medium">{player.mainStageProgress ?? "未提供"}</dd></div>
-              <div><dt className="text-muted-foreground">助理</dt><dd className="mt-1 font-medium">{player.secretary?.name ?? "未提供"}</dd></div>
-              <div><dt className="text-muted-foreground">月卡到期</dt><dd className="font-number mt-1 font-medium">{formatDate(player.subscriptionEnd)}</dd></div>
+              <div><dt className="text-muted-foreground">{rawText.text(rawLocale, "registered")}</dt><dd className="font-number mt-1 font-medium">{formatDate(player.registerTs, rawLocale)}</dd></div>
+              <div><dt className="text-muted-foreground">{rawText.text(rawLocale, "mainStory")}</dt><dd className="font-number mt-1 font-medium">{player.mainStageProgress ?? rawText.text(rawLocale, "notProvided")}</dd></div>
+              <div><dt className="text-muted-foreground">{rawText.text(rawLocale, "assistant")}</dt><dd className="mt-1 font-medium">{player.secretary?.name ? localizedOperatorName(player.secretary.name, rawLocale, gameCatalog) : rawText.text(rawLocale, "notProvided")}</dd></div>
+              <div><dt className="text-muted-foreground">{rawText.text(rawLocale, "monthlyCardExpires")}</dt><dd className="font-number mt-1 font-medium">{formatDate(player.subscriptionEnd, rawLocale)}</dd></div>
             </dl>
             {player.resume ? <p className="border-t pt-3 leading-6 text-muted-foreground">{player.resume}</p> : null}
           </CardContent>
         </Card>
         <Card className="surface-shadow ring-0">
           <CardHeader>
-            <CardDescription>收藏概况</CardDescription>
+            <CardDescription>{rawText.text(rawLocale, "collection")}</CardDescription>
             <CardTitle className="font-number">
-              {player.counts.operators === null ? "暂未提供" : `${player.counts.operators} 名干员`}
+              {player.counts.operators === null ? rawText.text(rawLocale, "notAvailableYet") : rawText.text(rawLocale, "operatorCount", { count: player.counts.operators })}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-3 text-xs">
-            <div><span className="text-muted-foreground">皮肤</span><strong className="font-number mt-1 block text-lg">{player.counts.skins ?? "—"}</strong></div>
-            <div><span className="text-muted-foreground">家具</span><strong className="font-number mt-1 block text-lg">{player.counts.furniture ?? "—"}</strong></div>
+            <div><span className="text-muted-foreground">{rawText.text(rawLocale, "outfits2")}</span><strong className="font-number mt-1 block text-lg">{player.counts.skins ?? "—"}</strong></div>
+            <div><span className="text-muted-foreground">{rawText.text(rawLocale, "furniture")}</span><strong className="font-number mt-1 block text-lg">{player.counts.furniture ?? "—"}</strong></div>
           </CardContent>
         </Card>
       </section>
 
-      <ProgressSection title="公开招募" description="完成时间以本次森空岛存档为准。">
+      <ProgressSection title={rawText.text(rawLocale, "recruitment")} description={rawText.text(rawLocale, "completionTimesComeFromThisSklandSnapshot")}>
         {progress.recruit?.length ? (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {progress.recruit.map((slot) => {
               const finished = slot.state === "completed"
                 || (slot.state === "recruiting" && slot.finishTs > 0 && slot.finishTs <= now);
               const label = finished
-                ? "已完成"
+                ? rawText.text(rawLocale, "complete")
                 : slot.state === "locked"
-                  ? "未解锁"
+                  ? rawText.text(rawLocale, "locked")
                   : slot.state === "standby"
-                    ? "空闲"
-                    : "进行中";
+                    ? rawText.text(rawLocale, "idle")
+                    : rawText.text(rawLocale, "inProgress");
               return (
                 <div key={slot.index} className="rounded-lg bg-muted/45 p-3 text-sm">
                   <div className="flex items-center justify-between">
-                    <strong className="font-number">槽位 {slot.index + 1}</strong>
+                    <strong className="font-number">{rawText.rich(rawLocale, "slot", { part1: richValue((slot.index + 1)) })}</strong>
                     <Badge variant={finished ? "secondary" : "outline"}>{label}</Badge>
                   </div>
                   <p className="font-number mt-2 text-xs text-muted-foreground">
-                    {slot.finishTs > 0 ? formatDateTime(slot.finishTs) : "暂无计时"}
+                    {slot.finishTs > 0 ? formatDateTime(slot.finishTs, rawLocale) : rawText.text(rawLocale, "noTimer")}
                   </p>
                 </div>
               );
             })}
           </div>
-        ) : <p className="text-sm text-muted-foreground">森空岛暂未提供公招计时。</p>}
+        ) : <p className="text-sm text-muted-foreground">{rawText.text(rawLocale, "sklandDidNotProvideRecruitmentTimers")}</p>}
       </ProgressSection>
 
-      <ProgressSection title="作战进度" description="剿灭、保全派驻与集成战略。">
+      <ProgressSection title={rawText.text(rawLocale, "combatProgress")} description={rawText.text(rawLocale, "annihilationStationarySecurityServiceAndIntegratedStrategies")}>
         {progress.campaign || progress.tower || progress.rogue ? (
           <div className="grid gap-6 lg:grid-cols-3">
             {progress.campaign ? (
               <div>
-                <div className="flex items-center gap-2 text-sm font-medium"><PackageCheck className="size-4" />剿灭作战</div>
-                <ProgressMeter label="奖励进度" {...progress.campaign.reward} />
+                <div className="flex items-center gap-2 text-sm font-medium">{rawText.rich(rawLocale, "annihilation", { part1: richValue((<PackageCheck className="size-4" />)) })}</div>
+                <ProgressMeter label={rawText.text(rawLocale, "rewardProgress")} {...progress.campaign.reward} />
                 <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
                   {progress.campaign.records.map((record) => (
                     <p key={`${record.zoneName}-${record.name}`} className="font-number">
                       {record.zoneName ? `${record.zoneName} · ` : ""}{record.name}：{record.maxKills}
                     </p>
                   ))}
-                  {!progress.campaign.records.length ? <p>暂无记录</p> : null}
+                  {!progress.campaign.records.length ? <p>{rawText.text(rawLocale, "noRecords")}</p> : null}
                 </div>
               </div>
             ) : null}
             {progress.tower ? (
               <div>
-                <div className="flex items-center gap-2 text-sm font-medium"><Boxes className="size-4" />保全派驻</div>
+                <div className="flex items-center gap-2 text-sm font-medium">{rawText.rich(rawLocale, "stationarySecurityService", { part1: richValue((<Boxes className="size-4" />)) })}</div>
                 <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
                   {progress.tower.records.map((record) => (
                     <p key={`${record.name}-${record.subName}`} className="font-number">{record.name}{record.subName ? ` · ${record.subName}` : ""}：{record.best}</p>
                   ))}
-                  {!progress.tower.records.length ? <p>暂无记录</p> : null}
+                  {!progress.tower.records.length ? <p>{rawText.text(rawLocale, "noRecords")}</p> : null}
                 </div>
               </div>
             ) : null}
             {progress.rogue ? (
               <div>
-                <div className="flex items-center gap-2 text-sm font-medium"><DoorOpen className="size-4" />集成战略</div>
+                <div className="flex items-center gap-2 text-sm font-medium">{rawText.rich(rawLocale, "integratedStrategies", { part1: richValue((<DoorOpen className="size-4" />)) })}</div>
                 <div className="mt-3 grid gap-2 text-xs text-muted-foreground">
                   {progress.rogue.map((record) => (
-                    <p key={record.name} className="font-number">{record.name}：藏品 {record.relicCount} · 银行 {record.bankCurrent}/{record.bankRecord}</p>
+                    <p key={record.name} className="font-number">{rawText.rich(rawLocale, "collectiblesBank", { part1: richValue((record.name)), part2: richValue((record.relicCount)), part3: richValue((record.bankCurrent)), part4: richValue((record.bankRecord)) })}</p>
                   ))}
-                  {!progress.rogue.length ? <p>暂无记录</p> : null}
+                  {!progress.rogue.length ? <p>{rawText.text(rawLocale, "noRecords")}</p> : null}
                 </div>
               </div>
             ) : null}
           </div>
-        ) : <p className="text-sm text-muted-foreground">森空岛暂未提供作战进度。</p>}
+        ) : <p className="text-sm text-muted-foreground">{rawText.text(rawLocale, "sklandHasNotProvidedCombatProgressYet")}</p>}
       </ProgressSection>
 
-      <ProgressSection title="活动记录" description="只展示森空岛返回的关卡完成情况，不加载活动宣传链接。">
+      <ProgressSection title={rawText.text(rawLocale, "eventHistory")} description={rawText.text(rawLocale, "showsOnlyStageCompletionReturnedBySklandEventPromotional")}>
         {progress.activities?.length || progress.bossRush?.length ? (
           <div className="grid gap-x-6 gap-y-4 md:grid-cols-2 xl:grid-cols-3">
             {(progress.activities ?? []).map((activity) => (
               <article key={`${activity.name}-${activity.startTime}`} className="border-t border-border/70 pt-3">
                 <div className="flex items-center justify-between gap-3">
                   <strong>{activity.name}</strong>
-                  {activity.isReplicate ? <Badge variant="outline">复刻</Badge> : null}
+                  {activity.isReplicate ? <Badge variant="outline">{rawText.text(rawLocale, "rerun")}</Badge> : null}
                 </div>
-                <p className="font-number mt-2 text-xs text-muted-foreground">
-                  关卡 {activity.clearedStages}/{activity.totalStages} · 至 {formatDate(activity.endTime)}
-                </p>
+                <p className="font-number mt-2 text-xs text-muted-foreground">{rawText.rich(rawLocale, "stagesThrough", { part1: richValue((activity.clearedStages)), part2: richValue((activity.totalStages)), part3: richValue((formatDate(activity.endTime, rawLocale))) })}</p>
               </article>
             ))}
             {(progress.bossRush ?? []).map((record, index) => (
               <article key={`${record.stageCode}-${index}`} className="border-t border-border/70 pt-3">
-                <strong className="font-number">{record.stageCode ?? "首领活动"} {record.stageName ?? ""}</strong>
+                <strong className="font-number">{record.stageCode ?? rawText.text(rawLocale, "bossEvent")} {record.stageName ?? ""}</strong>
                 <p className="font-number mt-2 text-xs text-muted-foreground">
-                  {record.played ? "已有记录" : "尚未挑战"} · {record.difficulty}
+                  {record.played ? rawText.text(rawLocale, "recorded") : rawText.text(rawLocale, "notAttempted")} · {record.difficulty}
                 </p>
               </article>
             ))}
           </div>
-        ) : <p className="text-sm text-muted-foreground">森空岛暂未提供活动记录。</p>}
+        ) : <p className="text-sm text-muted-foreground">{rawText.text(rawLocale, "sklandHasNotProvidedEventHistoryYet")}</p>}
       </ProgressSection>
     </div>
   );
@@ -1446,7 +1427,7 @@ export function SklandStatus({
 }: SklandStatusProps) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [addAccountOpen, setAddAccountOpen] = useState(false);
   const pathname = usePathname();
   const selectedTab = sklandTabFromPathname(pathname) ?? "overview";
@@ -1454,8 +1435,8 @@ export function SklandStatus({
   if (sessionLoading) return <LoadingState />;
 
   if (!scheduleSnapshot) {
-    const loginTitle = localize_components_pages_SklandStatus.text(en, "additional1", { choice1: ((en)) && (bindingState === "renewal-due") ? "yes" : "no", choice2: ((en) && !(bindingState === "renewal-due")) && (bindingState === "reauthorize") ? "yes" : "no", choice3: (!(en)) && (bindingState === "renewal-due") ? "yes" : "no", choice4: (!(en) && !(bindingState === "renewal-due")) && (bindingState === "reauthorize") ? "yes" : "no" });
-    const loginDescription = localize_components_pages_SklandStatus.text(en, "additional2", { choice1: ((en)) && (bindingState === "renewal-due") ? "yes" : "no", choice2: ((en) && !(bindingState === "renewal-due")) && (bindingState === "reauthorize") ? "yes" : "no", value3: ((en) && !(bindingState === "renewal-due") && (bindingState === "reauthorize")) ? String(bindingCount) : "", choice4: (!(en)) && (bindingState === "renewal-due") ? "yes" : "no", choice5: (!(en) && (bindingState === "renewal-due")) && (bindingSummary.latestExpiredAt) ? "yes" : "no", value6: (!(en) && (bindingState === "renewal-due") && (bindingSummary.latestExpiredAt)) ? String(credentialExpiryLabel(bindingSummary.latestExpiredAt)) : "", choice7: (!(en) && !(bindingState === "renewal-due")) && (bindingState === "reauthorize") ? "yes" : "no", value8: (!(en) && !(bindingState === "renewal-due") && (bindingState === "reauthorize")) ? String(bindingCount) : "" });
+    const loginTitle = localize_components_pages_SklandStatus.text(en, "additional1", { choice3: ((bindingState === "renewal-due") ? ("yes") : ("no")), choice4: ((!(bindingState === "renewal-due")) && (bindingState === "reauthorize") ? ("yes") : ("no")) });
+    const loginDescription = localize_components_pages_SklandStatus.text(en, "additional2", { state: bindingState === "renewal-due" ? "expired" : bindingState === "reauthorize" ? "linked" : "other", hasExpiry: bindingSummary.latestExpiredAt ? "yes" : "no", expiry: bindingSummary.latestExpiredAt ? credentialExpiryLabel(bindingSummary.latestExpiredAt, en) : "", count: bindingCount });
     return (
       <StatusCenterPage
         className="min-h-[calc(100dvh-7rem)] place-items-center py-8 sm:py-12"
@@ -1494,7 +1475,7 @@ export function SklandStatus({
           <p className="text-xs font-medium tracking-wide text-primary">{intl("components_pages_SklandStatus.sklandStatus")}</p>
           <h2 className="mt-2 text-2xl font-semibold tracking-tight">{intl("components_pages_SklandStatus.fullStatusIsTemporarilyUnavailable")}</h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            {intl("components_pages_SklandStatus.signedInAsReloadOrSignOutAndAuthorize", { value1: (en) ? (activeRole ? `“${activeRole.nickname}”` : "Skland") : "", value2: (en) ? "" : (activeRole ? `“${activeRole.nickname}”` : "森空岛") })}
+            {intl("components_pages_SklandStatus.signedInAsReloadOrSignOutAndAuthorize", { value2: en === "en" ? (((activeRole ? (`“${activeRole.nickname}”`) : ("Skland")))) : (((activeRole ? (`“${activeRole.nickname}”`) : (rawText.text(locale, "sklandName"))))) })}
           </p>
         </header>
         <Alert variant="destructive"><AlertDescription>{error.message}{intl("components_pages_SklandStatus.label", { code: error.code })}</AlertDescription></Alert>
@@ -1607,7 +1588,7 @@ export function SklandStatus({
           <div className="min-w-0 max-w-full pb-1">
             <CompactTabsList data-skland-view-tabs>
               <TabsTrigger value="overview" nativeButton={false} render={<Link to={sklandTabHref("overview")} resetScroll={false} />}>{intl("components_pages_SklandStatus.overview")}</TabsTrigger>
-              <TabsTrigger value="inventory" nativeButton={false} render={<Link to={sklandTabHref("inventory")} resetScroll={false} />}>{en ? "Backpack" : "背包"}</TabsTrigger>
+              <TabsTrigger value="inventory" nativeButton={false} render={<Link to={sklandTabHref("inventory")} resetScroll={false} />}>{uiText.text(en, "backpack")}</TabsTrigger>
               <TabsTrigger value="infrastructure" nativeButton={false} render={<Link to={sklandTabHref("infrastructure")} resetScroll={false} />}>{intl("components_pages_SklandStatus.infrastructure")}</TabsTrigger>
             </CompactTabsList>
           </div>

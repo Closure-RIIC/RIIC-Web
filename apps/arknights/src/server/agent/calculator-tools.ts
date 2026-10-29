@@ -3,6 +3,7 @@ import { z } from "zod";
 import { calculateMastery, formatMasteryTime, MASTERY_ENVIRONMENTS } from "../../mastery.ts";
 import { inspectMasteryTarget, resolveAgentOperator } from "./operator-tools.ts";
 import { masteryInstructions } from "../../mastery-presentation.ts";
+import { loadMessages } from "../../i18n/messages.ts";
 import { calculateRecruitment, RECRUITMENT_TAGS, RECRUITMENT_SOURCE } from "../../recruitment.ts";
 import type { MasteryEnvironmentObservation } from "./mastery-environment.ts";
 import type { OperBoxEntry, SklandInventoryItem, SklandOperatorStatus } from "@riic/arknights-domain/types";
@@ -70,8 +71,10 @@ export function buildCalculatorTools(
           environment: Object.fromEntries(Object.keys(MASTERY_ENVIRONMENTS).map((key) => [key, input.environment?.[key] ?? pool.masteryEnvironment?.environment[key] ?? 0])),
         };
         const result = calculateMastery({ operbox: pool.operbox, targetId: target.id, ...settings });
+        // Agent tool output uses canonical Chinese independently of page requests.
+        await loadMessages("zh-CN", ["mastery_presentation"]);
         const project = (plan: typeof result.simple) => ({
-          ...plan, totalTime: formatMasteryTime(plan.totalSeconds), instructions: masteryInstructions(plan),
+          ...plan, totalTime: formatMasteryTime(plan.totalSeconds), instructions: masteryInstructions(plan, "zh-CN"),
         });
         return {
           source: pool.source, sourceName: pool.sourceName, isSample: pool.source === "sample",

@@ -1,0 +1,8 @@
+{
+  "progressionAdjustedPlan": "练度调整后方案",
+  "originalPlan": "原方案",
+  "replaceTheExistingManualDraft": "替换现有手动草稿？",
+  "creatingAManualScheduleFromTheWillReplaceYour": "基于「{sourceLabel}」创建手动排班会替换你已保存的手动草稿，且无法自动撤销。",
+  "keepExistingDraft": "保留现有草稿",
+  "replaceAndContinue": "替换并进入"
+}

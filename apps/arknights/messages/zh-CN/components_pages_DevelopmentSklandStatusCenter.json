@@ -1,0 +1,9 @@
+{
+  "sklandStatus": "森空岛同步",
+  "signInToYourWebsiteAccount": "先登录网站账号",
+  "yourSklandConnectionBelongsToTheCurrentWebsiteAccount": "森空岛绑定属于当前网站账号。登录后可通过扫码或凭证导入完成绑定、查看当前基建状态，并在七天授权到期后重新续期。",
+  "websiteAccountNotSignedIn": "网站账号尚未登录",
+  "accountManagementAndSklandStatusAreSeparateSignIn": "账号管理与森空岛状态已经分开。请先前往账号管理登录，再回到这里完成森空岛授权。",
+  "goToAccount": "前往账号管理",
+  "restoringWebsiteAccount": "正在恢复网站账号"
+}

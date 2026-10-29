@@ -1,0 +1,11 @@
+{
+  "noData": "No data",
+  "selectMoraleCurveOperators": "Select morale curve operators",
+  "moraleCurve": "{name} morale curve",
+  "status": {
+    "work": "Working",
+    "rest": "Resting",
+    "standby": "Standby",
+    "zero": "Depleted"
+  }
+}

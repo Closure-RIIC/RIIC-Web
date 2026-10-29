@@ -16,7 +16,7 @@ test("about uses the public help shell and keeps its links usable on small scree
     await expect(page.locator("footer [data-filing-links] a")).toHaveCount(2);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
-  await page.getByRole("button", { name: "EN", exact: true }).click();
+  await page.getByRole("button", { name: "English", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1, name: "About", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Development resources and data sources" })).toBeVisible();
   await page.setViewportSize({ width: 375, height: 900 });

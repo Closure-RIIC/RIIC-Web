@@ -16,9 +16,9 @@ const CROSSFADE = { type: "spring", stiffness: 260, damping: 34, mass: 0.8 } as 
 const INSTANT = { duration: 0 } as const;
 
 export function PasswordStrength({ value, className = "", id }: { value: string; className?: string; id?: string }) {
-  const intl = useTranslations();
+  const intl = useTranslations("Account");
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const reduced = useReducedMotion();
   const labels = messageRecord(en, "components_interior_password_strength_labels");
   const state = useMemo(() => {
@@ -30,7 +30,7 @@ export function PasswordStrength({ value, className = "", id }: { value: string;
     const unmet = rules.filter((rule) => !rule.met);
     const announcement = value.length === 0
       ? ""
-      : intl("AuthValidation.announcement", { strength: labels[strength.score], guessable: strength.guessable ? "yes" : "no", unmet: unmet.length ? "yes" : "no", rules: unmet.map((rule) => rule.label).join(en ? ", " : "、") });
+      : intl("AuthValidation.announcement", { strength: labels[strength.score], guessable: strength.guessable ? "yes" : "no", unmet: unmet.length ? "yes" : "no", rules: unmet.map((rule) => rule.label).join(en === "en" ? ", " : "、") });
     return { ...strength, rules, announcement };
   }, [en, value, intl, labels]);
   const [announcement, setAnnouncement] = useState("");
