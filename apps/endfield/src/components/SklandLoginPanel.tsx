@@ -144,7 +144,7 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
     if (!value) { request.current?.abort(); request.current = null; setBusy(false); setScan(null); setScanState("idle"); }
   }
   const policies = <div className="ef-login-consent" data-skland-policy-consent>
-    <label><input type="checkbox" checked={terms} onChange={e => updateConsent("terms", e.target.checked)} /><span>{t("SklandLoginPanel.iHaveReadAndAgreeToThe")} <a href={`${main}terms`} target="_blank" rel="noreferrer">{t("SklandLoginPanel.termsOfService")}</a>。</span></label>
+    <label><input type="checkbox" checked={terms} onChange={e => updateConsent("terms", e.target.checked)} /><span>{t("SklandLoginPanel.iHaveReadAndAgreeToThe")} <a href={`${main}terms`} target="_blank" rel="noreferrer">{t("SklandLoginPanel.termsOfService")}</a>{t("SklandLoginPanel.termsSentenceEnd")}</span></label>
     <label><input type="checkbox" checked={privacy} onChange={e => updateConsent("privacy", e.target.checked)} /><span>{t("SklandLoginPanel.iHaveReadThe")} <a href={`${main}privacy`} target="_blank" rel="noreferrer">{t("SklandLoginPanel.privacyPolicy")}</a>{t("SklandLoginPanel.andConsentToProcessingMySklandCredentialsCharacterOperators")}</span></label>
   </div>;
   const status = busy ? t("SklandLoginPanel.preparingQrCode") : scanState === "scanned" ? t("SklandLoginPanel.scannedConfirmInTheSklandApp")

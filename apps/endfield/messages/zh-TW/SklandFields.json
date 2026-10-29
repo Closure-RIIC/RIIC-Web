@@ -105,5 +105,10 @@
   "pkg": "套裝",
   "properties": "屬性",
   "key": "標識",
-  "value": "內容"
+  "value": "內容",
+  "talent": "天賦",
+  "latestSpaceshipSkillNodes": "已解鎖基建技能節點",
+  "nodeId": "技能節點編號",
+  "weaponId": "武器編號",
+  "skillLevel": "技能等級"
 }
