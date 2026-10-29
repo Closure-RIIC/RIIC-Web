@@ -1,3 +1,4 @@
+import { useEndfieldLanguage } from "../i18n/client";
 import { displayText, operatorName } from "../i18n/game-data";
 import { type ReactNode, useId } from "react";
 import { Dialog } from "@base-ui/react/dialog";
@@ -20,7 +21,7 @@ function ChangeSection({ title, count, children }: { title: string; count: numbe
   </details>;
 }
 function OperatorRow({ name, children, aside }: { name: string; children?: ReactNode; aside: ReactNode }) {
-  const { locale } = useWorkspace();
+  const { locale } = useEndfieldLanguage();
   return <div className={styles.row}>
     <OperatorPortrait name={name} elite={null} size={40} />
     <div className={styles.rowCopy}><strong>{operatorName(name, locale)}</strong>{children}</div>
@@ -28,11 +29,11 @@ function OperatorRow({ name, children, aside }: { name: string; children?: React
   </div>;
 }
 function Difference({ before, after }: { before: string; after: string }) {
-  const { t } = useWorkspace();
+  const { t } = useEndfieldLanguage();
   return <span className={styles.change}><span>{before}</span><ArrowRight size={14} aria-label={t("SklandSyncDetails.changedTo")} /><strong>{after}</strong></span>;
 }
 function SkillChanges({ before, after }: { before?: Operator; after: Operator }) {
-  const { locale, t } = useWorkspace();
+  const { locale, t } = useEndfieldLanguage();
   const tiers = skillTiersOf(after.name);
   const previous = before ? unlockedSkillNodes(tiers, before) : [];
   const current = unlockedSkillNodes(tiers, after);
@@ -51,7 +52,8 @@ function SkillChanges({ before, after }: { before?: Operator; after: Operator })
 }
 
 export function SklandSyncDetails() {
-  const { sklandSyncReport: report, sklandSyncDetailsOpen: open, setSklandSyncDetailsOpen: setOpen, setSklandSyncActivity, storageError, locale, t } = useWorkspace();
+  const { sklandSyncReport: report, sklandSyncDetailsOpen: open, setSklandSyncDetailsOpen: setOpen, setSklandSyncActivity, storageError } = useWorkspace();
+  const { locale, t } = useEndfieldLanguage();
   if (!report) return null;
   const roomName = (key: SyncFacilityKey) => ({
     center: t("SklandSyncDetails.controlCenter"), mfg1: t("SklandSyncDetails.manufacturingI"), mfg2: t("SklandSyncDetails.manufacturingIi"),

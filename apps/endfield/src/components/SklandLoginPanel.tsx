@@ -1,3 +1,4 @@
+import { useEndfieldLanguage } from "../i18n/client";
 import { lazy, Suspense, useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { Check, Clipboard, ExternalLink, KeyRound, LoaderCircle, RefreshCw, ScanLine, ShieldCheck, TriangleAlert } from "lucide-react";
@@ -9,7 +10,6 @@ import { nextSklandQrPollDelay } from "@riic/platform/skland-qr-polling";
 import { sklandApi, SklandRequestError } from "../skland-client";
 import { sklandErrorKey, type SklandFeedbackKey } from "../skland-feedback";
 import { sklandFeedbackText } from "../skland-feedback-text";
-import { useWorkspace } from "../state";
 
 const QrCode = lazy(() => import("qrcode.react").then(module => ({ default: module.QRCodeSVG })));
 const COPY_CREDENTIAL = "copy(localStorage.getItem('SK_OAUTH_CRED_KEY')+','+localStorage.getItem('SK_TOKEN_CACHE_KEY'))";
@@ -22,7 +22,7 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
   main: string; onAuthenticated: (value: EndfieldLogin) => void; onMethodChange: () => void;
   renderDialog?: (body: ReactNode, actions: ReactNode) => ReactNode;
 }) {
-  const { t } = useWorkspace();
+  const { t } = useEndfieldLanguage();
   const copyCommand = `${COPY_CREDENTIAL},console.log(${JSON.stringify(t("SklandLoginPanel.credentialCopied"))})`;
   const [method, setMethod] = useState<"qr" | "credential">("qr");
   const [terms, setTerms] = useState(false);
@@ -144,7 +144,7 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
     if (!value) { request.current?.abort(); request.current = null; setBusy(false); setScan(null); setScanState("idle"); }
   }
   const policies = <div className="ef-login-consent" data-skland-policy-consent>
-    <label><input type="checkbox" checked={terms} onChange={e => updateConsent("terms", e.target.checked)} /><span>{t("SklandLoginPanel.iHaveReadAndAgreeToThe")} <a href={`${main}terms`} target="_blank" rel="noreferrer">{t("SklandLoginPanel.termsOfService")}</a>。</span></label>
+    <label><input type="checkbox" checked={terms} onChange={e => updateConsent("terms", e.target.checked)} /><span>{t("SklandLoginPanel.iHaveReadAndAgreeToThe")} <a href={`${main}terms`} target="_blank" rel="noreferrer">{t("SklandLoginPanel.termsOfService")}</a>{t("SklandLoginPanel.termsSentenceEnd")}</span></label>
     <label><input type="checkbox" checked={privacy} onChange={e => updateConsent("privacy", e.target.checked)} /><span>{t("SklandLoginPanel.iHaveReadThe")} <a href={`${main}privacy`} target="_blank" rel="noreferrer">{t("SklandLoginPanel.privacyPolicy")}</a>{t("SklandLoginPanel.andConsentToProcessingMySklandCredentialsCharacterOperators")}</span></label>
   </div>;
   const status = busy ? t("SklandLoginPanel.preparingQrCode") : scanState === "scanned" ? t("SklandLoginPanel.scannedConfirmInTheSklandApp")

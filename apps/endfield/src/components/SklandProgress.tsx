@@ -1,11 +1,11 @@
-import { useWorkspace } from "../state";
+import { useEndfieldLanguage } from "../i18n/client";
 import styles from "./SklandProgress.module.css";
 
 /** The overview and expanded details share the same values and accessible progress meter. */
 export function SklandProgress({ label, current, max, compact = false }: {
   label: string; current: number | null; max: number | null; compact?: boolean;
 }) {
-  const { t } = useWorkspace();
+  const { t } = useEndfieldLanguage();
   const known = current !== null && max !== null && max > 0;
   const percent = known ? Math.min(100, Math.max(0, current / max * 100)) : null;
   return <div className={`${styles.root} ${compact ? styles.compact : ""}`}>
