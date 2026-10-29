@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { useRender } from "@base-ui/react/use-render"
+import { usePrimitiveLabels } from "@riic/ui-primitives/labels"
 import { usePathname } from "@/navigation"
 
 import { cn } from "@/lib/utils"
@@ -88,7 +89,7 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
-  closeLabel = "Close",
+  closeLabel,
   layer = "base",
   fromSkeleton = false,
   style,
@@ -100,6 +101,7 @@ function DialogContent({
   fromSkeleton?: boolean
 }) {
   const pathname = usePathname()
+  const labels = usePrimitiveLabels()
   const accentStyle = { "--dialog-accent": dialogAccentForPathname(pathname) }
   return (
     <DialogPortal>
@@ -135,7 +137,7 @@ function DialogContent({
           >
             <XIcon
             />
-            <span className="sr-only">{closeLabel}</span>
+            <span className="sr-only">{closeLabel ?? labels.close}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>
@@ -172,6 +174,7 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean
 }) {
+  const labels = usePrimitiveLabels()
   return (
     <div
       data-slot="dialog-footer"
@@ -184,7 +187,7 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close render={<Button size="dialog" variant="ghost" />}>
-          Close
+          {labels.close}
         </DialogPrimitive.Close>
       )}
     </div>

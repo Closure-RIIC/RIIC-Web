@@ -1,0 +1,23 @@
+{
+  "loadingCredentialImport": "<part1></part1>正在載入憑證匯入…",
+  "sklandSignInIsCurrentlyUnavailableYouCanContinue": "當前未開放森空島登入，可繼續使用 MAA 匯入。",
+  "sklandSignInMethod": "森空島登入方式",
+  "qrSignIn": "<part1></part1>掃碼登入",
+  "importCredential": "<part1></part1>憑證匯入",
+  "recommendedScanTheQrCodeWithTheSklandApp": "推薦方式。開啟森空島 App 掃描二維碼，確認後同步當前角色的幹員、基建與狀態中心資料。",
+  "openSklandApp": "<part1></part1>開啟森空島 App",
+  "scanWithSklandDisplayThisCodeOnAnotherDevice": "請用森空島掃描二維碼；必要時可在另一臺裝置展示。",
+  "generateLoginQrCode": "生成登入二維碼",
+  "generateANewQrCode": "重新生成二維碼",
+  "sklandLoginQrCode": "森空島登入二維碼",
+  "qrFailed": "QR Code 產生失敗，請稍後重試。",
+  "pollFailed": "登入狀態查詢失敗，將繼續重試。",
+  "connecting": "正在連線至登入服務，請稍候…",
+  "generating": "正在產生 QR Code…",
+  "scanned": "已掃碼，正在等待森空島 App 確認並完成登入…",
+  "expired": "QR Code 已過期，請重新產生。",
+  "refreshing": "QR Code 已過期，正在重新整理…",
+  "scanPrompt": "請使用森空島 App 掃描 QR Code",
+  "readyPrompt": "準備好後產生 QR Code。",
+  "consentPrompt": "勾選下方兩項授權後顯示 QR Code"
+}

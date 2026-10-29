@@ -1,0 +1,6 @@
+{
+  "inventory": "查看库存",
+  "couldNotSaveToThisBrowserYourEdits": "浏览器保存失败，修改仅在当前页面有效；请允许浏览器存储后重新填写。",
+  "manualAmountsSavedToThisBrowserForThe": "手填数量已保存到此浏览器，按当前账号和角色分别保留，刷新后仍有效。",
+  "manualAmountsAreAutomaticallySavedToThisBrowser": "手填数量会自动保存到此浏览器，按账号和角色分别保留。"
+}

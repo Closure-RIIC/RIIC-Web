@@ -1,16 +1,12 @@
-import { createLocalizer } from "@riic/arknights-domain/i18n/localize";
-import zh from "./zh.json" with { type: "json" };
-import en from "./en.json" with { type: "json" };
-import zhRecords from "./zh-records.json" with { type: "json" };
-import enRecords from "./en-records.json" with { type: "json" };
-
-export const authMessages = { zh, en };
-export const authText = createLocalizer(zh.AuthValidation, en.AuthValidation);
-export const authPanelText = createLocalizer(zh.components_auth_WebsiteAccountPanel, en.components_auth_WebsiteAccountPanel);
-export const authFeedbackText = createLocalizer(zh.AuthFeedback, en.AuthFeedback);
-export const authFlowText = createLocalizer(zh.AuthFlow, en.AuthFlow);
-
+import { createLocalizer, getCatalog } from "@riic/arknights-domain/i18n/localize";
+import type { AppLocale } from "@riic/contracts/locale";
+import type Account from "../messages/zh-CN/Account.json";
+import type Records from "../messages/zh-CN/AccountRecords.json";
+export const authText = createLocalizer<typeof Account.AuthValidation>("Account.AuthValidation");
+export const authPanelText = createLocalizer<typeof Account.components_auth_WebsiteAccountPanel>("Account.components_auth_WebsiteAccountPanel");
+export const authFeedbackText = createLocalizer<typeof Account.AuthFeedback>("Account.AuthFeedback");
+export const authFlowText = createLocalizer<typeof Account.AuthFlow>("Account.AuthFlow");
 type Indexable<T> = T extends unknown[] ? T : T & Record<string, T[keyof T]>;
-export function messageRecord<K extends keyof typeof zhRecords>(locale: string | boolean, key: K): Indexable<typeof zhRecords[K]> {
-  return (locale === true || locale === "en" ? enRecords : zhRecords)[key] as Indexable<typeof zhRecords[K]>;
+export function messageRecord<K extends keyof typeof Records>(locale: AppLocale, key: K): Indexable<typeof Records[K]> {
+  return getCatalog<typeof Records>(locale, "AccountRecords")[key] as Indexable<typeof Records[K]>;
 }

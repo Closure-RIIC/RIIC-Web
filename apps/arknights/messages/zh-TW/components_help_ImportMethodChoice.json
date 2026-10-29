@@ -1,0 +1,11 @@
+{
+  "chooseAnImportMethod": "選擇匯入方式",
+  "chooseTheMethodYouUseOnlyItsInstructionsWill": "選擇你實際使用的一種方式，下方只顯示對應教程；選錯時可直接改選。",
+  "currentlyShown": "當前顯示",
+  "chooseThisMethod": "選擇此方式",
+  "selected": "已選",
+  "selectedItsInstructionsAreShownBelow": "已選擇{selectedLabel}，下方顯示{selectedLabel}教程。",
+  "noImportMethodSelected": "尚未選擇匯入方式。",
+  "chooseMaaOrSklandFirst": "請先選擇 MAA 或森空島",
+  "screenshotsAndInstructionsForThatMethodWillAppearHere": "選擇後，這裡會顯示對應截圖與操作步驟。"
+}

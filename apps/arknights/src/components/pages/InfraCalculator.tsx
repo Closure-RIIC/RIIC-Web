@@ -1,10 +1,15 @@
 "use client";
+
+import { localizedOperationError } from "@/operation-error-presentation";
+
+
+import { lazyWithMessages } from "@/i18n/features-client";
 import { localize as localize_components_pages_InfraCalculator } from "../../i18n/helpers/components_pages_InfraCalculator.ts";
 
 import { useTranslations, useLocale } from "use-intl";
 
 import { ArrowRight, Download, Ellipsis, FlaskConical, Loader2, PencilLine, Play, RefreshCw, Search, Settings2, SlidersHorizontal, X } from "lucide-react";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { ScheduleBoard, ShiftTabs } from "@/components";
 import { Button } from "@/components/ui/button";
@@ -37,12 +42,12 @@ import type {
   ShiftComparison,
 } from "@riic/arknights-domain/types";
 
-const PlanResultSummary = lazy(() => import("@/components/PlanResultSummary").then((module) => ({ default: module.PlanResultSummary })));
-const PlanSupportSummary = lazy(() => import("@/components/PlanSupportSummary").then((module) => ({ default: module.PlanSupportSummary })));
-const UpgradeSimulationDialog = lazy(() => import("@/components/UpgradeSimulationDialog").then((module) => ({ default: module.UpgradeSimulationDialog })));
-const DroneTargetPicker = lazy(() => import("@/components/DroneTargetPicker").then(module => ({ default: module.DroneTargetPicker })));
-const ScheduleImageExportAction = lazy(() => import("@/components/ScheduleImageExportAction").then(module => ({ default: module.ScheduleImageExportAction })));
-const PlanActionsDialog = lazy(() => import("@/components/PlanActionsDialog").then(module => ({ default: module.PlanActionsDialog })));
+const PlanResultSummary = lazyWithMessages(() => import("@/components/PlanResultSummary").then((module) => ({ default: module.PlanResultSummary })), "apps/arknights/src/components/PlanResultSummary.tsx");
+const PlanSupportSummary = lazyWithMessages(() => import("@/components/PlanSupportSummary").then((module) => ({ default: module.PlanSupportSummary })), "apps/arknights/src/components/PlanSupportSummary.tsx");
+const UpgradeSimulationDialog = lazyWithMessages(() => import("@/components/UpgradeSimulationDialog").then((module) => ({ default: module.UpgradeSimulationDialog })), "apps/arknights/src/components/UpgradeSimulationDialog.tsx");
+const DroneTargetPicker = lazyWithMessages(() => import("@/components/DroneTargetPicker").then(module => ({ default: module.DroneTargetPicker })), "apps/arknights/src/components/DroneTargetPicker.tsx");
+const ScheduleImageExportAction = lazyWithMessages(() => import("@/components/ScheduleImageExportAction").then(module => ({ default: module.ScheduleImageExportAction })), "apps/arknights/src/components/ScheduleImageExportAction.tsx");
+const PlanActionsDialog = lazyWithMessages(() => import("@/components/PlanActionsDialog").then(module => ({ default: module.PlanActionsDialog })), "apps/arknights/src/components/PlanActionsDialog.tsx");
 
 function DeferredResultLoading() {
   return <PlanResultSummarySkeleton />;
@@ -97,7 +102,7 @@ function CalculatorStartPanel({
 }) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const statuses = onboardingStepStatuses({
     authenticated: websiteAuthenticated,
     hasPersonalBox,
@@ -107,13 +112,13 @@ function CalculatorStartPanel({
     {
       title: intl("components_pages_InfraCalculator.signIn"),
       eyebrow: intl("components_pages_InfraCalculator.account"),
-      description: localize_components_pages_InfraCalculator.text(en, "additional1", { choice1: ((en)) && (websiteAuthenticated) ? "yes" : "no", choice2: (!(en)) && (websiteAuthenticated) ? "yes" : "no" }),
+      description: localize_components_pages_InfraCalculator.text(en, "additional1", { choice2: ((websiteAuthenticated) ? ("yes") : ("no")) }),
       group: "control",
     },
     {
       title: intl("components_pages_InfraCalculator.importYourBox"),
       eyebrow: intl("components_pages_InfraCalculator.operators"),
-      description: localize_components_pages_InfraCalculator.text(en, "additional2", { choice1: ((en)) && (hasPersonalBox) ? "yes" : "no", choice2: (!(en)) && (hasPersonalBox) ? "yes" : "no" }),
+      description: localize_components_pages_InfraCalculator.text(en, "additional2", { choice2: ((hasPersonalBox) ? ("yes") : ("no")) }),
       group: "trading",
     },
     {
@@ -125,7 +130,7 @@ function CalculatorStartPanel({
   ] as const;
   const personalActionLabel = runCooldownSeconds > 0 && websiteAuthenticated && hasPersonalBox
     ? intl("components_pages_InfraCalculator.retryInS2", { runCooldownSeconds: runCooldownSeconds })
-    : localize_components_pages_InfraCalculator.text(en, "additional3", { choice1: ((en)) && (!websiteAuthenticated) ? "yes" : "no", choice2: ((en) && (!websiteAuthenticated)) && (hasPersonalBox) ? "yes" : "no", choice3: ((en) && !(!websiteAuthenticated)) && (hasPersonalBox && !plannerReady) ? "yes" : "no", choice4: ((en) && !(!websiteAuthenticated) && !(hasPersonalBox && !plannerReady)) && (hasPersonalBox) ? "yes" : "no", choice5: (!(en)) && (!websiteAuthenticated) ? "yes" : "no", choice6: (!(en) && (!websiteAuthenticated)) && (hasPersonalBox) ? "yes" : "no", choice7: (!(en) && !(!websiteAuthenticated)) && (hasPersonalBox && !plannerReady) ? "yes" : "no", choice8: (!(en) && !(!websiteAuthenticated) && !(hasPersonalBox && !plannerReady)) && (hasPersonalBox) ? "yes" : "no" });
+    : localize_components_pages_InfraCalculator.text(en, "additional3", { choice5: ((!websiteAuthenticated) ? ("yes") : ("no")), choice6: (((!websiteAuthenticated)) && (hasPersonalBox) ? ("yes") : ("no")), choice7: ((!(!websiteAuthenticated)) && (hasPersonalBox && !plannerReady) ? ("yes") : ("no")), choice8: ((!(!websiteAuthenticated) && !(hasPersonalBox && !plannerReady)) && (hasPersonalBox) ? ("yes") : ("no")) });
   const personalActionAriaLabel = hasPersonalBox ? (intl("components_pages_InfraCalculator.generateSchedule")) : (intl("components_pages_InfraCalculator.configureBoxAndLayout"));
   const personalPlanUnavailable = websiteAuthenticated && hasPersonalBox && !plannerReady;
   const showAnonymousSampleTrial = shouldShowAnonymousSampleTrial({
@@ -186,7 +191,7 @@ function CalculatorStartPanel({
         >
             {steps.map((step, index) => {
               const status = statuses[index];
-              const statusLabel = localize_components_pages_InfraCalculator.text(en, "additional4", { choice1: ((en)) && (status === "complete") ? "yes" : "no", choice2: ((en) && !(status === "complete")) && (status === "current") ? "yes" : "no", choice3: (!(en)) && (status === "complete") ? "yes" : "no", choice4: (!(en) && !(status === "complete")) && (status === "current") ? "yes" : "no" });
+              const statusLabel = localize_components_pages_InfraCalculator.text(en, "additional4", { choice3: ((status === "complete") ? ("yes") : ("no")), choice4: ((!(status === "complete")) && (status === "current") ? ("yes") : ("no")) });
               return (
                 <li
                   key={step.title}
@@ -353,6 +358,7 @@ export interface InfraCalculatorProps {
 
 export function InfraCalculator(props: InfraCalculatorProps) {
   const intl = useTranslations();
+  const locale = useLocale();
   const [dronePickerOpen, setDronePickerOpen] = useState(false);
   const {
     layout,
@@ -619,7 +625,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
                 </div>
                   <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 md:flex-nowrap">
                     {loading && taskQueue?.error ? (
-                      <span className="w-full break-words text-xs text-red-300 md:w-auto" role="status">{taskQueue.error}</span>
+                      <span className="w-full break-words text-xs text-red-300 md:w-auto" role="status">{localizedOperationError(taskQueue.error, locale)}</span>
                     ) : null}
                     {loading && taskQueue?.pollStopped ? (
                       <div className="relative max-md:w-full">

@@ -1,3 +1,7 @@
+import type { AppLocale } from "@riic/contracts/locale";
+import { createLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type Messages from "../messages/zh-CN/PosterTextErrors.json";
+const errorText = createLocalizer<typeof Messages>("PosterTextErrors");
 import { manualRoomCapacity, type ManualRoomAssignment, type ManualScheduleDraft } from "./manual-schedule.ts";
 import { manualEditableRooms, type EditableRoom } from "./recycling-room.ts";
 import type { BaseBlueprint } from "@riic/arknights-domain/types";
@@ -52,8 +56,8 @@ export function scheduleDraftToText(layout: BaseBlueprint, draft: ManualSchedule
 }
 
 export type ScheduleTextResult = { draft: ManualScheduleDraft; changedRows: number; errors: string[] };
-export function applyScheduleText(text: string, layout: BaseBlueprint, draft: ManualScheduleDraft, knownNames: ReadonlySet<string>): ScheduleTextResult {
-  if (text.length > 64 * 1024) return { draft, changedRows: 0, errors: ["批量文本不能超过 64 KB。"] };
+export function applyScheduleText(text: string, layout: BaseBlueprint, draft: ManualScheduleDraft, knownNames: ReadonlySet<string>, locale: AppLocale = "zh-CN"): ScheduleTextResult {
+  if (text.length > 64 * 1024) return { draft, changedRows: 0, errors: [errorText.text(locale, "tooLarge")] };
   const next = structuredClone(draft);
   const errors: string[] = [];
   const rooms = manualEditableRooms(layout);
@@ -63,60 +67,60 @@ export function applyScheduleText(text: string, layout: BaseBlueprint, draft: Ma
   let changedRows = 0;
   for (const [lineIndex, raw] of text.split(/\r?\n/).entries()) {
     const lineNumber = lineIndex + 1;
-    const fail = (message: string) => errors.push(`第 ${lineNumber} 行：${message}`);
+    const fail = (message: string) => errors.push(errorText.text(locale, "line", { line: lineNumber, message }));
     const line = raw.trim();
     if (!line || line.startsWith("//")) continue;
     const match = line.match(/^([^:：]+)[:：](.*)$/);
-    if (!match) { fail("请使用“设施：第1班 | 第2班 …”格式。"); continue; }
+    if (!match) { fail(errorText.text(locale, "format")); continue; }
     const label = compact(match[1]!);
     const room = roomMap.get(label);
     const id = room?.id ?? label;
-    if (!room && !["无人机", "菲亚梅塔"].includes(label)) { fail(`当前布局没有“${label}”。`); continue; }
-    if (seen.has(id)) { fail(`与第 ${seen.get(id)} 行重复。`); continue; }
+    if (!room && !["无人机", "菲亚梅塔"].includes(label)) { fail(errorText.text(locale, "missingRoom", { label })); continue; }
+    if (seen.has(id)) { fail(errorText.text(locale, "duplicate", { line: seen.get(id)! })); continue; }
     seen.set(id, lineNumber);
     rowLines.set(id, lineNumber);
     const cells = match[2]!.split(/[|｜]/).map(cell => cell.trim());
-    if (cells.length !== draft.shifts.length) { fail(`需要 ${draft.shifts.length} 个班次，当前有 ${cells.length} 列。`); continue; }
+    if (cells.length !== draft.shifts.length) { fail(errorText.text(locale, "shiftCount", { count: draft.shifts.length, actual: cells.length })); continue; }
     for (let index = 0; index < cells.length; index++) {
       if (cells[index] === "=") {
-        if (!index) { fail("第一班不能用 =。"); continue; }
+        if (!index) { fail(errorText.text(locale, "firstEquals")); continue; }
         cells[index] = cells[index - 1]!;
       }
       const cell = cells[index]!;
       const shift = next.shifts[index]!;
       if (label === "无人机") {
         const target = cell === "-" ? undefined : roomMap.get(compact(cell));
-        if (cell !== "-" && (!target || !["trade_post", "factory"].includes(target.kind))) fail(`${index + 1} 班的无人机去向必须是贸易站、制造站或 -。`);
+        if (cell !== "-" && (!target || !["trade_post", "factory"].includes(target.kind))) fail(errorText.text(locale, "droneTarget", { shift: index + 1 }));
         else shift.droneTargetRoomId = target?.id ?? null;
         continue;
       }
       if (label === "菲亚梅塔") {
-        if (cell !== "-" && (!knownNames.has(cell) || cell === "菲亚梅塔")) fail(`${index + 1} 班的菲亚梅塔对象“${cell}”无效。`);
+        if (cell !== "-" && (!knownNames.has(cell) || cell === "菲亚梅塔")) fail(errorText.text(locale, "fiammettaTarget", { shift: index + 1, target: cell }));
         else shift.fiammettaTarget = cell === "-" ? null : cell;
         continue;
       }
       if (!room) continue;
       const productMatch = cell.match(/\s+#\s*(\S+)\s*$/);
       const withoutProduct = productMatch ? cell.slice(0, productMatch.index).trimEnd() : cell;
-      if (withoutProduct.includes("#")) { fail(`${index + 1} 班格式错误；每格最多填写一个 #产物。`); continue; }
+      if (withoutProduct.includes("#")) { fail(errorText.text(locale, "productFormat", { shift: index + 1 })); continue; }
       const atIndex = withoutProduct.indexOf("@");
       const team = (atIndex < 0 ? withoutProduct : withoutProduct.slice(0, atIndex)).trim();
-      if (!team) { fail(`${index + 1} 班为空；清空请写 -。`); continue; }
+      if (!team) { fail(errorText.text(locale, "emptyShift", { shift: index + 1 })); continue; }
       const directives = atIndex < 0 ? [] : withoutProduct.slice(atIndex + 1).split("@").map(value => value.trim());
-      if (directives.some(value => !value)) { fail(`${index + 1} 班 @ 设置格式错误。`); continue; }
+      if (directives.some(value => !value)) { fail(errorText.text(locale, "directiveFormat", { shift: index + 1 })); continue; }
       let efficiencyMode: number | "automatic" | undefined;
       let invalidDirective = false;
       for (const directive of directives) {
         const token = directive.replace(/\s*[%％]\s*$/, "").trim();
         const lowerToken = token.toLowerCase();
         if (automaticEfficiencyTokens.has(lowerToken)) {
-          if (efficiencyMode !== undefined) { fail(`${index + 1} 班只能设置一次技能效率。`); invalidDirective = true; break; }
+          if (efficiencyMode !== undefined) { fail(errorText.text(locale, "duplicateEfficiency", { shift: index + 1 })); invalidDirective = true; break; }
           efficiencyMode = "automatic";
         } else if (/^\d+(?:\.\d+)?$/.test(token)) {
-          if (efficiencyMode !== undefined) { fail(`${index + 1} 班只能设置一次技能效率。`); invalidDirective = true; break; }
+          if (efficiencyMode !== undefined) { fail(errorText.text(locale, "duplicateEfficiency", { shift: index + 1 })); invalidDirective = true; break; }
           efficiencyMode = Number(token);
         } else {
-          fail(`${index + 1} 班无法识别设置“@${directive}”。`);
+          fail(errorText.text(locale, "unknownDirective", { shift: index + 1, directive }));
           invalidDirective = true;
           break;
         }
@@ -126,10 +130,10 @@ export function applyScheduleText(text: string, layout: BaseBlueprint, draft: Ma
       const autoToken = (name: string) => ["auto", "free"].includes(name.toLowerCase());
       const autofillSlots = memberTokens.flatMap((name, slotIndex) => autoToken(name) ? [slotIndex] : []);
       const names = memberTokens.map(name => ["_", "空位"].includes(name) || autoToken(name) ? null : name);
-      if (names.length > manualRoomCapacity(room)) fail(`${scheduleTextRoomLabel(room, layout)}最多 ${manualRoomCapacity(room)} 位，第 ${index + 1} 班填写了 ${names.length} 位。`);
-      for (const name of names) if (name !== null && !knownNames.has(name)) fail(`${index + 1} 班未知干员“${name}”。请使用图鉴全名。`);
+      if (names.length > manualRoomCapacity(room)) fail(errorText.text(locale, "capacity", { room: scheduleTextRoomLabel(room, layout), capacity: manualRoomCapacity(room), shift: index + 1, actual: names.length }));
+      for (const name of names) if (name !== null && !knownNames.has(name)) fail(errorText.text(locale, "unknownOperator", { shift: index + 1, name }));
       const assignment: ManualRoomAssignment = { ...shift.rooms[room.id], operators: names };
-      if (autofillSlots.length && !supportsMaaAutofill(room)) fail("训练室和回收站不支持 MAA 自动填充。");
+      if (autofillSlots.length && !supportsMaaAutofill(room)) fail(errorText.text(locale, "autofill"));
       if (supportsMaaAutofill(room)) assignment.autofill = autofillSlots.length > 0;
       else delete assignment.autofill;
       if (autofillSlots.length) {
@@ -139,26 +143,26 @@ export function applyScheduleText(text: string, layout: BaseBlueprint, draft: Ma
       }
       if (["trade_post", "factory", "power_plant"].includes(room.kind)) {
         if (efficiencyMode === undefined || efficiencyMode === "automatic") delete assignment.manualSkillEfficiencyPct;
-        else if (!Number.isFinite(efficiencyMode) || efficiencyMode > 10000) fail("技能效率应在 0%～10000% 之间。");
+        else if (!Number.isFinite(efficiencyMode) || efficiencyMode > 10000) fail(errorText.text(locale, "efficiencyRange"));
         else assignment.manualSkillEfficiencyPct = efficiencyMode;
       } else if (efficiencyMode !== undefined) {
-        fail("只有贸易、制造、发电设施可以填写效率。");
+        fail(errorText.text(locale, "efficiencyRoom"));
       }
       const product = productMatch?.[1];
       if (product) {
         if (room.kind === "trade_post" && ["龙门币", "合成玉"].includes(product)) {
-          if (product === "合成玉" && room.level < 3) fail("合成玉需要 3 级贸易站，请在 Box 与排班设置中调整等级。");
+          if (product === "合成玉" && room.level < 3) fail(errorText.text(locale, "tradeLevel"));
           assignment.product = { trade: { order: product === "龙门币" ? "gold" : "originium" } };
         } else if (room.kind === "factory" && ["赤金", "作战记录", "源石碎片", "待定配方"].includes(product)) {
-          if (product === "源石碎片" && !layout.rooms.some(r => r.kind === "factory" && r.level >= 3)) fail("源石碎片需要至少一间 3 级制造站解锁。");
+          if (product === "源石碎片" && !layout.rooms.some(r => r.kind === "factory" && r.level >= 3)) fail(errorText.text(locale, "factoryLevel"));
           assignment.product = { factory: { recipe: ({ 赤金: "gold", 作战记录: "battle_record", 源石碎片: "originium", 待定配方: "all" } as const)[product as "赤金"] } };
-        } else fail(`${index + 1} 班的产物“${product}”不适用于此设施。`);
+        } else fail(errorText.text(locale, "invalidProduct", { shift: index + 1, product }));
       }
       shift.rooms[room.id] = assignment;
     }
     changedRows++;
   }
-  if (!changedRows && !errors.length) errors.push("请至少填写一行设施或支援安排。");
+  if (!changedRows && !errors.length) errors.push(errorText.text(locale, "empty"));
   if (seen.has("菲亚梅塔")) next.fiammettaEnabled = next.shifts.some(shift => Boolean(shift.fiammettaTarget));
   const external = new Set(next.externalOperatorNames);
   for (const [index, shift] of next.shifts.entries()) {
@@ -166,11 +170,11 @@ export function applyScheduleText(text: string, layout: BaseBlueprint, draft: Ma
     for (const room of rooms) for (const name of shift.rooms[room.id]?.operators ?? []) {
       if (!name) continue;
       const previous = assigned.get(name);
-      if (previous) errors.push(`第 ${rowLines.get(room.id) ?? rowLines.get(previous) ?? "未编辑"} 行：第 ${index + 1} 班的 ${name} 同时出现在 ${scheduleTextRoomLabel(roomMap.get(previous)!, layout)} 和 ${scheduleTextRoomLabel(room, layout)}。`);
+      if (previous) errors.push(errorText.text(locale, "conflict", { line: rowLines.get(room.id) ?? rowLines.get(previous) ?? errorText.text(locale, "unedited"), shift: index + 1, name, first: scheduleTextRoomLabel(roomMap.get(previous)!, layout), second: scheduleTextRoomLabel(room, layout) }));
       assigned.set(name, room.id);
       external.add(name);
     }
-    if (shift.fiammettaTarget && !assigned.has(shift.fiammettaTarget)) errors.push(`第 ${rowLines.get("菲亚梅塔") ?? "未编辑"} 行：第 ${index + 1} 班的菲亚梅塔对象 ${shift.fiammettaTarget} 未安排入驻。`);
+    if (shift.fiammettaTarget && !assigned.has(shift.fiammettaTarget)) errors.push(errorText.text(locale, "targetNotAssigned", { line: rowLines.get("菲亚梅塔") ?? errorText.text(locale, "unedited"), shift: index + 1, name: shift.fiammettaTarget }));
   }
   next.externalOperatorNames = [...external];
   return { draft: errors.length ? draft : next, changedRows, errors };

@@ -303,7 +303,7 @@ test("Mobile history shows loading only on the running conversation while anothe
   await input.fill("仍在运行的对话");
   await input.press("Enter");
   await expect(page.getByRole("button", { name: "停止", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   const old = page.locator('[data-agent-history] a[aria-label="已完成的对话"]');
   const running = page.locator('[data-agent-history] a[aria-label="仍在运行的对话"]');
   await expect(running.locator("[data-agent-history-loading]")).toBeVisible();
@@ -314,8 +314,8 @@ test("Mobile history shows loading only on the running conversation while anothe
   expect(indicator.x).toBeGreaterThanOrEqual(title.x + title.width);
   await old.click();
   await expect(page.getByText("已完成", { exact: true })).toBeVisible();
-  await expect(page.getByRole("dialog", { name: "Sidebar" })).toHaveCount(0);
-  await page.getByRole("main").getByRole("button", { name: "Toggle Sidebar" }).click();
+  await expect(page.getByRole("dialog", { name: /^(侧边栏|側邊欄|Sidebar)$/ })).toHaveCount(0);
+  await page.getByRole("main").getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await expect(running.locator("[data-agent-history-loading]")).toBeVisible();
   await emit(page, [{ type: "start", messageId: "background-history" }, { type: "text-start", id: "new" }, { type: "text-delta", id: "new", delta: "另一段对话完成" }, { type: "text-end", id: "new" }, { type: "finish", finishReason: "stop" }], true);
   await expect(running.locator("[data-agent-history-loading]")).toHaveCount(0);

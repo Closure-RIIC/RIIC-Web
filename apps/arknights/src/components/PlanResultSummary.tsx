@@ -1,4 +1,6 @@
 "use client";
+
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_components_PlanResultSummary } from "../i18n/helpers/components_PlanResultSummary.ts";
 import { useTranslations, useLocale } from "use-intl";
 
@@ -19,15 +21,15 @@ import { withOriginiumLmdCost, type OriginiumShardRecipe } from "@/originium-lmd
 import { cn } from "@/lib/utils";
 
 const PRODUCT_KEYS = { experience: "productExperience", "lmd-orders": "productLmd", gold: "productGold", orundum: "productOrundum", shards: "productShards" } as const;
-function productLabel(product: { id: string; label: string; net?: boolean }, en: boolean) {
+function productLabel(product: { id: string; label: string; net?: boolean }, en: AppLocale) {
   if (product.net) return localize_components_PlanResultSummary.text(en, "productNetLmd");
   const key = PRODUCT_KEYS[product.id as keyof typeof PRODUCT_KEYS];
-  return en && key ? localize_components_PlanResultSummary.text(en, key) : product.label;
+  return key ? localize_components_PlanResultSummary.text(en, key) : product.label;
 }
-function productUnit(unit: string, en: boolean) {
+function productUnit(unit: string, en: AppLocale) {
   const keys = { "经验": "unitExperience", "龙门币": "unitLmd", "合成玉": "unitOrundum", "枚": "unitPieces" } as const;
   const key = keys[unit as keyof typeof keys];
-  return en && key ? localize_components_PlanResultSummary.text(en, key) : unit;
+  return key ? localize_components_PlanResultSummary.text(en, key) : unit;
 }
 import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion";
 import { formatPlanDuration } from "@/rotation-presentation";
@@ -40,7 +42,7 @@ function dailyNumber(value: number | null): string {
   return value === null ? "—" : Math.round(value).toLocaleString("zh-CN");
 }
 
-function unavailableReason(reason: DailyProductionUnavailableReason | undefined, en: boolean): string {
+function unavailableReason(reason: DailyProductionUnavailableReason | undefined, en: AppLocale): string {
   if (reason === "ambiguous-recipe") return localize_components_PlanResultSummary.text(en, "recipeCannotBeClassified");
   if (reason === "missing-drone-data") return localize_components_PlanResultSummary.text(en, "insufficientDroneData");
   return localize_components_PlanResultSummary.text(en, "insufficientRoomData");
@@ -82,19 +84,19 @@ const RELATION_KEYS = {
   "制造环节": "manufactureStage",
 } as const;
 
-function detailLabel(label: string, en: boolean): string {
+function detailLabel(label: string, en: AppLocale): string {
   const key = DETAIL_LABEL_KEYS[label as keyof typeof DETAIL_LABEL_KEYS];
-  return en && key ? localize_components_PlanResultSummary.text(en, key) : label;
+  return key ? localize_components_PlanResultSummary.text(en, key) : label;
 }
 
-function detailNote(note: string, en: boolean): string {
+function detailNote(note: string, en: AppLocale): string {
   const key = DETAIL_NOTE_KEYS[note as keyof typeof DETAIL_NOTE_KEYS];
-  return en && key ? localize_components_PlanResultSummary.text(en, key) : note;
+  return key ? localize_components_PlanResultSummary.text(en, key) : note;
 }
 
-function productRelation(relation: string, en: boolean): string {
+function productRelation(relation: string, en: AppLocale): string {
   const key = RELATION_KEYS[relation as keyof typeof RELATION_KEYS];
-  return en && key ? localize_components_PlanResultSummary.text(en, key) : relation;
+  return key ? localize_components_PlanResultSummary.text(en, key) : relation;
 }
 
 export function PlanResultSummary({
@@ -139,7 +141,7 @@ export function PlanResultSummary({
 }) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const shouldReduceMotion = useReducedMotion();
   const [animateOnMount] = useState(animateEntrance);
   const [detailSection, setDetailSection] = useState<DetailSection>("efficiency");
@@ -200,7 +202,7 @@ export function PlanResultSummary({
           <motion.button type="button" className={cn("group relative flex min-w-0 items-center justify-between gap-3 overflow-hidden bg-[#272A2B] px-5 py-3 text-left text-white focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#FFD800] max-[820px]:row-span-1 max-sm:min-h-16", comparison && "row-span-2", !canOpenDetails && "cursor-default")} data-plan-details-trigger="efficiency" data-plan-primary-details-trigger disabled={!canOpenDetails} whileHover={canOpenDetails && !shouldReduceMotion ? { x: 2 } : undefined} whileTap={canOpenDetails && !shouldReduceMotion ? { scale: 0.985 } : undefined} onClick={() => { if (canOpenDetails) openDetails("efficiency"); }}>
             <motion.span className="min-w-0" data-plan-metric initial={animateOnMount ? { opacity: 0, x: shouldReduceMotion ? 0 : -10 } : false} animate={{ opacity: 1, x: 0 }} transition={{ duration: shouldReduceMotion ? MOTION_DURATION.feedback : 0.36, delay: shouldReduceMotion ? 0 : 0.1, ease: MOTION_EASE_OUT }}>
               <strong className="block truncate text-lg font-medium">{presentationTitle ?? <><span className="font-number">{layout.template}</span> {intl("components_PlanResultSummary.basePlan")}</>}</strong>
-              <span className="mt-1 block text-[10px] text-white/45">{presentationSubtitle ?? <>{intl("components_PlanResultSummary.generatedIn")} <span className="font-number">{en ? formatPlanDuration(durationMs).replace(" 秒", "s") : formatPlanDuration(durationMs)}</span> · {intl("components_PlanResultSummary.viewDetails")}</>}</span>
+              <span className="mt-1 block text-[10px] text-white/45">{presentationSubtitle ?? <>{intl("components_PlanResultSummary.generatedIn")} <span className="font-number">{formatPlanDuration(durationMs, en)}</span> · {intl("components_PlanResultSummary.viewDetails")}</>}</span>
             </motion.span>
             <ChevronRight className="size-4 shrink-0 text-white/55 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
           </motion.button>
@@ -331,7 +333,7 @@ export function PlanResultSummary({
   );
 }
 
-function ProductionDetailItem({ product, supporting = false, en }: { product: ProductionDetailProduct; supporting?: boolean; en: boolean }) {
+function ProductionDetailItem({ product, supporting = false, en }: { product: ProductionDetailProduct; supporting?: boolean; en: AppLocale }) {
   return (
     <article
       className={cn(
@@ -370,7 +372,7 @@ function ProductionDetailItem({ product, supporting = false, en }: { product: Pr
   );
 }
 
-function ProductionDetails({ productGroups, en, solverProduction, droneProduction }: { productGroups: DailyProductionGroup[]; en: boolean; solverProduction?: NonNullable<RotationJson["daily"]["production"]> | null; droneProduction?: NonNullable<RotationJson["daily"]["drone_production"]> }) {
+function ProductionDetails({ productGroups, en, solverProduction, droneProduction }: { productGroups: DailyProductionGroup[]; en: AppLocale; solverProduction?: NonNullable<RotationJson["daily"]["production"]> | null; droneProduction?: NonNullable<RotationJson["daily"]["drone_production"]> }) {
   if (!productGroups.length) return null;
   const drone = droneProduction;
   const totalLmd = solverProduction ? solverProduction.lmd + (drone?.lmd ?? 0) : null;
@@ -380,8 +382,8 @@ function ProductionDetails({ productGroups, en, solverProduction, droneProductio
   const displayGroups = productGroups.map((productGroup) => {
     if (productGroup.id !== "lmd" || !productGroup.supporting || !solverProduction) return productGroup;
     const valueRows: Array<[string, number | null, string]> = [
-      ["总价值", totalGoldValue, ""],
-      [balance !== null && balance >= 0 ? "盈余" : "亏损", balance === null ? null : Math.abs(balance), ""],
+      [localize_components_PlanResultSummary.text(en, "totalValue"), totalGoldValue, ""],
+      [balance !== null && balance >= 0 ? localize_components_PlanResultSummary.text(en, "surplus") : localize_components_PlanResultSummary.text(en, "deficit"), balance === null ? null : Math.abs(balance), ""],
     ];
     return {
       ...productGroup,
@@ -409,7 +411,7 @@ function ProductionDetails({ productGroups, en, solverProduction, droneProductio
   );
 }
 
-function EfficiencyDetails({ productGroups, en, solverProduction, droneProduction }: { productGroups: DailyProductionGroup[]; en: boolean; solverProduction?: NonNullable<RotationJson["daily"]["production"]> | null; droneProduction?: NonNullable<RotationJson["daily"]["drone_production"]> }) {
+function EfficiencyDetails({ productGroups, en, solverProduction, droneProduction }: { productGroups: DailyProductionGroup[]; en: AppLocale; solverProduction?: NonNullable<RotationJson["daily"]["production"]> | null; droneProduction?: NonNullable<RotationJson["daily"]["drone_production"]> }) {
   return (
     <section className="pt-4" aria-label={localize_components_PlanResultSummary.text(en, "outputAndImprovementDetails")} data-efficiency-details>
       <ProductionDetails productGroups={productGroups} en={en} solverProduction={solverProduction} droneProduction={droneProduction} />

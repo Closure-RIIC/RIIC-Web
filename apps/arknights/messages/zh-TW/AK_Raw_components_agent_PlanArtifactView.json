@@ -1,0 +1,17 @@
+{
+  "layout": "佈局 <part1></part1>",
+  "solvedInMs": "求解 <part1></part1> ms",
+  "switchShifts": "班次切換",
+  "shift": "第 <part1></part1> 班<part2></part2>",
+  "trainingRecommendations": "練卡建議（<part1></part1> 條）",
+  "control": "控制中樞",
+  "trading": "貿易站",
+  "manufacture": "製造站",
+  "power": "發電站",
+  "dormitory": "宿舍",
+  "meeting": "會客室",
+  "hire": "辦公室",
+  "processing": "加工站",
+  "elite2": "精二",
+  "unassigned": "（未安排幹員）"
+}

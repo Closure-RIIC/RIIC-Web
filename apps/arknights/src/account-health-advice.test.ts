@@ -36,8 +36,8 @@ test("severe LMD shortage recommends 342 with the durin group, 333 without", () 
     inventory: { items: [{ id: "4001", count: 2_000_000 }, { id: "2004", count: 4_000 }] },
     operators: trainedPool,
   };
-  const withGroup = buildHealthAdvice(extractAccountHealthInput(base), true, "zh");
-  const withoutGroup = buildHealthAdvice(extractAccountHealthInput(base), false, "zh");
+  const withGroup = buildHealthAdvice(extractAccountHealthInput(base), true, "zh-CN");
+  const withoutGroup = buildHealthAdvice(extractAccountHealthInput(base), false, "zh-CN");
   assert.equal(withGroup.recommendation?.layout, "342");
   assert.match(withGroup.recommendation?.headline ?? "", /纯钱表/);
   assert.match(withGroup.recommendation?.lines.join(" ") ?? "", /鸿雪杜林组/);
@@ -53,7 +53,7 @@ test("severe EXP shortage recommends 153", () => {
   const result = buildHealthAdvice(extractAccountHealthInput({
     inventory: { items: [{ id: "4001", count: 50_000_000 }, { id: "2004", count: 100 }] },
     operators: trainedPool,
-  }), true, "zh");
+  }), true, "zh-CN");
   assert.equal(result.recommendation?.layout, "153");
   assert.ok((result.stock?.expShort ?? 0) >= 1_000_000);
   assert.match(result.summary, /缺经验/);
@@ -64,19 +64,19 @@ test("manageable gap recommends 252+342, or 243 when avoiding two power plants",
     inventory: { items: [{ id: "4001", count: 10_000_000 }, { id: "2004", count: 3_500 }] },
     operators: trainedPool,
   };
-  assert.equal(buildHealthAdvice(extractAccountHealthInput(base), true, "zh").recommendation?.layout, "252＋342 切换");
-  assert.equal(buildHealthAdvice(extractAccountHealthInput({ ...base, demand: { twoPowerPlants: "avoid" } }), true, "zh").recommendation?.layout, "243");
+  assert.equal(buildHealthAdvice(extractAccountHealthInput(base), true, "zh-CN").recommendation?.layout, "252＋342 切换");
+  assert.equal(buildHealthAdvice(extractAccountHealthInput({ ...base, demand: { twoPowerPlants: "avoid" } }), true, "zh-CN").recommendation?.layout, "243");
 });
 
 test("orundum plans branch on layout preference and effort", () => {
   const base = { operators: trainedPool };
-  const keep = buildHealthAdvice(extractAccountHealthInput({ ...base, demand: { orundumPlan: "planned", layoutChange: "keep" } }), true, "zh");
+  const keep = buildHealthAdvice(extractAccountHealthInput({ ...base, demand: { orundumPlan: "planned", layoutChange: "keep" } }), true, "zh-CN");
   assert.match(keep.recommendation?.headline ?? "", /现有布局/);
   assert.match(keep.recommendation?.lines.join(" ") ?? "", /开采协力/);
-  const relaxed = buildHealthAdvice(extractAccountHealthInput({ ...base, demand: { orundumPlan: "planned", outputPriority: "low-maintenance" } }), true, "zh");
+  const relaxed = buildHealthAdvice(extractAccountHealthInput({ ...base, demand: { orundumPlan: "planned", outputPriority: "low-maintenance" } }), true, "zh-CN");
   assert.equal(relaxed.recommendation?.layout, "333");
   assert.match(relaxed.recommendation?.shifts.join(" ") ?? "", /搓玉期/);
-  const output = buildHealthAdvice(extractAccountHealthInput({ ...base, demand: { orundumPlan: "planned", twoPowerPlants: "accept" } }), true, "zh");
+  const output = buildHealthAdvice(extractAccountHealthInput({ ...base, demand: { orundumPlan: "planned", twoPowerPlants: "accept" } }), true, "zh-CN");
   assert.equal(output.recommendation?.layout, "342");
   assert.match(output.recommendation?.lines.join(" ") ?? "", /源石碎片/);
 });
@@ -87,7 +87,7 @@ test("production grading, net gain direction and gold balance follow skill-8 ban
     operators: trainedPool,
     report: threeDayReport({ lmd: 40_000, goldValue: 50_000, experience: 32_000 }),
   });
-  const result = buildHealthAdvice(health, true, "zh");
+  const result = buildHealthAdvice(health, true, "zh-CN");
   assert.equal(result.production?.capacityIndex, 96_000);
   assert.equal(result.production?.grade, "pass");
   assert.equal(result.production?.degraded, false);
@@ -111,7 +111,7 @@ test("gold deficit projects stock runway; irregular shifts stay in-game", () => 
     report: threeDayReport({ lmd: 80_000, goldValue: 20_000, experience: 20_000 }),
     demand: { loginCadence: "irregular" },
   });
-  const result = buildHealthAdvice(health, false, "zh");
+  const result = buildHealthAdvice(health, false, "zh-CN");
   assert.equal(result.production?.goldTone, "deficit");
   assert.ok(Math.abs((result.production?.goldRunwayDays ?? 0) - 3) < 0.01);
   assert.equal(result.stock?.goldSurplus, "clear");
@@ -125,7 +125,7 @@ test("large gold surplus is described qualitatively without bar counts", () => {
     inventory: { items: [{ id: "3003", count: 1_200 }] },
     operators: trainedPool,
   });
-  const result = buildHealthAdvice(health, false, "zh");
+  const result = buildHealthAdvice(health, false, "zh-CN");
   assert.equal(result.stock?.goldSurplus, "large");
   assert.match(result.summary, /存在大量赤金盈余/);
   assert.ok(!result.summary.includes("1200"));
@@ -137,7 +137,7 @@ test("surplus net gain projects cover days for the short side", () => {
     operators: trainedPool,
     report: threeDayReport({ lmd: 200_000, goldValue: 300_000, experience: 20_000, equivalentGoldValue: 100_000 }),
   });
-  const result = buildHealthAdvice(health, true, "zh");
+  const result = buildHealthAdvice(health, true, "zh-CN");
   assert.equal(result.production?.netGain?.resource, "lmd");
   assert.ok((result.production?.netGain?.amount ?? 0) > 0);
   assert.ok((result.production?.coverDays ?? 0) > 0);
@@ -147,7 +147,7 @@ test("degraded grading without gold data uses the LMD+EXP sum bands", () => {
   const health = extractAccountHealthInput({
     report: threeDayReport({ lmd: 40_000, experience: 32_000 }),
   });
-  const result = buildHealthAdvice(health, false, "zh");
+  const result = buildHealthAdvice(health, false, "zh-CN");
   assert.equal(result.production?.capacityIndex, null);
   assert.equal(result.production?.lmdExpSum, 72_000);
   assert.equal(result.production?.degraded, true);
@@ -156,7 +156,7 @@ test("degraded grading without gold data uses the LMD+EXP sum bands", () => {
 });
 
 test("missing inputs surface notes instead of inventing conclusions", () => {
-  const result = buildHealthAdvice(extractAccountHealthInput({}), false, "zh");
+  const result = buildHealthAdvice(extractAccountHealthInput({}), false, "zh-CN");
   assert.equal(result.stock, null);
   assert.equal(result.production, null);
   assert.ok(result.notes.length >= 3);
@@ -172,7 +172,7 @@ test("six-star training capacity takes the short side under both cost benchmarks
     inventory: { items: [{ id: "4001", count: stockLmd }, { id: "2004", count: 4_000 }] },
     operators: trainedPool,
   });
-  const capacity = buildHealthAdvice(health, false, "zh").stock?.sixStarCapacity;
+  const capacity = buildHealthAdvice(health, false, "zh-CN").stock?.sixStarCapacity;
   const six = extractAccountHealthInput({ operators: trainedPool }).training?.byRarity.find((row) => row.rarity === 6);
   assert.ok(six);
   const perLmd = (six.levelCost.lmd + (six.moduleLmd ?? 0)) / six.promotedE2;
@@ -195,7 +195,7 @@ test("six-star capacity falls back to the maxed benchmark without a demand ratio
     inventory: { items: [{ id: "4001", count: 100_000_000 }, { id: "2004", count: 25_000 }] },
     operators: smallPool,
   });
-  const capacity = buildHealthAdvice(health, false, "zh").stock?.sixStarCapacity;
+  const capacity = buildHealthAdvice(health, false, "zh-CN").stock?.sixStarCapacity;
   const maxed = trainingCost(6, 2, 90);
   const maxedLmd = maxed.lmd + MODULE_LMD[6]!.reduce((sum, value) => sum + value, 0);
   assert.ok(capacity);
@@ -203,3 +203,4 @@ test("six-star capacity falls back to the maxed benchmark without a demand ratio
   assert.ok(Math.abs(capacity.byMaxed - Math.min(100_000_000 / maxedLmd, 50_000_000 / maxed.exp)) < 1e-9);
   assert.ok(capacity.byMaxed >= 1);
 });
+import "./i18n/test-setup.ts";

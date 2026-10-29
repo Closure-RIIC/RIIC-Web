@@ -142,7 +142,7 @@ for (const mobile of [false, true]) {
     await expect(card.locator("[data-silverash-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
     await expect(card.locator("img:visible")).toHaveCount(0);
     await card.getByRole("button", { name: "使用银灰" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect(page.locator("[data-agent-chat]")).toHaveCSS("--dialogue-accent", "#84bfff");
     await expect(page.getByText("盟友，从哪件事开始？")).toBeVisible();
     const input = page.getByRole("textbox", { name: "发给银灰的消息" });
@@ -176,7 +176,7 @@ for (const mobile of [false, true]) {
     await (await personaControl(page, "人格卡：银灰")).click();
     await expect(page.locator('[data-persona-card="upload-existing"]')).toContainText("原有人格");
     await page.getByRole("button", { name: "可露希尔 · 使用网站服务端当前配置的人格卡" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect(page.locator("[data-agent-chat]")).toHaveCSS("--dialogue-accent", "#bd354b");
     await expect(page.locator('[data-agent-chat] h1 > span[aria-hidden="true"]')).toHaveCSS("background-color", "rgb(189, 53, 75)");
     await page.reload();
@@ -184,7 +184,7 @@ for (const mobile of [false, true]) {
     expect(await page.evaluate(() => JSON.parse(localStorage.getItem("riic.agent.persona.v1")!))).toEqual(savedUpload);
     await (await personaControl(page, "人格卡：可露希尔")).click();
     await page.getByRole("button", { name: "使用原有人格" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect((await personaControl(page, "人格卡：原有人格"))).toBeVisible();
   });
 }
@@ -198,7 +198,7 @@ test("a missing private card explains why sending is blocked and permits switchi
   await expect(page.getByRole("button", { name: "发送", exact: true })).toBeDisabled();
   await (await personaControl(page, "人格卡：银灰")).click();
   await page.getByRole("button", { name: "可露希尔 · 使用网站服务端当前配置的人格卡" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(page.getByRole("button", { name: "发送", exact: true })).toBeEnabled();
 });
 
@@ -275,7 +275,7 @@ for (const mobile of [false, true]) {
     await expect(card).toHaveCSS("--dialogue-accent", "#bd354b");
     await expect(card.locator('[data-fur-avatar="exusiai"]')).toHaveAttribute("data-fur-ready", "true");
     await card.getByRole("button", { name: "使用能天使" }).click();
-    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect(page.locator("[data-agent-chat]")).toHaveCSS("--dialogue-accent", "#bd354b");
     await expect(page.getByText("老板，今天有什么差事？")).toBeVisible();
     const input = page.getByRole("textbox", { name: "发给能天使的消息" });
@@ -376,7 +376,7 @@ for (const mobile of [false, true]) {
     await expect(card).toHaveAttribute("data-selected", "true");
     await expect(card).toHaveCSS("outline-width", "2px");
     await expect(page.locator('[data-persona-card="default"]')).not.toHaveAttribute("data-selected", "true");
-    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect(page.locator("[data-agent-chat]")).toHaveCSS("--dialogue-accent", "#ffd800");
     await expect(page.getByText("博士，今天需要我帮您做些什么？")).toBeVisible();
     const input = page.getByRole("textbox", { name: "发给琴柳的消息" });
@@ -418,7 +418,7 @@ for (const mobile of [false, true]) {
     const columns = await page.locator('[data-persona-card="saileach"]').evaluate(element => getComputedStyle(element.parentElement!).gridTemplateColumns.split(" ").length);
     expect(columns).toBe(mobile ? 1 : 3);
     await expect(page.getByRole("dialog").locator('[data-slot="dialog-footer"]')).toHaveCount(0);
-    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect(page.getByRole("dialog")).not.toBeVisible();
   });
 }
@@ -441,7 +441,7 @@ for (const mobile of [false, true]) {
     await expect(card.locator('[data-fur-avatar="mountain"]')).toHaveAttribute("data-fur-ready", "true", { timeout: 30_000 });
     await card.getByRole("button", { name: "使用山", exact: true }).click();
     await expect(card).toHaveAttribute("data-selected", "true");
-    await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect(page.getByText("我在，博士。今天有什么需要处理？")).toBeVisible();
     await expect(page.locator("[data-agent-chat]")).toHaveCSS("--dialogue-accent", "#84bfff");
     const input = page.getByRole("textbox", { name: "发给山的消息" });
@@ -496,7 +496,7 @@ test("Mountain keeps a usable SVG fallback without WebGL", async ({ page }) => {
   await expect(avatar).toHaveAttribute("data-fur-performance", "static");
   await expect(avatar).toHaveAttribute("data-fur-ready", "false");
   await expect(avatar.locator("[data-mountain-fallback]")).toBeVisible();
-  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(page.getByRole("textbox", { name: "发给山的消息" })).toBeEnabled();
 });
 
@@ -509,7 +509,7 @@ test("Mountain missing private card blocks sending and allows another persona", 
   await expect(page.getByRole("button", { name: "发送", exact: true })).toBeDisabled();
   await (await personaControl(page, "人格卡：山")).click();
   await page.getByRole("button", { name: "可露希尔 · 使用网站服务端当前配置的人格卡" }).click();
-  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(page.getByRole("button", { name: "发送", exact: true })).toBeEnabled();
 });
 
@@ -531,7 +531,7 @@ test("Saileach has a usable SVG fallback without WebGL", async ({ page }) => {
   await expect(avatar).toHaveAttribute("data-fur-performance", "static");
   await expect(avatar).toHaveAttribute("data-fur-ready", "false");
   await expect(avatar.locator("[data-saileach-fallback]")).toBeVisible();
-  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(page.getByRole("textbox", { name: "发给琴柳的消息" })).toBeEnabled();
 });
 
@@ -556,7 +556,7 @@ test("Exusiai retains a halo and usable chat without WebGL", async ({ page }) =>
   await expect(avatar.locator('[data-plush-halo]')).toBeVisible();
   await expect(avatar.locator('[data-plush-wings] path')).toHaveCount(6);
   await expect(avatar.locator('path[fill="#f1d4ac"]')).toBeVisible();
-  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(page.getByRole("textbox", { name: "发给能天使的消息" })).toBeEnabled();
 });
 
@@ -577,6 +577,6 @@ test("SilverAsh keeps its gray and white silhouette when WebGL is unavailable", 
   await expect(silverash).toHaveAttribute("data-fur-performance", "static");
   await expect(silverash.locator("[data-fur-fallback]")).toBeVisible();
   await expect(silverash).toHaveAttribute("data-fur-ready", "false");
-  await page.getByRole("dialog").getByRole("button", { name: "Close", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(page.getByRole("textbox", { name: "发给银灰的消息" })).toBeEnabled();
 });

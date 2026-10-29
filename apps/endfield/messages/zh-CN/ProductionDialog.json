@@ -1,0 +1,8 @@
+{
+  "productionSetup": "生产配置",
+  "closeProductionSetup": "关闭生产配置",
+  "adjustFacilityLevelsProductionAndGrowthPlotsOrRestore": "调整各舱室等级、制造产物与培养位分配；也可恢复账号实际配置。修改自动保存并用于排班。",
+  "done": "完成",
+  "schedulingPriorities": "排班目标",
+  "enableCentralAssistance2PointsDay": "启用中枢助力（每日 2 点）"
+}

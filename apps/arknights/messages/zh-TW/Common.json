@@ -1,0 +1,15 @@
+{
+  "language": "Language / 語言",
+  "missingSkillName": "基建技能",
+  "missingSkillText": "暫無英文資料。",
+  "consentFeedback": "我同意提交以上{kind, select, performance {效能} other {排班問題}}資訊和私有復現快照。",
+  "sortDone": "結束調整順序",
+  "sortOperators": "調整幹員順序",
+  "signedInAccount": "已登入帳號",
+  "unknownOperator": "未知幹員",
+  "personalBoxRequired": "目前排班缺少可提交的個人幹員 Box，請重新匯入後產生排班。",
+  "copiedTraining": "參考排班練度（非個人幹員名單）",
+  "tradeStrategy": "貿易策略",
+  "factoryRecipe": "製造配方",
+  "requestFailed": "請求失敗，請稍後再試。"
+}

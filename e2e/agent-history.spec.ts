@@ -62,7 +62,7 @@ for (const width of [1440, 375]) {
     }
     await expect.poll(async () => (await storedHistory(page)).conversations.length).toBe(5);
     expect((await storedHistory(page)).conversations.some((entry) => entry.title === "第一个问题")).toBe(false);
-    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     const history = page.locator("[data-agent-history]");
     await expect(history.getByRole("link")).toHaveCount(5);
     await expect(page.getByRole("button", { name: "历史记录", exact: true })).toHaveCount(0);
@@ -72,7 +72,7 @@ for (const width of [1440, 375]) {
     await expect.poll(async () => (await storedHistory(page)).expanded).toBe(false);
     await page.reload();
     await expect(input).toBeVisible();
-    if (width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     await expect(page.getByRole("button", { name: "展开对话历史" })).toBeVisible();
     await page.getByRole("button", { name: "展开对话历史" }).click();
     let releaseReady!: () => void;

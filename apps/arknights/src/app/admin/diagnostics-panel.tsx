@@ -1,4 +1,6 @@
 "use client";
+import { useRef } from "react";
+
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
@@ -9,6 +11,9 @@ import { useAdminRequest } from "./admin-context";
 export function DiagnosticsPanel() {
   const requestAdminData = useAdminRequest();
   const t=useTranslations("diagnostics");
+  // Language changes update copy without reloading or overwriting in-progress work.
+  const languageEffectRef = useRef({ t });
+  useEffect(() => { languageEffectRef.current = { t }; }, [t]);
   const locale=useLocale();
   const [hours,setHours]=useState("1");
   const [category,setCategory]=useState("all");
@@ -19,12 +24,12 @@ export function DiagnosticsPanel() {
   useEffect(()=>{
     const controller=new AbortController();
     setLoading(true); setError(""); setReport(null);
-    void requestAdminData<DiagnosticReport>(`/api/admin/diagnostics?hours=${hours}`,{signal:controller.signal},t("loadFailed"))
+    void requestAdminData<DiagnosticReport>(`/api/admin/diagnostics?hours=${hours}`,{signal:controller.signal},languageEffectRef.current.t("loadFailed"))
       .then(value=>{if(!controller.signal.aborted) setReport(value);})
-      .catch(cause=>{if(!controller.signal.aborted) setError(cause instanceof Error ? cause.message : t("loadFailed"));})
+      .catch(cause=>{if(!controller.signal.aborted) setError(cause instanceof Error ? cause.message : languageEffectRef.current.t("loadFailed"));})
       .finally(()=>{if(!controller.signal.aborted) setLoading(false);});
     return ()=>controller.abort();
-  },[hours,refresh,t,requestAdminData]);
+  },[hours, refresh, requestAdminData]);
   const time=(value:string)=>new Intl.DateTimeFormat(locale,{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",timeZone:"Asia/Shanghai",hour12:false}).format(new Date(value));
   const groups=report?.groups.filter(group=>category==="all" || group.category===category) ?? [];
   const recent=report?.recent.filter(row=>category==="all" || row.category===category) ?? [];

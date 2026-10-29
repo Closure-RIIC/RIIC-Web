@@ -1,0 +1,11 @@
+{
+  "title": "Changelog",
+  "description": "New features, improvements, and fixes in published releases.",
+  "latestUpdate": "Latest update",
+  "loading": "Loading changelog",
+  "loadError": "Unable to load the changelog. Please try again.",
+  "retry": "Retry",
+  "empty": "No published updates yet.",
+  "earlier": "Looking for earlier releases or technical details?",
+  "repositoryLink": "Read the repository changelog (new tab)"
+}

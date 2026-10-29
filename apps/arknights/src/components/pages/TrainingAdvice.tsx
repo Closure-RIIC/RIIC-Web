@@ -1,9 +1,11 @@
+import { lazyWithMessages } from "@/i18n/features-client";
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_components_pages_TrainingAdvice } from "../../i18n/helpers/components_pages_TrainingAdvice.ts";
 import { useTranslations, useLocale } from "use-intl";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 import { TrainingSyncButton, type TrainingSyncControl } from "@/components/workbench/TrainingSyncButton";
 import { messageRecord } from "@/i18n/translate";
-import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { Calculator, CircleAlert, ChevronDown, GraduationCap, X } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -27,17 +29,17 @@ import type { TrainingPlannerHandoff } from "@/training-planner-store";
 import { trainingPlannerTargetFromAdvice } from "@/training-planner-handoff";
 
 const TRAINING_BLACKLIST_KEY = "arknights-infra-training-blacklist-v1";
-const TrainingAdviceActionCard = lazy(() => import("@/components/training-advice/TrainingAdviceActionCard").then((module) => ({
+const TrainingAdviceActionCard = lazyWithMessages(() => import("@/components/training-advice/TrainingAdviceActionCard").then((module) => ({
   default: module.TrainingAdviceActionCard,
-})));
+})), "apps/arknights/src/components/training-advice/TrainingAdviceActionCard.tsx");
 
-const TrainingCombinationCard = lazy(() => import("@/components/training-advice/TrainingCombinationCard").then((module) => ({
+const TrainingCombinationCard = lazyWithMessages(() => import("@/components/training-advice/TrainingCombinationCard").then((module) => ({
   default: module.TrainingCombinationCard,
-})));
+})), "apps/arknights/src/components/training-advice/TrainingCombinationCard.tsx");
 
-const RecommendationCard = lazy(() => import("@/components/RecommendationCard").then((module) => ({
+const RecommendationCard = lazyWithMessages(() => import("@/components/RecommendationCard").then((module) => ({
   default: module.RecommendationCard,
-})));
+})), "apps/arknights/src/components/RecommendationCard.tsx");
 
 export type TrainingAdviceProps = {
   operbox?: OperBoxEntry[] | null;
@@ -82,7 +84,7 @@ function trainingRecommendationKey(recommendation: TrainingRecommendation, targe
   return `${recommendation.combination_id ?? "standalone"}:${recommendation.operator}:${target.targetElite}:${target.targetLevel}`;
 }
 
-function contractIssues(layout: BaseBlueprint | null | undefined, operbox: OperBoxEntry[] | null | undefined, en = false) {
+function contractIssues(layout: BaseBlueprint | null | undefined, operbox: OperBoxEntry[] | null | undefined, en: AppLocale = "zh-CN") {
   const issues: string[] = [];
   const rooms = layout?.rooms ?? [];
   const entries = operbox ?? [];
@@ -95,13 +97,13 @@ function contractIssues(layout: BaseBlueprint | null | undefined, operbox: OperB
   if (entries.some((entry) => !entry.id.trim() || !entry.name.trim())) issues.push(localize_components_pages_TrainingAdvice.text(en, "anOperatorIdOrNameIsEmpty"));
 
   const duplicateRoomIds = duplicateValues(rooms.map((room) => room.id));
-  if (duplicateRoomIds.length) issues.push(localize_components_pages_TrainingAdvice.text(en, "duplicateRoomIds", { value1: (en) ? (duplicateRoomIds.join(", ")) : "", value2: (en) ? "" : (duplicateRoomIds.join("、")) }));
+  if (duplicateRoomIds.length) issues.push(localize_components_pages_TrainingAdvice.text(en, "duplicateRoomIds", { value2: en === "en" ? (((duplicateRoomIds.join(", ")))) : (((duplicateRoomIds.join("、")))) }));
 
   const duplicateOperatorIds = duplicateValues(entries.map((entry) => entry.id));
-  if (duplicateOperatorIds.length) issues.push(localize_components_pages_TrainingAdvice.text(en, "duplicateOperatorIds", { value1: (en) ? (duplicateOperatorIds.join(", ")) : "", value2: (en) ? "" : (duplicateOperatorIds.join("、")) }));
+  if (duplicateOperatorIds.length) issues.push(localize_components_pages_TrainingAdvice.text(en, "duplicateOperatorIds", { value2: en === "en" ? (((duplicateOperatorIds.join(", ")))) : (((duplicateOperatorIds.join("、")))) }));
 
   const duplicateOperatorNames = duplicateValues(entries.map((entry) => entry.name));
-  if (duplicateOperatorNames.length) issues.push(localize_components_pages_TrainingAdvice.text(en, "duplicateOperatorNames", { value1: (en) ? (duplicateOperatorNames.join(", ")) : "", value2: (en) ? "" : (duplicateOperatorNames.join("、")) }));
+  if (duplicateOperatorNames.length) issues.push(localize_components_pages_TrainingAdvice.text(en, "duplicateOperatorNames", { value2: en === "en" ? (((duplicateOperatorNames.join(", ")))) : (((duplicateOperatorNames.join("、")))) }));
 
   return issues;
 }
@@ -171,7 +173,7 @@ export function TrainingAdvice({
 }: TrainingAdviceProps) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const shouldReduceMotion = useReducedMotion();
   const [onlyOwned, setOnlyOwned] = useState(false);
   const [rarityFilter, setRarityFilter] = useState("all");

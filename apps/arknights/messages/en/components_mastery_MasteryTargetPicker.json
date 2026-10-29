@@ -1,0 +1,9 @@
+{
+  "chooseATrainee": "Choose a trainee",
+  "ownedE2OperatorsInYourCurrentBoxThisSelection": "{length} owned E2 operators in your current Box. This selection does not change your Box.",
+  "select": "Select {name}",
+  "e2": "E2",
+  "noMatchingOwnedE2Operators": "No matching owned E2 operators.",
+  "cancel": "Cancel",
+  "useThisOperator": "Use this operator"
+}

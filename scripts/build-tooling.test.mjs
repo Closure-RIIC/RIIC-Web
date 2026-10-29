@@ -307,11 +307,17 @@ test("CI enforces route and document preload JavaScript budgets after building",
 test("Start and Nitro preserve compression and private document caching", async () => {
   const config = await readRepoFile("apps/arknights/vite.config.ts");
   const server = await readRepoFile("apps/arknights/src/server.ts");
+  const endfieldServer = await readRepoFile("apps/endfield/src/server.ts");
+  const compression = await readRepoFile("packages/platform-server/src/html-compression.ts");
   const policy = await readRepoFile("apps/arknights/src/server/http-cache-policy.ts");
   const root = await readRepoFile("apps/arknights/src/routes/__root.tsx");
   const verify = await readRepoFile("scripts/verify-public-compression.mjs");
   assert.match(config, /compressPublicAssets: true/);
-  assert.match(server, /new CompressionStream\("gzip"\)/);
+  for (const entry of [server, endfieldServer]) {
+    assert.match(entry, /import \{ compressHtmlResponse \} from "@riic\/platform-server\/html-compression"/);
+    assert.match(entry, /return compressHtmlResponse\(request, response\)/);
+  }
+  assert.match(compression, /new CompressionStream\("gzip"\)/);
   assert.match(server, /Cache-Control.*, DOCUMENT_CACHE_CONTROL/);
   assert.match(policy, /private, no-cache, no-store, max-age=0, must-revalidate/);
   assert.match(root, /"riic-build-id", content: process.env.APP_CLIENT_BUILD_ID/);

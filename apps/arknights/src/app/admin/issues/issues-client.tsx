@@ -1,4 +1,11 @@
 "use client";
+
+
+import type { AppLocale } from "@riic/contracts/locale";
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../../messages/zh-CN/AK_app_admin_issues_issues_client.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_app_admin_issues_issues_client");
+
 import { useAdminRequest, useAdminHref } from "../admin-context";
 import { adminPageClass } from "../admin-page";
 import { useTranslations, useLocale } from "use-intl";
@@ -51,29 +58,9 @@ import { RelatedFeedback } from "./related-feedback";
 
 const PAGE_SIZE = 50;
 
-const STATUS_LABELS: Record<AdminFeedbackStatus, string> = {
-  unreviewed: "未审阅",
-  reviewed: "已阅",
-  ignored: "忽略",
-  reproduced: "已复现",
-  fixed: "已修复",
-};
+const STATUSES: AdminFeedbackStatus[] = ["unreviewed", "reviewed", "ignored", "reproduced", "fixed"];
 
-const FACILITY_LABELS: Record<AdminFeedbackFacility, string> = {
-  trading: "贸易站",
-  manufacture: "制造站",
-  power: "发电站",
-  control: "控制中枢",
-  dormitory: "宿舍",
-  meeting: "会客室",
-  hire: "办公室",
-  processing: "加工站",
-  training: "训练室",
-  solver: "求解器整体",
-  unknown: "其他设施",
-};
-
-const FACILITY_FILTERS = Object.keys(FACILITY_LABELS) as AdminFeedbackFacility[];
+const FACILITY_FILTERS: AdminFeedbackFacility[] = ["trading", "manufacture", "power", "control", "dormitory", "meeting", "hire", "processing", "training", "solver", "unknown"];
 
 type DetailState = {
   history?: AdminFeedbackDetailData["history"];
@@ -84,8 +71,8 @@ type DetailState = {
 };
 
 
-function formatDate(value: string, en = false): string {
-  return new Intl.DateTimeFormat((en ? "en-US" : "zh-CN"), {
+function formatDate(value: string, en: AppLocale = "zh-CN"): string {
+  return new Intl.DateTimeFormat(en, {
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
@@ -123,7 +110,7 @@ function ReproductionPanel({ state }: { state: DetailState }) {
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
   const [copied, setCopied] = useState(false);
   if (state.loading) {
     return <p role="status" className="flex items-center gap-2 py-4 text-sm text-muted-foreground"><Loader2 className="animate-spin" />{intl("app_admin_issues_issues_client.loadingReproductionData")}</p>;
@@ -151,7 +138,7 @@ function ReproductionPanel({ state }: { state: DetailState }) {
 
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="outline" disabled={!reproduction.operbox} onClick={() => downloadReproduction(reproduction, true)}>
-          <Download aria-hidden="true" />{en ? "Export box" : "导出 box"}
+          <Download aria-hidden="true" />{uiText.text(en, "exportBox")}
         </Button>
         <Button type="button" variant="outline" disabled={!reproduction.available} onClick={() => downloadReproduction(reproduction)}>
           <Download aria-hidden="true" />{intl("app_admin_issues_issues_client.downloadReproductionJson")}
@@ -171,7 +158,7 @@ function ReproductionPanel({ state }: { state: DetailState }) {
       </div>
 
       {state.solverExecutableSha256 ? <p className="break-all text-xs text-muted-foreground">SHA256: {state.solverExecutableSha256}</p> : null}
-      {state.history?.length ? <ol className="grid gap-2 text-sm" aria-label={en ? "Review history" : "处理历史"}>
+      {state.history?.length ? <ol className="grid gap-2 text-sm" aria-label={uiText.text(en, "reviewHistory")}>
         {state.history.map((event) => <li key={event.id} className="rounded-lg bg-muted p-3">
           <p>{formatDate(event.createdAt, en)} · {event.actorUserId ?? "—"} · {messageRecord(en, "app_admin_issues_issues_client_labels2")[event.status]}</p>
           <p className="whitespace-pre-wrap">{event.note}</p>
@@ -228,7 +215,7 @@ function FeedbackRow({
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
   const statusLabels = messageRecord(en, "app_admin_issues_issues_client_labels2");
   const facilityLabels = messageRecord(en, "app_admin_issues_issues_client_labels3");
   return (
@@ -253,7 +240,7 @@ function FeedbackRow({
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/70 pt-3">
         <div role="group" className="flex flex-wrap gap-1" aria-label={intl("app_admin_issues_issues_client.reviewStatus")}>
-          {(Object.keys(STATUS_LABELS) as AdminFeedbackStatus[]).map((status) => (
+          {STATUSES.map((status) => (
             <Button
               key={status}
               type="button"
@@ -290,7 +277,7 @@ function RunRow({
 }) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   return (
     <article className="rounded-xl bg-background p-4 shadow-[var(--shadow-border)] sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -323,7 +310,10 @@ export function AdminIssues({ isAdmin = false }: { isAdmin?: boolean }) {
   const adminHref = useAdminHref();
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
+  // Language changes update copy without reloading or overwriting in-progress work.
+  const languageEffectRef = useRef({ intl, en });
+  useEffect(() => { languageEffectRef.current = { intl, en }; }, [intl, en]);
   const statusLabels = messageRecord(en, "app_admin_issues_issues_client_labels4");
   const facilityLabels = messageRecord(en, "app_admin_issues_issues_client_labels5");
   const [feedback, setFeedback] = useState<AdminFeedbackListData>({ items: [], total: 0, limit: PAGE_SIZE, offset: 0 });
@@ -379,14 +369,14 @@ export function AdminIssues({ isAdmin = false }: { isAdmin?: boolean }) {
       if (to) params.set("to", new Date(to).toISOString());
       if (errorCode) params.set("errorCode", errorCode);
       if (solver) params.set("solver", solver);
-      setFeedback(await requestData<AdminFeedbackListData>(`/api/admin/feedback?${params}`, { signal: controller.signal }, en));
+      setFeedback(await requestData<AdminFeedbackListData>(`/api/admin/feedback?${params}`, { signal: controller.signal }, languageEffectRef.current.en));
     } catch (loadError) {
       if (controller.signal.aborted) return;
-      setError(loadError instanceof Error ? loadError.message : (intl("app_admin_issues_issues_client.couldNotLoadFeedbackRecords")));
+      setError(loadError instanceof Error ? loadError.message : (languageEffectRef.current.intl("app_admin_issues_issues_client.couldNotLoadFeedbackRecords")));
     } finally {
       if (feedbackRequestRef.current === controller) setLoadingFeedback(false);
     }
-  }, [intl, en, facilityFilter, feedbackOffset, statusFilter, search, from, to, errorCode, solver, requestData]);
+  }, [facilityFilter, feedbackOffset, statusFilter, search, from, to, errorCode, solver, requestData]);
 
   const loadRuns = useCallback(async () => {
     runRequestRef.current?.abort();
@@ -396,14 +386,14 @@ export function AdminIssues({ isAdmin = false }: { isAdmin?: boolean }) {
     setError(null);
     try {
       const params = new URLSearchParams({ status: "failed", limit: String(PAGE_SIZE), offset: String(runOffset) });
-      setRuns(await requestData<AdminPlanRunListData>(`/api/admin/plan-runs?${params}`, { signal: controller.signal }, en));
+      setRuns(await requestData<AdminPlanRunListData>(`/api/admin/plan-runs?${params}`, { signal: controller.signal }, languageEffectRef.current.en));
     } catch (loadError) {
       if (controller.signal.aborted) return;
-      setError(loadError instanceof Error ? loadError.message : (intl("app_admin_issues_issues_client.couldNotLoadSolverErrors")));
+      setError(loadError instanceof Error ? loadError.message : (languageEffectRef.current.intl("app_admin_issues_issues_client.couldNotLoadSolverErrors")));
     } finally {
       if (runRequestRef.current === controller) setLoadingRuns(false);
     }
-  }, [intl, en, runOffset, requestData]);
+  }, [runOffset, requestData]);
 
   useEffect(() => {
     void loadFeedback();
@@ -542,13 +532,13 @@ export function AdminIssues({ isAdmin = false }: { isAdmin?: boolean }) {
         <TabsContent value="feedback" className="grid gap-5">
           <section aria-labelledby="feedback-filters" className="grid gap-3">
             <form className="flex items-end gap-2" onSubmit={(event) => { event.preventDefault(); setFilter("q", String(new FormData(event.currentTarget).get("q") ?? "")); }}>
-              <label className="grid flex-1 gap-2 text-sm">{en ? "Search feedback" : "搜索反馈"}
-                <input key={search} name="q" type="search" maxLength={200} defaultValue={search} placeholder={en ? "ID, description, review note, operator" : "反馈编号、诊断编号、描述、处理备注、干员"} className="min-h-11 min-w-0 rounded-lg border border-border bg-background px-3" />
+              <label className="grid flex-1 gap-2 text-sm">{uiText.text(en, "searchFeedback")}
+                <input key={search} name="q" type="search" maxLength={200} defaultValue={search} placeholder={uiText.text(en, "idDescriptionReviewNoteOperator")} className="min-h-11 min-w-0 rounded-lg border border-border bg-background px-3" />
               </label>
-              <Button type="submit" variant="outline">{en ? "Search" : "搜索"}</Button>
+              <Button type="submit" variant="outline">{uiText.text(en, "search")}</Button>
             </form>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {([ ["from", en ? "From" : "开始时间", from, "datetime-local"], ["to", en ? "Until" : "结束时间", to, "datetime-local"], ["errorCode", en ? "Error code" : "错误码", errorCode, "text"], ["solver", en ? "Solver SHA256" : "求解器 SHA256", solver, "text"] ] as const).map(([key, label, value, type]) => <label key={key} className="grid gap-2 text-sm">{label}<input type={type} value={value} maxLength={100} className="min-h-11 min-w-0 rounded-lg border bg-background px-3" onChange={(event) => setFilter(key, event.target.value)} /></label>)}
+              {([ ["from", uiText.text(en, "from"), from, "datetime-local"], ["to", uiText.text(en, "until"), to, "datetime-local"], ["errorCode", uiText.text(en, "errorCode"), errorCode, "text"], ["solver", uiText.text(en, "solverSha256"), solver, "text"] ] as const).map(([key, label, value, type]) => <label key={key} className="grid gap-2 text-sm">{label}<input type={type} value={value} maxLength={100} className="min-h-11 min-w-0 rounded-lg border bg-background px-3" onChange={(event) => setFilter(key, event.target.value)} /></label>)}
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -556,8 +546,8 @@ export function AdminIssues({ isAdmin = false }: { isAdmin?: boolean }) {
                 <p className="mt-1 text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.statusAndFacilityCountsApplyToTheCurrentPage")}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="outline" disabled={!selected.size || !!busyStatusId} onClick={() => void reproduce([...selected])}>{en ? "Add to test batch" : "加入测试批次"}</Button>
-                <Button type="button" variant="outline" disabled={!selected.size || !!busyStatusId} onClick={() => { setReview({ items: visibleFeedback.filter((item) => selected.has(item.id)), status: "reviewed" }); setReviewNote(""); }}>{en ? "Review selected" : "批量审阅"} ({selected.size})</Button>
+                <Button type="button" variant="outline" disabled={!selected.size || !!busyStatusId} onClick={() => void reproduce([...selected])}>{uiText.text(en, "addToTestBatch")}</Button>
+                <Button type="button" variant="outline" disabled={!selected.size || !!busyStatusId} onClick={() => { setReview({ items: visibleFeedback.filter((item) => selected.has(item.id)), status: "reviewed" }); setReviewNote(""); }}>{uiText.text(en, "reviewSelected")} ({selected.size})</Button>
                 <Button
                   type="button"
                   variant="outline"
@@ -574,7 +564,7 @@ export function AdminIssues({ isAdmin = false }: { isAdmin?: boolean }) {
 
             <div role="group" className="flex flex-wrap gap-1" aria-label={intl("app_admin_issues_issues_client.filterByReviewStatus")}>
               <Button type="button" size="sm" variant={statusFilter === "all" ? "secondary" : "ghost"} aria-pressed={statusFilter === "all"} onClick={() => setStatusFilter("all")}>{intl("app_admin_issues_issues_client.all")}</Button>
-              {(Object.keys(STATUS_LABELS) as AdminFeedbackStatus[]).map((status) => (
+              {STATUSES.map((status) => (
                 <Button key={status} type="button" size="sm" variant={statusFilter === status ? "secondary" : "ghost"} aria-pressed={statusFilter === status} onClick={() => setStatusFilter(status)}>
                   {statusLabels[status]}
                 </Button>
@@ -626,19 +616,19 @@ export function AdminIssues({ isAdmin = false }: { isAdmin?: boolean }) {
               })}
             </section>
           ))}
-          </div><aside className="grid gap-4 rounded-xl border bg-background p-4 lg:sticky lg:top-20" aria-label={en ? "Feedback detail" : "反馈详情"}>
+          </div><aside className="grid gap-4 rounded-xl border bg-background p-4 lg:sticky lg:top-20" aria-label={uiText.text(en, "feedbackDetail")}>
             {expanded?.startsWith("feedback:") && details[expanded] ? <>
               <div className="flex flex-wrap gap-2">{([-1, 1] as const).map((direction) => {
                 const index = visibleFeedback.findIndex((item) => `feedback:${item.id}` === expanded);
                 const adjacent = visibleFeedback[index + direction];
-                return <Button key={direction} variant="outline" disabled={!adjacent} onClick={() => adjacent && void toggleDetail(`feedback:${adjacent.id}`, `/api/admin/feedback/${encodeURIComponent(adjacent.id)}`)}>{direction < 0 ? (en ? "Previous issue" : "上一条") : (en ? "Next issue" : "下一条")}</Button>;
+                return <Button key={direction} variant="outline" disabled={!adjacent} onClick={() => adjacent && void toggleDetail(`feedback:${adjacent.id}`, `/api/admin/feedback/${encodeURIComponent(adjacent.id)}`)}>{direction < 0 ? (uiText.text(en, "previousIssue")) : (uiText.text(en, "nextIssue"))}</Button>;
               })}</div>
               <h2 className="break-all font-medium">{expanded.slice(9)}</h2>
               <p className="whitespace-pre-wrap text-sm">{visibleFeedback.find((item) => `feedback:${item.id}` === expanded)?.note}</p>
-              <Button disabled={!details[expanded].reproduction?.available || !!busyStatusId} onClick={() => void reproduce([expanded.slice(9)])}>{en ? "Reproduce" : "一键复现"}</Button>
+              <Button disabled={!details[expanded].reproduction?.available || !!busyStatusId} onClick={() => void reproduce([expanded.slice(9)])}>{uiText.text(en, "reproduce")}</Button>
               <ReproductionPanel state={details[expanded]} />
               {visibleFeedback.find((item) => `feedback:${item.id}` === expanded) && <RelatedFeedback key={expanded} item={visibleFeedback.find((item) => `feedback:${item.id}` === expanded)!} onChanged={() => { setExpanded(null); void loadFeedback(); }} />}
-            </> : <p className="text-sm text-muted-foreground">{en ? "Select feedback to inspect its reproduction and review history." : "选择一条反馈，查看复现条件与处理历史。"}</p>}
+            </> : <p className="text-sm text-muted-foreground">{uiText.text(en, "selectFeedbackToInspectItsReproductionAndReview")}</p>}
           </aside></div>
           <div className="flex items-center justify-between gap-3 border-t border-border/70 pt-4">
             <p className="font-number text-xs text-muted-foreground">{feedback.total ? `${feedback.offset + 1}–${Math.min(feedback.offset + feedback.items.length, feedback.total)} / ${feedback.total}` : (intl("app_admin_issues_issues_client.0Records"))}</p>
@@ -684,15 +674,15 @@ export function AdminIssues({ isAdmin = false }: { isAdmin?: boolean }) {
 
       <Dialog open={!!review} onOpenChange={(open) => { if (!open && !busyStatusId) setReview(null); }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{en ? "Record review" : "记录审阅结论"}</DialogTitle><DialogDescription>{en ? "Opening feedback does not change its status. Ignoring requires a note." : "打开反馈不会更改状态。忽略必须填写备注。"}</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{uiText.text(en, "recordReview")}</DialogTitle><DialogDescription>{uiText.text(en, "openingFeedbackDoesNotChangeItsStatusIgnoring")}</DialogDescription></DialogHeader>
           <DialogBody className="grid gap-4">
-            <label className="grid gap-2 text-sm">{en ? "Status" : "状态"}<select className="min-h-11 rounded-lg border bg-background px-3" value={review?.status ?? "reviewed"} disabled={!!busyStatusId} onChange={(event) => setReview((current) => current && ({ ...current, status: event.target.value as AdminFeedbackStatus }))}>
-              {(Object.keys(STATUS_LABELS) as AdminFeedbackStatus[]).map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
+            <label className="grid gap-2 text-sm">{uiText.text(en, "status")}<select className="min-h-11 rounded-lg border bg-background px-3" value={review?.status ?? "reviewed"} disabled={!!busyStatusId} onChange={(event) => setReview((current) => current && ({ ...current, status: event.target.value as AdminFeedbackStatus }))}>
+              {STATUSES.map((status) => <option key={status} value={status}>{statusLabels[status]}</option>)}
             </select></label>
-            {review?.status === "ignored" ? <div className="flex flex-wrap gap-2">{(en ? ["Not reproduced", "Configuration issue", "Expected behavior", "Other"] : ["未复现", "配置问题", "预期行为", "其他"]).map((note) => <Button key={note} variant="outline" size="sm" disabled={!!busyStatusId} onClick={() => setReviewNote(note)}>{note}</Button>)}</div> : null}
-            <label className="grid gap-2 text-sm">{en ? "Review note" : "处理备注"}<textarea maxLength={2000} rows={4} className="rounded-lg border bg-background p-3" value={reviewNote} disabled={!!busyStatusId} onChange={(event) => setReviewNote(event.target.value)} /></label>
+            {review?.status === "ignored" ? <div className="flex flex-wrap gap-2">{([uiText.text(en, "notReproduced"), uiText.text(en, "configurationIssue"), uiText.text(en, "expectedBehavior"), uiText.text(en, "other")]).map((note) => <Button key={note} variant="outline" size="sm" disabled={!!busyStatusId} onClick={() => setReviewNote(note)}>{note}</Button>)}</div> : null}
+            <label className="grid gap-2 text-sm">{uiText.text(en, "reviewNote")}<textarea maxLength={2000} rows={4} className="rounded-lg border bg-background p-3" value={reviewNote} disabled={!!busyStatusId} onChange={(event) => setReviewNote(event.target.value)} /></label>
           </DialogBody>
-          <DialogFooter><Button variant="ghost" disabled={!!busyStatusId} onClick={() => setReview(null)}>{en ? "Cancel" : "取消"}</Button><Button disabled={!!busyStatusId || (review?.status === "ignored" && !reviewNote.trim())} onClick={() => void saveReview()}>{en ? "Save review" : "保存结论"}</Button></DialogFooter>
+          <DialogFooter><Button variant="ghost" disabled={!!busyStatusId} onClick={() => setReview(null)}>{uiText.text(en, "cancel")}</Button><Button disabled={!!busyStatusId || (review?.status === "ignored" && !reviewNote.trim())} onClick={() => void saveReview()}>{uiText.text(en, "saveReview")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
       <Dialog open={confirmDelete} onOpenChange={(open) => { if (!deleting) setConfirmDelete(open); }}>

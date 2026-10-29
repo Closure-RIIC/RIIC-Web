@@ -1,0 +1,9 @@
+{
+  "skill": "纯技能",
+  "skillEfficiency": "技能效率",
+  "crossFacility": "跨设施",
+  "combinedBonus": "综合加成",
+  "capacity": "仓储上限",
+  "orderMechanic": "订单机制",
+  "equivalentSkillEfficiency": "等效 {value}% 技能效率"
+}

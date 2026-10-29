@@ -190,7 +190,7 @@ export function OtpInput({
   className?: string;
   ref?: Ref<OtpInputHandle>;
 }) {
-  const intl = useTranslations();
+  const intl = useTranslations("Account");
   const reduced = useReducedMotion();
 
   const resolvedLabel = label ?? (intl("components_interior_otp_input.emailVerificationCode"));

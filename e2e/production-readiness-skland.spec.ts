@@ -860,7 +860,7 @@ test.describe("gacha touch layout", () => {
     expect(noticeBounds.x + noticeBounds.width).toBeLessThan((await trigger.boundingBox())!.x);
     await trigger.click();
     await expect(page.getByRole("dialog", { name: "授权寻访记录" })).toBeVisible();
-    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     const beforeScroll = (await trigger.boundingBox())!;
     await page.locator("[data-app-scroll-area]").evaluate((element) => element.scrollTo(0, element.scrollHeight));
     expect((await trigger.boundingBox())!.y).toBeCloseTo(beforeScroll.y, 1);
@@ -931,7 +931,7 @@ test("gacha authorization dialog stops polling when closed and refreshes after Q
   await expect(dialog.getByRole("status")).toHaveText("等待扫码确认");
   await page.clock.fastForward(3100);
   await expect.poll(() => polls).toBe(1);
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await expect(trigger).toBeFocused();
   await page.clock.fastForward(10_000);
@@ -1177,7 +1177,7 @@ test("Skland QR polling pauses while hidden or offline and resumes immediately",
   await seedPreferences(page);
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/");
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await openSklandOverview(page);
   await page.getByRole("checkbox").nth(0).check();
   await page.getByRole("checkbox").nth(1).check();
@@ -1235,7 +1235,7 @@ test("Skland QR expires locally without polling after its deadline", async ({ pa
   await seedPreferences(page);
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/");
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await openSklandOverview(page);
   await page.getByRole("checkbox").nth(0).check();
   await page.getByRole("checkbox").nth(1).check();
@@ -1305,7 +1305,7 @@ test("credential import explains the risk, gates consent, recovers from errors, 
   await seedPreferences(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await openSklandOverview(page);
   await page.getByRole("tab", { name: "凭证导入" }).click();
 
@@ -1510,7 +1510,7 @@ test("Skland login waits for explicit consent and explains slow preparation", as
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/");
 
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await openSklandOverview(page);
   expect(qrStartRequests).toBe(0);
   await page.getByRole("checkbox").nth(0).check();
@@ -1553,7 +1553,7 @@ test("Skland login replaces a scanned QR with progress while authentication fini
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
 
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await openSklandOverview(page);
   await page.getByRole("checkbox").nth(0).check();
   await page.getByRole("checkbox").nth(1).check();
@@ -1666,7 +1666,7 @@ test("an in-flight Skland restore cannot replace a newly imported MAA BOX", asyn
   await dialog.getByRole("button", { name: "粘贴 JSON", exact: true }).click();
   await dialog.getByLabel("JSON 内容").fill(JSON.stringify(sampleData));
   await dialog.getByRole("button", { name: "导入 JSON", exact: true }).click();
-  await dialog.getByRole("button", { name: "Close" }).click();
+  await dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/ }).click();
   await expect(dialog).toHaveCount(0);
 
   const fullRestoreResponse = page.waitForResponse((response) => {
@@ -1778,7 +1778,7 @@ test("Skland status center loads full status on demand and deletion preserves no
   await expect(calculatorAccount.locator("[data-skland-account-avatar] img")).toHaveCount(0);
   const compactAvatarBox = await calculatorAccount.locator("[data-remote-avatar-state]").boundingBox();
   expect(compactAvatarBox?.width).toBeCloseTo(42, 0);
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await openSklandOverview(page);
   await expect.poll(() => fullSessionRequests).toBe(1);
 
@@ -1818,7 +1818,7 @@ test("Skland status center loads full status on demand and deletion preserves no
     await page.mouse.up();
   }
 
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await page.getByRole("button", { name: "基建计算器", exact: true }).click();
   await expect(page.locator("[data-plan-board]")).toHaveAttribute("data-plan-revision", diagnosticId);
 });
@@ -2432,7 +2432,7 @@ test("Skland supports adding, switching, and individually logging out multiple a
   await logout.click();
   await expect(page.getByRole("heading", { name: "把当前罗德岛带进排班助手" })).toBeVisible();
   await expect(page.locator("[data-skland-account-control]")).toHaveCount(0);
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await page.getByRole("button", { name: "基建计算器", exact: true }).click();
   await expect(page.locator("[data-skland-account-control]")).toHaveCount(0);
 

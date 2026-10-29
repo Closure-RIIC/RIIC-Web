@@ -1,9 +1,13 @@
+import type { AppLocale } from "@riic/contracts/locale";
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../messages/zh-CN/AK_account_health_advice.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_account_health_advice");
 import { MODULE_LMD, type AccountHealthInput } from "./account-health-input.ts";
 import type { HealthDemand } from "./account-health-demand.ts";
 import { formatScaledAmount } from "./resource-scale-display.ts";
 import { trainingCost } from "./inventory-estimates.ts";
 
-export type AdviceLocale = "zh" | "en";
+export type AdviceLocale = AppLocale;
 
 export interface AdviceStockSection {
   lmd: number;
@@ -81,17 +85,11 @@ function gradeFor(value: number, bands: readonly [number, number, number]): "fai
   return "excellent";
 }
 
-const GRADE_TEXT: Record<"fail" | "pass" | "good" | "excellent", [string, string]> = {
-  fail: ["不及格", "below par"],
-  pass: ["合格", "adequate"],
-  good: ["良好", "good"],
-  excellent: ["优秀", "excellent"],
-};
 
 function wan(amount: number, locale: AdviceLocale): string {
   const scaled = formatScaledAmount(amount, locale);
   if (scaled) return scaled;
-  return new Intl.NumberFormat(locale === "en" ? "en-US" : "zh-CN").format(Math.round(amount));
+  return new Intl.NumberFormat(locale).format(Math.round(amount));
 }
 
 function stockSection(health: AccountHealthInput): AdviceStockSection | null {
@@ -182,77 +180,49 @@ function stockShortExp(health: AccountHealthInput): number | null {
 
 function shiftAdvice(demand: HealthDemand | null, orundum: boolean, locale: AdviceLocale): string[] {
   if (orundum) {
-    return locale === "en"
-      ? ["12h shifts or 12/6/6; harvest before storage fills up."]
-      : ["搓玉期 12 小时一换或 12/6/6 班制均可，以收菜不爆仓为准。"];
+    return [uiText.text(locale, "12hShiftsOr1266HarvestBefore")];
   }
   const cadence = demand?.loginCadence;
   if (cadence === "twice-daily") {
-    return locale === "en"
-      ? ["12/12/12 three shifts (36h cycle, two swaps a day) — the most recommended manual pattern."]
-      : ["12/12/12 三班（36h 周期、一天两换），手动玩家最推荐的班制。"];
+    return [uiText.text(locale, "121212ThreeShifts36hCycleTwo")];
   }
   if (cadence === "daily") {
-    return locale === "en"
-      ? ["In-game auto rotation (red-mood trigger) fits a once-a-day rhythm; switch to 12/12/12 when chasing output."]
-      : ["每天上线一次适合游戏内置自动轮换（红脸触发）；追求产出时改用 12/12/12。"];
+    return [uiText.text(locale, "inGameAutoRotationRedMoodTriggerFits")];
   }
   if (cadence === "irregular") {
-    return locale === "en"
-      ? ["In-game auto rotation (red-mood trigger) fits an irregular rhythm, or pick a shift pattern that matches your own schedule."]
-      : ["上线不规律适合游戏内置自动轮换（红脸触发），或按自己的实际作息自行选择换班模式。"];
+    return [uiText.text(locale, "inGameAutoRotationRedMoodTriggerFits2")];
   }
-  return locale === "en"
-    ? ["12/12/12 three shifts works for every layout by default."]
-    : ["默认推荐 12/12/12 三班，各布局通用。"];
+  return [uiText.text(locale, "121212ThreeShiftsWorksForEvery")];
 }
 
 function recommend(health: AccountHealthInput, holdsGroup: boolean, locale: AdviceLocale): AdviceRecommendation | null {
   const demand = health.demand;
   const severeLmd = (stockShortLmd(health) ?? 0) >= SEVERE_SHORT;
   const severeExp = (stockShortExp(health) ?? 0) >= SEVERE_SHORT;
-  const zh = locale === "zh";
+  const zh = locale;
   const shiftsBase = shiftAdvice(demand, demand?.orundumPlan === "planned", locale);
 
   if (demand?.orundumPlan === "planned") {
     if (demand.layoutChange === "keep") {
       return {
-        layout: zh ? "当前布局" : "current layout",
-        headline: zh ? "在现有布局内切产物搓玉" : "Switch recipes to grind orundum in the current layout",
-        lines: zh ? [
-          "一组贸易站切开采协力（合成玉订单），一组制造站切源石碎片。",
-          "243 一类均衡布局搓玉期间龙门币不涨、经验溢出，长期搓玉建议换 333/342。",
-        ] : [
-          "One trade post switches to mining support orders (orundum), one factory to originium shards.",
-          "Balanced layouts like 243 stall LMD and overflow EXP while grinding; switch to 333/342 for the long run.",
-        ],
+        layout: uiText.text(zh, "currentLayout"),
+        headline: uiText.text(zh, "switchRecipesToGrindOrundumInTheCurrent"),
+        lines: [uiText.text(zh, "oneTradePostSwitchesToMiningSupportOrders"), uiText.text(zh, "balancedLayoutsLike243StallLmdAndOverflow")],
         shifts: shiftsBase,
       };
     }
     if (demand.outputPriority === "low-maintenance") {
       return {
         layout: "333",
-        headline: zh ? "333 搓玉期布局（省心向）" : "333 orundum layout (low maintenance)",
-        lines: zh ? [
-          "3 贸易 = 2 龙门币 + 1 合成玉；3 制造 = 2 赤金 + 1 源石碎片。",
-          "土库存耗尽后就地转纯产钱（碎片站改赤金、合成玉贸易改回龙门币），或切回 243。",
-        ] : [
-          "3 trade = 2 LMD + 1 orundum; 3 factories = 2 gold + 1 originium shard.",
-          "When rock stock runs dry, flip shard factories to gold and orundum posts back to LMD, or return to 243.",
-        ],
+        headline: uiText.text(zh, "333OrundumLayoutLowMaintenance"),
+        lines: [uiText.text(zh, "3Trade2Lmd1Orundum3Factories"), uiText.text(zh, "whenRockStockRunsDryFlipShardFactories")],
         shifts: shiftsBase,
       };
     }
     return {
       layout: "342",
-      headline: zh ? "342 搓玉期布局（产出向）" : "342 orundum layout (output oriented)",
-      lines: zh ? [
-        "3 贸易 = 2 龙门币 + 1 合成玉；4 制造 = 1 源石碎片 + 2 赤金 + 1 经验（或 1 碎片 + 3 赤金）。",
-        "比 333 多一间制造站，搓玉同时多产赤金或经验，可在搓玉、补经验、纯产钱之间切换。",
-      ] : [
-        "3 trade = 2 LMD + 1 orundum; 4 factories = 1 shard + 2 gold + 1 EXP (or 1 shard + 3 gold).",
-        "One more factory than 333 — extra gold or EXP while grinding, flexible to switch lines.",
-      ],
+      headline: uiText.text(zh, "342OrundumLayoutOutputOriented"),
+      lines: [uiText.text(zh, "3Trade2Lmd1Orundum4Factories"), uiText.text(zh, "oneMoreFactoryThan333ExtraGoldOr")],
       shifts: shiftsBase,
     };
   }
@@ -261,90 +231,60 @@ function recommend(health: AccountHealthInput, holdsGroup: boolean, locale: Advi
     if (holdsGroup) {
       return {
         layout: "342",
-        headline: zh ? "342 纯钱表，优先补龙门币" : "342 pure LMD to refill the shortfall first",
-        lines: zh ? [
-          "3 贸易产龙门币 + 4 制造产赤金。",
-          "启用鸿雪杜林组（鸿雪＋绮良＋图耶）快速补龙门币。",
-        ] : [
-          "3 trade posts for LMD + 4 gold factories.",
-          "Run the Ho'olheyak-Durin group (Ho'olheyak + Kjera + Tuya) to refill LMD fast.",
-        ],
+        headline: uiText.text(zh, "342PureLmdToRefillTheShortfallFirst"),
+        lines: [uiText.text(zh, "3TradePostsForLmd4GoldFactories"), uiText.text(zh, "runTheHoOlheyakDurinGroupHoOlheyak")],
         shifts: shiftsBase,
       };
     }
     return {
       layout: "333",
-      headline: zh ? "333 全产钱，优先补龙门币" : "333 all-LMD to refill the shortfall first",
-      lines: zh ? [
-        "3 贸易产龙门币 + 3 制造产赤金。",
-        "持有鸿雪、绮良、图耶时可改用 342 纯钱表，回钱更快。",
-      ] : [
-        "3 trade posts for LMD + 3 gold factories.",
-        "With Ho'olheyak, Kjera and Tuya, 342 pure LMD recovers faster.",
-      ],
+      headline: uiText.text(zh, "333AllLmdToRefillTheShortfallFirst"),
+      lines: [uiText.text(zh, "3TradePostsForLmd3GoldFactories"), uiText.text(zh, "withHoOlheyakKjeraAndTuya342Pure")],
       shifts: shiftsBase,
     };
   }
   if (severeExp) {
     return {
       layout: "153",
-      headline: zh ? "153 经验布局，优先补作战记录" : "153 EXP layout to refill battle records first",
-      lines: zh ? [
-        "1 贸易配赤金 + 4 制造产经验，无人机加速经验线。",
-        "龙门币缺口靠刷 CE-6 或与 243 切换补回。",
-      ] : [
-        "1 trade with gold + 4 EXP factories; drones assist the EXP line.",
-        "Cover the LMD side with CE-6 runs or alternating with 243.",
-      ],
+      headline: uiText.text(zh, "153ExpLayoutToRefillBattleRecordsFirst"),
+      lines: [uiText.text(zh, "1TradeWithGold4ExpFactoriesDrones"), uiText.text(zh, "coverTheLmdSideWithCe6Runs")],
       shifts: shiftsBase,
     };
   }
   if (demand?.twoPowerPlants === "avoid") {
     return {
       layout: "243",
-      headline: zh ? "243 常驻自足（三发电）" : "243 steady-state (three power plants)",
-      lines: zh ? ["4 制造配 2 赤金 2 经验，钱书产出均衡。"] : ["4 factories as 2 gold + 2 EXP for balanced output."],
+      headline: uiText.text(zh, "243SteadyStateThreePowerPlants"),
+      lines: [uiText.text(zh, "4FactoriesAs2Gold2ExpFor")],
       shifts: shiftsBase,
     };
   }
   return {
-    layout: zh ? "252＋342 切换" : "252 + 342 alternating",
-    headline: zh ? "钱书缺口可控：252＋342 切换或 243 常驻" : "Gap manageable: alternate 252 + 342, or stay on 243",
-    lines: zh ? [
-      "252（2~3 赤金）偏经验，342（3~4 赤金）偏龙门币，互切配平钱书。",
-      "不想切换时 243 常驻自足即可。",
-    ] : [
-      "252 (2–3 gold) leans EXP, 342 (3–4 gold) leans LMD; alternate to balance.",
-      "Staying on 243 full-time also works.",
-    ],
+    layout: uiText.text(zh, "252342Alternating"),
+    headline: uiText.text(zh, "gapManageableAlternate252342OrStayOn"),
+    lines: [uiText.text(zh, "25223GoldLeansExp3423"), uiText.text(zh, "stayingOn243FullTimeAlsoWorks")],
     shifts: shiftsBase,
   };
 }
 
 function buildSummary(health: AccountHealthInput, stock: AdviceStockSection | null, production: AdviceProductionSection | null, recommendation: AdviceRecommendation | null, locale: AdviceLocale): string {
-  const zh = locale === "zh";
+  const zh = locale;
   const parts: string[] = [];
   if (stock) {
-    parts.push(zh
-      ? `库存龙门币 ${wan(stock.lmd, locale)}、作战记录 ${wan(stock.experience, locale)}`
-      : `Stock: LMD ${wan(stock.lmd, locale)}, EXP ${wan(stock.experience, locale)}`);
+    parts.push(uiText.text(locale, "summaryStock", { lmd: wan(stock.lmd, locale), exp: wan(stock.experience, locale) }));
     if (stock.demandRatio !== null) {
-      if (stock.lmdShort !== null) parts.push(zh ? `推测钱书需求比为 ${stock.demandRatio.toFixed(2)}，缺龙门币 ${wan(stock.lmdShort, locale)}` : `inferred demand ratio ${stock.demandRatio.toFixed(2)}, LMD short ${wan(stock.lmdShort, locale)}`);
-      else if (stock.expShort !== null) parts.push(zh ? `推测钱书需求比为 ${stock.demandRatio.toFixed(2)}，缺经验 ${wan(stock.expShort, locale)}` : `inferred demand ratio ${stock.demandRatio.toFixed(2)}, EXP short ${wan(stock.expShort, locale)}`);
-      else parts.push(zh ? `推测钱书需求比为 ${stock.demandRatio.toFixed(2)}，钱书匹配` : `inferred demand ratio ${stock.demandRatio.toFixed(2)}, balanced`);
+      if (stock.lmdShort !== null) parts.push(uiText.text(zh, "inferredDemandRatioLmdShort", { value1: stock.demandRatio.toFixed(2), value2: wan(stock.lmdShort, locale) }));
+      else if (stock.expShort !== null) parts.push(uiText.text(zh, "inferredDemandRatioExpShort", { value1: stock.demandRatio.toFixed(2), value2: wan(stock.expShort, locale) }));
+      else parts.push(uiText.text(zh, "inferredDemandRatioBalanced", { value1: stock.demandRatio.toFixed(2) }));
     }
-    if (stock.goldSurplus !== null) parts.push(zh
-      ? (stock.goldSurplus === "large" ? "存在大量赤金盈余" : "存在赤金盈余")
-      : (stock.goldSurplus === "large" ? "large gold surplus" : "gold surplus"));
+    if (stock.goldSurplus !== null) parts.push(uiText.text(locale, "summaryGold", { amount: stock.goldSurplus }));
   }
   if (production?.grade) {
     const score = production.capacityIndex ?? production.lmdExpSum;
-    if (score !== null) parts.push(zh
-      ? `${production.degraded ? "钱书和" : "产能指数"} ${wan(score, locale)}（${GRADE_TEXT[production.grade][0]}）`
-      : `${production.degraded ? "LMD+EXP sum" : "capacity index"} ${wan(score, locale)} (${GRADE_TEXT[production.grade][1]})`);
+    if (score !== null) parts.push(uiText.text(locale, "summaryProduction", { metric: production.degraded ? "sum" : "capacity", value: wan(score, locale), grade: production.grade }));
   }
-  if (recommendation) parts.push(zh ? `推荐 ${recommendation.layout}` : `recommended: ${recommendation.layout}`);
-  return parts.join(zh ? "；" : "; ") + (parts.length ? (zh ? "。" : ".") : "");
+  if (recommendation) parts.push(uiText.text(zh, "recommended", { value1: recommendation.layout }));
+  return parts.join(zh !== "en" ? "；" : "; ") + (parts.length ? (zh !== "en" ? "。" : ".") : "");
 }
 
 export function buildHealthAdvice(health: AccountHealthInput, holdsGroup: boolean, locale: AdviceLocale): HealthAdviceReport {
@@ -352,12 +292,12 @@ export function buildHealthAdvice(health: AccountHealthInput, holdsGroup: boolea
   const production = productionSection(health, stock?.demandRatio ?? null);
   const recommendation = recommend(health, holdsGroup, locale);
   const notes: string[] = [];
-  const zh = locale === "zh";
-  if (!health.inventory) notes.push(zh ? "绑定森空岛或手填库存后可评估库存缺口。" : "Connect Skland or fill inventory manually to assess the stock gap.");
+  const zh = locale;
+  if (!health.inventory) notes.push(uiText.text(zh, "connectSklandOrFillInventoryManuallyToAssess"));
   if (!health.training?.usableForPersonalAssessment || stock?.demandRatio == null) {
-    notes.push(zh ? "导入真实干员池（至少 3 名精二）后可按培养习惯估算需求比。" : "Import a real operator box (3+ E2) to estimate your demand ratio.");
+    notes.push(uiText.text(zh, "importARealOperatorBox3E2To"));
   }
-  if (!health.production) notes.push(zh ? "保存三日报表后可评估产能档位与赤金盈亏。" : "Save a three-day report to grade capacity and gold balance.");
+  if (!health.production) notes.push(uiText.text(zh, "saveAThreeDayReportToGradeCapacity"));
   return {
     summary: buildSummary(health, stock, production, recommendation, locale),
     stock, production, recommendation, notes,

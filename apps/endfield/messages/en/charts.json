@@ -1,0 +1,14 @@
+{
+  "assignOperatorsFirst": "Assign operators first.",
+  "simulatedFacility": "Simulated facility",
+  "morale": "Morale",
+  "rate": "Rate",
+  "theHorizontalAxisShowsElapsedHoursProductionIsA": "The horizontal axis shows elapsed hours. Production is a percentage of the base rate; the center shows recovery bonus.",
+  "ratesAreRecalculatedFromTheCrewOnShiftZero": "Rates are recalculated from the crew on shift. Zero output while the whole room rests or the B shift is empty is expected; morale refilling or the next shift restores it. The center shows the current crew''s recovery bonus.",
+  "theDashedLineMarksTheInspectedMomentClickA": "The dashed line marks the inspected moment. Click a chart to inspect it.",
+  "selectOperatorCardsToDisplayTheirMoraleCurves": "Select operator cards to display their morale curves.",
+  "recoveryBonus": "Recovery bonus",
+  "product": "Product",
+  "integralHAverage": "Integral {value1} %·h · average {value2}%",
+  "integralBaseHoursAverage": "Integral {value1} base-hours · average {value2}× ({value3}%)"
+}

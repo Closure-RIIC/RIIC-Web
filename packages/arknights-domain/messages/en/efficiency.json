@@ -1,0 +1,9 @@
+{
+  "skill": "Skill",
+  "skillEfficiency": "Skill efficiency",
+  "crossFacility": "Cross-facility",
+  "combinedBonus": "Combined bonus",
+  "capacity": "Capacity",
+  "orderMechanic": "Order mechanic",
+  "equivalentSkillEfficiency": "Equivalent {value}% skill efficiency"
+}

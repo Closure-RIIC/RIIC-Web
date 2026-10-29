@@ -110,7 +110,7 @@ function structuredEfficiency(
 export function presentRoomEfficiency(
   group: string,
   efficiency: RoomEfficiency | undefined,
-  locale: AppLocale = "zh",
+  locale: AppLocale = "zh-CN",
 ): RoomEfficiencyPresentation | null {
   if (!efficiency) return null;
 

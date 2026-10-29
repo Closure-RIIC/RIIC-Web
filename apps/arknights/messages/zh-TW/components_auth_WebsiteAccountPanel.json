@@ -1,0 +1,19 @@
+{
+  "somethingWentWrongTryAgainLater": "操作失敗，請稍後重試。",
+  "restoringWebsiteAccount": "正在恢復網站帳號",
+  "emailVerified": "郵箱已驗證",
+  "signingOut": "正在退出…",
+  "signOutOnThisDevice": "退出當前裝置",
+  "signedInDevices": "登入裝置",
+  "thisSessionSigningOutEverywhereRevokesDatabaseSessionsAnd": "當前會話{value2}。退出全部裝置會撤銷資料庫 Session，並清除當前瀏覽器儲存的第三方帳號憑據。",
+  "revokingSessions": "正在撤銷 Session…",
+  "signOutEverywhere": "退出全部裝置",
+  "deleteAccountPermanently": "永久登出帳號",
+  "yourAccountAndAllSessionsWillBeDeletedImmediately": "帳號與全部 Session 會立即刪除。請輸入當前密碼確認，此操作不可撤銷。",
+  "currentPassword": "當前密碼",
+  "showCurrentPassword": "顯示當前密碼",
+  "alsoClearThisBrowserSLocalWorkspaceAfterDeletion": "登出成功後同時清除當前瀏覽器的本地工作區",
+  "deleting": "正在登出…",
+  "account": "帳號管理",
+  "signIn": "登入"
+}

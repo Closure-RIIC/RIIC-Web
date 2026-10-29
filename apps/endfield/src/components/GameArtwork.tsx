@@ -1,3 +1,4 @@
+import { operatorName, displayText } from "../i18n/game-data";
 import { useState, type CSSProperties } from "react";
 import { operatorData, weaponData, workbenchArtwork } from "@riic/endfield-data";
 import { useWorkspace } from "../state";
@@ -18,9 +19,8 @@ export function OperatorPortrait({ name, size = 48, elite: explicitElite, showTi
   const stages = [...new Set(display?.skills.flatMap(skill => skill.unlock === null ? [] : [skill.unlock]) ?? [])];
   const progress = elite != null && Number.isInteger(elite) && elite >= 0 && elite <= 4 && stages.length
     ? { unlocked: stages.filter(stage => stage <= elite).length, total: stages.length } : null;
-  const label = (locale === "en" ? display?.enName : display?.name) || name;
-  const progressLabel = progress ? t(`基建技能已解锁 ${progress.unlocked}/${progress.total} 阶段 · 精英化 ${elite}`,
-    `Ship skills: ${progress.unlocked}/${progress.total} stages unlocked · Elite ${elite}`) : "";
+  const label = (displayText(display, "name", locale)) || name;
+  const progressLabel = progress ? t("GameArtwork.shipSkillsStagesUnlockedElite", { value1: progress.unlocked, value2: progress.total, value3: elite ?? 0 }) : "";
   return <span className="ef-operator-portrait" data-rarity={display?.rarity} style={{ width: size, height: size }}
     role={label ? "img" : undefined} aria-label={label ? `${label}${progressLabel ? ` · ${progressLabel}` : ""}` : undefined}
     aria-hidden={!label || undefined} title={showTitle ? progressLabel || label || undefined : undefined}>
@@ -51,14 +51,14 @@ export function EquippedWeapon({ name, compact = false }: { name: string; compac
   const weapon = record(record(character).weapon), profile = record(weapon.weaponData);
   const id = text(profile.id) || text(weapon.weaponId) || text(weapon.id);
   const data = weaponData(id);
-  const label = (locale === "en" ? data?.enName : data?.name) || text(profile.name);
+  const label = (displayText(data, "name", locale)) || text(profile.name);
   if (!label) return null;
-  return <span className={`ef-equipped-weapon${compact ? " ef-equipped-weapon--compact" : ""}`} title={`${t("已装备", "Equipped")}: ${label}`}>
+  return <span className={`ef-equipped-weapon${compact ? " ef-equipped-weapon--compact" : ""}`} title={`${t("GameArtwork.equipped")}: ${label}`}>
     <GameArtwork src={data?.icon || text(profile.iconUrl) || undefined} name={label} size={compact ? 22 : 32} />
     {!compact ? <span>{label}{weapon.level != null ? ` · Lv.${text(weapon.level)}` : ""}</span> : null}
   </span>;
 }
 export function OperatorChip({ name, showWeapon = true, compact = false }: { name: string; showWeapon?: boolean; compact?: boolean }) {
   const { locale } = useWorkspace();
-  return <div className={`ef-operator-chip${compact ? " ef-operator-chip--compact" : ""}`}><OperatorPortrait name={name} size={compact ? 28 : 36} /><span className="ef-operator-chip-name">{locale === "en" ? operatorData(name)?.enName || name : name}</span>{showWeapon ? <EquippedWeapon name={name} compact /> : null}</div>;
+  return <div className={`ef-operator-chip${compact ? " ef-operator-chip--compact" : ""}`}><OperatorPortrait name={name} size={compact ? 28 : 36} /><span className="ef-operator-chip-name">{operatorName(name, locale)}</span>{showWeapon ? <EquippedWeapon name={name} compact /> : null}</div>;
 }

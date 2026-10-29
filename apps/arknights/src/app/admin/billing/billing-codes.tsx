@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,9 @@ type IssuedBatch = { batchId: string; points: number; codes: string[]; batchLabe
 
 export function BillingCodes() {
   const t = useTranslations("AdminWorkspace");
+  // Language changes update copy without reloading or overwriting in-progress work.
+  const languageEffectRef = useRef({ t });
+  useEffect(() => { languageEffectRef.current = { t }; }, [t]);
   const locale = useLocale();
   const request = useAdminRequest();
   const [count, setCount] = useState("20");
@@ -43,14 +47,14 @@ export function BillingCodes() {
     setLoadError("");
     try {
       const params = new URLSearchParams({ ...filters, page: String(filters.page) });
-      const data = await request<CodeHistoryData>(`/api/admin/billing/cdk?${params}`, { cache: "no-store" }, t("cdkLoadFailed"));
+      const data = await request<CodeHistoryData>(`/api/admin/billing/cdk?${params}`, { cache: "no-store" }, languageEffectRef.current.t("cdkLoadFailed"));
       if (sequence === loadSequence.current) setHistory(data);
     } catch (cause) {
-      if (sequence === loadSequence.current) setLoadError(cause instanceof Error ? cause.message : t("cdkLoadFailed"));
+      if (sequence === loadSequence.current) setLoadError(cause instanceof Error ? cause.message : languageEffectRef.current.t("cdkLoadFailed"));
     } finally {
       if (sequence === loadSequence.current) setLoading(false);
     }
-  }, [request, t, filters]);
+  }, [request, filters]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 

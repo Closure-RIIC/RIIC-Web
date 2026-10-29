@@ -17,7 +17,7 @@ export function ReleaseEditor({ draft, onChange, versionLocked, disabled }: {
   draft: ReleaseDraft; onChange: (draft: ReleaseDraft) => void; versionLocked: boolean; disabled: boolean;
 }) {
   const t = useTranslations("ReleaseEditor");
-  const [language, setLanguage] = useState<"zh" | "en">("zh");
+  const [language, setLanguage] = useState<"zh" | "tw" | "en">("zh");
   function setItems(kind: ReleaseSection["kind"], items: ReleaseText[]) {
     const sections = RELEASE_KINDS.flatMap((candidate) => {
       const values = candidate === kind ? items : draft.sections.find((section) => section.kind === candidate)?.items ?? [];
@@ -48,16 +48,17 @@ export function ReleaseEditor({ draft, onChange, versionLocked, disabled }: {
         </Toggle>
         <p className="text-xs leading-5 text-muted-foreground">{t("notificationHint")}</p>
       </div>
-      <Tabs value={language} onValueChange={(value) => setLanguage(value as "zh" | "en")}>
+      <Tabs value={language} onValueChange={(value) => setLanguage(value as "zh" | "tw" | "en")}>
         <TabsList aria-label={t("contentLanguage")} className="h-11">
           <TabsTrigger value="zh">{t("chinese")}</TabsTrigger>
+          <TabsTrigger value="tw">{t("traditionalOptional")}</TabsTrigger>
           <TabsTrigger value="en">{t("englishOptional")}</TabsTrigger>
         </TabsList>
       <TabsContent value={language} className="space-y-6 pt-3">
-      {language === "en" ? <p className="text-xs text-muted-foreground">{t("englishFallback")}</p> : null}
+      {language !== "zh" ? <p className="text-xs text-muted-foreground">{t("englishFallback")}</p> : null}
       <div className="space-y-2">
         <Label htmlFor="release-title">{t("updateTitle")}</Label>
-        <Input id="release-title" value={draft.title[language]} className="h-11" maxLength={RELEASE_LIMITS.title}
+        <Input id="release-title" value={draft.title[language] ?? ""} className="h-11" maxLength={RELEASE_LIMITS.title}
           placeholder={t("titlePlaceholder")}
           onChange={(event) => onChange({ ...draft, title: { ...draft.title, [language]: event.target.value } })} />
       </div>
@@ -79,7 +80,7 @@ export function ReleaseEditor({ draft, onChange, versionLocked, disabled }: {
                   <Button type="button" variant="ghost" size="sm" onClick={() => setItems(kind, items.filter((_, itemIndex) => index !== itemIndex))}
                     aria-label={t("removeItemLabel", { section: t(SECTION_KEYS[kind]), index: index + 1 })}>{t("remove")}</Button>
                 </div>
-                <Textarea id={`release-${kind}-${index}`} value={item[language]} maxLength={RELEASE_LIMITS.item} className="min-h-24"
+                <Textarea id={`release-${kind}-${index}`} value={item[language] ?? ""} maxLength={RELEASE_LIMITS.item} className="min-h-24"
                   onChange={(event) => setItems(kind, items.map((entry, itemIndex) => index === itemIndex ? { ...entry, [language]: event.target.value } : entry))} />
               </div>
             ))}

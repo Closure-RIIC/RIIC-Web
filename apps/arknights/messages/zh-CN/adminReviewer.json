@@ -1,0 +1,8 @@
+{
+  "grant": "设为审阅人",
+  "revoke": "撤销审阅人",
+  "eligible": "只能将已验证且未封禁的账号设为审阅人。",
+  "grantDescription": "将 {name}（{email}）设为审阅人后，该账号只能访问运行概览和求解器问题。若原为管理员，将同时失去其他后台权限。",
+  "revokeDescription": "撤销后，{name}（{email}）将立即失去后台访问权限。",
+  "confirm": "确认设为审阅人"
+}

@@ -1,0 +1,8 @@
+{
+  "signInAndSecurity": "登入與安全",
+  "signedOutOnAllDevices": "已退出所有裝置。",
+  "accountDeleted": "帳號已刪除。",
+  "signedOutOnThisDevice": "已退出當前裝置。",
+  "revokeEverySessionToRequireAllDevicesTo": "撤銷全部登入會話後，所有裝置都需要重新登入。",
+  "sessionStatus": "{state, select, expires {將於 {date} 到期} other {目前有效}}"
+}

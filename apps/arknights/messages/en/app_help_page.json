@@ -1,0 +1,13 @@
+{
+  "helpTopics": "Help topics",
+  "firstImport": "FIRST IMPORT",
+  "importYourOperatorBoxStepByStep": "Import your Operator Box step by step",
+  "openTutorial": "Open tutorial",
+  "commonIssue": "COMMON ISSUE",
+  "switchToTheOperatorsYouActuallyOwn": "Switch to the operators you actually own",
+  "viewSteps": "View steps",
+  "stillNotWorking": "Still not working?",
+  "recordTheCurrentBoxSourceOwnedOperatorCountBase": "Record the current Box source, owned-operator count, base layout, and error code before reporting the issue. Never publish passwords, verification codes, or complete login credentials.",
+  "checkTheCalculator": "Check the calculator",
+  "reportAnIssue": "Report an issue"
+}

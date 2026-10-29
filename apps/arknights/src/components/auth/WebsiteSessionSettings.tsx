@@ -1,5 +1,11 @@
 "use client";
 
+import type { AppLocale } from "@riic/contracts/locale";
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_auth_WebsiteSessionSettings.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_auth_WebsiteSessionSettings");
+
+
 import { requestAccountSignIn } from "@riic/shell/account-sign-in";
 import { reportAccountActivity } from "@riic/shell/account-activity";
 import { Clock3, RefreshCw, ShieldCheck } from "lucide-react";
@@ -12,10 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useWebsiteSession } from "@/website-session";
 
-function formatExpiry(value: Date | string, locale: "zh" | "en"): string | null {
+function formatExpiry(value: Date | string, locale: AppLocale): string | null {
   const date = value instanceof Date ? value : new Date(value);
   if (!Number.isFinite(date.getTime())) return null;
-  return new Intl.DateTimeFormat(locale === "en" ? "en-US" : "zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(date);
+  return new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
 function remainingParts(value: Date | string, now: number) {
@@ -32,7 +38,7 @@ function remainingParts(value: Date | string, now: number) {
 
 export function WebsiteSessionSettings({ actions }: { actions?: ReactNode }) {
   const intl = useTranslations("components_auth_WebsiteSessionSettings");
-  const locale = useLocale() as "zh" | "en";
+  const locale = useLocale();
   const { data: session, isPending, refetch } = useWebsiteSession();
   const [open, setOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
@@ -67,7 +73,7 @@ export function WebsiteSessionSettings({ actions }: { actions?: ReactNode }) {
       await refetch();
       setNow(Date.now());
       setOpen(false);
-      reportAccountActivity({ title: locale === "en" ? "Sign-in and security" : "登录与安全", description: intl("extended") });
+      reportAccountActivity({ title: uiText.text(locale, "signInAndSecurity"), description: intl("extended") });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : intl("extendFailed"));
     } finally {
@@ -79,7 +85,7 @@ export function WebsiteSessionSettings({ actions }: { actions?: ReactNode }) {
     <InfraTechnicalCard group="meeting">
       <section aria-labelledby="settings-session-title" data-settings-group="security">
         <InfraTechnicalHeading icon={<Clock3 className="size-4" aria-hidden="true" />} titleId="settings-session-title">
-          {actions ? (locale === "en" ? "Sign-in and security" : "登录与安全") : intl("title")}
+          {actions ? (uiText.text(locale, "signInAndSecurity")) : intl("title")}
         </InfraTechnicalHeading>
         <p className="mt-4 text-sm leading-6 text-white/64">{intl("description")}</p>
         <div className="mt-5 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">

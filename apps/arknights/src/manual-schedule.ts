@@ -1,3 +1,7 @@
+import { createLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type DurationMessages from "../messages/zh-CN/RotationPresentation.json";
+const durationText = createLocalizer<typeof DurationMessages>("RotationPresentation");
+import type { AppLocale } from "@riic/contracts/locale";
 import type {
   BaseBlueprint,
   BlueprintRoom,
@@ -288,11 +292,10 @@ export function resizeManualShiftDurations(durations: readonly number[], count: 
   return minutes.map((duration) => duration / 60);
 }
 
-export function formatManualShiftDuration(minutes: number, en: boolean): string {
+export function formatManualShiftDuration(minutes: number, en: AppLocale): string {
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
-  if (en) return `${hours ? `${hours}h` : ""}${remainingMinutes ? `${hours ? " " : ""}${remainingMinutes}m` : ""}`;
-  return `${hours ? `${hours}小时` : ""}${remainingMinutes ? `${remainingMinutes}分钟` : ""}`;
+  return durationText.text(en, "manualDuration", { hours, minutes: remainingMinutes });
 }
 
 function finitePositive(value: unknown, fallback: number): number {

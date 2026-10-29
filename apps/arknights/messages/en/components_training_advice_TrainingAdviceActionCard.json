@@ -1,0 +1,11 @@
+{
+  "current": "Current",
+  "operatorSkillsTargetSkillHighlighted": "Operator skills · target skill highlighted",
+  "operatorInfrastructureSkills": "Operator infrastructure skills",
+  "target": "Target",
+  "acquisition": "Acquisition",
+  "efficiencyInsight": "Efficiency insight",
+  "acquire": "Obtain",
+  "train": "Train",
+  "selectForTrainingPlan": "Add to plan · E{elite} Lv {level}"
+}

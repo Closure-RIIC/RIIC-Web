@@ -1,0 +1,11 @@
+{
+  "latestProduction": "Latest production",
+  "previousProduction": "Previous production",
+  "production": "Production",
+  "status_queued": "Queued",
+  "status_running": "Running",
+  "status_completed": "Completed",
+  "status_failed": "Failed",
+  "status_cancelled": "Cancelled",
+  "status_interrupted": "Interrupted"
+}

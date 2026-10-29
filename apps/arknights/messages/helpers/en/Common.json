@@ -1,7 +1,0 @@
-{
-  "language": "Language / 语言",
-  "missingSkillName": "Infrastructure Skill",
-  "missingSkillText": "English data is not available yet.",
-  "changes": "{count, plural, one {# change} other {# changes}}",
-  "consentFeedback": "I consent to submitting the {kind, select, performance {performance} other {schedule issue}} information and private reproduction snapshot described above."
-}

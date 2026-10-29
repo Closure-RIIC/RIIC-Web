@@ -1,0 +1,23 @@
+{
+  "version": "版本號",
+  "versionLocked": "釋出過的版本號不可更改。",
+  "releaseDate": "釋出日期",
+  "notifyInPopup": "彈窗通知",
+  "popupOn": "彈窗通知：開",
+  "popupOff": "彈窗通知：關",
+  "notificationHint": "同版本的文字修正不會重複通知已讀使用者。",
+  "contentLanguage": "編輯內容語言",
+  "chinese": "中文",
+  "englishOptional": "英文（可選）",
+  "englishFallback": "缺少譯文時顯示簡體原文。",
+  "updateTitle": "更新標題",
+  "titlePlaceholder": "例如：專精規劃上線",
+  "sectionNew": "新增",
+  "sectionImproved": "最佳化",
+  "sectionFixed": "修復",
+  "addItem": "新增條目",
+  "noItems": "此分類暫無條目。",
+  "removeItemLabel": "移除{section}第 {index} 條",
+  "remove": "移除",
+  "traditionalOptional": "繁體中文（選填）"
+}

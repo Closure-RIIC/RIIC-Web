@@ -1,0 +1,13 @@
+{
+  "sampleSuspendedAccount": "Sample suspended account",
+  "thisActionIsUnavailableInTheLocalPreview": "This action is unavailable in the local preview. No live request was sent.",
+  "sampleIncompleteLayoutInput": "Sample: incomplete layout input",
+  "sampleExpiredSession": "Sample: expired session",
+  "sampleCurrentVersion": "Sample current version",
+  "sampleBaseline": "Sample baseline",
+  "tradingStationOperatorOrderDiffersAfterExport": "Trading station operator order differs after export.",
+  "aManufacturingRotationLeavesASlotEmpty": "A manufacturing rotation leaves a slot empty.",
+  "compareFiammettaTargetAssignmentAcrossShifts": "Compare Fiammetta target assignment across shifts.",
+  "reviewDormitoryAutofillInTheDownloadedPlan": "Review dormitory autofill in the downloaded plan.",
+  "theSolveTookLongerAfterChangingTheLayout": "The solve took longer after changing the layout."
+}

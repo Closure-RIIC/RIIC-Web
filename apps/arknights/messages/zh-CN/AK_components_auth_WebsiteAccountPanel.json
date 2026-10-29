@@ -1,0 +1,8 @@
+{
+  "signInAndSecurity": "登录与安全",
+  "signedOutOnAllDevices": "已退出所有设备。",
+  "accountDeleted": "账号已删除。",
+  "signedOutOnThisDevice": "已退出当前设备。",
+  "revokeEverySessionToRequireAllDevicesTo": "撤销全部登录会话后，所有设备都需要重新登录。",
+  "sessionStatus": "{state, select, expires {将在 {date} 到期} other {处于有效状态}}"
+}

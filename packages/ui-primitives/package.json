@@ -47,7 +47,8 @@
     "./utils": "./utils.ts",
     "./alert": "./alert.tsx",
     "./card": "./card.tsx",
-    "./label": "./label.tsx"
+    "./label": "./label.tsx",
+    "./labels": "./labels.tsx"
   },
   "sideEffects": [
     "**/*.css"

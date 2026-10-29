@@ -1,0 +1,13 @@
+{
+  "restore": "Cannot restore local data. The saved copy has not been overwritten. Export a backup, then import it again.",
+  "save": "Local storage is unavailable. Export your roster.",
+  "result": "This result is available in the current session but could not be saved locally.",
+  "workerFailed": "The solver failed. Please retry.",
+  "timeout": "The search timed out and computation has stopped. Try a smaller roster or adjust the settings.",
+  "workerStart": "Unable to start the solver.",
+  "clear": "Could not clear all local data. Export your setup before retrying.",
+  "clearPermission": "Could not clear local data. Check browser storage permissions.",
+  "evaluationFailed": "Evaluation failed. Edit the schedule to retry.",
+  "evaluationTimeout": "Evaluation timed out. Edit the schedule to retry.",
+  "evaluationStart": "Unable to start evaluation."
+}

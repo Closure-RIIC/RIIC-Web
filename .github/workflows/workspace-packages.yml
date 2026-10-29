@@ -30,6 +30,8 @@ jobs:
           --health-interval 10s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
@@ -41,6 +43,7 @@ jobs:
       - name: Endfield incremental transfer and interruption recovery
         run: python3 deploy/endfield-transfer.test.py
       - run: npm run check:public-repository && npm run check:types && npm run lint
+      - run: npm run check:i18n
       - run: npm run test:workspace && npm run test:platform && npm run test:endfield && npm run test:endfield:skland
       - name: Build independent artifacts
         env:

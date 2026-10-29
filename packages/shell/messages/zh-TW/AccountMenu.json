@@ -1,0 +1,17 @@
+{
+  "menu": "帳號選單",
+  "anonymous": "未登入",
+  "signIn": "登入網站帳號",
+  "loading": "正在載入帳號",
+  "billing": "付費計劃",
+  "changelog": "更新日誌",
+  "signOut": "退出登入",
+  "signingOut": "正在退出…",
+  "signOutFailed": "退出登入失敗，請重試。",
+  "docs": "Docs",
+  "settings": "設定",
+  "language": "語言",
+  "unavailable": "帳號服務暫不可用，本地排班仍可使用。",
+  "languageFailed": "語言載入失敗，請重新選擇以重試。",
+  "languageLoading": "正在載入語言…"
+}

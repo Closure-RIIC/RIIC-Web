@@ -1,12 +1,12 @@
 "use client";
 
-import { lazy, Suspense } from "react";
+import { lazyWithMessages } from "@/i18n/features-client";
+import { Suspense } from "react";
 
 import { RichTextStatic } from "@/components/RichTextStatic";
 
-const InteractiveRichText = lazy(() =>
-  import("@/components/RichTextInteractive").then((module) => ({ default: module.RichTextInteractive })),
-);
+const InteractiveRichText = lazyWithMessages(() =>
+  import("@/components/RichTextInteractive").then((module) => ({ default: module.RichTextInteractive })), "apps/arknights/src/components/RichTextInteractive.tsx");
 
 /**
  * 基建技能富文本渲染：`<@cc.xxx>` 上色、`<$cc.xxx>` 渲染为可点击词条。

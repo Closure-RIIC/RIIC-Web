@@ -1,0 +1,15 @@
+{
+  "operatorsControlCenterLv": "{value1} operators · Control center Lv.{value2}",
+  "sklandSync": "Skland sync",
+  "editRoster": "Edit roster",
+  "searching": "Searching…",
+  "generateSchedule": "Generate schedule",
+  "schedulingOperators": "Scheduling operators",
+  "viewAll": "View all {value1}",
+  "readyForTheNextProductionCycle": "Ready for the next production cycle",
+  "setUpYourOperators": "Set up your operators",
+  "chooseProductionAndPrioritiesInProductionSetupThenGenerate": "Choose production and priorities in Production setup, then generate your ship-wide schedule.",
+  "signInToSklandToSyncOperatorsEliteStages": "Sign in to Skland to sync operators, elite stages and facility levels, or use Edit roster to configure them manually.",
+  "adjustFacilityLevels": "Adjust facility levels",
+  "openSklandSync": "Open Skland sync"
+}

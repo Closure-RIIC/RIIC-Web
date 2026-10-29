@@ -1,0 +1,9 @@
+{
+  "notAssigned": "Not assigned",
+  "notEnabled": "Not enabled",
+  "drones": "Drones",
+  "chooseFacility": "Choose facility",
+  "autoAssignDrones": "Auto-assign drones",
+  "moraleRecovery": "Morale recovery",
+  "currentShift": "Current shift"
+}

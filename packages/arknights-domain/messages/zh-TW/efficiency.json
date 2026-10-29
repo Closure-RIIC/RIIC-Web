@@ -1,0 +1,9 @@
+{
+  "skill": "純技能",
+  "skillEfficiency": "技能效率",
+  "crossFacility": "跨設施",
+  "combinedBonus": "綜合加成",
+  "capacity": "倉儲上限",
+  "orderMechanic": "訂單機制",
+  "equivalentSkillEfficiency": "等效 {value}% 技能效率"
+}

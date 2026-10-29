@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations, useLocale } from "use-intl";
+import { useTranslations } from "use-intl";
 
 import { Button } from "@/components/ui/button";
 import { RemoteAvatar } from "@/components/ui/remote-avatar";
@@ -37,12 +37,11 @@ export function SklandAccountControl({
   onOpenSkland,
 }: SklandAccountControlProps) {
   const intl = useTranslations();
-  const locale = useLocale();
   if (!CLIENT_SKLAND_ENABLED) return null;
 
   const selectedRole = account.roles.find((role) => role.uid === account.selectedUid) ?? account.roles[0] ?? null;
   const nickname = statusSnapshot?.player.nickname ?? selectedRole?.nickname ?? null;
-  const accountLabel = intl("components_layout_AppTopBar.openSklandStatus", { value1: (locale === "en") ? (nickname ?? "Signed-in account") : "", value2: (locale === "en") ? "" : (nickname ?? "已登录账号") });
+  const accountLabel = intl("components_layout_AppTopBar.openSklandStatus", { value2: nickname ?? intl("Common.signedInAccount") });
 
   return (
     <Button

@@ -1,0 +1,15 @@
+{
+  "setUpYourRosterBeforeStarting": "名單為空，請先配置我的幹員。",
+  "enableAtLeastOneFacility": "請至少啟用一個艙室。",
+  "assignOperatorsInTheEditorBeforeStarting": "請先在編輯檢視安排幹員。",
+  "assistanceTargetDayAssist": "助力目標 · 第 {value1} 天 · 第 {value2} 次",
+  "chooseAssistanceTarget": "選擇助力目標",
+  "loadingLocalConfiguration": "正在讀取本地配置…",
+  "showResults": "展示模擬結果",
+  "resetSimulation": "重置模擬",
+  "assignOperatorsThenChooseShowResults": "安排幹員後點擊「展示模擬結果」檢視曲線。",
+  "simulationSettings": "模擬設定",
+  "eventsAndStatistics": "事件日誌與模擬統計",
+  "simulationStatistics": "模擬統計",
+  "notStarted": "尚未開始"
+}

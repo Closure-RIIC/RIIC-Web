@@ -1,0 +1,8 @@
+{
+  "backToHelp": "返回帮助首页",
+  "useTheOperatorsYouOwn": "切换成自己已有的干员",
+  "useThisGuideIfYouLoadedTheAllOperator": "适用于误点「全角色导入」、方案出现未拥有干员，或练完新干员后想更新 Box 的情况。",
+  "firstCheckWhetherTheSourceIs243MaxLevel": "先看当前来源是不是「243 全精二示例」",
+  "ifSoSeeingOperatorsYouDoNotOwnIs": "如果是，排出你没有的干员属于预期现象。无需清浏览器缓存，也不用删除账号；按下面步骤更换即可。",
+  "switchStepByStep": "逐步切换"
+}

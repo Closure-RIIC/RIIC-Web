@@ -1,0 +1,14 @@
+{
+  "assignOperatorsFirst": "請先安排幹員。",
+  "simulatedFacility": "模擬艙室",
+  "morale": "心情",
+  "rate": "產率",
+  "theHorizontalAxisShowsElapsedHoursProductionIsA": "橫軸為已模擬小時；產率以基礎產率的百分比顯示，中樞顯示恢復加成。",
+  "ratesAreRecalculatedFromTheCrewOnShiftZero": "換班後產率按新班次幹員的技能重新計算；全艙休息或 B 班為空時產率為 0 屬於停工，心情回滿/換班後恢復。中樞顯示的是當前班組的恢復加成。",
+  "theDashedLineMarksTheInspectedMomentClickA": "虛線表示當前回放位置；點選圖表檢視當時狀態。",
+  "selectOperatorCardsToDisplayTheirMoraleCurves": "點選幹員卡片選擇要顯示的心情曲線。",
+  "recoveryBonus": "恢復加成",
+  "product": "產物",
+  "integralHAverage": "積分 {value1} %·h · 平均 {value2}%",
+  "integralBaseHoursAverage": "積分 {value1} 等效小時 · 平均 {value2}×（{value3}%）"
+}

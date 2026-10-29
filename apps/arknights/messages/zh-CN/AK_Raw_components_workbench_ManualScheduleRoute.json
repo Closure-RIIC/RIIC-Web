@@ -1,0 +1,7 @@
+{
+  "scheduleCopyUsesTheScheduleSTrainingLevelsWhich": "作业副本：<part1></part1> · 使用作业练度，可在排班编辑中调整；个人干员池保留。",
+  "backToPersonalDraft": "返回个人草稿",
+  "invalidCode": "作业码格式不正确。",
+  "loadFailed": "读取作业失败。",
+  "copiedTraining": "作业练度（非个人干员池）"
+}

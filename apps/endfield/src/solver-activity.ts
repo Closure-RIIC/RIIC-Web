@@ -16,6 +16,7 @@ export interface SolverActivity {
   limited?: boolean;
   problem?: "empty" | "verification" | "worker";
   error?: string;
+  errorCode?: "workerFailed" | "timeout" | "workerStart";
 }
 
 export type ManualEvaluationActivity = Omit<SolverActivity, "kind" | "phase"> & {

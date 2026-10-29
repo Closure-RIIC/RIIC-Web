@@ -76,7 +76,7 @@ export function SkillQuery() {
       selectedTag,
       query,
       (skillId) => BUILDING_SKILL_CATALOG[skillId],
-      { rarity: rarity === "all" ? null : Number(rarity), profession: profession === "all" ? null : Number(profession), englishNames: gameCatalog?.operatorNames, pinyinNames },
+      { rarity: rarity === "all" ? null : Number(rarity), profession: profession === "all" ? null : Number(profession), englishNames: gameCatalog.operatorNames, pinyinNames, translatedSkills: gameCatalog.buildingSkills },
     ),
     [query, selectedRoom, selectedTag, rarity, profession, gameCatalog, pinyinNames],
   );

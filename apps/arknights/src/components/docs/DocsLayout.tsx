@@ -1,5 +1,10 @@
 "use client";
 
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_docs_DocsLayout.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_docs_DocsLayout");
+
+
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { ArrowLeft, ArrowUpRight, ChevronDown, ChevronRight, Search, X } from "lucide-react";
@@ -14,7 +19,7 @@ import styles from "./DocsLayout.module.css";
 
 function DocsNavigation({ slug, onSearch }: { slug: string; onSearch: () => void }) {
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const { setOpenMobile, isMobile } = useSidebar();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const activeGroup = findDoc(slug)?.group;
@@ -23,15 +28,15 @@ function DocsNavigation({ slug, onSearch }: { slug: string; onSearch: () => void
     <div className={`${sidebarStyles.sidebar} ${styles.sidebar}`} data-docs-sidebar>
       <SidebarHeader className={styles.sidebarHeader}>
         <div className={styles.brandRow}>
-          <Link to="/docs" onClick={closeMobile} className={styles.brand}><img src="/icon.png" width="22" height="22" alt="" /><span>{en ? "RIIC Docs" : "使用文档"}</span></Link>
-          {isMobile ? <button type="button" onClick={closeMobile} className={styles.iconButton} aria-label={en ? "Close navigation" : "关闭目录"}><X size={17} /></button> : null}
+          <Link to="/docs" onClick={closeMobile} className={styles.brand}><img src="/icon.png" width="22" height="22" alt="" /><span>{uiText.text(en, "riicDocs")}</span></Link>
+          {isMobile ? <button type="button" onClick={closeMobile} className={styles.iconButton} aria-label={uiText.text(en, "closeNavigation")}><X size={17} /></button> : null}
         </div>
-        <Link to="/" className={styles.backLink}><ArrowLeft size={14} aria-hidden="true" />{en ? "Back to workbench" : "返回基建"}</Link>
-        <button type="button" onClick={() => { closeMobile(); onSearch(); }} className={styles.searchTrigger}><Search size={15} aria-hidden="true" /><span>{en ? "Search docs" : "搜索文档"}</span><kbd>Ctrl K</kbd></button>
+        <Link to="/" className={styles.backLink}><ArrowLeft size={14} aria-hidden="true" />{uiText.text(en, "backToWorkbench")}</Link>
+        <button type="button" onClick={() => { closeMobile(); onSearch(); }} className={styles.searchTrigger}><Search size={15} aria-hidden="true" /><span>{uiText.text(en, "searchDocs")}</span><kbd>Ctrl K</kbd></button>
       </SidebarHeader>
       <SidebarContent data-yeye-scroll="y" className={styles.navigationScroll}>
-        <nav aria-label={en ? "Documentation" : "文档目录"}>
-          <SidebarMenu className={styles.overviewLink}><SidebarMenuItem><SidebarMenuButton isActive={!slug} render={<Link to="/docs" onClick={closeMobile} aria-current={!slug ? "page" : undefined} />}><span>{en ? "Overview" : "文档首页"}</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu>
+        <nav aria-label={uiText.text(en, "documentation")}>
+          <SidebarMenu className={styles.overviewLink}><SidebarMenuItem><SidebarMenuButton isActive={!slug} render={<Link to="/docs" onClick={closeMobile} aria-current={!slug ? "page" : undefined} />}><span>{uiText.text(en, "overview")}</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu>
           {DOC_GROUPS.map(group => {
             const open = expanded[group.id] ?? (group.id === "start" || group.id === activeGroup);
             return <section key={group.id} className={styles.navGroup}>
@@ -51,7 +56,7 @@ function DocsNavigation({ slug, onSearch }: { slug: string; onSearch: () => void
       </SidebarContent>
       <SidebarFooter className={styles.sidebarFooter}>
         <LanguageSwitch />
-        <a href="https://github.com/Closure-RIIC/RIIC-Web/issues" target="_blank" rel="noreferrer" className={styles.supportLink}>{en ? "Feedback" : "反馈问题"}<ArrowUpRight size={13} aria-hidden="true" /></a>
+        <a href="https://github.com/Closure-RIIC/RIIC-Web/issues" target="_blank" rel="noreferrer" className={styles.supportLink}>{uiText.text(en, "feedback")}<ArrowUpRight size={13} aria-hidden="true" /></a>
       </SidebarFooter>
     </div>
   </Sidebar>;
@@ -59,16 +64,16 @@ function DocsNavigation({ slug, onSearch }: { slug: string; onSearch: () => void
 
 function DocsSearch({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [query, setQuery] = useState("");
   const input = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   const results = searchDocs(query, locale);
   return <Dialog open={open} onOpenChange={onOpenChange}>
     <DialogContent initialFocus={input} className={styles.searchDialog}>
-      <DialogTitle className="sr-only">{en ? "Search documentation" : "搜索文档"}</DialogTitle>
-      <DialogDescription className="sr-only">{en ? "Search titles and content. Use arrow keys to browse results, Enter to open, and Escape to close." : "搜索标题与正文。方向键选择结果，回车打开，Esc 关闭。"}</DialogDescription>
-      <div className={styles.searchInputRow}><Search size={19} aria-hidden="true" /><input ref={input} value={query} onChange={event => setQuery(event.target.value)} placeholder={en ? "What would you like to know?" : "你想了解什么？"} aria-label={en ? "Search documentation" : "搜索文档"} onKeyDown={event => { if (event.key === "ArrowDown") { event.preventDefault(); resultsRef.current?.querySelector<HTMLAnchorElement>("a")?.focus(); } }} /></div>
+      <DialogTitle className="sr-only">{uiText.text(en, "searchDocumentation")}</DialogTitle>
+      <DialogDescription className="sr-only">{uiText.text(en, "searchTitlesAndContentUseArrowKeysTo")}</DialogDescription>
+      <div className={styles.searchInputRow}><Search size={19} aria-hidden="true" /><input ref={input} value={query} onChange={event => setQuery(event.target.value)} placeholder={uiText.text(en, "whatWouldYouLikeToKnow")} aria-label={uiText.text(en, "searchDocumentation")} onKeyDown={event => { if (event.key === "ArrowDown") { event.preventDefault(); resultsRef.current?.querySelector<HTMLAnchorElement>("a")?.focus(); } }} /></div>
       <div className={styles.searchResults} ref={resultsRef} data-yeye-scroll="y" onKeyDown={event => {
         if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
         const links = Array.from(event.currentTarget.querySelectorAll<HTMLAnchorElement>("a"));
@@ -78,11 +83,11 @@ function DocsSearch({ open, onOpenChange }: { open: boolean; onOpenChange: (open
         if (event.key === "ArrowUp" && index === 0) { input.current?.focus(); return; }
         links[event.key === "Home" ? 0 : event.key === "End" ? links.length - 1 : (index + (event.key === "ArrowDown" ? 1 : -1) + links.length) % links.length]?.focus();
       }}>
-        <p className={styles.searchLabel} role="status">{query.trim() ? (en ? `${results.length} results` : `${results.length} 篇相关文档`) : (en ? "Start here" : "从这里开始")}</p>
+        <p className={styles.searchLabel} role="status">{query.trim() ? (uiText.text(en, "results", { value1: results.length })) : (uiText.text(en, "startHere"))}</p>
         {results.map(article => <Link key={article.slug} to="/docs/$slug" params={{ slug: article.slug }} onClick={() => onOpenChange(false)} className={styles.searchResult}>
           <span><small>{docText(DOC_GROUPS.find(group => group.id === article.group)!.title, locale)}</small><strong>{docText(article.title, locale)}</strong><span>{docText(article.description, locale)}</span></span><ChevronRight size={16} aria-hidden="true" />
         </Link>)}
-        {!results.length ? <p className={styles.emptySearch}>{en ? "No matching articles. Try “import”, “MAA”, or “sync”." : "没有找到相关文档，试试「导入」「MAA」或「同步」。"}</p> : null}
+        {!results.length ? <p className={styles.emptySearch}>{uiText.text(en, "noMatchingArticlesTryImportMaaOrSync")}</p> : null}
       </div>
     </DialogContent>
   </Dialog>;
@@ -90,7 +95,7 @@ function DocsSearch({ open, onOpenChange }: { open: boolean; onOpenChange: (open
 
 export function DocsLayout({ children }: { children: ReactNode }) {
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const pathname = useLocation({ select: location => location.pathname });
   const slug = pathname.split("/")[2] ?? "";
   const article = findDoc(slug);
@@ -104,17 +109,17 @@ export function DocsLayout({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
   return <TooltipProvider><SidebarProvider cookieName="docs_sidebar_state" data-workbench-shell data-docs-shell style={{ "--sidebar-width": "14rem" } as CSSProperties}>
-    <a href="#docs-content" className={styles.skipLink}>{en ? "Skip to content" : "跳转到正文"}</a>
+    <a href="#docs-content" className={styles.skipLink}>{uiText.text(en, "skipToContent")}</a>
     <DocsNavigation key={article?.group ?? "home"} slug={slug} onSearch={() => setSearchOpen(true)} />
     <SidebarInset>
       <header className={styles.topbar} data-docs-topbar>
-        <SidebarTrigger aria-label={en ? "Toggle navigation" : "展开或收起目录"} />
-        <nav aria-label={en ? "Breadcrumb" : "当前位置"} className={styles.breadcrumb}>
-          <Link to="/docs">{en ? "Docs" : "使用文档"}</Link>
+        <SidebarTrigger aria-label={uiText.text(en, "toggleNavigation")} />
+        <nav aria-label={uiText.text(en, "breadcrumb")} className={styles.breadcrumb}>
+          <Link to="/docs">{uiText.text(en, "docs")}</Link>
           {group ? <><ChevronRight size={12} aria-hidden="true" /><span>{docText(group.title, locale)}</span></> : null}
           {article ? <><ChevronRight size={12} aria-hidden="true" /><span aria-current="page">{docText(article.title, locale)}</span></> : null}
         </nav>
-        <button type="button" onClick={() => setSearchOpen(true)} className={styles.iconButton} aria-label={en ? "Search documentation" : "搜索文档"}><Search size={17} /></button>
+        <button type="button" onClick={() => setSearchOpen(true)} className={styles.iconButton} aria-label={uiText.text(en, "searchDocumentation")}><Search size={17} /></button>
       </header>
       <div data-app-scroll-area="docs" data-scroll-restoration-id="docs-page" data-yeye-scroll="y" data-yeye-scroll-slot="docs-page-scrollbar" className={styles.viewport}>
         {children}
@@ -126,18 +131,18 @@ export function DocsLayout({ children }: { children: ReactNode }) {
 }
 
 export function DocsBackToTop({ className }: { className?: string }) {
-  const en = useLocale() === "en";
+  const en = useLocale();
   return <button type="button" className={className} data-docs-back-to-top onClick={() => {
     document.getElementById("docs-content")?.focus({ preventScroll: true });
     document.querySelector('[data-app-scroll-area="docs"]')?.scrollTo({
       top: 0,
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
     });
-  }}>{en ? "Back to top" : "回到顶部"}</button>;
+  }}>{uiText.text(en, "backToTop")}</button>;
 }
 
 export function DocsTableOfContents({ items }: { items: { id: string; title: string }[] }) {
-  const en = useLocale() === "en";
+  const en = useLocale();
   const [active, setActive] = useState(items[0]?.id);
   useEffect(() => {
     const root = document.querySelector('[data-app-scroll-area="docs"]');
@@ -149,9 +154,9 @@ export function DocsTableOfContents({ items }: { items: { id: string; title: str
     items.forEach(item => { const element = document.getElementById(item.id); if (element) observer.observe(element); });
     return () => observer.disconnect();
   }, [items]);
-  const links = <nav aria-label={en ? "On this page" : "本页目录"}>{items.map(item => <a key={item.id} href={`#${item.id}`} aria-current={active === item.id ? "location" : undefined} onClick={() => setActive(item.id)}>{item.title}</a>)}</nav>;
+  const links = <nav aria-label={uiText.text(en, "onThisPage")}>{items.map(item => <a key={item.id} href={`#${item.id}`} aria-current={active === item.id ? "location" : undefined} onClick={() => setActive(item.id)}>{item.title}</a>)}</nav>;
   return <>
-    <details className={styles.mobileToc}><summary>{en ? "On this page" : "本页目录"}<ChevronDown size={14} /></summary>{links}</details>
-    <aside className={styles.toc}><p>{en ? "On this page" : "本页目录"}</p>{links}<DocsBackToTop className={styles.backToTop} /></aside>
+    <details className={styles.mobileToc}><summary>{uiText.text(en, "onThisPage")}<ChevronDown size={14} /></summary>{links}</details>
+    <aside className={styles.toc}><p>{uiText.text(en, "onThisPage")}</p>{links}<DocsBackToTop className={styles.backToTop} /></aside>
   </>;
 }

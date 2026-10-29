@@ -1,0 +1,26 @@
+{
+  "status": {
+    "local-only": "Local only · Cloud sync is off",
+    "idle": "Not synced yet",
+    "pending": "Changes waiting to sync",
+    "syncing": "Syncing…",
+    "synced": "No changes waiting to upload",
+    "error": "Sync failed · Latest changes are not confirmed uploaded",
+    "conflict": "Version conflict · Automatic sync paused"
+  },
+  "conflict": "The cloud workspace differs from this page. Automatic sync is paused. Choose which version to keep.",
+  "useRemote": "Use cloud version",
+  "useLocal": "Keep local version",
+  "confirmRemote": "Replace this page's BOX, settings, and schedule with the latest cloud version. Unsynced changes on this page will be replaced.",
+  "confirmLocal": "Replace the cloud workspace with this page's BOX, settings, and schedule. If another device changes the cloud again, you will see another conflict.",
+  "cancel": "Cancel",
+  "confirm": "Confirm this version",
+  "syncError_consent": "Cloud sync is paused until you accept the current terms and privacy policy. Your local data is unchanged.",
+  "syncError_policy": "The terms or privacy policy have changed since this page was opened. Refresh to review the latest versions before consenting. Your local data is retained.",
+  "syncError_invalid": "Cloud sync rejected this data and will not resend it unchanged. Check your operator progression or re-import your data. Your local copy is retained.",
+  "syncError_retry": "Cloud sync is temporarily unavailable or rate limited. It will retry after a cooldown; your local data is retained.",
+  "syncError_session": "Your login has expired. Sign in again to resume cloud sync. Your local data is retained.",
+  "syncError_paused": "Cloud sync is paused after an error. Your local data is retained; you can try again later.",
+  "resumeSync": "Resume cloud sync",
+  "useLocalOnly": "Use local only"
+}

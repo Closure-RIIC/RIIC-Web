@@ -6,6 +6,7 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react-swc";
 import tailwindcss from "@tailwindcss/vite";
 import { nitro } from "nitro/vite";
+import { i18nDevJsonModules } from "../../scripts/vite-i18n-json.ts";
 import { isSklandFeatureEnabled } from "@riic/arknights-domain/deployment";
 import { assetCacheControl } from "./src/server/http-cache-policy.ts";
 
@@ -59,7 +60,7 @@ export default defineConfig(({ mode }) => {
     css: { postcss: { plugins: [] } },
     ssr: { noExternal: ["cookie-es"] },
     build: { manifest: true },
-    plugins: [{
+    plugins: [i18nDevJsonModules(), {
       name: "riic-development-dependency-cache",
       apply: "serve",
       config(config) {

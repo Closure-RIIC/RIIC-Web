@@ -15,10 +15,10 @@ export function SklandPlayerIdentity({ player, syncedAt, onCopyUid, extraMetadat
   player: SklandPlayerIdentityData; syncedAt: number | null; onCopyUid: (uid: string) => void; extraMetadata?: ReactNode; nameBadge?: ReactNode;
 }) {
   const intl = useTranslations();
-  const en = useLocale() === "en";
+  const en = useLocale();
   const date = syncedAt !== null && syncedAt > 0 && Number.isFinite(syncedAt) ? new Date(syncedAt * 1000) : null;
   const syncLabel = date && !Number.isNaN(date.getTime())
-    ? new Intl.DateTimeFormat(en ? "en-US" : "zh-CN", { dateStyle: "medium", timeStyle: "short" }).format(date)
+    ? new Intl.DateTimeFormat(en, { dateStyle: "medium", timeStyle: "short" }).format(date)
     : localize.text(en, "notProvided");
   const uid = player.uid.length <= 6 ? `${player.uid.slice(0, 2)}••${player.uid.slice(-2)}` : `${player.uid.slice(0, 3)}••••${player.uid.slice(-3)}`;
   const avatarLabel = intl("components_pages_SklandStatus.sSklandAvatar", { nickname: player.nickname });

@@ -1,0 +1,9 @@
+{
+  "unexpected-operatorsTitle": "結果裡有我沒有的幹員",
+  "saved-boxTitle": "配置彈窗直接到了第 2 步",
+  "saved-boxBody": "瀏覽器已儲存過 Box。點彈窗頂部第 1 步「幹員資料」，即可回到資料來源選擇。",
+  "box-not-appliedTitle": "換過 Box，結果卻沒變化",
+  "box-not-appliedBody": "確認當前資料不再是全精二示例，點「完成」儲存後回到計算器重新生成；舊方案不會自動更新。",
+  "busyTitle": "提示請求過多或併發已滿",
+  "busyBody": "停止連續點選，按提示等待；仍繁忙時換一個時間段。已匯入的 Box 會儲存在瀏覽器，不用重新匯入。"
+}

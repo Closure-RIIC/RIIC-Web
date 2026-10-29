@@ -1,0 +1,5 @@
+{
+  "theModelResponseTimedOutYouCanRetry": "The model response timed out. You can retry your last question; your question and attachments are still here.",
+  "theReplyWasInterruptedTheReceivedTextIs": "The reply was interrupted. The received text is preserved; you can retry your question.",
+  "theAssistantIsTemporarilyUnavailablePleaseTryAgain": "The assistant is temporarily unavailable. Please try again shortly or choose another model."
+}

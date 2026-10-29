@@ -1,0 +1,15 @@
+{
+  "reviewImportIssues": "匯入異常確認",
+  "invalidTrainingEntriesFound": "發現 <part1></part1> 項異常練度",
+  "chooseACorrection": "請選擇修正方案",
+  "importStartsOnlyAfterConfirmationCancelingPreservesYourCurrent": "確認後才會匯入；取消會保留原來的 Box。",
+  "rarityIsMatchedAgainstOperatorDataAutomaticallyIncorrectRarity": "星級會根據幹員資料自動匹配，原 JSON 中填寫的星級不一致時將自動修正。",
+  "label": "<part1></part1>（<part2></part2>星）",
+  "originalELvOutsideTheValidRange": "原始資料：精<part1></part1> · <part2></part2>級，超出合法範圍",
+  "useAllRecommendedCorrections": "一鍵採用推薦方案",
+  "cancelImport": "取消本次匯入",
+  "importing": "正在匯入…",
+  "confirmAndImport": "確認選擇並匯入",
+  "importedOperatorsFromTheMaaRosterOwned": "MAA Box 已匯入 <part1></part1> 名幹員，其中已擁有 <part2></part2> 名。",
+  "correctionFor": "{name}的修正方式"
+}

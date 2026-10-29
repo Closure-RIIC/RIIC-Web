@@ -33,11 +33,11 @@ export function useManualEvaluation(workspace: Workspace, assignments: Assignmen
             finish(result, result.verification.ok ? "" : result.verification.errors.join("；"));
           } else if (event.data.type === "error") finish(null, event.data.error);
         };
-        worker.onerror = () => finish(null, "评估进程异常，请调整排班后重试。 / Evaluation failed. Edit the schedule to retry.");
-        timeout = setTimeout(() => finish(null, "评估超时，请调整排班后重试。 / Evaluation timed out. Edit the schedule to retry."), workspace.options.time + 10000);
+        worker.onerror = () => finish(null, "@evaluation:failed");
+        timeout = setTimeout(() => finish(null, "@evaluation:timeout"), workspace.options.time + 10000);
         const request: SolverRequest = { input: workspace, assignments: assignments.map(room => ({ ...room, a: room.a.filter(Boolean), b: room.b.filter(Boolean) })) };
         worker.postMessage(request);
-      } catch { finish(null, "无法启动评估进程。 / Unable to start evaluation."); }
+      } catch { finish(null, "@evaluation:start"); }
     }, 300);
     return () => { active = false; clearTimeout(timer); clearTimeout(timeout); worker?.terminate(); };
   }, [workspace, assignments, key, enabled, completed?.key]);

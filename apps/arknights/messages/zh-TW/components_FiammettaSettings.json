@@ -1,0 +1,8 @@
+{
+  "fiammettaMoraleRecovery": "菲亞梅塔恢復心情",
+  "chooseAMoraleRecoveryTargetSeparatelyForEveryManual": "啟用後，需要為每個手動班次分別選擇換心情目標。",
+  "whenEnabledScheduleRequestsUseFiammettaForMoraleRecovery": "啟用後，排班請求將開啟菲亞梅塔恢復心情。",
+  "enabled": "已啟用",
+  "disabled": "未啟用",
+  "fiammettaIsNotOwnedInTheCurrentBoxSo": "當前 Box 未擁有菲亞梅塔，無法使用。"
+}

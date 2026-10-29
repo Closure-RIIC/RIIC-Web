@@ -1,3 +1,4 @@
+import { displayText } from "../i18n/game-data";
 import { useId, useState, type ReactNode } from "react";
 import type { Operator } from "@riic/endfield-solver/model.mjs";
 import { operatorData, skillTiersOf } from "@riic/endfield-data";
@@ -29,13 +30,13 @@ export function OperatorSkillTooltip({ name, children, side = "top" }: {
   const tooltipId = useId();
   const display = operatorData(name);
   const entry = ownedEntry(workspace.operators, name);
-  const label = (locale === "en" ? display?.enName : display?.name) || name;
+  const label = (displayText(display, "name", locale)) || name;
 
   if (!display) return <>{children}</>;
 
   const skills = skillTiersOf(display.name);
   const unlocked = entry ? new Set(unlockedSkillNodes(skills, entry)) : null;
-  const heading = `${label}${entry ? ` · E${entry.elite}` : ` · ${t("未拥有", "Not owned")}`}`;
+  const heading = `${label}${entry ? ` · E${entry.elite}` : ` · ${t("OperatorSkillTooltip.notOwned")}`}`;
 
   return <Tooltip open={open} onOpenChange={setOpen}>
     <TooltipTrigger delay={0} aria-describedby={open ? tooltipId : undefined} render={<span className="ef-skill-tooltip-anchor" />}>
@@ -51,12 +52,12 @@ export function OperatorSkillTooltip({ name, children, side = "top" }: {
           className={active ? undefined : "grayscale opacity-70"}>
           <div className="flex items-center gap-2 font-semibold">
             <GameArtwork src={skill.icon} name={skill.name} size={28} />
-            <span>{locale === "en" ? skill.enName || skill.name : skill.name}</span>
+            <span>{displayText(skill, "name", locale)}</span>
             <small className="rounded-sm border border-background/20 px-1.5 py-0.5 text-[10px]">
-              E{skill.unlock} · {active ? t("已解锁", "Unlocked") : t("未解锁", "Locked")}
+              E{skill.unlock} · {active ? t("OperatorSkillTooltip.unlocked") : t("OperatorSkillTooltip.locked")}
             </small>
           </div>
-          <p className="mt-1 text-background/75">{locale === "en" ? skill.enDescription || skill.description : skill.description}</p>
+          <p className="mt-1 text-background/75">{displayText(skill, "description", locale)}</p>
         </div>;
       })}
     </TooltipContent>

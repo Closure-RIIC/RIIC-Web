@@ -1,0 +1,13 @@
+{
+  "reloadUpdatedPolicy": "Refresh to review updated policies",
+  "enableAccountCloudWorkspace": "Enable account cloud workspace",
+  "afterYouConsentTheSiteAutomaticallySyncsYourMaa": "After you consent, the site automatically syncs your MAA BOX, layout, settings, and recent schedules. You can keep using local-only mode instead.",
+  "eachMaaBoxUsesAnIndependentKeyAndAes": "Each MAA BOX uses an independent key and AES-256-GCM envelope encryption. Cloud data is retained on a rolling 30-day basis.",
+  "theFiveMostRecentSchedulesAreSyncedUpTo": "The five most recent schedules are synced; up to five pinned schedules can be kept longer.",
+  "thirdPartyGameAccountUidsNicknamesBoxDataCredentials": "Third-party game account UIDs, nicknames, BOX data, credentials, and complete status snapshots are not written to the business database.",
+  "keepLocalOnlyMode": "Keep local-only mode",
+  "enabling": "Enabling…",
+  "agreeAndStartSyncing": "Agree and start syncing",
+  "rich1": "I have read and agree to the <element1>Terms</element1>.",
+  "rich2": "I have read the <element1>Privacy Policy</element1> and consent to automatic syncing of the data above."
+}

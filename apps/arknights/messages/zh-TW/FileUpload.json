@@ -1,0 +1,17 @@
+{
+  "chooseFiles": "選擇檔案",
+  "dropNow": "鬆開以選擇檔案",
+  "dropOrChoose": "拖拽檔案到此處，或點選選擇",
+  "singleFile": "支援 {formats}，每次選擇一個檔案",
+  "multipleFiles": "支援 {formats}，可一次選擇多個檔案",
+  "singleFileOnly": "每次只能匯入一個檔案，請重新選擇。",
+  "tooManyFiles": "每次最多選擇 {count} 個檔案，請重新選擇。",
+  "unsupportedFile": "不支援檔案“{name}”，請選擇 {formats} 檔案。",
+  "readFailed": "無法讀取檔案，請重新選擇。",
+  "processing": "正在讀取並校驗檔案…",
+  "cancel": "取消",
+  "rosterTitle": "匯入幹員資料",
+  "rosterDescription": "選擇 MAA 幹員 JSON 或相容的一圖流 Excel 檔案。",
+  "layoutDescription": "選擇匯出的基建佈局 JSON 檔案。匯入成功後將更新當前佈局。",
+  "scheduleDescription": "選擇 MAA 排班 JSON 檔案，最大 5 MiB。替換草稿前會顯示匯入預覽。"
+}

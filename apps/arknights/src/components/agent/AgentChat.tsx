@@ -1,4 +1,17 @@
 "use client";
+
+import type { AppLocale } from "@riic/contracts/locale";
+import { personaPresentation } from "@/agent-persona-presentation";
+import { useLocale as useRawLocale } from "use-intl";
+import { createLocalizer as createRawLocalizer, richValue } from "@riic/arknights-domain/i18n/localize";
+import type RawMessages from "../../../messages/zh-CN/AK_Raw_components_agent_AgentChat.json";
+const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_components_agent_AgentChat");
+
+
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_agent_AgentChat.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_agent_AgentChat");
+
 import { INTERNAL_ANSWER_MARKERS } from "@/agent-answer";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 import { WorkbenchCard } from "@/components/workbench/WorkbenchCard";
@@ -62,8 +75,8 @@ function readLocalPersona(): PersonaCard | null {
     if (value.version !== 1 || typeof value.content !== "string" || !value.content.trim() || value.content.length > MAX_PERSONA_LENGTH) return null;
     return {
       id: typeof value.id === "string" ? value.id : `local-${Date.now()}`,
-      name: typeof value.name === "string" && value.name.trim() ? value.name.slice(0, 40) : "自定义人格",
-      description: typeof value.description === "string" ? value.description.slice(0, 120) : "保存在此浏览器中的人格卡。",
+      name: typeof value.name === "string" && value.name.trim() ? value.name.slice(0, 40) : "",
+      description: typeof value.description === "string" ? value.description.slice(0, 120) : "",
       content: value.content.slice(0, MAX_PERSONA_LENGTH),
       kind: "upload",
       filename: typeof value.filename === "string" ? value.filename.slice(0, 120) : undefined,
@@ -100,25 +113,25 @@ function clearLocalPersona() {
   }
 }
 
-const TOOL_LABELS: Record<string, string> = {
-  resolve_operator: "干员身份核实",
-  calculate_mastery: "专精方案计算",
-  calculate_training: "干员养成资源计算",
-  calculate_recruitment: "公招组合计算",
-  analyze_stock_and_training: "库存与培养分析",
-  analyze_daily_production: "日产出分析",
-  diagnose_account_health: "账号体检诊断",
-  preview_solve_defaults: "排班配置预览",
-  diagnose_account: "账号数据诊断",
-  solve_schedule: "排班求解",
-  query_skills: "基建技能查询",
-  kb_route: "知识库导诊",
-  kb_read: "知识库阅读",
-  load_agent_skill: "任务指引加载",
+const TOOL_LABELS: Record<string, keyof typeof RawMessages> = {
+  resolve_operator: "tool_resolve_operator",
+  calculate_mastery: "tool_calculate_mastery",
+  calculate_training: "tool_calculate_training",
+  calculate_recruitment: "tool_calculate_recruitment",
+  analyze_stock_and_training: "tool_analyze_stock_and_training",
+  analyze_daily_production: "tool_analyze_daily_production",
+  diagnose_account_health: "tool_diagnose_account_health",
+  preview_solve_defaults: "tool_preview_solve_defaults",
+  diagnose_account: "tool_diagnose_account",
+  solve_schedule: "tool_solve_schedule",
+  query_skills: "tool_query_skills",
+  kb_route: "tool_kb_route",
+  kb_read: "tool_kb_read",
+  load_agent_skill: "tool_load_agent_skill",
 };
 
-function toolLabel(name: string): string {
-  return TOOL_LABELS[name] ?? name;
+function toolLabel(name: string, rawLocale: AppLocale): string {
+  return TOOL_LABELS[name] ? rawText.text(rawLocale, TOOL_LABELS[name]) : name;
 }
 
 interface AgentToolPartView {
@@ -136,15 +149,15 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
 }
 
-export function formatEnvironmentSummary(environment: Record<string, unknown>, sources: Record<string, unknown>) {
-  const labels: Record<string, string> = { sami: "萨米", abyssal: "深海猎人", knights: "骑士", defence: "防守方", attack: "进攻方", siracusa: "叙拉古", fireworks: "人间烟火" };
+export function formatEnvironmentSummary(environment: Record<string, unknown>, sources: Record<string, unknown>, locale: AppLocale = "zh-CN") {
+  const labels = { sami: "sami", abyssal: "abyssal", knights: "knights", defence: "defence", attack: "attack", siracusa: "siracusa", fireworks: "fireworks" } as const;
   const groups = new Map<string, string[]>();
   for (const [key, value] of Object.entries(environment)) {
-    const raw = String(sources[key] ?? "默认值");
-    const source = raw.startsWith("默认值") ? "默认" : raw === "手动指定" ? "用户指定" : raw;
-    groups.set(source, [...(groups.get(source) ?? []), `${labels[key] ?? key} ${value}`]);
+    const raw = String(sources[key] ?? "");
+    const source = !raw || raw.startsWith("默认值") ? uiText.text(locale, "defaultValue") : raw === "手动指定" ? uiText.text(locale, "manualValue") : raw;
+    groups.set(source, [...(groups.get(source) ?? []), `${key in labels ? uiText.text(locale, labels[key as keyof typeof labels]) : key} ${value}`]);
   }
-  return [...groups].map(([source, values]) => `${source}：${values.join("、")}`).join("；");
+  return [...groups].map(([source, values]) => `${source}：${values.join(locale === "en" ? ", " : "、")}`).join("；");
 }
 
 function MasteryWarnings({ warnings }: { warnings: unknown }) {
@@ -155,7 +168,8 @@ function MasteryWarnings({ warnings }: { warnings: unknown }) {
   })}</>;
 }
 
-export function ToolResultSummary({ name, output, openLabel = "在基建计算器打开" }: { name: string; output: unknown; openLabel?: string }) {
+export function ToolResultSummary({ name, output, openLabel }: { name: string; output: unknown; openLabel?: string }) {
+  const rawLocale = useRawLocale();
   const [handoffError, setHandoffError] = useState<string | null>(null);
   const handoff = agentArtifactFromOutput(output);
   const record = asRecord(output);
@@ -166,13 +180,11 @@ export function ToolResultSummary({ name, output, openLabel = "在基建计算�
     return (
       <div className="grid gap-2 text-xs">
         <div className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground">
-          <span>布局 {String(plan.layoutLabel ?? record.layoutPreset ?? "?")}</span>
-          <span>干员 {String(record.operatorCount ?? "?")}</span>
-          <span>精二池就绪 {String(summary?.tier_up_owned ?? "?")}</span>
+          <span>{rawText.rich(rawLocale, "layout", { part1: richValue((String(plan.layoutLabel ?? record.layoutPreset ?? "?"))) })}</span>
+          <span>{rawText.rich(rawLocale, "operators", { part1: richValue((String(record.operatorCount ?? "?"))) })}</span>
+          <span>{rawText.rich(rawLocale, "elite2RosterReady", { part1: richValue((String(summary?.tier_up_owned ?? "?"))) })}</span>
           {Array.isArray(record.tradeOrders) && record.tradeOrders.length > 0 ? (
-            <span>
-              贸易订单 {record.tradeOrders.map((order) => (order === "originium" ? "开采协力" : "龙门商法")).join(" / ")}
-            </span>
+            <span>{rawText.rich(rawLocale, "tradingOrders", { part1: richValue((record.tradeOrders.map((order) => (order === "originium" ? rawText.text(rawLocale, "originiumOrder") : rawText.text(rawLocale, "goldOrder"))).join(" / "))) })}</span>
           ) : null}
         </div>
         {handoff ? (
@@ -184,16 +196,16 @@ export function ToolResultSummary({ name, output, openLabel = "在基建计算�
               onClick={() => {
                 setHandoffError(null);
                 try { requestAgentArtifactOpen(handoff); }
-                catch (error) { setHandoffError(error instanceof Error ? error.message : "临时交接失败，请重试。"); }
+                catch (error) { setHandoffError(error instanceof Error ? error.message : rawText.text(rawLocale, "handoffFailed")); }
               }}
             >
-              {openLabel}<ArrowUpRight className="size-3.5" aria-hidden="true" />
+              {openLabel ?? rawText.text(rawLocale, "openCalculator")}<ArrowUpRight className="size-3.5" aria-hidden="true" />
             </Button>
             {handoffError ? <p role="alert" className="text-destructive">{handoffError}</p> : null}
           </div>
         ) : null}
         <details className="rounded border bg-muted/20 px-2 py-1">
-          <summary className="cursor-pointer select-none text-xs font-medium">在对话中查看完整排班（可切换班次）</summary>
+          <summary className="cursor-pointer select-none text-xs font-medium">{rawText.text(rawLocale, "viewTheFullScheduleInChatSwitchBetweenShifts")}</summary>
           <div className="mt-2"><PlanArtifactView plan={plan} dense /></div>
         </details>
       </div>
@@ -204,16 +216,16 @@ export function ToolResultSummary({ name, output, openLabel = "在基建计算�
     const sources = asRecord(record.settingsSources);
     const observation = asRecord(record.environmentObservation);
     return <div className="grid gap-2 text-xs">
-      <p>{String(asRecord(record.targetOperator)?.name)} · 干员池：{String(record.sourceName)}</p>
-      <p>起始专精 {String(settings?.current)} → {String(settings?.target)} · 中枢 {settings?.controlBonus ? "+5%" : "0%"}（{String(sources?.controlBonus ?? "默认值")}） · 换人余量 {String(settings?.bufferMinutes)} 分钟</p>
-      <p>{formatEnvironmentSummary(asRecord(settings?.environment) ?? {}, asRecord(sources?.environment) ?? {})}</p>
-      {observation ? <><p>森空岛快照：{typeof observation.storeTs === "number" && observation.storeTs > 0 ? new Date(observation.storeTs * 1000).toLocaleString("zh-CN") : "时间未知"}</p><p className="text-amber-600 dark:text-amber-300">{String(observation.warning)}</p></> : null}
-      {record.isSample === true ? <p className="text-muted-foreground">按全精二示例干员池计算，不代表个人实际持有与练度。</p> : null}
+      <p>{rawText.rich(rawLocale, "roster", { part1: richValue((String(asRecord(record.targetOperator)?.name))), part2: richValue((String(record.sourceName))) })}</p>
+      <p>{rawText.rich(rawLocale, "masteryControlCenterSwapAllowanceMin", { part1: richValue((String(settings?.current))), part2: richValue((String(settings?.target))), part3: richValue((settings?.controlBonus ? "+5%" : "0%")), part4: richValue((String(sources?.controlBonus ?? uiText.text(rawLocale, "defaultValue")))), part5: richValue((String(settings?.bufferMinutes))) })}</p>
+      <p>{formatEnvironmentSummary(asRecord(settings?.environment) ?? {}, asRecord(sources?.environment) ?? {}, rawLocale)}</p>
+      {observation ? <><p>{rawText.rich(rawLocale, "sklandSnapshot", { part1: richValue((typeof observation.storeTs === "number" && observation.storeTs > 0 ? new Date(observation.storeTs * 1000).toLocaleString(rawLocale) : rawText.text(rawLocale, "unknownTime"))) })}</p><p className="text-amber-600 dark:text-amber-300">{String(observation.warning)}</p></> : null}
+      {record.isSample === true ? <p className="text-muted-foreground">{rawText.text(rawLocale, "calculatedUsingTheAllElite2SampleRosterThis")}</p> : null}
       <MasteryWarnings warnings={record.warnings} />
       {(["simple", "fast"] as const).map((mode) => {
         const plan = asRecord(record[mode]);
         return <details key={mode} className="rounded border p-2" open={mode === "simple"}>
-          <summary className="cursor-pointer">{mode === "simple" ? "简单方案" : "快速方案"} · {String(plan?.totalTime)} · 换人 {String(plan?.switches)} 次</summary>
+          <summary className="cursor-pointer">{rawText.rich(rawLocale, "swaps", { part1: richValue((mode === "simple" ? rawText.text(rawLocale, "simplePlan") : rawText.text(rawLocale, "fastPlan"))), part2: richValue((String(plan?.totalTime))), part3: richValue((String(plan?.switches))) })}</summary>
           {Array.isArray(plan?.instructions) ? plan.instructions.map((stage, index) => <ol key={index} className="mt-2 grid gap-1 border-t pt-2">
             {Array.isArray(stage) ? stage.map((step, stepIndex) => {
               const item = asRecord(step);
@@ -236,19 +248,19 @@ export function ToolResultSummary({ name, output, openLabel = "在基建计算�
     const shortages = Array.isArray(record.materialShortages) ? record.materialShortages : [];
     const crafts = Array.isArray(record.crafts) ? record.crafts : [];
     return <div className="grid gap-2 text-xs">
-      <p>{String(operator?.name)} · {String(record.source)}{record.owned === false ? " · 当前未持有" : ""}</p>
-      <p>当前精{String(current?.elite)} {String(current?.level)}级 → 目标精{String(target?.elite)} {String(target?.level)}级</p>
-      <p>龙门币 {Number(lmd?.required ?? 0).toLocaleString("zh-CN")} · 库存可用 {Number(lmd?.stockWithGoldBars ?? 0).toLocaleString("zh-CN")} · 缺口 {Number(lmd?.missing ?? 0).toLocaleString("zh-CN")}</p>
-      <p>经验 {Number(experience?.required ?? 0).toLocaleString("zh-CN")} · 库存 {Number(experience?.stock ?? 0).toLocaleString("zh-CN")} · 缺口 {Number(experience?.missing ?? 0).toLocaleString("zh-CN")}（约 {String(experience?.missingBookEquivalent)} 本特级记录）</p>
-      {record.hasInventoryShortage === true ? <p>材料缺口：{shortages.slice(0, 8).map((value) => {
+      <p>{String(operator?.name)} · {String(record.source)}{record.owned === false ? rawText.text(rawLocale, "notCurrentlyOwned") : ""}</p>
+      <p>{rawText.rich(rawLocale, "currentELvTargetELv", { part1: richValue((String(current?.elite))), part2: richValue((String(current?.level))), part3: richValue((String(target?.elite))), part4: richValue((String(target?.level))) })}</p>
+      <p>{rawText.rich(rawLocale, "lmdAvailableMissing", { part1: richValue((Number(lmd?.required ?? 0).toLocaleString(rawLocale))), part2: richValue((Number(lmd?.stockWithGoldBars ?? 0).toLocaleString(rawLocale))), part3: richValue((Number(lmd?.missing ?? 0).toLocaleString(rawLocale))) })}</p>
+      <p>{rawText.rich(rawLocale, "expAvailableMissingAboutStrategicBattleRecords", { part1: richValue((Number(experience?.required ?? 0).toLocaleString(rawLocale))), part2: richValue((Number(experience?.stock ?? 0).toLocaleString(rawLocale))), part3: richValue((Number(experience?.missing ?? 0).toLocaleString(rawLocale))), part4: richValue((String(experience?.missingBookEquivalent))) })}</p>
+      {record.hasInventoryShortage === true ? <p>{rawText.rich(rawLocale, "missingMaterials", { part1: richValue((shortages.slice(0, 8).map((value) => {
         const item = asRecord(value);
         return `${String(item?.name)} ×${String(item?.missing)}`;
-      }).join("、")}{shortages.length > 8 ? ` 等 ${shortages.length} 项` : ""}</p> : <p>库存足够覆盖本次目标。</p>}
+      }).join("、"))), part2: richValue((shortages.length > 8 ? rawText.text(rawLocale, "remainingMaterials", { count: shortages.length }) : "")) })}</p> : <p>{rawText.text(rawLocale, "yourInventoryCoversThisTarget")}</p>}
       {crafts.length ? <details className="rounded border p-2">
-        <summary className="cursor-pointer">加工建议（{crafts.length} 项）</summary>
+        <summary className="cursor-pointer">{rawText.rich(rawLocale, "craftingSuggestions", { part1: richValue((crafts.length)) })}</summary>
         <ul className="mt-2 grid gap-1">{crafts.map((value, index) => {
           const craft = asRecord(value);
-          return <li key={index}>{String(craft?.name)} ×{String(craft?.count)} · 加工费 {Number(craft?.lmd ?? 0).toLocaleString("zh-CN")}</li>;
+          return <li key={index}>{rawText.rich(rawLocale, "craftingCost", { part1: richValue((String(craft?.name))), part2: richValue((String(craft?.count))), part3: richValue((Number(craft?.lmd ?? 0).toLocaleString(rawLocale))) })}</li>;
         })}</ul>
       </details> : null}
       {Array.isArray(record.warnings) ? record.warnings.map((warning, index) => <p key={index} className="text-amber-600 dark:text-amber-300">{String(warning)}</p>) : null}
@@ -256,16 +268,16 @@ export function ToolResultSummary({ name, output, openLabel = "在基建计算�
   }
   if (name === "calculate_recruitment" && Array.isArray(record.results)) {
     return <div className="grid gap-2 text-xs">
-      <p>招聘 {String(record.minutes)} 分钟 · 干员池：{String(record.sourceName)}</p>
-      {record.ownershipKnown === false ? <p className="text-muted-foreground">示例干员池：个人拥有状态未知。</p> : null}
-      {record.results.length === 0 ? <p>没有符合当前词条和筛选条件的组合。</p> : null}
+      <p>{rawText.rich(rawLocale, "recruitmentMinRoster", { part1: richValue((String(record.minutes))), part2: richValue((String(record.sourceName))) })}</p>
+      {record.ownershipKnown === false ? <p className="text-muted-foreground">{rawText.text(rawLocale, "sampleRosterYourOwnershipStatusIsUnknown")}</p> : null}
+      {record.results.length === 0 ? <p>{rawText.text(rawLocale, "noCombinationsMatchTheCurrentTagsAndFilters")}</p> : null}
       {record.results.map((value, index) => {
         const result = asRecord(value);
         return <details key={index} className="rounded border p-2">
-          <summary className="cursor-pointer">{Array.isArray(result?.tags) ? result.tags.join(" + ") : ""} · 最低 {String(result?.minimumRarity)}★</summary>
+          <summary className="cursor-pointer">{rawText.rich(rawLocale, "minimum", { part1: richValue((Array.isArray(result?.tags) ? result.tags.join(" + ") : "")), part2: richValue((String(result?.minimumRarity))) })}</summary>
           <p className="mt-1 leading-5">{Array.isArray(result?.operators) ? result.operators.map((value) => {
             const operator = asRecord(value);
-            return `${operator?.name} ${operator?.rarity}★${operator?.ownership === "missing" ? "（未拥有）" : ""}`;
+            return `${operator?.name} ${operator?.rarity}★${operator?.ownership === "missing" ? rawText.text(rawLocale, "notOwned") : ""}`;
           }).join("、") : ""}</p>
         </details>;
       })}
@@ -277,15 +289,15 @@ export function ToolResultSummary({ name, output, openLabel = "在基建计算�
     if (!skland) return null;
     const pool = asRecord(record.operatorPool);
     if (skland.connected !== true) {
-      return <div className="grid gap-1 text-xs text-muted-foreground"><p>森空岛未连接：{String(skland.reason ?? "")}</p><p>干员池：{String(pool?.sourceName ?? "未知")} · 干员 {String(pool?.owned ?? "?")} / 精二 {String(pool?.elite2 ?? "?")}</p></div>;
+      return <div className="grid gap-1 text-xs text-muted-foreground"><p>{rawText.rich(rawLocale, "sklandDisconnected", { part1: richValue((String(skland.reason ?? ""))) })}</p><p>{rawText.rich(rawLocale, "rosterOperatorsElite2", { part1: richValue((String(pool?.sourceName ?? rawText.text(rawLocale, "unknownSource")))), part2: richValue((String(pool?.owned ?? "?"))), part3: richValue((String(pool?.elite2 ?? "?"))) })}</p></div>;
     }
     const player = asRecord(skland.player);
     const operbox = asRecord(skland.operbox);
     return (
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span>{String(player?.nickname ?? "?")}（{player?.level != null ? `Lv.${String(player.level)}` : "等级未知"}）</span>
-        <span>干员 {String(operbox?.owned ?? "?")} / 精二 {String(operbox?.elite2 ?? "?")}</span>
-        {Array.isArray(operbox?.elite2SixStarNames) ? <span>精二六星 {operbox.elite2SixStarNames.length} 名</span> : null}
+        <span>{String(player?.nickname ?? "?")}（{player?.level != null ? `Lv.${String(player.level)}` : rawText.text(rawLocale, "unknownLevel")}）</span>
+        <span>{rawText.rich(rawLocale, "operatorsElite2", { part1: richValue((String(operbox?.owned ?? "?"))), part2: richValue((String(operbox?.elite2 ?? "?"))) })}</span>
+        {Array.isArray(operbox?.elite2SixStarNames) ? <span>{rawText.rich(rawLocale, "6Elite2Operators", { part1: richValue((operbox.elite2SixStarNames.length)) })}</span> : null}
       </div>
     );
   }
@@ -295,6 +307,7 @@ export function ToolResultSummary({ name, output, openLabel = "在基建计算�
 }
 
 export function AgentToolCard({ part, animate = false, active = true }: { part: AgentToolPartView; animate?: boolean; active?: boolean }) {
+  const rawLocale = useRawLocale();
   const name = part.type.slice("tool-".length);
   const record = asRecord(part.output);
   const pending = part.state === "input-streaming" || part.state === "input-available";
@@ -304,20 +317,21 @@ export function AgentToolCard({ part, animate = false, active = true }: { part: 
   const knowledge = ["query_skills", "kb_route", "kb_read", "load_agent_skill"].includes(name);
   const object = name === "query_skills" ? record?.query : name === "kb_route" ? "" : record?.title;
   const safeObject = typeof object === "string" && !/[\\/\n\r]/.test(object) ? object.slice(0, 100) : "";
-  const label = toolLabel(name);
+  const label = toolLabel(name, rawLocale);
   const suffix = knowledge && safeObject ? name === "kb_read" || name === "load_agent_skill" ? `《${safeObject}》` : ` · ${safeObject}` : "";
-  return <ToolChip name={name} running={running} failed={failed} animate={animate} label={running ? `正在调用 ${label}…` : interrupted ? `${label} 已停止` : failed ? `${label} 出错` : `${label} 完成${suffix}`}>
-    {failed ? <p role="alert" className="text-xs text-destructive">{interrupted ? "本次调用已停止，可以重新提问。" : knowledge ? "本次查询暂未完成，请稍后重试。" : String(part.errorText ?? record?.error ?? "工具调用失败")}</p>
+  return <ToolChip name={name} running={running} failed={failed} animate={animate} label={running ? rawText.text(rawLocale, "toolRunning", { label }) : interrupted ? rawText.text(rawLocale, "toolStopped", { label }) : failed ? rawText.text(rawLocale, "toolError", { label }) : rawText.text(rawLocale, "toolComplete", { label, suffix })}>
+    {failed ? <p role="alert" className="text-xs text-destructive">{interrupted ? rawText.text(rawLocale, "thisRequestWasStoppedYouCanAskAgain") : knowledge ? rawText.text(rawLocale, "thisQueryHasNotFinishedPleaseTryAgainLater") : String(part.errorText ?? record?.error ?? rawText.text(rawLocale, "toolFailed"))}</p>
       : part.state === "output-available" && !knowledge ? <ToolResultSummary name={name} output={part.output} /> : undefined}
   </ToolChip>;
 }
 
 function AttachmentPreview({ file, onRemove }: { file: FileUIPart; onRemove?: () => void }) {
+  const rawLocale = useRawLocale();
   const image = file.mediaType.startsWith("image/");
   return <div className="group relative flex min-w-0 items-center gap-2 rounded-xl border border-border/80 bg-background/80 px-2.5 py-2 text-xs shadow-sm">
-    {image ? <img src={file.url} alt={file.filename ?? "图片附件"} className="size-10 shrink-0 rounded-lg object-cover" /> : <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"><FileText className="size-5" aria-hidden="true" /></span>}
-    <span className="min-w-0"><span className="block max-w-44 truncate font-medium">{file.filename ?? "未命名文件"}</span><span className="block text-[11px] text-muted-foreground">{image ? "图片" : file.mediaType || "文件"}</span></span>
-    {onRemove ? <Button type="button" variant="ghost" size="icon-xs" aria-label={`移除 ${file.filename ?? "附件"}`} className="absolute -top-1 -right-1 size-7 rounded-full border bg-background text-muted-foreground shadow-sm" onClick={onRemove}><X className="size-3" aria-hidden="true" /></Button> : null}
+    {image ? <img src={file.url} alt={file.filename ?? rawText.text(rawLocale, "imageAttachment")} className="size-10 shrink-0 rounded-lg object-cover" /> : <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground"><FileText className="size-5" aria-hidden="true" /></span>}
+    <span className="min-w-0"><span className="block max-w-44 truncate font-medium">{file.filename ?? rawText.text(rawLocale, "unnamedFile")}</span><span className="block text-[11px] text-muted-foreground">{image ? rawText.text(rawLocale, "image") : file.mediaType || rawText.text(rawLocale, "file")}</span></span>
+    {onRemove ? <Button type="button" variant="ghost" size="icon-xs" aria-label={rawText.text(rawLocale, "removeAttachment", { name: file.filename ?? rawText.text(rawLocale, "attachment") })} className="absolute -top-1 -right-1 size-7 rounded-full border bg-background text-muted-foreground shadow-sm" onClick={onRemove}><X className="size-3" aria-hidden="true" /></Button> : null}
   </div>;
 }
 
@@ -333,9 +347,10 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   onSharePageContextChange?: (value: boolean) => void;
   onClose?: () => void;
 }) {
+  const rawLocale = useRawLocale();
   useAgentViewport(!compact);
   const isMobile = useIsMobile();
-  const en = useLocale() === "en";
+  const en = useLocale();
   const intl = useTranslations();
   const { store: historyStore, error: historyError } = useAgentHistory();
   const [agentStatus, setAgentStatus] = useState<AgentStatus>("loading");
@@ -373,11 +388,11 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     throttle: 50,
   });
   const busy = status === "submitted" || status === "streaming";
-  const personaName = activePersona?.name ?? (en ? "Closure" : "可露希尔");
+  const personaName = activePersona ? personaPresentation(activePersona, en).name : uiText.text(en, "closure");
   const personaTheme = activePersona?.kind === "builtin" ? BUILTIN_PERSONA_THEMES[activePersona.theme] : !activePersona ? personaStyles.closure : "";
   const personaUnavailable = activePersona?.kind === "builtin" && !builtinPersonas.some(persona => persona.id === activePersona.id);
   const displayTurns = useMemo(() => buildAgentDisplayTurns(messages, busy), [messages, busy]);
-  const modeLabel = (id?: AgentModelChoice["id"]) => id === "glm" ? (en ? "Deep" : "深度模式") : (en ? "Fast" : "快速模式");
+  const modeLabel = (id?: AgentModelChoice["id"]) => id === "glm" ? (uiText.text(en, "deep")) : (uiText.text(en, "fast"));
   const currentModel = modelChoices.find((choice) => choice.id === selectedModel);
 
   useEffect(() => {
@@ -522,19 +537,19 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     setUploadError(null);
     const incoming = Array.from(fileList);
     if (incoming.length + attachments.length > MAX_ATTACHMENTS) {
-      setUploadError(`最多同时发送 ${MAX_ATTACHMENTS} 个附件。`);
+      setUploadError(rawText.text(rawLocale, "attachmentLimit", { count: MAX_ATTACHMENTS }));
       return;
     }
     const invalid = incoming.find((file) => file.size > MAX_ATTACHMENT_BYTES || !(ACCEPTED_ATTACHMENT_TYPES.some((type) => file.type.startsWith(type)) || ACCEPTED_ATTACHMENT_EXTENSIONS.some((extension) => file.name.toLowerCase().endsWith(extension))));
     if (invalid) {
-      setUploadError(`${invalid.name} 不受支持，或超过 8 MB 大小限制。`);
+      setUploadError(rawText.text(rawLocale, "attachmentUnsupported", { name: invalid.name }));
       return;
     }
     try {
       const next = await convertFileListToFileUIParts(fileList);
       setAttachments((current) => [...current, ...next].slice(0, MAX_ATTACHMENTS));
     } catch {
-      setUploadError("读取附件失败，请重试或换一个文件。");
+      setUploadError(rawText.text(rawLocale, "attachmentReadFailed"));
     }
   };
 
@@ -542,20 +557,20 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     setPersonaError(null);
     setActivePersona(persona);
     try { window.localStorage.setItem(AGENT_PERSONA_SELECTION_KEY, persona?.id ?? "default"); }
-    catch { setPersonaError("人格卡已应用，但浏览器拒绝了保存选择。"); }
+    catch { setPersonaError(rawText.text(rawLocale, "personaSelectionNotSaved")); }
   };
 
   const importPersona = async (file: File) => {
     setPersonaError(null);
     if (file.size > MAX_PERSONA_LENGTH) {
-      setPersonaError("人格卡需要小于 36 KB。");
+      setPersonaError(rawText.text(rawLocale, "personaTooLarge"));
       return;
     }
     try {
       const raw = await file.text();
       let content = raw.trim();
-      let name = file.name.replace(/\.(md|markdown|txt|json)$/i, "") || "自定义人格";
-      let description = "本次浏览器会话使用的自定义人格卡。";
+      let name = file.name.replace(/\.(md|markdown|txt|json)$/i, "") || "";
+      let description = "";
       let avatarUrl: string | undefined;
       if (file.name.toLowerCase().endsWith(".json")) {
         try {
@@ -568,14 +583,14 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
           content = raw;
         }
       }
-      if (!content.trim()) throw new Error("人格卡内容为空");
+      if (!content.trim()) throw new Error(rawText.text(rawLocale, "emptyPersona"));
       const persona: PersonaCard = { id: `upload-${Date.now()}`, name: name.slice(0, 40), description, content: content.slice(0, MAX_PERSONA_LENGTH), kind: "upload", filename: file.name, avatarUrl };
       setUploadedPersona(persona);
       selectPersona(persona);
-      if (!saveLocalPersona(persona)) setPersonaError("人格卡已应用，但浏览器拒绝了本地保存。");
+      if (!saveLocalPersona(persona)) setPersonaError(rawText.text(rawLocale, "personaNotSaved"));
       setPersonaOpen(false);
     } catch (error) {
-      setPersonaError(error instanceof Error ? error.message : "读取人格卡失败，请重试。");
+      setPersonaError(error instanceof Error ? error.message : rawText.text(rawLocale, "personaReadFailed"));
     }
   };
 
@@ -583,7 +598,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     if (!uploadedPersona) return;
     setPersonaError(null);
     const next = { ...uploadedPersona, avatarUrl };
-    if (!saveLocalPersona(next)) { setPersonaError("头像未能保存，请检查浏览器存储空间后重试。"); return; }
+    if (!saveLocalPersona(next)) { setPersonaError(rawText.text(rawLocale, "avatarNotSaved")); return; }
     setUploadedPersona(next);
     if (activePersona?.id === next.id) setActivePersona(next);
   };
@@ -592,8 +607,8 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     if (!uploadedPersona) return;
     setAvatarSaving(true);
     setPersonaError(null);
-    try { updatePersonaAvatar(await readPersonaAvatar(file)); }
-    catch (error) { setPersonaError(error instanceof Error ? error.message : "读取头像失败，请换一张图片重试。"); }
+    try { updatePersonaAvatar(await readPersonaAvatar(file, en)); }
+    catch (error) { setPersonaError(error instanceof Error ? error.message : rawText.text(rawLocale, "avatarReadFailed")); }
     finally { setAvatarSaving(false); }
   };
 
@@ -605,60 +620,60 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
         <div className={`${dialogueStyles.avatar} ${dialogueStyles.compactAvatar}`} aria-hidden="true" data-agent-header-avatar><PersonaAvatar name={personaName} src={activePersona?.kind === "upload" ? activePersona.avatarUrl : undefined} mascot={activePersona?.kind === "builtin" ? activePersona.avatar : undefined} size={32} active={busy} /></div>
         <p className={dialogueStyles.compactTitle}>{personaName}</p>
         <div className={dialogueStyles.compactHeaderActions}>
-        <Button type="button" variant="ghost" size="icon" className={dialogueStyles.compactHeaderAction} aria-label={en ? "New conversation" : "新对话"} title={en ? "New conversation" : "新对话"} disabled={busy || messages.length === 0} onClick={() => { runtime.flush(); historyStore.startNew(); }}><Plus className="size-4" aria-hidden="true" /></Button>
-        <Button type="button" variant="ghost" size="icon" className={dialogueStyles.compactHeaderAction} aria-label={en ? "Close assistant" : "收起助理"} title={en ? "Close assistant" : "收起助理"} onClick={onClose}><X className="size-4" aria-hidden="true" /></Button>
+        <Button type="button" variant="ghost" size="icon" className={dialogueStyles.compactHeaderAction} aria-label={uiText.text(en, "newConversation")} title={uiText.text(en, "newConversation")} disabled={busy || messages.length === 0} onClick={() => { runtime.flush(); historyStore.startNew(); }}><Plus className="size-4" aria-hidden="true" /></Button>
+        <Button type="button" variant="ghost" size="icon" className={dialogueStyles.compactHeaderAction} aria-label={uiText.text(en, "closeAssistant")} title={uiText.text(en, "closeAssistant")} onClick={onClose}><X className="size-4" aria-hidden="true" /></Button>
         </div>
       </header> : <header className={dialogueStyles.header} data-agent-header>
         <SidebarTrigger className="size-11 shrink-0 md:hidden" />
         <div className="min-w-0 flex-1">
-          <WorkbenchPageHeading page="agent" accentColor="var(--dialogue-accent)" className="max-md:gap-1 max-md:text-sm max-md:[&>span:first-child]:hidden"><span className="md:hidden">{en ? "Closure" : "可露希尔"}</span><span className="hidden md:inline">{en ? "Closure Assistant" : "可露希尔助理"}</span></WorkbenchPageHeading>
-          <p className="mt-2 hidden text-xs text-muted-foreground md:block">{en ? "Your account, base and training — in one conversation." : "从了解账号到安排基建，把想做的事交给可露希尔。"}</p>
+          <WorkbenchPageHeading page="agent" accentColor="var(--dialogue-accent)" className="max-md:gap-1 max-md:text-sm max-md:[&>span:first-child]:hidden"><span className="md:hidden">{uiText.text(en, "closure")}</span><span className="hidden md:inline">{uiText.text(en, "closureAssistant")}</span></WorkbenchPageHeading>
+          <p className="mt-2 hidden text-xs text-muted-foreground md:block">{uiText.text(en, "yourAccountBaseAndTrainingInOneConversation")}</p>
         </div>
         <div className={dialogueStyles.headerActions}>
-        {automaticRouting && <span className="text-xs text-muted-foreground">{en ? "Auto" : "自动调度"}</span>}
+        {automaticRouting && <span className="text-xs text-muted-foreground">{uiText.text(en, "auto")}</span>}
         {modelChoices.length > 0 ? <Combobox items={modelChoices} filteredItems={modelChoices}
           value={currentModel ?? null}
           itemToStringValue={(choice) => `${modeLabel(choice.id)} ${choice.label}`} isItemEqualToValue={(choice, value) => choice.id === value.id}
           disabled={busy} onValueChange={(choice) => { if (choice) setSelectedModel(choice.id); }}>
-          <ComboboxTrigger ref={modeAnchor} aria-label={`${en ? "Assistant mode" : "助理模式"}：${modeLabel(selectedModel)}`} className={dialogueStyles.modeTrigger}>
+          <ComboboxTrigger ref={modeAnchor} aria-label={`${uiText.text(en, "assistantMode")}：${modeLabel(selectedModel)}`} className={dialogueStyles.modeTrigger}>
             <span className="min-w-0 text-left"><span className="block truncate text-xs font-semibold">{modeLabel(selectedModel)}</span><span className="block truncate text-[10px] leading-4 text-muted-foreground">{currentModel?.label}</span></span>
           </ComboboxTrigger>
           <ComboboxContent anchor={modeAnchor} className="min-w-56"><ComboboxList>{(choice) => <ComboboxItem key={choice.id} value={choice} className="min-h-14"><span><span className="block font-medium">{modeLabel(choice.id)}</span><span className="block text-xs text-muted-foreground">{choice.label}</span></span></ComboboxItem>}</ComboboxList></ComboboxContent>
         </Combobox> : null}
         <AgentCreditBalance enabled={billingAllowed && (agentStatus === "ready" || agentStatus === "payment_required" || agentStatus === "unconfigured")} busy={busy} en={en} />
-        <Button type="button" variant="outline" size="sm" aria-label={en ? "New conversation" : "新对话"} title={en ? "New conversation" : "新对话"} className={dialogueStyles.newConversation} disabled={busy || messages.length === 0} onClick={() => { runtime.flush(); historyStore.startNew(); }}>
-          <Plus className="size-4" aria-hidden="true" /><span className="max-md:hidden">{en ? "New conversation" : "新对话"}</span>
+        <Button type="button" variant="outline" size="sm" aria-label={uiText.text(en, "newConversation")} title={uiText.text(en, "newConversation")} className={dialogueStyles.newConversation} disabled={busy || messages.length === 0} onClick={() => { runtime.flush(); historyStore.startNew(); }}>
+          <Plus className="size-4" aria-hidden="true" /><span className="max-md:hidden">{uiText.text(en, "newConversation")}</span>
         </Button>
         </div>
       </header>}
       </div>
       {compact && onSharePageContextChange ? <div className={dialogueStyles.compactContextBar}>
-        <span className={dialogueStyles.compactContextLabel}><FileText size={13} aria-hidden="true" />{en ? "Page context" : "页面摘要"}</span>
+        <span className={dialogueStyles.compactContextLabel}><FileText size={13} aria-hidden="true" />{uiText.text(en, "pageContext")}</span>
         <label className={dialogueStyles.compactShare}>
-          <input type="checkbox" checked={Boolean(sharePageContext && pageContext)} disabled={!pageContext} aria-label={en ? "Include current page context" : "随消息共享当前页面摘要"} onChange={(event) => onSharePageContextChange(event.currentTarget.checked)} />
-          <span>{en ? "Share with assistant" : "共享本页"}</span>
+          <input type="checkbox" checked={Boolean(sharePageContext && pageContext)} disabled={!pageContext} aria-label={uiText.text(en, "includeCurrentPageContext")} onChange={(event) => onSharePageContextChange(event.currentTarget.checked)} />
+          <span>{uiText.text(en, "shareWithAssistant")}</span>
         </label>
       </div> : null}
 
-      {historyError ? <p role="alert" className="text-xs text-destructive">{en ? "Chat history could not be saved in this browser. Keep this page open and check available storage." : "浏览器暂时无法保存对话历史，请暂勿关闭页面，并检查可用存储空间。"}</p> : null}
-      {agentStatus === "ready" && personaUnavailable ? <p role="alert" className="text-xs text-destructive">{en ? "This persona is unavailable. Choose another persona to continue." : "所选人格卡暂不可用，请在输入框下方选择其他人格卡。"}</p> : null}
+      {historyError ? <p role="alert" className="text-xs text-destructive">{uiText.text(en, "chatHistoryCouldNotBeSavedInThis")}</p> : null}
+      {agentStatus === "ready" && personaUnavailable ? <p role="alert" className="text-xs text-destructive">{uiText.text(en, "thisPersonaIsUnavailableChooseAnotherPersonaTo")}</p> : null}
 
       <ChatPanel
         composer={agentStatus === "ready" ? <>
           {showLatest ? <Button type="button" size="sm" variant="outline" className="absolute -top-10 left-1/2 z-10 -translate-x-1/2 rounded-full bg-background shadow-sm" onClick={followLatest}>
-            <ArrowDown className="size-3.5" aria-hidden="true" />{en ? "Back to latest" : "回到最新"}
+            <ArrowDown className="size-3.5" aria-hidden="true" />{uiText.text(en, "backToLatest")}
           </Button> : null}
           <PromptBar
             busy={busy}
             disabled={!personaHydrated || personaUnavailable || (!draft.trim() && attachments.length === 0)}
-            sendLabel={en ? "Send message" : "发送"}
-            stopLabel={en ? "Stop generating" : "停止"}
+            sendLabel={uiText.text(en, "sendMessage")}
+            stopLabel={uiText.text(en, "stopGenerating")}
             onSend={() => void submit(draft)}
             onStop={() => stop()}
             onDrop={(event) => { event.preventDefault(); void addFiles(event.dataTransfer.files); }}
             input={{
-              "aria-label": en ? `Message ${personaName}` : `发给${personaName}的消息`,
-              placeholder: isMobile ? (en ? "Ask your assistant…" : "聊聊基建、干员…") : (en ? "Ask about your base, operators or next upgrade…" : "聊聊你的基建、干员，或下一步养成计划…"),
+              "aria-label": uiText.text(en, "message", { value1: personaName }),
+              placeholder: isMobile ? (uiText.text(en, "askYourAssistant")) : (uiText.text(en, "askAboutYourBaseOperatorsOrNextUpgrade")),
               rows: 1,
               value: draft,
               onChange: (event) => setDraft(event.target.value),
@@ -674,15 +689,15 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
             }}
             attachments={attachments.length ? <div className="flex flex-wrap gap-2 p-1">{attachments.map((file, index) => <AttachmentPreview key={`${file.filename}-${index}`} file={file} onRemove={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))} />)}</div> : undefined}
             toolbar={<>
-              <AgentComposerMenu compact={compact} en={en} personaName={activePersona?.name ?? (en ? "Closure" : "可露希尔")} onAttach={() => fileInputRef.current?.click()} onPersona={() => setPersonaOpen(true)} attachmentCount={attachments.length}>
+              <AgentComposerMenu compact={compact} en={en} personaName={activePersona ? personaPresentation(activePersona, en).name : uiText.text(en, "closure")} onAttach={() => fileInputRef.current?.click()} onPersona={() => setPersonaOpen(true)} attachmentCount={attachments.length}>
                 {attachments.map((file, index) => <AttachmentPreview key={`${file.filename}-${index}`} file={file} onRemove={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))} />)}
               </AgentComposerMenu>
-              <input ref={fileInputRef} type="file" aria-label={en ? "Attach files" : "上传附件"} multiple accept="image/*,.md,.markdown,.txt,.json,.pdf,.csv,.xlsx" className="hidden" onChange={(event) => { void addFiles(event.target.files); event.currentTarget.value = ""; }} />
-              {!compact ? <Button type="button" variant="ghost" size="icon" className="hidden md:inline-flex size-9 rounded-lg text-muted-foreground" aria-label={en ? "Add attachment" : "添加附件"} title={en ? "Add attachment" : "添加附件"} onClick={() => fileInputRef.current?.click()}><Paperclip className="size-4" aria-hidden="true" /></Button> : null}
-              <Button type="button" variant="ghost" size="sm" disabled={busy} className={compact ? dialogueStyles.compactPersonaButton : "hidden md:inline-flex max-w-40 rounded-lg text-xs text-muted-foreground"} aria-label={compact ? `${en ? "Persona" : "人格卡"}：${personaName}` : undefined} onClick={() => setPersonaOpen(true)}>{compact ? null : <Settings2 className="size-3.5 shrink-0" aria-hidden="true" />}<span className="truncate">{compact ? personaName : `${en ? "Persona" : "人格卡"}：${personaName}`}</span>{compact ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}</Button>
+              <input ref={fileInputRef} type="file" aria-label={uiText.text(en, "attachFiles")} multiple accept="image/*,.md,.markdown,.txt,.json,.pdf,.csv,.xlsx" className="hidden" onChange={(event) => { void addFiles(event.target.files); event.currentTarget.value = ""; }} />
+              {!compact ? <Button type="button" variant="ghost" size="icon" className="hidden md:inline-flex size-9 rounded-lg text-muted-foreground" aria-label={uiText.text(en, "addAttachment")} title={uiText.text(en, "addAttachment")} onClick={() => fileInputRef.current?.click()}><Paperclip className="size-4" aria-hidden="true" /></Button> : null}
+              <Button type="button" variant="ghost" size="sm" disabled={busy} className={compact ? dialogueStyles.compactPersonaButton : "hidden md:inline-flex max-w-40 rounded-lg text-xs text-muted-foreground"} aria-label={compact ? `${uiText.text(en, "persona")}：${personaName}` : undefined} onClick={() => setPersonaOpen(true)}>{compact ? null : <Settings2 className="size-3.5 shrink-0" aria-hidden="true" />}<span className="truncate">{compact ? personaName : `${uiText.text(en, "persona")}：${personaName}`}</span>{compact ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}</Button>
             </>}
           />
-          {uploadError ? <p role="alert" className="mt-2 px-1 text-xs text-destructive">{uploadError}</p> : !compact ? <p className="mt-2 hidden flex-wrap justify-between gap-1 px-1 text-[10px] text-muted-foreground md:flex"><span>{en ? "Up to 4 attachments · 8 MB each" : "最多 4 个附件 · 单个 ≤ 8 MB"}</span><span>{en ? "Enter to send · Shift + Enter for a new line" : "Enter 发送 · Shift + Enter 换行"}</span></p> : null}
+          {uploadError ? <p role="alert" className="mt-2 px-1 text-xs text-destructive">{uploadError}</p> : !compact ? <p className="mt-2 hidden flex-wrap justify-between gap-1 px-1 text-[10px] text-muted-foreground md:flex"><span>{uiText.text(en, "upTo4Attachments8MbEach")}</span><span>{uiText.text(en, "enterToSendShiftEnterForANew")}</span></p> : null}
         </> : null}
       >
         <AgentConversationScrollArea floating={compact} onScrollbarPointerDown={onScrollbarPointerDown} className={`${compact ? dialogueStyles.compactConversation : dialogueStyles.conversation} min-h-0 flex-1 bg-transparent`} viewportClassName={`flex min-w-0 flex-col gap-6 overscroll-contain py-3 md:gap-10 md:py-8 ${compact ? "gap-4 py-2 md:gap-5 md:py-2" : ""}`} viewportProps={{ ref: conversationRef,
@@ -692,30 +707,30 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
           onTouchMove: (event) => { const y = event.touches[0]?.clientY; if (y !== undefined && touchY.current !== null && Math.abs(touchY.current - y) > 12) { readingGesture(touchY.current - y); touchY.current = y; } },
           onTouchEnd: () => { touchY.current = null; },
           onKeyDown: (event) => { if (event.target === event.currentTarget) { if (event.key === "PageDown" || event.key === "ArrowDown") readingGesture(20); if (["PageUp", "ArrowUp", "Home"].includes(event.key)) readingGesture(-20); } },
-          role: "region", "aria-label": en ? "Conversation" : "对话记录", "aria-busy": busy }}>
-          {agentStatus === "loading" ? <div className={dialogueStyles.activity}><LoadingState label={en ? "Connecting to Closure…" : "正在连接可露希尔…"} /></div> : null}
-          {agentStatus === "unconfigured" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><Bot className="size-6 text-muted-foreground" aria-hidden="true" /><h2 className="font-medium">{en ? "Assistant is not available yet" : "助理暂未就绪"}</h2><p className="text-muted-foreground">{en ? "The model connection needs to be configured. Please try again later." : "大模型连接尚未配置，请稍后重试。"}</p></div> : null}
-          {agentStatus === "unavailable" ? <div role="alert" className="my-auto grid justify-items-start gap-3 text-sm"><h2 className="font-medium">{en ? "Could not connect to the assistant" : "暂时无法连接助理"}</h2><p className="text-muted-foreground">{en ? "Please refresh the page and try again." : "请刷新页面后重试。"}</p></div> : null}
-          {agentStatus === "unauthenticated" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><Bot className="size-6 text-muted-foreground" aria-hidden="true" /><h2 className="font-medium">{en ? "Sign in to meet Closure" : "登录后，与可露希尔开始对话"}</h2><p className="text-muted-foreground">{en ? "Use your website account to access the assistant." : "使用网站账号登录，即可让助理帮你诊断账号、规划基建。"}</p><Button onClick={event => requestAccountSignIn(event.currentTarget)} size="sm" className="h-9 rounded-full px-4">{en ? "Sign in" : "登录网站账号"}</Button></div> : null}
-          {agentStatus === "payment_required" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><h2 className="font-medium">{en ? "Add credits to get started" : "补充积分，开始对话"}</h2><p className="text-muted-foreground">{en ? "You need at least 1 credit to use the assistant." : "当前账号需至少有 1 积分才能使用助理。"}</p>{billingAllowed ? <Button nativeButton={false} render={<Link to="/billing" />} size="sm" className={billingStyles.pill}>{en ? "View payment plans" : "查看付费计划"}</Button> : null}</div> : null}
+          role: "region", "aria-label": uiText.text(en, "conversation"), "aria-busy": busy }}>
+          {agentStatus === "loading" ? <div className={dialogueStyles.activity}><LoadingState label={uiText.text(en, "connectingToClosure")} /></div> : null}
+          {agentStatus === "unconfigured" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><Bot className="size-6 text-muted-foreground" aria-hidden="true" /><h2 className="font-medium">{uiText.text(en, "assistantIsNotAvailableYet")}</h2><p className="text-muted-foreground">{uiText.text(en, "theModelConnectionNeedsToBeConfiguredPlease")}</p></div> : null}
+          {agentStatus === "unavailable" ? <div role="alert" className="my-auto grid justify-items-start gap-3 text-sm"><h2 className="font-medium">{uiText.text(en, "couldNotConnectToTheAssistant")}</h2><p className="text-muted-foreground">{uiText.text(en, "pleaseRefreshThePageAndTryAgain")}</p></div> : null}
+          {agentStatus === "unauthenticated" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><Bot className="size-6 text-muted-foreground" aria-hidden="true" /><h2 className="font-medium">{uiText.text(en, "signInToMeetClosure")}</h2><p className="text-muted-foreground">{uiText.text(en, "useYourWebsiteAccountToAccessTheAssistant")}</p><Button onClick={event => requestAccountSignIn(event.currentTarget)} size="sm" className="h-9 rounded-full px-4">{uiText.text(en, "signIn")}</Button></div> : null}
+          {agentStatus === "payment_required" ? <div className="my-auto grid justify-items-start gap-3 text-sm"><h2 className="font-medium">{uiText.text(en, "addCreditsToGetStarted")}</h2><p className="text-muted-foreground">{uiText.text(en, "youNeedAtLeast1CreditToUse")}</p>{billingAllowed ? <Button nativeButton={false} render={<Link to="/billing" />} size="sm" className={billingStyles.pill}>{uiText.text(en, "viewPaymentPlans")}</Button> : null}</div> : null}
 
           {messages.length === 0 && agentStatus === "ready" ? <div className={compact ? dialogueStyles.compactWelcome : "my-auto grid gap-5 py-4 sm:py-8"} data-agent-welcome>
             {compact ? <>
               <div className="grid gap-1">
-                <p className="text-xs font-medium text-muted-foreground">{en ? "Page guide" : "当前页面导览"}</p>
-                <h2 className="text-xl font-medium tracking-tight">{pageContext?.title ?? (en ? "Current page" : "当前页面")}</h2>
+                <p className="text-xs font-medium text-muted-foreground">{uiText.text(en, "pageGuide")}</p>
+                <h2 className="text-xl font-medium tracking-tight">{pageContext?.title ?? (uiText.text(en, "currentPage"))}</h2>
               </div>
               {pageContext && sharePageContext ? <div className={dialogueStyles.compactContextCard} data-agent-page-guide>
-                <p className={dialogueStyles.compactContextCardTitle}><FileText size={13} aria-hidden="true" />{en ? "Page summary is shared" : "已共享本页摘要"}</p>
+                <p className={dialogueStyles.compactContextCardTitle}><FileText size={13} aria-hidden="true" />{uiText.text(en, "pageSummaryIsShared")}</p>
                 {pageGuideLines.map((line, index) => <p key={`${line}-${index}`}>{line}</p>)}
-              </div> : <p className="text-sm leading-6 text-muted-foreground" data-agent-page-guide>{!sharePageContext ? (en ? "Page sharing is off. Only your message will be sent." : "已关闭本页共享，只发送你输入的消息。") : (en ? "The page summary is unavailable. You can still ask a question about what you see." : "当前页面摘要暂不可用，你仍可以直接提问。")}</p>}
-              <p className="text-sm leading-6 text-muted-foreground">{en ? "Ask about the current shift, room assignments or production output." : "可以直接问我当前班次、设施安排或产出为什么这样。"}</p>
+              </div> : <p className="text-sm leading-6 text-muted-foreground" data-agent-page-guide>{!sharePageContext ? (uiText.text(en, "pageSharingIsOffOnlyYourMessageWill")) : (uiText.text(en, "thePageSummaryIsUnavailableYouCanStill"))}</p>}
+              <p className="text-sm leading-6 text-muted-foreground">{uiText.text(en, "askAboutTheCurrentShiftRoomAssignmentsOr")}</p>
             </> : <>
               <div className="grid gap-1">
-                <p className="text-xs font-medium text-muted-foreground">{en ? "Live conversation" : "实时对话"}</p>
-                <h2 className="text-xl font-medium tracking-tight">{activePersona?.kind === "builtin" ? activePersona.welcome[en ? "en" : "zh"] : (en ? "What would you like to know?" : "想了解什么？")}</h2>
+                <p className="text-xs font-medium text-muted-foreground">{uiText.text(en, "liveConversation")}</p>
+                <h2 className="text-xl font-medium tracking-tight">{activePersona?.kind === "builtin" ? personaPresentation(activePersona, en).welcome : (uiText.text(en, "whatWouldYouLikeToKnow"))}</h2>
               </div>
-              <p className="max-w-lg text-sm leading-6 text-muted-foreground">{en ? "Ask directly about your account, operators or base plan." : "直接输入问题，我会根据当前可用信息回答。"}</p>
+              <p className="max-w-lg text-sm leading-6 text-muted-foreground">{uiText.text(en, "askDirectlyAboutYourAccountOperatorsOrBase")}</p>
             </>}
           </div> : null}
 
@@ -723,13 +738,14 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
             if (turn.kind === "user") {
               const message = turn.message;
               const text = message.parts.filter((part) => part.type === "text").map((part) => part.text).join("");
-              return <ChatBubble key={turn.key} speaker="user" name={userName?.trim() || (en ? "Doctor" : "博士")} avatar={userId ? <FluidOrb size={38} color={accountOrbColor(userId)} style={{ width: "100%", height: "100%" }} data-account-orb-color={accountOrbColor(userId)} /> : undefined}>
+              return <ChatBubble key={turn.key} speaker="user" name={userName?.trim() || (uiText.text(en, "doctor"))} avatar={userId ? <FluidOrb size={38} color={accountOrbColor(userId)} style={{ width: "100%", height: "100%" }} data-account-orb-color={accountOrbColor(userId)} /> : undefined}>
               {message.parts.some((part) => part.type === "file") ? <div className="mb-2 flex flex-wrap gap-2">{message.parts.filter((part) => part.type === "file").map((part, index) => <AttachmentPreview key={index} file={part} />)}</div> : null}
               {text ? <p className="whitespace-pre-wrap">{text}</p> : null}
             </ChatBubble>;
             }
             const waiting = turn.pending && (status === "submitted" || !hasActiveAgentContent(turn.messages.at(-1)));
-            const personaName = turn.persona.name ?? (en ? "Closure" : "可露希尔");
+            const builtin = builtinAgentPersona(turn.persona.mascot);
+            const personaName = builtin ? personaPresentation(builtin, en).name : turn.persona.name ?? uiText.text(en, "closure");
             const personaAvatar = turn.persona.avatarUrl;
             const personaMascot = turn.persona.mascot;
             return <div key={turn.key} className={dialogueStyles.assistantTurn} data-agent-assistant-turn data-response-key={turn.key} data-pending={turn.pending}>
@@ -740,15 +756,15 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
                   part.type === "text" && part.state === "streaming" && !!part.text.trim() ? index : last, -1) : -1;
                 return message.parts.map((part, partIndex) => {
                 const key = `${message.id}:${partIndex}`;
-                if (part.type === "text") return part.text.trim() ? <ChatBubble key={key} speaker="assistant" name={personaName} label={en ? `${personaName} reply` : `${personaName}的回答`} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} active={partIndex === activeAvatarIndex} />}><StreamingText content={INTERNAL_ANSWER_MARKERS.test(part.text) ? (en ? "This saved reply contains invalid formatting. Please ask again." : "这条历史回复的格式有误，请重新提问。") : part.text} running={active && part.state === "streaming"} animate={animate} previousParts={message.parts.slice(0, partIndex).flatMap((previous) => previous.type === "text" && !INTERNAL_ANSWER_MARKERS.test(previous.text) ? [previous.text] : [])} /></ChatBubble> : null;
-                if (part.type === "reasoning") return part.text.trim() || (active && part.state === "streaming") ? <div key={key} className={dialogueStyles.activity}><ThinkingState label={en ? "Thinking" : "思考过程"} activeLabel={en ? "Thinking…" : "正在思考…"} running={active && part.state === "streaming"} animate={animate}>{part.text}</ThinkingState></div> : null;
+                if (part.type === "text") return part.text.trim() ? <ChatBubble key={key} speaker="assistant" name={personaName} label={uiText.text(en, "reply", { value1: personaName })} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} active={partIndex === activeAvatarIndex} />}><StreamingText content={INTERNAL_ANSWER_MARKERS.test(part.text) ? (uiText.text(en, "thisSavedReplyContainsInvalidFormattingPleaseAsk")) : part.text} running={active && part.state === "streaming"} animate={animate} previousParts={message.parts.slice(0, partIndex).flatMap((previous) => previous.type === "text" && !INTERNAL_ANSWER_MARKERS.test(previous.text) ? [previous.text] : [])} /></ChatBubble> : null;
+                if (part.type === "reasoning") return part.text.trim() || (active && part.state === "streaming") ? <div key={key} className={dialogueStyles.activity}><ThinkingState label={uiText.text(en, "thinking")} activeLabel={uiText.text(en, "thinking2")} running={active && part.state === "streaming"} animate={animate}>{part.text}</ThinkingState></div> : null;
                 if (isToolPart(part)) {
                   // Keep every completed schedule in its original conversation position,
                   // including restored history, with an action that can be used again.
                   const output = asRecord(part.output);
                   const handoff = part.type === "tool-solve_schedule" && part.state === "output-available" && !output?.error && output?.plan ? agentArtifactFromOutput(part.output) : null;
                   if (handoff) {
-                    return <ChatBubble key={key} speaker="assistant" name={personaName} label={en ? "Generated schedule" : "已生成的排班"} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} active={partIndex === activeAvatarIndex} />}>
+                    return <ChatBubble key={key} speaker="assistant" name={personaName} label={uiText.text(en, "generatedSchedule")} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} active={partIndex === activeAvatarIndex} />}>
                       <p className="mb-3 text-sm leading-6">{intl("App.agentArtifactBannerText", { preset: handoff.preset ? `（${handoff.preset}）` : "" })}</p>
                       <ToolResultSummary name="solve_schedule" output={part.output} openLabel={intl("App.agentArtifactOpen")} />
                     </ChatBubble>;
@@ -758,62 +774,64 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
                 return null;
                 });
               })}
-              {waiting ? <div key="waiting" className={dialogueStyles.activity}><LoadingState label={en ? "Working on your request…" : "正在处理你的请求…"} /></div> : null}
+              {waiting ? <div key="waiting" className={dialogueStyles.activity}><LoadingState label={uiText.text(en, "workingOnYourRequest")} /></div> : null}
             </div>;
           })}
-          {error ? <div role="alert" className="grid justify-items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/5 p-3 text-sm"><p className="break-words text-destructive">{agentChatErrorMessage(error.message, en)}</p><Button variant="ghost" size="sm" disabled={busy} onClick={() => { void retryAnswer(); }}><RotateCcw className="size-3.5" aria-hidden="true" />{en ? "Try again" : "重试回答"}</Button></div> : null}
+          {error ? <div role="alert" className="grid justify-items-start gap-2 rounded-xl border border-destructive/25 bg-destructive/5 p-3 text-sm"><p className="break-words text-destructive">{agentChatErrorMessage(error.message, en)}</p><Button variant="ghost" size="sm" disabled={busy} onClick={() => { void retryAnswer(); }}><RotateCcw className="size-3.5" aria-hidden="true" />{uiText.text(en, "tryAgain")}</Button></div> : null}
         </AgentConversationScrollArea>
       </ChatPanel>
 
       <Dialog open={personaOpen} onOpenChange={(open) => { if (!avatarSaving) setPersonaOpen(open); }}>
         <DialogContent aria-describedby={undefined} className="flex max-h-[calc(100dvh-2rem)] flex-col sm:max-w-[min(1160px,calc(100vw-2rem))]">
-          <DialogHeader><DialogTitle>人格卡</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{rawText.text(rawLocale, "persona")}</DialogTitle></DialogHeader>
           <DialogBody className="min-h-0 overflow-y-auto overscroll-contain pb-5 sm:pb-7">
             <div className="grid gap-3">
               <div className={personaStyles.cards}>
               {[null, ...builtinPersonas, ...(uploadedPersona ? [uploadedPersona] : [])].map((persona) => {
                 const selected = (persona?.id ?? null) === (activePersona?.id ?? null);
-                return <WorkbenchCard key={persona?.id ?? "default"} glass className={`${billingStyles.product} ${personaStyles.preview} ${!persona ? personaStyles.closure : persona.kind === "builtin" ? BUILTIN_PERSONA_THEMES[persona.theme] : ""}`} aria-label={selected ? "当前人格卡预览" : `${persona?.name ?? "可露希尔"}人格卡`} data-persona-card={persona?.id ?? "default"} data-selected={selected ? "true" : undefined} data-persona-theme={persona?.kind === "builtin" ? persona.theme : undefined} data-persona-avatar-settings={selected ? "" : undefined}>
-                <button type="button" className={personaStyles.cardSelect} disabled={avatarSaving || busy} aria-pressed={selected} aria-label={persona ? `使用${persona.name}` : "可露希尔 · 使用网站服务端当前配置的人格卡"} onClick={() => { if (!selected) selectPersona(persona); }} />
+                const display = persona ? personaPresentation(persona, en) : null;
+                const displayName = display?.name ?? uiText.text(en, "closure");
+                return <WorkbenchCard key={persona?.id ?? "default"} glass className={`${billingStyles.product} ${personaStyles.preview} ${!persona ? personaStyles.closure : persona.kind === "builtin" ? BUILTIN_PERSONA_THEMES[persona.theme] : ""}`} aria-label={rawText.text(en, selected ? "selectedPersonaPreview" : "personaPreview", { name: displayName })} data-persona-card={persona?.id ?? "default"} data-selected={selected ? "true" : undefined} data-persona-theme={persona?.kind === "builtin" ? persona.theme : undefined} data-persona-avatar-settings={selected ? "" : undefined}>
+                <button type="button" className={personaStyles.cardSelect} disabled={avatarSaving || busy} aria-pressed={selected} aria-label={rawText.text(en, "selectPersona", { name: displayName })} onClick={() => { if (!selected) selectPersona(persona); }} />
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-medium text-muted-foreground">人格卡</p>
-                  <span className={`${billingStyles.productBadge} shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium`}>{persona?.kind === "builtin" ? "预设人格" : persona ? "本地人格" : "默认人格"}</span>
+                  <p className="text-xs font-medium text-muted-foreground">{rawText.text(rawLocale, "persona")}</p>
+                  <span className={`${billingStyles.productBadge} shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium`}>{persona?.kind === "builtin" ? rawText.text(rawLocale, "builtInPersonas") : persona ? rawText.text(rawLocale, "localPersonas") : rawText.text(rawLocale, "defaultPersona")}</span>
                 </div>
                 <div className={personaStyles.identity}>
-                  <div className={personaStyles.portrait} aria-hidden="true"><PersonaAvatar name={persona?.name ?? "可露希尔"} src={persona?.kind === "upload" ? persona.avatarUrl : undefined} mascot={persona?.kind === "builtin" ? persona.avatar : undefined} size={80} /></div>
+                  <div className={personaStyles.portrait} aria-hidden="true"><PersonaAvatar name={displayName} src={persona?.kind === "upload" ? persona.avatarUrl : undefined} mascot={persona?.kind === "builtin" ? persona.avatar : undefined} size={80} /></div>
                   <div className="min-w-0 flex-1">
-                    <h3 className={personaStyles.name}>{persona?.name ?? "可露希尔"}</h3>
-                    <p className={personaStyles.description}>{persona?.description || "罗德岛的基建搭档"}</p>
+                    <h3 className={personaStyles.name}>{displayName}</h3>
+                    <p className={personaStyles.description}>{display?.description || rawText.text(en, "defaultPersonaDescription")}</p>
                   </div>
                 </div>
                 {persona?.kind === "upload" ? <div>
-                  <p className={billingStyles.caption}>头像保存在当前浏览器<br />PNG / JPEG / WebP，最大 2 MB</p>
+                  <p className={billingStyles.caption}>{rawText.rich(rawLocale, "avatarSavedInThisBrowserPngJpegWebpUp", { part1: richValue((<br />)) })}</p>
                   <div className={personaStyles.actions}>
-                    <Button type="button" className={`${billingStyles.pill} ${billingStyles.primary}`} disabled={avatarSaving} onClick={() => personaAvatarInputRef.current?.click()}><Upload className="size-3.5" aria-hidden="true" />{avatarSaving ? "正在保存…" : "上传头像"}</Button>
-                    <Button type="button" variant="ghost" className={billingStyles.pill} disabled={avatarSaving || !persona.avatarUrl} onClick={() => updatePersonaAvatar()}>重置头像</Button>
+                    <Button type="button" className={`${billingStyles.pill} ${billingStyles.primary}`} disabled={avatarSaving} onClick={() => personaAvatarInputRef.current?.click()}><Upload className="size-3.5" aria-hidden="true" />{avatarSaving ? rawText.text(rawLocale, "saving") : rawText.text(rawLocale, "uploadAvatar")}</Button>
+                    <Button type="button" variant="ghost" className={billingStyles.pill} disabled={avatarSaving || !persona.avatarUrl} onClick={() => updatePersonaAvatar()}>{rawText.text(rawLocale, "resetAvatar")}</Button>
                   </div>
-                    <p className={`${billingStyles.caption} mt-3 break-words`}>{persona.filename} · 已保存在此浏览器，下次打开优先使用</p>
-                    <Button type="button" variant="link" size="sm" disabled={avatarSaving || busy} className="mt-1 h-auto px-0 text-xs text-muted-foreground" onClick={() => { clearLocalPersona(); setUploadedPersona(null); if (selected) selectPersona(null); }}>清除本地人格卡</Button>
+                    <p className={`${billingStyles.caption} mt-3 break-words`}>{rawText.rich(rawLocale, "savedInThisBrowserAndSelectedTheNextTime", { part1: richValue((persona.filename)) })}</p>
+                    <Button type="button" variant="link" size="sm" disabled={avatarSaving || busy} className="mt-1 h-auto px-0 text-xs text-muted-foreground" onClick={() => { clearLocalPersona(); setUploadedPersona(null); if (selected) selectPersona(null); }}>{rawText.text(rawLocale, "removeLocalPersonaCard")}</Button>
                 </div> : <div>
-                  <p className={billingStyles.caption}>{persona?.caption ?? "使用网站服务端当前配置的人格卡"}</p>
+                  <p className={billingStyles.caption}>{display?.caption || rawText.text(rawLocale, "useThePersonaCurrentlyConfiguredOnTheServer")}</p>
                 </div>}
               </WorkbenchCard>;
               })}
-              {!uploadedPersona ? <WorkbenchCard glass className={`${billingStyles.product} ${personaStyles.preview}`} aria-label="导入人格卡">
+              {!uploadedPersona ? <WorkbenchCard glass className={`${billingStyles.product} ${personaStyles.preview}`} aria-label={rawText.text(rawLocale, "importPersonaCard")}>
                 <div>
                   <Upload className="mb-5 size-6 text-muted-foreground" aria-hidden="true" />
-                  <h3 className="text-lg font-semibold">添加你的人格卡</h3>
-                  <p className={personaStyles.description}>导入喜欢的表达风格，打造自己的基建搭档。</p>
+                  <h3 className="text-lg font-semibold">{rawText.text(rawLocale, "addYourPersonaCard")}</h3>
+                  <p className={personaStyles.description}>{rawText.text(rawLocale, "importAStyleYouLikeAndCreateYourOwn")}</p>
                 </div>
                 <div>
-                  <p className={billingStyles.caption}>Markdown / TXT / JSON，最大 36 KB<br />保存在当前浏览器</p>
-                  <Button type="button" variant="outline" className={`${billingStyles.pill} mt-3 w-full`} disabled={avatarSaving} onClick={() => personaInputRef.current?.click()}><Upload className="size-4" aria-hidden="true" />上传人格卡</Button>
+                  <p className={billingStyles.caption}>{rawText.rich(rawLocale, "markdownTxtJsonUpTo36KbSavedIn", { part1: richValue((<br />)) })}</p>
+                  <Button type="button" variant="outline" className={`${billingStyles.pill} mt-3 w-full`} disabled={avatarSaving} onClick={() => personaInputRef.current?.click()}>{rawText.rich(rawLocale, "uploadPersonaCard", { part1: richValue((<Upload className="size-4" aria-hidden="true" />)) })}</Button>
                 </div>
               </WorkbenchCard> : null}
               </div>
-              {uploadedPersona ? <input ref={personaAvatarInputRef} aria-label="上传人格卡头像" type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={avatarSaving} onChange={(event) => { const file = event.target.files?.[0]; if (file) void importPersonaAvatar(file); event.currentTarget.value = ""; }} /> : null}
-              <input ref={personaInputRef} aria-label="上传人格卡文件" type="file" accept=".md,.markdown,.txt,.json,text/markdown,text/plain,application/json" className="hidden" disabled={avatarSaving} onChange={(event) => { const file = event.target.files?.[0]; if (file) void importPersona(file); event.currentTarget.value = ""; }} />
-              {uploadedPersona ? <Button type="button" variant="outline" disabled={avatarSaving} className={`${billingStyles.pill} justify-self-start`} onClick={() => personaInputRef.current?.click()}><Upload className="size-4" aria-hidden="true" />上传人格卡</Button> : null}
+              {uploadedPersona ? <input ref={personaAvatarInputRef} aria-label={rawText.text(rawLocale, "uploadPersonaAvatar")} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={avatarSaving} onChange={(event) => { const file = event.target.files?.[0]; if (file) void importPersonaAvatar(file); event.currentTarget.value = ""; }} /> : null}
+              <input ref={personaInputRef} aria-label={rawText.text(rawLocale, "uploadPersonaFile")} type="file" accept=".md,.markdown,.txt,.json,text/markdown,text/plain,application/json" className="hidden" disabled={avatarSaving} onChange={(event) => { const file = event.target.files?.[0]; if (file) void importPersona(file); event.currentTarget.value = ""; }} />
+              {uploadedPersona ? <Button type="button" variant="outline" disabled={avatarSaving} className={`${billingStyles.pill} justify-self-start`} onClick={() => personaInputRef.current?.click()}>{rawText.rich(rawLocale, "uploadPersonaCard", { part1: richValue((<Upload className="size-4" aria-hidden="true" />)) })}</Button> : null}
               {personaError ? <p role="alert" className="text-xs text-destructive">{personaError}</p> : null}
             </div>
           </DialogBody>

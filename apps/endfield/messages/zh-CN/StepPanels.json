@@ -1,0 +1,16 @@
+{
+  "eventLog": "事件日志",
+  "clear": "清空",
+  "noEventsYet": "暂无事件",
+  "outputIsMeasuredInEffectiveHoursAverageRateUses": "产出单位为等效小时；均产按有效工作时长计算。",
+  "facilityProductionStatistics": "设施产出统计",
+  "facilityProduct": "舱室 / 产物",
+  "totalOutput": "累计产出",
+  "averageH": "均产 / h",
+  "activeWork": "有效工作",
+  "operatorMoraleStatistics": "干员心情统计",
+  "operator": "干员",
+  "minimum": "最低",
+  "maximum": "最高",
+  "current": "当前"
+}

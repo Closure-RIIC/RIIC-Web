@@ -1,0 +1,23 @@
+{
+  "version": "版本号",
+  "versionLocked": "发布过的版本号不可更改。",
+  "releaseDate": "发布日期",
+  "notifyInPopup": "弹窗通知",
+  "popupOn": "弹窗通知：开",
+  "popupOff": "弹窗通知：关",
+  "notificationHint": "同版本的文字修正不会重复通知已读用户。",
+  "contentLanguage": "编辑内容语言",
+  "chinese": "中文",
+  "englishOptional": "英文（可选）",
+  "englishFallback": "缺少译文时显示简体原文。",
+  "updateTitle": "更新标题",
+  "titlePlaceholder": "例如：专精规划上线",
+  "sectionNew": "新增",
+  "sectionImproved": "优化",
+  "sectionFixed": "修复",
+  "addItem": "添加条目",
+  "noItems": "此分类暂无条目。",
+  "removeItemLabel": "移除{section}第 {index} 条",
+  "remove": "移除",
+  "traditionalOptional": "繁体中文（可选）"
+}

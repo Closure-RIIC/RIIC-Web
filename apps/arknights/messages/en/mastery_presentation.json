@@ -1,0 +1,12 @@
+{
+  "noTrainer": "no trainer",
+  "removeThePreviousTrainerBeforeStartingDiscardTheSaved": "Remove the previous trainer before starting (discard the saved halving).",
+  "startMWithToApplyThe50Reduction": "Start M{level} with {value2} to apply the 50% reduction.",
+  "thenImmediatelySwitchTo": "Then immediately switch to {firstName}.",
+  "startMWith": "Start M{level} with {firstName}.",
+  "switchTo": "Switch to {name}.",
+  "trainForAtTotalSpeed": "{name}: train for {value2} at {value3}% total speed.",
+  "completeM": "Complete M{level}.",
+  "keepBothOperatorsInTheTrainingRoomStartThe": "Keep both operators in the training room. Start the next stage before changing trainers.",
+  "additional1": "{choice2, select, yes {Simple} other {Fast}}"
+}

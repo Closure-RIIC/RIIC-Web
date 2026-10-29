@@ -1,4 +1,8 @@
 "use client";
+import { useRef } from "react";
+
+
+import { releaseText } from "@riic/arknights-domain/releases/types";
 import { adminPageClass } from "../admin-page";
 
 import { useCallback, useEffect, useState } from "react";
@@ -27,8 +31,11 @@ type Confirmation = { action: "publish" | "withdraw" | "delete"; release: AdminR
 export function ChangelogManager() {
   const requestAdminData = useAdminRequest();
   const t = useTranslations("AdminChangelog");
+  // Language changes update copy without reloading or overwriting in-progress work.
+  const languageEffectRef = useRef({ t });
+  useEffect(() => { languageEffectRef.current = { t }; }, [t]);
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [data, setData] = useState<AdminReleaseList | null>(null);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
@@ -44,10 +51,10 @@ export function ChangelogManager() {
   const environment = data ? t(`environment.${data.environment}`) : "";
   const load = useCallback(async () => {
     setLoading(true);
-    try { setData(await requestAdminData<AdminReleaseList>("/api/admin/releases", undefined, t("loadError"))); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : t("loadError")); }
+    try { setData(await requestAdminData<AdminReleaseList>("/api/admin/releases", undefined, languageEffectRef.current.t("loadError"))); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : languageEffectRef.current.t("loadError")); }
     finally { setLoading(false); }
-  }, [t, requestAdminData]);
+  }, [requestAdminData]);
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
     if (!dirty) return;
@@ -133,7 +140,7 @@ export function ChangelogManager() {
                   <span className="flex flex-wrap items-center justify-between gap-2"><span className="font-number text-lg">v{record.draft.version}</span>
                     <Badge variant={record.published ? "default" : "outline"}>{record.published ? t("published") : record.firstPublishedAt ? t("withdrawn") : t("draft")}</Badge>
                   </span>
-                  <span className="break-words text-sm">{record.draft.title[en ? "en" : "zh"] || record.draft.title.zh}</span>
+                  <span className="break-words text-sm">{releaseText(record.draft.title, en)}</span>
                   {record.published && JSON.stringify(record.draft) !== JSON.stringify(record.published) ? <span className="text-xs text-muted-foreground">{t("unpublishedChanges")}</span> : null}
                 </button>
               ))}

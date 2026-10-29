@@ -1,4 +1,14 @@
 "use client";
+import { useLocale as useRawLocale } from "use-intl";
+import { createLocalizer as createRawLocalizer, richValue } from "@riic/arknights-domain/i18n/localize";
+import type RawMessages from "../../../messages/zh-CN/AK_Raw_components_pages_InventoryPage.json";
+const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_components_pages_InventoryPage");
+
+
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_pages_InventoryPage.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_pages_InventoryPage");
+
 import { FilterSelect } from "@riic/ui-primitives/filter-select";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 
@@ -16,7 +26,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import itemCatalog from "@/generated/item-catalog.json";
-import { useLocale } from "use-intl";
+import { useLocale, useTranslations } from "use-intl";
+import { useGameCatalog } from "@/i18n/game-data-client";
 import type { DisplayError, SklandInventoryData } from "@riic/arknights-domain/types";
 
 const catalog: Record<string, { name?: string; icon?: string }> = {
@@ -24,7 +35,6 @@ const catalog: Record<string, { name?: string; icon?: string }> = {
   classic_normal_ticket: { name: "通用凭证", icon: "/images/items/classic_normal_ticket.png" },
   classic_gacha: { name: "中坚寻访凭证", icon: "/images/items/classic_gacha.png" },
 };
-const fmt = (value: number) => value.toLocaleString("zh-CN");
 const BATTLE_RECORD_IDS = new Set(["2001", "2002", "2003", "2004"]);
 const COMMON_IDS = ["4002", "4003", "4001", "4004", "4005", "7004", "7003", "7001", "3141", "3003", "classic_normal_ticket", "classic_gacha"];
 const MANUAL_RESOURCE_IDS = ["4002", "4003", "4004", "4005", "7004", "7003", "7001", "classic_normal_ticket", "classic_gacha"];
@@ -40,8 +50,13 @@ export default function InventoryPage() {
 }
 
 function InventoryContent({ identityKey }: { identityKey: string }) {
+  const rawLocale = useRawLocale();
   const storageKey = `${MANUAL_STORAGE_KEY}:${identityKey}`;
   const locale = useLocale();
+  const inventoryText = useTranslations("InventoryLabels");
+  const gameCatalog = useGameCatalog();
+  const fmt = (value: number) => value.toLocaleString(locale);
+  const itemName = (id: string) => gameCatalog.itemNames[id] ?? catalog[id]?.name ?? rawText.text(locale, "unknownItem");
   const [data, setData] = useState<SklandInventoryData | null>(null);
   const [query, setQuery] = useState("");
   const [estimateOpen, setEstimateOpen] = useState(false);
@@ -57,7 +72,7 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
     setLoading(true);
     try {
       const inventory = await getSklandInventory();
-      if (inventory.identityKey !== identityKey) throw new Error("账号或角色已变化，请刷新页面后重试。");
+      if (inventory.identityKey !== identityKey) throw new Error("@inventory:identityChanged");
       setData(inventory);
       setError(null);
     } catch (value) {
@@ -101,8 +116,8 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
     const normalized = query.trim().toLocaleLowerCase();
     return (data?.items ?? [])
       .filter((item) => /^\d+$/.test(item.id))
-      .filter((item) => !normalized || (catalog[item.id]?.name ?? "").toLocaleLowerCase().includes(normalized));
-  }, [data, query]);
+      .filter((item) => !normalized || [catalog[item.id]?.name, gameCatalog.itemNames[item.id]].some(name => name?.toLocaleLowerCase().includes(normalized)));
+  }, [data, query, gameCatalog]);
   const apiCountById = useMemo(() => new Map((data?.items ?? []).map((item) => [item.id, item.count])), [data]);
   const manualValue = useCallback((id: string) => {
     const raw = manualCounts[id]?.trim();
@@ -120,18 +135,18 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
     const candidates = new Map(items.filter((item) => !excluded.has(item.id)).map((item) => [item.id, item]));
     for (const id of ["4005", "7001"]) candidates.set(id, { id, count: itemCount(id) });
     const categories = [
-      { title: "养成材料", names: Object.entries(MATERIAL_GROUPS).filter(([title]) => title.startsWith("稀有度")).flatMap(([, names]) => names) },
-      { title: "模组芯片和技能书", names: [...MATERIAL_GROUPS["模组"], ...MATERIAL_GROUPS["芯片相关"], ...MATERIAL_GROUPS["技能书"]] },
+      { id: "materials", title: inventoryText("materials"), names: Object.entries(MATERIAL_GROUPS).filter(([title]) => title.startsWith("稀有度")).flatMap(([, names]) => names) },
+      { id: "upgrades", title: inventoryText("upgrades"), names: [...MATERIAL_GROUPS["模组"], ...MATERIAL_GROUPS["芯片相关"], ...MATERIAL_GROUPS["技能书"]] },
     ];
-    const groups = categories.map(({ title, names }) => {
+    const groups = categories.map(({ id, title, names }) => {
       const grouped = [...candidates.values()].filter((item) => names.includes(catalog[item.id]?.name ?? ""))
         .sort((a, b) => names.indexOf(catalog[a.id]?.name ?? "") - names.indexOf(catalog[b.id]?.name ?? ""));
       grouped.forEach((item) => candidates.delete(item.id));
-      return { title, items: grouped };
+      return { id, title, items: grouped };
     });
-    groups.push({ title: "其他", items: [...candidates.values()] });
+    groups.push({ id: "other", title: inventoryText("other"), items: [...candidates.values()] });
     return groups;
-  }, [items, itemCount]);
+  }, [items, itemCount, inventoryText]);
   const yellowCerts = manualValue("4004") ?? apiCountById.get("4004") ?? 0;
   const exchange = useMemo(() => yellowCertificateExchange(yellowCerts), [yellowCerts]);
   const pullSummary = useMemo(() => estimateHeadhuntPulls({
@@ -160,30 +175,30 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
       <div className="flex w-full min-w-0 flex-col gap-5 pb-8 pt-5">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <WorkbenchPageHeading page="inventory">{locale === "en" ? "Inventory" : "查看库存"}</WorkbenchPageHeading>
-            <span className="whitespace-nowrap text-sm text-muted-foreground">共 {items.length} 项</span>
+            <WorkbenchPageHeading page="inventory">{uiText.text(locale, "inventory")}</WorkbenchPageHeading>
+            <span className="whitespace-nowrap text-sm text-muted-foreground">{rawText.rich(rawLocale, "items", { part1: richValue((items.length)) })}</span>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => setEstimateOpen(true)} disabled={loading}><Calculator className="size-4" />资源估算</Button>
-            <Button variant="outline" onClick={() => void load()} disabled={loading} aria-label="刷新库存"><RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />刷新</Button>
-            <Button nativeButton={false} variant="outline" size="icon" render={<Link to="/" />} aria-label="返回基建终端"><ArrowLeft /></Button>
+            <Button variant="outline" onClick={() => setEstimateOpen(true)} disabled={loading}>{rawText.rich(rawLocale, "resourceEstimate", { part1: richValue((<Calculator className="size-4" />)) })}</Button>
+            <Button variant="outline" onClick={() => void load()} disabled={loading} aria-label={rawText.text(rawLocale, "refreshInventory")}>{rawText.rich(rawLocale, "refresh", { part1: richValue((<RefreshCw className={loading ? "size-4 animate-spin" : "size-4"} />)) })}</Button>
+            <Button nativeButton={false} variant="outline" size="icon" render={<Link to="/" />} aria-label={rawText.text(rawLocale, "backToBaseTerminal")}><ArrowLeft /></Button>
           </div>
         </header>
 
         <section className="w-full min-w-0">
-          <div className="relative max-w-md"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索物品名称" className="h-9 pl-9" aria-label="搜索库存" /></div>
-          {error ? <div className="mt-5 border border-amber-400/40 bg-amber-50/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200">{error.message || "库存读取失败，请稍后重试。"} 手工填写仍可用于估算；未读取的数量按 0 处理。</div> : null}
-          {!error && loading ? <div className="py-16 text-center text-sm text-muted-foreground">正在读取森空岛库存...</div> : null}
+          <div className="relative max-w-md"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={rawText.text(rawLocale, "searchItemNames")} className="h-9 pl-9" aria-label={rawText.text(rawLocale, "searchInventory")} /></div>
+          {error ? <div className="mt-5 border border-amber-400/40 bg-amber-50/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-200">{rawText.rich(rawLocale, "manualEntriesCanStillBeUsedForEstimatesUnavailable", { part1: richValue((error.message === "@inventory:identityChanged" ? rawText.text(rawLocale, "identityChanged") : error.message || inventoryText("loadFailed"))) })}</div> : null}
+          {!error && loading ? <div className="py-16 text-center text-sm text-muted-foreground">{rawText.text(rawLocale, "loadingSklandInventory")}</div> : null}
           {!loading ? <>
             <div className="mt-5 grid gap-6">
               <div className="min-w-0">
-              <h3 className="mb-3 border-b border-border pb-3 text-lg font-semibold">抽卡资源</h3>
+              <h3 className="mb-3 border-b border-border pb-3 text-lg font-semibold">{rawText.text(rawLocale, "headhuntingResources")}</h3>
               <p role="status" className={`mb-3 text-xs leading-5 ${manualSaveState === "error" ? "text-destructive" : "text-muted-foreground"}`}>
                 {manualSaveState === "error"
-                  ? (locale === "en" ? "Could not save to this browser. Your edits are available on this page only; allow browser storage and edit again to retry." : "浏览器保存失败，修改仅在当前页面有效；请允许浏览器存储后重新填写。")
+                  ? (uiText.text(locale, "couldNotSaveToThisBrowserYourEdits"))
                   : manualSaveState === "saved"
-                    ? (locale === "en" ? "Manual amounts saved to this browser for the current account and character. They remain after a refresh." : "手填数量已保存到此浏览器，按当前账号和角色分别保留，刷新后仍有效。")
-                    : (locale === "en" ? "Manual amounts are automatically saved to this browser for each account and character." : "手填数量会自动保存到此浏览器，按账号和角色分别保留。")}
+                    ? (uiText.text(locale, "manualAmountsSavedToThisBrowserForThe"))
+                    : (uiText.text(locale, "manualAmountsAreAutomaticallySavedToThisBrowser"))}
               </p>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 {commonItems.map((item) => {
@@ -193,22 +208,22 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
                       {catalogItem?.icon ? <img src={catalogItem.icon} alt="" width={44} height={44} className="size-10 object-contain" /> : <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />}
                     </div>
                     <div className="min-w-0 flex-1 text-sm">
-                      <span className="block break-words">{catalogItem?.name ?? "未知物品"}</span>
+                      <span className="block break-words">{itemName(item.id)}</span>
                     {MANUAL_RESOURCE_IDS.includes(item.id) || !apiCountById.has(item.id) ? <Input
                       inputMode="numeric"
                       value={manualCounts[item.id] ?? ""}
                       onChange={(event) => setManualCount(item.id, event.target.value)}
-                      placeholder={apiCountById.has(item.id) ? String(apiCountById.get(item.id)) : "填写数量"}
-                      aria-label={`填写${catalogItem?.name ?? "资源"}数量`}
+                      placeholder={apiCountById.has(item.id) ? String(apiCountById.get(item.id)) : rawText.text(locale, "enterQuantity")}
+                      aria-label={inventoryText("quantityFor", { name: itemName(item.id) })}
                       className="mt-1 h-9 w-full min-w-0 px-2 font-number text-xs"
-                    /> : <span className="mt-1 block text-xs text-muted-foreground">拥有：{fmt(item.count)}</span>}
+                    /> : <span className="mt-1 block text-xs text-muted-foreground">{rawText.rich(rawLocale, "owned", { part1: richValue((fmt(item.count))) })}</span>}
                     </div>
                   </div>;
                 })}
               </div>
               </div>
               <div className="min-w-0">
-                <h3 className="mb-3 border-b border-border pb-3 text-lg font-semibold">钱书资源</h3>
+                <h3 className="mb-3 border-b border-border pb-3 text-lg font-semibold">{rawText.text(rawLocale, "lmdAndExpResources")}</h3>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                   {experienceItems.map((item) => {
                     const catalogItem = catalog[item.id];
@@ -217,15 +232,15 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
                         {catalogItem?.icon ? <img src={catalogItem.icon} alt="" width={44} height={44} className="size-10 object-contain" /> : <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />}
                       </div>
                       <div className="min-w-0 flex-1 text-sm">
-                        <span className="block break-words">{catalogItem?.name ?? "未知物品"}</span>
+                        <span className="block break-words">{itemName(item.id)}</span>
                         {item.id === "4001" && !apiCountById.has(item.id) ? <Input
                           inputMode="numeric"
                           value={manualCounts[item.id] ?? ""}
                           onChange={(event) => setManualCount(item.id, event.target.value)}
-                          placeholder="填写数量"
-                          aria-label="填写龙门币数量"
+                          placeholder={rawText.text(rawLocale, "enterQuantity")}
+                          aria-label={rawText.text(rawLocale, "enterLmdAmount")}
                           className="mt-1 h-9 w-full min-w-0 px-2 font-number text-xs"
-                        /> : <span className="mt-1 block text-xs text-muted-foreground">拥有：{fmt(item.count)}</span>}
+                        /> : <span className="mt-1 block text-xs text-muted-foreground">{rawText.rich(rawLocale, "owned", { part1: richValue((fmt(item.count))) })}</span>}
                       </div>
                     </div>;
                   })}
@@ -233,57 +248,57 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
               </div>
             <Dialog open={estimateOpen} onOpenChange={setEstimateOpen}>
               <DialogContent className="max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)] sm:max-w-[min(800px,calc(100vw-2rem))]">
-                <DialogHeader><DialogTitle>资源估算</DialogTitle></DialogHeader>
+                <DialogHeader><DialogTitle>{rawText.text(rawLocale, "resourceEstimate2")}</DialogTitle></DialogHeader>
                 <DialogBody className="min-h-0 overflow-y-auto pb-6">
             <section className="grid min-w-0 auto-rows-fr sm:grid-cols-2">
               <div className="grid min-w-0 grid-rows-[24px_44px_56px_1fr_36px] gap-3 pb-5 sm:pb-0 sm:pr-6">
-                <h3 className="text-base font-semibold">寻访估算</h3>
-                <p className="flex items-center text-sm text-muted-foreground">当前资源可用寻访</p>
-                <p className="font-number text-4xl font-semibold leading-[56px]"><span className="text-[#FFD501]">{fmt(pullSummary.totalPulls)}</span> <span className="text-xl">抽</span></p>
+                <h3 className="text-base font-semibold">{rawText.text(rawLocale, "headhuntingEstimate")}</h3>
+                <p className="flex items-center text-sm text-muted-foreground">{rawText.text(rawLocale, "pullsAvailableFromCurrentResources")}</p>
+                <p className="font-number text-4xl font-semibold leading-[56px]"><span className="text-[#FFD501]">{fmt(pullSummary.totalPulls)}</span> <span className="text-xl">{rawText.text(rawLocale, "pulls")}</span></p>
               <div className="grid content-start gap-3 border-t border-border/70 pt-3 text-xs text-muted-foreground">
-                <p className="flex justify-between gap-3"><span>源石与合成玉</span><strong className="font-number text-foreground">{fmt(pullSummary.currencyPulls)} 抽</strong></p>
-                <p className="flex justify-between gap-3"><span>寻访凭证</span><strong className="font-number text-foreground">{fmt(pullSummary.ticketPulls)} 抽</strong></p>
+                <p className="flex justify-between gap-3"><span>{rawText.text(rawLocale, "originitePrimeAndOrundum")}</span><strong className="font-number text-foreground">{rawText.rich(rawLocale, "pulls2", { part1: richValue((fmt(pullSummary.currencyPulls))) })}</strong></p>
+                <p className="flex justify-between gap-3"><span>{rawText.text(rawLocale, "headhuntingPermits")}</span><strong className="font-number text-foreground">{rawText.rich(rawLocale, "pulls2", { part1: richValue((fmt(pullSummary.ticketPulls))) })}</strong></p>
                 <Tooltip>
                   <TooltipTrigger
                     render={<p className="flex cursor-help justify-between gap-3 border-b border-dashed border-muted-foreground/50" />}
                   >
-                    <span>黄票阶梯兑换</span><strong className="font-number text-foreground">{fmt(exchange.pulls)} 抽</strong>
+                    <span>{rawText.text(rawLocale, "distinctionExchangeTiers")}</span><strong className="font-number text-foreground">{rawText.rich(rawLocale, "pulls2", { part1: richValue((fmt(exchange.pulls))) })}</strong>
                   </TooltipTrigger>
                   <TooltipContent side="left" className="w-72 p-3">
-                    <p className="mb-2 text-xs font-semibold">黄票兑换规则</p>
+                    <p className="mb-2 text-xs font-semibold">{rawText.text(rawLocale, "distinctionExchangeRules")}</p>
                     <div className="grid gap-1 text-xs">
                       {HEADHUNTING_STEPS.map((step) => <p key={step.tier} className="flex justify-between gap-3">
-                        <span>{step.content}</span><span className="font-number">累计 {step.cost} 黄票 · {step.pulls} 抽</span>
+                        <span>{inventoryText("permits", { count: step.pulls })}</span><span className="font-number">{rawText.rich(rawLocale, "totalDistinctionsPulls", { part1: richValue((step.cost)), part2: richValue((step.pulls)) })}</span>
                       </p>)}
                     </div>
                   </TooltipContent>
                 </Tooltip>
               </div>
-                <p className="text-xs leading-[18px] text-muted-foreground">另余 {fmt(pullSummary.remainingOrundum)} 合成玉。假设源石全部兑换、当月黄票兑换尚未购买；不含中坚票。</p>
+                <p className="text-xs leading-[18px] text-muted-foreground">{rawText.rich(rawLocale, "orundumRemainingAssumesAllOriginitePrimeIsConvertedAnd", { part1: richValue((fmt(pullSummary.remainingOrundum))) })}</p>
               </div>
               <div className="grid min-w-0 grid-rows-[24px_44px_56px_1fr_36px] gap-3 border-t border-border/70 pt-5 sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
-                <h3 className="text-base font-semibold">养成估算</h3>
+                <h3 className="text-base font-semibold">{rawText.text(rawLocale, "trainingEstimate")}</h3>
                 <div className="grid grid-cols-3 items-center gap-2">
-                  <FilterSelect value={targetRarity} onValueChange={(value) => { const rarity = Number(value); setTargetRarity(rarity); const elite = Math.min(targetElite, maxEliteForRarity(rarity)); setTargetElite(elite); setTargetLevel(Math.min(targetLevel, manualLevelFor(rarity, elite))); }} className="h-11" aria-label="目标星级"
+                  <FilterSelect value={targetRarity} onValueChange={(value) => { const rarity = Number(value); setTargetRarity(rarity); const elite = Math.min(targetElite, maxEliteForRarity(rarity)); setTargetElite(elite); setTargetLevel(Math.min(targetLevel, manualLevelFor(rarity, elite))); }} className="h-11" aria-label={rawText.text(rawLocale, "targetRarity")}
                     options={[3, 4, 5, 6].map(rarity => ({ value: rarity, label: `${rarity}★` }))} />
-                  <FilterSelect value={targetElite} onValueChange={(value) => { const elite = Number(value); setTargetElite(elite); setTargetLevel(Math.min(targetLevel, manualLevelFor(targetRarity, elite))); }} className="h-11" aria-label="目标精英阶段"
-                    options={[0, 1, 2].filter(elite => targetRarity >= (elite === 2 ? 4 : 3)).map(elite => ({ value: elite, label: `精${elite}` }))} />
-                  <FilterSelect value={targetLevel} onValueChange={value => setTargetLevel(Number(value))} className="h-11" aria-label="目标等级"
-                    options={Array.from({ length: manualLevelFor(targetRarity, targetElite) }, (_, index) => ({ value: index + 1, label: `${index + 1}级` }))} />
+                  <FilterSelect value={targetElite} onValueChange={(value) => { const elite = Number(value); setTargetElite(elite); setTargetLevel(Math.min(targetLevel, manualLevelFor(targetRarity, elite))); }} className="h-11" aria-label={rawText.text(rawLocale, "targetEliteStage")}
+                    options={[0, 1, 2].filter(elite => targetRarity >= (elite === 2 ? 4 : 3)).map(elite => ({ value: elite, label: inventoryText("elite", { level: elite }) }))} />
+                  <FilterSelect value={targetLevel} onValueChange={value => setTargetLevel(Number(value))} className="h-11" aria-label={rawText.text(rawLocale, "targetLevel")}
+                    options={Array.from({ length: manualLevelFor(targetRarity, targetElite) }, (_, index) => ({ value: index + 1, label: inventoryText("level", { level: index + 1 }) }))} />
                 </div>
-                <p className="font-number text-4xl font-semibold leading-[56px]"><span className="text-[#FFD501]">{sixStarSummary.count.toFixed(2)}</span> <span className="text-xl">个</span></p>
+                <p className="font-number text-4xl font-semibold leading-[56px]"><span className="text-[#FFD501]">{sixStarSummary.count.toFixed(2)}</span> <span className="text-xl">{rawText.text(rawLocale, "units")}</span></p>
                 <div className="grid content-start gap-3 border-t border-border/70 pt-3 text-xs text-muted-foreground [&_p]:flex-wrap [&_strong]:break-all">
-                  <p className="flex justify-between gap-3"><span>龙门币</span><strong className="font-number text-foreground">{fmt(itemCount("4001"))} / {fmt(sixStarSummary.targetCost.lmd)}</strong></p>
-                  <p className="flex justify-between gap-3"><span>作战记录经验</span><strong className="font-number text-foreground">{fmt(sixStarSummary.exp)} / {fmt(sixStarSummary.targetCost.exp)}</strong></p>
+                  <p className="flex justify-between gap-3"><span>{rawText.text(rawLocale, "lmd")}</span><strong className="font-number text-foreground">{fmt(itemCount("4001"))} / {fmt(sixStarSummary.targetCost.lmd)}</strong></p>
+                  <p className="flex justify-between gap-3"><span>{rawText.text(rawLocale, "exp")}</span><strong className="font-number text-foreground">{fmt(sixStarSummary.exp)} / {fmt(sixStarSummary.targetCost.exp)}</strong></p>
                 </div>
-                <p className="text-xs leading-[18px] text-muted-foreground">从精0 1级开始，仅计算升级与精英化的钱书；不包含材料、技能、模组。</p>
+                <p className="text-xs leading-[18px] text-muted-foreground">{rawText.text(rawLocale, "startsAtE0Lv1AndCountsOnlyLmd")}</p>
               </div>
             </section>
                 </DialogBody>
               </DialogContent>
             </Dialog>
             </div>
-            {materialGroups.map((group) => <section key={group.title} className="mt-6">
+            {materialGroups.map((group) => <section key={group.id} className="mt-6">
               <h3 className="mb-3 border-b border-border pb-3 text-lg font-semibold">{group.title}</h3>
               <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6">
                 {group.items.map((item) => {
@@ -292,16 +307,16 @@ function InventoryContent({ identityKey }: { identityKey: string }) {
                     <div className="grid size-10 shrink-0 place-items-center rounded-full bg-muted/30">
                       {catalogItem?.icon ? <img src={catalogItem.icon} alt="" width={44} height={44} className="size-10 object-contain" /> : <PackageOpen className="size-5 text-muted-foreground" aria-hidden="true" />}
                     </div>
-                    <div className="min-w-0 flex-1 text-sm leading-5"><span className="block break-words">{catalogItem?.name ?? "未知物品"}</span>
-                      {MANUAL_RESOURCE_IDS.includes(item.id) ? <Input inputMode="numeric" value={manualCounts[item.id] ?? ""} onChange={(event) => setManualCount(item.id, event.target.value)} placeholder={String(apiCountById.get(item.id) ?? 0)} aria-label={`填写${catalogItem?.name ?? "资源"}数量`} className="mt-1 h-9 w-full min-w-0 px-2 font-number text-xs" /> : <span className="mt-1 block text-xs text-muted-foreground">拥有：{fmt(item.count)}</span>}
+                    <div className="min-w-0 flex-1 text-sm leading-5"><span className="block break-words">{itemName(item.id)}</span>
+                      {MANUAL_RESOURCE_IDS.includes(item.id) ? <Input inputMode="numeric" value={manualCounts[item.id] ?? ""} onChange={(event) => setManualCount(item.id, event.target.value)} placeholder={String(apiCountById.get(item.id) ?? 0)} aria-label={inventoryText("quantityFor", { name: itemName(item.id) })} className="mt-1 h-9 w-full min-w-0 px-2 font-number text-xs" /> : <span className="mt-1 block text-xs text-muted-foreground">{rawText.rich(rawLocale, "owned", { part1: richValue((fmt(item.count))) })}</span>}
                     </div>
                   </div>;
                 })}
               </div>
             </section>)}
-            {items.length === 0 ? <div className="py-16 text-center text-sm text-muted-foreground">没有匹配的库存物品。</div> : null}
+            {items.length === 0 ? <div className="py-16 text-center text-sm text-muted-foreground">{rawText.text(rawLocale, "noMatchingInventoryItems")}</div> : null}
           </> : null}
-          {data ? <p className="mt-5 text-xs text-muted-foreground">读取时间：{new Date(data.fetchedAt).toLocaleString()}</p> : null}
+          {data ? <p className="mt-5 text-xs text-muted-foreground">{rawText.rich(rawLocale, "retrieved", { part1: richValue((new Date(data.fetchedAt).toLocaleString(locale))) })}</p> : null}
         </section>
       </div>
     </main>

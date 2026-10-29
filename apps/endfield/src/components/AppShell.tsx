@@ -1,3 +1,4 @@
+import { useEndfieldLanguage } from "../i18n/client";
 import { type CSSProperties, type ReactNode } from "react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { Calculator, SquarePen, Search, Cloud } from "lucide-react";
@@ -19,11 +20,11 @@ import { WorkspaceLiveActivity } from "./WorkspaceLiveActivity";
 
 function AccountMenu() {
   const router = useRouter();
-  const { locale, setLocale } = useWorkspace();
+  const language = useEndfieldLanguage();
   const { session, pending, failed, busy, run } = useAccount();
   const path = useRouterState({ select: state => state.location.pathname });
   return <SharedAccountMenu user={session?.user} pending={pending} busy={busy !== null} unavailable={failed}
-    language={{ locale, setLocale }} currentPage={path === "/settings" ? "settings" : undefined}
+    language={language} currentPage={path === "/settings" ? "settings" : undefined}
     links={{ changelog: <Link to="/changelog" preload={false} />,
       docs: <Link to="/docs" data-docs-link />, settings: <Link to="/settings" preload={false} /> }}
     onSignIn={requestAccountSignIn} onSignOut={async () => { await run("sign-out"); await router.navigate({ to: "/" }); }} />;
@@ -33,15 +34,15 @@ function Navigation() {
   const path = useRouterState({ select: s => s.location.pathname });
   const { setOpenMobile } = useSidebar();
   const groups = [
-    { label: t("基建排班", "Base Scheduling"), links: [
-      { to: "/" as const, label: t(...pageLabels["/"]), icon: Calculator },
-      { to: "/manual" as const, label: t(...pageLabels["/manual"]), icon: SquarePen },
+    { label: t("AppShell.baseScheduling"), links: [
+      { to: "/" as const, label: t(pageLabels["/"]), icon: Calculator },
+      { to: "/manual" as const, label: t(pageLabels["/manual"]), icon: SquarePen },
     ] },
-    { label: t("技能Wiki", "Skill Wiki"), links: [
-      { to: "/skills" as const, label: t(...pageLabels["/skills"]), icon: Search },
+    { label: t("AppShell.skillWiki"), links: [
+      { to: "/skills" as const, label: t(pageLabels["/skills"]), icon: Search },
     ] },
-    { label: t("我的角色", "My Characters"), links: [
-      { to: "/skland" as const, label: t(...pageLabels["/skland"]), icon: Cloud },
+    { label: t("AppShell.myCharacters"), links: [
+      { to: "/skland" as const, label: t(pageLabels["/skland"]), icon: Cloud },
     ] },
   ];
   return <Sidebar collapsible="icon" mobileWidth="min(17rem, calc(100vw - 3rem))"><div className={nav.sidebar}>
@@ -58,13 +59,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { t } = useWorkspace();
   const path = useRouterState({ select: state => state.location.pathname });
   const label = pageLabels[path.replace(/\/+$/, "") || "/"];
-  const title = label ? `${t(...label)} · 帝江号基建终端` : "帝江号基建终端";
+  const title = label ? `${t(label)} · ${t("Navigation.siteTitle")}` : t("Navigation.siteTitle");
   return <TooltipProvider><SidebarProvider data-workbench-shell defaultOpen defaultOpenBreakpoint={1280} style={{ "--sidebar-width": "14rem", "--sidebar-width-icon": "3.25rem" } as CSSProperties}>
     <title>{title}</title>
     <RosterDialogProvider>
     <Navigation />
     <SidebarInset className="ef-theme isolate">
-      <SidebarTrigger className="ef-mobile-navigation md:hidden" data-endfield-mobile-navigation aria-label={t("展开侧边栏", "Open sidebar")} />
+      <SidebarTrigger className="ef-mobile-navigation md:hidden" data-endfield-mobile-navigation aria-label={t("AppShell.openSidebar")} />
       <div data-app-scroll-area="endfield" data-scroll-restoration-id="endfield-page" data-yeye-scroll="y" data-yeye-scroll-slot="endfield-scrollbar">
         <div className="ef-page-content" data-app-content>{children}</div>
         <SiteFooter />

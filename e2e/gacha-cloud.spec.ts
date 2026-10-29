@@ -164,7 +164,7 @@ test("gacha keeps the current Skland role when archive order or QR authorization
   await expect(dialog.getByRole("status")).toHaveText("等待扫码确认");
   await page.clock.fastForward(3100);
   await expect(dialog.getByRole("alert")).toContainText("扫码账号与森空岛同步当前角色不一致");
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(identity.getByRole("heading", { name: "当前角色" })).toBeVisible();
   expect(writes).toBe(0);
   await expect(page.locator("[data-gacha-account-select]")).toHaveCount(0);

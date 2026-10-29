@@ -12,7 +12,7 @@ export const APPLICATIONS = ["arknights", "endfield"];
 // another consumer or transitive import expands this set.
 export const ENDFIELD_SHARED_LEAVES = {
   "packages/arknights-domain": ["src/account-name.ts", "src/password-strength.ts", "src/i18n/localize.ts", "src/i18n/config.ts"],
-  "packages/platform-server": ["src/proxy.ts"],
+  "packages/platform-server": ["src/proxy.ts", "src/html-compression.ts"],
 };
 const shaPattern = /^[a-f0-9]{40}$/;
 const ordered = (values) => APPLICATIONS.filter((app) => values.has(app));

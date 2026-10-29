@@ -969,7 +969,7 @@ test("dialog and mobile sheet motion preserve direction, exit timing, and focus"
   const setupDialog = page.getByRole("dialog");
   await expect(setupDialog).toBeVisible({ timeout: 30_000 });
   await expect(setupDialog).toHaveCSS("transform-origin", /.+/);
-  await setupDialog.getByRole("button", { name: "Close" }).click();
+  await setupDialog.getByRole("button", { name: /^(关闭|關閉|Close)$/ }).click();
   await expect(setupDialog).toHaveCount(0);
   await expect(setupTrigger).toBeFocused();
 
@@ -979,7 +979,7 @@ test("dialog and mobile sheet motion preserve direction, exit timing, and focus"
   await expect(setupDialog).toHaveCSS("transform-origin", /.+/);
   await page.setViewportSize({ width: 768, height: 900 });
   await armEndingTransitionCapture(setupDialog, "setup");
-  await setupDialog.getByRole("button", { name: "Close" }).click();
+  await setupDialog.getByRole("button", { name: /^(关闭|關閉|Close)$/ }).click();
   await expectCapturedExitDuration(page, "setup", 150);
   await expect(setupDialog).toHaveCount(0);
   await expect(setupTrigger).toBeFocused();
@@ -1004,7 +1004,7 @@ test("dialog and mobile sheet motion preserve direction, exit timing, and focus"
   await expect(issueTrigger).toBeFocused();
 
   await page.setViewportSize({ width: 390, height: 844 });
-  const sidebarTrigger = page.getByRole("button", { name: "Toggle Sidebar" });
+  const sidebarTrigger = page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i });
   await armMotionCapture(page, '[data-mobile="true"][data-sidebar="sidebar"]', "sidebar-enter", 320);
   await sidebarTrigger.click();
   const sheet = page.locator('[data-mobile="true"][data-sidebar="sidebar"]');
@@ -1029,7 +1029,7 @@ test("shared action buttons keep their geometry after WebKit interactions", asyn
   await setupTrigger.click();
   const setupDialog = page.getByRole("dialog");
   await expect(setupDialog).toBeVisible();
-  await setupDialog.getByRole("button", { name: "Close" }).click();
+  await setupDialog.getByRole("button", { name: /^(关闭|關閉|Close)$/ }).click();
   await expect(setupDialog).toHaveCount(0);
   await expect(setupTrigger).toBeFocused();
   await expectButtonGeometryStable(setupTrigger);
@@ -1404,11 +1404,11 @@ test("the compact mobile navigation stays pinned while the account control belon
   await expect.poll(async () => (await topbar.boundingBox())?.y ?? -1).toBeCloseTo(4, 0);
 
   for (const destination of ["练卡建议", "森空岛同步", "账号管理"]) {
-    await topbar.getByRole("button", { name: "Toggle Sidebar" }).click();
+    await topbar.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     await (await sidebarNavigation(page, destination)).click();
     await expect(page.locator("[data-skland-account-control]")).toHaveCount(0);
   }
-  await topbar.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await topbar.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await page.getByRole("button", { name: "基建计算器", exact: true }).click();
   await expect(page.locator("[data-skland-account-control]")).toBeVisible();
 

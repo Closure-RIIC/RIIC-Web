@@ -1,0 +1,7 @@
+{
+  "scheduleCopyUsesTheScheduleSTrainingLevelsWhich": "Schedule copy: <part1></part1> · Uses the schedule’s training levels, which you can edit. Your personal roster is preserved.",
+  "backToPersonalDraft": "Back to personal draft",
+  "invalidCode": "Invalid schedule code.",
+  "loadFailed": "Could not load the reference schedule.",
+  "copiedTraining": "Reference schedule training (not your roster)"
+}

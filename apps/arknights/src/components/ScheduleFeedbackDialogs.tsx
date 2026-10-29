@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations, useLocale } from "use-intl";
+import { useTranslations } from "use-intl";
 import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, Loader2, RotateCcw, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -120,15 +120,13 @@ export function ProductChangeConfirmModal({
 }: {
   open: boolean;
   roomLabel: string;
-  changeKind: "制造配方" | "贸易策略";
+  changeKind: string;
   nextValueLabel: string;
   busy: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
   const intl = useTranslations();
-  const locale = useLocale();
-  const en = locale === "en";
   return (
     <Dialog
       open={open}
@@ -146,7 +144,7 @@ export function ProductChangeConfirmModal({
         <DialogHeader>
           <DialogTitle>{intl("components.changeSettingsAndRegenerate")}</DialogTitle>
           <DialogDescription>
-            {intl("components.sWillChangeToTheCurrentResultWillBe", { roomLabel: roomLabel, value2: (en) ? (changeKind === "制造配方" ? "factory recipe" : "trade strategy") : "", nextValueLabel: nextValueLabel, changeKind: (en) ? "" : (changeKind) })}
+            {intl("components.sWillChangeToTheCurrentResultWillBe", { roomLabel, nextValueLabel, changeKind })}
           </DialogDescription>
         </DialogHeader>
         <DialogBody className="py-2">

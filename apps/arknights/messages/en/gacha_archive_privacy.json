@@ -1,0 +1,4 @@
+{
+  "title": "Cloud headhunting archives",
+  "body": "With your separate consent, we store your Arknights role UID, nickname and headhunting records in the server database, bound to your website account without automatic expiry. Reading saved history does not require an active Skland or headhunting authorization; retrieving new records does. Browser history is uploaded only when you choose to do so after role authorization. You can export or delete a role's records. Disconnecting authorization does not delete records; deleting records retains the ownership binding to prevent transfers. Deleting your website account removes its archives and bindings. Temporary headhunting credentials are not stored in the archive tables."
+}

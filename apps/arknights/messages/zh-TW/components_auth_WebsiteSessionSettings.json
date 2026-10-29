@@ -1,0 +1,22 @@
+{
+  "title": "登入有效期",
+  "description": "檢視當前裝置的網站登入有效期，並可手動延長。",
+  "loading": "正在讀取登入狀態",
+  "signedOut": "當前未登入",
+  "signInToManage": "登入後可檢視並延長當前裝置的 Session。",
+  "signIn": "前往登入",
+  "manage": "檢視與延長",
+  "dialogTitle": "管理登入有效期",
+  "dialogDescription": "延長僅作用於當前裝置，其他登入裝置不會改變。",
+  "timeRemaining": "剩餘有效期",
+  "remainingDaysHours": "剩餘 {days} 天 {hours} 小時",
+  "remainingHoursMinutes": "剩餘 {hours} 小時 {minutes} 分鐘",
+  "expired": "登入已過期",
+  "unavailable": "暫時無法獲取",
+  "expiresAt": "到期時間：{value}",
+  "extendThirtyDays": "延長 30 天",
+  "extending": "正在延長…",
+  "extended": "當前裝置的登入有效期已延長 30 天。",
+  "extendFailed": "延長登入有效期失敗，請稍後重試。",
+  "close": "關閉"
+}

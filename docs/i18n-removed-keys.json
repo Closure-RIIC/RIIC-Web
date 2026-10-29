@@ -1,0 +1,921 @@
+{
+  "reason": "Reviewed after helper/record/type-contract coverage and unique-range usage manifests. Obsolete UI copy or account copy superseded by the shared Account namespace.",
+  "keys": [
+    {
+      "file": "apps/arknights/messages/zh-CN/adminReviewer.json",
+      "key": "adminReviewer.role"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AdminWorkspace.json",
+      "key": "AdminWorkspace.cdkId"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AdminWorkspace.json",
+      "key": "AdminWorkspace.cdkIssuedAt"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AdminWorkspace.json",
+      "key": "AdminWorkspace.previewUnsupported"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_components_workbench_AccountHealthRoute.json",
+      "key": "AK_components_workbench_AccountHealthRoute.inferredLmdExpDemandRatio"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_components_workbench_AccountHealthRoute.json",
+      "key": "AK_components_workbench_AccountHealthRoute.isAccumulating"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_components_workbench_AccountHealthRoute.json",
+      "key": "AK_components_workbench_AccountHealthRoute.netAtTheDemandRatio"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_components_workbench_AccountHealthRoute.json",
+      "key": "AK_components_workbench_AccountHealthRoute.goldBarsDay"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.quickPlan"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.closure"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_pages_GachaStatistics.json",
+      "key": "AK_Raw_components_pages_GachaStatistics.one"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_pages_SklandStatus.json",
+      "key": "AK_Raw_components_pages_SklandStatus.notProvidedBySklandYet"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_about_page.json",
+      "key": "app_about_page.backToClosureInfrastructureTerminal"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_about_page.json",
+      "key": "app_about_page.terms"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_about_page.json",
+      "key": "app_about_page.privacy"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.passwordStrength"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.passwordStrength2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.avoidCommonEasyToGuessPatterns"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.theResetLinkIsInvalidOrMissingAToken"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.passwordResetExistingSessionsHaveBeenRevokedReturnTo"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.backToScheduler"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.theNewPasswordMustContain8128CharactersAnd"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.newPassword"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.newPassword8128Characters"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.showNewPassword"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.confirmNewPassword"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.enterTheNewPasswordAgain"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.showPasswordConfirmation"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.enterTheNewPasswordAgain2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.resetting"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_account_reset_password_reset_client.json",
+      "key": "app_account_reset_password_reset_client.resetPassword2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_admin_admin_nav.json",
+      "key": "app_admin_admin_nav.administrationNavigation"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_admin_admin_nav.json",
+      "key": "app_admin_admin_nav.backToScheduler"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_admin_issues_issues_client.json",
+      "key": "app_admin_issues_issues_client.requestFailed"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_admin_users_users_client.json",
+      "key": "app_admin_users_users_client.userManagement"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_admin_users_users_client.json",
+      "key": "app_admin_users_users_client.searchSuspendInspectOrRevokeSessions"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_admin_users_users_client.json",
+      "key": "app_admin_users_users_client.noMatchingUsers"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_admin_users_users_client.json",
+      "key": "app_admin_users_users_client.verified"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_admin_users_users_client.json",
+      "key": "app_admin_users_users_client.unverified"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_admin_users_users_client.json",
+      "key": "app_admin_users_users_client.suspended"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_admin_users_users_client.json",
+      "key": "app_admin_users_users_client.reason"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_help_import_operators_page.json",
+      "key": "app_help_import_operators_page.doneWhen"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_help_import_operators_page.json",
+      "key": "app_help_import_operators_page.backToHelp"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_help_import_operators_page.json",
+      "key": "app_help_import_operators_page.importYourOperatorBox"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_help_layout.json",
+      "key": "app_help_layout.skipToHelpContent"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_help_layout.json",
+      "key": "app_help_layout.backToCalculator"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_help_layout.json",
+      "key": "app_help_layout.terms"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_help_layout.json",
+      "key": "app_help_layout.privacy"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_help_layout.json",
+      "key": "app_help_layout.about"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/app_help_page.json",
+      "key": "app_help_page.30SecondCheck"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/App.json",
+      "key": "App.help"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/App.json",
+      "key": "App.websiteAccountSignIn"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/App.json",
+      "key": "App.loadingSignIn"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AuthValidation.json",
+      "key": "AuthValidation.passwordWeak"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AuthValidation.json",
+      "key": "AuthValidation.nameHint"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AuthValidation.json",
+      "key": "AuthValidation.passwordMismatch"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AuthValidation.json",
+      "key": "AuthValidation.passwordRepeat"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AuthValidation.json",
+      "key": "AuthValidation.length"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AuthValidation.json",
+      "key": "AuthValidation.letter"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AuthValidation.json",
+      "key": "AuthValidation.digit"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AuthValidation.json",
+      "key": "AuthValidation.variety"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AuthValidation.json",
+      "key": "AuthValidation.announcement"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Common.json",
+      "key": "Common.changes"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_password_input.json",
+      "key": "components_auth_password_input.showPassword"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.enterTheEmailAddressYouWantToVerify"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.verificationCodeSentCompleteVerificationWithin10Minutes"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.ifThisEmailIsRegisteredAResetMessageWill"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.userNotRegistered"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.emailVerifiedYouCanNowSignIn"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.confirmEmail"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.checkInbox"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.passwordRecoverySteps"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.displayName"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.shownOnThisWebsite"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.email"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.password"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.8128Characters"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.showPassword"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.confirmPassword"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.enterThePasswordAgain"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.showPasswordConfirmation"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.enterTheSamePasswordAgain"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.processing"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.createAccountAndSendCode"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.sendResetEmail"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.iHaveAnAccount"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.createAccount"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.backToSignIn"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.forgotPassword"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.verifyEmail"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.enterEmailVerificationCode"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.sentTo"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.enterThe6DigitCodeFromTheEmail"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.theCodeIsIncorrectOrExpiredTryAgain"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.verified"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.verifying"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.changeEmail"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.resendInS"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.resendCode"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.resetEmailSent"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.emailVerified2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_auth_WebsiteAccountPanel.json",
+      "key": "components_auth_WebsiteAccountPanel.rich1"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_cloud_CloudDataPanel.json",
+      "key": "components_cloud_CloudDataPanel.reviewSyncDetails"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_cloud_CloudDataSync.json",
+      "key": "components_cloud_CloudDataSync.retry"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_cloud_CloudDataSync.json",
+      "key": "components_cloud_CloudDataSync.cloudSyncIsTemporarilyUnavailableCurrentDataRemainsStored"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_cloud_CloudDataSync.json",
+      "key": "components_cloud_CloudDataSync.cloudSyncFailedALocalCopyHasBeenRetained"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_cloud_CloudDataSync.json",
+      "key": "components_cloud_CloudDataSync.couldNotSaveConsentTryAgainLater"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_interior_otp_input.json",
+      "key": "components_interior_otp_input.emailVerificationCode"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_interior_otp_input.json",
+      "key": "components_interior_otp_input.digitOf"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_interior_password_strength.json",
+      "key": "components_interior_password_strength.passwordStrength2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_interior_password_strength.json",
+      "key": "components_interior_password_strength.passwordStrength3"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_interior_password_strength.json",
+      "key": "components_interior_password_strength.easyToGuess"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_interior_password_strength.json",
+      "key": "components_interior_password_strength.met"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_interior_password_strength.json",
+      "key": "components_interior_password_strength.notMet"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_interior_wizard_steps.json",
+      "key": "components_interior_wizard_steps.setupSteps"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_interior_wizard_steps.json",
+      "key": "components_interior_wizard_steps.stepOf"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_interior_wizard_steps.json",
+      "key": "components_interior_wizard_steps.rich1"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.imageExportScope"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.imageExportSingle"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.imageExportAll"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_ManualSchedulePage.json",
+      "key": "components_pages_ManualSchedulePage.chooseMowerOrMaaScheduleFile"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_ManualSchedulePage.json",
+      "key": "components_pages_ManualSchedulePage.portrait"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_ManualSchedulePage.json",
+      "key": "components_pages_ManualSchedulePage.eLv"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_ManualSchedulePage.json",
+      "key": "components_pages_ManualSchedulePage.hoverForInfrastructureSkills"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_ManualSchedulePage.json",
+      "key": "components_pages_ManualSchedulePage.searchOperators"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_ManualSchedulePage.json",
+      "key": "components_pages_ManualSchedulePage.searchSelectableOperators"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_ManualSchedulePage.json",
+      "key": "components_pages_ManualSchedulePage.autoFill"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_ManualSchedulePage.json",
+      "key": "components_pages_ManualSchedulePage.evaluateBasedOnCurrentScheduleUnavailable"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_MasteryPlanner.json",
+      "key": "components_pages_MasteryPlanner.generatePlans"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_MasteryPlanner.json",
+      "key": "components_pages_MasteryPlanner.inputsOrBoxChangedGeneratePlansAgainToSee"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_SkillQuery.json",
+      "key": "components_pages_SkillQuery.operators"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_SkillQuery.json",
+      "key": "components_pages_SkillQuery.clearFilters"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_TrainingAdvice.json",
+      "key": "components_pages_TrainingAdvice.dataValidation"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_TrainingAdvice.json",
+      "key": "components_pages_TrainingAdvice.infrastructureAndOperatorDataPassedTheBasicChecks"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.noComparablePlan"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.noComparison"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.aboveRecommendation"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.ahead"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.belowRecommendation"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.canImprove"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.matchesRecommendation"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.matched"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.aboveRecommendedTeam"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.belowRecommendedTeam"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.atRecommendedLevel"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.adjustFirst"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.canImprove2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.good"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.trading"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.manufacturing"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.power"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.productionImprovements"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.accountReadiness"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.candidates"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.trade"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.factory"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.control"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.shifts"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.available"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.upgrade"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.facilityTeamImprovements"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.currentOperators"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_PlanResultSummary.json",
+      "key": "components_PlanResultSummary.noAvailableTeam"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_RecommendationCard.json",
+      "key": "components_RecommendationCard.elite"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_RecommendationCard.json",
+      "key": "components_RecommendationCard.elite2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_RecommendationCard.json",
+      "key": "components_RecommendationCard.trainingNeeded"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_skill_query_SkillRoomTagBar.json",
+      "key": "components_skill_query_SkillRoomTagBar.roomFilters"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_skill_query_SkillRoomTagBar.json",
+      "key": "components_skill_query_SkillRoomTagBar.facility"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_skill_query_SkillRoomTagBar.json",
+      "key": "components_skill_query_SkillRoomTagBar.facilityFilters"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_skill_query_SkillTagBar.json",
+      "key": "components_skill_query_SkillTagBar.skillTagFilters"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_skill_query_SkillTagBar.json",
+      "key": "components_skill_query_SkillTagBar.skillTags"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Metadata.json",
+      "key": "Metadata.help"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Metadata.json",
+      "key": "Metadata.account"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Metadata.json",
+      "key": "Metadata.account_reset_password"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Metadata.json",
+      "key": "Metadata.help_import_operators"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Metadata.json",
+      "key": "Metadata.help_owned_operators"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/MoodSimulation.json",
+      "key": "MoodSimulation.editHint"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/MoodSimulation.json",
+      "key": "MoodSimulation.simulationHint"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/MoodSimulation.json",
+      "key": "MoodSimulation.subtitle"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/records.json",
+      "key": "records.app_admin_admin_nav_content.value"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/records.json",
+      "key": "records.app_admin_admin_nav_content2.value"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/records.json",
+      "key": "records.app_admin_admin_nav_content3.value"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/records.json",
+      "key": "records.app_admin_admin_nav_content4.value"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/records.json",
+      "key": "records.app_admin_admin_nav_content5.value"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/records.json",
+      "key": "records.components_auth_WebsiteAccountPanel_labels.signin.title"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/records.json",
+      "key": "records.components_auth_WebsiteAccountPanel_labels.signin.description"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/records.json",
+      "key": "records.components_auth_WebsiteAccountPanel_labels.signup.title"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/records.json",
+      "key": "records.components_auth_WebsiteAccountPanel_labels.signup.description"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/records.json",
+      "key": "records.components_auth_WebsiteAccountPanel_labels.forgot.title"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/records.json",
+      "key": "records.components_auth_WebsiteAccountPanel_labels.forgot.description"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Recruitment.json",
+      "key": "Recruitment.boxLinked"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Recruitment.json",
+      "key": "Recruitment.importBox"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Recruitment.json",
+      "key": "Recruitment.changeBox"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/setup_dialog.json",
+      "key": "setup_dialog.manualShifts"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/setup_dialog.json",
+      "key": "setup_dialog.total24Hours"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/setup_dialog.json",
+      "key": "setup_dialog.durationsAreIndependentAndDoNotNeedToAdd"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/setup_dialog.json",
+      "key": "setup_dialog.durationParenthetical"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/setup_dialog.json",
+      "key": "setup_dialog.start"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/setup_dialog.json",
+      "key": "setup_dialog.end"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/setup_dialog.json",
+      "key": "setup_dialog.shiftEndTime"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/setup_dialog.json",
+      "key": "setup_dialog.shiftDuration"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/setup_dialog.json",
+      "key": "setup_dialog.h"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Static.json",
+      "key": "Static.app_admin_layout_tsx1"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Static.json",
+      "key": "Static.app_admin_layout_tsx2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Static.json",
+      "key": "Static.app_admin_page_tsx1"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Static.json",
+      "key": "Static.app_admin_page_tsx2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Static.json",
+      "key": "Static.app__workbench__manual_page_tsx1"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/Static.json",
+      "key": "Static.app__workbench__manual_page_tsx2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.level"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.masteries"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.allItems"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.requirements"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.currentUnknown"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.eligibleModule"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.enableModule"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.confirmClearGoals"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.baseCost"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.skillCost"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.moduleCost"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.optionalRedGold"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/TrainingPlanner.json",
+      "key": "TrainingPlanner.checkBoxes"
+    },
+    {
+      "file": "packages/arknights-domain/messages/zh-CN/efficiency.json",
+      "key": "efficiency.totalCharge"
+    },
+    {
+      "file": "packages/arknights-domain/messages/zh-CN/efficiency.json",
+      "key": "efficiency.totalEfficiency"
+    },
+    {
+      "file": "packages/arknights-domain/messages/zh-CN/efficiency.json",
+      "key": "efficiency.displayEfficiency"
+    },
+    {
+      "file": "packages/arknights-domain/messages/zh-CN/efficiency.json",
+      "key": "efficiency.chargingEfficiency"
+    },
+    {
+      "file": "apps/endfield/messages/zh-CN/Navigation.json",
+      "key": "Navigation.notFound"
+    },
+    {
+      "file": "apps/endfield/messages/zh-CN/Navigation.json",
+      "key": "Navigation.home"
+    },
+    {
+      "file": "apps/endfield/messages/zh-CN/Navigation.json",
+      "key": "Navigation.languageFailed"
+    },
+    {
+      "file": "apps/endfield/messages/zh-CN/Skland.json",
+      "key": "Skland.endfield"
+    }
+  ]
+}

@@ -1,4 +1,3 @@
-import zh from "../../../messages/helpers/zh/skland_status_metrics.json" with { type: "json" };
-import en from "../../../messages/helpers/en/skland_status_metrics.json" with { type: "json" };
+import type Messages from "../../../messages/zh-CN/skland_status_metrics.json";
 import { createLocalizer } from "@riic/arknights-domain/i18n/localize";
-export const localize = createLocalizer(zh, en);
+export const localize = createLocalizer<typeof Messages>("skland_status_metrics");

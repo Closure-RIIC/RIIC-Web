@@ -1,7 +1,7 @@
-import type messages from "../../messages/zh";
+import type Metadata from "../../messages/zh-CN/Metadata.json";
 import type { Route as RootRoute } from "../routes/__root";
 
-export function pageHead(matches: readonly { routeId: string; loaderData?: unknown }[], key: keyof typeof messages.Metadata) {
+export function pageHead(matches: readonly { routeId: string; loaderData?: unknown }[], key: keyof typeof Metadata) {
   // head() types each match with the leaf loader; identify the root before narrowing.
   const bootstrap = matches.find(match => match.routeId === "__root__")?.loaderData as typeof RootRoute.types.loaderData | undefined;
   const source = bootstrap?.messages;

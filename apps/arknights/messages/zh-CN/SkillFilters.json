@@ -1,0 +1,11 @@
+{
+  "rarity": "星级",
+  "profession": "职业",
+  "room": "工作房间",
+  "tag": "技能标签",
+  "all": "全部",
+  "chooseRoom": "请先选择工作房间",
+  "noTags": "该房间暂无技能标签",
+  "operators": "{count} 名干员",
+  "clear": "清除选择"
+}

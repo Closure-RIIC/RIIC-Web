@@ -1,0 +1,19 @@
+{
+  "control_center": "控制中樞",
+  "trade_post": "貿易站",
+  "factory": "製造站",
+  "power_plant": "發電站",
+  "dormitory": "宿舍 · 輔助幹員",
+  "office": "人力",
+  "meeting_room": "會客室",
+  "workshop": "加工站",
+  "training_room": "訓練室",
+  "recycling": "回收站",
+  "lmd": "龍門幣",
+  "orundum": "合成玉",
+  "gold": "赤金",
+  "battle_record": "作戰紀錄",
+  "originium": "源石碎片",
+  "all": "待定配方",
+  "defaultTitle": "{layout} {count}班輪替"
+}

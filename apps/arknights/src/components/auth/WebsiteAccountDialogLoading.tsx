@@ -1,4 +1,9 @@
 "use client";
+
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_auth_WebsiteAccountDialogLoading.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_auth_WebsiteAccountDialogLoading");
+
 import { useLocale, useTranslations } from "use-intl";
 
 import { LoaderCircle } from "lucide-react";
@@ -55,7 +60,7 @@ export function WebsiteAccountDialogLoading({
         data-website-account-dialog-loading
         aria-busy="true"
         finalFocus={false}
-        closeLabel={locale === "en" ? "Close" : "关闭"}
+        closeLabel={uiText.text(locale, "close")}
         className={websiteAuthDialogClassName}
       >
         <DialogHeader className="sr-only">

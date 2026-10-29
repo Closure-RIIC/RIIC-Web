@@ -83,7 +83,7 @@ test("nested dialog and dropdown keep keyboard navigation, background locking an
     await rotation.press("Escape");
     await expect(list).toHaveCount(0);
     await expect(rotation).toBeFocused();
-    await dialog.getByRole("button", { name: "Close", exact: true }).focus();
+    await dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).focus();
     await page.keyboard.press("Escape");
     await expect(dialog).toHaveCount(0);
     await expect(page.locator('[data-slot="dialog-content"] .os-scrollbar')).toHaveCount(0);

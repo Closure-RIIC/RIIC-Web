@@ -1,0 +1,8 @@
+{
+  "ready": "Ready",
+  "missing": "Missing",
+  "needs": "Needs ",
+  "covers": "Covers: ",
+  "label": ", ",
+  "facilities": "Facilities: "
+}

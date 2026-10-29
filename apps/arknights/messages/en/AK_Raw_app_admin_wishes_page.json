@@ -1,0 +1,13 @@
+{
+  "wishes": "Wishes",
+  "approvedWishesAppearOnThePublicWishWall": "Approved wishes appear on the public wish wall.",
+  "donationCodeSettings": "Donation code settings",
+  "disabledByDefaultUploadACodeAndEnableIt": "Disabled by default. Upload a code and enable it to show it on the wish wall.",
+  "showDonationCode": "<part1></part1> Show donation code",
+  "saveSettings": "Save settings",
+  "wishAttachment": "Wish attachment",
+  "approve": "<part1></part1> Approve",
+  "reject": "<part1></part1> Reject",
+  "hide": "<part1></part1> Hide",
+  "noWishesYet": "No wishes yet."
+}

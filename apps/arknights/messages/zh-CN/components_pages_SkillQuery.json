@@ -1,0 +1,8 @@
+{
+  "skillSearch": "技能Wiki",
+  "searchOperatorSkillNameOrEffect": "搜索干员名称/技能名称/技能效果",
+  "clearSearch": "清空搜索",
+  "manualSkillNotesCouldNotBeLoaded": "技能补充说明暂未加载。",
+  "retryNotes": "重新加载说明",
+  "noOperatorsMatchTheseFilters": "没有符合筛选条件的干员。"
+}

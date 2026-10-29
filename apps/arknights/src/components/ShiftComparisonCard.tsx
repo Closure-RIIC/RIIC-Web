@@ -1,4 +1,6 @@
 "use client";
+
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_components_ShiftComparisonCard } from "../i18n/helpers/components_ShiftComparisonCard.ts";
 import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
@@ -14,12 +16,10 @@ import type { ShiftAdjustment, ShiftAdjustmentIssue, ShiftComparison } from "@ri
 import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 
-const ISSUE_LABELS: Record<ShiftAdjustmentIssue, string> = { missing: "需换入", unexpected: "需换出", misplaced: "位置调整", tired: "疲劳" };
-const ISSUE_LABELS_EN: Record<ShiftAdjustmentIssue, string> = { missing: "Move in", unexpected: "Move out", misplaced: "Relocate", tired: "Fatigued" };
 const ACTION_ISSUES = ["unexpected", "missing", "misplaced"] as const;
 type ActionIssue = typeof ACTION_ISSUES[number];
 
-function roomKeyParts(key: string | null, en = false) {
+function roomKeyParts(key: string | null, en: AppLocale) {
   if (!key) return { group: "default", label: localize_components_ShiftComparisonCard.text(en, "unassigned") };
   const [group, indexText] = key.split(":");
   const labels = messageRecord(en, "components_ShiftComparisonCard_labels");
@@ -31,8 +31,8 @@ function roomKeyParts(key: string | null, en = false) {
   };
 }
 
-export function roomKeyLabel(key: string | null) {
-  return roomKeyParts(key).label;
+export function roomKeyLabel(key: string | null, locale: AppLocale) {
+  return roomKeyParts(key, locale).label;
 }
 
 function issueTone(issue: ShiftAdjustmentIssue) {
@@ -49,7 +49,7 @@ function IssueLabel({ issue }: { issue: ShiftAdjustmentIssue }) {
 
 function RoomLabel({ roomKey }: { roomKey: string | null }) {
   const locale = useLocale();
-  const room = roomKeyParts(roomKey, locale === "en");
+  const room = roomKeyParts(roomKey, locale);
   const accent = roomLightAccentFor(room.group);
   const style = {
     "--comparison-room-accent": accent,
@@ -98,7 +98,7 @@ function GroupHeading({ issue, count, id }: { issue: ActionIssue; count: number;
   return (
     <div className="flex items-center justify-between gap-3">
       <h4 id={id}><IssueLabel issue={issue} /></h4>
-      <span className="font-number text-xs text-muted-foreground">{count} {localize_components_ShiftComparisonCard.text(locale, "additional1", { choice1: ((locale === "en")) && (count === 1) ? "yes" : "no" })}</span>
+      <span className="font-number text-xs text-muted-foreground">{localize_components_ShiftComparisonCard.text(locale, "additional1", { count })}</span>
     </div>
   );
 }
@@ -107,7 +107,7 @@ function MobileAdjustmentGroups({ adjustments, reduceMotion }: { adjustments: Sh
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
   const tiredOnly = adjustments.filter((adjustment) => adjustment.issues.includes("tired") && !ACTION_ISSUES.some((issue) => adjustment.issues.includes(issue)));
 
   return (
@@ -142,7 +142,7 @@ function MobileAdjustmentGroups({ adjustments, reduceMotion }: { adjustments: Sh
         <section aria-labelledby="mobile-adjustment-tired" data-adjustment-group="tired">
           <div className="flex items-center justify-between gap-3">
             <h4 id="mobile-adjustment-tired"><IssueLabel issue="tired" /></h4>
-            <span className="font-number text-xs text-muted-foreground">{tiredOnly.length} {localize_components_ShiftComparisonCard.text(en, "additional2", { choice1: ((en)) && (tiredOnly.length === 1) ? "yes" : "no" })}</span>
+            <span className="font-number text-xs text-muted-foreground">{localize_components_ShiftComparisonCard.text(en, "additional2", { count: tiredOnly.length })}</span>
           </div>
           <p className="mt-2 bg-red-50 px-3 py-2.5 text-xs leading-5 text-red-800">{tiredOnly.map((adjustment) => localizedOperatorName(adjustment.operator, locale, gameCatalog)).join(intl("components_ShiftComparisonCard.label"))}</p>
         </section>
@@ -160,13 +160,13 @@ function DesktopCells({ adjustment, issue }: { adjustment: ShiftAdjustment; issu
 function DesktopTable({ items, issue, reduceMotion }: { items: ShiftAdjustment[]; issue: ActionIssue; reduceMotion: boolean }) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const roomHeaders: ReactNode = issue === "misplaced"
     ? <><th className="px-3 py-2 text-left font-medium">{intl("components_ShiftComparisonCard.currentRoom")}</th><th className="px-3 py-2 text-left font-medium">{intl("components_ShiftComparisonCard.targetRoom")}</th></>
     : <th className="px-3 py-2 text-left font-medium">{issue === "unexpected" ? (intl("components_ShiftComparisonCard.currentRoom")) : (intl("components_ShiftComparisonCard.targetRoom"))}</th>;
 
   return (
-    <table className="mt-2 w-full table-fixed border-collapse" aria-label={intl("components_ShiftComparisonCard.operatorAdjustments", { value1: (en) ? (ISSUE_LABELS_EN[issue]) : "", value2: (en) ? "" : (ISSUE_LABELS[issue]) })} data-desktop-adjustment-table={issue}>
+    <table className="mt-2 w-full table-fixed border-collapse" aria-label={intl("components_ShiftComparisonCard.operatorAdjustments", { value2: messageRecord(en, "components_ShiftComparisonCard_labels2")[issue] })} data-desktop-adjustment-table={issue}>
       <colgroup>
         <col style={{ width: issue === "misplaced" ? "28%" : "38%" }} />
         <col style={{ width: issue === "misplaced" ? "36%" : "62%" }} />

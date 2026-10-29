@@ -1,0 +1,4 @@
+{
+  "confirmed": "Confirmed",
+  "holdForSecondsToConfirmReleasingEarlyCancelsWithout": "Hold for {value1} seconds to confirm. Releasing early cancels without deleting data."
+}
