@@ -1,0 +1,10 @@
+{
+  "quantityFor": "填写{name}数量",
+  "materials": "养成材料",
+  "upgrades": "模组、芯片和技能书",
+  "other": "其他",
+  "permits": "寻访凭证 × {count}",
+  "elite": "精{level}",
+  "level": "{level}级",
+  "loadFailed": "库存读取失败，请稍后重试。"
+}

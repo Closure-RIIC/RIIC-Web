@@ -1,4 +1,8 @@
 "use client";
+
+
+
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_components_ui_live_activity } from "../../i18n/helpers/components_ui_live_activity.ts";
 import { useTranslations, useLocale } from "use-intl";
 
@@ -122,7 +126,7 @@ export function LiveActivity({ activity: planActivity, notice, trainingSync, onR
   const intl = useTranslations();
   const reduceMotion = useReducedMotion();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [copied, setCopied] = useState(false);
   const accountActivity = useAccountActivity();
   const [dismissed, setDismissed] = useState<Partial<Record<ActivityKind, string>>>({});
@@ -374,7 +378,7 @@ export function LiveActivity({ activity: planActivity, notice, trainingSync, onR
               {activity.phase === "success" && activity.uncertainMaaOperators?.length ? (
                 <p className="mt-1 text-sm leading-relaxed text-amber-700 dark:text-amber-300" data-maa-recognition-warning>
                   {intl("components_ui_live_activity.maaRecognitionWarning", {
-                    operators: activity.uncertainMaaOperators.join(en ? ", " : "」「"),
+                    operators: activity.uncertainMaaOperators.join(en === "en" ? ", " : "」「"),
                   })}
                 </p>
               ) : null}
@@ -396,7 +400,7 @@ export function LiveActivity({ activity: planActivity, notice, trainingSync, onR
                 <span className="flex shrink-0 items-center gap-1 max-sm:basis-full max-sm:justify-end">
                 {activity.error?.retryable ? (
                   <Button type="button" size="sm" variant="ghost" className="h-9 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={onRetry} disabled={retryCountdownSeconds > 0}>
-                    {retryCountdownSeconds > 0 ? `${intl("components_ui_live_activity.retryIn")} ${retryCountdownSeconds} ${intl("components_ui_live_activity.s")}`.trim() : (intl("components_ui_live_activity.retry"))}
+                    {retryCountdownSeconds > 0 ? intl("components_ui_live_activity.retryCountdown", { seconds: retryCountdownSeconds }) : intl("components_ui_live_activity.retry")}
                   </Button>
                 ) : null}
                 <Button
@@ -472,7 +476,7 @@ export function LiveActivity({ activity: planActivity, notice, trainingSync, onR
   );
 }
 
-function formatDuration(seconds: number | null | undefined, en = false): string {
+function formatDuration(seconds: number | null | undefined, en: AppLocale = "zh-CN"): string {
   const total = Math.max(0, Math.round(seconds ?? 0));
   const minutes = Math.floor(total / 60);
   const rest = total % 60;

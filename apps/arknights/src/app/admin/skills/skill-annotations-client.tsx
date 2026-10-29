@@ -1,4 +1,7 @@
 "use client";
+
+
+import type { AppLocale } from "@riic/contracts/locale";
 import { adminPageClass } from "../admin-page";
 import { localize as localize_app_admin_skills_skill_annotations_client } from "../../../i18n/helpers/app_admin_skills_skill_annotations_client.ts";
 import { useTranslations, useLocale } from "use-intl";
@@ -83,8 +86,11 @@ function OperatorIdentity({ operator }: { operator: OperatorAssetRecord }) {
 export function SkillAnnotationManager() {
   const requestData = useAdminRequest();
   const intl = useTranslations();
+  // Language changes update copy without reloading or overwriting in-progress work.
+  const languageEffectRef = useRef({ intl });
+  useEffect(() => { languageEffectRef.current = { intl }; }, [intl]);
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [annotations, setAnnotations] = useState<AdminSkillAnnotationData[]>([]);
   const [query, setQuery] = useState("");
   const [operatorQuery, setOperatorQuery] = useState("");
@@ -103,16 +109,16 @@ export function SkillAnnotationManager() {
       const data = await requestData<AdminSkillAnnotationListData>(
         "/api/admin/skill-annotations",
         signal ? { signal } : undefined,
-        intl("app_admin_skills_skill_annotations_client.couldNotLoadSkillNotes"),
+        languageEffectRef.current.intl("app_admin_skills_skill_annotations_client.couldNotLoadSkillNotes"),
       );
       setAnnotations(data.annotations);
     } catch (loadError) {
       if (signal?.aborted) return;
-      setError(loadError instanceof Error ? loadError.message : (intl("app_admin_skills_skill_annotations_client.couldNotLoadSkillNotes")));
+      setError(loadError instanceof Error ? loadError.message : (languageEffectRef.current.intl("app_admin_skills_skill_annotations_client.couldNotLoadSkillNotes")));
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, [intl, requestData]);
+  }, [requestData]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -348,7 +354,7 @@ function AnnotationEditor({
   selectedSkill?: (typeof BUILDING_SKILL_CATALOG)[string];
   annotationIndex: ReturnType<typeof indexSkillAnnotations>;
   saving: boolean;
-  en: boolean;
+  en: AppLocale;
   onEditorChange: (value: EditorState) => void;
   onOperatorQueryChange: (value: string) => void;
   onSave: () => void;
@@ -510,7 +516,7 @@ function AnnotationCard({
   onDelete,
 }: {
   annotation: AdminSkillAnnotationData;
-  en: boolean;
+  en: AppLocale;
   onEdit: () => void;
   onDelete: () => void;
 }) {
@@ -538,7 +544,7 @@ function AnnotationCard({
         <span className="shrink-0 font-semibold text-[#B69600]" aria-hidden="true">*</span>
         <span>{annotation.note}</span>
       </p>
-      <p className="mt-3 text-right text-[11px] text-muted-foreground">{localize_app_admin_skills_skill_annotations_client.text(en, "updated")}{new Date(annotation.updatedAt).toLocaleString((en ? "en-US" : "zh-CN"))}</p>
+      <p className="mt-3 text-right text-[11px] text-muted-foreground">{localize_app_admin_skills_skill_annotations_client.text(en, "updated")}{new Date(annotation.updatedAt).toLocaleString((en))}</p>
     </article>
   );
 }

@@ -1,0 +1,10 @@
+{
+  "quantityFor": "填寫{name}數量",
+  "materials": "養成素材",
+  "upgrades": "模組、晶片與技巧概要",
+  "other": "其他",
+  "permits": "尋訪憑證 × {count}",
+  "elite": "精{level}",
+  "level": "等級 {level}",
+  "loadFailed": "無法讀取庫存，請稍後再試。"
+}

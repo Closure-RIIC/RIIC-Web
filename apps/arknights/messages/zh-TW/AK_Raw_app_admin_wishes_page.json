@@ -1,0 +1,13 @@
+{
+  "wishes": "許願稽核",
+  "approvedWishesAppearOnThePublicWishWall": "稽核通過的內容會展示在公開許願頁。",
+  "donationCodeSettings": "讚賞碼預留設定",
+  "disabledByDefaultUploadACodeAndEnableIt": "預設關閉。上傳後開啟，才會顯示在許願頁。",
+  "showDonationCode": "<part1></part1>開放讚賞碼",
+  "saveSettings": "儲存設定",
+  "wishAttachment": "許願附圖",
+  "approve": "<part1></part1>通過",
+  "reject": "<part1></part1>駁回",
+  "hide": "<part1></part1>下架",
+  "noWishesYet": "暫無許願。"
+}

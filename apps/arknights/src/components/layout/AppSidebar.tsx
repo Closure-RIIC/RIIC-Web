@@ -1,4 +1,10 @@
 "use client";
+
+import { lazyWithMessages } from "@/i18n/features-client";
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_layout_AppSidebar.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_layout_AppSidebar");
+
 import { messageRecord } from "@/i18n/translate";
 
 import {
@@ -16,7 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { createContext, lazy, Suspense, useContext, useEffect, useId, useState, type ReactNode } from "react";
+import { createContext, Suspense, useContext, useEffect, useId, useState, type ReactNode } from "react";
 import { useRouter } from "@/navigation";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import styles from "@riic/shell/AppSidebar.module.css";
@@ -42,7 +48,7 @@ import { workbenchHref, type AppPage } from "@/workbench-routes";
 import { useLocale } from "use-intl";
 
 const CLIENT_SKLAND_ENABLED = process.env.APP_CLIENT_SKLAND_ENABLED === "1";
-const AgentHistoryNavigation = lazy(() => import("@/components/agent/AgentHistoryNavigation").then((module) => ({ default: module.AgentHistoryNavigation })));
+const AgentHistoryNavigation = lazyWithMessages(() => import("@/components/agent/AgentHistoryNavigation").then((module) => ({ default: module.AgentHistoryNavigation })), "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx");
 const SidebarHighlight = createContext<{ target: string; setHovered: (target: string | null) => void }>({ target: "", setHovered: () => undefined });
 
 interface AppSidebarProps {
@@ -133,14 +139,14 @@ export function AppSidebar({ page, onPageChange, showMower = false, onSessionCha
           <SidebarMenu>
             <AppNavigationItem page={page} target="calculator" label={labels.calculator} icon={Calculator} onPageChange={onPageChange} />
             <AppNavigationItem page={page} target="manual" label={labels.manual} icon={SquarePen} onPageChange={onPageChange} />
-            {showMower ? <AppNavigationItem page={page} target="mower" label={locale === "en" ? "Mower Schedule" : "排班表（Mower）"} icon={Bot} onPageChange={onPageChange} /> : null}
+            {showMower ? <AppNavigationItem page={page} target="mower" label={uiText.text(locale, "mowerSchedule")} icon={Bot} onPageChange={onPageChange} /> : null}
             <AppNavigationItem page={page} target="training" label={labels.training} icon={GraduationCap} onPageChange={onPageChange} />
           </SidebarMenu>
         </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupLabel>{labels.progressionGroup}</SidebarGroupLabel>
           <SidebarMenu>
-            <AppNavigationItem page={page} target="account-health" label={locale === "en" ? "Account Health" : "账号体检"} icon={ClipboardCheck} onPageChange={onPageChange} />
+            <AppNavigationItem page={page} target="account-health" label={uiText.text(locale, "accountHealth")} icon={ClipboardCheck} onPageChange={onPageChange} />
             <AppNavigationItem page={page} target="training-planner" label={labels.trainingPlanner} icon={Calculator} onPageChange={onPageChange} />
             <AppNavigationItem page={page} target="mastery" label={labels.mastery} icon={BookOpen} onPageChange={onPageChange} />
             <AppNavigationItem page={page} target="recruitment" label={labels.recruitment} icon={UserRoundPlus} onPageChange={onPageChange} />
@@ -153,9 +159,9 @@ export function AppSidebar({ page, onPageChange, showMower = false, onSessionCha
           </SidebarMenu>
         </SidebarGroup>
         {features.agent ? <SidebarGroup>
-          <SidebarGroupLabel>{locale === "en" ? "AI Assistant" : "智能助理"}</SidebarGroupLabel>
+          <SidebarGroupLabel>{uiText.text(locale, "aiAssistant")}</SidebarGroupLabel>
           <SidebarMenu>
-            <AppNavigationItem page={page} target="agent" label={locale === "en" ? "Closure Assistant" : "可露希尔助理"} icon={Bot} onPageChange={onPageChange}>
+            <AppNavigationItem page={page} target="agent" label={uiText.text(locale, "closureAssistant")} icon={Bot} onPageChange={onPageChange}>
               {websiteSession ? <Suspense fallback={null}><AgentHistoryNavigation active={page === "agent"} /></Suspense> : null}
             </AppNavigationItem>
           </SidebarMenu>

@@ -1,0 +1,8 @@
+{
+  "skillSearch": "Skill Wiki",
+  "searchOperatorSkillNameOrEffect": "Search operator, skill name, or effect",
+  "clearSearch": "Clear search",
+  "manualSkillNotesCouldNotBeLoaded": "Manual skill notes could not be loaded.",
+  "retryNotes": "Retry notes",
+  "noOperatorsMatchTheseFilters": "No operators match these filters."
+}

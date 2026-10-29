@@ -4,11 +4,15 @@
   "type": "module",
   "version": "0.0.0",
   "exports": {
+    "./metadata.json": "./metadata.json",
     ".": "./index.ts",
     "./catalog.json": "./catalog.json",
     "./operator-releases": "./operator-releases.ts",
     "./sources.json": "./sources.json",
     "./workbench-sources.json": "./workbench-sources.json",
-    "./workbench.json": "./workbench.json"
+    "./workbench.json": "./workbench.json",
+    "./messages/zh-CN/EndfieldGameData.json": "./messages/zh-CN/EndfieldGameData.json",
+    "./messages/zh-TW/EndfieldGameData.json": "./messages/zh-TW/EndfieldGameData.json",
+    "./messages/en/EndfieldGameData.json": "./messages/en/EndfieldGameData.json"
   }
 }

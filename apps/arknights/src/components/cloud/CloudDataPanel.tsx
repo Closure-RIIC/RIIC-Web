@@ -1,5 +1,7 @@
 "use client";
 
+
+import type { AppLocale } from "@riic/contracts/locale";
 import { useTranslations, useLocale } from "use-intl";
 
 import { Cloud } from "lucide-react";
@@ -24,11 +26,11 @@ import type { AccountDataConsentData, CloudWorkspaceData, SavedPlanData } from "
 const CLOUD_PRIMARY_BUTTON_CLASS = "w-full bg-white text-[#272a2b] hover:bg-white/90 sm:w-auto";
 const CLOUD_PLAN_BUTTON_CLASS = "min-h-11 px-3 text-white/78 hover:bg-white/10 hover:text-white";
 
-function formatDate(value: string | null, en: boolean): string {
+function formatDate(value: string | null, en: AppLocale): string {
   if (!value) return "—";
   const date = new Date(value);
   return Number.isFinite(date.getTime())
-    ? new Intl.DateTimeFormat((en ? "en-US" : "zh-CN"), { dateStyle: "medium", timeStyle: "short" }).format(date)
+    ? new Intl.DateTimeFormat((en === "en" ? "en-US" : "zh-CN"), { dateStyle: "medium", timeStyle: "short" }).format(date)
     : "—";
 }
 
@@ -47,7 +49,10 @@ export function CloudDataPanel({
 }) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
+  // Language changes update copy without reloading or overwriting in-progress work.
+  const languageEffectRef = useRef({ intl, en });
+  useEffect(() => { languageEffectRef.current = { intl, en }; }, [intl, en]);
   const [consent, setConsent] = useState<AccountDataConsentData | null>(null);
   const [plans, setPlans] = useState<SavedPlanData[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
@@ -68,19 +73,19 @@ export function CloudDataPanel({
   useEffect(() => {
     let cancelled = false;
     void reload().catch((cause) => {
-      if (!cancelled) setError(cause instanceof Error ? cause.message : (intl("components_cloud_CloudDataPanel.failedToLoadCloudDataStatus")));
+      if (!cancelled) setError(cause instanceof Error ? cause.message : (languageEffectRef.current.intl("components_cloud_CloudDataPanel.failedToLoadCloudDataStatus")));
     });
     return () => { cancelled = true; };
-  }, [intl, en, reload, workspace?.revision]);
+  }, [reload, workspace?.revision]);
 
   useEffect(() => {
     if (!pendingDeleteId || busy === `delete:${pendingDeleteId}`) return;
     const timeout = window.setTimeout(() => {
       setPendingDeleteId(null);
-      setDeleteAnnouncement(intl("components_cloud_CloudDataPanel.deleteConfirmationTimedOutThePlanWasNotDeleted"));
+      setDeleteAnnouncement(languageEffectRef.current.intl("components_cloud_CloudDataPanel.deleteConfirmationTimedOutThePlanWasNotDeleted"));
     }, 8_000);
     return () => window.clearTimeout(timeout);
-  }, [intl, busy, en, pendingDeleteId]);
+  }, [busy, pendingDeleteId]);
 
   if (consent && !consent.cloudSyncEnabled) return null;
 
@@ -115,7 +120,7 @@ export function CloudDataPanel({
         <p role="status" className="mt-4 max-w-3xl text-sm leading-6 text-white/64">
           {consent?.current && !localOnly
             ? syncStatus === "synced" && workspace?.exists
-              ? (intl("components_cloud_CloudDataPanel.syncedLastSync", { value1: (en) ? (formatDate(workspace?.syncedAt ?? null, true)) : "", value2: (en) ? "" : (formatDate(workspace?.syncedAt ?? null, false)) }))
+              ? (intl("components_cloud_CloudDataPanel.syncedLastSync", { value2: en === "en" ? (((formatDate(workspace?.syncedAt ?? null, "en")))) : (((formatDate(workspace?.syncedAt ?? null, "zh-CN")))) }))
               : intl(`components_cloud_CloudDataSync.status.${syncStatus}`)
             : (intl("components_cloud_CloudDataPanel.localOnlyModeIsActiveExistingDataIsNot"))}
         </p>
@@ -206,7 +211,7 @@ export function CloudDataPanel({
                           variant="ghost"
                           className={CLOUD_PLAN_BUTTON_CLASS}
                           disabled={busy !== null}
-                          aria-label={intl("components_cloud_CloudDataPanel.plan", { value1: (en) ? (plan.pinned ? "Unpin" : "Pin") : "", title: plan.title, value3: (en) ? "" : (plan.pinned ? "取消固定" : "固定") })}
+                          aria-label={intl("components_cloud_CloudDataPanel.plan", { title: plan.title, value3: en === "en" ? (((plan.pinned ? ("Unpin") : ("Pin")))) : (((plan.pinned ? (intl("components_cloud_CloudDataPanel.unpin")) : (intl("components_cloud_CloudDataPanel.pin"))))) })}
                           onClick={() => void run(`pin:${plan.id}`, async () => {
                             await updateAccountSavedPlan(plan.id, !plan.pinned);
                             await reload();

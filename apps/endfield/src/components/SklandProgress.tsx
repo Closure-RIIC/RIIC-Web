@@ -11,11 +11,11 @@ export function SklandProgress({ label, current, max, compact = false }: {
   return <div className={`${styles.root} ${compact ? styles.compact : ""}`}>
     <div className={styles.summary}>
       <div className={styles.value}><strong>{current ?? "—"}</strong><span>/ {max ?? "—"}</span></div>
-      <span className={styles.percent}>{percent === null ? t("暂未获取", "Not available") : `${Math.round(percent)}%`}</span>
+      <span className={styles.percent}>{percent === null ? t("SklandProgress.notAvailable") : `${Math.round(percent)}%`}</span>
     </div>
     {known ? <progress className={styles.bar} value={Math.min(current, max)} max={max} aria-label={label}
       aria-valuetext={`${current} / ${max}`}>{percent}%</progress>
       : <div className={styles.placeholder} aria-hidden="true" />}
-    {known && current > max ? <p className={styles.hint}>{t("已超过恢复上限，按实际数值展示。", "Above the recovery cap; the actual value is shown.")}</p> : null}
+    {known && current > max ? <p className={styles.hint}>{t("SklandProgress.aboveTheRecoveryCapTheActualValueIsShown")}</p> : null}
   </div>;
 }

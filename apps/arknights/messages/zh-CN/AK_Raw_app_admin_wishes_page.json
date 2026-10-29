@@ -1,0 +1,13 @@
+{
+  "wishes": "许愿审核",
+  "approvedWishesAppearOnThePublicWishWall": "审核通过的内容会展示在公开许愿页。",
+  "donationCodeSettings": "赞赏码预留设置",
+  "disabledByDefaultUploadACodeAndEnableIt": "默认关闭。上传后开启，才会显示在许愿页。",
+  "showDonationCode": "<part1></part1>开放赞赏码",
+  "saveSettings": "保存设置",
+  "wishAttachment": "许愿附图",
+  "approve": "<part1></part1>通过",
+  "reject": "<part1></part1>驳回",
+  "hide": "<part1></part1>下架",
+  "noWishesYet": "暂无许愿。"
+}

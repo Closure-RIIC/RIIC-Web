@@ -21,9 +21,9 @@ export function ConfirmAction({ title, description, confirmLabel, onConfirm, chi
     </Dialog.Trigger>
     <Dialog.Portal>
       <Dialog.Backdrop className="ef-dialog-backdrop" />
-      <DialogFrame className="ef-confirm-dialog" title={title} description={description} closeLabel={t("关闭", "Close")} initialFocus={cancel}
+      <DialogFrame className="ef-confirm-dialog" title={title} description={description} closeLabel={t("ConfirmAction.close")} initialFocus={cancel}
         footer={<>
-          <Dialog.Close ref={cancel} className={actionClassName({ size: "sm" })}><ActionContent>{t("取消", "Cancel")}</ActionContent></Dialog.Close>
+          <Dialog.Close ref={cancel} className={actionClassName({ size: "sm" })}><ActionContent>{t("ConfirmAction.cancel")}</ActionContent></Dialog.Close>
           <Action size="sm" variant="red" disabled={disabled} onClick={() => { setOpen(false); onConfirm(); }}>{confirmLabel}</Action>
         </>}>
         {null}

@@ -1,4 +1,10 @@
 "use client";
+
+
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../../messages/zh-CN/AK_app_admin_users_users_client.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_app_admin_users_users_client");
+
 import { useAdminFetch } from "../admin-context";
 import { useTranslations, useLocale } from "use-intl";
 
@@ -18,6 +24,9 @@ type RoleChange = { userId: string; name: string; email: string; action: "grantA
 export function AdminUserManagement() {
   const request = useAdminFetch();
   const intl = useTranslations();
+  // Language changes update copy without reloading or overwriting in-progress work.
+  const languageEffectRef = useRef({ intl });
+  useEffect(() => { languageEffectRef.current = { intl }; }, [intl]);
   const t = useTranslations("AdminWorkspace");
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -27,7 +36,7 @@ export function AdminUserManagement() {
   const loadController = useRef<AbortController | null>(null);
   const [appliedQuery, setAppliedQuery] = useState("");
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [users, setUsers] = useState<AdminUserData[]>([]);
   const [verifiedUsers, setVerifiedUsers] = useState<number | null>(null);
   const [canManageAdminRoles, setCanManageAdminRoles] = useState<boolean | null>(null);
@@ -48,7 +57,7 @@ export function AdminUserManagement() {
     try {
       const response = await request(`/api/admin/users?q=${encodeURIComponent(search)}`, { cache: "no-store", signal: controller.signal });
       const body = await response.json();
-      if (!response.ok) throw new Error(body.error?.message ?? (intl("app_admin_users_users_client.couldNotLoadUsers")));
+      if (!response.ok) throw new Error(body.error?.message ?? (languageEffectRef.current.intl("app_admin_users_users_client.couldNotLoadUsers")));
       if (controller.signal.aborted) return;
       setUsers(body.data.users);
       setAppliedQuery(search);
@@ -63,14 +72,14 @@ export function AdminUserManagement() {
         setLoading(false);
       }
     }
-  }, [intl, request]);
+  }, [request]);
 
   useEffect(() => {
     void load("").catch((error) => {
-      setMessage(error instanceof Error ? error.message : (intl("app_admin_users_users_client.couldNotLoadUsers")));
+      setMessage(error instanceof Error ? error.message : (languageEffectRef.current.intl("app_admin_users_users_client.couldNotLoadUsers")));
     });
     return () => loadController.current?.abort();
-  }, [intl, load]);
+  }, [load]);
 
   async function act(userId: string, action: AdminUserAction): Promise<boolean> {
     if (busyRef.current || loadController.current) return false;
@@ -195,9 +204,9 @@ export function AdminUserManagement() {
                     {CLIENT_SKLAND_ENABLED && entry.sklandRenewalDueCount > 0 && <span className="text-amber-700">{intl("app_admin_users_users_client.renewalDue")} · {entry.sklandRenewalDueCount}</span>}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground" data-user-billing-summary>
-                    <span className="font-medium text-foreground">{en ? "Points" : "积分"} {entry.totalPoints}</span>
-                    <span>{en ? "Permanent" : "永久"} {entry.paidPoints}</span>
-                    <span>{en ? "Monthly" : "月卡"} {entry.monthlyPoints}{entry.monthlyExpiresAt ? ` · ${en ? "expires" : "到期"} ${new Date(entry.monthlyExpiresAt).toLocaleDateString(locale === "en" ? "en-US" : "zh-CN")}` : ""}</span>
+                    <span className="font-medium text-foreground">{uiText.text(en, "points")} {entry.totalPoints}</span>
+                    <span>{uiText.text(en, "permanent")} {entry.paidPoints}</span>
+                    <span>{uiText.text(en, "monthly")} {entry.monthlyPoints}{entry.monthlyExpiresAt ? ` · ${uiText.text(en, "expires")} ${new Date(entry.monthlyExpiresAt).toLocaleDateString(locale)}` : ""}</span>
                   </div>
                   {entry.banned && entry.banReason && <p className="text-xs text-destructive">{entry.banReason}</p>}
                   <div className="flex flex-wrap gap-2">
@@ -233,7 +242,7 @@ export function AdminUserManagement() {
                   <div className="mt-4 grid gap-2 border-t pt-3">
                     {sessions.length ? sessions.map((current) => (
                       <div key={current.id} className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
-                        <p>{intl("app_admin_users_users_client.created")}{new Date(current.createdAt).toLocaleString((locale === "en" ? "en-US" : "zh-CN"))} · {intl("app_admin_users_users_client.expires")}{new Date(current.expiresAt).toLocaleString((locale === "en" ? "en-US" : "zh-CN"))}</p>
+                        <p>{intl("app_admin_users_users_client.created")}{new Date(current.createdAt).toLocaleString((locale))} · {intl("app_admin_users_users_client.expires")}{new Date(current.expiresAt).toLocaleString((locale))}</p>
                         <p className="mt-1 break-all">{current.ipAddress ?? (intl("app_admin_users_users_client.unknownIp"))} · {current.userAgent ?? (intl("app_admin_users_users_client.unknownBrowser"))}</p>
                       </div>
                     )) : <p className="text-sm text-muted-foreground">{intl("app_admin_users_users_client.noActiveSessions")}</p>}
@@ -266,7 +275,7 @@ export function AdminUserManagement() {
                 ? intl(roleChange.action === "grantReviewer" ? "adminReviewer.grantDescription" : "adminReviewer.revokeDescription", { name: roleChange.name, email: roleChange.email })
                 : roleChange?.action === "revokeAdmin"
                 ? (intl("app_admin_users_users_client.willImmediatelyLoseAccessToUserManagement", { name: roleChange.name, email: roleChange.email }))
-                : (intl("app_admin_users_users_client.willBeAbleToSearchAndSuspendUsersAnd", { value1: (en) ? (roleChange?.name ?? "This user") : "", value2: roleChange?.email ?? "", value3: (en) ? "" : (roleChange?.name ?? "该用户") }))}
+                : (intl("app_admin_users_users_client.willBeAbleToSearchAndSuspendUsersAnd", { value2: roleChange?.email ?? "", value3: roleChange?.name ?? intl("app_admin_users_users_client.thisUser") }))}
             </DialogDescription>
           </DialogHeader>
           <DialogBody>

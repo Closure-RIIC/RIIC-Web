@@ -1,0 +1,17 @@
+{
+  "menu": "Account menu",
+  "anonymous": "Not signed in",
+  "signIn": "Sign in to your account",
+  "loading": "Loading account",
+  "billing": "Payment plans",
+  "changelog": "Changelog",
+  "signOut": "Sign out",
+  "signingOut": "Signing out…",
+  "signOutFailed": "Could not sign out. Please try again.",
+  "docs": "Docs",
+  "settings": "Settings",
+  "language": "Language",
+  "unavailable": "Account service unavailable. Local scheduling still works.",
+  "languageFailed": "Language could not load. Select it again to retry.",
+  "languageLoading": "Loading language…"
+}

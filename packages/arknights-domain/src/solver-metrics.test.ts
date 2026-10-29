@@ -173,7 +173,7 @@ test("admin routes split overview, issue triage, and users while keeping the acc
   assert.equal(page.includes("<AdminUserManagement"), false);
   assert.equal(issuesPage.includes("<AdminIssues"), true);
   assert.equal(usersPage.includes("<AdminUserManagement"), true);
-  assert.equal(chartClient.includes("lazy("), true);
+  assert.equal(chartClient.includes("lazyWithMessages("), true);
   assert.equal(chartClient.includes("<ClientOnly"), true);
   assert.equal(chart.includes("<AreaChart accessibilityLayer"), true);
   assert.equal(chart.match(/<Area/g)?.length, 3);

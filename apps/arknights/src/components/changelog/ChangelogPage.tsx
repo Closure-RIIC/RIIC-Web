@@ -1,6 +1,7 @@
 "use client";
 
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazyWithMessages } from "@/i18n/features-client";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useTranslations } from "use-intl";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { markBrowserReleaseSeen } from "@/releases/announcement-state";
 import { useReleaseFeed } from "@/releases/use-release-feed";
 import { ReleaseEntry } from "./ReleaseEntry";
 
-const ReleaseDialog = lazy(() => import("./ReleaseDialog").then((module) => ({ default: module.ReleaseDialog })));
+const ReleaseDialog = lazyWithMessages(() => import("./ReleaseDialog").then((module) => ({ default: module.ReleaseDialog })), "apps/arknights/src/components/changelog/ReleaseDialog.tsx");
 
 export function ChangelogPage() {
   const t = useTranslations("ChangelogPage");

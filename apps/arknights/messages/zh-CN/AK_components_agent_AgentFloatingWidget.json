@@ -1,0 +1,22 @@
+{
+  "checkingAssistantAccess": "正在检查助理状态…",
+  "signInToChatWithClosure": "登录后即可和可露希尔对话。",
+  "addCreditsToStartAConversation": "准备积分后即可开始对话。",
+  "theAssistantIsTemporarilyUnavailable": "助理暂时不可用，请稍后再试。",
+  "signIn": "登录网站账号",
+  "viewCredits": "查看积分",
+  "showFloatingAssistant": "显示悬浮助理",
+  "hideFloatingAssistant": "隐藏悬浮助理",
+  "assistant": "助理",
+  "closureAssistant": "可露希尔助理",
+  "openingConversation": "正在打开对话…",
+  "whatWouldYouLikeToAskAboutThis": "博士，这页有什么想问的？",
+  "askClosureAboutThisPage": "点击查看可露希尔助理",
+  "minimizeFloatingAssistant": "收起悬浮助理",
+  "closeClosureAssistant": "收起可露希尔助理",
+  "openClosureAssistant": "打开可露希尔助理",
+  "closeAssistant": "收起助理",
+  "askClosure": "和可露希尔聊聊",
+  "conversationLoadFailed": "对话加载失败，请刷新页面后重试。",
+  "refreshPage": "刷新页面"
+}

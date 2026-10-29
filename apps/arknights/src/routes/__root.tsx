@@ -1,7 +1,12 @@
+import { useLocale as useRawLocale } from "use-intl";
+import { createLocalizer as createRawLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type RawMessages from "../../messages/zh-CN/AK_Raw_routes___root.json";
+const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_routes___root");
 import { HeadContent, Outlet, Scripts, createRootRoute, useHydrated } from "@tanstack/react-router";
 import { IntlProvider } from "use-intl";
 import { LocaleProvider } from "@/i18n/client";
 import { getRequestI18n } from "@/i18n/locale";
+import { registerMessages } from "@riic/arknights-domain/i18n/localize";
 import { getPublicPageConfig } from "@/server/page-data";
 import { TelemetryLoader } from "@/components/telemetry/TelemetryLoader";
 import "overlayscrollbars/overlayscrollbars.css";
@@ -16,8 +21,8 @@ export const Route = createRootRoute({
   // Public bootstrap data belongs to this router/request, not a module-global cache.
   // Explicit invalidation (e.g. a language change) refreshes it; navigation reuses it.
   staleTime: Infinity,
-  loader: async () => {
-    const [{ locale, messages }, publicConfig] = await Promise.all([getRequestI18n(), getPublicPageConfig()]);
+  loader: async ({ location }) => {
+    const [{ locale, messages }, publicConfig] = await Promise.all([getRequestI18n({ data: { pathname: location.pathname } }), getPublicPageConfig()]);
     return { locale, messages, publicConfig };
   },
   head: ({ loaderData }) => {
@@ -35,22 +40,26 @@ export const Route = createRootRoute({
     };
   },
   component: RootDocument,
-  notFoundComponent: () => <><meta name="robots" content="noindex" /><main className="p-8"><h1>404</h1><a href="/">返回首页 / Home</a></main></>,
+  notFoundComponent: NotFoundPage,
 });
 
 function RootDocument() {
   const hydrated = useHydrated();
   const { locale, messages } = Route.useLoaderData();
-  return <html lang={locale === "zh" ? "zh-CN" : "en"} className="antialiased" suppressHydrationWarning>
+  registerMessages(locale, messages);
+  return <html lang={locale} className="antialiased" suppressHydrationWarning>
     <head><script dangerouslySetInnerHTML={{ __html: COLOR_MODE_BOOTSTRAP }} /><HeadContent /></head>
     <body inert={!hydrated} data-app-hydrated={hydrated ? "true" : "false"}>
-      <noscript><div style={{ padding: 24, fontFamily: "sans-serif", lineHeight: 1.6 }}>当前浏览器无法运行页面脚本。请启用 JavaScript，或升级浏览器 / Android System WebView。</div></noscript>
+      <noscript><div style={{ padding: 24, fontFamily: "sans-serif", lineHeight: 1.6 }}>{rawText.text(locale, "thisBrowserCannotRunThePageScriptsEnableJavascript")}</div></noscript>
       <IntlProvider locale={locale} messages={messages} timeZone="Asia/Shanghai">
         <ColorModeController />
-        <LocaleProvider><AgentRuntimeProvider><Outlet /></AgentRuntimeProvider></LocaleProvider>
+        <LocaleProvider locale={locale} messages={messages}><AgentRuntimeProvider><Outlet /></AgentRuntimeProvider></LocaleProvider>
         <TelemetryLoader />
       </IntlProvider>
       <Scripts />
     </body>
   </html>;
 }
+
+
+function NotFoundPage() { const rawLocale = useRawLocale(); return <><meta name="robots" content="noindex" /><main className="p-8"><h1>404</h1><a href="/">{rawText.text(rawLocale, "backToHome")}</a></main></>; }

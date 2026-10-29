@@ -1,0 +1,12 @@
+{
+  "control": "Control Center",
+  "power": "Power Plant",
+  "manu": "Factory",
+  "trade": "Trading Post",
+  "dorm": "Dormitory",
+  "hire": "Office",
+  "meet": "Reception Room",
+  "train": "Training Room",
+  "workshop": "Workshop",
+  "recycle": "Recycling Station"
+}

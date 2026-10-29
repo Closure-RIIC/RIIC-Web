@@ -1,7 +1,0 @@
-{
-  "language": "Language / 语言",
-  "missingSkillName": "基建技能",
-  "missingSkillText": "暂无英文资料。",
-  "changes": "需调整 {count} 处",
-  "consentFeedback": "我同意提交以上{kind, select, performance {性能} other {排班问题}}信息和私有复现快照。"
-}

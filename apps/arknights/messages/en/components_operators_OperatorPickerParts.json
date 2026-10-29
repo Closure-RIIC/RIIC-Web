@@ -1,0 +1,8 @@
+{
+  "portrait": "{displayName} portrait",
+  "searchOperator": "Search operator",
+  "filterByRarity": "Filter by rarity",
+  "all": "All",
+  "starOperators": "{rarity}-star operators",
+  "filterByProfession": "Filter by profession"
+}

@@ -1,0 +1,15 @@
+{
+  "shift": "班次",
+  "group_control": "控制中枢",
+  "group_trading": "贸易站",
+  "group_manufacture": "制造站",
+  "group_power": "发电站",
+  "group_dormitory": "宿舍",
+  "group_meeting": "会客室",
+  "group_hire": "人力办公室",
+  "group_processing": "加工站",
+  "group_training": "训练室",
+  "group_recycling": "回收站",
+  "group_recycle": "回收站",
+  "group_functional": "功能设施"
+}

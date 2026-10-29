@@ -1,4 +1,9 @@
 "use client";
+
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_auth_WebsiteAccountPanel.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_auth_WebsiteAccountPanel");
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_components_auth_WebsiteAccountPanel } from "../../i18n/helpers/components_auth_WebsiteAccountPanel.ts";
 import { useTranslations, useLocale } from "use-intl";
 
@@ -57,15 +62,15 @@ export interface WebsiteAccountPanelProps {
   onCloudDataChanged?: () => void;
 }
 
-function errorMessage(value: unknown, en: boolean): string {
+function errorMessage(value: unknown, en: AppLocale): string {
   return value instanceof Error ? value.message : localize_components_auth_WebsiteAccountPanel.text(en, "somethingWentWrongTryAgainLater");
 }
 
-function formatSessionExpiry(value: unknown, locale: "zh" | "en"): string | null {
+function formatSessionExpiry(value: unknown, locale: AppLocale): string | null {
   if (!(value instanceof Date) && typeof value !== "string") return null;
   const date = value instanceof Date ? value : new Date(value);
   if (!Number.isFinite(date.getTime())) return null;
-  return new Intl.DateTimeFormat((locale === "en" ? "en-US" : "zh-CN"), { dateStyle: "medium", timeStyle: "short" }).format(date);
+  return new Intl.DateTimeFormat((locale), { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
 export function WebsiteAccountPanel({
@@ -79,7 +84,7 @@ export function WebsiteAccountPanel({
 }: WebsiteAccountPanelProps) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const { data: session, isPending, refetch } = useWebsiteSession();
   const [deletePassword, setDeletePassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -113,9 +118,9 @@ export function WebsiteAccountPanel({
       setDeletePassword("");
       await notifySessionChanged(false);
       reportAccountActivity({
-        title: en ? "Sign-in and security" : "登录与安全",
-        description: action === "sessions" ? (en ? "Signed out on all devices." : "已退出所有设备。")
-          : action === "delete" ? (en ? "Account deleted." : "账号已删除。") : (en ? "Signed out on this device." : "已退出当前设备。"),
+        title: uiText.text(en, "signInAndSecurity"),
+        description: action === "sessions" ? (uiText.text(en, "signedOutOnAllDevices"))
+          : action === "delete" ? (uiText.text(en, "accountDeleted")) : (uiText.text(en, "signedOutOnThisDevice")),
       });
     } catch (caught) {
       setError(errorMessage(caught, en));
@@ -242,7 +247,7 @@ export function WebsiteAccountPanel({
         {error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : null}
       </div> : null,
       securityActions: <div className="grid gap-4 border-t border-white/14 pt-5" data-account-action-cards>
-        <p className="text-sm leading-6 text-white/64">{en ? "Revoke every session to require all devices to sign in again." : "撤销全部登录会话后，所有设备都需要重新登录。"}</p>
+        <p className="text-sm leading-6 text-white/64">{uiText.text(en, "revokeEverySessionToRequireAllDevicesTo")}</p>
         <div className="flex flex-wrap justify-end gap-3">
           {revokeSessionsButton}
         </div>
@@ -266,7 +271,7 @@ export function WebsiteAccountPanel({
                 {intl("components_auth_WebsiteAccountPanel.signedInDevices")}
               </AccountTechnicalHeading>
               <p className="mt-4 max-w-xl text-sm leading-6 text-white/64">
-                {intl("components_auth_WebsiteAccountPanel.thisSessionSigningOutEverywhereRevokesDatabaseSessionsAnd", { value1: (en) ? (expiresAt ? `expires ${expiresAt}` : "is active") : "", value2: (en) ? "" : (expiresAt ? `将在 ${expiresAt} 到期` : "处于有效状态") })}
+                {intl("components_auth_WebsiteAccountPanel.thisSessionSigningOutEverywhereRevokesDatabaseSessionsAnd", { value2: uiText.text(en, "sessionStatus", { state: expiresAt ? "expires" : "active", date: expiresAt ?? "" }) })}
               </p>
               <div className="mt-auto flex justify-end pt-5">
                 {revokeSessionsButton}

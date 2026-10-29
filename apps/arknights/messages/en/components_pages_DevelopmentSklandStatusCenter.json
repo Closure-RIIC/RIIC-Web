@@ -1,0 +1,9 @@
+{
+  "sklandStatus": "Skland Sync",
+  "signInToYourWebsiteAccount": "Sign in to your website account",
+  "yourSklandConnectionBelongsToTheCurrentWebsiteAccount": "Your Skland connection belongs to the current website account. Sign in to connect by QR code or credentials, view infrastructure status, and renew access after seven days.",
+  "websiteAccountNotSignedIn": "Website account not signed in",
+  "accountManagementAndSklandStatusAreSeparateSignIn": "Account management and Skland status are separate. Sign in under Account, then return here to authorize Skland.",
+  "goToAccount": "Go to Account",
+  "restoringWebsiteAccount": "Restoring website account"
+}

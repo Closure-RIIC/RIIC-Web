@@ -1,3 +1,4 @@
+import type { AppLocale } from "@riic/contracts/locale";
 import type { DailyProductionGroup } from "./daily-production-presentation.ts";
 import { localize } from "./i18n/helpers/components_PlanResultSummary.ts";
 
@@ -5,7 +6,7 @@ export type OriginiumShardRecipe = "orirock" | "device";
 
 // Game manufacture formulae 13 (Orirock) and 14 (Device) both produce one shard.
 // Keep the public solver's gross, non-negative production fields unchanged.
-export function withOriginiumLmdCost(groups: DailyProductionGroup[], recipe: OriginiumShardRecipe, en: boolean): DailyProductionGroup[] {
+export function withOriginiumLmdCost(groups: DailyProductionGroup[], recipe: OriginiumShardRecipe, en: AppLocale): DailyProductionGroup[] {
   const shards = groups.find((group) => group.id === "orundum")?.supporting?.amount;
   if (!shards || shards.value === 0) return groups;
   const unitCost = recipe === "device" ? 1_000 : 1_600;

@@ -1,0 +1,9 @@
+{
+  "relatedIssues": "Related issues",
+  "unlink": "Unlink",
+  "confirmAsMainIssue": "Confirm as main issue",
+  "sameDiagnostic": "Same diagnostic",
+  "sameFullInput": "Same full input",
+  "sameFacilityAndRelatedOperators": "Same facility and related operators",
+  "sameFacilityAndErrorCode": "Same facility and error code"
+}

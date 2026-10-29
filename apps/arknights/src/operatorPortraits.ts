@@ -12,6 +12,7 @@ export {
   buildingSkillUnlockLabel,
   buildingSkillUnlockLabelEnglish,
   buildingSkillUnlockPrefix,
+  buildingSkillUnlockSuffix,
   operatorProfessionLabelEnglishForCode,
 } from "./operator-presentation.ts";
 

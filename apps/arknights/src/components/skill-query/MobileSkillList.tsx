@@ -25,7 +25,7 @@ export default function MobileSkillList({
   const [selected, setSelected] = useState<OperatorBuildingSkillRef | null>(null);
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
 
   return (
     <div className="flex min-w-0 flex-col gap-2">
@@ -40,7 +40,7 @@ export default function MobileSkillList({
               type="button"
               onClick={() => setSelected(ref)}
               className="flex min-h-11 flex-col items-start justify-center rounded-lg border border-white/10 bg-black/24 px-2.5 py-2 text-left text-sm font-medium text-white outline-none transition-colors hover:bg-black/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#FFD800]"
-              aria-label={localize_components_skill_query_SkillResultRow.text(en, "additional1", { choice1: ((en)) && (skill) ? "yes" : "no", value2: ((en) && (skill)) ? String(ref.index) : "", value3: ((en) && (skill)) ? String(skill.name) : "", choice4: (!(en)) && (skill) ? "yes" : "no", value5: (!(en) && (skill)) ? String(ref.index) : "", value6: (!(en) && (skill)) ? String(skill.name) : "" })}
+              aria-label={localize_components_skill_query_SkillResultRow.text(en, "additional1", { choice4: ((skill) ? ("yes") : ("no")), value5: (((skill)) ? (String(ref.index)) : ("")), value6: (((skill)) ? (String(skill.name)) : ("")) })}
             >
               {skill ? (
                 <span className="flex min-w-0 items-center gap-2">
@@ -88,7 +88,7 @@ function SkillDetailDialog({
 
   const sourceSkill = selected ? BUILDING_SKILL_CATALOG[selected.id] : undefined;
   const skill = selected && sourceSkill ? localizedBuildingSkill(selected.id, locale, sourceSkill, gameCatalog) : undefined;
-  const unlockLabel = selected ? buildingSkillUnlockLabel(selected.elite, selected.level, enhanced) : "";
+  const unlockLabel = selected ? buildingSkillUnlockLabel(selected.elite, selected.level, enhanced, locale) : "";
 
   return (
     <Dialog

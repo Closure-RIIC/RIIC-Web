@@ -1,4 +1,3 @@
-import zh from "../../../messages/helpers/zh/RotationLabels.json" with { type: "json" };
-import en from "../../../messages/helpers/en/RotationLabels.json" with { type: "json" };
+import type Messages from "../../../messages/zh-CN/RotationLabels.json";
 import { createLocalizer } from "../localize.ts";
-export const localize = createLocalizer(zh, en);
+export const localize = createLocalizer<typeof Messages>("RotationLabels");

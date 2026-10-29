@@ -1,0 +1,8 @@
+{
+  "grant": "設為審閱人",
+  "revoke": "撤銷審閱人",
+  "eligible": "只能將已驗證且未封禁的帳號設為審閱人。",
+  "grantDescription": "將 {name}（{email}）設為審閱人後，該帳號只能訪問執行概覽和求解器問題。若原為管理員，將同時失去其他後臺許可權。",
+  "revokeDescription": "撤銷後，{name}（{email}）將立即失去後臺訪問許可權。",
+  "confirm": "確認設為審閱人"
+}

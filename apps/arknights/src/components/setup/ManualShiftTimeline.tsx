@@ -40,7 +40,7 @@ export function ManualShiftTimeline({ durations, startTime, onDurationsChange }:
   onDurationsChange?: (durations: number[]) => void;
 }) {
   const t = useTranslations("setup_dialog");
-  const en = useLocale() === "en";
+  const en = useLocale();
   const reduced = useReducedMotion();
   const transition = reduced ? { duration: 0 } : SNAP;
   const track = useRef<HTMLDivElement>(null);

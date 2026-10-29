@@ -1,7 +1,9 @@
+import { operatorName } from "../i18n/game-data";
+import type { MessageTranslator } from "../i18n/types";
+import { gameLabel } from "../i18n/game-labels";
 import { useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, usePlotArea } from "recharts";
 import { Tabs, CompactTabsList, TabsTrigger } from "@riic/ui-primitives/tabs";
-import { operatorData } from "@riic/endfield-data";
 import type { StepRoom, StepView } from "../step/step-types.ts";
 import { useWorkspace } from "../state";
 import { OperatorStates } from "./operator-states";
@@ -16,10 +18,10 @@ export function MoodCharts({ view, timeline, rooms, onSeek }: {
   const [selected, setSelected] = useState<ReadonlySet<string> | null>(null);
   const occupied = rooms.filter(room => view.ops.some(op => op.roomKey === room.key));
   const room = occupied.find(room => room.key === roomKey) ?? occupied[0];
-  if (!room) return <p className="ef-muted">{t("请先安排干员。", "Assign operators first.")}</p>;
+  if (!room) return <p className="ef-muted">{t("charts.assignOperatorsFirst")}</p>;
   const states = operatorsAt(view, room.key);
   const focused = states.filter(op => selected === null || selected.has(op.name));
-  const labelOf = (name: string) => locale === "en" ? operatorData(name)?.enName || name : name;
+  const labelOf = (name: string) => operatorName(name, locale);
   function toggleOperator(name: string) {
     setSelected(previous => {
       const next = new Set(previous ?? timeline.ops.map(op => op.name));
@@ -30,7 +32,7 @@ export function MoodCharts({ view, timeline, rooms, onSeek }: {
   }
   return <div id="moodCharts" className="ef-mood-workbench">
     <Tabs value={room.key} onValueChange={value => setRoomKey(String(value))}>
-      <CompactTabsList aria-label={t("模拟舱室", "Simulated facility")}>
+      <CompactTabsList aria-label={t("charts.simulatedFacility")}>
         {occupied.map(item => <TabsTrigger key={item.key} value={item.key}>{roomLabel(item, t)}</TabsTrigger>)}
       </CompactTabsList>
     </Tabs>
@@ -40,16 +42,16 @@ export function MoodCharts({ view, timeline, rooms, onSeek }: {
       </div>
       <div className="ef-step-detail">
         <div className="ef-mood-room-panel">
-          <figure className="ef-mood-card"><figcaption>{focused.length === 1 ? labelOf(focused[0].name) : roomLabel(room, t)} · {t("心情", "Morale")}</figcaption>
+          <figure className="ef-mood-card"><figcaption>{focused.length === 1 ? labelOf(focused[0].name) : roomLabel(room, t)} · {t("charts.morale")}</figcaption>
             <RoomMoodChart timeline={timeline} room={room} cursor={view.tSec} selected={selected} onSeek={onSeek} />
           </figure>
-          <figure className="ef-mood-card"><figcaption>{roomLabel(room, t)} · {t("产率", "Rate")}</figcaption>
+          <figure className="ef-mood-card"><figcaption>{roomLabel(room, t)} · {t("charts.rate")}</figcaption>
             <RoomRateChart timeline={timeline} room={room} cursor={view.tSec} onSeek={onSeek} />
           </figure>
         </div>
-        <p className="ef-muted ef-step-chart-summary">{t("横轴为已模拟小时；产率以基础产率的百分比显示，中枢显示恢复加成。", "The horizontal axis shows elapsed hours. Production is a percentage of the base rate; the center shows recovery bonus.")}</p>
-        <p className="ef-muted ef-step-chart-summary">{t("换班后产率按新班次干员的技能重新计算；全舱休息或 B 班为空时产率为 0 属于停工，心情回满/换班后恢复。中枢显示的是当前班组的恢复加成。", "Rates are recalculated from the crew on shift. Zero output while the whole room rests or the B shift is empty is expected; morale refilling or the next shift restores it. The center shows the current crew's recovery bonus.")}</p>
-        <p className="ef-muted ef-step-chart-summary">{t("虚线表示当前回放位置；点击图表查看当时状态。", "The dashed line marks the inspected moment. Click a chart to inspect it.")}</p>
+        <p className="ef-muted ef-step-chart-summary">{t("charts.theHorizontalAxisShowsElapsedHoursProductionIsA")}</p>
+        <p className="ef-muted ef-step-chart-summary">{t("charts.ratesAreRecalculatedFromTheCrewOnShiftZero")}</p>
+        <p className="ef-muted ef-step-chart-summary">{t("charts.theDashedLineMarksTheInspectedMomentClickA")}</p>
       </div>
     </div>
   </div>;
@@ -96,7 +98,7 @@ const hourAxis = (hours: number) => ({
 export function RoomMoodChart({ timeline, room, cursor, selected, onSeek }: ChartProps & { selected: ReadonlySet<string> | null }) {
   const { locale, t } = useWorkspace();
   const { rows, names } = useMoodSeries(timeline, room.key, selected);
-  const labelOf = (name: string) => locale === "en" ? operatorData(name)?.enName || name : name;
+  const labelOf = (name: string) => operatorName(name, locale);
   return <>
     <div className="ef-mood-chart" data-step-chart="mood">
       <ResponsiveContainer width="100%" height="100%">
@@ -115,7 +117,7 @@ export function RoomMoodChart({ timeline, room, cursor, selected, onSeek }: Char
       </ResponsiveContainer>
     </div>
     {names.length ? <Legend items={names.map(name => ({ label: labelOf(name), color: colorForName(name) }))} />
-      : <p className="ef-mood-empty">{t("点击干员卡片选择要显示的心情曲线。", "Select operator cards to display their morale curves.")}</p>}
+      : <p className="ef-mood-empty">{t("charts.selectOperatorCardsToDisplayTheirMoraleCurves")}</p>}
   </>;
 }
 
@@ -181,11 +183,11 @@ export function RoomRateChart({ timeline, room, cursor, onSeek }: ChartProps) {
   const { rows, keys, max, activeKey } = useRateSeries(timeline, room.key, selectedProduct);
   const summary = useMemo(() => activeKey ? integrateRate(timeline, room.key, activeKey) : null, [timeline, room.key, activeKey]);
   const labelOf = (key: string) => key === "_total"
-    ? room.key === "中枢" ? t("恢复加成", "Recovery bonus") : t("产率", "Rate") : productLabel(key, t);
+    ? room.key === "中枢" ? t("charts.recoveryBonus") : t("charts.rate") : productLabel(key, t);
   const colorOf = () => "var(--ef-ink)";
   return <>
     {keys.length > 1 ? <Tabs value={activeKey ?? ""} onValueChange={value => setSelectedProduct(String(value))}>
-      <CompactTabsList aria-label={t("产物", "Product")}>
+      <CompactTabsList aria-label={t("charts.product")}>
         {keys.map(key => <TabsTrigger key={key} value={key}>{productLabel(key, t)}</TabsTrigger>)}
       </CompactTabsList>
     </Tabs> : null}
@@ -208,8 +210,8 @@ export function RoomRateChart({ timeline, room, cursor, onSeek }: ChartProps) {
     {activeKey ? <Legend items={[{ label: labelOf(activeKey), color: colorOf() }]} /> : null}
     {summary ? <p className="ef-muted ef-step-chart-summary">
       {room.key === "中枢"
-        ? t(`积分 ${summary.integral.toFixed(1)} %·h · 平均 ${summary.average.toFixed(1)}%`, `Integral ${summary.integral.toFixed(1)} %·h · average ${summary.average.toFixed(1)}%`)
-        : t(`积分 ${summary.integral.toFixed(2)} 等效小时 · 平均 ${summary.average.toFixed(2)}×（${(summary.average * 100).toFixed(1)}%）`, `Integral ${summary.integral.toFixed(2)} base-hours · average ${summary.average.toFixed(2)}× (${(summary.average * 100).toFixed(1)}%)`)}
+        ? t("charts.integralHAverage", { value1: summary.integral.toFixed(1), value2: summary.average.toFixed(1) })
+        : t("charts.integralBaseHoursAverage", { value1: summary.integral.toFixed(2), value2: summary.average.toFixed(2), value3: (summary.average * 100).toFixed(1) })}
     </p> : null}
   </>;
 }
@@ -254,9 +256,9 @@ function SeekArea({ max, onSeek }: { max: number; onSeek: (seconds: number) => v
     }} />;
 }
 
-function roomLabel(room: StepRoom, t: (zh: string, en: string) => string) {
-  return t(room.label, ({ 中枢: "Control center", 会客室: "Reception", 制造舱1: "Manufacturing I", 制造舱2: "Manufacturing II", 培养舱: "Growth chamber" })[room.key]);
+function roomLabel(room: StepRoom, t: MessageTranslator) {
+  return gameLabel(t, room.key);
 }
-function productLabel(product: string, t: (zh: string, en: string) => string) {
-  return t(product, ({ 干员经验: "Operator EXP", 武器经验: "Weapon EXP", 线索: "Clues", 晶植: "Crystals", 菌类: "Fungi", 矿物: "Minerals" } as Record<string, string>)[product] ?? product);
+function productLabel(product: string, t: MessageTranslator) {
+  return gameLabel(t, product);
 }

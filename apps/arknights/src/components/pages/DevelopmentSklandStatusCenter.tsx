@@ -1,6 +1,8 @@
 "use client";
+
+import { lazyWithMessages } from "@/i18n/features-client";
 import { useTranslations } from "use-intl";
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 
 import { LogIn, UserRound } from "lucide-react";
 
@@ -9,7 +11,7 @@ import { StatusCenterLoading, StatusCenterPage } from "@/components/pages/Status
 import { Button } from "@/components/ui/button";
 import type { SklandBindingSummary } from "@riic/arknights-domain/types";
 
-const SklandStatus = lazy(() => import("@/components/pages/SklandStatus").then((module) => ({ default: module.SklandStatus })));
+const SklandStatus = lazyWithMessages(() => import("@/components/pages/SklandStatus").then((module) => ({ default: module.SklandStatus })), "apps/arknights/src/components/pages/SklandStatus.tsx");
 
 export interface DevelopmentSklandStatusCenterProps {
   websiteAuthenticated: boolean;

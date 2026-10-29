@@ -1,4 +1,9 @@
 "use client";
+import { useLocale as useRawLocale } from "use-intl";
+import { createLocalizer as createRawLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type RawMessages from "../../../messages/zh-CN/AK_Raw_app_wishes2_page.json";
+const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_app_wishes2_page");
+
 
 import { Link } from "@tanstack/react-router";
 import { useRouter } from "@/navigation";
@@ -6,6 +11,7 @@ import { useState } from "react";
 
 
 export default function Wishes2Page() {
+  const rawLocale = useRawLocale();
   const router = useRouter();
   const [openingRoute, setOpeningRoute] = useState<"/wishes" | null>(null);
 
@@ -18,7 +24,7 @@ export default function Wishes2Page() {
 
   return (
     <main
-      aria-label="许愿墙背景"
+      aria-label={rawText.text(rawLocale, "wishWallBackground")}
       aria-busy={Boolean(openingRoute)}
       className="relative min-h-screen w-full overflow-hidden bg-[#1c373a] bg-[url('/images/wishes/wish-background.png')] bg-cover bg-center bg-no-repeat"
     >
@@ -32,13 +38,13 @@ export default function Wishes2Page() {
         </div>
       ) : null}
       <nav
-        aria-label="页面导航"
+        aria-label={rawText.text(rawLocale, "pageNavigation")}
         className="absolute left-0 top-5 z-10 size-[90px]"
       >
         <Link
           to="/"
-          aria-label="返回主界面"
-          title="返回主界面"
+          aria-label={rawText.text(rawLocale, "backToMainPage")}
+          title={rawText.text(rawLocale, "backToMainPage")}
           className="block size-[90px] transition-[filter] duration-150 hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
           <img
@@ -51,13 +57,13 @@ export default function Wishes2Page() {
         </Link>
       </nav>
       <nav
-        aria-label="活动功能"
+        aria-label={rawText.text(rawLocale, "eventFeatures")}
         className="absolute right-8 top-6 z-10 flex items-center gap-5"
       >
         <button
           type="button"
-          aria-label="干员信赖"
-          title="干员信赖"
+          aria-label={rawText.text(rawLocale, "operatorTrust")}
+          title={rawText.text(rawLocale, "operatorTrust")}
           className="size-11 transition-[filter] duration-150 hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
           <img
@@ -70,8 +76,8 @@ export default function Wishes2Page() {
         </button>
         <button
           type="button"
-          aria-label="影像资料"
-          title="影像资料"
+          aria-label={rawText.text(rawLocale, "videoRecords")}
+          title={rawText.text(rawLocale, "videoRecords")}
           className="size-11 transition-[filter] duration-150 hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
           <img
@@ -84,8 +90,8 @@ export default function Wishes2Page() {
         </button>
         <button
           type="button"
-          aria-label="本篇回想"
-          title="本篇回想"
+          aria-label={rawText.text(rawLocale, "storyRecollections")}
+          title={rawText.text(rawLocale, "storyRecollections")}
           className="size-11 transition-[filter] duration-150 hover:brightness-125 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
           <img
@@ -98,12 +104,12 @@ export default function Wishes2Page() {
         </button>
       </nav>
       <div
-        aria-label="活动入口"
+        aria-label={rawText.text(rawLocale, "eventEntry")}
         className="absolute bottom-6 left-8 z-10 flex flex-col items-start gap-5"
       >
         <Link
           to="/wishes"
-          aria-label="进入许愿墙"
+          aria-label={rawText.text(rawLocale, "openWishWall")}
           onClick={(event) => {
             event.preventDefault();
             openRoute("/wishes");
@@ -117,13 +123,11 @@ export default function Wishes2Page() {
             height={96}
             className="block h-[96px] w-[339px]"
           />
-          <span className="absolute left-[86px] top-[68px] whitespace-nowrap text-[18px] font-medium leading-none text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.75)]">
-            旅行者的背包
-          </span>
+          <span className="absolute left-[86px] top-[68px] whitespace-nowrap text-[18px] font-medium leading-none text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.75)]">{rawText.text(rawLocale, "travelerSBackpack")}</span>
         </Link>
         <button
           type="button"
-          aria-label="进入许愿墙"
+          aria-label={rawText.text(rawLocale, "openWishWall")}
           disabled={Boolean(openingRoute)}
           onClick={() => openRoute("/wishes")}
           className="relative h-[84px] w-[203px] cursor-pointer text-left outline-none transition-[filter] duration-150 hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white disabled:cursor-default"
@@ -135,9 +139,7 @@ export default function Wishes2Page() {
             height={84}
             className="block h-[84px] w-[203px]"
           />
-          <span className="absolute left-[86px] top-[62px] whitespace-nowrap text-[18px] font-medium leading-none text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.75)]">
-            愿望清单
-          </span>
+          <span className="absolute left-[86px] top-[62px] whitespace-nowrap text-[18px] font-medium leading-none text-white drop-shadow-[0_2px_2px_rgba(0,0,0,0.75)]">{rawText.text(rawLocale, "wishlist")}</span>
         </button>
       </div>
     </main>

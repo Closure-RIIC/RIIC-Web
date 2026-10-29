@@ -1,0 +1,4 @@
+{
+  "confirmed": "已確認",
+  "holdForSecondsToConfirmReleasingEarlyCancelsWithout": "按住 {value1} 秒確認；提前鬆開將取消，且不會刪除任何資料。"
+}

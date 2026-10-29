@@ -32,13 +32,13 @@
 .cardSelect:disabled { cursor: not-allowed; }
 .preview button:not(.cardSelect) { position: relative; z-index: 3; }
 
-.closure {
+.closure, .closure[data-agent-chat] {
   --dialogue-accent: #bd354b;
   --dialogue-name: #bd354b;
   --billing-accent-foreground: #fff;
 }
 
-.sunny {
+.sunny, .sunny[data-agent-chat] {
   --dialogue-accent: #ffd800;
   --dialogue-name: #8a6900;
   --billing-accent-foreground: #302710;

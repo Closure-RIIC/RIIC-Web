@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import messages from "../messages/zh-CN/efficiency.json" with { type: "json" };
+import { registerMessages } from "./i18n/localize.ts";
 
 import { normalizeServeRoomEfficiency, presentRoomEfficiency } from "./efficiency.ts";
+registerMessages("zh-CN", { efficiency: messages });
 
 test("normalizes backend total efficiency to the shared final_efficiency field", () => {
   assert.deepEqual(normalizeServeRoomEfficiency({

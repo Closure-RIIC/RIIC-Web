@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
+import "../../i18n/test-setup.ts";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { LanguageModelV4, LanguageModelV4StreamPart } from "@ai-sdk/provider";
 import { jsonSchema, stepCountIs, streamText, tool, type UIMessageChunk } from "ai";
@@ -128,16 +129,16 @@ test("tool execution can exceed the content idle limit and resume a successful a
 });
 
 test("timeout text is localized without replacing unrelated failures", () => {
-  assert.match(agentChatErrorMessage(AGENT_TIMEOUT_ERROR, false), /超时/);
-  assert.match(agentChatErrorMessage(AGENT_TIMEOUT_ERROR, true), /timed out/);
-  assert.equal(agentChatErrorMessage("specific failure", false), "specific failure");
+  assert.match(agentChatErrorMessage(AGENT_TIMEOUT_ERROR, "zh-CN"), /超时/);
+  assert.match(agentChatErrorMessage(AGENT_TIMEOUT_ERROR, "en"), /timed out/);
+  assert.equal(agentChatErrorMessage("specific failure", "zh-CN"), "specific failure");
 });
 
 test("upstream URLs, credentials and raw errors never enter public error text", () => {
   const policy = createAgentStreamPolicy(new AbortController().signal);
   assert.equal(policy.errorText(new Error("https://gateway.test failed with private-api-token")), AGENT_UNAVAILABLE_ERROR);
   assert.equal(policy.errorText({ responseBody: "private-api-token" }), AGENT_UNAVAILABLE_ERROR);
-  assert.match(agentChatErrorMessage(AGENT_UNAVAILABLE_ERROR, false), /切换模型/);
+  assert.match(agentChatErrorMessage(AGENT_UNAVAILABLE_ERROR, "zh-CN"), /切换模型/);
 });
 
 test("a truncated stream preserves output and reports failure without replaying it", async () => {

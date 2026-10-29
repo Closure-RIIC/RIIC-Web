@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 import { mockApis, mockSignedInWebsiteSession, seedV4Session, scheduleVisualPlanData } from "./production-readiness.fixture";
+import { switchWorkbenchLanguage } from "./workbench-language";
 
 test("settings persist and control language, schedule controls and MAA export", async ({ page }) => {
   await mockApis(page);
@@ -8,10 +9,13 @@ test("settings persist and control language, schedule controls and MAA export", 
   await seedV4Session(page);
   await page.goto("/settings");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
-  await page.getByRole("switch", { name: /^加载英文资源/ }).click();
+  await page.getByRole("switch", { name: /^预加载游戏翻译资料/ }).click();
   await page.locator("[data-sidebar-account-trigger]").click();
-  await expect(page.getByRole("menuitemradio", { name: "EN（关闭）", exact: true })).toBeDisabled();
+  await expect(page.getByRole("menuitemradio", { name: "繁體中文（台灣）", exact: true })).toBeEnabled();
+  await page.getByRole("menuitemradio", { name: "English", exact: true }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await page.keyboard.press("Escape");
+  await switchWorkbenchLanguage(page, "zh-CN");
   await page.getByRole("switch", { name: /^严格按照顺序入驻/ }).click();
   await page.getByRole("switch", { name: /^加载干员图片/ }).click();
   await page.getByRole("button", { name: "细致调整", exact: true }).click();
@@ -20,8 +24,9 @@ test("settings persist and control language, schedule controls and MAA export", 
   await page.reload();
   await expect(page.getByRole("switch", { name: /^严格按照顺序入驻/ })).not.toBeChecked();
   await page.locator("[data-sidebar-account-trigger]").click();
-  await expect(page.getByRole("menuitemradio", { name: "EN（关闭）", exact: true })).toBeDisabled();
+  await expect(page.getByRole("menuitemradio", { name: "English", exact: true })).toBeEnabled();
   await page.keyboard.press("Escape");
+  await expect(page.getByRole("switch", { name: /^预加载游戏翻译资料/ })).not.toBeChecked();
   await page.goto("/");
   const shifts = page.getByRole("combobox", { name: "班次", exact: true });
   await expect(shifts).toBeVisible();

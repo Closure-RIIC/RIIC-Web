@@ -1,0 +1,13 @@
+{
+  "reloadUpdatedPolicy": "刷新以查看新版条款",
+  "enableAccountCloudWorkspace": "启用账号云端工作区",
+  "afterYouConsentTheSiteAutomaticallySyncsYourMaa": "同意后，本站会自动同步 MAA Box、布局、设置与最近排班。你也可以选择继续纯本地使用。",
+  "eachMaaBoxUsesAnIndependentKeyAndAes": "MAA Box 使用每条独立密钥和 AES-256-GCM 信封加密，云端数据滚动保留 30 天。",
+  "theFiveMostRecentSchedulesAreSyncedUpTo": "最近 5 条排班会同步；最多固定 5 条长期保留。",
+  "thirdPartyGameAccountUidsNicknamesBoxDataCredentials": "第三方游戏账号的 UID、昵称、Box、凭据和完整状态快照不会写入业务数据库。",
+  "keepLocalOnlyMode": "继续纯本地模式",
+  "enabling": "正在启用…",
+  "agreeAndStartSyncing": "同意并开始同步",
+  "rich1": "我已阅读并同意<element1>服务条款</element1>。",
+  "rich2": "我已阅读<element1>隐私政策</element1>并同意自动同步上述数据。"
+}

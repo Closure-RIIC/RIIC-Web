@@ -89,7 +89,7 @@ export function ManualScheduleRoomActions({ row, position, roomTitle, onClearRoo
           variant="ghost"
           size="icon-sm"
           aria-pressed={sortMode}
-          aria-label={sortMode ? "退出调整顺序" : "调整干员顺序"}
+          aria-label={sortMode ? intl("Common.sortDone") : intl("Common.sortOperators")}
           className={cn(
             "ml-1 h-7 w-7 border text-white hover:text-white",
             sortMode ? "border-[#FFD800]/70 bg-[#FFD800]/18" : "border-white/15 bg-[#3C3C3C]/55 hover:bg-[#4B4B4B]",

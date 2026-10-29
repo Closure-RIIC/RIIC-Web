@@ -1,0 +1,15 @@
+{
+  "language": "Language / 语言",
+  "missingSkillName": "Infrastructure Skill",
+  "missingSkillText": "English data is not available yet.",
+  "consentFeedback": "I consent to submitting the {kind, select, performance {performance} other {schedule issue}} information and private reproduction snapshot described above.",
+  "sortDone": "Finish reordering",
+  "sortOperators": "Reorder operators",
+  "signedInAccount": "Signed-in account",
+  "unknownOperator": "Unknown operator",
+  "personalBoxRequired": "This schedule has no personal operator Box to submit. Import your Box again and generate a schedule.",
+  "copiedTraining": "Reference schedule training (not your roster)",
+  "tradeStrategy": "Trading strategy",
+  "factoryRecipe": "Factory recipe",
+  "requestFailed": "Request failed. Please try again later."
+}

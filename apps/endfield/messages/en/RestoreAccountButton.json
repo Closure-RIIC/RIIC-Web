@@ -1,0 +1,13 @@
+{
+  "syncAnAccountFromSklandFirst": "Sync an account from Skland first.",
+  "theOriginalAccountAuthorizationExpiredReauthorizeOnTheSkland": "The original account authorization expired. Reauthorize on the Skland page.",
+  "sklandDidNotReturnTheFullRosterSoOwnership": "Skland did not return the full roster, so ownership cannot be restored accurately. Local settings were kept. Make your full roster public and retry.",
+  "theAccountChangedRetry": "The account changed. Retry.",
+  "accountDataCannotBeRestoredLocalSettingsWereKept": "Account data cannot be restored. Local settings were kept.",
+  "restoredYourActualOperatorsSkillsAndFacilityLevels": "Restored your actual operators, skills and facility levels.",
+  "restoredYourActualOperatorsAndSkillsSklandFacilityData": "Restored your actual operators and skills. Skland facility data is incomplete; existing levels were kept and can be adjusted above.",
+  "restoreFailedRetry": "Restore failed. Retry.",
+  "restoring": "Restoring…",
+  "restoreActualAccount": "Restore actual account",
+  "restoreActualOperatorsAndSkillsFromSklandAndClear": "Restore actual operators and skills from Skland and clear manual drafts. Restore facility levels when complete; otherwise keep current levels. Production preferences are kept."
+}

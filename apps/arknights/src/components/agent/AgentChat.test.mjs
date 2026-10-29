@@ -6,9 +6,12 @@ import path from "node:path";
 import { URL, pathToFileURL, fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { IntlProvider } from "use-intl";
+import { loadMessages } from "../../i18n/messages.ts";
 
 // Compile the real card and result summaries; browser E2E covers chip disclosure and motion.
 test("agent cards group sources, expose only knowledge subjects, and render failures once", async () => {
+  const messages = await loadMessages("zh-CN", ["AK_Raw_components_agent_AgentChat", "AK_components_agent_AgentChat"]);
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const temporary = await mkdtemp(path.join(root, ".agent-card-test-"));
   try {
@@ -34,6 +37,7 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
           export const useIsMobile=()=>false;
           export const AGENT_PERSONA_SELECTION_KEY="test-persona";
           export const builtinAgentPersona=()=>undefined;
+          export const personaPresentation=()=>({});
           export const resolveAgentPersonaSelection=()=>null;
           export const accountOrbColor=()=>"";
           export const parsePersonaAvatar=()=>undefined;
@@ -59,7 +63,7 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
       } }] });
     const { AgentToolCard, formatEnvironmentSummary } = await import(pathToFileURL(outfile).href);
     assert.equal(formatEnvironmentSummary({ fireworks: 0, sami: 1, abyssal: 2, knights: 0 }, { fireworks: "默认值（未自动推导）", sami: "森空岛自动读取", abyssal: "森空岛自动读取", knights: "手动指定" }), "默认：人间烟火 0；森空岛自动读取：萨米 1、深海猎人 2；用户指定：骑士 0");
-    const render = (part) => renderToStaticMarkup(React.createElement(AgentToolCard, { part }));
+    const render = (part) => renderToStaticMarkup(React.createElement(IntlProvider, { locale: "zh-CN", messages, timeZone: "Asia/Shanghai" }, React.createElement(AgentToolCard, { part })));
     const solve = render({ type: "tool-solve_schedule", state: "output-available", output: { plan: { layoutLabel: "243", summary: {} }, workbenchSession: {}, planUrl: "/plan/old" } });
     assert.match(solve, /在基建计算器打开/);
     assert.doesNotMatch(solve, /只读结果页|\/plan\/old/);

@@ -1,0 +1,8 @@
+{
+  "openFullResolutionImage": "開啟高畫質原圖：{title}",
+  "fullSize": "高畫質原圖",
+  "screenshot": "圖示：{title}",
+  "screenshotPlaceholder": "截圖佔位：{title}",
+  "screenshot2": "截圖位 {slot}",
+  "replaceLaterWith": "後續替換檔案："
+}

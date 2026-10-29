@@ -1,0 +1,14 @@
+{
+  "assignOperatorsFirst": "请先安排干员。",
+  "simulatedFacility": "模拟舱室",
+  "morale": "心情",
+  "rate": "产率",
+  "theHorizontalAxisShowsElapsedHoursProductionIsA": "横轴为已模拟小时；产率以基础产率的百分比显示，中枢显示恢复加成。",
+  "ratesAreRecalculatedFromTheCrewOnShiftZero": "换班后产率按新班次干员的技能重新计算；全舱休息或 B 班为空时产率为 0 属于停工，心情回满/换班后恢复。中枢显示的是当前班组的恢复加成。",
+  "theDashedLineMarksTheInspectedMomentClickA": "虚线表示当前回放位置；点击图表查看当时状态。",
+  "selectOperatorCardsToDisplayTheirMoraleCurves": "点击干员卡片选择要显示的心情曲线。",
+  "recoveryBonus": "恢复加成",
+  "product": "产物",
+  "integralHAverage": "积分 {value1} %·h · 平均 {value2}%",
+  "integralBaseHoursAverage": "积分 {value1} 等效小时 · 平均 {value2}×（{value3}%）"
+}

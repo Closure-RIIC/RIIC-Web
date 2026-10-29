@@ -59,7 +59,7 @@ test("legacy import links preserve their step and method with accessible mobile 
   await navigation.getByRole("button", { name: "常见问题", exact: true }).click();
   await navigation.getByRole("link", { name: "结果里有未持有的干员", exact: true }).click();
   await expect(page).toHaveURL(/\/docs\/faq-box$/);
-  await expect(page.getByRole("dialog", { name: "Sidebar" })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: /^(侧边栏|側邊欄|Sidebar)$/ })).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 

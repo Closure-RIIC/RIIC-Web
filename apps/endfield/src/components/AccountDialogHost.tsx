@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazyWithMessages } from "../i18n/features-client";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { LoaderCircle } from "lucide-react";
 import { useRouter, useRouterState } from "@tanstack/react-router";
@@ -9,7 +10,7 @@ import { useWorkspace } from "../state";
 import { useAccount } from "../account";
 import { DialogFrame } from "./DialogFrame";
 
-const WebsiteAuthContent = lazy(() => import("@riic/shell/WebsiteAuthDialog").then(module => ({ default: module.WebsiteAuthContent })));
+const WebsiteAuthContent = lazyWithMessages(() => import("@riic/shell/WebsiteAuthDialog").then(module => ({ default: module.WebsiteAuthContent })), "packages/shell/auth/WebsiteAuthDialog.tsx");
 
 export function AccountDialogHost() {
   const { locale, t, colorMode } = useWorkspace();
@@ -58,11 +59,11 @@ export function AccountDialogHost() {
   return <Dialog.Root open={open} onOpenChange={changeOpen}><Dialog.Portal>
     <Dialog.Backdrop className="ef-dialog-backdrop" />
     <DialogFrame className="ef-account-dialog" bodyClassName="ef-account-dialog-body" data-website-account-dialog finalFocus={false}
-      title={title || (resetToken === undefined ? t("登录网站账号", "Website account sign-in") : t("重置密码", "Reset password"))}
-      closeLabel={t("关闭", "Close")} footer={null}>
+      title={title || (resetToken === undefined ? t("AccountDialogHost.websiteAccountSignIn") : t("AccountDialogHost.resetPassword"))}
+      closeLabel={t("AccountDialogHost.close")} footer={null}>
       <Suspense fallback={<p role="status" data-website-account-dialog-loading className="flex min-h-72 items-center justify-center gap-2 px-5 py-8">
         <LoaderCircle aria-hidden="true" className="size-4 animate-spin motion-reduce:animate-none" />
-        {t("正在加载登录界面…", "Loading sign-in…")}
+        {t("AccountDialogHost.loadingSignIn")}
       </p>}>
         <WebsiteAuthContent locale={locale} active={open} resetToken={resetToken} hideHeading onTitleChange={setTitle}
           renderAction={({ secondary, ...props }) => <Action {...props} size="sm" data-auth-action={secondary ? "secondary" : "primary"}

@@ -1,9 +1,13 @@
 "use client";
+
+
+import { lazyWithMessages } from "@/i18n/features-client";
+import type { AppLocale } from "@riic/contracts/locale";
 import { useAdminFetch } from "../admin-context";
 import { localize as localize_app_admin_users_solver_metrics_client } from "../../../i18n/helpers/app_admin_users_solver_metrics_client.ts";
 import { useTranslations, useLocale } from "use-intl";
 
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 import { ClientOnly } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RefreshCw } from "lucide-react";
@@ -20,7 +24,7 @@ function MetricsChartLoading() {
   return <SkeletonRouteFallback><Skeleton className="h-[280px] rounded-xl sm:h-[320px]" aria-label={intl("app_admin_users_solver_metrics_client.loadingSolverTrendChart")} /></SkeletonRouteFallback>;
 }
 
-const LazyMetricsChart = lazy(() => import("./solver-metrics-chart").then((module) => ({ default: module.AdminSolverMetricsChart })));
+const LazyMetricsChart = lazyWithMessages(() => import("./solver-metrics-chart").then((module) => ({ default: module.AdminSolverMetricsChart })), "apps/arknights/src/app/admin/users/solver-metrics-chart.tsx");
 function AdminSolverMetricsChart(props: React.ComponentProps<typeof LazyMetricsChart>) {
   return <ClientOnly fallback={<MetricsChartLoading />}><Suspense fallback={<MetricsChartLoading />}><LazyMetricsChart {...props} /></Suspense></ClientOnly>;
 }
@@ -42,11 +46,11 @@ type MetricsResponse = {
   error?: { message?: string };
 };
 
-function percentage(value: number | null, en = false): string {
+function percentage(value: number | null, en: AppLocale = "zh-CN"): string {
   return value === null ? (localize_app_admin_users_solver_metrics_client.text(en, "noSamples")) : PERCENT_FORMATTER.format(value);
 }
 
-function duration(value: number | null, en = false): string {
+function duration(value: number | null, en: AppLocale = "zh-CN"): string {
   if (value === null) return localize_app_admin_users_solver_metrics_client.text(en, "noSamples");
   return value < 1_000 ? `${value} ms` : `${DECIMAL_FORMATTER.format(value / 1_000)} s`;
 }
@@ -69,8 +73,11 @@ function Metric({ label, value, detail, dataAttribute }: {
 export function AdminSolverMetrics() {
   const request = useAdminFetch();
   const intl = useTranslations();
+  // Language changes update copy without reloading or overwriting in-progress work.
+  const languageEffectRef = useRef({ intl });
+  useEffect(() => { languageEffectRef.current = { intl }; }, [intl]);
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [metrics, setMetrics] = useState<AdminSolverMetricsData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -87,12 +94,12 @@ export function AdminSolverMetrics() {
         signal: controller.signal,
       });
       const body = await response.json() as MetricsResponse;
-      if (!response.ok || !body.data) throw new Error(body.error?.message ?? (intl("app_admin_users_solver_metrics_client.couldNotLoadSolverMetrics")));
+      if (!response.ok || !body.data) throw new Error(body.error?.message ?? (languageEffectRef.current.intl("app_admin_users_solver_metrics_client.couldNotLoadSolverMetrics")));
       setMetrics(body.data);
       setError(null);
     } catch (caught) {
       if (!(caught instanceof DOMException && caught.name === "AbortError")) {
-        setError(caught instanceof Error ? caught.message : (intl("app_admin_users_solver_metrics_client.couldNotLoadSolverMetrics")));
+        setError(caught instanceof Error ? caught.message : (languageEffectRef.current.intl("app_admin_users_solver_metrics_client.couldNotLoadSolverMetrics")));
       }
     } finally {
       if (requestRef.current === controller) {
@@ -100,7 +107,7 @@ export function AdminSolverMetrics() {
         setRefreshing(false);
       }
     }
-  }, [intl, request]);
+  }, [request]);
 
   useEffect(() => {
     const refreshWhenVisible = () => {
@@ -169,12 +176,12 @@ export function AdminSolverMetrics() {
             <Metric
               label={intl("app_admin_users_solver_metrics_client.solverComputeTime")}
               value={duration(metrics.solver.averageSolverDurationMs, en)}
-              detail={intl("app_admin_users_solver_metrics_client.p95AverageWorkerEndToEnd", { value1: (en) ? (duration(metrics.solver.p95SolverDurationMs, en)) : "", value2: (en) ? (duration(metrics.solver.averageWorkerDurationMs, en)) : "", value3: (en) ? "" : (duration(metrics.solver.p95SolverDurationMs)), value4: (en) ? "" : (duration(metrics.solver.averageWorkerDurationMs)) })}
+              detail={intl("app_admin_users_solver_metrics_client.p95AverageWorkerEndToEnd", { value3: duration(metrics.solver.p95SolverDurationMs, en), value4: duration(metrics.solver.averageWorkerDurationMs, en) })}
             />
             <Metric
               label={intl("app_admin_users_solver_metrics_client.currentTaskQueue")}
               value={intl("app_admin_users_solver_metrics_client.queued", { pendingCount: metrics.queue.pendingCount })}
-              detail={intl("app_admin_users_solver_metrics_client.candidatesRunningAverageWait", { bufferedCount: metrics.queue.bufferedCount, runningCount: metrics.queue.runningCount, value3: (en) ? (duration(metrics.queue.averageWaitMs, en)) : "", value4: (en) ? "" : (duration(metrics.queue.averageWaitMs)) })}
+              detail={intl("app_admin_users_solver_metrics_client.candidatesRunningAverageWait", { bufferedCount: metrics.queue.bufferedCount, runningCount: metrics.queue.runningCount, value4: duration(metrics.queue.averageWaitMs, en) })}
               dataAttribute={{ "data-pending-task-count": metrics.queue.pendingCount }}
             />
           </div>

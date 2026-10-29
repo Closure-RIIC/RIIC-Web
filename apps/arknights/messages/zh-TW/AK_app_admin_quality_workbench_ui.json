@@ -1,0 +1,11 @@
+{
+  "latestProduction": "最新生產版",
+  "previousProduction": "上一生產版",
+  "production": "生產版",
+  "status_queued": "排隊中",
+  "status_running": "執行中",
+  "status_completed": "已完成",
+  "status_failed": "失敗",
+  "status_cancelled": "已取消",
+  "status_interrupted": "執行中斷"
+}

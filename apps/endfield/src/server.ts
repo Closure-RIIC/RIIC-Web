@@ -1,5 +1,6 @@
 import handler, { createServerEntry } from "@tanstack/react-start/server-entry";
 import { canAccessEndfield, endfieldNotFound } from "./server/admin-access";
+import { compressHtmlResponse } from "@riic/platform-server/html-compression";
 
 export default createServerEntry({
   async fetch(request, options) {
@@ -7,6 +8,6 @@ export default createServerEntry({
     const response = await handler.fetch(request, options);
     response.headers.set("Cache-Control", "private, no-store");
     response.headers.append("Vary", "Cookie");
-    return response;
+    return compressHtmlResponse(request, response);
   },
 });

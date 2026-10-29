@@ -37,7 +37,7 @@ test("skill search combines Chinese pinyin and English operator names", async ({
     await expect(results.getByRole("article", { name: `${name} 的基建技能`, exact: true })).toBeVisible();
   }
   await search.fill("Exusiai");
-  await expect(results.getByRole("article", { name: /能天使/ })).toHaveCount(0);
+  await expect(results.getByRole("article", { name: "能天使 的基建技能", exact: true })).toBeVisible();
   await switchWorkbenchLanguage(page, "en");
   await expect(results.getByRole("article", { name: "Exusiai's infrastructure skills", exact: true })).toBeVisible();
   await search.fill("nts");

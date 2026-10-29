@@ -1,5 +1,9 @@
 "use client";
 
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../../messages/zh-CN/AK_app_admin_quality_workbench_ui.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_app_admin_quality_workbench_ui");
+import type { AppLocale } from "@riic/contracts/locale";
 import { useId, type ReactNode } from "react";
 import { useLocale } from "use-intl";
 import { CheckCircle2, Clock3, Loader2, XCircle } from "lucide-react";
@@ -10,8 +14,8 @@ import { Label } from "@/components/ui/label";
 import type { QualityVersion } from "@riic/arknights-domain/quality";
 
 export function useWorkbenchText() {
-  const en = useLocale() === "en";
-  return { en, t: (zh: string, english: string) => en ? english : zh };
+  const en = useLocale();
+  return { en };
 }
 
 export function Panel({ title, description, children, id }: { title: string; description?: string; children: ReactNode; id?: string }) {
@@ -43,9 +47,9 @@ export function Check({ label, checked, onChange, disabled = false }: { label: s
   </label>;
 }
 
-export function statusText(status: string, en: boolean) {
-  const labels: Record<string, [string, string]> = { queued: ["排队中", "Queued"], running: ["运行中", "Running"], completed: ["已完成", "Completed"], failed: ["失败", "Failed"], cancelled: ["已取消", "Cancelled"], interrupted: ["运行中断", "Interrupted"] };
-  return labels[status]?.[en ? 1 : 0] ?? status;
+export function statusText(status: string, en: AppLocale) {
+  const keys: Record<string, keyof typeof UiMessages> = {"queued":"status_queued","running":"status_running","completed":"status_completed","failed":"status_failed","cancelled":"status_cancelled","interrupted":"status_interrupted"};
+  return keys[status] ? uiText.text(en, keys[status]) : status;
 }
 
 export function Status({ status }: { status: string }) {
@@ -54,12 +58,12 @@ export function Status({ status }: { status: string }) {
   return <Badge variant={status === "failed" ? "destructive" : status === "completed" ? "secondary" : "outline"}><Icon aria-hidden="true" className={status === "running" ? "motion-safe:animate-spin" : undefined} />{statusText(status, en)}</Badge>;
 }
 
-export function dateText(value: string, en: boolean) {
-  return new Intl.DateTimeFormat(en ? "en-GB" : "zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+export function dateText(value: string, en: AppLocale) {
+  return new Intl.DateTimeFormat(en === "en" ? "en-GB" : en, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
-export function versionText(version: QualityVersion, index: number, en: boolean) {
-  const label = index === 0 ? (en ? "Latest production" : "最新生产版") : index === 1 ? (en ? "Previous production" : "上一生产版") : (en ? "Production" : "生产版");
+export function versionText(version: QualityVersion, index: number, en: AppLocale) {
+  const label = index === 0 ? (uiText.text(en, "latestProduction")) : index === 1 ? (uiText.text(en, "previousProduction")) : (uiText.text(en, "production"));
   return `${label} · ${version.executableSha256.slice(0, 8)}`;
 }
 

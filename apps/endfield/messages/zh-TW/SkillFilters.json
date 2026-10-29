@@ -1,0 +1,13 @@
+{
+  "all": "全部",
+  "rarity": "星級",
+  "filterRarity": "稀有度篩選",
+  "profession": "職業",
+  "filterProfession": "職業篩選",
+  "workRoom": "工作房間",
+  "filterFacility": "設施篩選",
+  "skillTags": "技能標籤",
+  "filterSkillTags": "技能標籤篩選",
+  "chooseAWorkRoomFirst": "請先選擇工作房間",
+  "noSkillTagsForThisRoom": "該房間暫無技能標籤"
+}

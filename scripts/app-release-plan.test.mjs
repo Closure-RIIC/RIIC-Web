@@ -11,7 +11,8 @@ const manifests = {
   "apps/endfield": { name: "@riic/endfield", dependencies: { "@riic/shell": "*", "@riic/endfield-data": "*", "@riic/platform-server": "*" } },
   "packages/shell": { name: "@riic/shell", dependencies: { "@riic/ui-primitives": "*", "@riic/arknights-domain": "*" } },
   "packages/ui-primitives": { name: "@riic/ui-primitives" },
-  "packages/arknights-domain": { name: "@riic/arknights-domain" },
+  "packages/arknights-domain": { name: "@riic/arknights-domain", dependencies: { "@riic/contracts": "*" } },
+  "packages/contracts": { name: "@riic/contracts" },
   "packages/platform-server": { name: "@riic/platform-server" },
   "packages/endfield-data": { name: "@riic/endfield-data" },
   "packages/endfield-skland": { name: "@riic/endfield-skland" },
@@ -27,7 +28,11 @@ test("application ownership, shared inputs and backend hosting select the right 
     ["packages/arknights-domain/src/generated/gacha-up.json", ["arknights"]],
     ["packages/arknights-domain/src/rotation-result.ts", ["arknights"]],
     ["packages/arknights-domain/src/password-strength.ts", APPLICATIONS],
+    ["packages/arknights-domain/src/i18n/config.ts", APPLICATIONS],
+    ["packages/arknights-domain/src/i18n/localize.ts", APPLICATIONS],
+    ["packages/contracts/locale.ts", APPLICATIONS],
     ["packages/platform-server/src/proxy.ts", APPLICATIONS],
+    ["packages/platform-server/src/html-compression.ts", APPLICATIONS],
     ["packages/platform-server/src/auth/endfield-access.ts", ["arknights"]],
     ["packages/platform-server/src/skland/endfield-api.ts", ["arknights"]],
     ["apps/arknights/src/routes/api.endfield.skland.$action.ts", ["arknights"]],
@@ -167,7 +172,18 @@ test("narrow shared leaves cover every Endfield consumer and all their relative 
         if (specifier.startsWith(".")) {
           const resolved = path.posix.normalize(`${path.posix.dirname(file)}/${specifier}`);
           assert.ok([resolved, `${resolved}.ts`, `${resolved}.tsx`, `${resolved}/index.ts`].some((candidate) => allowed.has(candidate)), `Expand shared leaves for ${specifier} imported by ${file}`);
-        } else assert.ok(!specifier.startsWith("@riic/"), `Account for transitive workspace import ${specifier} in ${file}`);
+        } else if (specifier.startsWith("@riic/")) {
+          const packageName = specifier.split("/").slice(0, 2).join("/");
+          const target = Object.entries(snapshot.manifests).find(([, entry]) => entry.name === packageName);
+          assert.ok(target, `Cannot resolve transitive workspace import ${specifier} in ${file}`);
+          const [targetDirectory, targetManifest] = target;
+          const subpath = specifier.slice(packageName.length);
+          const exported = targetManifest.exports?.[subpath ? `.${subpath}` : "."];
+          assert.equal(typeof exported, "string", `Cannot safely resolve ${specifier} in ${file}`);
+          const targetFile = path.posix.normalize(`${targetDirectory}/${exported}`);
+          const impact = classifyAppChanges([targetFile], { beforeManifests: snapshot.manifests, afterManifests: snapshot.manifests });
+          assert.ok(impact.deployApps.includes("endfield"), `Account for transitive workspace import ${specifier} in ${file}`);
+        }
       }
     }
   }

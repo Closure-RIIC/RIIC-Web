@@ -1,0 +1,22 @@
+{
+  "checkingAssistantAccess": "Checking assistant access…",
+  "signInToChatWithClosure": "Sign in to chat with Closure.",
+  "addCreditsToStartAConversation": "Add credits to start a conversation.",
+  "theAssistantIsTemporarilyUnavailable": "The assistant is temporarily unavailable.",
+  "signIn": "Sign in",
+  "viewCredits": "View credits",
+  "showFloatingAssistant": "Show floating assistant",
+  "hideFloatingAssistant": "Hide floating assistant",
+  "assistant": "Assistant",
+  "closureAssistant": "Closure Assistant",
+  "openingConversation": "Opening conversation…",
+  "whatWouldYouLikeToAskAboutThis": "What would you like to ask about this page?",
+  "askClosureAboutThisPage": "Ask Closure about this page",
+  "minimizeFloatingAssistant": "Minimize floating assistant",
+  "closeClosureAssistant": "Close Closure Assistant",
+  "openClosureAssistant": "Open Closure Assistant",
+  "closeAssistant": "Close assistant",
+  "askClosure": "Ask Closure",
+  "conversationLoadFailed": "The conversation could not load. Refresh the page to try again.",
+  "refreshPage": "Refresh page"
+}

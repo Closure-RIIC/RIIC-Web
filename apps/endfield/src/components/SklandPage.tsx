@@ -50,7 +50,7 @@ export function SklandPage() {
     controller.current = request;
     setPending(true); setError("");
     try { await task(request.signal); }
-    catch (cause) { if (!request.signal.aborted) setError(cause instanceof Error ? cause.message : t("同步失败，请重试。", "Sync failed. Please retry.")); }
+    catch (cause) { if (!request.signal.aborted) setError(cause instanceof Error ? cause.message : t("Skland.syncFailedPleaseRetry")); }
     finally { if (controller.current === request) { controller.current = null; setPending(false); setInitialized(true); } }
   }
   async function loadSnapshot(id: string, role: EndfieldRole, signal: AbortSignal, showDetails = true) {
@@ -105,7 +105,7 @@ export function SklandPage() {
   }
   function authenticated(value: EndfieldLogin) {
     clearData(true); setLoginOpen(false); setAccountId(value.accountId);
-    setAccounts(current => [{ id: value.accountId, label: value.roles[0]?.nickname || "终末地", source: "endfield" }, ...current.filter(account => account.id !== value.accountId)]);
+    setAccounts(current => [{ id: value.accountId, label: value.roles[0]?.nickname || "", source: "endfield" }, ...current.filter(account => account.id !== value.accountId)]);
     void perform(async signal => {
       const list = await api<Accounts>("accounts", signal);
       if (signal.aborted) return;
@@ -147,31 +147,31 @@ export function SklandPage() {
 
   const loginPanel = <SklandLoginPanel main={main} onAuthenticated={authenticated} onMethodChange={() => { setError(""); }} />;
   return <div className={`ef-page${initialized && !accounts.length ? " ef-skland-login" : ""}`} data-endfield-skland aria-busy={pending}>
-    <h1 className="sr-only">{t("森空岛同步", "Skland sync")}</h1>
+    <h1 className="sr-only">{t("Skland.sklandSync")}</h1>
     {accounts.length ? <header className={`ef-skland-header ${styles.header}`}>
       <SklandProfile snapshot={snapshot} role={loadedRole} accountLabel={currentAccount?.label} />
       <div className={`ef-skland-controls ${styles.controls}`}>
         <div className="ef-skland-selectors">
-          <FilterSelect id="skland-account" aria-label={t("森空岛账号", "Skland account")} value={accountId} disabled={pending} onValueChange={selectAccount}
-            emptyText={t("没有匹配账号", "No matching accounts")} options={accounts.map(account => ({ value: account.id, label: account.label }))} />
-          {roles.length ? <FilterSelect id="skland-role" aria-label={t("角色与服务器", "Character & server")} disabled={pending} value={selected} onValueChange={value => {
+          <FilterSelect id="skland-account" aria-label={t("Skland.sklandAccount")} value={accountId} disabled={pending} onValueChange={selectAccount}
+            emptyText={t("Skland.noMatchingAccounts")} options={accounts.map(account => ({ value: account.id, label: account.label }))} />
+          {roles.length ? <FilterSelect id="skland-role" aria-label={t("Skland.characterServer")} disabled={pending} value={selected} onValueChange={value => {
             const role = roles.find(item => roleKey(item) === value);
             if (!role) return; clearData(true); setSelected(roleKey(role)); void perform(signal => loadSnapshot(accountId, role, signal));
-          }} emptyText={t("没有匹配角色", "No matching characters")} options={roles.map(role => ({ value: roleKey(role), label: `${role.nickname} · ${role.serverName}` }))} /> : null}
+          }} emptyText={t("Skland.noMatchingCharacters")} options={roles.map(role => ({ value: roleKey(role), label: `${role.nickname} · ${role.serverName}` }))} /> : null}
         </div>
         <div className={`ef-actions ${styles.actions}`}>
           <Action size="sm" variant="yellow" icon={<RefreshCw className={pending ? "ef-spin" : undefined} />}
-            aria-label={t("刷新数据", "Refresh data")} title={t("刷新数据", "Refresh data")}
-            disabled={pending} onClick={() => { clearData(); void perform(signal => restoreAccounts(signal, false, true)); }}>{pending ? t("同步中…", "Syncing…") : t("同步数据", "Sync data")}</Action>
-          <Action size="sm" variant="dark" icon={<UserPlus />} disabled={pending || accounts.filter(account => account.source === "endfield").length >= 5} onClick={() => setLoginOpen(true)}>{t("添加账号", "Add account")}</Action>
+            aria-label={t("Skland.refreshData")} title={t("Skland.refreshData")}
+            disabled={pending} onClick={() => { clearData(); void perform(signal => restoreAccounts(signal, false, true)); }}>{pending ? t("Skland.syncing") : t("Skland.syncData")}</Action>
+          <Action size="sm" variant="dark" icon={<UserPlus />} disabled={pending || accounts.filter(account => account.source === "endfield").length >= 5} onClick={() => setLoginOpen(true)}>{t("Skland.addAccount")}</Action>
           <Action size="sm" variant="red" icon={<LogOut />} disabled={pending || currentAccount?.source !== "endfield"}
-            title={currentAccount?.source !== "endfield" ? t("请在明日方舟的森空岛同步页退出此共享账号。", "Disconnect this shared account from Arknights Skland sync.") : undefined}
+            title={currentAccount?.source !== "endfield" ? t("Skland.disconnectThisSharedAccountFromArknightsSklandSync") : undefined}
             onClick={() => {
               clearData(true); void perform(async signal => {
                 await api("disconnect", signal, { accountId });
                 if (!signal.aborted) await restoreAccounts(signal);
               });
-            }}>{t("退登账号", "Sign out account")}</Action>
+            }}>{t("Skland.signOutAccount")}</Action>
 
         </div>
       </div>
@@ -181,26 +181,26 @@ export function SklandPage() {
         {sklandSyncReport.blocked || sklandSyncReport.partial || !sklandSyncReport.facilitiesApplied ? <TriangleAlert size={17} /> : <CheckCheck size={17} />}
       </span>
       <div className={styles.syncCopy}>
-        <strong>{sklandSyncReport.blocked ? t("本次数据未覆盖配置", "Local settings preserved") : sklandSyncReport.noChanges ? t("同步完成 · 配置没有变化", "Synced · No settings changed") : t("同步完成 · 配置已更新", "Synced · Settings updated")}</strong>
-        <span>{t(`${sklandSyncReport.afterCount} 名可排班干员`, `${sklandSyncReport.afterCount} scheduling operators`)}<i />{new Date(sklandSyncReport.at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
+        <strong>{sklandSyncReport.blocked ? t("Skland.localSettingsPreserved") : sklandSyncReport.noChanges ? t("Skland.syncedNoSettingsChanged") : t("Skland.syncedSettingsUpdated")}</strong>
+        <span>{t("Skland.schedulingOperators", { value1: sklandSyncReport.afterCount })}<i />{new Date(sklandSyncReport.at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</span>
       </div>
-      <Action size="sm" icon={<FileDiff />} disabled={pending} onClick={() => setSklandSyncDetailsOpen(true)}>{t("最近同步明细", "Latest sync details")}</Action>
+      <Action size="sm" icon={<FileDiff />} disabled={pending} onClick={() => setSklandSyncDetailsOpen(true)}>{t("Skland.latestSyncDetails")}</Action>
     </div> : null}
     {error ? <Notice error>{error}</Notice> : null}
-    {!initialized ? <p className="ef-muted" role="status">{t("正在恢复森空岛账号…", "Restoring your Skland account…")}</p> : null}
-    {initialized && !accounts.length ? <div className="ef-login"><header className="ef-login-copy"><h2>{t("登录森空岛", "Connect to Skland")}</h2><p>{t("登录后自动读取角色数据，已连接的账号会保留在此浏览器。", "Sign in to load your character data. Connected accounts remain in this browser.")}</p></header>{loginPanel}</div> : null}
+    {!initialized ? <p className="ef-muted" role="status">{t("Skland.restoringYourSklandAccount")}</p> : null}
+    {initialized && !accounts.length ? <div className="ef-login"><header className="ef-login-copy"><h2>{t("Skland.connectToSkland")}</h2><p>{t("Skland.signInToLoadYourCharacterDataConnectedAccounts")}</p></header>{loginPanel}</div> : null}
     {accounts.length ? <>
-      {!pending && !roles.length ? <Notice>{t("这个账号没有可用的终末地角色，可添加其他账号或刷新重试。", "This account has no available Endfield character. Add an account or retry.")}</Notice> : null}
-      {!pending && !snapshot && loadedRole ? <Action onClick={() => void perform(signal => loadSnapshot(accountId, loadedRole, signal))}>{t("重新读取数据", "Retry data")}</Action> : null}
+      {!pending && !roles.length ? <Notice>{t("Skland.thisAccountHasNoAvailableEndfieldCharacterAddAn")}</Notice> : null}
+      {!pending && !snapshot && loadedRole ? <Action onClick={() => void perform(signal => loadSnapshot(accountId, loadedRole, signal))}>{t("Skland.retryData")}</Action> : null}
     </> : null}
-    {pending && initialized ? <p className="ef-muted" role="status">{t("正在读取森空岛数据…", "Reading Skland data…")} <Action size="sm" variant="red" onClick={cancel}>{t("取消", "Cancel")}</Action></p> : null}
+    {pending && initialized ? <p className="ef-muted" role="status">{t("Skland.readingSklandData")} <Action size="sm" variant="red" onClick={cancel}>{t("Skland.cancel")}</Action></p> : null}
     {snapshot ? <SklandDataView key={`${accountId}:${selected}`} snapshot={snapshot} /> : null}
     <Dialog.Root open={accounts.length > 0 && loginOpen} onOpenChange={setLoginOpen}>
       <Dialog.Portal><Dialog.Backdrop className="ef-dialog-backdrop" />
         <SklandLoginPanel main={main} onAuthenticated={authenticated} onMethodChange={() => { setError(""); }}
-          renderDialog={(body, actions) => <DialogFrame title={t("添加森空岛账号", "Add Skland account")} closeLabel={t("关闭", "Close")}
-            description={t("最多保存 5 个终末地账号，登录后自动读取数据。", "Save up to 5 Endfield accounts. Data loads automatically after sign-in.")}
-            footer={<><Dialog.Close className={actionClassName({ size: "sm" })}><ActionContent>{t("取消", "Cancel")}</ActionContent></Dialog.Close>{actions}</>}>
+          renderDialog={(body, actions) => <DialogFrame title={t("Skland.addSklandAccount")} closeLabel={t("Skland.close")}
+            description={t("Skland.saveUpTo5EndfieldAccountsDataLoadsAutomatically")}
+            footer={<><Dialog.Close className={actionClassName({ size: "sm" })}><ActionContent>{t("Skland.cancel")}</ActionContent></Dialog.Close>{actions}</>}>
             {body}
           </DialogFrame>} />
       </Dialog.Portal>

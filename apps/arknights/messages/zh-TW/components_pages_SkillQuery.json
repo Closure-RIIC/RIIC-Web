@@ -1,0 +1,8 @@
+{
+  "skillSearch": "技能Wiki",
+  "searchOperatorSkillNameOrEffect": "搜尋幹員名稱/技能名稱/技能效果",
+  "clearSearch": "清空搜尋",
+  "manualSkillNotesCouldNotBeLoaded": "技能補充說明暫未載入。",
+  "retryNotes": "重新載入說明",
+  "noOperatorsMatchTheseFilters": "沒有符合篩選條件的幹員。"
+}

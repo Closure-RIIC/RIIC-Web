@@ -1,0 +1,11 @@
+{
+  "current": "當前",
+  "operatorSkillsTargetSkillHighlighted": "幹員基建技能 · 已標出本次目標",
+  "operatorInfrastructureSkills": "該幹員的基建技能",
+  "target": "目標",
+  "acquisition": "獲取方式",
+  "efficiencyInsight": "效率知識",
+  "acquire": "獲取",
+  "train": "培養",
+  "selectForTrainingPlan": "加入養成清單 · 精{elite} {level}級"
+}

@@ -1,0 +1,8 @@
+{
+  "backToHelp": "返回幫助首頁",
+  "useTheOperatorsYouOwn": "切換成自己已有的幹員",
+  "useThisGuideIfYouLoadedTheAllOperator": "適用於誤點「全形色匯入」、方案出現未擁有幹員，或練完新幹員後想更新 Box 的情況。",
+  "firstCheckWhetherTheSourceIs243MaxLevel": "先看當前來源是不是「243 全精二示例」",
+  "ifSoSeeingOperatorsYouDoNotOwnIs": "如果是，排出你沒有的幹員屬於預期現象。無需清瀏覽器快取，也不用刪除帳號；按下面步驟更換即可。",
+  "switchStepByStep": "逐步切換"
+}

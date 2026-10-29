@@ -1,8 +1,9 @@
 "use client";
 
+import { lazyWithMessages } from "@/i18n/features-client";
 import { useTranslations, useLocale } from "use-intl";
 
-import { lazy, Suspense } from "react";
+import { Suspense } from "react";
 
 import { OperatorSlot } from "@/components";
 import { RichText } from "@/components/RichText";
@@ -21,7 +22,7 @@ import { useGameCatalog } from "@/i18n/game-data-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BuildingSkillUnlockText, SkillAnnotationNote } from "./SkillText";
 
-const MobileSkillList = lazy(() => import("./MobileSkillList"));
+const MobileSkillList = lazyWithMessages(() => import("./MobileSkillList"), "apps/arknights/src/components/skill-query/MobileSkillList.tsx");
 
 /** 按「最后一个下划线之前」的前缀分组：同一族（基础 + 提升）分到同一组，行内按 index 升序。 */
 function groupSkillsByPrefix(skills: OperatorBuildingSkillRef[]): OperatorBuildingSkillRef[][] {
@@ -58,7 +59,7 @@ export function SkillResultRow({ operator, annotationIndex }: SkillResultRowProp
   return (
     <article
       className="infra-room-surface min-w-0 overflow-hidden px-4 py-4"
-      aria-label={intl("components_skill_query_SkillResultRow.sInfrastructureSkills", { displayName: (locale === "en") ? (displayName) : "", name: (locale === "en") ? "" : (operator.name) })}
+      aria-label={intl("components_skill_query_SkillResultRow.sInfrastructureSkills", { name: locale === "en" ? (((displayName))) : (((operator.name))) })}
     >
       {/* 左右布局：左侧干员卡片（不展示心情），右侧技能（PC 每技能一列，移动端按钮列表+弹窗） */}
       <div className="relative z-10 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-4">

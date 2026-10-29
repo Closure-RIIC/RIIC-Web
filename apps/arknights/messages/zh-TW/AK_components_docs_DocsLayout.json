@@ -1,0 +1,21 @@
+{
+  "riicDocs": "使用檔案",
+  "closeNavigation": "關閉目錄",
+  "backToWorkbench": "返回基建",
+  "searchDocs": "搜尋檔案",
+  "documentation": "檔案目錄",
+  "overview": "檔案首頁",
+  "feedback": "反饋問題",
+  "searchDocumentation": "搜尋檔案",
+  "searchTitlesAndContentUseArrowKeysTo": "搜尋標題與正文。方向鍵選擇結果，回車開啟，Esc 關閉。",
+  "whatWouldYouLikeToKnow": "你想了解什麼？",
+  "results": "{value1} 篇相關檔案",
+  "startHere": "從這裡開始",
+  "noMatchingArticlesTryImportMaaOrSync": "沒有找到相關檔案，試試「匯入」「MAA」或「同步」。",
+  "skipToContent": "跳轉到正文",
+  "toggleNavigation": "展開或收起目錄",
+  "breadcrumb": "當前位置",
+  "docs": "使用檔案",
+  "backToTop": "回到頂部",
+  "onThisPage": "本頁目錄"
+}

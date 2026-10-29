@@ -1,0 +1,16 @@
+{
+  "eventLog": "Event log",
+  "clear": "Clear",
+  "noEventsYet": "No events yet",
+  "outputIsMeasuredInEffectiveHoursAverageRateUses": "Output is measured in effective hours; average rate uses active work time.",
+  "facilityProductionStatistics": "Facility production statistics",
+  "facilityProduct": "Facility / product",
+  "totalOutput": "Total output",
+  "averageH": "Average / h",
+  "activeWork": "Active work",
+  "operatorMoraleStatistics": "Operator morale statistics",
+  "operator": "Operator",
+  "minimum": "Minimum",
+  "maximum": "Maximum",
+  "current": "Current"
+}

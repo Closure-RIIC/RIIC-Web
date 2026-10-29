@@ -1,0 +1,13 @@
+{
+  "helpTopics": "幫助入口",
+  "firstImport": "第一次匯入",
+  "importYourOperatorBoxStepByStep": "檢視完整的幹員 Box 圖文步驟",
+  "openTutorial": "開啟教程",
+  "commonIssue": "常見問題",
+  "switchToTheOperatorsYouActuallyOwn": "切換成自己實際擁有的幹員",
+  "viewSteps": "檢視步驟",
+  "stillNotWorking": "仍然不對？",
+  "recordTheCurrentBoxSourceOwnedOperatorCountBase": "記錄當前 Box 來源、擁有幹員數量、佈局型別和錯誤碼，再提交反饋。不要公開帳號密碼、驗證碼或完整登入憑據。",
+  "checkTheCalculator": "返回計算器檢查",
+  "reportAnIssue": "提交問題反饋"
+}

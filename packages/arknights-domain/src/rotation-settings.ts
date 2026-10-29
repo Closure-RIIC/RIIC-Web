@@ -1,3 +1,4 @@
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as rotationText } from "./i18n/helpers/RotationLabels.ts";
 import { localize as localize_rotation_settings } from "./i18n/helpers/rotation_settings.ts";
 import type { RotationProfile } from "./types";
@@ -50,7 +51,7 @@ export function rotationDurations(profile: RotationProfile): number[] {
   return [...(current?.durations ?? LEGACY_ROTATION_OPTIONS[profile as keyof typeof LEGACY_ROTATION_OPTIONS].durations)];
 }
 
-export function rotationDescription(profile: RotationProfile, en = false): string {
+export function rotationDescription(profile: RotationProfile, en: AppLocale = "zh-CN"): string {
   const current = ROTATION_OPTIONS.find((option) => option.profile === profile);
   const option = current ?? LEGACY_ROTATION_OPTIONS[profile as keyof typeof LEGACY_ROTATION_OPTIONS];
 

@@ -14,12 +14,12 @@ type PasswordInputProps = Omit<ComponentProps<typeof Input>, "type"> & {
 };
 
 export function PasswordInput({ className, disabled, hideLabel, id, revealLabel, toggleClassName, ...props }: PasswordInputProps) {
-  const intl = useTranslations();
+  const intl = useTranslations("Account");
 
   const [revealed, setRevealed] = useState(false);
   const resolvedRevealLabel = revealLabel ?? (intl("components_auth_password_input.showPassword"));
   const toggleLabel = revealed
-    ? hideLabel ?? (resolvedRevealLabel.startsWith("Show ") ? resolvedRevealLabel.replace(/^Show /, "Hide ") : resolvedRevealLabel.replace(/^显示/, "隐藏"))
+    ? hideLabel ?? intl("components_auth_password_input.hidePassword")
     : resolvedRevealLabel;
 
   return (

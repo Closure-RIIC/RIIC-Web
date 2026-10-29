@@ -14,20 +14,11 @@ type ImportMethodChoiceProps = {
 };
 
 const methods = [
-  {
-    id: "skland",
-    zh: messageRecord("zh", "components_help_ImportMethodChoice_content").value as [string, string],
-    en: messageRecord("en", "components_help_ImportMethodChoice_content").value as [string, string],
-  },
-  {
-    id: "maa",
-    zh: messageRecord("zh", "components_help_ImportMethodChoice_content2").value as [string, string],
-    en: messageRecord("en", "components_help_ImportMethodChoice_content2").value as [string, string],
-  },
+  { id: "skland", content: "components_help_ImportMethodChoice_content" as const },
+  { id: "maa", content: "components_help_ImportMethodChoice_content2" as const },
 ] satisfies Array<{
   id: ImportMethod;
-  zh: [string, string];
-  en: [string, string];
+  content: "components_help_ImportMethodChoice_content" | "components_help_ImportMethodChoice_content2";
 }>;
 
 function parseMethod(value: string | null): ImportMethod | null {
@@ -37,7 +28,7 @@ function parseMethod(value: string | null): ImportMethod | null {
 export function ImportMethodChoice({ sklandContent, maaContent }: ImportMethodChoiceProps) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const [selectedMethod, setSelectedMethod] = useState<ImportMethod | null>(null);
 
   useEffect(() => {
@@ -68,7 +59,7 @@ export function ImportMethodChoice({ sklandContent, maaContent }: ImportMethodCh
   }
 
   const selectedMethodData = methods.find((method) => method.id === selectedMethod);
-  const selectedLabel = selectedMethodData ? (en ? selectedMethodData.en[0] : selectedMethodData.zh[0]) : undefined;
+  const selectedLabel = selectedMethodData ? messageRecord(en, selectedMethodData.content).value[0] : undefined;
 
   return (
     <section className="grid gap-6" aria-labelledby="import-method-choice-title" data-help-import-method-picker>
@@ -78,7 +69,7 @@ export function ImportMethodChoice({ sklandContent, maaContent }: ImportMethodCh
         <div className="grid gap-3 sm:grid-cols-2">
           {methods.map((method) => {
             const isSelected = method.id === selectedMethod;
-            const [label, description] = en ? method.en : method.zh;
+            const [label, description] = messageRecord(en, method.content).value;
 
             return (
               <label

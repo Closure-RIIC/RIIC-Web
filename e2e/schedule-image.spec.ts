@@ -22,6 +22,11 @@ for (const { width, mode, dark } of [
     await expect(board.locator('[data-skeleton-swap="loading"]')).toHaveCount(0);
     await expect(board.locator("[data-skeleton-swap-placeholder]")).toHaveCount(0);
     await page.evaluate((enabled) => document.documentElement.classList.toggle("dark", enabled), dark);
+    // Theme transitions must finish before comparing native pixels to the clone.
+    await page.evaluate(async () => {
+      document.documentElement.getBoundingClientRect();
+      await Promise.all(document.getAnimations().filter(animation => animation instanceof CSSTransition).map(animation => animation.finished.catch(() => {})));
+    });
     await board.locator("img").evaluateAll(images => Promise.all(images.map(image => {
       image.loading = "eager";
       return image.decode().catch(() => {});

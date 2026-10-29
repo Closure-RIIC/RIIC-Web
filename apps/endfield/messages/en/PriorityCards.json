@@ -1,0 +1,6 @@
+{
+  "movedToPriority": "{value1} moved to priority {value2}.",
+  "dragCardsToReorderEarlierGoalsTakePriorityYou": "Drag cards to reorder; earlier goals take priority. You can also focus a card and use the arrow keys.",
+  "schedulingPriorities": "Scheduling priorities",
+  "reorderPriority": "Reorder {value1}, priority {value2}"
+}

@@ -1,0 +1,9 @@
+{
+  "relatedIssues": "相似问题与人工关联",
+  "unlink": "拆分",
+  "confirmAsMainIssue": "确认关联到此主问题",
+  "sameDiagnostic": "相同诊断",
+  "sameFullInput": "相同完整输入",
+  "sameFacilityAndRelatedOperators": "相同设施且共享相关干员",
+  "sameFacilityAndErrorCode": "相同设施且错误码一致"
+}

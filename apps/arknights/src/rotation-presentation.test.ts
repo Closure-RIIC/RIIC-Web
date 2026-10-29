@@ -1,3 +1,4 @@
+import "./i18n/test-setup.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 

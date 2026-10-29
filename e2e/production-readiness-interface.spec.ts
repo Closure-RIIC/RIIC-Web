@@ -216,7 +216,7 @@ test("setup keeps Box parse errors local and actionable", async ({ page }) => {
   await expect.poll(() => page.locator('[role="alert"]').evaluateAll((elements) => (
     elements.filter((element) => element.textContent?.trim()).length
   ))).toBe(1);
-  await dialog.getByRole("button", { name: "Close" }).click();
+  await dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/ }).click();
   await expect(dialog).toBeHidden();
   await expect(setupTrigger).toBeFocused();
 });
@@ -258,12 +258,12 @@ test("setup always reopens on operator data, including from the Skland overview"
   await expect(boxStep).toHaveAttribute("aria-current", "step");
   await dialog.getByRole("button", { name: "继续", exact: true }).click();
   await expect(dialog.getByRole("button", { name: /第 2 步，共 3 步：布局/ })).toHaveAttribute("aria-current", "step");
-  await dialog.getByRole("button", { name: "Close" }).click();
+  await dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/ }).click();
   await expect(dialog).toHaveCount(0);
 
   await setupTrigger.click();
   await expect(boxStep).toHaveAttribute("aria-current", "step");
-  await dialog.getByRole("button", { name: "Close" }).click();
+  await dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/ }).click();
 
   await openSklandOverview(page);
   await page.getByRole("button", { name: "继续配置布局", exact: true }).click();
@@ -413,7 +413,7 @@ test("progression adjustments sync back to the schedule settings manual BOX", as
   await expect(manualSkillTooltip.locator('[data-skill-unlocked="false"]')).toHaveCSS("opacity", "0.7");
   await expect(manualSkillTooltip.locator('[data-skill-unlocked="false"]')).toHaveCSS("filter", "grayscale(1)");
   await expect(manualPicker.getByRole("radiogroup", { name: "阿米娅持有与精英阶段" }).getByRole("radio", { name: "精1", exact: true })).toBeChecked();
-  await setupDialog.getByRole("button", { name: "Close" }).click();
+  await setupDialog.getByRole("button", { name: /^(关闭|關閉|Close)$/ }).click();
 
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
@@ -493,7 +493,7 @@ test("setup exposes and persists only worker-supported rotation profiles", async
   await expect(setupPrimaryAction).toHaveCSS("font-size", "13px");
   await expect(setupPrimaryAction.locator("svg")).toHaveCount(0);
   await expect(dialog.getByRole("heading", { name: "排班设置" })).toBeVisible();
-  const closeButton = dialog.getByRole("button", { name: "Close" });
+  const closeButton = dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/ });
   await expect(closeButton).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await closeButton.hover();
   await expect(closeButton).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
@@ -884,7 +884,7 @@ test("calculator owns scheduling controls and training advice uses a single tech
   expect(cardBoxes[1].top).toBeGreaterThan(cardBoxes[0].top);
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await page.getByRole("button", { name: "基建计算器" }).click();
   const mobileHeights = await Promise.all([
     page.locator('[data-calculator-export-actions="mobile"]').getByRole("button", { name: "导出到 MAA" }).evaluate((element) => element.getBoundingClientRect().height),

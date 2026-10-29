@@ -9,29 +9,28 @@ import { InfoPageLayout } from "@/components/layout/InfoPageLayout";
 type LinkCardItem = {
   title: string;
   titleKey?: "officialWebsite" | "contribute";
-  zh: [string, string[]];
-  en: [string, string[]];
+  content: "app_about_page_content" | "app_about_page_content2" | "app_about_page_content3" | "app_about_page_content4" | "app_about_page_content5";
   href: string;
   icon: LucideIcon;
 };
 
 const sources: LinkCardItem[] = [
-  { title: "arknights-toolbox-data", zh: messageRecord("zh", "app_about_page_content").value as [string, string[]], en: messageRecord("en", "app_about_page_content").value as [string, string[]], href: "https://github.com/arkntools/arknights-toolbox-data", icon: Database },
-  { title: "ArknightsGameResource", zh: messageRecord("zh", "app_about_page_content2").value as [string, string[]], en: messageRecord("en", "app_about_page_content2").value as [string, string[]], href: "https://github.com/yuanyan3060/ArknightsGameResource", icon: ImageIcon },
-  { title: "", titleKey: "officialWebsite", zh: messageRecord("zh", "app_about_page_content3").value as [string, string[]], en: messageRecord("en", "app_about_page_content3").value as [string, string[]], href: "https://ak.hypergryph.com/", icon: Code2 },
+  { title: "arknights-toolbox-data", href: "https://github.com/arkntools/arknights-toolbox-data", icon: Database, content: "app_about_page_content" as const },
+  { title: "ArknightsGameResource", href: "https://github.com/yuanyan3060/ArknightsGameResource", icon: ImageIcon, content: "app_about_page_content2" as const },
+  { title: "", titleKey: "officialWebsite", href: "https://ak.hypergryph.com/", icon: Code2, content: "app_about_page_content3" as const },
 ];
 
 const contributionCards: LinkCardItem[] = [
-  { title: "RIIC-Web", zh: messageRecord("zh", "app_about_page_content4").value as [string, string[]], en: messageRecord("en", "app_about_page_content4").value as [string, string[]], href: "https://github.com/Closure-RIIC/RIIC-Web", icon: Code2 },
-  { title: "", titleKey: "contribute", zh: messageRecord("zh", "app_about_page_content5").value as [string, string[]], en: messageRecord("en", "app_about_page_content5").value as [string, string[]], href: "https://github.com/Closure-RIIC/RIIC-Web/issues", icon: MessageSquareText },
+  { title: "RIIC-Web", href: "https://github.com/Closure-RIIC/RIIC-Web", icon: Code2, content: "app_about_page_content4" as const },
+  { title: "", titleKey: "contribute", href: "https://github.com/Closure-RIIC/RIIC-Web/issues", icon: MessageSquareText, content: "app_about_page_content5" as const },
 ];
 
 function ResourceLink({ item, featured = false }: { item: LinkCardItem; featured?: boolean }) {
   const t = useTranslations("app_about_page");
   const Icon = item.icon;
   const locale = useLocale();
-  const en = locale === "en";
-  const [description, tags] = en ? item.en : item.zh;
+  const en = locale;
+  const [description, tags] = messageRecord(en, item.content).value as [string, string[]];
   return (
     <a href={item.href} target="_blank" rel="noopener noreferrer" className={featured
       ? "group relative flex min-h-40 items-start gap-4 overflow-hidden bg-[#272A2B] p-5 text-white outline-none transition-[transform,box-shadow] hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-[#FFD501] motion-reduce:transform-none"

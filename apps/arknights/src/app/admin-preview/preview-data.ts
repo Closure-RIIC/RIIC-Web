@@ -1,17 +1,21 @@
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_app_admin_preview_preview_data.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_app_admin_preview_preview_data");
+import type { AppLocale } from "@riic/contracts/locale";
 import type { AdminFeedbackRecordData, AdminSkillAnnotationData, AdminSolverMetricsData, AdminUserData } from "@riic/arknights-domain/types";
 import type { AdminRelease, ReleaseDraft } from "@riic/arknights-domain/releases/types";
 import type { DiagnosticReport } from "@riic/arknights-domain/diagnostics";
 import type { AdminFetch } from "../admin/admin-context";
 
 /** Browser-local sample transport. Never falls back to a network request. */
-export function createAdminPreviewRequest(isAdmin: boolean, en: boolean): AdminFetch {
+export function createAdminPreviewRequest(isAdmin: boolean, en: AppLocale): AdminFetch {
   const now = Date.now();
   const date = (hoursAgo = 0) => new Date(now - hoursAgo * 3_600_000).toISOString();
   const names = ["折纸舟", "白露与灯塔", "南桥", "Kestrel", "雨落龙门", "松间照", "Mira K.", "槐序", "北港信使", "听风的博士", "蓝盐", "Linh Nguyễn", "苇岸", "停云之外", "顾星河", "Nadia R.", "苔原来信"];
   const users: AdminUserData[] = names.map((name, index) => ({
     id: `preview-user-${index}`, name, email: `doctor.${index + 1}@example.test`,
     emailVerified: index % 7 !== 6, banned: index % 9 === 8,
-    banReason: index % 9 === 8 ? (en ? "Sample suspended account" : "演示：账户已暂停") : null,
+    banReason: index % 9 === 8 ? (uiText.text(en, "sampleSuspendedAccount")) : null,
     createdAt: date(index * 37 + 3), isAdmin: index < 2, isReviewer: index === 2 || index === 5,
     isBootstrapAdmin: index === 0, sklandBindingCount: index % 3,
     sklandActiveBindingCount: index % 3, sklandRenewalDueCount: index === 4 ? 1 : 0,
@@ -20,9 +24,7 @@ export function createAdminPreviewRequest(isAdmin: boolean, en: boolean): AdminF
     totalPoints: 120 + index * 45 + (index % 4 === 0 ? 100 : 0),
   }));
   const revokedSessions = new Set<string>();
-  const notes = en
-    ? ["Trading station operator order differs after export.", "A manufacturing rotation leaves a slot empty.", "Compare Fiammetta target assignment across shifts.", "Review dormitory autofill in the downloaded plan.", "The solve took longer after changing the layout."]
-    : ["贸易站导出后的干员顺序与排班展示不同。", "制造站轮换后有一个位置留空，希望核对替换排班。", "需要比较不同班次的菲亚梅塔充能目标。", "已确认宿舍自动填充设置与下载文件一致。", "调整布局后求解耗时变长，需要查看运行记录。"];
+  const notes = [uiText.text(en, "tradingStationOperatorOrderDiffersAfterExport"), uiText.text(en, "aManufacturingRotationLeavesASlotEmpty"), uiText.text(en, "compareFiammettaTargetAssignmentAcrossShifts"), uiText.text(en, "reviewDormitoryAutofillInTheDownloadedPlan"), uiText.text(en, "theSolveTookLongerAfterChangingTheLayout")];
   let feedback: AdminFeedbackRecordData[] = notes.map((note, index) => ({
     id: `preview-feedback-${index + 1}`, diagnosticId: `preview-run-${index + 1}`,
     kind: index === 4 ? "performance_issue" : "room_issue",
@@ -38,7 +40,7 @@ export function createAdminPreviewRequest(isAdmin: boolean, en: boolean): AdminF
   };
   const releases: AdminRelease[] = [{ id: "preview-release-1", draft, published: structuredClone(draft), firstPublishedAt: date(6), publishedAt: date(6), updatedAt: date(6), revision: 1 }];
   const success = (data: unknown) => Response.json({ success: true, data, requestId: "local-preview" });
-  const failure = (status = 400) => Response.json({ success: false, error: { code: "PREVIEW_ONLY", message: en ? "This action is unavailable in the local preview. No live request was sent." : "此操作暂未接入本地演示，未发送真实请求。" } }, { status });
+  const failure = (status = 400) => Response.json({ success: false, error: { code: "PREVIEW_ONLY", message: uiText.text(en, "thisActionIsUnavailableInTheLocalPreview") } }, { status });
   const metrics = (): AdminSolverMetricsData => ({
     generatedAt: new Date().toISOString(),
     solver: {
@@ -93,8 +95,8 @@ export function createAdminPreviewRequest(isAdmin: boolean, en: boolean): AdminF
       const report: DiagnosticReport = {
         from: date(Number(url.searchParams.get("hours") ?? 1)), to: date(), configured: true, truncated: false, total: 7,
         groups: [
-          { fingerprint: "preview-validation", category: "validation", code: "AIC-REQ-1001", route: "/api/plan", method: "POST", reason: en ? "Sample: incomplete layout input" : "演示：布局输入不完整", count: 5, first: date(0.7), last: date(0.1) },
-          { fingerprint: "preview-auth", category: "authentication", code: "AIC-AUTH-2008", route: "/api/account", method: "GET", reason: en ? "Sample: expired session" : "演示：登录会话已过期", count: 2, first: date(0.5), last: date(0.2) },
+          { fingerprint: "preview-validation", category: "validation", code: "AIC-REQ-1001", route: "/api/plan", method: "POST", reason: uiText.text(en, "sampleIncompleteLayoutInput"), count: 5, first: date(0.7), last: date(0.1) },
+          { fingerprint: "preview-auth", category: "authentication", code: "AIC-AUTH-2008", route: "/api/account", method: "GET", reason: uiText.text(en, "sampleExpiredSession"), count: 2, first: date(0.5), last: date(0.2) },
         ], recent: [],
       };
       return success(report);
@@ -132,8 +134,8 @@ export function createAdminPreviewRequest(isAdmin: boolean, en: boolean): AdminF
       if (url.searchParams.get("kind") === "related") return success({ links: [], matches: [], operators: [] });
       if (url.searchParams.has("kind")) return failure();
       return success({ isAdmin, drafts: [], batches: [], versions: [
-        { id: "preview-current", label: en ? "Sample current version" : "演示：当前版本", executableSha256: "a".repeat(64), createdAt: date(4) },
-        { id: "preview-baseline", label: en ? "Sample baseline" : "演示：对照版本", executableSha256: "b".repeat(64), createdAt: date(96) },
+        { id: "preview-current", label: uiText.text(en, "sampleCurrentVersion"), executableSha256: "a".repeat(64), createdAt: date(4) },
+        { id: "preview-baseline", label: uiText.text(en, "sampleBaseline"), executableSha256: "b".repeat(64), createdAt: date(96) },
       ], worker: { at: date() } });
     }
     if (path === "/api/admin/releases" && method === "GET") return success({ environment: "local", releases });

@@ -1,0 +1,11 @@
+{
+  "seconds": "{seconds}s",
+  "main": "Main",
+  "backup": "Backup",
+  "shift": "Shift {index}",
+  "shiftDuration": "Shift {index} · {hours}h",
+  "resting": "{team} resting",
+  "working": "{team} working",
+  "teams": "{active} working · {resting} resting",
+  "manualDuration": "{hours, plural, =0 {} other {#h}}{minutes, plural, =0 {} other {{hours, plural, =0 {} other { }}#m}}"
+}

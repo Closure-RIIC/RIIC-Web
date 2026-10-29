@@ -1,0 +1,19 @@
+{
+  "control_center": "Control Center",
+  "trade_post": "Trading Post",
+  "factory": "Factory",
+  "power_plant": "Power Plant",
+  "dormitory": "Dormitory · Support",
+  "office": "Office",
+  "meeting_room": "Reception Room",
+  "workshop": "Workshop",
+  "training_room": "Training Room",
+  "recycling": "Recycling Station",
+  "lmd": "LMD",
+  "orundum": "Orundum",
+  "gold": "Pure Gold",
+  "battle_record": "Battle Records",
+  "originium": "Originium Shards",
+  "all": "Recipe pending",
+  "defaultTitle": "{layout} · {count}-shift rotation"
+}

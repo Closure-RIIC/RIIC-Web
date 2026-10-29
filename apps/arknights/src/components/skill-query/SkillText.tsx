@@ -1,17 +1,16 @@
 "use client";
 
 import { useLocale, useTranslations } from "use-intl";
-import { BUILDING_SKILL_ENHANCED_WORD, buildingSkillUnlockLabel, buildingSkillUnlockLabelEnglish, buildingSkillUnlockPrefix } from "@/operatorPortraits";
+import { buildingSkillUnlockLabel, buildingSkillUnlockPrefix, buildingSkillUnlockSuffix } from "@/operatorPortraits";
 
 /** 强化技能的尾词用一图流同款蓝色。 */
 export function BuildingSkillUnlockText({ elite, level, enhanced }: { elite: number; level: number; enhanced: boolean }) {
   const locale = useLocale();
-  if (locale === "en") return <>{buildingSkillUnlockLabelEnglish(elite, level, enhanced)}</>;
-  if (!enhanced) return <>{buildingSkillUnlockLabel(elite, level)}</>;
+  if (!enhanced) return <>{buildingSkillUnlockLabel(elite, level, false, locale)}</>;
   return (
     <>
-      <span>{buildingSkillUnlockPrefix(elite, level)}</span>
-      <span className="text-[#22BBFF]">{BUILDING_SKILL_ENHANCED_WORD}</span>
+      <span>{buildingSkillUnlockPrefix(elite, level, locale)}</span>
+      <span className="text-[#22BBFF]">{buildingSkillUnlockSuffix(true, locale)}</span>
     </>
   );
 }

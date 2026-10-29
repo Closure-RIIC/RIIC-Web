@@ -1,4 +1,6 @@
 "use client";
+
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_components_RecommendationCard } from "../i18n/helpers/components_RecommendationCard.ts";
 import { useTranslations, useLocale } from "use-intl";
 import { messageRecord } from "@/i18n/translate";
@@ -18,15 +20,15 @@ import { recommendationCurrentState, recommendationMessage } from "./training-ad
 
 const DOMAIN_GROUPS: Record<string, string> = { trade: "trading", trading: "trading", manufacture: "manufacture", manu: "manufacture", power: "power", control: "control", general: "training" };
 
-export function recommendationDomainLabel(value: string, en = false) { return (messageRecord(en, "components_RecommendationCard_labels"))[value.toLowerCase()] ?? (localize_components_RecommendationCard.text(en, "general")); }
-export function recommendationKindLabel(value: string, en = false) { return (messageRecord(en, "components_RecommendationCard_labels2"))[value.toLowerCase()] ?? (localize_components_RecommendationCard.text(en, "trainingAdvice")); }
+export function recommendationDomainLabel(value: string, en: AppLocale = "zh-CN") { return (messageRecord(en, "components_RecommendationCard_labels"))[value.toLowerCase()] ?? (localize_components_RecommendationCard.text(en, "general")); }
+export function recommendationKindLabel(value: string, en: AppLocale = "zh-CN") { return (messageRecord(en, "components_RecommendationCard_labels2"))[value.toLowerCase()] ?? (localize_components_RecommendationCard.text(en, "trainingAdvice")); }
 
 export function RecommendationCard({ action, entry, variant = "full", index = 0, showSkillTooltip = true }: { action: UserProfileAction; entry?: OperBoxEntry; variant?: "full" | "compact"; index?: number; showSkillTooltip?: boolean }) {
   const intl = useTranslations();
   const reduceMotion = useReducedMotion();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
   const message = recommendationMessage(action, en) || intl("components_RecommendationCard.noDetailsAvailable");
   const currentState = recommendationCurrentState(action, entry, en);
   const priority = action.priority || (intl("components_RecommendationCard.unranked"));
@@ -55,7 +57,7 @@ export function RecommendationCard({ action, entry, variant = "full", index = 0,
       <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-4" data-recommendation-card="full">
         <OperatorSlot
           slot={{
-            name: action.operator || "未知干员",
+            name: action.operator || intl("Common.unknownOperator"),
             label: operatorName,
             portrait: operatorPortraitFor(action.operator, entry?.id),
             profession: operatorProfessionFor(action.operator),

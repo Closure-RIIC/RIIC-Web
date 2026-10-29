@@ -1,4 +1,9 @@
 "use client";
+
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_app_help_page_client.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_app_help_page_client");
+
 import { useTranslations, useLocale } from "use-intl";
 
 import { Link } from "@tanstack/react-router";
@@ -8,7 +13,7 @@ import { KnowledgeHelpSection } from "@/components/help/KnowledgeHelpSection";
 export default function HelpHomePage() {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   return (
     <article className="flex w-full flex-col gap-5 pt-5">
       <section className="grid gap-3 md:grid-cols-2" aria-label={intl("app_help_page.helpTopics")}>
@@ -37,7 +42,7 @@ export default function HelpHomePage() {
       </section>
 
       <Link to="/help/beginner" className="group flex min-h-28 scroll-mt-5 items-center justify-between gap-4 border-y border-border px-3 py-5 outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring sm:px-5">
-        <span className="min-w-0"><strong className="block text-lg font-semibold">{en ? "Beginner tutorials" : "新手教程"}</strong><span className="mt-2 block text-sm leading-6 text-muted-foreground">{en ? "Video tutorials for MAA Box export, manual scheduling, shift changes, and Orundum production." : "MAA 获取 Box、手动抄作业、换班与搓玉视频教程。"}</span></span>
+        <span className="min-w-0"><strong className="block text-lg font-semibold">{uiText.text(en, "beginnerTutorials")}</strong><span className="mt-2 block text-sm leading-6 text-muted-foreground">{uiText.text(en, "videoTutorialsForMaaBoxExportManualScheduling")}</span></span>
         <ArrowRight className="size-5 shrink-0 transition-transform group-hover:translate-x-1" aria-hidden="true" />
       </Link>
 

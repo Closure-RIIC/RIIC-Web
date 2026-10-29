@@ -8,7 +8,7 @@ import { LoadMore } from "@/components/ui/load-more";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
-import { PROFESSION_LABELS, PROFESSION_LABELS_ENGLISH } from "@/operator-presentation";
+import { operatorProfessionLabel } from "@/operator-presentation";
 import { cn } from "@/lib/utils";
 
 export const OPERATOR_PAGE_SIZE = 48;
@@ -62,11 +62,11 @@ export function OperatorRarityFilter({ value, onChange, disabled, rarities = [6,
 export function OperatorProfessionFilter({ value, onChange, disabled }: FilterProps) {
   const intl = useTranslations();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   return <Tabs className="min-w-0 shrink-0" value={value} onValueChange={onChange}>
     <TabsList aria-label={intl("components_operators_OperatorPickerParts.filterByProfession")}>
       <TabsTrigger value="all" disabled={disabled}>{intl("components_operators_OperatorPickerParts.all")}</TabsTrigger>
-      {PROFESSIONS.map((profession) => <TabsTrigger key={profession} value={String(profession)} disabled={disabled}>{(en ? PROFESSION_LABELS_ENGLISH : PROFESSION_LABELS)[profession]}</TabsTrigger>)}
+      {PROFESSIONS.map((profession) => <TabsTrigger key={profession} value={String(profession)} disabled={disabled}>{operatorProfessionLabel(profession, en)}</TabsTrigger>)}
     </TabsList>
   </Tabs>;
 }

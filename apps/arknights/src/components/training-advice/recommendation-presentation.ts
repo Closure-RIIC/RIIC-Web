@@ -1,13 +1,14 @@
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize } from "../../i18n/helpers/components_RecommendationCard.ts";
 import type { OperBoxEntry, UserProfileAction } from "@riic/arknights-domain/types";
 import { legacyTrainingTarget } from "./skill-selection.ts";
 
-function eliteLabel(elite: number | undefined, en: boolean): string | undefined {
+function eliteLabel(elite: number | undefined, en: AppLocale): string | undefined {
   if (elite !== 0 && elite !== 1 && elite !== 2) return undefined;
   return localize.text(en, "eliteStage", { elite: String(elite) });
 }
 
-export function recommendationMessage(action: UserProfileAction, en = false): string {
+export function recommendationMessage(action: UserProfileAction, en: AppLocale = "zh-CN"): string {
   const target = legacyTrainingTarget(action.tier_up_requirement)
     ?? legacyTrainingTarget(action.message.match(/tier_up\s*[（(]需([^（）()]+)[）)]/i)?.[1]);
   const targetLabel = eliteLabel(target?.elite, en);
@@ -22,7 +23,7 @@ export function recommendationMessage(action: UserProfileAction, en = false): st
     ));
 }
 
-export function recommendationCurrentState(action: UserProfileAction, entry?: OperBoxEntry, en = false): string {
+export function recommendationCurrentState(action: UserProfileAction, entry?: OperBoxEntry, en: AppLocale = "zh-CN"): string {
   if (entry && !entry.own) return localize.text(en, "notOwned");
   const current = eliteLabel(action.current_elite ?? entry?.elite, en);
   const target = eliteLabel(legacyTrainingTarget(action.tier_up_requirement)?.elite, en);

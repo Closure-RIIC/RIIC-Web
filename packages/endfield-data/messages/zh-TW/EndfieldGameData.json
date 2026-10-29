@@ -1,0 +1,1246 @@
+{
+  "chr_0002_endminm": {
+    "name": "管理員",
+    "profession": "近衛"
+  },
+  "chr_0015_lifeng": {
+    "name": "黎風",
+    "profession": "近衛"
+  },
+  "chr_0003_endminf": {
+    "name": "管理員",
+    "profession": "近衛"
+  },
+  "chr_0004_pelica": {
+    "name": "佩麗卡",
+    "profession": "術師"
+  },
+  "chr_0005_chen": {
+    "name": "陳千語",
+    "profession": "近衛"
+  },
+  "chr_0012_avywen": {
+    "name": "艾維文娜",
+    "profession": "突擊"
+  },
+  "chr_0031_mifu": {
+    "name": "弭弗",
+    "profession": "近衛"
+  },
+  "chr_0032_lizhiyan": {
+    "name": "訣",
+    "profession": "術師"
+  },
+  "chr_0006_wolfgd": {
+    "name": "狼衛",
+    "profession": "術師"
+  },
+  "chr_0033_camille": {
+    "name": "卡繆",
+    "profession": "先鋒"
+  },
+  "chr_0007_ikut": {
+    "name": "弧光",
+    "profession": "先鋒"
+  },
+  "chr_0013_aglina": {
+    "name": "潔爾佩塔",
+    "profession": "輔助"
+  },
+  "chr_0009_azrila": {
+    "name": "餘燼",
+    "profession": "重灌"
+  },
+  "chr_0011_seraph": {
+    "name": "賽希",
+    "profession": "輔助"
+  },
+  "chr_0038_purrche": {
+    "name": "噗切娜",
+    "profession": "重灌"
+  },
+  "chr_0014_aurora": {
+    "name": "晝雪",
+    "profession": "重灌"
+  },
+  "chr_0018_dapan": {
+    "name": "大潘",
+    "profession": "突擊"
+  },
+  "chr_0016_laevat": {
+    "name": "萊萬汀",
+    "profession": "突擊"
+  },
+  "chr_0026_lastrite": {
+    "name": "別禮",
+    "profession": "突擊"
+  },
+  "chr_0017_yvonne": {
+    "name": "伊馮",
+    "profession": "突擊"
+  },
+  "chr_0021_whiten": {
+    "name": "埃特拉",
+    "profession": "近衛"
+  },
+  "chr_0027_tangtang": {
+    "name": "湯湯",
+    "profession": "術師"
+  },
+  "chr_0036_jsspsi": {
+    "name": "祀",
+    "profession": "輔助"
+  },
+  "chr_0019_karin": {
+    "name": "秋栗",
+    "profession": "先鋒"
+  },
+  "chr_0020_meurs": {
+    "name": "卡契爾",
+    "profession": "重灌"
+  },
+  "chr_0022_bounda": {
+    "name": "螢石",
+    "profession": "術師"
+  },
+  "chr_0023_antal": {
+    "name": "安塔爾",
+    "profession": "輔助"
+  },
+  "chr_0025_ardelia": {
+    "name": "艾爾黛拉",
+    "profession": "輔助"
+  },
+  "chr_0024_deepfin": {
+    "name": "阿列什",
+    "profession": "先鋒"
+  },
+  "chr_0028_wulfa": {
+    "name": "洛西",
+    "profession": "近衛"
+  },
+  "chr_0029_pograni": {
+    "name": "駿衛",
+    "profession": "先鋒"
+  },
+  "chr_0030_zhuangfy": {
+    "name": "莊方宜",
+    "profession": "突擊"
+  },
+  "chr_0034_typhoea": {
+    "name": "提弗洛斯",
+    "profession": "突擊"
+  },
+  "chr_0035_liino": {
+    "name": "梨諾",
+    "profession": "輔助"
+  },
+  "wpn_claym_0003": {
+    "name": "工業零點一"
+  },
+  "wpn_lance_0004": {
+    "name": "嵌合正義"
+  },
+  "wpn_lance_0008": {
+    "name": "天使殺手"
+  },
+  "wpn_sword_0021_ink": {
+    "name": "宏願"
+  },
+  "wpn_claym_0004": {
+    "name": "典範"
+  },
+  "wpn_claym_0006": {
+    "name": "昔日精品"
+  },
+  "wpn_funnel_0019": {
+    "name": "寒夜幽影"
+  },
+  "wpn_lance_0007": {
+    "name": "燈火使命"
+  },
+  "wpn_claym_0007": {
+    "name": "大雷斑"
+  },
+  "wpn_funnel_0014": {
+    "name": "O.B.J.術識"
+  },
+  "wpn_claym_0008": {
+    "name": "破碎君王"
+  },
+  "wpn_claym_0009": {
+    "name": "淬火者"
+  },
+  "wpn_pistol_0011": {
+    "name": "落草"
+  },
+  "wpn_claym_0010": {
+    "name": "達爾霍夫7"
+  },
+  "wpn_claym_0011": {
+    "name": "探驪"
+  },
+  "wpn_claym_0012": {
+    "name": "終點之聲"
+  },
+  "wpn_claym_0013": {
+    "name": "赫拉芬格"
+  },
+  "wpn_pistol_0001": {
+    "name": "佩科5"
+  },
+  "wpn_claym_0014": {
+    "name": "古渠"
+  },
+  "wpn_claym_0015": {
+    "name": "O.B.J.重荷"
+  },
+  "wpn_claym_0016": {
+    "name": "幻想苦痛"
+  },
+  "wpn_funnel_0016": {
+    "name": "四二式·肅陣"
+  },
+  "wpn_claym_0017": {
+    "name": "赤纓"
+  },
+  "wpn_funnel_0017": {
+    "name": "霧中微光"
+  },
+  "wpn_claym_0018": {
+    "name": "玉中身"
+  },
+  "wpn_claym_0019": {
+    "name": "悠久傳承"
+  },
+  "wpn_pistol_0012": {
+    "name": "O.B.J.迅極"
+  },
+  "wpn_funnel_0001": {
+    "name": "全自動駭新星"
+  },
+  "wpn_lance_0011": {
+    "name": "J.E.T."
+  },
+  "wpn_funnel_0002": {
+    "name": "吉米尼12"
+  },
+  "wpn_funnel_0003": {
+    "name": "螢光雷羽"
+  },
+  "wpn_sword_0024": {
+    "name": "聚合工業"
+  },
+  "wpn_funnel_0004": {
+    "name": "迷失荒野"
+  },
+  "wpn_funnel_0005": {
+    "name": "悼亡詩"
+  },
+  "wpn_funnel_0006": {
+    "name": "作品：蝕跡"
+  },
+  "wpn_funnel_0007": {
+    "name": "莫奈何"
+  },
+  "wpn_funnel_0008": {
+    "name": "爆破單元"
+  },
+  "wpn_funnel_0009": {
+    "name": "遺忘"
+  },
+  "wpn_funnel_0010": {
+    "name": "騎士精神"
+  },
+  "wpn_sword_0015": {
+    "name": "仰止"
+  },
+  "wpn_funnel_0011": {
+    "name": "使命必達"
+  },
+  "wpn_lance_0012": {
+    "name": "負山"
+  },
+  "wpn_sword_0005": {
+    "name": "鋼鐵餘音"
+  },
+  "wpn_funnel_0012": {
+    "name": "佈道自由"
+  },
+  "wpn_funnel_0013": {
+    "name": "滄溟星夢"
+  },
+  "wpn_funnel_0015": {
+    "name": "孤舟"
+  },
+  "wpn_funnel_0018": {
+    "name": "聯結點"
+  },
+  "wpn_funnel_0020": {
+    "name": "苦難的盡頭"
+  },
+  "wpn_pistol_0007": {
+    "name": "望鄉"
+  },
+  "wpn_sword_0012": {
+    "name": "熱熔切割器"
+  },
+  "wpn_lance_0003": {
+    "name": "尋路者道標"
+  },
+  "wpn_lance_0009": {
+    "name": "奧佩羅77"
+  },
+  "wpn_lance_0006": {
+    "name": "向心之引"
+  },
+  "wpn_lance_0010": {
+    "name": "驍勇"
+  },
+  "wpn_sword_0003": {
+    "name": "塔爾11"
+  },
+  "wpn_lance_0013": {
+    "name": "O.B.J.尖峰"
+  },
+  "wpn_sword_0006": {
+    "name": "熔鑄火焰"
+  },
+  "wpn_lance_0014": {
+    "name": "曜夜的首演"
+  },
+  "wpn_sword_0007": {
+    "name": "堅城鑄造者"
+  },
+  "wpn_lance_0015": {
+    "name": "鍍紅祝福"
+  },
+  "wpn_sword_0008": {
+    "name": "顯鋒"
+  },
+  "wpn_lance_0016": {
+    "name": "黃金時代"
+  },
+  "wpn_sword_0009": {
+    "name": "浪潮"
+  },
+  "wpn_pistol_0002": {
+    "name": "呼嘯守衛"
+  },
+  "wpn_pistol_0003": {
+    "name": "長路"
+  },
+  "wpn_pistol_0004": {
+    "name": "理性告別"
+  },
+  "wpn_pistol_0005": {
+    "name": "領航者"
+  },
+  "wpn_pistol_0006": {
+    "name": "作品：眾生"
+  },
+  "wpn_sword_0022": {
+    "name": "狼之緋"
+  },
+  "wpn_pistol_0008": {
+    "name": "楔子"
+  },
+  "wpn_pistol_0009": {
+    "name": "同類相食"
+  },
+  "wpn_pistol_0010": {
+    "name": "藝術暴君"
+  },
+  "wpn_sword_0010": {
+    "name": "黯色火炬"
+  },
+  "wpn_sword_0011": {
+    "name": "扶搖"
+  },
+  "wpn_sword_0013": {
+    "name": "顯赫聲名"
+  },
+  "wpn_sword_0014": {
+    "name": "白夜新星"
+  },
+  "wpn_sword_0016": {
+    "name": "不知歸"
+  },
+  "wpn_sword_0017": {
+    "name": "光榮記憶"
+  },
+  "wpn_sword_0018": {
+    "name": "十二問"
+  },
+  "wpn_sword_0021": {
+    "name": "宏願"
+  },
+  "wpn_sword_0019": {
+    "name": "O.B.J.輕芒"
+  },
+  "wpn_sword_0020": {
+    "name": "逐鱗3.0"
+  },
+  "wpn_sword_0023": {
+    "name": "點心時刻"
+  },
+  "wpn_sword_0026": {
+    "name": "遙望"
+  },
+  "spaceship_skill_chr_0015_lifeng_1_1": {
+    "name": "少年意氣·β",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升12%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0015_lifeng_1_2": {
+    "name": "少年意氣·γ",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升16%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0015_lifeng_2_1": {
+    "name": "小大人·α",
+    "description": "進駐會客室時，幹員收集到線索3——宏山科學院的機率小幅提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 3",
+    "clueTierName": "小幅提升"
+  },
+  "spaceship_skill_chr_0015_lifeng_2_2": {
+    "name": "小大人·β",
+    "description": "進駐會客室時，幹員收集到線索3——宏山科學院的機率提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 3",
+    "clueTierName": "提升"
+  },
+  "spaceship_skill_chr_0004_pelica_1_1": {
+    "name": "監督·α",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升8%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0004_pelica_1_2": {
+    "name": "監督·β",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升12%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0004_pelica_2_1": {
+    "name": "協議調度·β",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0004_pelica_2_2": {
+    "name": "協議調度·γ",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升30%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0005_chen_1_1": {
+    "name": "名劍選評·α",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升10%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0005_chen_1_2": {
+    "name": "名劍選評·β",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0005_chen_2_1": {
+    "name": "琢玉·β",
+    "description": "進駐培養艙時，礦物材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "礦物"
+  },
+  "spaceship_skill_chr_0005_chen_2_2": {
+    "name": "琢玉·γ",
+    "description": "進駐培養艙時，礦物材料的培養速度提升30%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "礦物"
+  },
+  "spaceship_skill_chr_0012_avywen_1_1": {
+    "name": "居家顧問·α",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升8%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0012_avywen_1_2": {
+    "name": "居家顧問·β",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升12%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0012_avywen_2_1": {
+    "name": "信使的秘密·α",
+    "description": "進駐會客室時，幹員收集到線索2——環塔商會的機率小幅提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 2",
+    "clueTierName": "小幅提升"
+  },
+  "spaceship_skill_chr_0012_avywen_2_2": {
+    "name": "信使的秘密·β",
+    "description": "進駐會客室時，幹員收集到線索2——環塔商會的機率提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 2",
+    "clueTierName": "提升"
+  },
+  "spaceship_skill_chr_0031_mifu_1_1": {
+    "name": "暗樁眼線·α",
+    "description": "進駐會客室時，幹員收集到線索3——宏山科學院的機率小幅提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 3",
+    "clueTierName": "小幅提升"
+  },
+  "spaceship_skill_chr_0031_mifu_1_2": {
+    "name": "暗樁眼線·β",
+    "description": "進駐會客室時，幹員收集到線索3——宏山科學院的機率提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 3",
+    "clueTierName": "提升"
+  },
+  "spaceship_skill_chr_0031_mifu_2_1": {
+    "name": "草藥偏方·β",
+    "description": "進駐培養艙時，菌類材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "菌類"
+  },
+  "spaceship_skill_chr_0031_mifu_2_2": {
+    "name": "草藥偏方·γ",
+    "description": "進駐培養艙時，菌類材料的培養速度提升30%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "菌類"
+  },
+  "spaceship_skill_chr_0032_lizhiyan_1_1": {
+    "name": "摘山煮海·β",
+    "description": "進駐培養艙時，礦物材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "礦物"
+  },
+  "spaceship_skill_chr_0032_lizhiyan_1_2": {
+    "name": "摘山煮海·γ",
+    "description": "進駐培養艙時，礦物材料的培養速度提升30%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "礦物"
+  },
+  "spaceship_skill_chr_0032_lizhiyan_2_1": {
+    "name": "多識草木·β",
+    "description": "進駐培養艙時，晶植材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "晶植"
+  },
+  "spaceship_skill_chr_0032_lizhiyan_2_2": {
+    "name": "多識草木·γ",
+    "description": "進駐培養艙時，晶植材料的培養速度提升30%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "晶植"
+  },
+  "spaceship_skill_chr_0006_wolfgd_1_1": {
+    "name": "狼群的技巧·α",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升10%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0006_wolfgd_1_2": {
+    "name": "狼群的技巧·β",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0006_wolfgd_2_1": {
+    "name": "荒野卓識·β",
+    "description": "進駐培養艙時，礦物材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "礦物"
+  },
+  "spaceship_skill_chr_0006_wolfgd_2_2": {
+    "name": "荒野卓識·γ",
+    "description": "進駐培養艙時，礦物材料的培養速度提升30%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "礦物"
+  },
+  "spaceship_skill_chr_0033_camille_1_1": {
+    "name": "血晶層析·β",
+    "description": "進駐培養艙時，晶植材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "晶植"
+  },
+  "spaceship_skill_chr_0033_camille_1_2": {
+    "name": "血晶層析·γ",
+    "description": "進駐培養艙時，晶植材料的培養速度提升30%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "晶植"
+  },
+  "spaceship_skill_chr_0033_camille_2_1": {
+    "name": "看護人手冊·β",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0033_camille_2_2": {
+    "name": "看護人手冊·γ",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升30%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0007_ikut_1_1": {
+    "name": "荒野鋒刃·α",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升10%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0007_ikut_1_2": {
+    "name": "荒野鋒刃·β",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0007_ikut_2_1": {
+    "name": "歌謠傳唱·α",
+    "description": "進駐會客室時，幹員收集到線索6——眾生長地的機率小幅提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 6",
+    "clueTierName": "小幅提升"
+  },
+  "spaceship_skill_chr_0007_ikut_2_2": {
+    "name": "歌謠傳唱·β",
+    "description": "進駐會客室時，幹員收集到線索6——眾生長地的機率提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 6",
+    "clueTierName": "提升"
+  },
+  "spaceship_skill_chr_0013_aglina_1_1": {
+    "name": "信使的加工藝術·β",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低14%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0013_aglina_1_2": {
+    "name": "信使的加工藝術·γ",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低18%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0013_aglina_2_1": {
+    "name": "信使的武器知識·β",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0013_aglina_2_2": {
+    "name": "信使的武器知識·γ",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升30%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0009_azrila_1_1": {
+    "name": "北地特訓·β",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0009_azrila_1_2": {
+    "name": "北地特訓·γ",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升30%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0009_azrila_2_1": {
+    "name": "同袍相繫·α",
+    "description": "進駐會客室時，幹員收集到線索4——鐵誓軍的機率小幅提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 4",
+    "clueTierName": "小幅提升"
+  },
+  "spaceship_skill_chr_0009_azrila_2_2": {
+    "name": "同袍相繫·β",
+    "description": "進駐會客室時，幹員收集到線索4——鐵誓軍的機率提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 4",
+    "clueTierName": "提升"
+  },
+  "spaceship_skill_chr_0011_seraph_1_1": {
+    "name": "標準化編譯·α",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升10%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0011_seraph_1_2": {
+    "name": "標準化編譯·β",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0011_seraph_2_1": {
+    "name": "會話與細語·α",
+    "description": "進駐會客室時，幹員收集到線索5——寂語修會的機率小幅提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 5",
+    "clueTierName": "小幅提升"
+  },
+  "spaceship_skill_chr_0011_seraph_2_2": {
+    "name": "會話與細語·β",
+    "description": "進駐會客室時，幹員收集到線索5——寂語修會的機率提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 5",
+    "clueTierName": "提升"
+  },
+  "spaceship_skill_chr_0038_purrche_1_1": {
+    "name": "形象代言人·α",
+    "description": "進駐會客室時，幹員收集到線索2——環塔商會的機率小幅提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 2",
+    "clueTierName": "小幅提升"
+  },
+  "spaceship_skill_chr_0038_purrche_1_2": {
+    "name": "形象代言人·β",
+    "description": "進駐會客室時，幹員收集到線索2——環塔商會的機率提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 2",
+    "clueTierName": "提升"
+  },
+  "spaceship_skill_chr_0038_purrche_2_1": {
+    "name": "任務後的點心·β",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0038_purrche_2_2": {
+    "name": "任務後的點心·γ",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升30%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0014_aurora_1_1": {
+    "name": "救援者的恆心·α",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低10%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0014_aurora_1_2": {
+    "name": "救援者的恆心·β",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低14%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0014_aurora_2_1": {
+    "name": "樂天派·β",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升12%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0014_aurora_2_2": {
+    "name": "樂天派·γ",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升16%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0018_dapan_1_1": {
+    "name": "擅烹山珍·α",
+    "description": "進駐培養艙時，菌類材料的培養速度提升10%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "菌類"
+  },
+  "spaceship_skill_chr_0018_dapan_1_2": {
+    "name": "擅烹山珍·β",
+    "description": "進駐培養艙時，菌類材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "菌類"
+  },
+  "spaceship_skill_chr_0018_dapan_2_1": {
+    "name": "人情練達·β",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升12%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0018_dapan_2_2": {
+    "name": "人情練達·γ",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升16%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0016_laevat_1_1": {
+    "name": "記憶熔爐·β",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0016_laevat_1_2": {
+    "name": "記憶熔爐·γ",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升30%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0016_laevat_2_1": {
+    "name": "不熄炎火·β",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低14%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0016_laevat_2_2": {
+    "name": "不熄炎火·γ",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低18%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0026_lastrite_1_1": {
+    "name": "墓地園藝·β",
+    "description": "進駐培養艙時，晶植材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "晶植"
+  },
+  "spaceship_skill_chr_0026_lastrite_1_2": {
+    "name": "墓地園藝·γ",
+    "description": "進駐培養艙時，晶植材料的培養速度提升30%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "晶植"
+  },
+  "spaceship_skill_chr_0026_lastrite_2_1": {
+    "name": "王庭盛名·α",
+    "description": "進駐會客室時，幹員收集到線索7——塞什卡的機率小幅提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 7",
+    "clueTierName": "小幅提升"
+  },
+  "spaceship_skill_chr_0026_lastrite_2_2": {
+    "name": "王庭盛名·β",
+    "description": "進駐會客室時，幹員收集到線索7——塞什卡的機率提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 7",
+    "clueTierName": "提升"
+  },
+  "spaceship_skill_chr_0017_yvonne_1_1": {
+    "name": "菌類顏料提取·β",
+    "description": "進駐培養艙時，菌類材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "菌類"
+  },
+  "spaceship_skill_chr_0017_yvonne_1_2": {
+    "name": "菌類顏料提取·γ",
+    "description": "進駐培養艙時，菌類材料的培養速度提升30%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "菌類"
+  },
+  "spaceship_skill_chr_0017_yvonne_2_1": {
+    "name": "時尚達人·β",
+    "description": "進駐培養艙時，艙室內幹員心情消耗降低14%",
+    "room": "培養艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0017_yvonne_2_2": {
+    "name": "時尚達人·γ",
+    "description": "進駐培養艙時，艙室內幹員心情消耗降低18%",
+    "room": "培養艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0021_whiten_1_1": {
+    "name": "碎片化休息·α",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升8%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0021_whiten_1_2": {
+    "name": "碎片化休息·β",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升12%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0021_whiten_2_1": {
+    "name": "監聽頻段·β",
+    "description": "進駐會客室時，幹員收集線索的效率提升20%",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 線索收集效率提升"
+  },
+  "spaceship_skill_chr_0021_whiten_2_2": {
+    "name": "監聽頻段·γ",
+    "description": "進駐會客室時，幹員收集線索的效率提升30%",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 線索收集效率提升"
+  },
+  "spaceship_skill_chr_0027_tangtang_1_1": {
+    "name": "大當家·β",
+    "description": "進駐培養艙時，艙室內幹員心情消耗降低14%",
+    "room": "培養艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0027_tangtang_1_2": {
+    "name": "大當家·γ",
+    "description": "進駐培養艙時，艙室內幹員心情消耗降低18%",
+    "room": "培養艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0027_tangtang_2_1": {
+    "name": "河流的女兒·β",
+    "description": "進駐培養艙時，晶植材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "晶植"
+  },
+  "spaceship_skill_chr_0027_tangtang_2_2": {
+    "name": "河流的女兒·γ",
+    "description": "進駐培養艙時，晶植材料的培養速度提升30%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "晶植"
+  },
+  "spaceship_skill_chr_0036_jsspsi_1_1": {
+    "name": "點器為倀·β",
+    "description": "進駐會客室時，幹員收集線索的效率提升20%",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 線索收集效率提升"
+  },
+  "spaceship_skill_chr_0036_jsspsi_1_2": {
+    "name": "點器為倀·γ",
+    "description": "進駐會客室時，幹員收集線索的效率提升30%",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 線索收集效率提升"
+  },
+  "spaceship_skill_chr_0036_jsspsi_2_1": {
+    "name": "墨魎代勞·β",
+    "description": "進駐會客室時，艙室內幹員心情消耗降低14%",
+    "room": "會客室(線索)",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0036_jsspsi_2_2": {
+    "name": "墨魎代勞·γ",
+    "description": "進駐會客室時，艙室內幹員心情消耗降低18%",
+    "room": "會客室(線索)",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0019_karin_1_1": {
+    "name": "咖啡或茶·α",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低10%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0019_karin_1_2": {
+    "name": "咖啡或茶·β",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低14%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0019_karin_2_1": {
+    "name": "破冰遊戲·β",
+    "description": "進駐會客室時，艙室內幹員心情消耗降低14%",
+    "room": "會客室(線索)",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0019_karin_2_2": {
+    "name": "破冰遊戲·γ",
+    "description": "進駐會客室時，艙室內幹員心情消耗降低18%",
+    "room": "會客室(線索)",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0020_meurs_1_1": {
+    "name": "緘默關懷·α",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升8%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0020_meurs_1_2": {
+    "name": "緘默關懷·β",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升12%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0020_meurs_2_1": {
+    "name": "務實心態·β",
+    "description": "進駐培養艙時，艙室內幹員心情消耗降低14%",
+    "room": "培養艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0020_meurs_2_2": {
+    "name": "務實心態·γ",
+    "description": "進駐培養艙時，艙室內幹員心情消耗降低18%",
+    "room": "培養艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0022_bounda_1_1": {
+    "name": "荒蕪行者·α",
+    "description": "進駐培養艙時，礦物材料的培養速度提升10%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "礦物"
+  },
+  "spaceship_skill_chr_0022_bounda_1_2": {
+    "name": "荒蕪行者·β",
+    "description": "進駐培養艙時，礦物材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "礦物"
+  },
+  "spaceship_skill_chr_0022_bounda_2_1": {
+    "name": "知人所想·β",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升12%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0022_bounda_2_2": {
+    "name": "知人所想·γ",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升16%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0023_antal_1_1": {
+    "name": "實驗性施術單元·α",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升10%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0023_antal_1_2": {
+    "name": "實驗性施術單元·β",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0023_antal_2_1": {
+    "name": "冷笑話學習·β",
+    "description": "進駐培養艙時，艙室內幹員心情消耗降低14%",
+    "room": "培養艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0023_antal_2_2": {
+    "name": "冷笑話學習·γ",
+    "description": "進駐培養艙時，艙室內幹員心情消耗降低18%",
+    "room": "培養艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0025_ardelia_1_1": {
+    "name": "大地的故事·β",
+    "description": "進駐會客室時，幹員收集線索的效率提升20%",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 線索收集效率提升"
+  },
+  "spaceship_skill_chr_0025_ardelia_1_2": {
+    "name": "大地的故事·γ",
+    "description": "進駐會客室時，幹員收集線索的效率提升30%",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 線索收集效率提升"
+  },
+  "spaceship_skill_chr_0025_ardelia_2_1": {
+    "name": "多利先生的遊戲·β",
+    "description": "進駐會客室時，艙室內幹員心情消耗降低14%",
+    "room": "會客室(線索)",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0025_ardelia_2_2": {
+    "name": "多利先生的遊戲·γ",
+    "description": "進駐會客室時，艙室內幹員心情消耗降低18%",
+    "room": "會客室(線索)",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0024_deepfin_1_1": {
+    "name": "悠閒垂釣·α",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升8%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0024_deepfin_1_2": {
+    "name": "悠閒垂釣·β",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升12%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0024_deepfin_2_1": {
+    "name": "釣友情報網·α",
+    "description": "進駐會客室時，幹員收集到線索1——聯盟工團的機率小幅提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 1",
+    "clueTierName": "小幅提升"
+  },
+  "spaceship_skill_chr_0024_deepfin_2_2": {
+    "name": "釣友情報網·β",
+    "description": "進駐會客室時，幹員收集到線索1——聯盟工團的機率提升（進駐即生效，同類不可疊加）",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 指定線索出現機率提升",
+    "target": "線索 1",
+    "clueTierName": "提升"
+  },
+  "spaceship_skill_chr_0028_wulfa_1_1": {
+    "name": "氏族的禮儀·β",
+    "description": "進駐會客室時，艙室內幹員心情消耗降低14%",
+    "room": "會客室(線索)",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0028_wulfa_1_2": {
+    "name": "氏族的禮儀·γ",
+    "description": "進駐會客室時，艙室內幹員心情消耗降低18%",
+    "room": "會客室(線索)",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0028_wulfa_2_1": {
+    "name": "狩獵嗅覺·β",
+    "description": "進駐會客室時，幹員收集線索的效率提升20%",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 線索收集效率提升"
+  },
+  "spaceship_skill_chr_0028_wulfa_2_2": {
+    "name": "狩獵嗅覺·γ",
+    "description": "進駐會客室時，幹員收集線索的效率提升30%",
+    "room": "會客室(線索)",
+    "effectName": "會客室 · 線索收集效率提升"
+  },
+  "spaceship_skill_chr_0029_pograni_1_1": {
+    "name": "先利其器·β",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0029_pograni_1_2": {
+    "name": "先利其器·γ",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升30%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0029_pograni_2_1": {
+    "name": "鼓舞士氣·β",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低14%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0029_pograni_2_2": {
+    "name": "鼓舞士氣·γ",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低18%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0030_zhuangfy_1_1": {
+    "name": "管代經驗·β",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低14%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0030_zhuangfy_1_2": {
+    "name": "管代經驗·γ",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低18%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0030_zhuangfy_2_1": {
+    "name": "天師養氣法·β",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0030_zhuangfy_2_2": {
+    "name": "天師養氣法·γ",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升30%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0034_typhoea_1_1": {
+    "name": "晶石低語·β",
+    "description": "進駐培養艙時，礦物材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "礦物"
+  },
+  "spaceship_skill_chr_0034_typhoea_1_2": {
+    "name": "晶石低語·γ",
+    "description": "進駐培養艙時，礦物材料的培養速度提升30%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "礦物"
+  },
+  "spaceship_skill_chr_0034_typhoea_2_1": {
+    "name": "孢子生靈·β",
+    "description": "進駐培養艙時，菌類材料的培養速度提升20%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "菌類"
+  },
+  "spaceship_skill_chr_0034_typhoea_2_2": {
+    "name": "孢子生靈·γ",
+    "description": "進駐培養艙時，菌類材料的培養速度提升30%",
+    "room": "培養艙",
+    "effectName": "培養艙 · 指定質料培養速度提升",
+    "target": "菌類"
+  },
+  "spaceship_skill_chr_0035_liino_1_1": {
+    "name": "偶像的熱忱·β",
+    "description": "進駐會客室時，艙室內幹員心情消耗降低14%",
+    "room": "會客室(線索)",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0035_liino_1_2": {
+    "name": "偶像的熱忱·γ",
+    "description": "進駐會客室時，艙室內幹員心情消耗降低18%",
+    "room": "會客室(線索)",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0035_liino_2_1": {
+    "name": "演出餘韻·β",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升12%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0035_liino_2_2": {
+    "name": "演出餘韻·γ",
+    "description": "進駐總控中樞時，所有幹員心情恢復提升16%",
+    "room": "總控中樞",
+    "effectName": "全員心情恢復提升"
+  }
+}

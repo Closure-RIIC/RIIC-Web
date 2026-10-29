@@ -23,8 +23,8 @@ function text(value: unknown, max: number, required = true): string {
 }
 
 function localized(value: unknown, max: number): ReleaseText {
-  const record = object(value, ["zh", "en"]);
-  return { zh: text(record.zh, max), en: text(record.en ?? "", max, false) };
+  const record = object(value, ["zh", "en", "tw"]);
+  return { zh: text(record.zh, max), en: text(record.en ?? "", max, false), ...(record.tw !== undefined ? { tw: text(record.tw, max, false) } : {}) };
 }
 
 export function parseReleaseDraft(value: unknown): ReleaseDraft {
