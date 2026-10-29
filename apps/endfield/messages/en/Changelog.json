@@ -1,4 +1,10 @@
 {
   "featuresAndExperienceUpdatesForTheDijiangInfrastructureTerminal": "Features and experience updates for the Dijiang infrastructure terminal.",
-  "developmentPreview": "Development preview"
+  "developmentPreview": "Development preview",
+  "added": "Added",
+  "improved": "Improved",
+  "fixed": "Fixed",
+  "loadFailed": "The changelog is unavailable. Early development notes remain below.",
+  "retry": "Refresh",
+  "loading": "Loading…"
 }

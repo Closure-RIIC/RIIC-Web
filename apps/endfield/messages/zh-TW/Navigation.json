@@ -7,5 +7,6 @@
   "settings": "設定",
   "docs": "幫助檔案",
   "changelog": "更新日誌",
-  "siteTitle": "帝江號基建終端"
+  "siteTitle": "帝江號基建終端",
+  "changelogAdmin": "更新日誌管理"
 }

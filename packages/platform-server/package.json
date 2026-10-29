@@ -101,7 +101,10 @@
     "./solver-timeout": "./src/solver-timeout.ts",
     "./workspace": "./src/workspace.ts",
     "./workspace-crypto": "./src/workspace-crypto.ts",
-    "./workspace-payload": "./src/workspace-payload.ts"
+    "./workspace-payload": "./src/workspace-payload.ts",
+    "./releases/service": "./src/releases/service.ts",
+    "./releases/api": "./src/releases/api.ts",
+    "./public-data-cache": "./src/public-data-cache.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.12",

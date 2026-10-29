@@ -1,6 +1,7 @@
 import { parseWebsiteSession } from "@riic/contracts/account-session";
 import { withPlatformRequest } from "./request-context";
 import { sharedSessionConfiguration } from "./auth/shared-session";
+import { isEndfieldReleasePath } from "./proxy";
 
 type Handler = (request: Request, context: { params: Promise<{ id: string }> }) => Promise<Response>;
 type Routes = Partial<Record<string, Handler>>;
@@ -41,6 +42,7 @@ async function dispatch(request: Request): Promise<Response> {
     const { websiteSession } = await import("./auth");
     return Response.json(parseWebsiteSession(await websiteSession(request)));
   }
+  if (isEndfieldReleasePath(url.pathname)) return (await import("./releases/api")).handleEndfieldReleases(request);
   const endfield = /^\/api\/endfield\/skland\/([a-z-]+)$/.exec(url.pathname);
   if (url.pathname === "/api/platform/endfield-access") {
     return (await import("./auth/endfield-access")).endfieldAccessResponse(request);

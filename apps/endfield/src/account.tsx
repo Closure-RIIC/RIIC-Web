@@ -10,6 +10,15 @@ function useAccountState(initialSession?: WebsiteSessionData | null) {
   const [pending, setPending] = useState(initialSession === undefined);
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState<AccountAction | null>(null);
+  const [adminOwner, setAdminOwner] = useState<string | null>(null);
+  useEffect(() => {
+    if (!session) return;
+    const controller = new AbortController();
+    void fetch("/api/endfield/admin/access", { credentials: "same-origin", cache: "no-store", signal: AbortSignal.any([controller.signal, AbortSignal.timeout(5000)]) })
+      .then(response => { if (!controller.signal.aborted) setAdminOwner(response.ok ? session.user.id : null); })
+      .catch(() => { if (!controller.signal.aborted) setAdminOwner(null); });
+    return () => controller.abort();
+  }, [session]);
   const revision = useRef(0);
   const actionPending = useRef(false);
   const owner = useRef(initialSession?.user.id);
@@ -70,7 +79,7 @@ function useAccountState(initialSession?: WebsiteSessionData | null) {
       actionPending.current = false; setBusy(null); setPending(false);
     }
   }
-  return { session, pending, failed, busy, refresh, run };
+  return { session, pending, failed, busy, refresh, run, isAdmin: Boolean(session && adminOwner === session.user.id) };
 }
 const AccountContext = createContext<ReturnType<typeof useAccountState> | null>(null);
 export function AccountProvider({ children, initialSession }: { children: ReactNode; initialSession?: WebsiteSessionData | null }) {
