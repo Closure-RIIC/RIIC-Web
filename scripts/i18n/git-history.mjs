@@ -55,6 +55,9 @@ export const messageGitHistory = {
     }
     const resources = new Map(ctx.resources.filter(r => !r.block).map(r => [path.relative(top, path.resolve(root, r.path)).replaceAll("\\", "/"), r]));
     const commits = new Map(), head = new Map(), ids = new Set();
+    // A catalog migration adds hundreds of files in one commit. Detect that
+    // commit's renames once, rather than running the same full diff per file.
+    const renameDiffs = new Map();
     const queue = [{ revision: "HEAD", resources }];
     const visited = new Set();
     for (let item = queue.shift(); item; item = queue.shift()) {
@@ -71,11 +74,19 @@ export const messageGitHistory = {
             let oldBlob = before;
             // Follow renames without passing all historical paths to Git at once.
             if (status === "A") {
-              const renames = await git(top, ["diff-tree", "-r", "-M", "--raw", "--no-abbrev", "--no-commit-id", sha]);
-              for (const rename of renames.trim().split("\n")) {
-                const [info, from, to] = rename.split("\t");
-                if (to !== file || !info.split(" ")[4]?.startsWith("R")) continue;
-                oldBlob = info.split(" ")[2];
+              if (!renameDiffs.has(sha)) {
+                const output = await git(top, ["diff-tree", "-r", "-M", "--raw", "--no-abbrev", "--no-commit-id", sha]);
+                const renames = new Map();
+                for (const line of output.trim().split("\n")) {
+                  const [info, from, to] = line.split("\t");
+                  if (info.split(" ")[4]?.startsWith("R")) renames.set(to, { from, before: info.split(" ")[2] });
+                }
+                renameDiffs.set(sha, renames);
+              }
+              const rename = renameDiffs.get(sha).get(file);
+              if (rename) {
+                const { from, before } = rename;
+                oldBlob = before;
                 const key = `${sha}:${from}`;
                 if (!visited.has(key)) { visited.add(key); queue.push({ revision: `${sha}^`, resources: new Map([[from, resource]]) }); }
               }

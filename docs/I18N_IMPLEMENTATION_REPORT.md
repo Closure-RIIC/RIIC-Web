@@ -27,7 +27,8 @@
 
 | 范围 | 本地结果 |
 | --- | --- |
-| `check:i18n` | 26 项非 UI 测试通过；x18n 检查无诊断 |
+| `check:i18n` | 26 项非 UI 测试通过；提交后完整历史扫描无错误，保留 5 条已核对的英文历史过时提醒 |
+| 跨平台生成与历史扫描 | Windows 与 CI 同版 Linux Node 的两站资源清单及引用清单校验通过；按提交复用重命名差异，历史语义回归通过 |
 | 两站类型与生产构建 | 通过；方舟使用与 CI 相同的生产/森空岛/云同步开关 |
 | 平台与根工具类型 | 通过 |
 | ESLint、工作区约定 | 通过；工作区测试 4 项 |
@@ -44,6 +45,8 @@
 | `git diff --check`、公开仓库边界 | 通过；移除了本地预览生成的存储标记 |
 
 普通用户矩阵使用客户端 API 模拟和会话刷新，不等同真实登录的服务端 SSR 集成。没有运行本地 UI 单元测试；保留既有 CI 门禁，并在平台测试入口加入 HTML 压缩回归。本地结果不代表远端 CI、部署或线上验收结果。
+
+提交后 x18n 沿重命名追溯出 5 条旧英文的 `stale-translation` 提醒：`components_pages_ManualSchedulePage` 的 `invalidMaaSchedule`、`importScheduleFile`、`importMaaScheduleQuestion`，`components_setup_ManualOperboxPicker.selectAllAtMaxElite` 和 `setup_dialog.timeRanges`。已对照当前简体及对应操作核对，没有发现语义冲突；保留提醒，不以关闭检查或无意义改写刷新历史日期。
 
 关闭森空岛的默认构建在本批和未修改基线上均不能通过现有“客户端不含森空岛文案”检查。发布配置按既有 CI 显式开启森空岛，并通过对应检查；没有放宽此检查来消除失败。
 
