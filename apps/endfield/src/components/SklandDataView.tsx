@@ -1,10 +1,10 @@
-import { useEndfieldLanguage } from "../i18n/client";
 import { displayText } from "../i18n/game-data";
 const detailFieldKeys = new Set(["base","chars","spaceShip","domain","achieve","bpSystem","dailyMission","dungeon","config","currentTs","avatarUrl","charNum","createTime","docNum","exp","gender","lastLoginTime","level","mainMission","description","desc","id","name","roleId","saveTime","serverName","weaponNum","worldLevel","curLevel","maxLevel","ownTs","potentialLevel","evolvePhase","armEquip","bodyEquip","firstAccessory","secondAccessory","weapon","weapons","breakthroughLevel","gem","icon","iconUrl","refineLevel","weaponData","function","rarity","skills","type","charData","avatarRtUrl","avatarSqUrl","illustrationUrl","labelType","profession","property","descLevelParams","descParams","params","tags","weaponType","tacticalItem","activeEffectType","activeEffect","passiveEffect","activeEffectParams","passiveEffectParams","userSkills","skillId","charIds","charSwitch","dailyActivation","maxDailyActivation","collections","blackboxCount","levelId","pieceCount","puzzleCount","trchestCount","domainId","factory","moneyMgr","curStamina","maxStamina","maxTs","settlements","officerCharIds","remainMoney","quickaccess","link","rooms","charId","favorability","physicalStrength","reports","char","createdTimeTs","output","achieveMedals","count","display","equipData","isAccessory","pkg","properties","key","value","talent","latestSpaceshipSkillNodes","nodeId","weaponId","skillLevel"]);
 import { useState, type ReactNode } from "react";
 import { Section } from "@riic/endfield-ui";
 import { type DetailRecord, type DetailValue } from "@riic/endfield-skland/details";
 import type { EndfieldRole, EndfieldSnapshot } from "@riic/endfield-skland/model";
+import { useWorkspace } from "../state";
 import { SklandProgress } from "./SklandProgress";
 import { SklandInventory } from "./SklandInventory";
 import { Tabs, CompactTabsList, TabsTrigger, TabsContent } from "@riic/ui-primitives/tabs";
@@ -30,7 +30,7 @@ function Disclosure({ title, count, children }: { title: string; count?: number;
 
 /** Details within the selected categories render only when expanded. */
 function DataFields({ value, names, field = "" }: { value: DetailValue; names: Map<string, string>; field?: string }) {
-  const { locale, t } = useEndfieldLanguage();
+  const { locale, t } = useWorkspace();
   const label = (key: string) => detailFieldKeys.has(key) ? t(`SklandFields.${key}`) : names.get(key) ?? key;
   if (value === null) return <span className="ef-muted">{t("SklandDataView.noData")}</span>;
   if (typeof value === "boolean") return <span>{value ? t("SklandDataView.yes") : t("SklandDataView.no")}</span>;
@@ -49,7 +49,7 @@ function DataFields({ value, names, field = "" }: { value: DetailValue; names: M
   if (Array.isArray(value)) return <div className="ef-data-list">{value.map((item, i) => {
     if (item && typeof item === "object") {
       const row = record(item);
-      return <Disclosure key={i} title={names.get(nameOf(row.charId)) || displayText(operatorData(nameOf(row.name)), "name", locale) || nameOf(row.name) || nameOf(row.description) || `${t("SklandDataView.record")} ${i + 1}`}>
+      return <Disclosure key={i} title={displayText(operatorData(nameOf(row.name)), "name", locale) || nameOf(row.name) || nameOf(row.description) || names.get(nameOf(row.charId)) || `${t("SklandDataView.record")} ${i + 1}`}>
         <DataFields value={item} names={names} />
       </Disclosure>;
     }
@@ -80,7 +80,7 @@ function ProgressDetails({ label, data, currentKey, maxKey, names }: {
 }
 
 export function SklandProfile({ snapshot, role, accountLabel }: { snapshot: EndfieldSnapshot | null; role?: EndfieldRole; accountLabel?: string }) {
-  const { t, locale } = useEndfieldLanguage();
+  const { t, locale } = useWorkspace();
   const base = record(snapshot?.details?.base);
   const name = snapshot?.role.name || role?.nickname || accountLabel || t("SklandDataView.sklandAccount");
   const server = snapshot?.role.serverName || role?.serverName;
@@ -99,7 +99,7 @@ export function SklandProfile({ snapshot, role, accountLabel }: { snapshot: Endf
 }
 
 export function SklandDataView({ snapshot }: { snapshot: EndfieldSnapshot }) {
-  const { t, locale } = useEndfieldLanguage();
+  const { t, locale } = useWorkspace();
   const [search, setSearch] = useState("");
   const [weaponSearch, setWeaponSearch] = useState("");
   const data: DetailRecord = snapshot.details ?? { base: snapshot.role, chars: snapshot.characters, spaceShip: { rooms: snapshot.rooms } };
@@ -108,7 +108,7 @@ export function SklandDataView({ snapshot }: { snapshot: EndfieldSnapshot }) {
   const names = new Map(snapshot.characters.map(char => [char.id, displayText(operatorData(char.id) ?? operatorData(char.name), "name", locale) || char.name]));
   for (const item of allChars) {
     const char = record(item), profile = record(char.charData);
-    if (nameOf(char.id) && nameOf(profile.name)) names.set(nameOf(char.id), displayText(operatorData(nameOf(profile.id) || nameOf(profile.name)), "name", locale) || nameOf(profile.name));
+    if (nameOf(char.id) && nameOf(profile.name)) names.set(nameOf(char.id), displayText(operatorData(nameOf(profile.id)) ?? operatorData(nameOf(profile.name)), "name", locale) || nameOf(profile.name));
   }
   const characters = allChars.filter(item => {
     const char = record(item), profile = record(char.charData), display = operatorData(nameOf(profile.id));

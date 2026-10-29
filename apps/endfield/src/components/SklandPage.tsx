@@ -1,4 +1,3 @@
-import { useEndfieldLanguage } from "../i18n/client";
 import { useEffect, useEffectEvent, useRef, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import { RefreshCw, LogOut, UserPlus } from "lucide-react";
@@ -28,8 +27,7 @@ function savedSelection(): { accountId?: string; role?: string; ownerKey?: strin
 }
 
 export function SklandPage() {
-  const { t } = useEndfieldLanguage();
-  const { update, ready, setSklandSnapshot, reportSklandSync, setSklandSyncActivity, sklandSyncReport, setSklandSyncReport, setSklandSyncDetailsOpen } = useWorkspace();
+  const { update, ready, t, setSklandSnapshot, reportSklandSync, setSklandSyncActivity, sklandSyncReport, setSklandSyncReport, setSklandSyncDetailsOpen } = useWorkspace();
   const [origin, setOrigin] = useState<string>();
   const [loginOpen, setLoginOpen] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);

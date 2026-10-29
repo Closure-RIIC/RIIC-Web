@@ -1,13 +1,13 @@
-import { useEndfieldLanguage } from "../i18n/client";
 import { useState } from "react";
 import { Notice, Section } from "@riic/endfield-ui";
 import type { EndfieldInventory, EndfieldMaterialGroup } from "@riic/endfield-skland/inventory";
 import { inventoryExperienceSummary } from "@riic/endfield-skland/inventory-summary";
+import { useWorkspace } from "../state";
 import { SearchInput } from "@riic/ui-primitives/search-input";
 import { Tabs, TabsList, TabsTrigger } from "@riic/ui-primitives/tabs";
 
 export function SklandInventory({ inventory }: { inventory?: EndfieldInventory }) {
-  const { t, locale } = useEndfieldLanguage();
+  const { t, locale } = useWorkspace();
   const [search, setSearch] = useState("");
   const [group, setGroup] = useState("all");
   const items = inventory?.items ?? [];

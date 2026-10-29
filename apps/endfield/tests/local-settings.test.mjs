@@ -21,11 +21,9 @@ test("Endfield cleanup only removes its own keys and handles corrupt archives", 
   assert.deepEqual([...local], [["riic-web-user-settings", "keep"]]);
   assert.deepEqual([...session], [["unrelated", "keep"]]);
 });
-test("Endfield defaults to Simplified Chinese unless its own language was selected", () => {
+test("Endfield uses its own language after migration, regardless of the Arknights cookie", () => {
   assert.equal(readEndfieldLocale(""), "zh-CN");
-  assert.equal(readEndfieldLocale("riic-locale=en"), "zh-CN");
-  assert.equal(readEndfieldLocale("riic-locale=zh-TW"), "zh-CN");
-  assert.equal(readEndfieldLocale("riic-endfield-locale=invalid; riic-locale=en"), "zh-CN");
+  assert.equal(readEndfieldLocale("riic-locale=en"), "en");
   assert.equal(readEndfieldLocale("riic-locale=en;riic-endfield-locale=zh"), "zh-CN");
   assert.equal(readEndfieldLocale("riic-endfield-locale=en; riic-locale=zh"), "en");
   assert.equal(readEndfieldLocale("riic-endfield-locale=zh-Hant; riic-locale=en"), "zh-TW");

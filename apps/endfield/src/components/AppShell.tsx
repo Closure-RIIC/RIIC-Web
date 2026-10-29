@@ -1,6 +1,4 @@
 import { useEndfieldLanguage } from "../i18n/client";
-import { loadMessages } from "../i18n/messages";
-import { pageNamespaces } from "../i18n/feature-manifest";
 import { type CSSProperties, type ReactNode } from "react";
 import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 import { Calculator, SquarePen, Search, Cloud, BookOpenCheck } from "lucide-react";
@@ -33,7 +31,6 @@ function AccountMenu() {
 }
 function Navigation() {
   const { locale, t } = useWorkspace();
-  const warmMessages = (pathname: string) => { void loadMessages(locale, pageNamespaces(pathname)).catch(() => { /* Navigation retries failed optional preloads. */ }); };
   const { isAdmin } = useAccount();
   const path = useRouterState({ select: s => s.location.pathname });
   const { setOpenMobile } = useSidebar();
@@ -56,7 +53,7 @@ function Navigation() {
     <SidebarHeader className={nav.header}><GameSwitcher game="endfield" locale={locale} targetOrigin={import.meta.env.VITE_ARKNIGHTS_ORIGIN} /><SidebarTrigger className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground" /></SidebarHeader>
     <SidebarContent>{groups.map(group => <SidebarGroup key={group.label}><SidebarGroupLabel>{group.label}</SidebarGroupLabel><SidebarMenu>
       {group.links.map(({ to, label, icon: Icon }) => <SidebarMenuItem key={to}><SidebarMenuButton
-        render={<Link to={to} preload="intent" onMouseEnter={() => warmMessages(to)} onFocus={() => warmMessages(to)} aria-label={label} aria-current={path === to ? "page" : undefined} onClick={() => setOpenMobile(false)} />}
+        render={<Link to={to} preload={false} aria-label={label} aria-current={path === to ? "page" : undefined} onClick={() => setOpenMobile(false)} />}
         isActive={path === to} tooltip={label} className="ef-nav-link"><Icon /><span className={nav.copy}>{label}</span></SidebarMenuButton></SidebarMenuItem>)}
     </SidebarMenu></SidebarGroup>)}</SidebarContent>
     <SidebarFooter className={nav.footer}><AccountMenu /></SidebarFooter>
