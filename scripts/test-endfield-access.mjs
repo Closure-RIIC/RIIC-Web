@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { readdir } from "node:fs/promises";
-import { createServer } from "node:http";
+import { createServer, request as httpRequest } from "node:http";
 import { setTimeout } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
@@ -10,10 +10,24 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 const adminCookie = "better-auth.session_token=isolated-admin-fixture";
 const userCookie = "better-auth.session_token=ordinary-user";
 let allowed = true;
+let signInCalls = 0;
 const account = createServer((request, response) => {
   response.setHeader("Content-Type", "application/json");
   response.setHeader("Cache-Control", "private, no-store");
-  if (request.url === "/api/platform/endfield-access") {
+  if (request.url === "/api/auth/sign-in/email") {
+    signInCalls++;
+    assert.equal(request.headers.origin, "https://endfield.example.test");
+    assert.equal(request.headers["x-forwarded-proto"], "https");
+    assert.equal(request.headers["x-forwarded-host"], "endfield.example.test");
+    assert.equal(request.headers.cookie, "");
+    let body = "";
+    request.on("data", chunk => { body += chunk; });
+    request.on("end", () => {
+      assert.deepEqual(JSON.parse(body), { email: "fixture@example.test", password: "fixture-only-password", callbackURL: "https://endfield.example.test/" });
+      response.setHeader("Set-Cookie", "better-auth.session_token=ordinary-user; Path=/; HttpOnly; Secure; SameSite=Lax");
+      response.end(JSON.stringify({ token: "not-for-the-client", user: { id: "fixture-user" } }));
+    });
+  } else if (request.url === "/api/platform/endfield-access") {
     response.writeHead(allowed && request.headers.cookie === adminCookie ? 204 : 403).end();
   } else if (request.url?.startsWith("/api/auth/get-session")) {
     const id = request.headers.cookie === adminCookie ? "fixture-admin" : request.headers.cookie === userCookie ? "fixture-user" : null;
@@ -49,6 +63,27 @@ try {
   const origin = `http://127.0.0.1:${port}`;
   const request = (path, cookie, options = {}) => fetch(origin + path, {
     ...options, headers: { ...(cookie ? { cookie } : {}), ...options.headers }, signal: AbortSignal.timeout(10000),
+  });
+  // Native fetch rewrites Host; use the HTTP client to model the TLS ingress.
+  const proxyRequest = (path, cookie, options = {}) => new Promise((resolve, reject) => {
+    const upstream = httpRequest(origin + path, {
+      method: options.method ?? "GET",
+      headers: { host: "endfield.example.test", "x-forwarded-proto": "https", ...(cookie ? { cookie } : {}), ...options.headers },
+    }, response => {
+      const chunks = [];
+      response.on("data", chunk => chunks.push(chunk));
+      response.on("error", reject);
+      response.on("end", () => {
+        const headers = new Headers();
+        for (const [name, value] of Object.entries(response.headers)) {
+          for (const item of Array.isArray(value) ? value : value === undefined ? [] : [value]) headers.append(name, item);
+        }
+        resolve(new Response(Buffer.concat(chunks), { status: response.statusCode, headers }));
+      });
+    });
+    upstream.on("error", reject);
+    upstream.setTimeout(10000, () => upstream.destroy(new Error("TLS proxy fixture timed out")));
+    upstream.end(options.body);
   });
   let ready = false;
   for (let attempt = 0; attempt < 120; attempt++) {
@@ -99,6 +134,17 @@ try {
     await setTimeout(100);
   }
   assert.ok(ready, "Public Endfield starts without an account session");
+  const proxyHeaders = { host: "endfield.example.test", "x-forwarded-proto": "https", origin: "https://endfield.example.test", "content-type": "application/json" };
+  const signInBody = JSON.stringify({ email: "fixture@example.test", password: "fixture-only-password", callbackURL: "https://endfield.example.test/" });
+  const signIn = await proxyRequest("/api/auth/sign-in/email", undefined, { method: "POST", headers: proxyHeaders, body: signInBody });
+  assert.equal(signIn.status, 200, "A fresh HTTPS visitor can sign in through the local TLS proxy");
+  assert.deepEqual(await signIn.json(), { success: true });
+  assert.match(signIn.headers.get("set-cookie"), /better-auth\.session_token=ordinary-user;.*HttpOnly; Secure/);
+  assert.equal((await (await proxyRequest("/api/auth/get-session", userCookie, { headers: proxyHeaders })).json()).user.id, "fixture-user");
+  for (const invalidOrigin of ["https://untrusted.example", "http://endfield.example.test"]) {
+    assert.equal((await proxyRequest("/api/auth/sign-in/email", undefined, { method: "POST", headers: { ...proxyHeaders, origin: invalidOrigin }, body: signInBody })).status, 403);
+  }
+  assert.equal(signInCalls, 1, "Invalid origins never reach the account service");
   for (const cookie of [undefined, userCookie, "role=admin", adminCookie]) {
     for (const path of ["/", "/manual", "/skills", "/skland", `/assets/${asset}`]) {
       const response = await request(path, cookie);
