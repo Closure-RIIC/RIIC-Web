@@ -8,16 +8,17 @@ for (const app of ["arknights", "endfield"]) {
   const loader = fs.readFileSync(`${appRoot}/i18n/messages.ts`, "utf8");
   const namespaces = new Set(JSON.parse(loader.match(/export const messageNamespaces = (\[[^\n]+\]);/)[1]));
   const graph = createModuleGraph(namespaces), entries = new Set(), routes = [];
-  for (const file of fs.readdirSync(appRoot, { recursive: true }).filter(f => /\.tsx$/.test(f))) {
+  for (const file of fs.readdirSync(appRoot, { recursive: true }).map(normalize).sort().filter(f => /\.tsx$/.test(f))) {
     const absolute = path.resolve(appRoot, file), source = fs.readFileSync(absolute, "utf8");
     const route = source.match(/createFileRoute\("([^"]+)"\)/)?.[1];
-    if (route || file === "routes/__root.tsx" || file === "routes\\__root.tsx") {
+    if (route || file === "routes/__root.tsx") {
       entries.add(absolute); if (route) routes.push({ route, module: normalize(path.relative(process.cwd(), absolute)) });
     }
     for (const target of graph.inspect(absolute).dynamic) if (/\.[cm]?tsx?$/.test(target)) entries.add(target);
     for (const match of source.matchAll(/(?:withMessages|lazyWithMessages)\([\s\S]*?"((?:apps|packages)\/[^"\n]+)"\)/g)) entries.add(path.resolve(match[1]));
   }
-  const features = Object.fromEntries([...entries].sort().map(file => [normalize(path.relative(process.cwd(), file)), [...graph.resources(file)].sort()]));
+  // Sort portable relative paths: Windows separators order files and folders differently.
+  const features = Object.fromEntries([...entries].map(file => normalize(path.relative(process.cwd(), file))).sort().map(file => [file, [...graph.resources(path.resolve(file))].sort()]));
   const rootId = `${routeRoot}/__root.tsx`;
   const root = [...new Set([...(features[rootId] ?? []), ...["Common", "Metadata", "AccountMenu", "Shell_GameSwitcher", "Interface"].filter(n => namespaces.has(n))])].sort();
   // Resource names repeat across routes and lazy features. Store a compact index

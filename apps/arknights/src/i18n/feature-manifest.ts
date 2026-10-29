@@ -125,6 +125,82 @@ export const features: Record<string, readonly string[]> = Object.fromEntries(Ob
 export const rootNamespaces = ["AK_Raw_routes___root","AccountMenu","Common","Interface","Metadata","Shell_GameSwitcher"];
 const routes = [
   {
+    "route": "/_workbench/account-health",
+    "module": "apps/arknights/src/routes/_workbench.account-health.tsx"
+  },
+  {
+    "route": "/_workbench/account",
+    "module": "apps/arknights/src/routes/_workbench.account.tsx"
+  },
+  {
+    "route": "/_workbench/agent",
+    "module": "apps/arknights/src/routes/_workbench.agent.tsx"
+  },
+  {
+    "route": "/_workbench/billing",
+    "module": "apps/arknights/src/routes/_workbench.billing.tsx"
+  },
+  {
+    "route": "/_workbench/changelog",
+    "module": "apps/arknights/src/routes/_workbench.changelog.tsx"
+  },
+  {
+    "route": "/_workbench/gacha",
+    "module": "apps/arknights/src/routes/_workbench.gacha.tsx"
+  },
+  {
+    "route": "/_workbench/",
+    "module": "apps/arknights/src/routes/_workbench.index.tsx"
+  },
+  {
+    "route": "/_workbench/inventory",
+    "module": "apps/arknights/src/routes/_workbench.inventory.tsx"
+  },
+  {
+    "route": "/_workbench/manual",
+    "module": "apps/arknights/src/routes/_workbench.manual.tsx"
+  },
+  {
+    "route": "/_workbench/mastery",
+    "module": "apps/arknights/src/routes/_workbench.mastery.tsx"
+  },
+  {
+    "route": "/_workbench/mower",
+    "module": "apps/arknights/src/routes/_workbench.mower.tsx"
+  },
+  {
+    "route": "/_workbench/recruitment",
+    "module": "apps/arknights/src/routes/_workbench.recruitment.tsx"
+  },
+  {
+    "route": "/_workbench/settings",
+    "module": "apps/arknights/src/routes/_workbench.settings.tsx"
+  },
+  {
+    "route": "/_workbench/skills",
+    "module": "apps/arknights/src/routes/_workbench.skills.tsx"
+  },
+  {
+    "route": "/_workbench/skland/$tab",
+    "module": "apps/arknights/src/routes/_workbench.skland.$tab.tsx"
+  },
+  {
+    "route": "/_workbench/skland",
+    "module": "apps/arknights/src/routes/_workbench.skland.tsx"
+  },
+  {
+    "route": "/_workbench/training-plan",
+    "module": "apps/arknights/src/routes/_workbench.training-plan.tsx"
+  },
+  {
+    "route": "/_workbench/training",
+    "module": "apps/arknights/src/routes/_workbench.training.tsx"
+  },
+  {
+    "route": "/_workbench",
+    "module": "apps/arknights/src/routes/_workbench.tsx"
+  },
+  {
     "route": "/about",
     "module": "apps/arknights/src/routes/about.tsx"
   },
@@ -247,82 +323,6 @@ const routes = [
   {
     "route": "/wishes3",
     "module": "apps/arknights/src/routes/wishes3.tsx"
-  },
-  {
-    "route": "/_workbench/account-health",
-    "module": "apps/arknights/src/routes/_workbench.account-health.tsx"
-  },
-  {
-    "route": "/_workbench/account",
-    "module": "apps/arknights/src/routes/_workbench.account.tsx"
-  },
-  {
-    "route": "/_workbench/agent",
-    "module": "apps/arknights/src/routes/_workbench.agent.tsx"
-  },
-  {
-    "route": "/_workbench/billing",
-    "module": "apps/arknights/src/routes/_workbench.billing.tsx"
-  },
-  {
-    "route": "/_workbench/changelog",
-    "module": "apps/arknights/src/routes/_workbench.changelog.tsx"
-  },
-  {
-    "route": "/_workbench/gacha",
-    "module": "apps/arknights/src/routes/_workbench.gacha.tsx"
-  },
-  {
-    "route": "/_workbench/",
-    "module": "apps/arknights/src/routes/_workbench.index.tsx"
-  },
-  {
-    "route": "/_workbench/inventory",
-    "module": "apps/arknights/src/routes/_workbench.inventory.tsx"
-  },
-  {
-    "route": "/_workbench/manual",
-    "module": "apps/arknights/src/routes/_workbench.manual.tsx"
-  },
-  {
-    "route": "/_workbench/mastery",
-    "module": "apps/arknights/src/routes/_workbench.mastery.tsx"
-  },
-  {
-    "route": "/_workbench/mower",
-    "module": "apps/arknights/src/routes/_workbench.mower.tsx"
-  },
-  {
-    "route": "/_workbench/recruitment",
-    "module": "apps/arknights/src/routes/_workbench.recruitment.tsx"
-  },
-  {
-    "route": "/_workbench/settings",
-    "module": "apps/arknights/src/routes/_workbench.settings.tsx"
-  },
-  {
-    "route": "/_workbench/skills",
-    "module": "apps/arknights/src/routes/_workbench.skills.tsx"
-  },
-  {
-    "route": "/_workbench/skland/$tab",
-    "module": "apps/arknights/src/routes/_workbench.skland.$tab.tsx"
-  },
-  {
-    "route": "/_workbench/skland",
-    "module": "apps/arknights/src/routes/_workbench.skland.tsx"
-  },
-  {
-    "route": "/_workbench/training-plan",
-    "module": "apps/arknights/src/routes/_workbench.training-plan.tsx"
-  },
-  {
-    "route": "/_workbench/training",
-    "module": "apps/arknights/src/routes/_workbench.training.tsx"
-  },
-  {
-    "route": "/_workbench",
-    "module": "apps/arknights/src/routes/_workbench.tsx"
   }
 ];
 export function pageNamespaces(pathname: string): string[] { return routeMessageNamespaces(pathname, routes, features, rootNamespaces); }

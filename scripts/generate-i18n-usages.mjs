@@ -17,7 +17,7 @@ async function sources(directory) {
 for (const app of ["arknights", "endfield"]) {
   const directories = [`apps/${app}/src`, "packages/shell", ...(app === "arknights" ? ["packages/arknights-domain/src"] : [])];
   const references = new Map();
-  for (const file of (await Promise.all(directories.map(sources))).flat().sort()) {
+  for (const file of (await Promise.all(directories.map(sources))).flat().map(file => file.replaceAll("\\", "/")).sort()) {
     const text = await fs.readFile(file, "utf8");
     const relative = file.replaceAll("\\", "/");
     for (const usage of scanHelpers({ path: relative, text }, process.cwd()).usages) {
