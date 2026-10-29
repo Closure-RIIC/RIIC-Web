@@ -36,14 +36,14 @@ for (const width of [1440, 375]) {
     await trigger.hover();
     await expect(trigger).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     await page.mouse.move(0, 0);
-    const helpBox = await footer.getByRole("link", { name: "Docs", exact: true }).boundingBox();
+    const helpBox = await footer.getByRole("link", { name: "帮助文档", exact: true }).boundingBox();
     const settingsBox = await footer.getByRole("button", { name: "设置", exact: true }).boundingBox();
     expect(settingsBox!.x - helpBox!.x - helpBox!.width).toBeCloseTo(0, 0);
     await expect(footer).not.toContainText(user.email);
     const name = footer.locator("[data-sidebar-account-name]");
     await expect(name).toHaveCSS("text-overflow", "ellipsis");
     expect(await name.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true);
-    await expect(footer.getByRole("link", { name: "Docs", exact: true })).toHaveAttribute("href", "/docs");
+    await expect(footer.getByRole("link", { name: "帮助文档", exact: true })).toHaveAttribute("href", "/docs");
     await expect(page.getByText("我的角色", { exact: true })).toBeVisible();
     const skland = page.locator('[data-primary-navigation-page="skland"]');
     await expect(skland).toHaveAccessibleName("森空岛同步");
@@ -88,7 +88,7 @@ for (const width of [1440, 375]) {
     if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     await expect(footer.locator("[data-sidebar-account-avatar]")).toHaveAttribute("data-account-orb-color", (await accountAvatar.getAttribute("data-account-orb-color"))!);
     expect(await footer.evaluate(node => node.getBoundingClientRect().bottom <= window.innerHeight)).toBe(true);
-    await footer.getByRole("link", { name: "Docs", exact: true }).click();
+    await footer.getByRole("link", { name: "帮助文档", exact: true }).click();
     await expect(page).toHaveURL(/\/docs$/);
     await expect(page.locator("[data-docs-home]")).toBeVisible();
     if (width < 768) await expect(page.getByRole("dialog", { name: /^(侧边栏|側邊欄|Sidebar)$/ })).toHaveCount(0);
@@ -102,14 +102,18 @@ for (const width of [1440, 375]) {
     await expect(page.locator(".workbench-footer [data-help-link]")).toHaveCount(0);
     await expect(page.locator(".workbench-footer").getByRole("button", { name: /^(简体中文|繁體中文（台灣）|English)$/ })).toHaveCount(0);
     if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
+    const footer = page.locator("[data-sidebar-account-footer]");
+    await expect(footer.getByRole("link", { name: "帮助文档", exact: true })).toHaveAttribute("href", "/docs");
     await page.locator("[data-sidebar-account-trigger]").click();
     const menu = page.locator("[data-sidebar-account-menu]");
     await expect(menu.getByRole("menuitemradio")).toHaveCount(3);
     await expect(menu.getByRole("menuitemradio", { name: "简体中文", exact: true })).toBeChecked();
     await menu.getByRole("menuitemradio", { name: "繁體中文（台灣）", exact: true }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-TW");
+    await expect(footer.getByRole("link", { name: "說明文件", exact: true })).toHaveAttribute("href", "/docs");
     await menu.getByRole("menuitemradio", { name: "English", exact: true }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(footer.getByRole("link", { name: "Docs", exact: true })).toHaveAttribute("href", "/docs");
     await expect(menu.getByRole("menuitemradio", { name: "English", exact: true })).toBeChecked();
     await expect(page).toHaveURL(/\/settings$/);
 
