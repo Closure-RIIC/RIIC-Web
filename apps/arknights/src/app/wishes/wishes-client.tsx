@@ -21,7 +21,12 @@ export function WishesClient() {
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const updateVolume = () => { audio.volume = desktop.matches ? 0.06 : 0.7; };
+    updateVolume();
+    desktop.addEventListener("change", updateVolume);
     void audio.play().catch(() => setAudioPlaying(false));
+    return () => desktop.removeEventListener("change", updateVolume);
   }, []);
   function playAudio() {
     const audio = audioRef.current;
