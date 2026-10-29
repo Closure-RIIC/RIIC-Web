@@ -628,12 +628,12 @@ export const references = [
   {
     "key": "EF_Raw_routes___root.backToSchedule",
     "prefix": false,
-    "source": "apps/endfield/src/routes/__root.tsx:42"
+    "source": "apps/endfield/src/routes/__root.tsx:45"
   },
   {
     "key": "EF_Raw_routes___root.pageNotFound",
     "prefix": false,
-    "source": "apps/endfield/src/routes/__root.tsx:42"
+    "source": "apps/endfield/src/routes/__root.tsx:45"
   },
   {
     "key": "EndfieldGameData",
