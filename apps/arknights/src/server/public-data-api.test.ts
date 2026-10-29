@@ -32,11 +32,11 @@ test("public release handlers cache only published DTOs, invalidate mutations an
   let loads = 0;
   let adminLoads = 0;
   let version = "1.0.0";
-  await context.mock.module(new URL("./release-notes.ts", import.meta.url), {
+  await context.mock.module(new URL("../../../../packages/platform-server/src/releases/service.ts", import.meta.url), {
     namedExports: {
       createRelease: async () => ({}),
       listAdminReleases: async () => { adminLoads++; return [{ draft: "private" }]; },
-      listPublishedReleases: async (env: string) => { loads++; return [{ version, notify: true, title: env }]; },
+      listPublishedReleases: async (env: string, app: string) => { loads++; return [{ version, notify: true, title: `${app}:${env}` }]; },
       mutateRelease: async () => { version = "1.0.1"; return {}; },
       ReleaseConflictError: class extends Error {}, ReleaseNotFoundError: class extends Error {},
     },
@@ -69,6 +69,17 @@ test("public release handlers cache only published DTOs, invalidate mutations an
   assert.match(denied.headers.get("cache-control")!, /no-store/);
   assert.equal(loads, 3, "rate limits run even when a public value is cached");
   assert.equal(limits, 9);
+  rateLimited = false;
+  const endfield = await (await handlePublicReleases(request(), "endfield")).json();
+  assert.equal(endfield.data.releases[0].title, "endfield:production");
+  assert.equal(loads, 4, "applications have independent public caches");
+  await handleAdminReleaseMutation(new Request("https://example.test/api/endfield/admin/releases/id", {
+    method: "PATCH", headers: { origin: "https://example.test" }, body: JSON.stringify({ action: "publish", revision: 1 }),
+  }), "id", "endfield");
+  assert.equal((await (await handlePublicReleases(request())).json()).data.releases[0].title, "arknights:production");
+  assert.equal(loads, 4, "Endfield mutations preserve the Arknights cache");
+  await handlePublicReleases(request(), "endfield");
+  assert.equal(loads, 5, "Endfield mutations invalidate its own cache");
 });
 
 test("skill annotation handlers cache sanitized data and invalidate create, update and delete", async (context) => {

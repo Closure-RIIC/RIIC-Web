@@ -6,6 +6,8 @@ import { type EndfieldRole, type EndfieldSnapshot } from "@riic/endfield-skland/
 import { gameHref } from "@riic/shell/games";
 import { FilterSelect } from "@riic/ui-primitives/filter-select";
 import { sklandApi as api, SklandRequestError } from "../skland-client";
+import { sklandErrorKey, type SklandFeedbackKey } from "../skland-feedback";
+import { sklandFeedbackText } from "../skland-feedback-text";
 import { SklandLoginPanel, type EndfieldLogin } from "./SklandLoginPanel";
 import { SklandDataView, SklandProfile } from "./SklandDataView";
 import { useWorkspace, WEBSITE_SIGN_OUT_EVENT, WEBSITE_SESSION_CHANGE_EVENT } from "../state";
@@ -35,7 +37,7 @@ export function SklandPage() {
   const [snapshot, setSnapshot] = useState<EndfieldSnapshot | null>(null);
   const [pending, setPending] = useState(true);
   const [initialized, setInitialized] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<SklandFeedbackKey | "">("");
   const controller = useRef<AbortController | null>(null);
   const owner = useRef("");
   const main = gameHref("arknights", origin, import.meta.env.VITE_ARKNIGHTS_ORIGIN);
@@ -50,7 +52,7 @@ export function SklandPage() {
     controller.current = request;
     setPending(true); setError("");
     try { await task(request.signal); }
-    catch (cause) { if (!request.signal.aborted) setError(cause instanceof Error ? cause.message : t("Skland.syncFailedPleaseRetry")); }
+    catch (cause) { if (!request.signal.aborted) setError(sklandErrorKey(cause, "Skland.syncFailedPleaseRetry")); }
     finally { if (controller.current === request) { controller.current = null; setPending(false); setInitialized(true); } }
   }
   async function loadSnapshot(id: string, role: EndfieldRole, signal: AbortSignal, showDetails = true) {
@@ -153,7 +155,7 @@ export function SklandPage() {
       <div className={`ef-skland-controls ${styles.controls}`}>
         <div className="ef-skland-selectors">
           <FilterSelect id="skland-account" aria-label={t("Skland.sklandAccount")} value={accountId} disabled={pending} onValueChange={selectAccount}
-            emptyText={t("Skland.noMatchingAccounts")} options={accounts.map(account => ({ value: account.id, label: account.label }))} />
+            emptyText={t("Skland.noMatchingAccounts")} options={accounts.map((account, index) => ({ value: account.id, label: account.label || `${t("Skland.sklandAccount")} ${index + 1}` }))} />
           {roles.length ? <FilterSelect id="skland-role" aria-label={t("Skland.characterServer")} disabled={pending} value={selected} onValueChange={value => {
             const role = roles.find(item => roleKey(item) === value);
             if (!role) return; clearData(true); setSelected(roleKey(role)); void perform(signal => loadSnapshot(accountId, role, signal));
@@ -186,7 +188,7 @@ export function SklandPage() {
       </div>
       <Action size="sm" icon={<FileDiff />} disabled={pending} onClick={() => setSklandSyncDetailsOpen(true)}>{t("Skland.latestSyncDetails")}</Action>
     </div> : null}
-    {error ? <Notice error>{error}</Notice> : null}
+    {error ? <Notice error>{sklandFeedbackText(error, t)}</Notice> : null}
     {!initialized ? <p className="ef-muted" role="status">{t("Skland.restoringYourSklandAccount")}</p> : null}
     {initialized && !accounts.length ? <div className="ef-login"><header className="ef-login-copy"><h2>{t("Skland.connectToSkland")}</h2><p>{t("Skland.signInToLoadYourCharacterDataConnectedAccounts")}</p></header>{loginPanel}</div> : null}
     {accounts.length ? <>

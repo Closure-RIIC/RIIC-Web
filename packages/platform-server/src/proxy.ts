@@ -1,7 +1,11 @@
 const sharedPaths = new Set(["/api/workspace", "/api/account/data-consent", "/api/account/session/extend", "/api/platform/session", "/api/platform/endfield-access"]);
 
+export function isEndfieldReleasePath(pathname: string): boolean {
+  return /^\/api\/endfield\/(?:releases|admin\/(?:access|releases(?:\/[a-zA-Z0-9.-]{1,100})?))$/.test(pathname);
+}
+
 export function isPlatformPath(pathname: string): boolean {
-  return sharedPaths.has(pathname) || ["/api/auth/", "/api/skland/", "/api/endfield/skland/"].some(prefix => pathname.startsWith(prefix));
+  return sharedPaths.has(pathname) || isEndfieldReleasePath(pathname) || ["/api/auth/", "/api/skland/", "/api/endfield/skland/"].some(prefix => pathname.startsWith(prefix));
 }
 
 export function platformOrigin(value = process.env.PLATFORM_API_ORIGIN): URL {

@@ -499,7 +499,7 @@ export function TrainingAdvice({
                     <div key={label} className="grid grid-cols-[auto_1fr_auto] items-center gap-2 border-b border-white/8 py-2.5 last:border-0">
                       <span className="font-number text-[10px] text-white/35">0{index + 1}</span>
                       <span className="text-xs text-white/65">{label}</span>
-                      <span className="font-number text-[10px] text-emerald-300/80">CLEAR</span>
+                      <span className="font-number text-[10px] text-emerald-300/80">{intl("components_pages_TrainingAdvice.clear")}</span>
                     </div>
                   ))}
                 </motion.div>

@@ -108,7 +108,9 @@ release/
 
 生产平台配置 `PLATFORM_PUBLIC_ORIGINS` 为两个完整 HTTPS Origin，以逗号分隔。只有相关子域都受信任时才配置 `AUTH_COOKIE_DOMAIN`；它必须覆盖显式列出的两个 Origin，且 `BETTER_AUTH_URL` 属于列表。保留 HttpOnly、Secure 和 SameSite 策略。网站会话可以共享，森空岛授权仍使用现有按账号加密、绑定网站用户的 Cookie，不因网站会话共享而扩大授权范围。
 
-应用配置 `PLATFORM_API_ORIGIN` 为固定平台地址，支持同机回环 HTTP 或 HTTPS。平台默认只监听 `127.0.0.1`；只有受控代理可访问它时，才启用 `BETA_TRUST_PROXY_HEADERS=1`。代理必须覆盖转发来源和客户端地址。不要对外开放可信代理模式的内部端口。共享 API 不包括方舟求解、管理员和计费入口；它们继续由相应应用负责。
+应用配置 `PLATFORM_API_ORIGIN` 为固定平台地址，支持同机回环 HTTP 或 HTTPS。平台默认只监听 `127.0.0.1`；只有受控代理可访问它时，才启用 `BETA_TRUST_PROXY_HEADERS=1`。代理必须覆盖转发来源和客户端地址。不要对外开放可信代理模式的内部端口。方舟求解、管理员和计费入口继续由方舟应用负责。终末地日志通过固定的 `/api/endfield/releases` 和 `/api/endfield/admin/*` 日志入口访问共享平台，也支持方舟兼容宿主；两站日志按站点及环境隔离，详见 [终末地日志管理](ENDFIELD_CHANGELOG.md)。
+
+终末地的 Nitro 入口只在实际 TCP 对端为本机回环地址时，使用入口代理覆盖的 `X-Forwarded-Proto: https` 恢复请求协议，保留原有 Host、路径和同源校验。Nginx 必须设置 `Host $host` 与 `X-Forwarded-Proto $scheme`；不要把客户端传入的转发头直接透传。运行时检查包含无已有 Cookie 的 HTTPS 代理登录，以及跨来源请求拒绝用例。
 
 公共后端用同一套数据库及迁移。账号删除仍包含游戏诊断与存档清理，因此独立平台必须与方舟任务进程共享既有私有存储配置；不要给新服务配置另一份空存储目录。
 

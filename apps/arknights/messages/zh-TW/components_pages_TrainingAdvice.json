@@ -1,4 +1,5 @@
 {
+  "clear": "無需調整",
   "noBaseFacilitiesConfigured": "尚未配置基建設施",
   "noOperatorDataImported": "尚未匯入幹員資料",
   "theBaseCannotContainMoreThan64Rooms": "基建設施不能超過 64 間房",

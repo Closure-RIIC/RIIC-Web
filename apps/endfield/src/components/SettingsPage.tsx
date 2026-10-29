@@ -20,7 +20,14 @@ export function SettingsPage() {
   const [password, setPassword] = useState("");
   const [revealPassword, setRevealPassword] = useState(false);
   const [deleteLocal, setDeleteLocal] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<"password" | "session" | "account" | "clear" | "read" | "">("");
+  const errorText = {
+    password: t("Settings.theCurrentPasswordIsIncorrect"),
+    session: t("Settings.yourSessionExpiredSignInAndRetry"),
+    account: t("Settings.accountOperationFailedPleaseTryAgain"),
+    clear: t("Settings.couldNotClearData"),
+    read: t("Settings.couldNotReadTheSavedCopy"),
+  };
   const [clearing, setClearing] = useState(false);
   const expiryDate = session ? new Date(session.session.expiresAt) : null;
   const expiry = expiryDate && Number.isFinite(expiryDate.getTime()) ? new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(expiryDate) : "—";
@@ -35,15 +42,14 @@ export function SettingsPage() {
       });
       if (action === "delete" && deleteLocal) await clearLocalData();
     } catch (cause) {
-      setError(cause instanceof Error && cause.message === "INVALID_PASSWORD" ? t("Settings.theCurrentPasswordIsIncorrect")
-        : cause instanceof Error && cause.message === "SIGNED_OUT" ? t("Settings.yourSessionExpiredSignInAndRetry")
-          : t("Settings.accountOperationFailedPleaseTryAgain"));
+      setError(cause instanceof Error && cause.message === "INVALID_PASSWORD" ? "password"
+        : cause instanceof Error && cause.message === "SIGNED_OUT" ? "session" : "account");
     } finally { if (action === "delete") setPassword(""); }
   }
   async function clearData() {
     setClearing(true); setError("");
     try { await clearLocalData(); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : t("Settings.couldNotClearData")); setClearing(false); }
+    catch { setError("clear"); setClearing(false); }
   }
   return <div className="ef-page" data-endfield-settings>
     <PageTitle title={t("Settings.settings")} subtitle={t("Settings.manageYourAccountSiteAppearanceAndLocalEndfieldData")}
@@ -51,7 +57,7 @@ export function SettingsPage() {
         <FluidOrb size={32} color={accountOrbColor(session.user.id)} animation="hover" />
         <div><strong title={session.user.name}>{session.user.name}</strong><span title={session.user.email}>{session.user.email}</span></div>
       </div> : undefined} />
-    {error ? <Notice error>{error}</Notice> : null}
+    {error ? <Notice error>{errorText[error]}</Notice> : null}
     <div className="ef-settings-grid">
       <div>
         <Section title={t("Settings.appearance")}><div data-settings-group="display" className="ef-settings-fields">
@@ -79,7 +85,7 @@ export function SettingsPage() {
         <Section title={t("Settings.localData")}><div data-settings-group="local-data">
           <p className="ef-settings-description">{t("Settings.yourRosterFacilitiesManualScheduleAndLatestResultAre")}</p>
           <div className="ef-actions"><Action size="sm" icon={<Download />} disabled={!ready || clearing} onClick={() => downloadJson("endfield-workspace.json", workspace)}>{t("Settings.exportCurrentSetup")}</Action>
-            {storageError ? <><Action size="sm" onClick={() => { try { downloadJson("endfield-storage-backup.json", { raw: localStorage.getItem(STORAGE_KEY) }); } catch { setError(t("Settings.couldNotReadTheSavedCopy")); } }}>{t("Settings.exportSavedCopy")}</Action>
+            {storageError ? <><Action size="sm" onClick={() => { try { downloadJson("endfield-storage-backup.json", { raw: localStorage.getItem(STORAGE_KEY) }); } catch { setError("read"); } }}>{t("Settings.exportSavedCopy")}</Action>
               <ConfirmAction variant="red" title={t("Settings.repairLocalArchive")}
                 description={t("Settings.replaceTheUnreadableSavedCopyWithYourCurrentSetup")}
                 confirmLabel={t("Settings.confirmRepair")} onConfirm={repairStorage}>{t("Settings.repairLocalArchive")}</ConfirmAction></> : null}

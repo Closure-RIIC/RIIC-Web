@@ -1,4 +1,5 @@
 {
+  "clear": "CLEAR",
   "noBaseFacilitiesConfigured": "No base facilities configured",
   "noOperatorDataImported": "No operator data imported",
   "theBaseCannotContainMoreThan64Rooms": "The base cannot contain more than 64 rooms",

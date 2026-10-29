@@ -32,12 +32,16 @@ test("Skland proxy constrains destinations, origin, body, cookies and methods", 
     assert.match(calls[0].init.headers.cookie, /skland_endfield_account_v1_12345678=second/);
     assert.match(response.headers.get("set-cookie"), /^skland_endfield_v1=/);
     assert.match(response.headers.get("cache-control"), /private, no-store/);
-    for (const [req, action, status] of [
-      [request(), "../auth/sign-out", 404],
-      [request({ headers: { origin: "https://evil.invalid" } }), "sync", 403],
-      [request({ headers: { origin: "http://127.0.0.1:5176" } }), "sync", 401],
-      [request({ body: "x".repeat(17000) }), "credential", 413],
-    ]) assert.equal((await forwardEndfieldSkland(req, action)).status, status);
+    for (const [req, action, status, code] of [
+      [request(), "../auth/sign-out", 404, "AIC-AUTH-2007"],
+      [request({ headers: { origin: "https://evil.invalid" } }), "sync", 403, "AIC-AUTH-2002"],
+      [request({ headers: { origin: "http://127.0.0.1:5176" } }), "sync", 401, "AIC-AUTH-2008"],
+      [request({ body: "x".repeat(17000) }), "credential", 413, "AIC-REQ-1002"],
+    ]) {
+      const rejected = await forwardEndfieldSkland(req, action);
+      assert.equal(rejected.status, status);
+      assert.equal((await rejected.json()).error.code, code, "clients can localize failures without parsing messages");
+    }
     assert.equal(calls.length, 1, "Rejected requests never reach upstream");
     const broken = new ReadableStream({ start(controller) { controller.error(new Error("aborted")); } });
     assert.equal((await forwardEndfieldSkland(request({ body: broken, duplex: "half" }), "sync")).status, 400);

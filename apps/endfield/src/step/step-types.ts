@@ -85,10 +85,24 @@ export interface StepSample {
 
 export type StepEventType = "start" | "switch" | "boost" | "mood-zero" | "mood-full" | "end" | "pause";
 
+/** Keep simulation identity and values independent of the display language. */
+export type StepLogMessage =
+  | { kind: "start"; startHour: number; duration: number; sampleSec: number }
+  | { kind: "crew"; room: StepRoomKey; round: StepRound; names: string[]; shiftHours?: [number, number] }
+  | { kind: "boost"; room: StepRoomKey; name: string; amount: number; before: number; after: number }
+  | { kind: "mood-zero" | "mood-full"; room: StepRoomKey; name: string }
+  | { kind: "switch"; room: StepRoomKey; from: StepRound; to: StepRound }
+  | { kind: "end" | "pause" };
+
+export type StepProblem =
+  | { kind: "invalid-hour"; room: StepRoomKey }
+  | { kind: "unknown-operator"; room: StepRoomKey; shift: string; name: string }
+  | { kind: "duplicate-operator"; name: string };
+
 export interface StepLogEntry {
   type: StepEventType;
   tSec: number;
-  text: string;
+  message: StepLogMessage;
   room?: StepRoomKey;
 }
 
