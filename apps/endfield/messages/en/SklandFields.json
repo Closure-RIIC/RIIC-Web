@@ -105,5 +105,10 @@
   "pkg": "Set",
   "properties": "Attributes",
   "key": "Key",
-  "value": "Value"
+  "value": "Value",
+  "talent": "Talents",
+  "latestSpaceshipSkillNodes": "Unlocked ship skill nodes",
+  "nodeId": "Skill node ID",
+  "weaponId": "Weapon ID",
+  "skillLevel": "Skill level"
 }

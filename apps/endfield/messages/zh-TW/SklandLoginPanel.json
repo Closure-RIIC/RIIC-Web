@@ -36,5 +36,6 @@
   "pasteCredToken": "貼上 cred,token",
   "credentialsGrantAccountAccessDoNotShareThem": "憑證等同登入許可權，請勿傳送給任何人",
   "thisPageSyncsEndfieldCharactersOperatorProgressionAndShip": "本站僅同步終末地角色、幹員練度與帝江號設施；憑證不會寫入本地名單或匯出檔案。",
-  "pollFailed": "登入狀態查詢失敗，將繼續重試。"
+  "pollFailed": "登入狀態查詢失敗，將繼續重試。",
+  "termsSentenceEnd": "。"
 }
