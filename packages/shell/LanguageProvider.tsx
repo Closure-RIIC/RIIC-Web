@@ -86,7 +86,10 @@ export function MessageBoundary({ namespaces, children }: { namespaces: readonly
   const parent = useMessages();
   if (!resources) throw new Error("Missing message resource provider");
   const available = resources.read(locale, namespaces);
-  const messages = available ?? use(resources.load(locale, namespaces));
+  // A suspended render must resume through the same promise even after its
+  // catalogs enter the cache. Seeded SSR resources can still render synchronously.
+  const request = resources.request(locale, namespaces);
+  const messages = request ? use(request) : available ?? use(resources.load(locale, namespaces));
   registerMessages(locale, messages);
   return <IntlProvider locale={locale} messages={{ ...parent, ...messages }} timeZone="Asia/Shanghai">{children}</IntlProvider>;
 }

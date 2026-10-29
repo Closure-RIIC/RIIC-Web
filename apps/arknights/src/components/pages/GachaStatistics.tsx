@@ -61,9 +61,9 @@ export function GachaAnalysisOverview({ analysis }: { analysis: Analysis }) {
         </article>)}
       </div>
       {(achievements.multiSix.length > 0 || achievements.longestUpStreak >= 2 || achievements.fullSparks > 0) && <div className={styles.achievements} aria-label={rawText.text(rawLocale, "headhuntingAchievements")}>
-        {achievements.multiSix.map(([count, batches]) => <span key={count} data-gacha-achievement="multi-six" data-tone="green">{rawText.rich(rawLocale, "sixStarsInATenPull", { part1: richValue((count.toLocaleString(rawLocale))), part2: richValue((batches)) })}</span>)}
+        {achievements.multiSix.map(([count, batches]) => <span key={count} data-gacha-achievement="multi-six" data-tone="green">{rawText.rich(rawLocale, "sixStarsInATenPull", { count, part2: richValue(batches) })}</span>)}
         {achievements.longestUpStreak >= 2 && <span data-gacha-achievement="up-streak" data-tone="green" title={rawText.text(rawLocale, "consecutiveRateUp6OperatorsOnTheSameBanner")}>{rawText.rich(rawLocale, "rateUpStreak", { part1: richValue((achievements.longestUpStreak)) })}</span>}
-        {achievements.fullSparks > 0 && <span data-gacha-achievement="full-spark" data-tone="red" title={rawText.text(rawLocale, "each300SavedPullsOnAnIndividualLimitedBanner")}>{rawText.rich(rawLocale, "sparksReached", { part1: richValue((achievements.fullSparks.toLocaleString(rawLocale))) })}</span>}
+        {achievements.fullSparks > 0 && <span data-gacha-achievement="full-spark" data-tone="red" title={rawText.text(rawLocale, "each300SavedPullsOnAnIndividualLimitedBanner")}>{rawText.text(rawLocale, "sparksReached", { count: achievements.fullSparks })}</span>}
       </div>}
     </div>
     <div className={styles.pityPanel} aria-label={rawText.text(rawLocale, "currentPityCount")} data-gacha-pity>

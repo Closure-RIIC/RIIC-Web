@@ -175,7 +175,7 @@ for (const mobile of [false, true]) {
     await expect((await personaControl(page, "人格卡：银灰"))).toBeVisible({ timeout: 30_000 });
     await (await personaControl(page, "人格卡：银灰")).click();
     await expect(page.locator('[data-persona-card="upload-existing"]')).toContainText("原有人格");
-    await page.getByRole("button", { name: "可露希尔 · 使用网站服务端当前配置的人格卡" }).click();
+    await page.getByRole("button", { name: "使用可露希尔", exact: true }).click();
     await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect(page.locator("[data-agent-chat]")).toHaveCSS("--dialogue-accent", "#bd354b");
     await expect(page.locator('[data-agent-chat] h1 > span[aria-hidden="true"]')).toHaveCSS("background-color", "rgb(189, 53, 75)");
@@ -197,7 +197,7 @@ test("a missing private card explains why sending is blocked and permits switchi
   await page.getByRole("textbox", { name: "发给银灰的消息" }).fill("你好");
   await expect(page.getByRole("button", { name: "发送", exact: true })).toBeDisabled();
   await (await personaControl(page, "人格卡：银灰")).click();
-  await page.getByRole("button", { name: "可露希尔 · 使用网站服务端当前配置的人格卡" }).click();
+  await page.getByRole("button", { name: "使用可露希尔", exact: true }).click();
   await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(page.getByRole("button", { name: "发送", exact: true })).toBeEnabled();
 });
@@ -508,7 +508,7 @@ test("Mountain missing private card blocks sending and allows another persona", 
   await page.getByRole("textbox", { name: "发给山的消息" }).fill("你好");
   await expect(page.getByRole("button", { name: "发送", exact: true })).toBeDisabled();
   await (await personaControl(page, "人格卡：山")).click();
-  await page.getByRole("button", { name: "可露希尔 · 使用网站服务端当前配置的人格卡" }).click();
+  await page.getByRole("button", { name: "使用可露希尔", exact: true }).click();
   await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(page.getByRole("button", { name: "发送", exact: true })).toBeEnabled();
 });

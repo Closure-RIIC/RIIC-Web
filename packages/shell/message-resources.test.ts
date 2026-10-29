@@ -17,6 +17,8 @@ test("feature resources deduplicate concurrent requests, isolate locales and ret
   const first = resources.load("zh-TW", ["Roster", "Common"]);
   assert.equal(first, resources.load("zh-TW", ["Common", "Roster"]));
   await first;
+  assert.equal(resources.request("zh-TW", ["Roster", "Common"]), first);
+  assert.equal(resources.request("zh-CN", ["Common"]), undefined);
   assert.equal(requests, 1);
   await assert.rejects(resources.load("en", ["Common"]), /offline/);
   fail = false;

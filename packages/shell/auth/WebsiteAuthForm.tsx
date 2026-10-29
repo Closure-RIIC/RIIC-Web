@@ -26,7 +26,7 @@ const AUTH_PASSWORD_TOGGLE_CLASS = "text-muted-foreground hover:text-foreground"
 
 function localizedWebsiteAccountName(value: unknown, en: AppLocale) {
   const result = validateWebsiteAccountName(value);
-  return result.error ? { ...result, error: authText.text(en, "nameHint") } : result;
+  return result.errorCode ? { ...result, error: authText.text(en, result.errorCode) } : result;
 }
 
 function localizedPasswordConfirmationError(password: string, confirmation: string, en: AppLocale): string | null {

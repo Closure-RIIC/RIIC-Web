@@ -4,7 +4,7 @@
   "segmentsEndingInA6PullNewestFirst": "六星尋訪分段，最近在前",
   "pulls": "抽",
   "5OperatorsInThisSegment": "本段五星幹員",
-  "sixStarsInATenPull": "十連<part1></part1>金",
+  "sixStarsInATenPull": "十連{count, select, 2 {二} 3 {三} 4 {四} 5 {五} 6 {六} 7 {七} 8 {八} 9 {九} 10 {十} other {{count}}}金",
   "recordsBegin": "記錄始於 <part1></part1>",
   "headhuntingRecordActions": "尋訪記錄操作",
   "show5Operators": "展示五星",

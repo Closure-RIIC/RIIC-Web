@@ -924,7 +924,7 @@ export async function mockApis(
     // Result tests continue after acknowledging the new solver notice.
     // Its own coverage opts out and verifies the full dialog interaction.
     await page.addLocatorHandler(page.getByRole("dialog", { name: /^(排班已生成|Schedule generated)$/ }), async (dialog) => {
-      await dialog.getByRole("button", { name: /^(关闭|Dismiss)$/ }).click();
+      await dialog.locator('[data-slot="dialog-footer"]').getByRole("button", { name: /^(关闭|關閉|Dismiss)$/ }).click();
     });
   }
   // Existing feature tests are independent of database-backed release announcements.

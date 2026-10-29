@@ -21,9 +21,9 @@ export function LanguageSwitch() {
   const { locale, pending, error, label, setLocale } = useLanguageSwitch();
   const t = useTranslations("AccountMenu");
   return <div role="group" aria-label={label} aria-busy={pending} className="flex flex-wrap gap-1">
-    {APP_LOCALES.map(value => <button key={value} type="button" disabled={pending} aria-pressed={locale === value}
+    {APP_LOCALES.map(value => <button key={value} type="button" disabled={pending} aria-label={LOCALE_LABELS[value]} aria-pressed={locale === value}
       className="rounded border border-border px-2 py-1 text-xs aria-pressed:bg-foreground aria-pressed:text-background"
-      onClick={() => void setLocale(value)}>{LOCALE_LABELS[value]}</button>)}
+      onClick={() => void setLocale(value)}><span className="sm:hidden" aria-hidden="true">{value === "zh-CN" ? "简" : value === "zh-TW" ? "繁" : "EN"}</span><span className="hidden sm:inline" aria-hidden="true">{LOCALE_LABELS[value]}</span></button>)}
     {error ? <p role="alert" className="w-full text-xs text-destructive">{t("languageFailed")}</p> : null}
   </div>;
 }

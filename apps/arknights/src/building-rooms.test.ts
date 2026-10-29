@@ -164,6 +164,17 @@ test("keeps both pinyin readings for 仇白", () => {
   assert.deepEqual(filterOperators(operators, null, null, "qiubai", lookup, { pinyinNames }).map((operator) => operator.name), ["仇白"]);
 });
 
+test("operator initials rank ahead of incidental translated skill matches", () => {
+  const operators: OperatorWithSkills[] = [
+    { name: "阿米娅", buildingSkills: [{ id: "control_x" }] },
+    { name: "能天使", buildingSkills: [{ id: "manu_x" }] },
+  ];
+  const results = filterOperators(operators, null, null, "nts", () => ({}), {
+    pinyinNames, translatedSkills: { control_x: { description: "Increases points earned." } },
+  });
+  assert.deepEqual(results.map(operator => operator.name), ["能天使", "阿米娅"]);
+});
+
 test("matches queries against skill names and plain-text descriptions", () => {
   const operators: OperatorWithSkills[] = [
     { name: "阿米娅", buildingSkills: [{ id: "control_x" }] },

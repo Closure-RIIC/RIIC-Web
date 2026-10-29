@@ -125,13 +125,14 @@ test("the anonymous sample trial fetches and solves once before showing the sche
   // the login dialog and try to click an inert, underlying close button.
   const completionNotice = page.getByRole("dialog", { name: "排班已生成", exact: true });
   await expect(completionNotice).toBeVisible();
-  await completionNotice.getByRole("button", { name: "关闭", exact: true }).click();
+  await completionNotice.locator('[data-slot="dialog-footer"]').getByRole("button", { name: "关闭", exact: true }).click();
   await expect(completionNotice).toHaveCount(0);
 
   const adjustmentTrigger = page.getByRole("button", { name: "修改练度并重算", exact: true });
   await adjustmentTrigger.click();
   await expect(page.getByRole("dialog", { name: "登录网站账号" })).toBeVisible();
   await expect(page.locator("[data-upgrade-simulation-dialog]")).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "邮箱", exact: true })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(adjustmentTrigger).toBeFocused();
 });

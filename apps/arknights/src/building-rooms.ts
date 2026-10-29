@@ -176,8 +176,11 @@ export function filterOperators<T extends OperatorWithSkills>(
       );
     })
     .sort((left, right) => {
-      // 搜索时按名字排序便于查找；默认浏览按数据仓库原始顺序倒序（新在前）。
-      if (normalizedQuery) return left.name.localeCompare(right.name, "zh-CN");
+      // Name/alias matches precede incidental matches inside translated skill text.
+      if (normalizedQuery) {
+        const byName = (operator: T) => Number(operatorMatchesQuery(operator.name, [], normalizedQuery, skillLookup, filters.englishNames, filters.pinyinNames));
+        return byName(right) - byName(left) || left.name.localeCompare(right.name, "zh-CN");
+      }
       return (right.order ?? 0) - (left.order ?? 0) || left.name.localeCompare(right.name, "zh-CN");
     });
 }

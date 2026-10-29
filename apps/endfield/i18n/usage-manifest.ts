@@ -13,17 +13,27 @@ export const references = [
   {
     "key": "Account.app_account_reset_password_reset_client.confirmNewPassword",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:176"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:177"
   },
   {
     "key": "Account.app_account_reset_password_reset_client.enterTheNewPasswordAgain",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:197"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:198"
   },
   {
     "key": "Account.app_account_reset_password_reset_client.enterTheNewPasswordAgain2",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:207"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:209"
+  },
+  {
+    "key": "Account.app_account_reset_password_reset_client.hideNewPassword",
+    "prefix": false,
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:167"
+  },
+  {
+    "key": "Account.app_account_reset_password_reset_client.hidePasswordConfirmation",
+    "prefix": false,
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:200"
   },
   {
     "key": "Account.app_account_reset_password_reset_client.newPassword",
@@ -58,12 +68,12 @@ export const references = [
   {
     "key": "Account.app_account_reset_password_reset_client.resetPassword2",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:218"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:220"
   },
   {
     "key": "Account.app_account_reset_password_reset_client.resetting",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:218"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:220"
   },
   {
     "key": "Account.app_account_reset_password_reset_client.showNewPassword",
@@ -73,7 +83,7 @@ export const references = [
   {
     "key": "Account.app_account_reset_password_reset_client.showPasswordConfirmation",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:198"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:199"
   },
   {
     "key": "Account.app_account_reset_password_reset_client.theNewPasswordMustContain8128CharactersAnd",
@@ -83,17 +93,17 @@ export const references = [
   {
     "key": "Account.AuthFeedback.codeAttempts",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:210"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
     "key": "Account.AuthFeedback.existingAccount",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:210"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
     "key": "Account.AuthFeedback.expiredCode",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:210"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
     "key": "Account.AuthFeedback.expiredReset",
@@ -103,42 +113,42 @@ export const references = [
   {
     "key": "Account.AuthFeedback.invalidCode",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:210"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
     "key": "Account.AuthFeedback.invalidCredentials",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:210"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
     "key": "Account.AuthFeedback.invalidEmail",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:210"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
     "key": "Account.AuthFeedback.network",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:210"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
     "key": "Account.AuthFeedback.rateLimited",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:210"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
     "key": "Account.AuthFeedback.unavailable",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:210"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
     "key": "Account.AuthFeedback.unverifiedEmail",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:210"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
     "key": "Account.AuthFeedback.weakPassword",
     "prefix": false,
-    "source": "packages/shell/auth/ResetPasswordForm.tsx:210"
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
     "key": "Account.AuthFlow.changeEmail",
@@ -216,7 +226,22 @@ export const references = [
     "source": "packages/shell/auth/ResetPasswordForm.tsx:53"
   },
   {
+    "key": "Account.AuthValidation.nameCharacters",
+    "prefix": false,
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:29"
+  },
+  {
     "key": "Account.AuthValidation.nameHint",
+    "prefix": false,
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:277"
+  },
+  {
+    "key": "Account.AuthValidation.nameLength",
+    "prefix": false,
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:29"
+  },
+  {
+    "key": "Account.AuthValidation.nameSpaces",
     "prefix": false,
     "source": "packages/shell/auth/WebsiteAuthForm.tsx:29"
   },

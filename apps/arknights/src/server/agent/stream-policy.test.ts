@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { setTimeout as delay } from "node:timers/promises";
 import test from "node:test";
+import "../../i18n/test-setup.ts";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { LanguageModelV4, LanguageModelV4StreamPart } from "@ai-sdk/provider";
 import { jsonSchema, stepCountIs, streamText, tool, type UIMessageChunk } from "ai";
