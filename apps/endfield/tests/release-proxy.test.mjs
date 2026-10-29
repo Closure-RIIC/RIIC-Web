@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
-import { registerHooks } from "node:module";
 import test from "node:test";
-
-registerHooks({ resolve(specifier, context, next) {
-  return specifier === "@tanstack/react-start/server-only" ? { shortCircuit: true, url: "data:text/javascript,export{}" } : next(specifier, context);
-} });
-const { forwardEndfieldReleases } = await import("../src/server/release-proxy.ts");
+import { forwardEndfieldReleases } from "../src/server/release-proxy.ts";
 
 test("release bridge restricts origin, methods, body and credentials for both service topologies", async context => {
   const oldFetch = globalThis.fetch;
