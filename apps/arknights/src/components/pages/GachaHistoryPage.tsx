@@ -161,7 +161,7 @@ function GachaDrawIntervals({ intervals, showFiveStars }: { intervals: GachaSixS
       </div>}
     </div>; })}
     {links.map((link) => <div key={link.key} className={styles.multiSixLink} data-gacha-multi-six style={{ top: link.top, height: link.height }}>
-      <span className={styles.multiSixLabel}>{rawText.rich(rawLocale, "sixStarsInATenPull", { part1: richValue((link.count.toLocaleString(rawLocale))) })}</span>
+      <span className={styles.multiSixLabel}>{rawText.text(rawLocale, "sixStarsInATenPull", { count: link.count })}</span>
     </div>)}
   </div>;
 }

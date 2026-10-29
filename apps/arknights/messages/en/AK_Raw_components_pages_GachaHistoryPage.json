@@ -4,7 +4,7 @@
   "segmentsEndingInA6PullNewestFirst": "Segments ending in a 6★ pull, newest first",
   "pulls": "pulls",
   "5OperatorsInThisSegment": "5★ operators in this segment",
-  "sixStarsInATenPull": "<part1></part1> six-stars in a ten-pull",
+  "sixStarsInATenPull": "{count} six-stars in a ten-pull",
   "recordsBegin": "Records begin <part1></part1>",
   "headhuntingRecordActions": "Headhunting record actions",
   "show5Operators": "Show 5★ operators",

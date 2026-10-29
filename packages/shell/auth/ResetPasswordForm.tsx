@@ -153,7 +153,7 @@ export function ResetPasswordForm({ token, onSignIn, onForgotPassword, active = 
             }
             if (confirmPasswordError) {
               const error = passwordConfirmationError(nextPassword, confirmPassword);
-              setConfirmPasswordError(en === "en" && error ? (confirmPassword ? "The passwords do not match." : "Enter the password again.") : error);
+              setConfirmPasswordError(error ? authText.text(en, confirmPassword ? "passwordMismatch" : "passwordRepeat") : null);
             }
           }}
           onBlur={() => {
@@ -164,6 +164,7 @@ export function ResetPasswordForm({ token, onSignIn, onForgotPassword, active = 
           autoComplete="new-password"
           placeholder={intl("app_account_reset_password_reset_client.newPassword8128Characters")}
           revealLabel={intl("app_account_reset_password_reset_client.showNewPassword")}
+          hideLabel={intl("app_account_reset_password_reset_client.hideNewPassword")}
           aria-invalid={Boolean(passwordStrengthError)}
           aria-describedby="reset-password-strength"
         />
@@ -186,16 +187,17 @@ export function ResetPasswordForm({ token, onSignIn, onForgotPassword, active = 
             setConfirmPassword(nextConfirmation);
             if (confirmPasswordError) {
               const error = passwordConfirmationError(password, nextConfirmation);
-              setConfirmPasswordError(en === "en" && error ? (nextConfirmation ? "The passwords do not match." : "Enter the password again.") : error);
+              setConfirmPasswordError(error ? authText.text(en, nextConfirmation ? "passwordMismatch" : "passwordRepeat") : null);
             }
           }}
           onBlur={() => {
             const error = passwordConfirmationError(password, confirmPassword);
-            setConfirmPasswordError(en === "en" && error ? (confirmPassword ? "The passwords do not match." : "Enter the password again.") : error);
+            setConfirmPasswordError(error ? authText.text(en, confirmPassword ? "passwordMismatch" : "passwordRepeat") : null);
           }}
           autoComplete="new-password"
           placeholder={intl("app_account_reset_password_reset_client.enterTheNewPasswordAgain")}
           revealLabel={intl("app_account_reset_password_reset_client.showPasswordConfirmation")}
+          hideLabel={intl("app_account_reset_password_reset_client.hidePasswordConfirmation")}
           aria-invalid={Boolean(confirmPasswordError)}
           aria-describedby="reset-confirm-password-hint"
         />

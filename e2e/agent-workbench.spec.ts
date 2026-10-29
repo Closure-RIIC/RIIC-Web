@@ -186,6 +186,9 @@ for (const width of [1440, 375]) {
     await expect(page).toHaveURL(/\/account-health$/);
     await expect(shortcuts).toHaveCount(0);
     await expect(panel).toBeVisible();
+    // Route translations and the page summary load independently of the chat.
+    await expect(shareToggle).toBeEnabled();
+    await expect(shareToggle).toBeChecked();
     await input.fill("解释当前体检结果");
     await expect(panel.getByRole("button", { name: "发送", exact: true })).toBeEnabled();
     await input.press("Enter");
@@ -345,7 +348,7 @@ test("Persona portraits keep Closure fixed and persist uploaded persona avatars"
   await page.getByRole("button", { name: "重置头像", exact: true }).click();
   await expect(preview.locator("img")).toHaveCount(0);
   await expect(preview.locator("[data-remote-avatar-state]")).toHaveText("测");
-  await page.getByRole("button", { name: /可露希尔.*使用网站服务端/ }).click();
+  await page.getByRole("button", { name: "使用可露希尔", exact: true }).click();
   await expect(assistantAvatar.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
   await expect(assistantAvatar.locator("img:visible")).toHaveCount(0);
   await expect(avatarInput).toHaveCount(1);
