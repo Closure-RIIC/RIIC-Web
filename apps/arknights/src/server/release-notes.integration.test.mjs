@@ -21,12 +21,14 @@ process.env.BETTER_AUTH_URL = "http://127.0.0.1:5194";
 process.env.BETTER_AUTH_SECRET = "release-integration-secret-not-for-production-only";
 process.env.BETTER_AUTH_ADMIN_USER_IDS = "";
 process.env.BETA_PUBLIC_ORIGIN = "http://127.0.0.1:5194";
+process.env.PLATFORM_PUBLIC_ORIGINS = "http://127.0.0.1:5194";
+const { handlePlatformRequest } = await import("@riic/platform-server/http-api");
 const { getDatabasePool } = await import("@riic/platform-server/db");
 const { getAuth } = await import("@riic/platform-server/auth");
-const { handleAdminReleases, handleAdminReleaseMutation, handlePublicReleases } = await import("./release-notes-api.ts");
+const { handleAdminReleases, handleAdminReleaseMutation, handlePublicReleases, handleEndfieldReleases } = await import("./release-notes-api.ts");
 const { createRelease, listPublishedReleases, mutateRelease, ReleaseConflictError } = await import("./release-notes.ts");
 
-test("release lifecycle protects drafts, environment boundaries, permissions and concurrent edits", async () => {
+test("release lifecycle protects drafts, application/environment boundaries, permissions and concurrent edits", async () => {
   const pool = getDatabasePool();
   const suffix = randomUUID();
   const adminId = `release-admin-${suffix}`;
@@ -64,15 +66,35 @@ test("release lifecycle protects drafts, environment boundaries, permissions and
     }
     const adminCookie = await login(adminId);
     const userCookie = await login(userId);
+    const endfieldRequest = (method = "GET", body, cookie = adminCookie, suffix = "") => request(method, body, cookie, `/api/endfield/admin/releases${suffix}`);
     for (const cookie of [undefined, userCookie]) {
       const status = cookie ? 403 : 401;
       await decoded(await handleAdminReleases(request("GET", undefined, cookie)), status);
       await decoded(await handleAdminReleases(request("POST", draft, cookie)), status);
       await decoded(await handleAdminReleaseMutation(request("PATCH", { action: "publish", revision: 1 }, cookie), "missing"), status);
+      await decoded(await handleEndfieldReleases(request("GET", undefined, cookie, "/api/endfield/admin/releases")), status);
+      await decoded(await handleEndfieldReleases(request("POST", draft, cookie, "/api/endfield/admin/releases")), status);
+      await decoded(await handleEndfieldReleases(request("PATCH", { action: "publish", revision: 1 }, cookie, "/api/endfield/admin/releases/missing")), status);
     }
     await decoded(await handleAdminReleases(request("POST", draft, adminCookie, "/api/admin/releases", "https://evil.example")), 403);
     await decoded(await handleAdminReleases(request("POST", { ...draft, environment: "production" }, adminCookie)), 400);
     let row = (await decoded(await handleAdminReleases(request("POST", draft, adminCookie)), 201)).data.release;
+    const endfieldDraft = { ...draft, title: { zh: "Endfield only", en: "Endfield English", tw: "終末地更新" } };
+    let ef = (await decoded(await handleEndfieldReleases(endfieldRequest("POST", endfieldDraft)), 201)).data.release;
+    assert.deepEqual((await decoded(await handlePlatformRequest(endfieldRequest()))).data.releases.map(entry => entry.id), [ef.id]);
+    assert.equal((await decoded(await handlePlatformRequest(request("GET", undefined, adminCookie, "/api/endfield/admin/access")))).data.admin, true);
+    await decoded(await handlePlatformRequest(request("GET", undefined, userCookie, "/api/endfield/admin/access")), 403);
+    await decoded(await handleEndfieldReleases(endfieldRequest("POST", endfieldDraft)), 409);
+    await decoded(await handleEndfieldReleases(endfieldRequest("POST", { ...endfieldDraft, application: "arknights" })), 400);
+    await decoded(await handleEndfieldReleases(request("POST", endfieldDraft, adminCookie, "/api/endfield/admin/releases", "https://evil.example")), 403);
+    for (const action of ["save", "publish", "withdraw", "delete"]) {
+      const body = { action, revision: row.revision, ...(action === "save" ? { draft } : {}) };
+      await decoded(await handleEndfieldReleases(endfieldRequest("PATCH", body, adminCookie, `/${row.id}`)), 404);
+      await decoded(await handleAdminReleaseMutation(request("PATCH", body, adminCookie), ef.id), 404);
+    }
+    assert.equal((await listPublishedReleases("local", "endfield")).length, 0, "Endfield drafts stay private");
+    const efList = (await decoded(await handleEndfieldReleases(endfieldRequest()))).data.releases;
+    assert.deepEqual(efList.map(entry => entry.id), [ef.id]);
     await decoded(await handleAdminReleases(request("POST", draft, adminCookie)), 409);
     assert.equal((await listPublishedReleases("local")).some((note) => note.version === draft.version), false);
     const dev = await createRelease("development", { ...draft, title: { zh: "development only", en: "" } }, adminId);
@@ -88,6 +110,15 @@ test("release lifecycle protects drafts, environment boundaries, permissions and
       return body;
     }
     await mutation("publish");
+    ef = (await decoded(await handleEndfieldReleases(endfieldRequest("PATCH", { action: "publish", revision: ef.revision }, adminCookie, `/${ef.id}`)))).data.release;
+    const publicEndfield = () => handleEndfieldReleases(request("GET", undefined, undefined, "/api/endfield/releases?application=arknights&environment=production"));
+    const efFeed = (await decoded(await publicEndfield(), 200, true)).data;
+    assert.equal(efFeed.environment, "local");
+    assert.deepEqual(efFeed.releases, [endfieldDraft], "public Endfield feed contains only its published snapshot");
+    await decoded(await handleEndfieldReleases(endfieldRequest("PATCH", { action: "withdraw", revision: ef.revision - 1 }, adminCookie, `/${ef.id}`)), 409);
+    ef = (await decoded(await handleEndfieldReleases(endfieldRequest("PATCH", { action: "withdraw", revision: ef.revision }, adminCookie, `/${ef.id}`)))).data.release;
+    assert.deepEqual((await decoded(await publicEndfield(), 200, true)).data.releases, []);
+    assert.equal((await listPublishedReleases("local"))[0].title.zh, draft.title.zh, "withdrawing Endfield leaves Arknights published");
     const publicBody = (await decoded(await handlePublicReleases(request("GET", undefined, undefined, "/api/releases?environment=development")), 200, true)).data;
     assert.equal(publicBody.environment, "local");
     assert.equal(publicBody.releases[0].title.zh, "integration draft");

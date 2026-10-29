@@ -116,6 +116,7 @@ export const gachaDraw = appSchema.table("gacha_draw", {
 
 export const releaseNote = appSchema.table("release_note", {
   id: text("id").primaryKey(),
+  application: text("application").$type<"arknights" | "endfield">().default("arknights").notNull(),
   environment: text("environment").$type<ReleaseEnvironment>().notNull(),
   version: text("version").notNull(),
   draft: jsonb("draft").$type<ReleaseDraft>().notNull(),
@@ -128,8 +129,9 @@ export const releaseNote = appSchema.table("release_note", {
   createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
   updatedByUserId: text("updated_by_user_id").references(() => user.id, { onDelete: "set null" }),
 }, (table) => [
-  uniqueIndex("release_note_environment_version_uidx").on(table.environment, table.version),
-  index("release_note_environment_published_idx").on(table.environment, table.publishedAt),
+  uniqueIndex("release_note_application_environment_version_uidx").on(table.application, table.environment, table.version),
+  index("release_note_application_environment_published_idx").on(table.application, table.environment, table.publishedAt),
+  check("release_note_application_check", sql`${table.application} IN ('arknights', 'endfield')`),
   check("release_note_environment_check", sql`${table.environment} IN ('production', 'development', 'local')`),
   check("release_note_revision_check", sql`${table.revision} > 0`),
   check("release_note_version_check", sql`${table.draft}->>'version' = ${table.version} AND (${table.published} IS NULL OR ${table.published}->>'version' = ${table.version})`),

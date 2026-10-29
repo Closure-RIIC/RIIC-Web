@@ -30,6 +30,8 @@ test("application ownership, shared inputs and backend hosting select the right 
     ["packages/arknights-domain/src/password-strength.ts", APPLICATIONS],
     ["packages/arknights-domain/src/i18n/config.ts", APPLICATIONS],
     ["packages/arknights-domain/src/i18n/localize.ts", APPLICATIONS],
+    ["packages/arknights-domain/src/releases/types.ts", APPLICATIONS],
+    ["packages/arknights-domain/src/releases/validation.ts", APPLICATIONS],
     ["packages/contracts/locale.ts", APPLICATIONS],
     ["packages/platform-server/src/proxy.ts", APPLICATIONS],
     ["packages/platform-server/src/html-compression.ts", APPLICATIONS],

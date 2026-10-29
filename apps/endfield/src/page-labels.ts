@@ -6,5 +6,6 @@ export const pageLabels: Readonly<Record<string, string>> = {
   "/skland": "Navigation.skland",
   "/settings": "Navigation.settings",
   "/docs": "Navigation.docs",
-  "/changelog": "Navigation.changelog"
+  "/changelog": "Navigation.changelog",
+  "/admin/changelog": "Navigation.changelogAdmin"
 };

@@ -3,6 +3,7 @@ export const loaders: Record<string, () => Promise<unknown>> = {
   "AccountDialogHost": () => import("../../../messages/en/AccountDialogHost.json", { with: { type: "json" } }).then(module => module.default),
   "AppShell": () => import("../../../messages/en/AppShell.json", { with: { type: "json" } }).then(module => module.default),
   "Changelog": () => import("../../../messages/en/Changelog.json", { with: { type: "json" } }).then(module => module.default),
+  "ChangelogAdmin": () => import("../../../messages/en/ChangelogAdmin.json", { with: { type: "json" } }).then(module => module.default),
   "Changes": () => import("../../../messages/en/Changes.json", { with: { type: "json" } }).then(module => module.default),
   "ConfirmAction": () => import("../../../messages/en/ConfirmAction.json", { with: { type: "json" } }).then(module => module.default),
   "Docs": () => import("../../../messages/en/Docs.json", { with: { type: "json" } }).then(module => module.default),
