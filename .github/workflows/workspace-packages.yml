@@ -60,6 +60,14 @@ jobs:
           DATABASE_MIGRATION_URL: postgresql://postgres@127.0.0.1:5432/riic_platform_test
           AUTH_INTEGRATION_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/riic_platform_test
         run: npm run db:migrate && npm run test:platform:integration
+      - name: Validate unified changelog workbench
+        env:
+          PGPASSWORD: platform-test-only
+          AUTH_INTEGRATION_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/riic_platform_test
+        run: |
+          npm run test:admin-preview
+          npx playwright install --with-deps chromium
+          node scripts/test-endfield-changelog-e2e.mjs
       - name: Stage Endfield and platform artifacts
         env:
           RELEASE_SHA: ${{ github.sha }}

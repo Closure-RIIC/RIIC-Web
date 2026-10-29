@@ -17,20 +17,47 @@ await build({ stdin: { contents: `
   export { stepLogText, stepProblemText } from './apps/endfield/src/step/step-presentation';
   export { solverMessage } from './apps/endfield/src/result-presentation';
   export { sklandErrorKey, SklandFeedbackError } from './apps/endfield/src/skland-feedback';
+  export { sklandFeedbackText } from './apps/endfield/src/skland-feedback-text';
   export { PlatformRequestError } from './packages/platform/client';
   export { registerMessages } from './packages/arknights-domain/src/i18n/localize';
 `, resolveDir: root }, bundle: true, platform: "node", format: "esm", external: ["use-intl/core"], outfile });
-const { stepLogText, stepProblemText, solverMessage, sklandErrorKey, SklandFeedbackError, PlatformRequestError, registerMessages } = await import(pathToFileURL(outfile));
+const { stepLogText, stepProblemText, solverMessage, sklandErrorKey, SklandFeedbackError, sklandFeedbackText, PlatformRequestError, registerMessages } = await import(pathToFileURL(outfile));
 const translators = {};
 for (const locale of ["zh-CN", "zh-TW", "en"]) {
   const messages = {};
-  for (const namespace of ["StepMessages", "Game", "ReportMessages", "SklandErrors"]) {
+  for (const namespace of ["StepMessages", "Game", "ReportMessages", "SklandErrors", "Skland", "SklandLoginPanel", "SklandDataView", "SklandInventory", "SklandProgress", "SklandSyncDetails", "SklandFields"]) {
     messages[namespace] = JSON.parse(await fs.readFile(path.join(root, `apps/endfield/messages/${locale}/${namespace}.json`), "utf8"));
   }
   messages.EndfieldGameData = JSON.parse(await fs.readFile(path.join(root, `packages/endfield-data/messages/${locale}/EndfieldGameData.json`), "utf8"));
   registerMessages(locale, messages);
   translators[locale] = createTranslator({ locale, messages, onError: error => { throw error; } });
 }
+
+test("Skland page labels and existing sync errors follow the selected language", async () => {
+  const keys = new Set();
+  for (const name of ["SklandPage", "SklandLoginPanel", "SklandDataView", "SklandInventory", "SklandProgress", "SklandSyncDetails"]) {
+    const source = await fs.readFile(path.join(root, `apps/endfield/src/components/${name}.tsx`), "utf8");
+    for (const match of source.matchAll(/"(Skland\w*\.[A-Za-z]+)"/g)) keys.add(match[1]);
+    if (name === "SklandDataView") {
+      const fields = JSON.parse(source.match(/const detailFieldKeys = new Set\((\[[^\n]+\])\);/)[1]);
+      for (const field of fields) keys.add(`SklandFields.${field}`);
+    }
+  }
+  const error = new PlatformRequestError("untranslated upstream error");
+  error.status = 401;
+  const key = sklandErrorKey(error, "Skland.syncFailedPleaseRetry");
+  const feedback = new Set();
+  for (const [locale, t] of Object.entries(translators)) {
+    for (const key of keys) {
+      const text = t(key);
+      assert.ok(text && text !== key, `${locale}: ${key}`);
+    }
+    const text = sklandFeedbackText(key, t);
+    assert.doesNotMatch(text, /SklandErrors\.|untranslated upstream/);
+    feedback.add(text);
+  }
+  assert.equal(feedback.size, 3, "the same stored error renders in all three languages");
+});
 
 test("existing simulation events and validation problems switch languages without changing simulation state", () => {
   const simulation = new StepSimulation({
