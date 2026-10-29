@@ -327,8 +327,11 @@
 .ef-schedule-page { container-type:inline-size; padding-top:16px; padding-bottom:20px; }
 .ef-schedule-page>.ef-title { margin-bottom:12px; }
 .ef-schedule-page .ef-subtitle { margin-top:4px; font-size:12px; }
-.ef-result-toolbar,.ef-result-toolbar>div { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.ef-result-toolbar,.ef-result-heading { display:flex; align-items:center; gap:8px 12px; flex-wrap:wrap; }
 .ef-result-toolbar { justify-content:space-between; margin-bottom:20px; }
+.ef-result-heading { flex:1; min-width:0; }
+.ef-result-toolbar>button { flex-shrink:0; }
+.ef-result-timing { white-space:nowrap; }
 .ef-result-toolbar h2 { font-size:14px; font-weight:600; }
 .ef-result-toolbar .ef-muted { font-size:11px; }
 .ef-output-summary { margin-top:18px; padding-top:11px; }
@@ -418,9 +421,18 @@
 .ef-manual-operator:disabled { cursor:not-allowed; opacity:.6; }
 .ef-manual-empty { display:grid; place-items:center; width:min(100%,var(--result-avatar)); aspect-ratio:1; border:1px dashed color-mix(in oklab,var(--ef-ink) 35%,transparent); border-radius:50%; color:var(--ef-muted); background:color-mix(in oklab,var(--ef-surface) 35%,transparent); }
 .ef-manual-page>.ef-schedule-result { margin-top:28px; }
-.ef-result-status { display:flex; align-items:center; flex-wrap:wrap; gap:4px 16px; margin-top:8px; font-size:10px; line-height:16px; color:var(--ef-muted); }
+.ef-result-status { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; min-width:0; margin-top:8px; font-size:10px; line-height:16px; color:var(--ef-muted); }
 .ef-result-status>span { display:inline-flex; align-items:center; gap:4px; }
+.ef-result-status svg { flex-shrink:0; }
 .ef-result-warning { color:var(--ef-ink); }
+@media(min-width:900px) {
+  .ef-schedule-result-has-status { display:grid; grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"heading status report" "board board board"; align-items:center; gap:20px 12px; }
+  .ef-schedule-result-has-status>.ef-result-toolbar { display:contents; }
+  .ef-schedule-result-has-status .ef-result-heading { grid-area:heading; }
+  .ef-schedule-result-has-status .ef-result-toolbar>button { grid-area:report; }
+  .ef-schedule-result-has-status>.ef-ship-board { grid-area:board; }
+  .ef-schedule-result-has-status>.ef-result-status { grid-area:status; margin-top:0; }
+}
 .ef-live-activity {
   --status-mark-done:var(--color-emerald-600); --status-mark-failed:var(--destructive);
   position:fixed; top:max(12px,env(safe-area-inset-top)); left:50%; translate:-50% 0; z-index:80;

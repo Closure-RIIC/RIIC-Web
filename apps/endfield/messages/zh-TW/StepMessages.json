@@ -1,0 +1,18 @@
+{
+  "round1": "第一輪",
+  "round2": "第二輪",
+  "empty": "空",
+  "start": "模擬開始（事件驅動 · 精度 1s）：起點 {hour}:00，時長 {duration}，取樣 {seconds}s",
+  "shiftHours": "（第一輪 {first}h，第二輪 {second}h）",
+  "noRotation": "（不輪班）",
+  "crew": "{room}{shift} {round}：{names}",
+  "boost": "助力：{name}（{room}）心情 +{amount}（{before}% → {after}%）",
+  "moodZero": "{name}（{room}）心情歸零",
+  "moodFull": "{name}（{room}）心情回滿",
+  "switch": "{room} {from} → {to}",
+  "end": "模擬結束",
+  "pause": "已暫停",
+  "invalidHour": "{room}：換班時間必須是 1–23 的整點",
+  "unknownOperator": "{room} {shift} 班：{name} 不在名單中",
+  "duplicateOperator": "幹員「{name}」被重複排班"
+}

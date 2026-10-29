@@ -1,7 +1,7 @@
 import { manualTemplate, type Assignment, type Result, type Workspace } from "@riic/endfield-solver/model.mjs";
 import { MFG_LAYOUTS, operatorEffects } from "@riic/endfield-solver/simulation.mjs";
 import type {
-  EffectTable, RoomEffectResolver, RoomEffects, StepBoostConfig, StepBoostEntry, StepConfig, StepRoom, StepRoomKey, StepRoomKind,
+  EffectTable, RoomEffectResolver, RoomEffects, StepBoostConfig, StepBoostEntry, StepConfig, StepProblem, StepRoom, StepRoomKey, StepRoomKind,
 } from "./step-types.ts";
 
 export type ImportSource = "manual" | "result" | "template";
@@ -222,19 +222,19 @@ export function scheduledNames(rooms: readonly StepRoom[]): Set<string> {
   return names;
 }
 
-/** 换班时刻的合法性；返回给界面显示的中文错误。 */
-export function validateStepConfig(config: StepConfig, owned: ReadonlySet<string>): string[] {
-  const problems: string[] = [];
+/** Return structured problems so existing validation messages follow locale changes. */
+export function validateStepConfig(config: StepConfig, owned: ReadonlySet<string>): StepProblem[] {
+  const problems: StepProblem[] = [];
   const seen = new Set<string>();
   for (const room of config.rooms) {
     if (!room.enabled) continue;
-    if (!Number.isInteger(room.hour) || room.hour < 1 || room.hour > 23) problems.push(`${room.label}：换班时刻必须是 1–23 的整点`);
+    if (!Number.isInteger(room.hour) || room.hour < 1 || room.hour > 23) problems.push({ kind: "invalid-hour", room: room.key });
     const crews: [string, (string | null)[]][] = room.single ? [["A", room.crewA]] : [["A", room.crewA], ["B", room.crewB]];
     for (const [shift, crew] of crews) {
       for (const name of crew) {
         if (!name) continue;
-        if (!owned.has(name)) { problems.push(`${room.label} ${shift} 班：${name} 不在名单中`); continue; }
-        if (seen.has(name)) problems.push(`干员「${name}」被重复排班`);
+        if (!owned.has(name)) { problems.push({ kind: "unknown-operator", room: room.key, shift, name }); continue; }
+        if (seen.has(name)) problems.push({ kind: "duplicate-operator", name });
         seen.add(name);
       }
     }

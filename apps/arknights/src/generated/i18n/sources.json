@@ -11,7 +11,7 @@
     "packages/arknights-domain/src/generated/operator-english-names.json": "fb16929757c2e3d7aa7292de5b2d58331d8843cbe9d5dffe4e2d42766650c7de",
     "apps/arknights/src/generated/building-skill-english.json": "9bf697ec02013f0685654eba6a546afb05a538243c1ae959c45a81a5cf2e6d23",
     "apps/arknights/src/generated/building-skill-english-manual.json": "bf42ababa9313cbf4af3d743e3c57560ce732df0f01ab0c0654fe6d7291d214c",
-    "apps/arknights/i18n/game-overrides/en.json": "2fcd7469c9fd08f98477252c36e0c91532eef856904132c5e404b4426edb94ad",
+    "apps/arknights/i18n/game-overrides/en.json": "87970a73f8b5cabd6e4a1f21447115a9dd70112f44d5a48293ebc2d0efe793cd",
     "apps/arknights/i18n/game-overrides/zh-TW.json": "7d6323ee66ab3920a35a89a6df0b51fbe7ddd209d2bb5f9a4cad79162726647d"
   },
   "inputs": {
@@ -26,8 +26,8 @@
   "outputs": {
     "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json": "13ed2379ac937bfdffccee9b01f1b615741670ec5053b3e3699e91fab87f3c2f",
     "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json": "688975a1fd9f7ea1cbe490373247eb8334ff94d78f17bfce78b52587bedf49ef",
-    "apps/arknights/src/generated/i18n/en/ArknightsGameData.json": "1d41924b10660902051740d945773b73f3e6a9dcd5b78ce8ccf9d85ef656f3e8",
-    "apps/arknights/src/generated/i18n/operator-aliases.json": "67448c5479650a323c24d0ac65a32405f90a34ea74de69db783f151865da539f"
+    "apps/arknights/src/generated/i18n/en/ArknightsGameData.json": "58762e3e8652b681cd0b7298e0e1aa55dad803151d996150fe6cd555cd82b88f",
+    "apps/arknights/src/generated/i18n/operator-aliases.json": "5b17bb0e5bf59e5550b8387926cad01433147b1f927b17d2c012c3ee8733a674"
   },
   "coverage": {
     "zh-CN": [],
@@ -453,8 +453,8 @@
         "kind": "operator",
         "id": "char_393_toledo",
         "source": "德·托莱多",
-        "translation": "德·托莱多",
-        "resolution": "legacy-english"
+        "translation": "De Toledo",
+        "resolution": "manual"
       },
       {
         "kind": "operator",
@@ -467,29 +467,29 @@
         "kind": "operator",
         "id": "char_4217_makoto",
         "source": "结城理",
-        "translation": "结城理",
-        "resolution": "legacy-english"
+        "translation": "Makoto Yuki",
+        "resolution": "manual"
       },
       {
         "kind": "operator",
         "id": "char_4218_aigis",
         "source": "埃癸斯",
-        "translation": "埃癸斯",
-        "resolution": "legacy-english"
+        "translation": "Aigis",
+        "resolution": "manual"
       },
       {
         "kind": "operator",
         "id": "char_4219_yukari",
         "source": "岳羽由加莉",
-        "translation": "岳羽由加莉",
-        "resolution": "legacy-english"
+        "translation": "Yukari Takeba",
+        "resolution": "manual"
       },
       {
         "kind": "operator",
         "id": "char_4220_kormr",
         "source": "虎狼丸",
-        "translation": "虎狼丸",
-        "resolution": "legacy-english"
+        "translation": "Koromaru",
+        "resolution": "manual"
       },
       {
         "kind": "operator",
@@ -509,15 +509,15 @@
         "kind": "operator",
         "id": "char_4231_clemnt",
         "source": "克莱门莎",
-        "translation": "克莱门莎",
-        "resolution": "legacy-english"
+        "translation": "Clementia",
+        "resolution": "manual"
       },
       {
         "kind": "operator",
         "id": "char_4232_hbound",
         "source": "旅骨",
-        "translation": "旅骨",
-        "resolution": "legacy-english"
+        "translation": "Homebound",
+        "resolution": "manual"
       },
       {
         "kind": "operator",

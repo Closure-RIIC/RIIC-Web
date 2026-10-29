@@ -1,0 +1,18 @@
+{
+  "round1": "Shift 1",
+  "round2": "Shift 2",
+  "empty": "Empty",
+  "start": "Simulation started (event-driven, 1s precision): starts at {hour}:00, duration {duration}, sampling every {seconds}s",
+  "shiftHours": " (shift 1: {first}h, shift 2: {second}h)",
+  "noRotation": " (no rotation)",
+  "crew": "{room}{shift} · {round}: {names}",
+  "boost": "Assistance: {name} ({room}), morale +{amount} ({before}% → {after}%)",
+  "moodZero": "{name} ({room}) ran out of morale",
+  "moodFull": "{name} ({room}) recovered full morale",
+  "switch": "{room}: {from} → {to}",
+  "end": "Simulation finished",
+  "pause": "Paused",
+  "invalidHour": "{room}: the shift change must be at a whole hour from 1 to 23",
+  "unknownOperator": "{room}, shift {shift}: {name} is not in your roster",
+  "duplicateOperator": "Operator {name} is assigned more than once"
+}
