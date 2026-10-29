@@ -1,6 +1,7 @@
 import type WorkspaceErrors from "../messages/zh-CN/WorkspaceErrors.json";
 type WorkspaceError = keyof typeof WorkspaceErrors;
 import { createContext, useCallback, useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
+import { useTranslations } from "use-intl";
 import { DEFAULT_OPTIONS, STORAGE_KEY, manualTemplate, parseWorkspace, type Assignment, type Result, type Workspace } from "@riic/endfield-solver/model.mjs";
 import type { EndfieldSnapshot } from "@riic/endfield-skland/model";
 import { DISPLAY_STORAGE_KEY, readEndfieldColorMode, clearEndfieldStorage } from "./local-settings";
@@ -235,7 +236,14 @@ function useWorkspaceState() {
 }
 const Context = createContext<ReturnType<typeof useWorkspaceState> | null>(null);
 export function WorkspaceProvider({ children }: { children: ReactNode }) { const value = useWorkspaceState(); return <Context.Provider value={value}>{children}</Context.Provider>; }
-export function useWorkspace() { const value = useContext(Context); if (!value) throw new Error("Missing Endfield workspace"); return value; }
+export function useWorkspace() {
+  const value = useContext(Context);
+  // Lazy features extend messages below WorkspaceProvider. Read their nearest
+  // translator instead of reusing the provider's earlier resource snapshot.
+  const t = useTranslations();
+  if (!value) throw new Error("Missing Endfield workspace");
+  return { ...value, t };
+}
 export function downloadJson(name: string, value: unknown) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], { type: "application/json" }));
   const a = document.createElement("a"); a.href = url; a.download = name; a.click();

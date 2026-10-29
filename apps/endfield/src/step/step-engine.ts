@@ -1,5 +1,5 @@
 import type {
-  RoomEffectResolver, SimOp, SimOptions, SimRates, SimRoomState, StepConfig, StepEventType, StepLogEntry, StepRoomKey, StepRound, StepSample, StepView,
+  RoomEffectResolver, SimOp, SimOptions, SimRates, SimRoomState, StepConfig, StepEventType, StepLogEntry, StepLogMessage, StepRoomKey, StepRound, StepSample, StepView,
 } from "./step-types.ts";
 
 const EPS = 1e-6;
@@ -12,8 +12,6 @@ interface SimBoost {
   target: string;
   triggered: boolean;
 }
-
-const roundName = (round: StepRound) => round === "round1" ? "一轮" : "二轮";
 
 export function formatDuration(seconds: number): string {
   const total = Math.round(Math.max(0, seconds));
@@ -133,16 +131,16 @@ export class StepSimulation {
       }
     }
 
-    this.logEvent("start", `▶ 模拟开始（事件驱动 · 精度 1s）：起点 ${String(this.startHour).padStart(2, "0")}:00，时长 ${formatDuration(this.maxTSec)}，采样 ${this.sampleSec}s`);
+    this.logEvent("start", { kind: "start", startHour: this.startHour, duration: this.maxTSec, sampleSec: this.sampleSec });
     for (const room of this.config.rooms) {
       const state = this.rooms[room.key];
       if (!state) continue;
-      const shift = state.shiftEnabled ? `（一轮 ${state.shiftABSec / 3600}h，二轮 ${state.shiftBASec / 3600}h）` : "（不轮班）";
       const first = this.ops.filter(op => op.roomKey === room.key && op.round === "round1").map(op => op.name);
-      this.logEvent("start", `   ${room.label}${shift} 一轮：${first.join(" / ") || "空"}`, room.key);
+      this.logEvent("start", { kind: "crew", room: room.key, round: "round1", names: first,
+        ...(state.shiftEnabled ? { shiftHours: [state.shiftABSec / 3600, state.shiftBASec / 3600] as [number, number] } : {}) }, room.key);
       if (state.shiftEnabled) {
         const second = this.ops.filter(op => op.roomKey === room.key && op.round === "round2").map(op => op.name);
-        this.logEvent("start", `   ${room.label} 二轮：${second.join(" / ") || "空"}`, room.key);
+        this.logEvent("start", { kind: "crew", room: room.key, round: "round2", names: second }, room.key);
       }
     }
     this.recordSampleAt(0);
@@ -178,17 +176,13 @@ export class StepSimulation {
     return boosts.sort((a, b) => a.tSec - b.tSec);
   }
 
-  private logEvent(type: StepEventType, text: string, room?: StepRoomKey): void {
-    this.log.push({ type, tSec: this.tSec, text, room });
+  private logEvent(type: StepEventType, message: StepLogMessage, room?: StepRoomKey): void {
+    this.log.push({ type, tSec: this.tSec, message, room });
     if (this.log.length > MAX_LOG) this.log.shift();
   }
 
   private roomConfig(key: string) {
     return this.config.rooms.find(room => room.key === key);
-  }
-
-  private roomLabel(key: string): string {
-    return this.roomConfig(key)?.label ?? key;
   }
 
   /** 当前中枢在岗干员提供的“全员心情恢复”总和（%）。 */
@@ -331,7 +325,7 @@ export class StepSimulation {
       if (!op) continue;
       const before = op.mood;
       op.mood = Math.min(100, op.mood + this.assistPoints);
-      this.logEvent("boost", `⚡ 助力：${op.name}（${this.roomLabel(op.roomKey)}）心情 +${Math.round(this.assistPoints)}（${before.toFixed(1)}% → ${op.mood.toFixed(1)}%）`, op.roomKey);
+      this.logEvent("boost", { kind: "boost", room: op.roomKey, name: op.name, amount: Math.round(this.assistPoints), before, after: op.mood }, op.roomKey);
       extraSample = true;
     }
 
@@ -348,10 +342,10 @@ export class StepSimulation {
     for (const op of this.ops) {
       const last = this.lastMood[op.name] ?? null;
       if (op.mood <= EPS && last !== "zero") {
-        this.logEvent("mood-zero", `💤 ${op.name}（${this.roomLabel(op.roomKey)}）心情归零`, op.roomKey);
+        this.logEvent("mood-zero", { kind: "mood-zero", room: op.roomKey, name: op.name }, op.roomKey);
         this.lastMood[op.name] = "zero";
       } else if (op.mood >= 100 - EPS && last !== "full") {
-        this.logEvent("mood-full", `☀️ ${op.name}（${this.roomLabel(op.roomKey)}）心情回满`, op.roomKey);
+        this.logEvent("mood-full", { kind: "mood-full", room: op.roomKey, name: op.name }, op.roomKey);
         this.lastMood[op.name] = "full";
       } else if (op.mood > EPS && op.mood < 100 - EPS && last) {
         this.lastMood[op.name] = null;
@@ -364,7 +358,7 @@ export class StepSimulation {
       const from = room.activeRound;
       const to: StepRound = from === "round1" ? "round2" : "round1";
       this.activateRound(key, to);
-      this.logEvent("switch", `🔄 ${this.roomLabel(key)} ${roundName(from)} → ${roundName(to)}`, key as StepRoomKey);
+      this.logEvent("switch", { kind: "switch", room: key as StepRoomKey, from, to }, key as StepRoomKey);
       room.nextSwitchAtSec = tSec + (to === "round2" ? room.shiftBASec : room.shiftABSec);
       extraSample = true;
     }
@@ -403,7 +397,7 @@ export class StepSimulation {
     if (this.tSec >= this.maxTSec - EPS) {
       if (this.nextSampleSec <= this.maxTSec) this.recordSampleAt(this.maxTSec);
       this.tSec = this.maxTSec;
-      this.logEvent("end", "✅ 模拟结束");
+      this.logEvent("end", { kind: "end" });
       this.ended = true;
       return true;
     }
@@ -458,7 +452,7 @@ export class StepSimulation {
   }
 
   markPaused(): void {
-    if (!this.ended) this.logEvent("pause", "⏸ 已暂停");
+    if (!this.ended) this.logEvent("pause", { kind: "pause" });
   }
 
   clearLog(): void {

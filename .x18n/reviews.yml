@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://x18n.dev/schema/reviews.json
+x18n: 1
+sources:
+  components_pages_ManualSchedulePage.importMaaScheduleQuestion:
+    en: b66e29269a52c
+  components_pages_ManualSchedulePage.importScheduleFile:
+    en: 71779a8dae198
+  components_pages_ManualSchedulePage.invalidMaaSchedule:
+    en: 1af4650e83fe59
+  components_setup_ManualOperboxPicker.selectAllAtMaxElite:
+    en: 48021e3cf21f
+  setup_dialog.timeRanges:
+    en: b04388f05bc23

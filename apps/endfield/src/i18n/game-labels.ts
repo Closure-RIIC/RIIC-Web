@@ -4,6 +4,7 @@ const labels: Readonly<Record<string, string>> = {
   "总控中枢": "Game.control",
   "会客室": "Game.reception",
   "培养舱": "Game.growth",
+  "培养": "Game.growth",
   "制造舱": "Game.manufacturing",
   "制造舱 Ⅰ": "Game.manufacturing1",
   "制造舱 Ⅱ": "Game.manufacturing2",

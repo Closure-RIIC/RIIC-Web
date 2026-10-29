@@ -6163,7 +6163,7 @@ export const references = [
   {
     "key": "AK_Raw_app_wishes2_page.travelerSBackpack",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes2/page.tsx:126"
+    "source": "apps/arknights/src/app/wishes2/page.tsx:121"
   },
   {
     "key": "AK_Raw_app_wishes2_page.videoRecords",
@@ -6173,7 +6173,7 @@ export const references = [
   {
     "key": "AK_Raw_app_wishes2_page.wishlist",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes2/page.tsx:142"
+    "source": "apps/arknights/src/app/wishes2/page.tsx:137"
   },
   {
     "key": "AK_Raw_app_wishes2_page.wishWallBackground",
@@ -9351,6 +9351,11 @@ export const references = [
     "source": "apps/arknights/src/app/admin/issues/issues-client.tsx:692"
   },
   {
+    "key": "app_admin_issues_issues_client.fiammetta",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/issues/issues-client.tsx:135"
+  },
+  {
     "key": "app_admin_issues_issues_client.filterByFacility",
     "prefix": false,
     "source": "apps/arknights/src/app/admin/issues/issues-client.tsx:574"
@@ -9414,6 +9419,11 @@ export const references = [
     "key": "app_admin_issues_issues_client.onlyFailedSolvesAreListedCliOutputIsShown",
     "prefix": false,
     "source": "apps/arknights/src/app/admin/issues/issues-client.tsx:645"
+  },
+  {
+    "key": "app_admin_issues_issues_client.operatorBox",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/issues/issues-client.tsx:133"
   },
   {
     "key": "app_admin_issues_issues_client.operators",
@@ -13361,6 +13371,11 @@ export const references = [
     "source": "apps/arknights/src/components/pages/TrainingAdvice.tsx:356"
   },
   {
+    "key": "components_pages_TrainingAdvice.clear",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingAdvice.tsx:502"
+  },
+  {
     "key": "components_pages_TrainingAdvice.clearBlocked",
     "prefix": false,
     "source": "apps/arknights/src/components/pages/TrainingAdvice.tsx:348"
@@ -14771,6 +14786,11 @@ export const references = [
     "source": "apps/arknights/src/components/UpgradeSimulationDialog.tsx:168"
   },
   {
+    "key": "components_workbench_WorkbenchRouteSkeleton.loadingMasteryPlanner",
+    "prefix": false,
+    "source": "apps/arknights/src/app/(workbench)/mastery/loading.tsx:6"
+  },
+  {
     "key": "components_workbench_WorkbenchRouteSkeleton.loadingSkillReference",
     "prefix": false,
     "source": "apps/arknights/src/components/workbench/WorkbenchRouteSkeleton.tsx:76"
@@ -14784,6 +14804,11 @@ export const references = [
     "key": "components_workbench_WorkbenchRouteSkeleton.loadingTrainingAdvice",
     "prefix": false,
     "source": "apps/arknights/src/components/workbench/WorkbenchRouteSkeleton.tsx:26"
+  },
+  {
+    "key": "components_workbench_WorkbenchRouteSkeleton.loadingTrainingCalculator",
+    "prefix": false,
+    "source": "apps/arknights/src/app/(workbench)/training-plan/loading.tsx:7"
   },
   {
     "key": "components.24hManufacturing",

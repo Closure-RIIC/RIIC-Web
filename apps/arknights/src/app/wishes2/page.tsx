@@ -118,7 +118,7 @@ export default function Wishes2Page() {
         >
           <img
             src="/images/wishes/traveler-backpack.png"
-            alt="Traveler's Backpack"
+                    alt={rawText.text(rawLocale, "travelerSBackpack")}
             width={339}
             height={96}
             className="block h-[96px] w-[339px]"
@@ -134,7 +134,7 @@ export default function Wishes2Page() {
         >
           <img
             src="/images/wishes/wishlist.png"
-            alt="Wishlist"
+                    alt={rawText.text(rawLocale, "wishlist")}
             width={203}
             height={84}
             className="block h-[84px] w-[203px]"

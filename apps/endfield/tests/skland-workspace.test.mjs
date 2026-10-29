@@ -108,7 +108,7 @@ test("restoring a complete roster removes simulated operators and elite upgrades
 test("malformed or mismatched responses fail before mutating scheduling input", () => {
   const current = sync(base()).workspace;
   const before = structuredClone(current);
-  assert.throws(() => sync(current, snapshot({ role: { ...role, roleId: "other" } })), /角色/);
+  assert.throws(() => sync(current, snapshot({ role: { ...role, roleId: "other" } })), { messageKey: "SklandErrors.roleMismatch" });
   assert.throws(() => sync(current, snapshot({ characters: [character(0), character(0)] })), /重复/);
   assert.throws(() => sync(current, snapshot({ characters: [character(0, 9)] })), /elite|精英/);
   assert.deepEqual(current, before);

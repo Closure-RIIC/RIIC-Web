@@ -1,0 +1,17 @@
+{
+  "sessionExpired": "Your Skland session has expired. Sign in again.",
+  "invalidOrigin": "Invalid request origin. Refresh the page and try again.",
+  "unavailable": "Skland is temporarily unavailable. Try again later.",
+  "accountLimit": "You can connect up to 5 Skland accounts. Sign out of one first.",
+  "consentRequired": "Read and accept the Terms of Service and Privacy Policy first.",
+  "accountBound": "This Skland account is already linked to another website account.",
+  "notAvailable": "This feature is not available on this site.",
+  "signInRequired": "Sign in to your RIIC website account first.",
+  "forbidden": "This account cannot access this feature. Check which account is signed in.",
+  "invalidCredential": "Invalid Skland credential format. Copy the complete cred,token value again.",
+  "invalidRequest": "The request was invalid or interrupted. Try again.",
+  "tooLarge": "The submitted data is too large. Reduce its size and try again.",
+  "invalidData": "The Skland account or character data is invalid. Sign in again and sync.",
+  "rateLimited": "Too many requests. Try again later.",
+  "roleMismatch": "Skland returned a different character. Sync again."
+}

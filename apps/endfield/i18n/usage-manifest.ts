@@ -643,57 +643,57 @@ export const references = [
   {
     "key": "Game.caster",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:30"
+    "source": "apps/endfield/src/i18n/game-labels.ts:31"
   },
   {
     "key": "Game.clue1",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:32"
+    "source": "apps/endfield/src/i18n/game-labels.ts:33"
   },
   {
     "key": "Game.clue2",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:33"
+    "source": "apps/endfield/src/i18n/game-labels.ts:34"
   },
   {
     "key": "Game.clue3",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:34"
+    "source": "apps/endfield/src/i18n/game-labels.ts:35"
   },
   {
     "key": "Game.clue4",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:35"
+    "source": "apps/endfield/src/i18n/game-labels.ts:36"
   },
   {
     "key": "Game.clue5",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:36"
+    "source": "apps/endfield/src/i18n/game-labels.ts:37"
   },
   {
     "key": "Game.clue6",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:37"
+    "source": "apps/endfield/src/i18n/game-labels.ts:38"
   },
   {
     "key": "Game.clue7",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:38"
+    "source": "apps/endfield/src/i18n/game-labels.ts:39"
   },
   {
     "key": "Game.clueCollection",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:25"
+    "source": "apps/endfield/src/i18n/game-labels.ts:26"
   },
   {
     "key": "Game.clueProbability",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:24"
+    "source": "apps/endfield/src/i18n/game-labels.ts:25"
   },
   {
     "key": "Game.clues",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:12"
+    "source": "apps/endfield/src/i18n/game-labels.ts:13"
   },
   {
     "key": "Game.control",
@@ -703,27 +703,27 @@ export const references = [
   {
     "key": "Game.crystalPlots",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:19"
+    "source": "apps/endfield/src/i18n/game-labels.ts:20"
   },
   {
     "key": "Game.crystals",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:13"
+    "source": "apps/endfield/src/i18n/game-labels.ts:14"
   },
   {
     "key": "Game.defender",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:28"
+    "source": "apps/endfield/src/i18n/game-labels.ts:29"
   },
   {
     "key": "Game.fungi",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:14"
+    "source": "apps/endfield/src/i18n/game-labels.ts:15"
   },
   {
     "key": "Game.fungusPlots",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:20"
+    "source": "apps/endfield/src/i18n/game-labels.ts:21"
   },
   {
     "key": "Game.growth",
@@ -733,57 +733,57 @@ export const references = [
   {
     "key": "Game.guard",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:27"
+    "source": "apps/endfield/src/i18n/game-labels.ts:28"
   },
   {
     "key": "Game.manufacturing",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:7"
+    "source": "apps/endfield/src/i18n/game-labels.ts:8"
   },
   {
     "key": "Game.manufacturing1",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:8"
+    "source": "apps/endfield/src/i18n/game-labels.ts:9"
   },
   {
     "key": "Game.manufacturing2",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:9"
+    "source": "apps/endfield/src/i18n/game-labels.ts:10"
   },
   {
     "key": "Game.mineralPlots",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:21"
+    "source": "apps/endfield/src/i18n/game-labels.ts:22"
   },
   {
     "key": "Game.minerals",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:15"
+    "source": "apps/endfield/src/i18n/game-labels.ts:16"
   },
   {
     "key": "Game.mixedLayout",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:16"
+    "source": "apps/endfield/src/i18n/game-labels.ts:17"
   },
   {
     "key": "Game.moraleConsumption",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:23"
+    "source": "apps/endfield/src/i18n/game-labels.ts:24"
   },
   {
     "key": "Game.moraleRecovery",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:22"
+    "source": "apps/endfield/src/i18n/game-labels.ts:23"
   },
   {
     "key": "Game.operatorExp",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:10"
+    "source": "apps/endfield/src/i18n/game-labels.ts:11"
   },
   {
     "key": "Game.operatorLayout",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:17"
+    "source": "apps/endfield/src/i18n/game-labels.ts:18"
   },
   {
     "key": "Game.reception",
@@ -793,27 +793,27 @@ export const references = [
   {
     "key": "Game.striker",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:29"
+    "source": "apps/endfield/src/i18n/game-labels.ts:30"
   },
   {
     "key": "Game.supporter",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:31"
+    "source": "apps/endfield/src/i18n/game-labels.ts:32"
   },
   {
     "key": "Game.vanguard",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:26"
+    "source": "apps/endfield/src/i18n/game-labels.ts:27"
   },
   {
     "key": "Game.weaponExp",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:11"
+    "source": "apps/endfield/src/i18n/game-labels.ts:12"
   },
   {
     "key": "Game.weaponLayout",
     "prefix": false,
-    "source": "apps/endfield/src/i18n/game-labels.ts:18"
+    "source": "apps/endfield/src/i18n/game-labels.ts:19"
   },
   {
     "key": "Interface",
@@ -899,5 +899,75 @@ export const references = [
     "key": "SklandDataView.trusted",
     "prefix": false,
     "source": "apps/endfield/src/components/SklandDataView.tsx:21"
+  },
+  {
+    "key": "SklandErrors.accountBound",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:17"
+  },
+  {
+    "key": "SklandErrors.accountLimit",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:15"
+  },
+  {
+    "key": "SklandErrors.consentRequired",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:16"
+  },
+  {
+    "key": "SklandErrors.forbidden",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:20"
+  },
+  {
+    "key": "SklandErrors.invalidCredential",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:21"
+  },
+  {
+    "key": "SklandErrors.invalidData",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:24"
+  },
+  {
+    "key": "SklandErrors.invalidOrigin",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:13"
+  },
+  {
+    "key": "SklandErrors.invalidRequest",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:22"
+  },
+  {
+    "key": "SklandErrors.notAvailable",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:18"
+  },
+  {
+    "key": "SklandErrors.rateLimited",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:25"
+  },
+  {
+    "key": "SklandErrors.sessionExpired",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:12"
+  },
+  {
+    "key": "SklandErrors.signInRequired",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:19"
+  },
+  {
+    "key": "SklandErrors.tooLarge",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:23"
+  },
+  {
+    "key": "SklandErrors.unavailable",
+    "prefix": false,
+    "source": "apps/endfield/src/skland-feedback.ts:14"
   }
 ] as const;

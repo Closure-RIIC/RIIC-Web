@@ -1,4 +1,5 @@
 {
+  "clear": "无需调整",
   "noBaseFacilitiesConfigured": "尚未配置基建设施",
   "noOperatorDataImported": "尚未导入干员数据",
   "theBaseCannotContainMoreThan64Rooms": "基建设施不能超过 64 间房",
