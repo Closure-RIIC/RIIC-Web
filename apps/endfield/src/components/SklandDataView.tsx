@@ -1,5 +1,5 @@
 import { displayText } from "../i18n/game-data";
-const detailFieldKeys = new Set(["base","chars","spaceShip","domain","achieve","bpSystem","dailyMission","dungeon","config","currentTs","avatarUrl","charNum","createTime","docNum","exp","gender","lastLoginTime","level","mainMission","description","desc","id","name","roleId","saveTime","serverName","weaponNum","worldLevel","curLevel","maxLevel","ownTs","potentialLevel","evolvePhase","armEquip","bodyEquip","firstAccessory","secondAccessory","weapon","weapons","breakthroughLevel","gem","icon","iconUrl","refineLevel","weaponData","function","rarity","skills","type","charData","avatarRtUrl","avatarSqUrl","illustrationUrl","labelType","profession","property","descLevelParams","descParams","params","tags","weaponType","tacticalItem","activeEffectType","activeEffect","passiveEffect","activeEffectParams","passiveEffectParams","userSkills","skillId","charIds","charSwitch","dailyActivation","maxDailyActivation","collections","blackboxCount","levelId","pieceCount","puzzleCount","trchestCount","domainId","factory","moneyMgr","curStamina","maxStamina","maxTs","settlements","officerCharIds","remainMoney","quickaccess","link","rooms","charId","favorability","physicalStrength","reports","char","createdTimeTs","output","achieveMedals","count","display","equipData","isAccessory","pkg","properties","key","value"]);
+const detailFieldKeys = new Set(["base","chars","spaceShip","domain","achieve","bpSystem","dailyMission","dungeon","config","currentTs","avatarUrl","charNum","createTime","docNum","exp","gender","lastLoginTime","level","mainMission","description","desc","id","name","roleId","saveTime","serverName","weaponNum","worldLevel","curLevel","maxLevel","ownTs","potentialLevel","evolvePhase","armEquip","bodyEquip","firstAccessory","secondAccessory","weapon","weapons","breakthroughLevel","gem","icon","iconUrl","refineLevel","weaponData","function","rarity","skills","type","charData","avatarRtUrl","avatarSqUrl","illustrationUrl","labelType","profession","property","descLevelParams","descParams","params","tags","weaponType","tacticalItem","activeEffectType","activeEffect","passiveEffect","activeEffectParams","passiveEffectParams","userSkills","skillId","charIds","charSwitch","dailyActivation","maxDailyActivation","collections","blackboxCount","levelId","pieceCount","puzzleCount","trchestCount","domainId","factory","moneyMgr","curStamina","maxStamina","maxTs","settlements","officerCharIds","remainMoney","quickaccess","link","rooms","charId","favorability","physicalStrength","reports","char","createdTimeTs","output","achieveMedals","count","display","equipData","isAccessory","pkg","properties","key","value","talent","latestSpaceshipSkillNodes","nodeId","weaponId","skillLevel"]);
 import { useState, type ReactNode } from "react";
 import { Section } from "@riic/endfield-ui";
 import { type DetailRecord, type DetailValue } from "@riic/endfield-skland/details";
@@ -49,7 +49,7 @@ function DataFields({ value, names, field = "" }: { value: DetailValue; names: M
   if (Array.isArray(value)) return <div className="ef-data-list">{value.map((item, i) => {
     if (item && typeof item === "object") {
       const row = record(item);
-      return <Disclosure key={i} title={nameOf(row.name) || nameOf(row.description) || names.get(nameOf(row.charId)) || `${t("SklandDataView.record")} ${i + 1}`}>
+      return <Disclosure key={i} title={displayText(operatorData(nameOf(row.name)), "name", locale) || nameOf(row.name) || nameOf(row.description) || names.get(nameOf(row.charId)) || `${t("SklandDataView.record")} ${i + 1}`}>
         <DataFields value={item} names={names} />
       </Disclosure>;
     }
@@ -105,10 +105,10 @@ export function SklandDataView({ snapshot }: { snapshot: EndfieldSnapshot }) {
   const data: DetailRecord = snapshot.details ?? { base: snapshot.role, chars: snapshot.characters, spaceShip: { rooms: snapshot.rooms } };
   const base = record(data.base), sanity = record(data.dungeon), daily = record(data.dailyMission), pass = record(data.bpSystem);
   const allChars = items(data.chars);
-  const names = new Map(snapshot.characters.map(char => [char.id, char.name]));
+  const names = new Map(snapshot.characters.map(char => [char.id, displayText(operatorData(char.id) ?? operatorData(char.name), "name", locale) || char.name]));
   for (const item of allChars) {
     const char = record(item), profile = record(char.charData);
-    if (nameOf(char.id) && nameOf(profile.name)) names.set(nameOf(char.id), nameOf(profile.name));
+    if (nameOf(char.id) && nameOf(profile.name)) names.set(nameOf(char.id), displayText(operatorData(nameOf(profile.id)) ?? operatorData(nameOf(profile.name)), "name", locale) || nameOf(profile.name));
   }
   const characters = allChars.filter(item => {
     const char = record(item), profile = record(char.charData), display = operatorData(nameOf(profile.id));
