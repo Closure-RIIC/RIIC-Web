@@ -1,7 +1,13 @@
 "use client";
+
+import { lazyWithMessages } from "@/i18n/features-client";
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_agent_AgentFloatingWidget.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_agent_AgentFloatingWidget");
+import type { AppLocale } from "@riic/contracts/locale";
 import { requestAccountSignIn } from "@riic/shell/account-sign-in";
 
-import { Component, lazy, Suspense, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocale } from "use-intl";
 import { Minus } from "lucide-react";
 import { useWebsiteSession } from "@/website-session";
@@ -14,9 +20,9 @@ import styles from "./AgentFloatingWidget.module.css";
 import dockStyles from "../layout/WorkbenchDock.module.css";
 
 type Availability = "checking" | "available" | "sign_in" | "credits" | "unavailable";
-const AgentChat = lazy(() => import("./AgentChat").then((module) => ({ default: module.AgentChat })));
+const AgentChat = lazyWithMessages(() => import("./AgentChat").then((module) => ({ default: module.AgentChat })), "apps/arknights/src/components/agent/AgentChat.tsx");
 
-class AgentChatErrorBoundary extends Component<{ en: boolean; children: ReactNode }, { failed: boolean }> {
+class AgentChatErrorBoundary extends Component<{ en: AppLocale; children: ReactNode }, { failed: boolean }> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -26,9 +32,9 @@ class AgentChatErrorBoundary extends Component<{ en: boolean; children: ReactNod
   render() {
     if (!this.state.failed) return this.props.children;
     return <div className={styles.empty} role="alert">
-      <p>{this.props.en ? "The conversation could not load. Refresh the page to try again." : "对话加载失败，请刷新页面后重试。"}</p>
+      <p>{uiText.text(this.props.en, "conversationLoadFailed")}</p>
       <button type="button" className="text-primary underline underline-offset-4" onClick={() => window.location.reload()}>
-        {this.props.en ? "Refresh page" : "刷新页面"}
+        {uiText.text(this.props.en, "refreshPage")}
       </button>
     </div>;
   }
@@ -43,7 +49,7 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, minimi
 }) {
   const resolvedPageContext = useMemo(() => automaticContextInput ? buildAutomaticScheduleContext(automaticContextInput) : pageContext, [automaticContextInput, pageContext]);
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const { data, isPending } = useWebsiteSession();
   const features = useFeatureAccess();
   const { ready, history } = useAgentHistory();
@@ -110,16 +116,16 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, minimi
   const conversationId = history.activeId;
   const canChat = availability === "available" && features.agent;
   const lockedMessage = availability === "checking"
-    ? (en ? "Checking assistant access…" : "正在检查助理状态…")
+    ? (uiText.text(en, "checkingAssistantAccess"))
     : availability === "sign_in"
-      ? (en ? "Sign in to chat with Closure." : "登录后即可和可露希尔对话。")
+      ? (uiText.text(en, "signInToChatWithClosure"))
       : availability === "credits"
-        ? (en ? "Add credits to start a conversation." : "准备积分后即可开始对话。")
-        : (en ? "The assistant is temporarily unavailable." : "助理暂时不可用，请稍后再试。");
+        ? (uiText.text(en, "addCreditsToStartAConversation"))
+        : (uiText.text(en, "theAssistantIsTemporarilyUnavailable"));
   const lockedAction = availability === "sign_in"
-    ? { href: null, label: en ? "Sign in" : "登录网站账号" }
+    ? { href: null, label: uiText.text(en, "signIn") }
     : availability === "credits" && features.billing
-      ? { href: "/billing", label: en ? "View credits" : "查看积分" }
+      ? { href: "/billing", label: uiText.text(en, "viewCredits") }
       : null;
   const minimize = () => {
     setOpen(false);
@@ -132,10 +138,10 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, minimi
         ref={dockRef}
         type="button"
         className={dockStyles.button}
-        aria-label={minimized ? (en ? "Show floating assistant" : "显示悬浮助理") : (en ? "Hide floating assistant" : "隐藏悬浮助理")}
+        aria-label={minimized ? (uiText.text(en, "showFloatingAssistant")) : (uiText.text(en, "hideFloatingAssistant"))}
         aria-expanded={!minimized}
         aria-controls={minimized ? undefined : floatingId}
-        title={minimized ? (en ? "Show floating assistant" : "显示悬浮助理") : (en ? "Hide floating assistant" : "隐藏悬浮助理")}
+        title={minimized ? (uiText.text(en, "showFloatingAssistant")) : (uiText.text(en, "hideFloatingAssistant"))}
         onClick={() => {
           if (minimized) {
             onMinimizedChange(false);
@@ -147,11 +153,11 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, minimi
         data-agent-dock-trigger
       >
         <span className={styles.prtsCursor} aria-hidden="true" />
-        <span>{en ? "Assistant" : "助理"}</span>
+        <span>{uiText.text(en, "assistant")}</span>
       </button>
       {!minimized ? <div id={floatingId} className={styles.floating} data-agent-floating-surface>
-      {open ? <section id={panelId} className={styles.panel} aria-label={en ? "Closure Assistant" : "可露希尔助理"} data-agent-floating-panel>
-        {canChat && ready && conversationId ? <AgentChatErrorBoundary en={en}><Suspense fallback={<div className={styles.empty} role="status">{en ? "Opening conversation…" : "正在打开对话…"}</div>}><AgentChat
+      {open ? <section id={panelId} className={styles.panel} aria-label={uiText.text(en, "closureAssistant")} data-agent-floating-panel>
+        {canChat && ready && conversationId ? <AgentChatErrorBoundary en={en}><Suspense fallback={<div className={styles.empty} role="status">{uiText.text(en, "openingConversation")}</div>}><AgentChat
           key={`${owner ?? "anonymous"}:${conversationId}:floating`}
           compact
           sharePageContext={sharePageContext}
@@ -166,25 +172,25 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, minimi
           userName={data?.user.name}
           conversationId={conversationId}
           initialMessages={restoreAgentMessages(history.conversations.find((entry) => entry.id === conversationId)?.messages ?? [])}
-        /></Suspense></AgentChatErrorBoundary> : canChat ? <div className={styles.empty} role="status">{en ? "Opening conversation…" : "正在打开对话…"}</div> : <div className={styles.locked} role="status">
+        /></Suspense></AgentChatErrorBoundary> : canChat ? <div className={styles.empty} role="status">{uiText.text(en, "openingConversation")}</div> : <div className={styles.locked} role="status">
           <img src="/icon.png" alt="" draggable={false} />
-          <strong>{en ? "Closure Assistant" : "可露希尔助理"}</strong>
+          <strong>{uiText.text(en, "closureAssistant")}</strong>
           <p>{lockedMessage}</p>
           {lockedAction ? lockedAction.href ? <a href={lockedAction.href}>{lockedAction.label}</a> : <button type="button" onClick={event => requestAccountSignIn(event.currentTarget)}>{lockedAction.label}</button> : null}
         </div>}
       </section> : null}
-      {!open ? <span className={styles.hint} aria-hidden="true">{canChat ? (en ? "What would you like to ask about this page?" : "博士，这页有什么想问的？") : (en ? "Ask Closure about this page" : "点击查看可露希尔助理")}</span> : null}
-      <button type="button" className={styles.minimize} aria-label={en ? "Minimize floating assistant" : "收起悬浮助理"} title={en ? "Minimize floating assistant" : "收起悬浮助理"} onClick={minimize}>
+      {!open ? <span className={styles.hint} aria-hidden="true">{canChat ? (uiText.text(en, "whatWouldYouLikeToAskAboutThis")) : (uiText.text(en, "askClosureAboutThisPage"))}</span> : null}
+      <button type="button" className={styles.minimize} aria-label={uiText.text(en, "minimizeFloatingAssistant")} title={uiText.text(en, "minimizeFloatingAssistant")} onClick={minimize}>
         <Minus size={14} aria-hidden="true" />
       </button>
       <button
         ref={launcherRef}
         type="button"
         className={styles.launcher}
-        aria-label={open ? (en ? "Close Closure Assistant" : "收起可露希尔助理") : (en ? "Open Closure Assistant" : "打开可露希尔助理")}
+        aria-label={open ? (uiText.text(en, "closeClosureAssistant")) : (uiText.text(en, "openClosureAssistant"))}
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
-        title={open ? (en ? "Close assistant" : "收起助理") : (en ? "Ask Closure" : "和可露希尔聊聊")}
+        title={open ? (uiText.text(en, "closeAssistant")) : (uiText.text(en, "askClosure"))}
         onClick={() => setOpen((value) => !value)}
         data-agent-floating-trigger
       >

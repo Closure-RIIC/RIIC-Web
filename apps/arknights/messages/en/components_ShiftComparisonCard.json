@@ -1,0 +1,23 @@
+{
+  "unassigned": "Unassigned",
+  "unknownFacility": "Unknown facility",
+  "from": "From",
+  "moveOut": "move out",
+  "moveInto": "Move into",
+  "none": "None",
+  "shiftChangeSummary": "Shift-change summary",
+  "label": ", ",
+  "currentRoom": "Current room",
+  "targetRoom": "Target room",
+  "operatorAdjustments": "{value2} operator adjustments",
+  "operator": "Operator",
+  "operatorRoomAdjustmentsGroupedByAction": "Operator room adjustments grouped by action",
+  "currentStateMatch": "Current-state match",
+  "closestToShift": "Closest to shift <shiftNumber>{number}</shiftNumber>",
+  "nonDormitoryMatch": "Non-dormitory match",
+  "nonDormitoryFacilityMatchPercentage": "Non-dormitory facility match percentage",
+  "currentNonDormitoryAssignmentsMatchThisShiftExactly": "Current non-dormitory assignments match this shift exactly",
+  "noNonDormitoryOperatorNeedsToMoveInMove": "No non-dormitory operator needs to move in, move out, or change rooms.",
+  "additional1": "{count, plural, one {# operator} other {# operators}}",
+  "additional2": "{count, plural, one {# operator} other {# operators}}"
+}

@@ -1,0 +1,9 @@
+{
+  "helpMenu": "幫助目錄",
+  "helpCenter": "使用幫助",
+  "chooseAHelpArticle": "選擇需要檢視的幫助頁面",
+  "closeHelpMenu": "關閉幫助目錄",
+  "helpNavigation": "幫助檔案導航",
+  "current": "當前",
+  "ifYouCannotFindAnEntryPointReturnTo": "找不到入口時，先回到計算器，再開啟「配置Box與佈局」。"
+}

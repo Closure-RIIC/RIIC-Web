@@ -1,0 +1,17 @@
+{
+  "menu": "账号菜单",
+  "anonymous": "未登录",
+  "signIn": "登录网站账号",
+  "loading": "正在加载账号",
+  "billing": "付费计划",
+  "changelog": "更新日志",
+  "signOut": "退出登录",
+  "signingOut": "正在退出…",
+  "signOutFailed": "退出登录失败，请重试。",
+  "docs": "Docs",
+  "settings": "设置",
+  "language": "语言",
+  "unavailable": "账号服务暂不可用，本地排班仍可使用。",
+  "languageFailed": "语言加载失败，请重新选择以重试。",
+  "languageLoading": "正在加载语言…"
+}

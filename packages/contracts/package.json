@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./locale": "./locale.ts",
     "./account-session": "./account-session.ts",
     "./api": "./api.ts"
   }

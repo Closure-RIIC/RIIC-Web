@@ -1,0 +1,11 @@
+{
+  "assistsPerDay": "每日助力次数",
+  "eachAssistRestores30MoraleUpTo100Only": "每次恢复 30% 心情，最多恢复至 100%。仅可选择已排班干员。",
+  "centralAssistanceIsOffInTheWorkspaceTheseSettings": "工作区未开启中枢助力；此处配置仅用于本次模拟。",
+  "assistanceDay": "助力日期",
+  "day": "第 {value1} 天",
+  "assist": "助力 {value1}",
+  "time": "时间",
+  "chooseTarget": "选择助力目标",
+  "noAssistanceInThisSimulation": "本次模拟不使用助力。"
+}

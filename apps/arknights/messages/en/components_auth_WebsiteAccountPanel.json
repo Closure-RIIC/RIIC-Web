@@ -1,0 +1,19 @@
+{
+  "somethingWentWrongTryAgainLater": "Something went wrong. Try again later.",
+  "restoringWebsiteAccount": "Restoring website account",
+  "emailVerified": "Email verified",
+  "signingOut": "Signing out…",
+  "signOutOnThisDevice": "Sign out on this device",
+  "signedInDevices": "Signed-in devices",
+  "thisSessionSigningOutEverywhereRevokesDatabaseSessionsAnd": "This session {value2}. Signing out everywhere revokes database sessions and clears third-party account credentials saved in this browser.",
+  "revokingSessions": "Revoking sessions…",
+  "signOutEverywhere": "Sign out everywhere",
+  "deleteAccountPermanently": "Delete account permanently",
+  "yourAccountAndAllSessionsWillBeDeletedImmediately": "Your account and all sessions will be deleted immediately. Enter your current password to confirm. This cannot be undone.",
+  "currentPassword": "Current password",
+  "showCurrentPassword": "Show current password",
+  "alsoClearThisBrowserSLocalWorkspaceAfterDeletion": "Also clear this browser''s local workspace after deletion",
+  "deleting": "Deleting…",
+  "account": "Account",
+  "signIn": "Sign in"
+}

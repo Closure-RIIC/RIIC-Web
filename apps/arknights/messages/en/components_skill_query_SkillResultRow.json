@@ -1,0 +1,6 @@
+{
+  "sInfrastructureSkills": "{name}''s infrastructure skills",
+  "noSkillData": "No skill data",
+  "manualNote": "Manual note: ",
+  "additional1": "{choice4, select, yes {View skill S{value5}: {value6}} other {View skill details}}"
+}

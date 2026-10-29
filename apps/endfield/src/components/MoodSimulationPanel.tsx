@@ -1,5 +1,5 @@
+import { operatorName } from "../i18n/game-data";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { operatorData } from "@riic/endfield-data";
 import type { Assignment } from "@riic/endfield-solver/model.mjs";
 import { useWorkspace } from "../state";
 import { StepSettings } from "./StepSettings";
@@ -49,7 +49,7 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
   const days = maxBoostDays(startHour, maxHours);
   const scheduled = useMemo(() => scheduledNames(config.rooms), [config]);
 
-  const labelOf = (name: string) => locale === "en" ? operatorData(name)?.enName || name : name;
+  const labelOf = (name: string) => operatorName(name, locale);
 
   function changeMood(name: string, value: number) {
     setPreferences(toStored({ ...config, moods: { ...config.moods, [name]: value } }, controls));
@@ -65,9 +65,9 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
 
   function validate() {
     if (!ready) return false;
-    if (!workspace.operators.length) { setError(t("名单为空，请先配置我的干员。", "Set up your roster before starting.")); return false; }
-    if (!config.rooms.some(room => room.enabled)) { setError(t("请至少启用一个舱室。", "Enable at least one facility.")); return false; }
-    if (!scheduled.size) { setError(t("请先在编辑视图安排干员。", "Assign operators in the editor before starting.")); return false; }
+    if (!workspace.operators.length) { setError(t("MoodSimulationPanel.setUpYourRosterBeforeStarting")); return false; }
+    if (!config.rooms.some(room => room.enabled)) { setError(t("MoodSimulationPanel.enableAtLeastOneFacility")); return false; }
+    if (!scheduled.size) { setError(t("MoodSimulationPanel.assignOperatorsInTheEditorBeforeStarting")); return false; }
     const problems = validateStepConfig(config, new Set(workspace.operators.map(operator => operator.name)));
     if (problems.length) { setError(problems.join("；")); return false; }
     setError("");
@@ -104,37 +104,37 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
   const currentName = picker ? config.boost.days[picker.day]?.list[picker.index]?.target ?? null : null;
   const unavailable = new Set(workspace.operators.map(op => op.name).filter(name => !scheduled.has(name)));
   const pickerTitle = picker
-    ? t(`助力目标 · 第 ${picker.day + 1} 天 · 第 ${picker.index + 1} 次`, `Assistance target · Day ${picker.day + 1} · Assist ${picker.index + 1}`)
-    : t("选择助力目标", "Choose assistance target");
+    ? t("MoodSimulationPanel.assistanceTargetDayAssist", { value1: picker.day + 1, value2: picker.index + 1 })
+    : t("MoodSimulationPanel.chooseAssistanceTarget");
 
   const showResult = started && !!view && !!config;
   return <>
   <div className="ef-step-page" id="manual-simulation">
     <Section>
       {error ? <Notice error>{error}</Notice> : null}
-      {!ready ? <Notice>{t("正在读取本地配置…", "Loading local configuration…")}</Notice> : null}
+      {!ready ? <Notice>{t("MoodSimulationPanel.loadingLocalConfiguration")}</Notice> : null}
       <div className="ef-actions ef-step-playback">
         <Action id="showResultBtn" size="sm" variant="yellow" icon={<Play />} onClick={showResults} disabled={!ready}>
-          {t("展示模拟结果", "Show results")}
+          {t("MoodSimulationPanel.showResults")}
         </Action>
         <Action id="resetBtn" size="sm" icon={<RotateCcw />} onClick={reset} disabled={!ready}>
-          {t("重置模拟", "Reset simulation")}
+          {t("MoodSimulationPanel.resetSimulation")}
         </Action>
       </div>
     </Section>
 
     <Section>
       {showResult && view && timeline ? <MoodCharts view={view} timeline={timeline} rooms={config.rooms} onSeek={seek} />
-        : <div className="ef-empty"><p>{t("安排干员后点击「展示模拟结果」查看曲线。", "Assign operators, then choose Show results.")}</p></div>}
+        : <div className="ef-empty"><p>{t("MoodSimulationPanel.assignOperatorsThenChooseShowResults")}</p></div>}
     </Section>
-    <details className="ef-step-report"><summary>{t("模拟设置", "Simulation settings")}</summary>
+    <details className="ef-step-report"><summary>{t("MoodSimulationPanel.simulationSettings")}</summary>
       <StepSettings config={config} controls={controls} scheduled={scheduled} labelOf={labelOf} onControls={setControls}
         onMood={changeMood} onWork={changeWork} onBoost={changeBoost} onPick={(day, index) => setPicker({ day, index })} />
     </details>
-    <details className="ef-step-report" ref={reportRef}><summary>{t("事件日志与模拟统计", "Events and statistics")}</summary>
-      <StepLog log={showResult && view ? view.log : []} startHour={startHour} onClear={playback.clearLog} />      <Section title={t("模拟统计", "Simulation statistics")}>
+    <details className="ef-step-report" ref={reportRef}><summary>{t("MoodSimulationPanel.eventsAndStatistics")}</summary>
+      <StepLog log={showResult && view ? view.log : []} startHour={startHour} onClear={playback.clearLog} />      <Section title={t("MoodSimulationPanel.simulationStatistics")}>
       {showResult && view && config ? <StepStats view={view} rooms={config.rooms} />
-        : <p className="ef-muted">{t("尚未开始", "Not started")}</p>}
+        : <p className="ef-muted">{t("MoodSimulationPanel.notStarted")}</p>}
       </Section>
     </details>
   </div>

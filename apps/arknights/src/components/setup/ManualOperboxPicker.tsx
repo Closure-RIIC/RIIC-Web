@@ -1,4 +1,9 @@
 "use client";
+
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_setup_ManualOperboxPicker.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_setup_ManualOperboxPicker");
+
 import { localize as localize_components_setup_ManualOperboxPicker } from "../../i18n/helpers/components_setup_ManualOperboxPicker.ts";
 import { useTranslations, useLocale } from "use-intl";
 
@@ -77,10 +82,8 @@ const SHIFT_BADGE_CLASS = [
   "border-emerald-500/35 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300",
 ] as const;
 
-function shiftLabel(shift: number, en: boolean, short = false): string {
-  if (en) return short ? `S${shift}` : `Shift ${shift}`;
-  if (short) return `${shift}班`;
-  return ["第一班", "第二班", "第三班"][shift - 1] ?? `第${shift}班`;
+function shiftLabel(shift: number, en: AppLocale, short = false): string {
+  return localize_components_setup_ManualOperboxPicker.text(en, short ? "shiftShort" : "shiftFull", { shift });
 }
 
 function initialStages(operbox: OperBoxEntry[] | null): Record<string, ManualOperboxStage> {
@@ -92,10 +95,10 @@ function initialStages(operbox: OperBoxEntry[] | null): Record<string, ManualOpe
 }
 
 function stageLabel(stage: ManualOperboxStage, locale: AppLocale, rarity?: number): string {
-  const en = locale === "en";
+  const en = locale;
   if (stage === "none") return localize_components_setup_ManualOperboxPicker.text(en, "unowned");
-  if (stage === "e0") return rarity !== undefined && rarity <= 2 ? (locale === "en" ? "E0 level 30" : "精0 30级") : localize_components_setup_ManualOperboxPicker.text(en, "e0");
-  if (stage === "e0-low") return locale === "en" ? "E0 below max" : "精0非30";
+  if (stage === "e0") return rarity !== undefined && rarity <= 2 ? (uiText.text(locale, "e0Level30")) : localize_components_setup_ManualOperboxPicker.text(en, "e0");
+  if (stage === "e0-low") return uiText.text(locale, "e0BelowMax");
   if (stage === "e1") return localize_components_setup_ManualOperboxPicker.text(en, "e1");
   return localize_components_setup_ManualOperboxPicker.text(en, "e2");
 }
@@ -122,7 +125,7 @@ const ManualOperatorCard = memo(function ManualOperatorCard({
   scheduledShifts?: readonly number[];
   onStageChange: (id: string, stage: ManualOperboxStage) => void;
 }) {
-  const en = locale === "en";
+  const en = locale;
   const gameCatalog = useGameCatalog();
   const displayName = localizedOperatorName(operator.name, locale, gameCatalog);
   const maxElite = maxEliteForRarity(operator.rarity);
@@ -256,7 +259,7 @@ export function ManualOperboxPicker({
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
   const [query, setQuery] = useState("");
   const [onlyOwned, setOnlyOwned] = useState(false);
   const [rarity, setRarity] = useState("all");
@@ -270,7 +273,7 @@ export function ManualOperboxPicker({
   const stagesBeforeAllMaximum = useRef<Record<string, ManualOperboxStage> | null>(null);
   const [maximumStagesBackup, setMaximumStagesBackup] = useState<Record<string, ManualOperboxStage> | null>(null);
   const stagesBeforeOwnedMaximum = useRef<Record<string, ManualOperboxStage> | null>(null);
-  const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase((locale === "en" ? "en-US" : "zh-CN")));
+  const deferredQuery = useDeferredValue(query.trim().toLocaleLowerCase((locale)));
   const scheduledNames = useMemo(() => new Set([
     ...(scheduledOperatorNames ?? []),
     ...Object.keys(scheduledOperatorShifts ?? {}),
@@ -311,7 +314,7 @@ export function ManualOperboxPicker({
     if (rarity !== "all" && operator.rarity !== Number(rarity)) return false;
     if (showProfessionFilter && profession !== "all" && operator.profession !== Number(profession)) return false;
     if (!deferredQuery) return true;
-    const displayName = localizedOperatorName(operator.name, locale, gameCatalog).toLocaleLowerCase((locale === "en" ? "en-US" : "zh-CN"));
+    const displayName = localizedOperatorName(operator.name, locale, gameCatalog).toLocaleLowerCase((locale));
     return operator.name.toLocaleLowerCase("zh-CN").includes(deferredQuery)
       || displayName.includes(deferredQuery)
       || operator.id.toLocaleLowerCase("en-US").includes(deferredQuery);

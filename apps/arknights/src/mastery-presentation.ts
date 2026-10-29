@@ -1,9 +1,10 @@
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_mastery_presentation } from "./i18n/helpers/mastery_presentation.ts";
 import { formatMasteryTime, type MasteryPlan } from "./mastery.ts";
 
 export type MasteryInstruction = { elapsed: number; text: string; kind: "start" | "switch" | "complete" | "notice" };
 /** Shared by the visible timeline and clipboard so execution instructions cannot drift. */
-export function masteryInstructions(plan: MasteryPlan, en = false, operatorName: (name: string) => string = (name) => name): MasteryInstruction[][] {
+export function masteryInstructions(plan: MasteryPlan, en: AppLocale = "zh-CN", operatorName: (name: string) => string = (name) => name): MasteryInstruction[][] {
   let elapsed = 0;
   return plan.stages.map((stage) => {
     const rows: MasteryInstruction[] = [];
@@ -26,9 +27,9 @@ export function masteryInstructions(plan: MasteryPlan, en = false, operatorName:
   });
 }
 
-export function masteryClipboard(plan: MasteryPlan, targetName: string, en = false, operatorName?: (name: string) => string): string {
+export function masteryClipboard(plan: MasteryPlan, targetName: string, en: AppLocale = "zh-CN", operatorName?: (name: string) => string): string {
   return [
-    `${targetName} · ${localize_mastery_presentation.text(en, "additional1", { choice1: ((en)) && (plan.mode === "simple") ? "yes" : "no", choice2: (!(en)) && (plan.mode === "simple") ? "yes" : "no" })} · ${formatMasteryTime(plan.totalSeconds)}`,
+    `${targetName} · ${localize_mastery_presentation.text(en, "additional1", { choice2: ((plan.mode === "simple") ? ("yes") : ("no")) })} · ${formatMasteryTime(plan.totalSeconds)}`,
     ...masteryInstructions(plan,en,operatorName).flat().map((step) => `[+${formatMasteryTime(step.elapsed)}] ${step.text}`),
   ].join("\n");
 }

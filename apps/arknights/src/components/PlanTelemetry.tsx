@@ -36,16 +36,13 @@ export function PlanTelemetry({
   const intl = useTranslations();
   const shouldReduceMotion = useReducedMotion();
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   if (!profile && !rotation) return null;
 
   const active = rotation?.shifts?.[activeShift];
   const rotationProfile = rotation?.profile ?? profile?.rotation_profile ?? DEFAULT_ROTATION_PROFILE;
   const selectedRotationLabel = rotationText.text(en, rotationProfile);
-  const originalActiveTeamSummary = shiftTeamSummary(active, rotationProfile);
-  const activeTeamSummary = en && originalActiveTeamSummary
-    ? originalActiveTeamSummary.replaceAll("主力", "Main").replaceAll("替补", "Backup").replaceAll("上班", "working").replaceAll("休息", "resting")
-    : originalActiveTeamSummary;
+  const activeTeamSummary = shiftTeamSummary(active, rotationProfile, en);
   const summary = profile?.summary;
   const manufactureReady = summary ? manufacturePoolReady(summary) : undefined;
   const currentProfileRotation = profile?.rotation;

@@ -1,3 +1,4 @@
+import type { AppLocale } from "@riic/contracts/locale";
 const WAN = 10_000;
 
 /**
@@ -5,12 +6,12 @@ const WAN = 10_000;
  * 亿位起保留两位小数（190002000 → "1.90亿"）。英文用 compact 记法。
  * 小于 1 万的数值返回 null，由调用方保留原样展示。
  */
-export function formatScaledAmount(value: number, locale: "zh" | "en" = "zh"): string | null {
+export function formatScaledAmount(value: number, locale: AppLocale = "zh-CN"): string | null {
   if (!Number.isFinite(value) || value < WAN) return null;
   if (locale === "en") {
     return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value);
   }
   const yi = Math.round(value / 1_000_000) / 100;
-  if (yi >= 1) return `${yi.toFixed(2)}亿`;
-  return `${(value / WAN).toFixed(1).replace(/\.0$/, "")}万`;
+  if (yi >= 1) return `${yi.toFixed(2)}${locale === "zh-TW" ? "億" : "亿"}`;
+  return `${(value / WAN).toFixed(1).replace(/\.0$/, "")}${locale === "zh-TW" ? "萬" : "万"}`;
 }

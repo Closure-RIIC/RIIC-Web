@@ -1,0 +1,23 @@
+{
+  "version": "Version",
+  "versionLocked": "Published versions cannot be renamed.",
+  "releaseDate": "Release date",
+  "notifyInPopup": "Notify in popup",
+  "popupOn": "Popup notification on",
+  "popupOff": "Popup notification off",
+  "notificationHint": "Publishing text edits does not notify readers again.",
+  "contentLanguage": "Content language",
+  "chinese": "Chinese",
+  "englishOptional": "English (optional)",
+  "englishFallback": "Missing translations display the original Simplified Chinese text.",
+  "updateTitle": "Update title",
+  "titlePlaceholder": "What is the main change?",
+  "sectionNew": "New",
+  "sectionImproved": "Improved",
+  "sectionFixed": "Fixed",
+  "addItem": "Add item",
+  "noItems": "No items in this category.",
+  "removeItemLabel": "Remove {section} item {index}",
+  "remove": "Remove",
+  "traditionalOptional": "Traditional Chinese (optional)"
+}

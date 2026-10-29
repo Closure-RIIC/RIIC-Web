@@ -1,0 +1,8 @@
+{
+  "howToGetBoxJsonWithMaa": "如何用 MAA 获取 box.json",
+  "yourBrowserDoesNotSupportVideoPlayback": "你的浏览器不支持视频播放。",
+  "playVideo": "播放视频：{value1}",
+  "maaExportYourOperatorBox": "明日方舟 MAA 一键获取 BOX，干员识别与 BOX 整理",
+  "watchTutorial": "播放教程",
+  "videoCouldNotLoadRefreshThePageAnd": "视频加载失败，请刷新页面后重试。"
+}

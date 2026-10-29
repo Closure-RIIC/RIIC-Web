@@ -190,7 +190,7 @@ function CompactRoomCard({
   const intl = useTranslations();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
   const isTrade = layoutRoom?.kind === "trade_post";
   const isFactory = layoutRoom?.kind === "factory";
   const isPower = row.group === "power";
@@ -231,7 +231,7 @@ function CompactRoomCard({
           variant="ghost"
           size="icon-sm"
           aria-pressed={sortMode}
-          aria-label={sortMode ? "退出调整顺序" : "调整干员顺序"}
+          aria-label={sortMode ? intl("Common.sortDone") : intl("Common.sortOperators")}
           className={`ml-1 h-7 w-7 border text-white hover:text-white ${sortMode ? "border-[#FFD800]/70 bg-[#FFD800]/18" : "border-white/15 bg-[#3C3C3C]/55 hover:bg-[#4B4B4B]"}`}
           onClick={() => onSortToggle(row)}
         >
@@ -252,7 +252,7 @@ function CompactRoomCard({
               value={order}
               label={label}
               iconUrl={iconUrl}
-              options={[{ value: "gold", label: en ? "LMD Order" : intl("components_CompactScheduleView.lmdOrder"), iconUrl: PRODUCT_ICON_URLS.lmdOrders }, { value: "originium", label: en ? "Originium Order" : intl("components_CompactScheduleView.originiumOrder"), iconUrl: PRODUCT_ICON_URLS.orundum }]}
+              options={[{ value: "gold", label: en === "en" ? "LMD Order" : intl("components_CompactScheduleView.lmdOrder"), iconUrl: PRODUCT_ICON_URLS.lmdOrders }, { value: "originium", label: en === "en" ? "Originium Order" : intl("components_CompactScheduleView.originiumOrder"), iconUrl: PRODUCT_ICON_URLS.orundum }]}
               ariaLabel={`${localizedRoomTitle(row.title, row.group, locale, gameCatalog)}${intl("components.label")}${intl("components.orders")}`}
               onChange={(next) => onTradeOrderChange(row.roomId, next as import("@riic/arknights-domain/blueprint").TradeOrder)}
             />
@@ -272,7 +272,7 @@ function CompactRoomCard({
               value={recipe}
               label={label}
               iconUrl={iconUrl}
-              options={[{ value: "gold", label: en ? "Pure Gold" : intl("components_CompactScheduleView.pureGold"), iconUrl: PRODUCT_ICON_URLS.gold }, { value: "battle_record", label: en ? "Battle Records" : intl("components_CompactScheduleView.battleRecord"), iconUrl: PRODUCT_ICON_URLS.experience }, { value: "originium", label: en ? "Originium Shards" : intl("components_CompactScheduleView.originiumShard"), iconUrl: PRODUCT_ICON_URLS.shards }]}
+              options={[{ value: "gold", label: en === "en" ? "Pure Gold" : intl("components_CompactScheduleView.pureGold"), iconUrl: PRODUCT_ICON_URLS.gold }, { value: "battle_record", label: en === "en" ? "Battle Records" : intl("components_CompactScheduleView.battleRecord"), iconUrl: PRODUCT_ICON_URLS.experience }, { value: "originium", label: en === "en" ? "Originium Shards" : intl("components_CompactScheduleView.originiumShard"), iconUrl: PRODUCT_ICON_URLS.shards }]}
               ariaLabel={`${localizedRoomTitle(row.title, row.group, locale, gameCatalog)}${intl("components.label")}${intl("components.recipe")}`}
               onChange={(next) => onFactoryRecipeChange(row.roomId, next as import("@riic/arknights-domain/blueprint").FactoryRecipe)}
             />

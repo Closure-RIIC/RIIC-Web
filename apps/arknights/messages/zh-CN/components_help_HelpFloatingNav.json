@@ -1,0 +1,9 @@
+{
+  "helpMenu": "帮助目录",
+  "helpCenter": "使用帮助",
+  "chooseAHelpArticle": "选择需要查看的帮助页面",
+  "closeHelpMenu": "关闭帮助目录",
+  "helpNavigation": "帮助文档导航",
+  "current": "当前",
+  "ifYouCannotFindAnEntryPointReturnTo": "找不到入口时，先回到计算器，再打开「配置Box与布局」。"
+}

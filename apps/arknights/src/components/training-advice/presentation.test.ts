@@ -1,3 +1,4 @@
+import "../../i18n/test-setup.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -33,7 +34,7 @@ test("promotion copy replaces the wire token and retains combination and level d
   assert.equal(recommendationCurrentState({ ...promotionAction, current_elite: 1 }), "目前精一 · 目标精二");
   assert.equal(recommendationMessage({ ...promotionAction, tier_up_requirement: "精1" }).includes("升至精一"), true);
   assert.equal(recommendationMessage({ ...promotionAction, tier_up_requirement: undefined }), recommendationMessage(promotionAction));
-  assert.match(recommendationMessage(promotionAction, true), /Promote to Elite 2/);
+  assert.match(recommendationMessage(promotionAction, "en"), /Promote to Elite 2/);
 });
 
 test("promotion copy does not invent unknown elite stages or replace ordinary advice", () => {

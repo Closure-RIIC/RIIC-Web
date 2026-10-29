@@ -12,10 +12,14 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    files: ["scripts/build-infra-eval-wasm.mjs", "scripts/test-endfield*.mjs", "scripts/test-game-session-e2e.mjs", "apps/endfield/tests/*.mjs", "packages/endfield-solver/*.mjs"],
+    files: ["scripts/i18n/*.mjs", "scripts/generate-i18n-*.mjs", "scripts/test-i18n-*.mjs", "scripts/sync-arknights-i18n-data.mjs", "scripts/sync-endfield-display-data.mjs", "scripts/build-infra-eval-wasm.mjs", "scripts/test-endfield*.mjs", "scripts/test-game-session-e2e.mjs", "apps/endfield/tests/*.mjs", "packages/endfield-solver/*.mjs"],
     languageOptions: {
       globals: globals.node,
     },
+  },
+  {
+    files: ["scripts/test-i18n-*.mjs"],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {
     files: ["**/*.{ts,tsx}"],

@@ -1,0 +1,13 @@
+{
+  "sampleSuspendedAccount": "演示：账户已暂停",
+  "thisActionIsUnavailableInTheLocalPreview": "此操作暂未接入本地演示，未发送真实请求。",
+  "sampleIncompleteLayoutInput": "演示：布局输入不完整",
+  "sampleExpiredSession": "演示：登录会话已过期",
+  "sampleCurrentVersion": "演示：当前版本",
+  "sampleBaseline": "演示：对照版本",
+  "tradingStationOperatorOrderDiffersAfterExport": "贸易站导出后的干员顺序与排班展示不同。",
+  "aManufacturingRotationLeavesASlotEmpty": "制造站轮换后有一个位置留空，希望核对替换排班。",
+  "compareFiammettaTargetAssignmentAcrossShifts": "需要比较不同班次的菲亚梅塔充能目标。",
+  "reviewDormitoryAutofillInTheDownloadedPlan": "已确认宿舍自动填充设置与下载文件一致。",
+  "theSolveTookLongerAfterChangingTheLayout": "调整布局后求解耗时变长，需要查看运行记录。"
+}

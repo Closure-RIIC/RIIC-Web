@@ -1,0 +1,23 @@
+{
+  "loadingCredentialImport": "<part1></part1> Loading credential import…",
+  "sklandSignInIsCurrentlyUnavailableYouCanContinue": "Skland sign-in is currently unavailable. You can continue using MAA import.",
+  "sklandSignInMethod": "Skland sign-in method",
+  "qrSignIn": "<part1></part1> QR sign-in",
+  "importCredential": "<part1></part1> Import credential",
+  "recommendedScanTheQrCodeWithTheSklandApp": "Recommended. Scan the QR code with the Skland app and confirm to sync your current character’s operators, base, and status data.",
+  "openSklandApp": "<part1></part1> Open Skland app",
+  "scanWithSklandDisplayThisCodeOnAnotherDevice": "Scan with Skland; display this code on another device if needed.",
+  "generateLoginQrCode": "Generate login QR code",
+  "generateANewQrCode": "Generate a new QR code",
+  "sklandLoginQrCode": "Skland login QR code",
+  "qrFailed": "Could not generate the QR code. Please try again later.",
+  "pollFailed": "Could not check sign-in status. Retrying.",
+  "connecting": "Connecting to the sign-in service…",
+  "generating": "Generating QR code…",
+  "scanned": "Scanned. Waiting for confirmation in the Skland app…",
+  "expired": "QR code expired. Generate a new one.",
+  "refreshing": "QR code expired. Refreshing…",
+  "scanPrompt": "Scan the QR code with the Skland app",
+  "readyPrompt": "Generate a QR code when ready.",
+  "consentPrompt": "Accept both agreements below to show the QR code"
+}

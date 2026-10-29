@@ -1,0 +1,21 @@
+{
+  "riicDocs": "使用文档",
+  "closeNavigation": "关闭目录",
+  "backToWorkbench": "返回基建",
+  "searchDocs": "搜索文档",
+  "documentation": "文档目录",
+  "overview": "文档首页",
+  "feedback": "反馈问题",
+  "searchDocumentation": "搜索文档",
+  "searchTitlesAndContentUseArrowKeysTo": "搜索标题与正文。方向键选择结果，回车打开，Esc 关闭。",
+  "whatWouldYouLikeToKnow": "你想了解什么？",
+  "results": "{value1} 篇相关文档",
+  "startHere": "从这里开始",
+  "noMatchingArticlesTryImportMaaOrSync": "没有找到相关文档，试试「导入」「MAA」或「同步」。",
+  "skipToContent": "跳转到正文",
+  "toggleNavigation": "展开或收起目录",
+  "breadcrumb": "当前位置",
+  "docs": "使用文档",
+  "backToTop": "回到顶部",
+  "onThisPage": "本页目录"
+}

@@ -8,7 +8,7 @@ import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { InfraTechnicalCard } from "@/components/InfraTechnicalCard";
 import { Tabs, TabsList, TabsTrigger, tabsListVariants } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { PROFESSION_LABELS, PROFESSION_LABELS_ENGLISH } from "@/operator-presentation";
+import { operatorProfessionLabel } from "@/operator-presentation";
 import catalog from "@riic/arknights-domain/generated/arkntools/operator-catalog.json";
 import { cn } from "@/lib/utils";
 import { localizedOperatorName } from "@/i18n/game-data";
@@ -138,7 +138,7 @@ export function RecruitmentCalculator({ operbox, sourceName, pending, onOpenSetu
         <ul className="mt-3 grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-2 xl:grid-cols-3">
           {result.operators.map((operator) => {
             const meta = operatorsById.get(operator.id);
-            const profession = meta ? (locale === "en" ? PROFESSION_LABELS_ENGLISH : PROFESSION_LABELS)[meta.profession] : null;
+            const profession = meta ? operatorProfessionLabel(meta.profession, locale) : null;
             return <li key={operator.id} className={cn("grid min-w-0 grid-cols-[3rem_minmax(0,1fr)_auto] items-center gap-2.5 border border-white/10 p-2", operator.ownership === "owned" ? "bg-white/10" : "bg-black/18")}>
               <span className="size-12 overflow-hidden border border-white/10 bg-[#272A2B]">
                 {meta?.portrait ? <img src={meta.portrait} alt="" className="size-full object-cover" loading="lazy" decoding="async" /> : null}

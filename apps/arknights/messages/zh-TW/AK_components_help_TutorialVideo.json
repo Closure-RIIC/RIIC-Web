@@ -1,0 +1,6 @@
+{
+  "yourBrowserDoesNotSupportVideoPlayback": "你的瀏覽器不支援影片播放。",
+  "playVideo": "播放影片：{value1}",
+  "watchTutorial": "播放教程",
+  "videoCouldNotLoadTryAnotherBrowserOr": "影片無法播放，請嘗試其他瀏覽器，或通過下方連結觀看 B站原影片。"
+}

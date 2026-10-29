@@ -1,0 +1,7 @@
+{
+  "attachmentsAndPersona": "附件與人格卡{count, plural, =0 {} other {，# 個附件}}",
+  "attachmentsAndPersona2": "附件與人格卡",
+  "addAttachment": "新增附件",
+  "upTo4Attachments8MbEach": "最多 4 個附件 · 單個 ≤ 8 MB",
+  "persona": "人格卡"
+}

@@ -40,10 +40,15 @@ test("cloud gacha switches Skland accounts, leaves legacy data untouched without
     await page.locator("[data-skland-account-select]").getByRole("combobox").fill(accounts[index].selectedUid);
     await page.getByRole("option", { name: new RegExp(accounts[index].roles[0].nickname) }).click();
     await expect(identity.getByRole("heading", { name: accounts[index].roles[0].nickname })).toBeVisible();
-    const identityText = await identity.innerText();
+    // The gacha page adds an asynchronous rating badge and archive date.
+    // Compare the shared player fields, independently of those page details.
+    const sharedFields = identity.locator('h2, [data-slot="badge"], button, [data-skland-synced-at]');
+    const identityFields = await sharedFields.allTextContents();
+    expect(identityFields).toHaveLength(4);
     const avatar = await identity.locator("img").getAttribute("src");
     await page.locator('[data-primary-navigation-page="gacha"]:visible').click();
-    await expect(identity).toHaveText(identityText, { useInnerText: true });
+    await expect(sharedFields).toHaveText(identityFields);
+    await expect(identity.getByText(accounts[index].roles[0].channelName, { exact: true })).toBeVisible();
     await expect(identity.locator("img")).toHaveAttribute("src", avatar!);
     await expect(page.locator("[data-gacha-account-select], [data-skland-account-select]")).toHaveCount(0);
   };
@@ -164,7 +169,7 @@ test("gacha keeps the current Skland role when archive order or QR authorization
   await expect(dialog.getByRole("status")).toHaveText("等待扫码确认");
   await page.clock.fastForward(3100);
   await expect(dialog.getByRole("alert")).toContainText("扫码账号与森空岛同步当前角色不一致");
-  await dialog.getByRole("button", { name: "Close", exact: true }).click();
+  await dialog.getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(identity.getByRole("heading", { name: "当前角色" })).toBeVisible();
   expect(writes).toBe(0);
   await expect(page.locator("[data-gacha-account-select]")).toHaveCount(0);

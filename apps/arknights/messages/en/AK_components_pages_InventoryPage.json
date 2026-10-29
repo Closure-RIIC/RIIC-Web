@@ -1,0 +1,6 @@
+{
+  "inventory": "Inventory",
+  "couldNotSaveToThisBrowserYourEdits": "Could not save to this browser. Your edits are available on this page only; allow browser storage and edit again to retry.",
+  "manualAmountsSavedToThisBrowserForThe": "Manual amounts saved to this browser for the current account and character. They remain after a refresh.",
+  "manualAmountsAreAutomaticallySavedToThisBrowser": "Manual amounts are automatically saved to this browser for each account and character."
+}

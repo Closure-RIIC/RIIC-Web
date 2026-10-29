@@ -1,0 +1,20 @@
+{
+  "complete": "Complete",
+  "under1Minute": "Under 1 minute",
+  "dH": "{days}d {hours}h",
+  "hM": "{hours}h {minutes}m",
+  "m": "{value1}m",
+  "restProgress": "Rest progress",
+  "operatorsAreStillResting": "{value1} operators are still resting",
+  "noOperatorsAreResting": "No operators are resting",
+  "orderProgress": "Order progress",
+  "tradingPostOrderStock": "Trading Post order stock",
+  "manufacturingProgress": "Manufacturing progress",
+  "capacityIsUnknownForSomeFormulas": "Capacity is unknown for some formulas",
+  "completedFactoryProducts": "Completed Factory products",
+  "clueCollection": "Clue collection",
+  "sharing": "Sharing",
+  "sharingEndsIn": "Sharing ends in {value2}",
+  "cluesPlaced": "{clueCount} clues placed",
+  "receptionRoomDataNotProvided": "Reception Room data not provided"
+}

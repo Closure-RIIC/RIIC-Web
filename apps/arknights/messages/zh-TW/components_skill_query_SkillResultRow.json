@@ -1,0 +1,6 @@
+{
+  "sInfrastructureSkills": "{name} 的基建技能",
+  "noSkillData": "暫無技能資料",
+  "manualNote": "補充說明：",
+  "additional1": "檢視{choice4, select, yes {技能 S{value5}：{value6}} other {技能詳情}}"
+}

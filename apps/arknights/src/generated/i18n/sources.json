@@ -1,0 +1,732 @@
+{
+  "source": {
+    "repository": "https://github.com/arkntools/arknights-toolbox-data",
+    "commit": "a9342f1c5f49f21a0c49241fb9b56f3ee09685e8"
+  },
+  "localInputs": {
+    "packages/arknights-domain/src/generated/arkntools/source.json": "cf34faa39242b203bd8162f019056fc6c9efa97f880c5829cf74ecb9e67f3a8e",
+    "packages/arknights-domain/src/generated/arkntools/operator-catalog.json": "f1b6c8a62b38b2af35c1a48ead376b7d51ada2c695cf433f62d314f9b80fe1a2",
+    "packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json": "3d0ec6cd1405ca202c71c61b4885ad5c8e5132b7c97ea08370062efb80c897ff",
+    "apps/arknights/src/generated/item-name-catalog.json": "fa3fb34a8e17479bfbbf31f53488c75890f91f54d201450b0996e3555202e11a",
+    "packages/arknights-domain/src/generated/operator-english-names.json": "fb16929757c2e3d7aa7292de5b2d58331d8843cbe9d5dffe4e2d42766650c7de",
+    "apps/arknights/src/generated/building-skill-english.json": "9bf697ec02013f0685654eba6a546afb05a538243c1ae959c45a81a5cf2e6d23",
+    "apps/arknights/src/generated/building-skill-english-manual.json": "bf42ababa9313cbf4af3d743e3c57560ce732df0f01ab0c0654fe6d7291d214c",
+    "apps/arknights/i18n/game-overrides/en.json": "2fcd7469c9fd08f98477252c36e0c91532eef856904132c5e404b4426edb94ad",
+    "apps/arknights/i18n/game-overrides/zh-TW.json": "7d6323ee66ab3920a35a89a6df0b51fbe7ddd209d2bb5f9a4cad79162726647d"
+  },
+  "inputs": {
+    "assets/data/building.json": "453617c8bca06e5100fa1790991838c1d064ddeb992bf9e75beb3627aec1d204",
+    "assets/locales/tw/building.json": "e48379b3144b53e0f61da13fa9d5954bb24863e8d5cb163018416075e63d5669",
+    "assets/locales/tw/character.json": "afa670323f6214c4fdbd4b645dd909251412e584ee15c380e911d64f57beba4a",
+    "assets/locales/tw/material.json": "667a525e0565cca0529409576d59bf0be43e18ddbb7b199a1b01aa1491aece02",
+    "assets/locales/us/building.json": "cb5fb5285cdcbe2e4abc166225c5a79e063ded09febff3361b52d842e924132b",
+    "assets/locales/us/character.json": "7b92bf7d622021e9904024a3296c48337744daa02a76f0b579dd75f6433589ef",
+    "assets/locales/us/material.json": "630a53355e2eb486f64fe0e6b3b2fda879d517f1dcf0cb6ac30eb1bf49674af7"
+  },
+  "outputs": {
+    "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json": "13ed2379ac937bfdffccee9b01f1b615741670ec5053b3e3699e91fab87f3c2f",
+    "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json": "688975a1fd9f7ea1cbe490373247eb8334ff94d78f17bfce78b52587bedf49ef",
+    "apps/arknights/src/generated/i18n/en/ArknightsGameData.json": "1d41924b10660902051740d945773b73f3e6a9dcd5b78ce8ccf9d85ef656f3e8",
+    "apps/arknights/src/generated/i18n/operator-aliases.json": "67448c5479650a323c24d0ac65a32405f90a34ea74de69db783f151865da539f"
+  },
+  "coverage": {
+    "zh-CN": [],
+    "zh-TW": [
+      {
+        "kind": "operator",
+        "id": "char_1015_aglna2",
+        "source": "予愿安洁莉娜",
+        "translation": "予願安潔莉娜",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_1048_orchd2",
+        "source": "焰狐龙梓兰",
+        "translation": "焰狐龍梓蘭",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_1049_catap2",
+        "source": "雷狼龙S空爆",
+        "translation": "雷狼龍S空爆",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_1052_kalts2",
+        "source": "凯尔希·思衡托",
+        "translation": "凱爾希·思衡托",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_393_toledo",
+        "source": "德·托莱多",
+        "translation": "德·托萊多",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4215_buddy",
+        "source": "罗德岛隐秘队",
+        "translation": "羅德島隱秘隊",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4217_makoto",
+        "source": "结城理",
+        "translation": "結城理",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4218_aigis",
+        "source": "埃癸斯",
+        "translation": "埃癸斯",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4219_yukari",
+        "source": "岳羽由加莉",
+        "translation": "岳羽由加莉",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4220_kormr",
+        "source": "虎狼丸",
+        "translation": "虎狼丸",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4225_tanya",
+        "source": "裂响",
+        "translation": "裂響",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4226_veen",
+        "source": "维伊",
+        "translation": "維伊",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4227_gallus",
+        "source": "GALLUS²",
+        "translation": "GALLUS²",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4228_closur",
+        "source": "可露希尔",
+        "translation": "可露希爾",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4229_aphris",
+        "source": "谬因",
+        "translation": "謬因",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4230_mcnist",
+        "source": "机械师",
+        "translation": "機械師",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4231_clemnt",
+        "source": "克莱门莎",
+        "translation": "克萊門莎",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4232_hbound",
+        "source": "旅骨",
+        "translation": "旅骨",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4234_pedro",
+        "source": "佩德洛",
+        "translation": "佩德洛",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4235_thumpy",
+        "source": "珊比",
+        "translation": "珊比",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4236_tmslot",
+        "source": "时隙",
+        "translation": "時隙",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4237_jcinta",
+        "source": "嘉辛塔",
+        "translation": "嘉辛塔",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "control_hire_spd_all_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "control_mp_cost_014",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "control_prod_spd_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "dorm_hireToRecAll_002",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "dorm_rec_all_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "dorm_rec_oneself_002",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "dorm_rec_oneself_040",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "dorm_rec_single&tag_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "hire_spd_013",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "hire_spd_cost_113",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "hire_spd_cost_122",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "hire_spd_cost_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "hire_spd_tag_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "manu_formula_spd_011",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "manu_formula_spd_214",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "manu_formula_spd&limit&cost_100",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "manu_prod_cost_min_001",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "manu_prod_spd_train&lv_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "manu_prod_spd&bd_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd_023",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd_notOwned_004",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd_notOwned_P_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&bd_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&cost_110",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&cost_char_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&cost_condChar_002",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&exchange_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "power_rec_spd_0010",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "power_rec_spd_027",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "power_rec_spd_ext&tag_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "power_rec_spd_P2_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "recycle_spd&cost_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "recycle_spd&cost_010",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "trade_ord_closure_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "trade_ord_spd_022",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "trade_ord_spd&limit_tag_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "trade_ord_wt&cost_004",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd_doubleProf_301",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd_doubleProf_310",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd_doubleProf3_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd_doubleProf3_100",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd_doubleProf3_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd&profession3_190",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd&profession3_191",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_formula_device_080",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_formula_probability_301",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_proc_probability_041",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_proc_probability_050",
+        "resolution": "manual"
+      }
+    ],
+    "en": [
+      {
+        "kind": "operator",
+        "id": "char_1015_aglna2",
+        "source": "予愿安洁莉娜",
+        "translation": "Angelina the Wishful",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_1048_orchd2",
+        "source": "焰狐龙梓兰",
+        "translation": "Flaming Espinas Orchid",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_1049_catap2",
+        "source": "雷狼龙S空爆",
+        "translation": "Zinogre S Catapult",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_393_toledo",
+        "source": "德·托莱多",
+        "translation": "德·托莱多",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4215_buddy",
+        "source": "罗德岛隐秘队",
+        "translation": "Rhodes Island Covert Team",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4217_makoto",
+        "source": "结城理",
+        "translation": "结城理",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4218_aigis",
+        "source": "埃癸斯",
+        "translation": "埃癸斯",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4219_yukari",
+        "source": "岳羽由加莉",
+        "translation": "岳羽由加莉",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4220_kormr",
+        "source": "虎狼丸",
+        "translation": "虎狼丸",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4229_aphris",
+        "source": "谬因",
+        "translation": "Aphris",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4230_mcnist",
+        "source": "机械师",
+        "translation": "McNist",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4231_clemnt",
+        "source": "克莱门莎",
+        "translation": "克莱门莎",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4232_hbound",
+        "source": "旅骨",
+        "translation": "旅骨",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4234_pedro",
+        "source": "佩德洛",
+        "translation": "Pedro",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4235_thumpy",
+        "source": "珊比",
+        "translation": "Thumpy",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4236_tmslot",
+        "source": "时隙",
+        "translation": "Timeslot",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4237_jcinta",
+        "source": "嘉辛塔",
+        "translation": "Jacinta",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "control_hire_spd_all_000",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "control_prod_spd_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "dorm_hireToRecAll_002",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "dorm_rec_all_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "dorm_rec_oneself_002",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "dorm_rec_single&tag_000",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "hire_spd_013",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "hire_spd_cost_113",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "hire_spd_cost_122",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "hire_spd_cost_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "manu_formula_spd_011",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "manu_formula_spd_214",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "manu_prod_cost_min_001",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "manu_prod_spd&bd_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd_023",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd_notOwned_004",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd_notOwned_P_000",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&bd_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&cost_110",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&cost_char_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&cost_condChar_002",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&exchange_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "power_rec_spd_027",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "power_rec_spd_P2_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "recycle_spd&cost_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "recycle_spd&cost_010",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "trade_ord_spd_022",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "trade_ord_spd&limit_tag_000",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "trade_ord_wt&cost_004",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd_doubleProf3_000",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd_doubleProf3_100",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd_doubleProf3_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd&profession3_190",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd&profession3_191",
+        "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_formula_device_080",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_formula_probability_301",
+        "resolution": "legacy-english"
+      }
+    ]
+  }
+}

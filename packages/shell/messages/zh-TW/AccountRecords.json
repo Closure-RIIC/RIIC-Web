@@ -1,0 +1,30 @@
+{
+  "components_auth_WebsiteAccountPanel_labels": {
+    "signin": {
+      "title": "登入網站帳號",
+      "description": "繼續使用受帳號保護的資料匯入與排班功能。"
+    },
+    "signup": {
+      "title": "建立網站帳號",
+      "description": "填寫帳號資訊後，我們會向郵箱傳送 6 位驗證碼。"
+    },
+    "forgot": {
+      "title": "找回密碼",
+      "description": "輸入註冊郵箱，我們會發送一封 1 小時內有效的重置郵件。"
+    }
+  },
+  "components_interior_password_strength_labels": [
+    "尚未輸入",
+    "較弱",
+    "一般",
+    "良好",
+    "強"
+  ],
+  "app_account_reset_password_reset_client_labels": [
+    "尚未輸入",
+    "較弱",
+    "一般",
+    "良好",
+    "強"
+  ]
+}

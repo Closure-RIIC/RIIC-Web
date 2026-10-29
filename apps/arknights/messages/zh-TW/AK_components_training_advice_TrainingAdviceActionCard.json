@@ -1,0 +1,5 @@
+{
+  "unblockOperator": "取消拉黑",
+  "hideThisOperator": "拉黑此幹員",
+  "blockAction": "{action, select, unblock {取消封鎖} other {封鎖}}{name}"
+}

@@ -1,0 +1,388 @@
+{
+  "components_labels": [
+    "简中",
+    "繁中",
+    "日文",
+    "英文"
+  ],
+  "operator_presentation_professions": {
+    "1": "近卫",
+    "2": "狙击",
+    "3": "重装",
+    "4": "医疗",
+    "5": "辅助",
+    "6": "术师",
+    "7": "特种",
+    "8": "先锋"
+  },
+  "components_RecommendationCard_labels": {
+    "trade": "贸易站",
+    "trading": "贸易站",
+    "manufacture": "制造站",
+    "manu": "制造站",
+    "power": "发电站",
+    "control": "控制中枢",
+    "general": "综合"
+  },
+  "components_RecommendationCard_labels2": {
+    "promote": "培养优先级",
+    "promote_tier_up": "练度提升",
+    "acquire": "获取建议",
+    "replace": "阵容调整",
+    "advice": "培养建议"
+  },
+  "components_ShiftComparisonCard_labels": {
+    "control": "控制中枢",
+    "trading": "贸易站",
+    "manufacture": "制造站",
+    "power": "发电站",
+    "dormitory": "宿舍",
+    "meeting": "会客室",
+    "hire": "办公室",
+    "processing": "加工站"
+  },
+  "components_ShiftComparisonCard_labels2": {
+    "missing": "需换入",
+    "unexpected": "需换出",
+    "misplaced": "位置调整",
+    "tired": "疲劳"
+  },
+  "components_UpgradeSimulationDialog_content": {
+    "value": "贸易"
+  },
+  "components_UpgradeSimulationDialog_content2": {
+    "value": "制造"
+  },
+  "components_UpgradeSimulationDialog_content3": {
+    "value": "发电"
+  },
+  "app_about_page_content": {
+    "value": [
+      "干员、基建技能与术语数据",
+      [
+        "干员数据",
+        "基建技能",
+        "图片素材"
+      ]
+    ]
+  },
+  "app_about_page_content2": {
+    "value": [
+      "干员立绘与部分游戏图片资源",
+      [
+        "干员立绘",
+        "图片素材"
+      ]
+    ]
+  },
+  "app_about_page_content3": {
+    "value": [
+      "游戏名称、角色与美术资源权利归属",
+      [
+        "官方网站",
+        "权利归属"
+      ]
+    ]
+  },
+  "app_about_page_content4": {
+    "value": [
+      "查看源码、提交记录与开发进度",
+      [
+        "源码",
+        "开发进度"
+      ]
+    ]
+  },
+  "app_about_page_content5": {
+    "value": [
+      "提交问题、建议或改进方案",
+      [
+        "问题反馈",
+        "功能建议"
+      ]
+    ]
+  },
+  "app_admin_admin_nav_content": {},
+  "app_admin_admin_nav_content2": {},
+  "app_admin_admin_nav_content3": {},
+  "app_admin_admin_nav_content4": {},
+  "app_admin_admin_nav_content5": {},
+  "app_help_page_content": {
+    "value": [
+      "结果里有我没有的干员",
+      "先确认当前数据是不是「243 全精二示例」。示例 Box 不代表你的实际持有情况。"
+    ]
+  },
+  "app_help_page_content2": {
+    "value": [
+      "配置弹窗直接到了第 2 步",
+      "这是因为浏览器已经保存过 Box。点顶部第 1 步「干员数据」即可返回。"
+    ]
+  },
+  "app_help_page_content3": {
+    "value": [
+      "换过 Box，结果却没变化",
+      "完成设置后要重新生成排班；已经生成的旧方案不会自动套用新 Box。"
+    ]
+  },
+  "app_help_page_content4": {
+    "value": [
+      "提示请求过多或并发已满",
+      "停止连续点击，按提示等待；仍繁忙就换一个时间段再生成，不用重新导入 Box。"
+    ]
+  },
+  "components_auth_WebsiteAccountPanel_labels": {
+    "signin": {},
+    "signup": {},
+    "forgot": {}
+  },
+  "components_help_HelpFloatingNav_content": {
+    "value": [
+      "帮助首页",
+      "常见问题快速自检"
+    ]
+  },
+  "components_help_HelpFloatingNav_content2": {
+    "value": [
+      "导入干员数据",
+      "森空岛与 MAA 详细步骤"
+    ]
+  },
+  "components_help_HelpFloatingNav_content3": {
+    "value": [
+      "切换已有干员",
+      "换回自己的 Box"
+    ]
+  },
+  "components_help_ImportMethodChoice_content": {
+    "value": [
+      "森空岛",
+      "用森空岛 App 扫码并同步当前角色。"
+    ]
+  },
+  "components_help_ImportMethodChoice_content2": {
+    "value": [
+      "MAA",
+      "从 MAA 导出干员 Box 文件，点击上传入口后，在弹窗内拖入文件或点击“选择文件”。"
+    ]
+  },
+  "components_interior_password_strength_labels": [
+    "尚未输入",
+    "较弱",
+    "一般",
+    "良好",
+    "强"
+  ],
+  "components_layout_AppSidebar_labels": {
+    "schedulingGroup": "基建排班",
+    "progressionGroup": "养成规划",
+    "skillsGroup": "技能Wiki",
+    "personalGroup": "我的角色",
+    "calculator": "基建计算器",
+    "manual": "手动排班",
+    "training": "练卡建议",
+    "trainingPlanner": "养成计算",
+    "mastery": "专精规划",
+    "recruitment": "公招计算",
+    "skills": "技能Wiki",
+    "skland": "森空岛同步",
+    "gacha": "抽卡分析",
+    "accountMenu": "账号菜单",
+    "anonymousName": "未登录",
+    "signInHint": "登录网站账号",
+    "loadingAccount": "正在加载账号",
+    "billing": "付费计划",
+    "changelog": "更新日志",
+    "signOut": "退出登录",
+    "signingOut": "正在退出…",
+    "signOutFailed": "退出登录失败，请重试。",
+    "account": "账号管理",
+    "settings": "设置",
+    "docs": "Docs"
+  },
+  "components_operators_OperatorPickerParts_labels": {
+    "idle": "显示更多干员",
+    "loading": "正在加载",
+    "error": "加载失败，点击重试",
+    "end": "已显示全部符合条件的干员"
+  },
+  "components_pages_SklandStatus_labels": {
+    "PIONEER": "先锋",
+    "WARRIOR": "近卫",
+    "TANK": "重装",
+    "SNIPER": "狙击",
+    "CASTER": "术师",
+    "MEDIC": "医疗",
+    "SUPPORT": "辅助",
+    "SPECIAL": "特种",
+    "TOKEN": "召唤物",
+    "TRAP": "装置",
+    "UNKNOWN": "未分类"
+  },
+  "components_pages_SklandStatus_labels2": {
+    "gold": "贵金属 / 赤金",
+    "battle_record": "作战记录",
+    "originium": "源石碎片",
+    "unknown": "其他配方"
+  },
+  "components_pages_TrainingAdvice_labels": [
+    "干员练度扫描",
+    "设施领域分析",
+    "优先级队列"
+  ],
+  "components_training_advice_presentation_labels": {
+    "trade": "贸易",
+    "gold": "赤金",
+    "experience": "作战记录",
+    "general_manufacturing": "制造",
+    "originium_shards": "源石碎片"
+  },
+  "components_training_advice_presentation_labels2": {
+    "trade_station": "贸易站",
+    "manufacturing_station": "制造站",
+    "power_station": "发电站",
+    "control_center": "控制中枢",
+    "dormitory": "宿舍",
+    "meeting_room": "会客室",
+    "office": "办公室",
+    "training_room": "训练室",
+    "workshop": "加工站"
+  },
+  "components_training_advice_presentation_labels3": {
+    "complete": "已完成",
+    "needs_training": "需培养",
+    "missing_core": "缺失核心",
+    "missing_important": "缺失重要",
+    "needs_review": "待核对"
+  },
+  "components_training_advice_presentation_labels4": {
+    "ready": "就绪",
+    "missing": "缺失",
+    "owned_needs_training": "需培养",
+    "needs_review": "待核对"
+  },
+  "components_training_advice_presentation_labels5": {
+    "core": "核心",
+    "important": "重要",
+    "secondary": "次级",
+    "hanger": "挂件"
+  },
+  "components_training_advice_presentation_labels6": {
+    "newbie_four_star_elite_one": "四星精一",
+    "flagship_newbie": "新手主力",
+    "other_newbie": "新手补充",
+    "owned_tailor": "已拥有裁缝",
+    "automation_must_train": "自动化必练",
+    "small_high_efficiency_core": "高效小组核心",
+    "small_high_efficiency_important": "高效小组重要",
+    "system_single_core_gap": "体系单核缺口",
+    "other_important": "其他重要",
+    "lower_priority_core": "次优先核心",
+    "high_efficiency_standalone": "高效单卡"
+  },
+  "components_training_advice_presentation_labels7": {
+    "newbie_required": "新手必需",
+    "combination_core": "组合核心",
+    "combination_important": "组合重要",
+    "standalone": "独立推荐"
+  },
+  "components_training_advice_presentation_labels8": {
+    "shop": "商店",
+    "public_recruitment": "公开招募",
+    "event": "活动",
+    "redeem_code": "兑换码",
+    "integrated_strategy": "集成战略"
+  },
+  "components_training_advice_presentation_labels9": {
+    "satisfied": "已满足",
+    "unsatisfied": "未满足",
+    "unknown": "待确认"
+  },
+  "app_account_reset_password_reset_client_labels": [
+    "尚未输入",
+    "较弱",
+    "一般",
+    "良好",
+    "强"
+  ],
+  "app_admin_issues_issues_client_labels": {
+    "expired": "私有运行资料已达到 30 天保留期限；下方只显示仍可用的摘要。",
+    "cache_hit": "该记录使用了排班缓存，没有生成新的私有求解制品；下方只显示仍可用的摘要。",
+    "finalizing": "私有求解制品仍在整理中，请稍后刷新后重试。",
+    "finalization_failed": "私有求解制品整理失败；运行摘要仍在，请检查 Worker 日志和持久化目录。",
+    "not_recorded": "该记录没有保存对应的私有求解制品；下方只显示仍可用的摘要。",
+    "missing": "数据库摘要仍在，但服务器未找到对应制品；它可能已被旧保留策略清理，或持久化存储需要检查。",
+    "invalid": "私有制品目录存在，但结果索引损坏或与诊断编号不匹配。",
+    "incomplete": "私有制品仍在，但缺少或无法读取布局、Box、轮换或菲亚梅塔状态。"
+  },
+  "app_admin_issues_issues_client_labels2": {
+    "reviewed": "已阅",
+    "ignored": "忽略",
+    "unreviewed": "未审阅",
+    "reproduced": "已复现",
+    "fixed": "已修复"
+  },
+  "app_admin_issues_issues_client_labels3": {
+    "trading": "贸易站",
+    "manufacture": "制造站",
+    "power": "发电站",
+    "control": "控制中枢",
+    "dormitory": "宿舍",
+    "meeting": "会客室",
+    "hire": "办公室",
+    "processing": "加工站",
+    "training": "训练室",
+    "solver": "求解器整体",
+    "unknown": "其他设施"
+  },
+  "app_admin_issues_issues_client_labels4": {
+    "reviewed": "已阅",
+    "ignored": "忽略",
+    "unreviewed": "未审阅",
+    "reproduced": "已复现",
+    "fixed": "已修复"
+  },
+  "app_admin_issues_issues_client_labels5": {
+    "trading": "贸易站",
+    "manufacture": "制造站",
+    "power": "发电站",
+    "control": "控制中枢",
+    "dormitory": "宿舍",
+    "meeting": "会客室",
+    "hire": "办公室",
+    "processing": "加工站",
+    "training": "训练室",
+    "solver": "求解器整体",
+    "unknown": "其他设施"
+  },
+  "app_help_owned_operators_page_content": {
+    "value": [
+      "打开排班设置",
+      "回到基建计算器。电脑端点顶部「配置Box与布局」；手机端先点「更多工具」，再点同名按钮。"
+    ]
+  },
+  "app_help_owned_operators_page_content2": {
+    "value": [
+      "回到第 1 步「干员数据」",
+      "如果弹窗直接显示布局或设施，不用关闭。点顶部进度条最左侧的「干员数据」。"
+    ]
+  },
+  "app_help_owned_operators_page_content3": {
+    "value": [
+      "点当前数据右侧的「更换」",
+      "展开数据来源选项。不要点页面外面的「全角色导入」，它只会载入体验用的全精二示例。"
+    ]
+  },
+  "app_help_owned_operators_page_content4": {
+    "value": [
+      "导入你自己的 Box",
+      "选择森空岛同步，或点击上传入口，在弹窗内拖入或选择 MAA 导出的 Arknights_OperBox_Export.json。两种方式选一种即可。"
+    ]
+  },
+  "app_help_owned_operators_page_content5": {
+    "value": [
+      "完成设置并重新生成",
+      "按界面提示点「继续」或「检查设施」，核对布局与设施，再点「完成」。回到计算器后重新生成排班。"
+    ]
+  }
+}

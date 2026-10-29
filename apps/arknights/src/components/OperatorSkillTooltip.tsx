@@ -1,4 +1,7 @@
 "use client";
+
+import { BuildingSkillUnlockText } from "./skill-query/SkillText";
+import type { AppLocale } from "@riic/contracts/locale";
 import { localize as localize_components_OperatorSkillTooltip } from "../i18n/helpers/components_OperatorSkillTooltip.ts";
 
 import {
@@ -14,10 +17,6 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { RichTextHoverTerms } from "@/components/RichTextInteractive";
 import {
-  BUILDING_SKILL_ENHANCED_WORD,
-  buildingSkillUnlockLabel,
-  buildingSkillUnlockLabelEnglish,
-  buildingSkillUnlockPrefix,
   operatorBuildingSkillList,
   type BuildingSkillPresentation,
 } from "@/operatorPortraits";
@@ -131,7 +130,7 @@ function SkillBlock({
   unlocked,
 }: {
   skill: BuildingSkillPresentation;
-  locale: "zh" | "en";
+  locale: AppLocale;
   highlighted: boolean;
   unlocked?: boolean;
 }) {
@@ -163,16 +162,7 @@ function SkillBlock({
         ) : null}
       </span>
       <span className="mt-1 block text-background/72">
-        {locale === "en" ? (
-          <>{skill.enhanced ? <>{buildingSkillUnlockLabelEnglish(skill.elite, skill.level).replace(/unlock$/, "")}<span className="text-[#22BBFF]">upgrade</span></> : buildingSkillUnlockLabelEnglish(skill.elite, skill.level)}</>
-        ) : skill.enhanced ? (
-          <>
-            <span>{buildingSkillUnlockPrefix(skill.elite, skill.level)}</span>
-            <span className="text-[#22BBFF]">{BUILDING_SKILL_ENHANCED_WORD}</span>
-          </>
-        ) : (
-          buildingSkillUnlockLabel(skill.elite, skill.level)
-        )}
+        <BuildingSkillUnlockText elite={skill.elite} level={skill.level} enhanced={Boolean(skill.enhanced)} />
       </span>
       <span className="mt-1 block">
         {skill.descriptionRich ? <RichTextHoverTerms text={skill.descriptionRich} /> : skill.description}

@@ -1,3 +1,4 @@
+import "./i18n/test-setup.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -128,14 +129,14 @@ test("labels originium-shard orders as orundum even when a cached reward type is
     reward: { type: "lmd", count: 1_500 },
   };
   assert.equal(sklandTradingOrderRewardLabel(shardOrder), "合成玉");
-  assert.equal(sklandTradingOrderRewardLabel(shardOrder, true), "Orundum");
+  assert.equal(sklandTradingOrderRewardLabel(shardOrder, "en"), "Orundum");
   assert.equal(sklandTradingOrderRewardLabel(lmdOrder), "龙门币");
-  assert.equal(sklandTradingOrderRewardLabel(lmdOrder, true), "LMD");
+  assert.equal(sklandTradingOrderRewardLabel(lmdOrder, "en"), "LMD");
 });
 
 test("renders Skland building metrics in English", () => {
   const value = snapshot();
-  const metrics = deriveSklandBuildingMetrics(value, value.infrastructure.currentTs, true);
+  const metrics = deriveSklandBuildingMetrics(value, value.infrastructure.currentTs, "en");
   assert.deepEqual(metrics.map((metric) => metric.label), [
     "Rest progress",
     "Order progress",

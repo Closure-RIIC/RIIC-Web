@@ -1,0 +1,21 @@
+{
+  "riicDocs": "RIIC Docs",
+  "closeNavigation": "Close navigation",
+  "backToWorkbench": "Back to workbench",
+  "searchDocs": "Search docs",
+  "documentation": "Documentation",
+  "overview": "Overview",
+  "feedback": "Feedback",
+  "searchDocumentation": "Search documentation",
+  "searchTitlesAndContentUseArrowKeysTo": "Search titles and content. Use arrow keys to browse results, Enter to open, and Escape to close.",
+  "whatWouldYouLikeToKnow": "What would you like to know?",
+  "results": "{value1} results",
+  "startHere": "Start here",
+  "noMatchingArticlesTryImportMaaOrSync": "No matching articles. Try “import”, “MAA”, or “sync”.",
+  "skipToContent": "Skip to content",
+  "toggleNavigation": "Toggle navigation",
+  "breadcrumb": "Breadcrumb",
+  "docs": "Docs",
+  "backToTop": "Back to top",
+  "onThisPage": "On this page"
+}

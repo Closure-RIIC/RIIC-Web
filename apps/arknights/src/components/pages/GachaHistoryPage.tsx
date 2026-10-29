@@ -1,4 +1,9 @@
 "use client";
+import { useLocale as useRawLocale } from "use-intl";
+import { createLocalizer as createRawLocalizer, richValue } from "@riic/arknights-domain/i18n/localize";
+import type RawMessages from "../../../messages/zh-CN/AK_Raw_components_pages_GachaHistoryPage.json";
+const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_components_pages_GachaHistoryPage");
+
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
 import { RefreshCw, ScanLine, Star, Trash2, Unlink } from "lucide-react";
@@ -20,6 +25,12 @@ import styles from "./GachaHistoryPage.module.css";
 import titleManifest from "@/generated/gacha-titles.json";
 import { analyzeGachaHistory } from "@/gacha-analytics";
 import { GachaAnalysisOverview, GachaAnalysisRules, GachaRating } from "./GachaStatistics";
+
+import type { AppLocale } from "@riic/contracts/locale";
+import { useGameCatalog } from "@/i18n/game-data-client";
+import { localizedOperatorName } from "@/i18n/game-data";
+const errorKeys: Record<string, keyof typeof RawMessages> = {"@gacha:accountFailed":"accountFailed","@gacha:cloudFailed":"cloudFailed","@gacha:historyFailed":"historyFailed","@gacha:roleMismatch":"roleMismatch","@gacha:deleteFailed":"deleteFailed","@gacha:qrFailed":"qrFailed","@gacha:loginFailed":"loginFailed","@gacha:scanMismatch":"scanMismatch","@gacha:scanFailed":"scanFailed","@gacha:unlinkFailed":"unlinkFailed"};
+function gachaError(value: string, locale: AppLocale) { return errorKeys[value] ? rawText.text(locale, errorKeys[value]) : value; }
 
 type Scan = { scanId: string; scanUrl: string; expiresInSeconds: number };
 type ApiResult<T> = { success: true; data: T } | { success: false; error: { message: string } };
@@ -90,13 +101,17 @@ function PoolStatValue({ label, value, mobileDigits }: { label: string; value: n
 }
 
 function DrawPortrait({ record, large = false, offBanner = false }: { record: GachaRecord; large?: boolean; offBanner?: boolean }) {
-  return <div className="relative" title={`${record.charName} · ${record.stars}★${record.isNew ? " · NEW" : ""}`} data-gacha-record data-gacha-stars={record.stars}>
-    <RemoteAvatar src={operatorPortraitFor(record.charName, record.charId)} alt={`${record.charName}头像`} pixelSize={large ? 40 : 28} loading="lazy" className={`${large ? "size-10" : "size-7"} rounded-[4px] bg-muted`} emptyFallback={<span aria-hidden="true" className="text-xs text-muted-foreground">{record.charName.slice(0, 1)}</span>} />
-    {offBanner && <span data-gacha-off-banner aria-label="非本卡池 UP 六星" className="absolute -right-1 -top-1 z-10 grid size-4 place-items-center rounded-[2px] bg-destructive text-[10px] font-semibold leading-none text-white">歪</span>}
+  const rawLocale = useRawLocale();
+  const gameCatalog = useGameCatalog();
+  return <div className="relative" title={`${localizedOperatorName(record.charName, rawLocale, gameCatalog)} · ${record.stars}★${record.isNew ? " · NEW" : ""}`} data-gacha-record data-gacha-stars={record.stars}>
+    <RemoteAvatar src={operatorPortraitFor(record.charName, record.charId)} alt={rawText.text(rawLocale, "avatar", { name: localizedOperatorName(record.charName, rawLocale, gameCatalog) })} pixelSize={large ? 40 : 28} loading="lazy" className={`${large ? "size-10" : "size-7"} rounded-[4px] bg-muted`} emptyFallback={<span aria-hidden="true" className="text-xs text-muted-foreground">{record.charName.slice(0, 1)}</span>} />
+    {offBanner && <span data-gacha-off-banner aria-label={rawText.text(rawLocale, "6OperatorOutsideThisBannerSRateUpPool")} className="absolute -right-1 -top-1 z-10 grid size-4 place-items-center rounded-[2px] bg-destructive text-[10px] font-semibold leading-none text-white">{rawText.text(rawLocale, "offBanner")}</span>}
   </div>;
 }
 
 function GachaDrawIntervals({ intervals, showFiveStars }: { intervals: GachaSixStarInterval[]; showFiveStars: boolean }) {
+  const rawLocale = useRawLocale();
+  const gameCatalog = useGameCatalog();
   const container = useRef<HTMLDivElement>(null);
   const [links, setLinks] = useState<Array<{ key: string; count: number; top: number; height: number }>>([]);
   const hasMulti = intervals.some((interval) => interval.multiSixStarBatchKey !== null);
@@ -129,24 +144,24 @@ function GachaDrawIntervals({ intervals, showFiveStars }: { intervals: GachaSixS
     for (const row of root.querySelectorAll<HTMLElement>("[data-gacha-interval]")) observer.observe(row);
     return () => observer.disconnect();
   }, [intervals, showFiveStars]);
-  return <div ref={container} className={styles.poolRecords} data-multi-six={hasMulti || undefined} role="list" aria-label="六星寻访分段，最近在前">
+  return <div ref={container} className={styles.poolRecords} data-multi-six={hasMulti || undefined} role="list" aria-label={rawText.text(rawLocale, "segmentsEndingInA6PullNewestFirst")}>
     {intervals.map((interval) => {
       if (!interval.sixStar) return null;
       const color = interval.drawCount <= 30 ? workbenchPageAccent("gacha") : interval.drawCount <= 60 ? workbenchPageAccent("calculator") : "var(--destructive)";
-      return <div key={interval.key} data-gacha-interval role="listitem" aria-label={`${interval.sixStar.charName}，记录内${interval.drawCount}抽`} className="grid grid-cols-[40px_minmax(0,1fr)] items-start gap-x-3 gap-y-2 py-4 max-sm:gap-x-2 max-sm:gap-y-1.5 max-sm:py-3">
+      return <div key={interval.key} data-gacha-interval role="listitem" aria-label={rawText.text(rawLocale, "interval", { name: localizedOperatorName(interval.sixStar.charName, rawLocale, gameCatalog), count: interval.drawCount })} className="grid grid-cols-[40px_minmax(0,1fr)] items-start gap-x-3 gap-y-2 py-4 max-sm:gap-x-2 max-sm:gap-y-1.5 max-sm:py-3">
       <div className={showFiveStars && interval.lowerStars.length > 0 ? "row-span-2" : undefined}>
         <DrawPortrait record={interval.sixStar} large offBanner={interval.offBanner} />
       </div>
       <div className={`${styles.drawBar} relative flex h-10 min-w-0 items-center overflow-hidden`} style={{ "--gacha-accent": color, "--gacha-saturation": interval.drawCount <= 60 ? 2.3 : 1.45 } as CSSProperties} data-gacha-draw-bar data-gacha-interval-key={interval.key}>
         <div aria-hidden="true" className={`${styles.drawFill} absolute inset-y-0 left-0`} style={{ width: `${Math.min(100, interval.drawCount / 80 * 100)}%`, minWidth: "min(100%, calc(5rem + var(--gacha-bar-cut)))", backgroundColor: "var(--gacha-bar-fill)" } as CSSProperties} />
-        <span className="relative z-10 flex items-baseline gap-2 whitespace-nowrap px-3" style={{ color: "var(--gacha-bar-foreground, var(--foreground))" }}><strong className="font-number text-xl font-semibold leading-none tabular-nums">{interval.drawCount}</strong><span className="text-xs font-medium opacity-75">抽</span></span>
+        <span className="relative z-10 flex items-baseline gap-2 whitespace-nowrap px-3" style={{ color: "var(--gacha-bar-foreground, var(--foreground))" }}><strong className="font-number text-xl font-semibold leading-none tabular-nums">{interval.drawCount}</strong><span className="text-xs font-medium opacity-75">{rawText.text(rawLocale, "pulls")}</span></span>
       </div>
-      {showFiveStars && interval.lowerStars.length > 0 && <div className="col-start-2 flex min-w-0 flex-wrap gap-1.5" role="list" aria-label="本段五星干员">
-        {interval.lowerStars.map((record) => <div key={record.id} role="listitem" aria-label={`${record.charName}，${record.stars}星`}><DrawPortrait record={record} /></div>)}
+      {showFiveStars && interval.lowerStars.length > 0 && <div className="col-start-2 flex min-w-0 flex-wrap gap-1.5" role="list" aria-label={rawText.text(rawLocale, "5OperatorsInThisSegment")}>
+        {interval.lowerStars.map((record) => <div key={record.id} role="listitem" aria-label={rawText.text(rawLocale, "stars", { name: localizedOperatorName(record.charName, rawLocale, gameCatalog), stars: record.stars })}><DrawPortrait record={record} /></div>)}
       </div>}
     </div>; })}
     {links.map((link) => <div key={link.key} className={styles.multiSixLink} data-gacha-multi-six style={{ top: link.top, height: link.height }}>
-      <span className={styles.multiSixLabel}>十连{["", "", "二", "三", "四", "五", "六", "七", "八", "九", "十"][link.count]}金</span>
+      <span className={styles.multiSixLabel}>{rawText.text(rawLocale, "sixStarsInATenPull", { count: link.count })}</span>
     </div>)}
   </div>;
 }
@@ -155,6 +170,8 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
   uid: string; accountId?: string; player?: SklandPlayerIdentityData; syncedAt?: number | null;
   onCopyUid?: (uid: string) => void; identityError?: string | null; onRetryIdentity?: () => void;
 }) {
+  const rawLocale = useRawLocale();
+  const gameCatalog = useGameCatalog();
   const selectedUid = uid;
   const [authorizedUids, setAuthorizedUids] = useState<string[]>([]);
   const authorized = authorizedUids.includes(selectedUid);
@@ -203,7 +220,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
         if (!active) return;
         setAuthorizedUids(result.authorizedUids);
       })
-      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "云端账号读取失败，请刷新页面重试。"); })
+      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : "@gacha:accountFailed"); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, []);
@@ -217,7 +234,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
     setLoading(true);
     void api<GachaHistory | null>(`/api/gacha/history?${new URLSearchParams({ uid: selectedUid })}`, { signal: controller.signal })
       .then((result) => { if (sequence === historyRequest.current) setHistory(result); })
-      .catch((cause) => { if (!controller.signal.aborted && sequence === historyRequest.current) setError(cause instanceof Error ? cause.message : "云端记录读取失败。"); })
+      .catch((cause) => { if (!controller.signal.aborted && sequence === historyRequest.current) setError(cause instanceof Error ? cause.message : "@gacha:cloudFailed"); })
       .finally(() => { if (sequence === historyRequest.current) setLoading(false); });
     return () => { controller.abort(); };
   }, [selectedUid]);
@@ -231,24 +248,24 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
         method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "refresh" }),
       });
       if (sequence === historyRequest.current) setHistory(incoming);
-    } catch (cause) { if (sequence === historyRequest.current) setError(cause instanceof Error ? cause.message : "寻访记录读取失败。"); }
+    } catch (cause) { if (sequence === historyRequest.current) setError(cause instanceof Error ? cause.message : "@gacha:historyFailed"); }
     finally { setBusy(false); }
   }, [selectedUid]);
 
   function acceptAuthorization(result: { roles: Array<{ uid: string; nickname: string }>; selectedUid?: string }) {
     setAuthorizedUids(result.roles.map((role) => role.uid));
-    if (!result.roles.some((role) => role.uid === selectedUid)) throw new Error("授权账号与森空岛同步当前角色不一致，请使用对应账号授权。切换账号请前往森空岛同步。");
+    if (!result.roles.some((role) => role.uid === selectedUid)) throw new Error("@gacha:roleMismatch");
     setSyncAfterScan(true);
   }
 
   async function clearHistory() {
-    if (!window.confirm(`删除角色 ${selectedUid} 的全部云端寻访记录？此操作无法撤销。账号绑定将保留。`)) return;
+    if (!window.confirm(rawText.text(rawLocale, "deleteConfirm", { uid: selectedUid }))) return;
     const sequence = ++historyRequest.current;
     setBusy(true); setLoading(false); setError(null);
     try {
       await api(`/api/gacha/history?${new URLSearchParams({ uid: selectedUid })}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmUid: selectedUid }) });
       if (sequence === historyRequest.current) setHistory(null);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "云端记录删除失败。"); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "@gacha:deleteFailed"); }
     finally { setBusy(false); }
   }
 
@@ -267,7 +284,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
       if (controller.signal.aborted) return;
       setScan(result); setScanStatus("waiting");
     } catch (cause) {
-      if (!controller.signal.aborted) setScanError(cause instanceof Error ? cause.message : "二维码生成失败。");
+      if (!controller.signal.aborted) setScanError(cause instanceof Error ? cause.message : "@gacha:qrFailed");
     } finally {
       if (scanRequest.current === controller) { scanRequest.current = null; setScanBusy(false); }
     }
@@ -290,7 +307,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
       acceptAuthorization(result);
       changeAuthorizationOpen(false);
     } catch (cause) {
-      if (!controller.signal.aborted) setScanError(cause instanceof Error ? cause.message : "森空岛登录状态同步失败，请尝试扫码授权。");
+      if (!controller.signal.aborted) setScanError(cause instanceof Error ? cause.message : "@gacha:loginFailed");
     } finally {
       if (scanRequest.current === controller) { scanRequest.current = null; setScanBusy(false); setSyncingSkland(false); }
     }
@@ -315,7 +332,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
         if (result.status === "authenticated") {
           setAuthorizedUids(result.roles.map((role) => role.uid));
           if (!result.roles.some((role) => role.uid === selectedUid)) {
-            setScanError("扫码账号与森空岛同步当前角色不一致，请使用对应账号扫码。切换账号请前往森空岛同步。");
+            setScanError("@gacha:scanMismatch");
             setScan(null);
             return;
           }
@@ -323,7 +340,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
           setSyncAfterScan(true);
         }
       } catch (cause) {
-        if (!cancelled) { setScanError(cause instanceof Error ? cause.message : "扫码状态读取失败。"); setScan(null); }
+        if (!cancelled) { setScanError(cause instanceof Error ? cause.message : "@gacha:scanFailed"); setScan(null); }
       } finally { inFlight = false; }
     };
     const timer = window.setInterval(() => void poll(), 3000);
@@ -341,7 +358,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
     try {
       await api<{ disconnected: boolean }>("/api/gacha/session", { method: "DELETE" });
       setAuthorizedUids([]); setScan(null); setScanStatus("idle");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "解除授权失败。"); }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "@gacha:unlinkFailed"); }
     finally { setBusy(false); }
   }
 
@@ -371,57 +388,57 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
     <StatusCenterHeader data-ui-number-font className="items-start gap-2 pb-3 lg:items-start [&_[data-status-center-actions]]:min-h-0 [&_[data-status-center-actions]]:content-start [&_[data-status-center-identity]]:min-h-0 [&_[data-status-center-identity]]:items-start [&_[data-skland-player-identity]]:items-start"
       identity={player && onCopyUid ? <SklandPlayerIdentity player={player} syncedAt={syncedAt} onCopyUid={onCopyUid}
         nameBadge={<GachaRating average={analysis.current.sixAverage} scope="current" currentDraws={loading || error ? undefined : analysis.current.draws} />}
-        extraMetadata={recordStartedLabel && <span className="whitespace-nowrap" data-gacha-record-start>记录始于 <time dateTime={new Date(analysis.startedAt!).toISOString()}>{recordStartedLabel}</time></span>} /> : null}
+        extraMetadata={recordStartedLabel && <span className="whitespace-nowrap" data-gacha-record-start>{rawText.rich(rawLocale, "recordsBegin", { part1: richValue((<time dateTime={new Date(analysis.startedAt!).toISOString()}>{recordStartedLabel}</time>)) })}</span>} /> : null}
       actions={
-      <div className={`${styles.actionToolbar} ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 max-lg:ml-0 max-lg:w-full max-lg:justify-start`} role="group" aria-label="寻访记录操作">
-        {history && <SetupActionButton type="button" variant="outline" className={`${gachaToolbarActionClassName} ${styles.fiveStarToggle}`} data-gacha-action="five-stars" aria-label="展示五星" aria-pressed={showFiveStars} title="展示五星" onClick={() => setShowFiveStars(current => !current)}><Star /><span className={styles.actionLabel}>展示五星</span></SetupActionButton>}
-        {authorizedUids.length > 0 && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground`} data-gacha-action="disconnect" aria-label="解除授权" title="解除授权" disabled={busy} onClick={() => void disconnect()}><Unlink className="sm:hidden" /><span className={styles.actionLabel}>解除授权</span></SetupActionButton>}
-        {history && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground hover:text-destructive`} data-gacha-action="delete" disabled={busy || loading} aria-label="删除云端寻访记录" title="删除云端寻访记录" onClick={() => void clearHistory()}><Trash2 /><span className={styles.actionLabel}>删除</span></SetupActionButton>}
+      <div className={`${styles.actionToolbar} ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 max-lg:ml-0 max-lg:w-full max-lg:justify-start`} role="group" aria-label={rawText.text(rawLocale, "headhuntingRecordActions")}>
+        {history && <SetupActionButton type="button" variant="outline" className={`${gachaToolbarActionClassName} ${styles.fiveStarToggle}`} data-gacha-action="five-stars" aria-label={rawText.text(rawLocale, "show5Operators")} aria-pressed={showFiveStars} title={rawText.text(rawLocale, "show5Operators")} onClick={() => setShowFiveStars(current => !current)}><Star /><span className={styles.actionLabel}>{rawText.text(rawLocale, "show5Operators")}</span></SetupActionButton>}
+        {authorizedUids.length > 0 && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground`} data-gacha-action="disconnect" aria-label={rawText.text(rawLocale, "revokeAuthorization")} title={rawText.text(rawLocale, "revokeAuthorization")} disabled={busy} onClick={() => void disconnect()}><Unlink className="sm:hidden" /><span className={styles.actionLabel}>{rawText.text(rawLocale, "revokeAuthorization")}</span></SetupActionButton>}
+        {history && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground hover:text-destructive`} data-gacha-action="delete" disabled={busy || loading} aria-label={rawText.text(rawLocale, "deleteCloudHeadhuntingHistory")} title={rawText.text(rawLocale, "deleteCloudHeadhuntingHistory")} onClick={() => void clearHistory()}><Trash2 /><span className={styles.actionLabel}>{rawText.text(rawLocale, "delete")}</span></SetupActionButton>}
         <Dialog open={authorizationOpen} onOpenChange={changeAuthorizationOpen}>
-          <DialogTrigger render={<SetupActionButton type="button" variant={authorized ? "outline" : "default"} aria-label="授权记录" title="授权记录" disabled={busy} className={gachaToolbarActionClassName} />}><ScanLine /><span className={styles.actionLabel}>授权记录</span></DialogTrigger>
+          <DialogTrigger render={<SetupActionButton type="button" variant={authorized ? "outline" : "default"} aria-label={rawText.text(rawLocale, "authorizeHistory")} title={rawText.text(rawLocale, "authorizeHistory")} disabled={busy} className={gachaToolbarActionClassName} />}><ScanLine /><span className={styles.actionLabel}>{rawText.text(rawLocale, "authorizeHistory")}</span></DialogTrigger>
           <DialogContent className="max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)] sm:max-w-[min(720px,calc(100vw-2rem))]">
             <DialogHeader>
-              <DialogTitle>授权寻访记录</DialogTitle>
-              <DialogDescription>使用森空岛 App 扫码确认后，自动读取寻访记录；也可同步本站已登录的森空岛账号。</DialogDescription>
+              <DialogTitle>{rawText.text(rawLocale, "authorizeHeadhuntingHistory")}</DialogTitle>
+              <DialogDescription>{rawText.text(rawLocale, "scanAndConfirmWithTheSklandAppToRead")}</DialogDescription>
             </DialogHeader>
             <DialogBody className="min-h-0 overflow-y-auto pb-5 sm:pb-7">
               <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_224px]">
                 <div className="space-y-4">
-                  <p className="text-sm leading-6 text-muted-foreground">寻访记录上传后绑定当前网站账号，长期保存在服务器，不随授权过期而删除；登录同一网站账号即可跨设备查看。再次授权只用于更新记录。你可以删除记录；解除授权不会删除云端历史。</p>
+                  <p className="text-sm leading-6 text-muted-foreground">{rawText.text(rawLocale, "uploadedHistoryIsLinkedToYourWebsiteAccountAnd")}</p>
                   <SklandPolicyConsent termsAccepted={terms} privacyAccepted={privacy} onTermsChange={setTerms} onPrivacyChange={setPrivacy} />
-                  <label className="flex items-start gap-2 text-xs leading-5"><input type="checkbox" className="mt-1 size-4 accent-primary" checked={gachaConsent} onChange={(event) => setGachaConsent(event.target.checked)} />我同意读取寻访记录，绑定当前网站账号并保存在服务器。</label>
+                  <label className="flex items-start gap-2 text-xs leading-5">{rawText.rich(rawLocale, "iAgreeToReadHeadhuntingHistoryLinkItTo", { part1: richValue((<input type="checkbox" className="mt-1 size-4 accent-primary" checked={gachaConsent} onChange={(event) => setGachaConsent(event.target.checked)} />)) })}</label>
                   <div className="flex flex-wrap gap-3">
-                    <SetupActionButton type="button" className={gachaActionClassName} disabled={!terms || !privacy || !gachaConsent || scanBusy} onClick={() => void syncFromSkland()}><RefreshCw className={syncingSkland ? "animate-spin" : ""} />{syncingSkland ? "正在同步登录状态" : "同步本站森空岛登录状态"}</SetupActionButton>
-                    <SetupActionButton type="button" variant="outline" className={gachaActionClassName} disabled={!terms || !privacy || !gachaConsent || scanBusy} onClick={() => void startScan()}><ScanLine />{scanBusy && !syncingSkland ? "正在生成二维码" : scan ? "刷新二维码" : "生成二维码"}</SetupActionButton>
+                    <SetupActionButton type="button" className={gachaActionClassName} disabled={!terms || !privacy || !gachaConsent || scanBusy} onClick={() => void syncFromSkland()}><RefreshCw className={syncingSkland ? "animate-spin" : ""} />{syncingSkland ? rawText.text(rawLocale, "syncingSignInStatus") : rawText.text(rawLocale, "syncThisSiteSSklandSignIn")}</SetupActionButton>
+                    <SetupActionButton type="button" variant="outline" className={gachaActionClassName} disabled={!terms || !privacy || !gachaConsent || scanBusy} onClick={() => void startScan()}><ScanLine />{scanBusy && !syncingSkland ? rawText.text(rawLocale, "generatingQrCode") : scan ? rawText.text(rawLocale, "refreshQrCode") : rawText.text(rawLocale, "generateQrCode")}</SetupActionButton>
                   </div>
-                  <p className="text-xs leading-5 text-muted-foreground">已登录森空岛可先尝试同步；如缺少授权或授权已失效，请点击“生成二维码”。</p>
-                  {scan && <p role="status" className="text-sm text-muted-foreground">{scanStatus === "scanned" ? "已扫码，请在手机上确认" : scanStatus === "expired" ? "二维码已过期，请刷新" : "等待扫码确认"}</p>}
+                  <p className="text-xs leading-5 text-muted-foreground">{rawText.text(rawLocale, "ifYouAreSignedInToSklandTrySyncing")}</p>
+                  {scan && <p role="status" className="text-sm text-muted-foreground">{scanStatus === "scanned" ? rawText.text(rawLocale, "scannedPleaseConfirmOnYourPhone") : scanStatus === "expired" ? rawText.text(rawLocale, "qrCodeExpiredPleaseRefresh") : rawText.text(rawLocale, "waitingForScanConfirmation")}</p>}
                 </div>
                 <QrCodeFrame className="self-start justify-self-center max-sm:order-first" data-gacha-qr>{scan ? <QRCodeSVG value={scan.scanUrl} size={196} marginSize={1} className="size-full" /> : <ScanLine className="size-12 text-neutral-700 [forced-color-adjust:none]" />}</QrCodeFrame>
               </div>
-              {scanError && <p role="alert" className="border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">{scanError}</p>}
+              {scanError && <p role="alert" className="border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">{gachaError(scanError, rawLocale)}</p>}
             </DialogBody>
           </DialogContent>
         </Dialog>
-        {authorized && <SetupActionButton type="button" className={`${gachaToolbarActionClassName} max-lg:ml-auto`} aria-label="刷新" title="刷新" disabled={busy} onClick={() => void refresh()}><RefreshCw className={busy ? "animate-spin" : ""} /><span className={styles.actionLabel}>刷新</span></SetupActionButton>}
+        {authorized && <SetupActionButton type="button" className={`${gachaToolbarActionClassName} max-lg:ml-auto`} aria-label={rawText.text(rawLocale, "refresh")} title={rawText.text(rawLocale, "refresh")} disabled={busy} onClick={() => void refresh()}><RefreshCw className={busy ? "animate-spin" : ""} /><span className={styles.actionLabel}>{rawText.text(rawLocale, "refresh")}</span></SetupActionButton>}
       </div>
     } />
-    {identityError && <p role="alert" className="text-sm text-muted-foreground">账号资料暂时无法同步：{identityError} <button type="button" className="underline underline-offset-4" onClick={onRetryIdentity}>重新同步</button></p>}
-    {!history && <p className="border-y border-border py-12 text-center text-sm text-muted-foreground">{loading ? "正在读取云端记录…" : authorized ? "暂无已保存的寻访记录，点击刷新读取。" : "暂无已保存的寻访记录，点击“授权记录”开始读取。"}</p>}
-    {error && <p role="alert" className="border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</p>}
+    {identityError && <p role="alert" className="text-sm text-muted-foreground">{rawText.rich(rawLocale, "accountDetailsCouldNotSync", { part1: richValue((identityError)), part2: richValue((<button type="button" className="underline underline-offset-4" onClick={onRetryIdentity}>{rawText.text(rawLocale, "syncAgain")}</button>)) })}</p>}
+    {!history && <p className="border-y border-border py-12 text-center text-sm text-muted-foreground">{loading ? rawText.text(rawLocale, "loadingCloudHistory") : authorized ? rawText.text(rawLocale, "noSavedHeadhuntingRecordsSelectRefreshToLoadThem") : rawText.text(rawLocale, "noSavedHeadhuntingRecordsSelectAuthorizeHistoryToGet")}</p>}
+    {error && <p role="alert" className="border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">{gachaError(error, rawLocale)}</p>}
     {history && <>
       <div className={styles.statistics} data-gacha-statistics>
-      <section aria-label="已保存寻访统计" data-gacha-summary className="overflow-hidden border border-[#313131]/18 bg-[#F3F1EA] text-[#313131] shadow-[0_12px_30px_rgba(35,38,39,0.10)]">
+      <section aria-label={rawText.text(rawLocale, "savedHeadhuntingStatistics")} data-gacha-summary className="overflow-hidden border border-[#313131]/18 bg-[#F3F1EA] text-[#313131] shadow-[0_12px_30px_rgba(35,38,39,0.10)]">
         <div className="grid grid-cols-6 sm:grid-cols-5">
           {[
-            { id: "orundum", label: "总消耗合成玉", value: (history.records.length * 600).toLocaleString("zh-CN") },
-            { id: "career-score", label: "生涯评分", value: <GachaRating average={analysis.career.sixAverage} scope="career" /> },
-            { id: "draws", label: "已保存寻访", value: history.records.length.toLocaleString("zh-CN") },
-            { id: "six-stars", label: "六星干员", value: sixStars.toLocaleString("zh-CN") },
-            { id: "lower-stars", label: "五星 / 四星 / 三星", value: `${fiveStars} / ${fourStars} / ${threeStars}` },
+            { id: "orundum", label: rawText.text(rawLocale, "orundumTotal"), value: (history.records.length * 600).toLocaleString(rawLocale) },
+            { id: "career-score", label: rawText.text(rawLocale, "careerScore"), value: <GachaRating average={analysis.career.sixAverage} scope="career" /> },
+            { id: "draws", label: rawText.text(rawLocale, "savedPulls"), value: history.records.length.toLocaleString(rawLocale) },
+            { id: "six-stars", label: rawText.text(rawLocale, "sixStars"), value: sixStars.toLocaleString(rawLocale) },
+            { id: "lower-stars", label: rawText.text(rawLocale, "lowerStars"), value: `${fiveStars} / ${fourStars} / ${threeStars}` },
           ].map((metric) => <div key={metric.id} data-gacha-summary-metric={metric.id} className={`${styles.summaryMetric} relative col-span-2 min-w-0 border-r border-[#313131]/10 last:border-r-0 sm:col-span-1 max-sm:[&:nth-child(-n+2)]:col-span-3 max-sm:[&:nth-child(2)]:border-r-0 max-sm:[&:nth-child(n+3)]:border-t`}>
-            <SummaryMetric label={metric.label} value={metric.value} unit={metric.id === "orundum" ? "折算" : undefined} reserveIconSpace={metric.id === "orundum"} />
-            {metric.id === "orundum" && <img src={PRODUCT_ICON_URLS.orundum} alt="合成玉" width={24} height={24} className="pointer-events-none absolute right-1.5 top-1.5 size-6 object-contain opacity-75" />}
+            <SummaryMetric label={metric.label} value={metric.value} unit={metric.id === "orundum" ? rawText.text(rawLocale, "equivalent") : undefined} reserveIconSpace={metric.id === "orundum"} />
+            {metric.id === "orundum" && <img src={PRODUCT_ICON_URLS.orundum} alt={rawText.text(rawLocale, "orundum")} width={24} height={24} className="pointer-events-none absolute right-1.5 top-1.5 size-6 object-contain opacity-75" />}
           </div>)}
         </div>
       </section>
@@ -433,24 +450,24 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
           <header className={styles.poolHeader}>
             <div className={styles.poolIdentity}>
               <h4 className={`${styles.poolTitle} min-w-0 max-w-full break-words`}>{group.name}</h4>
-              {(group.upSixStars.length > 0 || group.upFiveStars.length > 0) && <div className={styles.poolInfo} role="list" aria-label="卡池 UP 干员">
+              {(group.upSixStars.length > 0 || group.upFiveStars.length > 0) && <div className={styles.poolInfo} role="list" aria-label={rawText.text(rawLocale, "rateUpOperators")}>
                 {[...new Set([...group.upSixStars, ...group.upFiveStars])].map((name) => <div key={name} role="listitem" aria-label={name} title={name}>
-                  <RemoteAvatar src={operatorPortraitFor(name)} alt={`${name}头像`} pixelSize={24} loading="lazy" className="size-6 rounded-[3px] bg-muted" emptyFallback={<span aria-hidden="true" className="text-[10px] text-muted-foreground">{name.slice(0, 1)}</span>} />
+                  <RemoteAvatar src={operatorPortraitFor(name)} alt={rawText.text(rawLocale, "avatar", { name: localizedOperatorName(name, rawLocale, gameCatalog) })} pixelSize={24} loading="lazy" className="size-6 rounded-[3px] bg-muted" emptyFallback={<span aria-hidden="true" className="text-[10px] text-muted-foreground">{name.slice(0, 1)}</span>} />
                 </div>)}
               </div>}
-              <p className={styles.poolPeriod} aria-label="卡池开放日期" title="北京时间（UTC+8）">{group.period ?? "开放日期待补充"}</p>
+              <p className={styles.poolPeriod} aria-label={rawText.text(rawLocale, "bannerDates")} title={rawText.text(rawLocale, "beijingTimeUtc8")}>{group.period ?? rawText.text(rawLocale, "bannerDatesNotAvailableYet")}</p>
             </div>
-              <dl className={styles.poolStats} aria-label="卡池统计">
-                <div className={styles.poolStat}><PoolStatValue label="累计抽数" value={group.records.length} mobileDigits={mobileStatDigits} /></div>
+              <dl className={styles.poolStats} aria-label={rawText.text(rawLocale, "bannerStatistics")}>
+                <div className={styles.poolStat}><PoolStatValue label={rawText.text(rawLocale, "totalPulls")} value={group.records.length} mobileDigits={mobileStatDigits} /></div>
               </dl>
           </header>
           <GachaDrawIntervals intervals={group.intervals} showFiveStars={showFiveStars} />
         </section>)}
-        {!pools.length && <p className="border-y border-border py-12 text-center text-sm text-muted-foreground">暂无寻访记录</p>}
+        {!pools.length && <p className="border-y border-border py-12 text-center text-sm text-muted-foreground">{rawText.text(rawLocale, "noHeadhuntingHistory")}</p>}
       </div>
-      {matchingCount > visibleIds.size && <div className="text-center"><SetupActionButton type="button" variant="outline" className={gachaActionClassName} onClick={() => setVisibleCount((count) => count + 10)}>加载更多</SetupActionButton></div>}
-      <p className="text-xs text-muted-foreground">UP 按卡池 ID 匹配游戏卡池资料；资料缺失的卡池只显示原名。</p>
-      <p className="text-xs text-muted-foreground">按六星分段，最近在前；下方仅展示两次六星之间的五星干员，每个头像代表一次寻访，抽数包含所有星级。最早分段的抽数仅统计已保存部分。</p>
+      {matchingCount > visibleIds.size && <div className="text-center"><SetupActionButton type="button" variant="outline" className={gachaActionClassName} onClick={() => setVisibleCount((count) => count + 10)}>{rawText.text(rawLocale, "loadMore")}</SetupActionButton></div>}
+      <p className="text-xs text-muted-foreground">{rawText.text(rawLocale, "rateUpOperatorsAreMatchedToGameDataBy")}</p>
+      <p className="text-xs text-muted-foreground">{rawText.text(rawLocale, "segmentsEndWithA6PullAndAppearNewest")}</p>
       <GachaAnalysisRules analysis={analysis} />
     </>}
   </section>;

@@ -125,13 +125,14 @@ test("the anonymous sample trial fetches and solves once before showing the sche
   // the login dialog and try to click an inert, underlying close button.
   const completionNotice = page.getByRole("dialog", { name: "排班已生成", exact: true });
   await expect(completionNotice).toBeVisible();
-  await completionNotice.getByRole("button", { name: "关闭", exact: true }).click();
+  await completionNotice.locator('[data-slot="dialog-footer"]').getByRole("button", { name: "关闭", exact: true }).click();
   await expect(completionNotice).toHaveCount(0);
 
   const adjustmentTrigger = page.getByRole("button", { name: "修改练度并重算", exact: true });
   await adjustmentTrigger.click();
   await expect(page.getByRole("dialog", { name: "登录网站账号" })).toBeVisible();
   await expect(page.locator("[data-upgrade-simulation-dialog]")).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "邮箱", exact: true })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(adjustmentTrigger).toBeFocused();
 });
@@ -303,7 +304,7 @@ test("completed onboarding returns to the empty schedule after changing the layo
   const setupDialog = page.getByRole("dialog");
   await setupDialog.getByRole("button", { name: "继续", exact: true }).click();
   await setupDialog.getByRole("button", { name: /^342/ }).click();
-  await setupDialog.getByRole("button", { name: "Close" }).click();
+  await setupDialog.getByRole("button", { name: /^(关闭|關閉|Close)$/ }).click();
   await page.getByRole("dialog", { name: "关闭排班设置？" })
     .getByRole("button", { name: "关闭设置" })
     .click();
@@ -772,7 +773,7 @@ test("a cached Skland box is labeled separately when the website binding needs b
   await expect(page.getByRole("heading", { name: "森空岛已绑定，请授权当前浏览器" })).toBeVisible();
   await expect(page.getByText(/网站账号仍保留 1 个森空岛绑定/)).toBeVisible();
 
-  await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+  await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
   await page.getByRole("button", { name: "基建计算器", exact: true }).click();
   await page.getByRole("button", { name: "配置Box与布局" }).first().click();
   const setupDialog = page.getByRole("dialog");
@@ -1441,7 +1442,7 @@ for (const viewport of [
     await page.goto("/");
 
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
-    if (viewport.width < 768) await page.getByRole("button", { name: "Toggle Sidebar" }).click();
+    if (viewport.width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     const accountNavigation = await sidebarNavigation(page, "账号管理");
     await expect(accountNavigation).toHaveAttribute("data-sidebar-sign-in", "true");
     await accountNavigation.click();

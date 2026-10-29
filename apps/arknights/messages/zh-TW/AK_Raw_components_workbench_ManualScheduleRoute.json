@@ -1,0 +1,7 @@
+{
+  "scheduleCopyUsesTheScheduleSTrainingLevelsWhich": "作業副本：<part1></part1> · 使用作業練度，可在排班編輯中調整；個人幹員池保留。",
+  "backToPersonalDraft": "返回個人草稿",
+  "invalidCode": "參考排班代碼格式不正確。",
+  "loadFailed": "讀取參考排班失敗。",
+  "copiedTraining": "參考排班練度（非個人幹員名單）"
+}

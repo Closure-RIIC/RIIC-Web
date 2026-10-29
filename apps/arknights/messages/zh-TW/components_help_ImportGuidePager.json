@@ -1,0 +1,16 @@
+{
+  "tutorialProgress": "教程進度",
+  "stepOf": "第 {value1} 步 · 共 {length} 步",
+  "complete": "完成",
+  "tutorialProgressPageOf": "教程進度：第 {value1} 頁，共 {length} 頁",
+  "tutorialStepNavigation": "教程步驟導航",
+  "selectAStepToJumpDirectlySwipeHorizontallyOn": "步驟導航，可點選直接跳轉；窄屏可以左右滑動。",
+  "swipeToViewAllSteps": "左右滑動檢視全部步驟",
+  "step": "第 {value1} 步：{title}。{summary}",
+  "current": "正在檢視",
+  "tutorialPagination": "教程翻頁",
+  "previous": "上一頁",
+  "page": "第 {value1} / {length} 頁",
+  "finishAndReturn": "完成並返回計算器",
+  "next": "下一頁"
+}

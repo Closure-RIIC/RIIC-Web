@@ -1,0 +1,21 @@
+{
+  "lmdOrder": "龍門商法",
+  "originiumOrder": "開採協力",
+  "auto": "自動選擇",
+  "pureGold": "貴金屬",
+  "battleRecord": "作戰記錄",
+  "originiumShard": "源石碎片",
+  "awaitingSchedule": "等待排班",
+  "droneAcceleration": "{roomTitle} 無人機加速",
+  "drones": "無人機",
+  "disableDroneAcceleration": "取消當前班次無人機加速",
+  "useDronesForShift": "當前班次在此使用無人機",
+  "clearRoom": "一鍵清空{roomTitle}",
+  "clear": "一鍵清空",
+  "clearThisFacility": "一鍵清空當前設施",
+  "reportScheduleIssue": "{roomTitle} 反饋排班問題",
+  "sampleBoxDataCannotSubmitFeedback": "全精二 Box 為體驗資料，不能提交反饋",
+  "reportScheduleIssue2": "反饋排班問題",
+  "noLayoutRoomsToDisplay": "沒有可展示的佈局房間。",
+  "recipe": "未定配方"
+}

@@ -1,0 +1,8 @@
+{
+  "portrait": "{displayName}頭像",
+  "searchOperator": "搜尋幹員",
+  "filterByRarity": "星級篩選",
+  "all": "全部",
+  "starOperators": "{rarity} 星幹員",
+  "filterByProfession": "職業篩選"
+}

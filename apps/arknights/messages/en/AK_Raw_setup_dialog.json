@@ -1,0 +1,15 @@
+{
+  "reviewImportIssues": "Review import issues",
+  "invalidTrainingEntriesFound": "Invalid training entries found: <part1></part1>",
+  "chooseACorrection": "Choose a correction",
+  "importStartsOnlyAfterConfirmationCancelingPreservesYourCurrent": "Import starts only after confirmation. Canceling preserves your current roster.",
+  "rarityIsMatchedAgainstOperatorDataAutomaticallyIncorrectRarity": "Rarity is matched against operator data automatically. Incorrect rarity values in the original JSON will be corrected.",
+  "label": "<part1></part1> (<part2></part2>★)",
+  "originalELvOutsideTheValidRange": "Original: E<part1></part1> · Lv.<part2></part2>, outside the valid range",
+  "useAllRecommendedCorrections": "Use all recommended corrections",
+  "cancelImport": "Cancel import",
+  "importing": "Importing…",
+  "confirmAndImport": "Confirm and import",
+  "importedOperatorsFromTheMaaRosterOwned": "Imported <part1></part1> operators from the MAA roster; owned: <part2></part2>.",
+  "correctionFor": "Corrections for {name}"
+}

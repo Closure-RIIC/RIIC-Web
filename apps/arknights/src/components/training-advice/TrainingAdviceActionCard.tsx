@@ -1,4 +1,9 @@
 "use client";
+
+import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type UiMessages from "../../../messages/zh-CN/AK_components_training_advice_TrainingAdviceActionCard.json";
+const uiText = createUiLocalizer<typeof UiMessages>("AK_components_training_advice_TrainingAdviceActionCard");
+
 import { useTranslations, useLocale } from "use-intl";
 
 import { motion, useReducedMotion } from "motion/react";
@@ -53,7 +58,7 @@ export function TrainingAdviceActionCard({
   const reduceMotion = useReducedMotion();
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
-  const en = locale === "en";
+  const en = locale;
   const actionLabel = action.action === "acquire" || action.action === "train" ? intl(`components_training_advice_TrainingAdviceActionCard.${action.action}`) : action.action;
   const currentText = action.current ? `${intl("components_training_advice_TrainingAdviceActionCard.current")} ${trainingLevelText(action.current, en)} → ` : "";
   const targetText = trainingLevelText(action.target, en);
@@ -105,7 +110,7 @@ export function TrainingAdviceActionCard({
                 ) : null}
               </div>
               <p className="mt-2 max-w-[72ch] text-pretty text-sm leading-6 text-white/82">
-                {actionLabel} {en ? operatorName : `「${operatorName}」`} · {currentText}{intl("components_training_advice_TrainingAdviceActionCard.target")} {targetText}
+                {actionLabel} {en === "en" ? operatorName : `「${operatorName}」`} · {currentText}{intl("components_training_advice_TrainingAdviceActionCard.target")} {targetText}
               </p>
               {action.acquisition ? (
                 <p className="mt-1 text-xs leading-5 text-white/58">
@@ -143,7 +148,7 @@ export function TrainingAdviceActionCard({
                   </span>
                 ) : null}
               </div>
-              {onToggleBlacklist ? <Button type="button" size="icon-sm" variant="ghost" onClick={onToggleBlacklist} aria-label={en ? `${blacklisted ? "Unblock" : "Block"} ${operatorName}` : `${blacklisted ? "取消拉黑" : "拉黑"}${operatorName}`} title={en ? (blacklisted ? "Unblock operator" : "Hide this operator") : (blacklisted ? "取消拉黑" : "拉黑此干员")} className="size-8 border border-white/15 bg-black/20 text-white/60 hover:bg-white/10 hover:text-white"><Ban className="size-4" /></Button> : null}
+              {onToggleBlacklist ? <Button type="button" size="icon-sm" variant="ghost" onClick={onToggleBlacklist} aria-label={uiText.text(en, "blockAction", { action: blacklisted ? "unblock" : "block", name: operatorName })} title={(blacklisted ? uiText.text(en, "unblockOperator") : uiText.text(en, "hideThisOperator"))} className="size-8 border border-white/15 bg-black/20 text-white/60 hover:bg-white/10 hover:text-white"><Ban className="size-4" /></Button> : null}
             </div>
           </div>
         </div>

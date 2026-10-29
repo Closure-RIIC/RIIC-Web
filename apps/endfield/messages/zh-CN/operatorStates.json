@@ -1,0 +1,11 @@
+{
+  "noData": "暂无数据",
+  "selectMoraleCurveOperators": "心情曲线干员选择",
+  "moraleCurve": "{name}的心情曲线",
+  "status": {
+    "work": "工作中",
+    "rest": "休息中",
+    "standby": "待命",
+    "zero": "已归零"
+  }
+}

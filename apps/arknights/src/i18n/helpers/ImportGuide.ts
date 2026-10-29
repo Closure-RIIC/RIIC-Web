@@ -1,4 +1,3 @@
-import zh from "../../../messages/helpers/zh/ImportGuide.json" with { type: "json" };
-import en from "../../../messages/helpers/en/ImportGuide.json" with { type: "json" };
+import type Messages from "../../../messages/zh-CN/ImportGuide.json";
 import { createLocalizer } from "@riic/arknights-domain/i18n/localize";
-export const localize = createLocalizer(zh, en);
+export const localize = createLocalizer<typeof Messages>("ImportGuide");

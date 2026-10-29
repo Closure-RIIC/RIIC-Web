@@ -1,3 +1,4 @@
+import "./i18n/test-setup.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import roster from "../../../fixtures/operbox_full_e2.json" with { type: "json" };

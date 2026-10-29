@@ -231,7 +231,7 @@ test("file drag highlighting survives child transitions, ignores text and protec
 
   await upload.getByRole("button", { name: "取消", exact: true }).click();
   await expect(upload).toHaveCount(0);
-  await setup.getByRole("button", { name: "Close", exact: true }).click();
+  await setup.getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
   await expect(setup).toHaveCount(0);
   for (const eventType of ["dragenter", "dragover", "drop"]) {
     await page.locator("body").dispatchEvent(eventType, { dataTransfer: fileTransfer });

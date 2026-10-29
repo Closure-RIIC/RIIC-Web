@@ -1,0 +1,8 @@
+{
+  "signInAndSecurity": "Sign-in and security",
+  "signedOutOnAllDevices": "Signed out on all devices.",
+  "accountDeleted": "Account deleted.",
+  "signedOutOnThisDevice": "Signed out on this device.",
+  "revokeEverySessionToRequireAllDevicesTo": "Revoke every session to require all devices to sign in again.",
+  "sessionStatus": "{state, select, expires {expires {date}} other {is active}}"
+}

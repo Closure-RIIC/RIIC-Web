@@ -1,4 +1,9 @@
 "use client";
+import { useLocale as useRawLocale } from "use-intl";
+import { createLocalizer as createRawLocalizer } from "@riic/arknights-domain/i18n/localize";
+import type RawMessages from "../../../messages/zh-CN/AK_Raw_components_manual_mood_MoodSimulationPanel.json";
+const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_components_manual_mood_MoodSimulationPanel");
+
 
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocale, useTranslations } from "use-intl";
@@ -50,6 +55,7 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
   settingsOpen:boolean;
   onSettingsOpenChange:(open:boolean) => void;
 }) {
+  const rawLocale = useRawLocale();
   const t=useTranslations("MoodSimulation"),locale=useLocale(),gameCatalog=useGameCatalog();
   const controlId=useId();
   const [idleExpanded,setIdleExpanded]=useState<string[]>([]);
@@ -170,7 +176,7 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
   return <section className="min-w-0 space-y-5" aria-label={t("title")} data-mood-simulation>
     <div className="flex flex-wrap items-center justify-between gap-3">
       <Tabs value={mode} onValueChange={value => {setMode(String(value));setPlaying(false);}}>
-        <TabsList aria-label={t("boardMode")}><TabsTrigger value="edit">{t("editMode")}</TabsTrigger><TabsTrigger value="simulation">{t("simulationMode")}</TabsTrigger>{onViewChange && <TabsTrigger value="poster">作业图</TabsTrigger>}</TabsList>
+        <TabsList aria-label={t("boardMode")}><TabsTrigger value="edit">{t("editMode")}</TabsTrigger><TabsTrigger value="simulation">{t("simulationMode")}</TabsTrigger>{onViewChange && <TabsTrigger value="poster">{rawText.text(rawLocale, "schedulePoster")}</TabsTrigger>}</TabsList>
       </Tabs>
     </div>
     <div hidden={mode!=="poster"}>{posterContent}</div>

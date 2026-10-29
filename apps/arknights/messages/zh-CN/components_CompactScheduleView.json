@@ -1,0 +1,21 @@
+{
+  "lmdOrder": "龙门商法",
+  "originiumOrder": "开采协力",
+  "auto": "自动选择",
+  "pureGold": "贵金属",
+  "battleRecord": "作战记录",
+  "originiumShard": "源石碎片",
+  "awaitingSchedule": "等待排班",
+  "droneAcceleration": "{roomTitle} 无人机加速",
+  "drones": "无人机",
+  "disableDroneAcceleration": "取消当前班次无人机加速",
+  "useDronesForShift": "当前班次在此使用无人机",
+  "clearRoom": "一键清空{roomTitle}",
+  "clear": "一键清空",
+  "clearThisFacility": "一键清空当前设施",
+  "reportScheduleIssue": "{roomTitle} 反馈排班问题",
+  "sampleBoxDataCannotSubmitFeedback": "全精二 Box 为体验数据，不能提交反馈",
+  "reportScheduleIssue2": "反馈排班问题",
+  "noLayoutRoomsToDisplay": "没有可展示的布局房间。",
+  "recipe": "待定配方"
+}

@@ -1,0 +1,8 @@
+{
+  "progressionAdjustedPlan": "progression-adjusted plan",
+  "originalPlan": "original plan",
+  "replaceTheExistingManualDraft": "Replace the existing manual draft?",
+  "creatingAManualScheduleFromTheWillReplaceYour": "Creating a manual schedule from the {sourceLabel} will replace your saved manual draft. This cannot be undone automatically.",
+  "keepExistingDraft": "Keep existing draft",
+  "replaceAndContinue": "Replace and continue"
+}

@@ -1,0 +1,15 @@
+{
+  "setUpYourRosterBeforeStarting": "名单为空，请先配置我的干员。",
+  "enableAtLeastOneFacility": "请至少启用一个舱室。",
+  "assignOperatorsInTheEditorBeforeStarting": "请先在编辑视图安排干员。",
+  "assistanceTargetDayAssist": "助力目标 · 第 {value1} 天 · 第 {value2} 次",
+  "chooseAssistanceTarget": "选择助力目标",
+  "loadingLocalConfiguration": "正在读取本地配置…",
+  "showResults": "展示模拟结果",
+  "resetSimulation": "重置模拟",
+  "assignOperatorsThenChooseShowResults": "安排干员后点击「展示模拟结果」查看曲线。",
+  "simulationSettings": "模拟设置",
+  "eventsAndStatistics": "事件日志与模拟统计",
+  "simulationStatistics": "模拟统计",
+  "notStarted": "尚未开始"
+}

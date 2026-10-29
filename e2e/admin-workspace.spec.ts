@@ -74,6 +74,11 @@ test("mobile navigation and tables do not overflow the page", async ({ page }) =
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  for (const [locale, label] of [["en", "English"], ["zh-TW", "繁體中文（台灣）"], ["zh-CN", "简体中文"]]) {
+    await page.getByRole("button", { name: label, exact: true }).click();
+    await expect(page.locator("html")).toHaveAttribute("lang", locale);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  }
 });
 
 test("English navigation and page copy resolve", async ({ page, context, baseURL }) => {

@@ -1,0 +1,7 @@
+{
+  "scheduleGeneratedByClosure": "可露希尔生成的排班方案",
+  "generatedLayoutOperatorsKeptFor7Days": "<part1></part1> 生成 · 布局 <part2></part2> · 干员 <part3></part3> 名 · 保留 7 天<part4></part4><part5></part5>",
+  "backToClosureAssistant": "← 返回可露希尔助理",
+  "factoryRecipes": " · 制造站配方 {recipes}",
+  "tradeOrders": " · 贸易站订单 {orders}"
+}

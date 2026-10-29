@@ -1,0 +1,11 @@
+{
+  "rarity": "Rarity",
+  "profession": "Profession",
+  "room": "Facility",
+  "tag": "Skill tags",
+  "all": "All",
+  "chooseRoom": "Choose a facility first",
+  "noTags": "This facility has no skill tags",
+  "operators": "{count, plural, one {# operator} other {# operators}}",
+  "clear": "Clear filters"
+}

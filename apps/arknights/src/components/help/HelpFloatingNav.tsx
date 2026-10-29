@@ -14,9 +14,9 @@ import { cn } from "@/lib/utils";
 import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion";
 
 const helpLinks = [
-  { href: "/help", zh: messageRecord("zh", "components_help_HelpFloatingNav_content").value as [string, string], en: messageRecord("en", "components_help_HelpFloatingNav_content").value as [string, string] },
-  { href: "/help/import-operators", zh: messageRecord("zh", "components_help_HelpFloatingNav_content2").value as [string, string], en: messageRecord("en", "components_help_HelpFloatingNav_content2").value as [string, string] },
-  { href: "/help/owned-operators", zh: messageRecord("zh", "components_help_HelpFloatingNav_content3").value as [string, string], en: messageRecord("en", "components_help_HelpFloatingNav_content3").value as [string, string] },
+  { href: "/help", content: "components_help_HelpFloatingNav_content" as const },
+  { href: "/help/import-operators", content: "components_help_HelpFloatingNav_content2" as const },
+  { href: "/help/owned-operators", content: "components_help_HelpFloatingNav_content3" as const },
 ];
 
 export function HelpFloatingNav() {
@@ -25,7 +25,7 @@ export function HelpFloatingNav() {
   const reduceMotion = useReducedMotion();
   const [openPath, setOpenPath] = useState<string | null>(null);
   const locale = useLocale();
-  const en = locale === "en";
+  const en = locale;
   const open = openPath === pathname;
 
   return (
@@ -92,9 +92,9 @@ export function HelpFloatingNav() {
 
             <nav aria-label={intl("components_help_HelpFloatingNav.helpNavigation")}>
               <ul className="grid gap-1">
-                {helpLinks.map(({ href, zh, en: english }) => {
+                {helpLinks.map(({ href, content }) => {
                   const active = pathname === href;
-                  const [label, description] = en ? english : zh;
+                  const [label, description] = messageRecord(en, content).value;
                   return (
                     <li key={href}>
                       <Link

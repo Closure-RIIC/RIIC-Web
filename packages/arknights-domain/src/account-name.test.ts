@@ -14,4 +14,7 @@ test("website account names enforce length, character, and spacing limits", () =
   assert.match(validateWebsiteAccountName("博士😀").error ?? "", /只能使用/);
   assert.match(validateWebsiteAccountName("__").error ?? "", /至少包含/);
   assert.match(validateWebsiteAccountName("Doctor  Rhodes").error ?? "", /连续空格/);
+  assert.equal(validateWebsiteAccountName("A").errorCode, "nameLength");
+  assert.equal(validateWebsiteAccountName("博士😀").errorCode, "nameCharacters");
+  assert.equal(validateWebsiteAccountName("Doctor  Rhodes").errorCode, "nameSpaces");
 });

@@ -1,4 +1,3 @@
-import zh from "../../../messages/helpers/zh/efficiency.json" with { type: "json" };
-import en from "../../../messages/helpers/en/efficiency.json" with { type: "json" };
+import type Messages from "../../../messages/zh-CN/efficiency.json";
 import { createLocalizer } from "../localize.ts";
-export const localize = createLocalizer(zh, en);
+export const localize = createLocalizer<typeof Messages>("efficiency");

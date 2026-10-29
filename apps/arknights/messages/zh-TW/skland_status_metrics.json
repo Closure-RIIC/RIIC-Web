@@ -1,0 +1,20 @@
+{
+  "complete": "已完成",
+  "under1Minute": "不足1分鐘",
+  "dH": "{days}天{hours}小時",
+  "hM": "{hours}小時{minutes}分鐘",
+  "m": "{value1}分鐘",
+  "restProgress": "休息進度",
+  "operatorsAreStillResting": "{value1} 名幹員仍在休息",
+  "noOperatorsAreResting": "當前宿舍無人休息",
+  "orderProgress": "訂單進度",
+  "tradingPostOrderStock": "貿易站訂單庫存",
+  "manufacturingProgress": "製造進度",
+  "capacityIsUnknownForSomeFormulas": "部分製造配方容量未知",
+  "completedFactoryProducts": "製造站已完成產物",
+  "clueCollection": "線索收集",
+  "sharing": "交流中",
+  "sharingEndsIn": "{value2}後結束交流",
+  "cluesPlaced": "當前已佈置 {clueCount} 條線索",
+  "receptionRoomDataNotProvided": "會客室資料未提供"
+}

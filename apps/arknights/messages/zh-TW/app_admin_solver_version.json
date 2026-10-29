@@ -1,0 +1,16 @@
+{
+  "unavailable": "未返回",
+  "solverVersion": "求解器版本",
+  "buildIdentityAndProtocolCapabilitiesCurrentlyRunningOnThe": "線上 Worker 當前實際執行的構建身份與協議能力",
+  "running": "執行中",
+  "notReady": "未就緒",
+  "workerPingDidNotReturnAValidSolverExecutable": "Worker ping 未返回有效的 solver_executable_sha256",
+  "fullWorkerFingerprint": "完整 Worker 指紋",
+  "buildCommitProtocolVersionsAndPlanContract": "構建提交、協議版本與計劃契約",
+  "expand": "展開",
+  "collapse": "收起",
+  "buildIdentity": "構建身份",
+  "protocolCapabilities": "協議能力",
+  "planContract": "計劃契約",
+  "theWorkerDidNotReturnPerVersionContractFingerprints": "Worker 未返回按版本劃分的契約指紋。"
+}

@@ -70,7 +70,7 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
         if (!controller.signal.aborted) onAuthenticated(result);
       }
     } catch (cause) {
-      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : t("登录失败，请重试。", "Sign-in failed. Please retry."));
+      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : t("SklandLoginPanel.signInFailedPleaseRetry"));
     } finally {
       if (request.current === controller) { request.current = null; setBusy(false); }
     }
@@ -112,7 +112,7 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
         setScanState(value.status === "scanned" ? "scanned" : "waiting");
       } catch (cause) {
         if (stopped || active.signal.aborted) return;
-        setError(cause instanceof Error ? cause.message : "登录查询失败 / Sign-in check failed");
+        setError(cause instanceof Error ? cause.message : "@login:pollFailed");
         failures++;
         if (cause instanceof SklandRequestError) {
           retryAfterSeconds = cause.retryAfterSeconds;
@@ -141,54 +141,54 @@ export function SklandLoginPanel({ main, onAuthenticated, onMethodChange, render
     if (!value) { request.current?.abort(); request.current = null; setBusy(false); setScan(null); setScanState("idle"); }
   }
   const policies = <div className="ef-login-consent" data-skland-policy-consent>
-    <label><input type="checkbox" checked={terms} onChange={e => updateConsent("terms", e.target.checked)} /><span>{t("我已阅读并同意", "I have read and agree to the ")} <a href={`${main}terms`} target="_blank" rel="noreferrer">{t("本站服务条款", "Terms of service")}</a>。</span></label>
-    <label><input type="checkbox" checked={privacy} onChange={e => updateConsent("privacy", e.target.checked)} /><span>{t("我已阅读", "I have read the ")} <a href={`${main}privacy`} target="_blank" rel="noreferrer">{t("本站隐私政策", "Privacy policy")}</a>{t("，并同意本站为登录和数据同步处理我的森空岛凭证、角色、干员与基建数据。", " and consent to processing my Skland credentials, character, operators and ship data for sign-in and sync.")}</span></label>
+    <label><input type="checkbox" checked={terms} onChange={e => updateConsent("terms", e.target.checked)} /><span>{t("SklandLoginPanel.iHaveReadAndAgreeToThe")} <a href={`${main}terms`} target="_blank" rel="noreferrer">{t("SklandLoginPanel.termsOfService")}</a>。</span></label>
+    <label><input type="checkbox" checked={privacy} onChange={e => updateConsent("privacy", e.target.checked)} /><span>{t("SklandLoginPanel.iHaveReadThe")} <a href={`${main}privacy`} target="_blank" rel="noreferrer">{t("SklandLoginPanel.privacyPolicy")}</a>{t("SklandLoginPanel.andConsentToProcessingMySklandCredentialsCharacterOperators")}</span></label>
   </div>;
-  const status = busy ? t("正在生成二维码…", "Preparing QR code…") : scanState === "scanned" ? t("已扫码，等待森空岛 App 确认…", "Scanned. Confirm in the Skland app…")
-    : scanState === "expired" ? t("二维码已过期，请重新生成。", "QR code expired. Generate a new one.")
-      : scan ? t("请使用森空岛 App 扫描二维码", "Scan with the Skland app") : t("勾选下方两项授权后生成二维码", "Accept both policies to generate a QR code");
+  const status = busy ? t("SklandLoginPanel.preparingQrCode") : scanState === "scanned" ? t("SklandLoginPanel.scannedConfirmInTheSklandApp")
+    : scanState === "expired" ? t("SklandLoginPanel.qrCodeExpiredGenerateANewOne")
+      : scan ? t("SklandLoginPanel.scanWithTheSklandApp") : t("SklandLoginPanel.acceptBothPoliciesToGenerateAQrCode");
   const actions = method === "qr"
-    ? !scan || error ? <Action size={renderDialog ? "sm" : "default"} variant="yellow" icon={busy ? <LoaderCircle className="ef-spin" /> : <RefreshCw />} aria-busy={busy} disabled={busy || !canSubmit} onClick={() => void submit()}>{scanState === "idle" && !error ? t("生成登录二维码", "Generate login QR code") : t("重新生成二维码", "Generate a new QR code")}</Action> : null
-    : <Action size={renderDialog ? "sm" : "default"} variant="yellow" type="submit" form={`${tabs}-credential-form`} icon={busy ? <LoaderCircle className="ef-spin" /> : <KeyRound />} aria-busy={busy} disabled={!canSubmit || !credential.trim() || busy}>{busy ? t("正在验证凭证…", "Verifying credential…") : t("导入并登录", "Import & sign in")}</Action>;
+    ? !scan || error ? <Action size={renderDialog ? "sm" : "default"} variant="yellow" icon={busy ? <LoaderCircle className="ef-spin" /> : <RefreshCw />} aria-busy={busy} disabled={busy || !canSubmit} onClick={() => void submit()}>{scanState === "idle" && !error ? t("SklandLoginPanel.generateLoginQrCode") : t("SklandLoginPanel.generateANewQrCode")}</Action> : null
+    : <Action size={renderDialog ? "sm" : "default"} variant="yellow" type="submit" form={`${tabs}-credential-form`} icon={busy ? <LoaderCircle className="ef-spin" /> : <KeyRound />} aria-busy={busy} disabled={!canSubmit || !credential.trim() || busy}>{busy ? t("SklandLoginPanel.verifyingCredential") : t("SklandLoginPanel.importSignIn")}</Action>;
   const body = <div className="ef-login-panel" data-skland-login-panel>
-    <div className="ef-login-tabs" role="tablist" aria-label={t("森空岛登录方式", "Skland sign-in method")}>
+    <div className="ef-login-tabs" role="tablist" aria-label={t("SklandLoginPanel.sklandSignInMethod")}>
       {(["qr", "credential"] as const).map(value => <button key={value} id={`${tabs}-${value}`} type="button" role="tab" aria-selected={method === value} aria-controls={`${tabs}-${value}-panel`} tabIndex={method === value ? 0 : -1} onClick={() => changeMethod(value)} onKeyDown={handleKey}>
-        {value === "qr" ? <ScanLine /> : <KeyRound />}{value === "qr" ? t("扫码登录", "QR sign-in") : t("凭证导入", "Credential import")}
+        {value === "qr" ? <ScanLine /> : <KeyRound />}{value === "qr" ? t("SklandLoginPanel.qrSignIn") : t("SklandLoginPanel.credentialImport")}
       </button>)}
     </div>
     <div id={`${tabs}-${method}-panel`} role="tabpanel" aria-labelledby={`${tabs}-${method}`}>
       {method === "qr" ? <div className="ef-login-qr" data-skland-login-qr>
         <div className="ef-login-instructions">
-          <p className="ef-login-recommend"><ShieldCheck aria-hidden="true" /><span>{t("推荐方式。打开森空岛 App 扫描二维码，确认后读取终末地角色，同步干员练度与帝江号设施。", "Recommended. Scan with the Skland app to connect your Endfield character and sync operator progression and ship facilities.")}</span></p>
+          <p className="ef-login-recommend"><ShieldCheck aria-hidden="true" /><span>{t("SklandLoginPanel.recommendedScanWithTheSklandAppToConnectYour")}</span></p>
           {policies}
-          {error ? <Notice error>{error}</Notice> : null}
-          {scan ? <div className="ef-login-app"><ActionLink href={buildSklandAppOpenUrl()} target="_blank" rel="noreferrer" icon={<ExternalLink />}>{t("打开森空岛 App", "Open Skland app")}</ActionLink><p>{t("请用森空岛扫描二维码；必要时可在另一台设备展示。", "Scan with Skland; display this code on another device if needed.")}</p></div> : null}
+          {error ? <Notice error>{error === "@login:pollFailed" ? t("SklandLoginPanel.pollFailed") : error}</Notice> : null}
+          {scan ? <div className="ef-login-app"><ActionLink href={buildSklandAppOpenUrl()} target="_blank" rel="noreferrer" icon={<ExternalLink />}>{t("SklandLoginPanel.openSklandApp")}</ActionLink><p>{t("SklandLoginPanel.scanWithSklandDisplayThisCodeOnAnotherDevice")}</p></div> : null}
           {!renderDialog ? actions : null}
         </div>
         <div className="ef-login-visual">
           <div className="ef-qr-frame" data-skland-qr-visual>
-            {scanState === "scanned" || busy ? <LoaderCircle className="ef-spin" aria-hidden="true" /> : scan ? <ClientOnly><Suspense fallback={<LoaderCircle className="ef-spin" />}><QrCode value={scan.scanUrl} size={196} bgColor="#fff" fgColor="#000" title={t("森空岛登录二维码", "Skland login QR code")} role="img" aria-label={t("森空岛登录二维码", "Skland login QR code")} /></Suspense></ClientOnly> : <ScanLine aria-hidden="true" />}
+            {scanState === "scanned" || busy ? <LoaderCircle className="ef-spin" aria-hidden="true" /> : scan ? <ClientOnly><Suspense fallback={<LoaderCircle className="ef-spin" />}><QrCode value={scan.scanUrl} size={196} bgColor="#fff" fgColor="#000" title={t("SklandLoginPanel.sklandLoginQrCode")} role="img" aria-label={t("SklandLoginPanel.sklandLoginQrCode")} /></Suspense></ClientOnly> : <ScanLine aria-hidden="true" />}
           </div>
           <p role="status" aria-live="polite">{status}</p>
         </div>
       </div> : <form id={`${tabs}-credential-form`} className="ef-login-credential" onSubmit={e => { e.preventDefault(); void submit(); }}>
-        <p className="ef-login-mobile-hint">{t("手机端优先使用扫码；凭证导入需要桌面浏览器的开发者工具。", "On mobile, use QR sign-in. Credential import requires desktop developer tools.")}</p>
+        <p className="ef-login-mobile-hint">{t("SklandLoginPanel.onMobileUseQrSignInCredentialImportRequires")}</p>
         <ol className="ef-credential-steps">
-          <li><span>1</span><div><strong>{t("登录森空岛网页版", "Sign in to Skland on the web")}</strong><p>{t("打开", "Open ")} <a href="https://www.skland.com/index" target="_blank" rel="noreferrer">www.skland.com/index</a> {t("并完成登录。", "and sign in.")}</p></div></li>
-          <li><span>2</span><div><strong>{t("在 F12 Console 执行命令", "Run the command in the F12 Console")}</strong><p>{t("打开开发者工具的 Console，将下方命令粘贴并执行。它只读取森空岛页面已有的 cred 与 token，并复制为一行。", "Open the developer Console and run this command to copy your existing Skland cred and token as one line.")}</p>
+          <li><span>1</span><div><strong>{t("SklandLoginPanel.signInToSklandOnTheWeb")}</strong><p>{t("SklandLoginPanel.open")} <a href="https://www.skland.com/index" target="_blank" rel="noreferrer">www.skland.com/index</a> {t("SklandLoginPanel.andSignIn")}</p></div></li>
+          <li><span>2</span><div><strong>{t("SklandLoginPanel.runTheCommandInTheF12Console")}</strong><p>{t("SklandLoginPanel.openTheDeveloperConsoleAndRunThisCommandTo")}</p>
             <div className="ef-credential-command"><code title={COPY_COMMAND}>{COPY_COMMAND}</code><Action size="sm" icon={copied ? <Check /> : <Clipboard />} onClick={() => {
               void navigator.clipboard.writeText(COPY_COMMAND).then(() => {
                 if (!mounted.current) return; setCopied(true);
                 if (copyTimer.current) clearTimeout(copyTimer.current);
                 copyTimer.current = setTimeout(() => setCopied(false), 2000);
-              }).catch(() => { if (mounted.current) setError(t("复制失败，请手动选择命令复制。", "Copy failed. Select and copy the command manually.")); });
-            }}>{copied ? t("已复制", "Copied") : t("复制命令", "Copy command")}</Action></div>
+              }).catch(() => { if (mounted.current) setError(t("SklandLoginPanel.copyFailedSelectAndCopyTheCommandManually")); });
+            }}>{copied ? t("SklandLoginPanel.copied") : t("SklandLoginPanel.copyCommand")}</Action></div>
           </div></li>
-          <li><span>3</span><div><label htmlFor={`${tabs}-credential-input`}><strong>{t("粘贴生成的单行凭证", "Paste the generated credential")}</strong></label><p>{t("内容应为 cred,token，仅在本次请求和当前组件内存中短暂存在。", "Use cred,token. It is held briefly in memory and sent only for this sign-in request.")}</p><input id={`${tabs}-credential-input`} type="password" placeholder={t("粘贴 cred,token", "Paste cred,token")} autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={12288} value={credential} onChange={e => setCredential(e.target.value)} /></div></li>
+          <li><span>3</span><div><label htmlFor={`${tabs}-credential-input`}><strong>{t("SklandLoginPanel.pasteTheGeneratedCredential")}</strong></label><p>{t("SklandLoginPanel.useCredTokenItIsHeldBrieflyInMemory")}</p><input id={`${tabs}-credential-input`} type="password" placeholder={t("SklandLoginPanel.pasteCredToken")} autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={12288} value={credential} onChange={e => setCredential(e.target.value)} /></div></li>
         </ol>
-        <div className="ef-credential-risk"><TriangleAlert aria-hidden="true" /><div><strong>{t("凭证等同登录权限，请勿发送给任何人", "Credentials grant account access. Do not share them.")}</strong><p>{t("本站仅同步终末地角色、干员练度与帝江号设施；凭证不会写入本地名单或导出文件。", "This page syncs Endfield characters, operator progression and ship facilities. Credentials are excluded from local rosters and exports.")}</p></div></div>
+        <div className="ef-credential-risk"><TriangleAlert aria-hidden="true" /><div><strong>{t("SklandLoginPanel.credentialsGrantAccountAccessDoNotShareThem")}</strong><p>{t("SklandLoginPanel.thisPageSyncsEndfieldCharactersOperatorProgressionAndShip")}</p></div></div>
         {policies}
-        {error ? <Notice error>{error}</Notice> : null}
+        {error ? <Notice error>{error === "@login:pollFailed" ? t("SklandLoginPanel.pollFailed") : error}</Notice> : null}
         {!renderDialog ? actions : null}
       </form>}
     </div>

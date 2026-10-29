@@ -1,0 +1,11 @@
+{
+  "assistsPerDay": "Assists per day",
+  "eachAssistRestores30MoraleUpTo100Only": "Each assist restores 30% morale, up to 100%. Only assigned operators are eligible.",
+  "centralAssistanceIsOffInTheWorkspaceTheseSettings": "Central assistance is off in the workspace. These settings apply only to this simulation.",
+  "assistanceDay": "Assistance day",
+  "day": "Day {value1}",
+  "assist": "Assist {value1}",
+  "time": "Time",
+  "chooseTarget": "Choose target",
+  "noAssistanceInThisSimulation": "No assistance in this simulation."
+}

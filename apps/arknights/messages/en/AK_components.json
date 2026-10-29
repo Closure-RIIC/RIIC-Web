@@ -1,0 +1,15 @@
+{
+  "shift": "Shift",
+  "group_control": "Control Center",
+  "group_trading": "Trading Posts",
+  "group_manufacture": "Factories",
+  "group_power": "Power Plants",
+  "group_dormitory": "Dormitories",
+  "group_meeting": "Reception Room",
+  "group_hire": "Office",
+  "group_processing": "Workshop",
+  "group_training": "Training Room",
+  "group_recycling": "Recycling Station",
+  "group_recycle": "Recycling Station",
+  "group_functional": "Functional Facilities"
+}

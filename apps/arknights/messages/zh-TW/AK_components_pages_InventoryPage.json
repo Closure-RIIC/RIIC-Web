@@ -1,0 +1,6 @@
+{
+  "inventory": "檢視庫存",
+  "couldNotSaveToThisBrowserYourEdits": "瀏覽器儲存失敗，修改僅在當前頁面有效；請允許瀏覽器儲存後重新填寫。",
+  "manualAmountsSavedToThisBrowserForThe": "手填數量已儲存到此瀏覽器，按當前帳號和角色分別保留，重新整理後仍有效。",
+  "manualAmountsAreAutomaticallySavedToThisBrowser": "手填數量會自動儲存到此瀏覽器，按帳號和角色分別保留。"
+}

@@ -1,0 +1,9 @@
+{
+  "sklandStatus": "森空島同步",
+  "signInToYourWebsiteAccount": "先登入網站帳號",
+  "yourSklandConnectionBelongsToTheCurrentWebsiteAccount": "森空島繫結屬於當前網站帳號。登入後可通過掃碼或憑證匯入完成繫結、檢視當前基建狀態，並在七天授權到期後重新續期。",
+  "websiteAccountNotSignedIn": "網站帳號尚未登入",
+  "accountManagementAndSklandStatusAreSeparateSignIn": "帳號管理與森空島狀態已經分開。請先前往帳號管理登入，再回到這裡完成森空島授權。",
+  "goToAccount": "前往帳號管理",
+  "restoringWebsiteAccount": "正在恢復網站帳號"
+}
