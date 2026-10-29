@@ -9,7 +9,7 @@ export function readEndfieldColorMode(saved: string | null): "light" | "dark" {
   return saved === "dark" ? "dark" : "light";
 }
 export function readEndfieldLocale(cookie: string): AppLocale {
-  return readLocaleCookie(cookie, [ENDFIELD_LOCALE_COOKIE, "riic-locale"]);
+  return readLocaleCookie(cookie, [ENDFIELD_LOCALE_COOKIE]);
 }
 export function clearEndfieldStorage(local: Pick<Storage, "removeItem">, session: Pick<Storage, "removeItem">) {
   for (const key of [STORAGE_KEY, RESULT_STORAGE_KEY, STEP_STORAGE_KEY, DISPLAY_STORAGE_KEY, "riic-color-mode"]) local.removeItem(key);
