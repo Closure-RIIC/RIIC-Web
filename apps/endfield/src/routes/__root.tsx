@@ -15,6 +15,9 @@ import "@fontsource/barlow-condensed/latin-500.css";
 import "@fontsource/barlow-condensed/latin-600.css";
 
 export const Route = createRootRoute({
+  // Keep the request's bootstrap resources across navigation. Language changes
+  // explicitly invalidate the router; feature boundaries load each page's text.
+  staleTime: Infinity,
   validateSearch: (search: Record<string, unknown>): { roster?: boolean } => ({ roster: search.roster === true || search.roster === "true" ? true : undefined }),
   loader: async ({ location }) => {
     const [i18n, session] = await Promise.all([getRequestI18n({ data: { pathname: location.pathname } }), import.meta.env.SSR ? getInitialAccountSession() : undefined]);
