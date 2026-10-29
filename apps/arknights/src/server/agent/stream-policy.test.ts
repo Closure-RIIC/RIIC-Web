@@ -8,6 +8,7 @@ import { jsonSchema, stepCountIs, streamText, tool, type UIMessageChunk } from "
 import { MockLanguageModelV4 } from "ai/test";
 import { AGENT_INTERRUPTED_ERROR, AGENT_UNAVAILABLE_ERROR, AGENT_TIMEOUT_ERROR, agentChatErrorMessage } from "../../agent-chat-errors.ts";
 import { createAgentStreamPolicy, withAgentModelTimeout } from "./stream-policy.ts";
+import { withAgentAnswerBoundary } from "./answer-boundary.ts";
 
 const limits = { firstChunkMs: 60, chunkMs: 60, totalMs: 2_000 };
 const finish = (reason: "stop" | "tool-calls" = "stop"): LanguageModelV4StreamPart => ({
@@ -32,7 +33,7 @@ function waitingModel(parts: LanguageModelV4StreamPart[] = []) {
 
 async function collect(model: LanguageModelV4, signal = new AbortController().signal, timeout = limits) {
   const policy = createAgentStreamPolicy(signal, timeout);
-  const result = streamText({ model: withAgentModelTimeout(model, timeout), prompt: "test", ...policy.options, onError() {} });
+  const result = streamText({ model: withAgentAnswerBoundary(withAgentModelTimeout(model, timeout)), prompt: "test", ...policy.options, onError() {} });
   return readChunks(result.toUIMessageStream({ onError: policy.errorText }).pipeThrough(policy.transform));
 }
 
@@ -119,7 +120,7 @@ test("tool execution can exceed the content idle limit and resume a successful a
     } }) },
   ] });
   const policy = createAgentStreamPolicy(new AbortController().signal, limits);
-  const result = streamText({ model: withAgentModelTimeout(model, limits), prompt: "test", ...policy.options, stopWhen: stepCountIs(2), tools: {
+  const result = streamText({ model: withAgentAnswerBoundary(withAgentModelTimeout(model, limits)), prompt: "test", ...policy.options, stopWhen: stepCountIs(2), tools: {
     lookup: tool({ inputSchema: jsonSchema<Record<string, never>>({ type: "object", properties: {} }), execute: async () => { await delay(120); return { ok: true }; } }),
   } });
   const chunks = await readChunks(result.toUIMessageStream({ onError: policy.errorText }).pipeThrough(policy.transform));
