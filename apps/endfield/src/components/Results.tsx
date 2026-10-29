@@ -1,5 +1,6 @@
 import { operatorName } from "../i18n/game-data";
 import { gameLabel } from "../i18n/game-labels";
+import { solverMessage } from "../result-presentation";
 import { Check, Download, TriangleAlert } from "lucide-react";
 import { Dialog } from "@base-ui/react/dialog";
 import { AnimatedNumber } from "@riic/ui-primitives/animated-number";
@@ -27,9 +28,12 @@ export function Results({ result, showWeapons = true }: { result: Result; showWe
   const { workspace, t } = useWorkspace();
   const warnings = result.status.gaps.length + result.status.approximations.length + result.rooms.filter(room => !room.converged).length;
   const level = (key: string) => key === "会客室" ? workspace.options.levels.guest : key === "培养舱" ? workspace.options.levels.grow : key === "制造舱1" ? workspace.options.levels.mfg1 : workspace.options.levels.mfg2;
-  return <section className="ef-schedule-result" aria-label={t("Results.scheduleResult")}>
+  return <section className={`ef-schedule-result${result.center ? " ef-schedule-result-has-status" : ""}`} aria-label={t("Results.scheduleResult")}>
     <header className="ef-result-toolbar">
-      <div><h2>{t("Results.scheduleResult")}</h2><span className="ef-muted">{t("Results.dailyCycle")} · {(result.elapsedMs / 1000).toFixed(2)}s</span></div>
+      <div className="ef-result-heading">
+        <h2>{t("Results.scheduleResult")}</h2>
+        <span className="ef-result-timing ef-muted">{t("Results.dailyCycle")} · {(result.elapsedMs / 1000).toFixed(2)}s</span>
+      </div>
       <ResultReportDialog result={result} showWeapons={showWeapons} />
     </header>
     {result.center ? <>
@@ -81,19 +85,19 @@ export function FacilityBonus({ kind, value, placeholder, animated = false }: { 
 }
 
 export function FacilityOutputSummary({ scores, production, animated = false }: { scores: Record<string, number | null>; production?: Record<string, ProductionSummary>; animated?: boolean }) {
-  const { t } = useWorkspace();
+  const { locale, t } = useWorkspace();
   const rows: OutputRow[] = Object.entries(scores).flatMap(([key]) => {
     const summary = production?.[key];
     if ((key === "干员经验" || key === "武器经验") && summary?.experience !== undefined && summary.sanity !== undefined) {
-      return [{ key, icon: key, label: categoryLabel(key, t), output: summary.sanity.toFixed(2), unit: t("Results.sanity"), secondary: (summary.experience / 10_000).toFixed(2), secondaryUnit: t("Results.10kExp"), hint: summary.note }];
+      return [{ key, icon: key, label: categoryLabel(key, t), output: summary.sanity.toFixed(2), unit: t("Results.sanity"), secondary: (summary.experience / 10_000).toFixed(2), secondaryUnit: t("Results.10kExp"), hint: summary.note ? solverMessage(summary.note, locale, t) : undefined }];
     }
     return (summary?.options ?? []).map(option => ({
       key: `${key}-${option.kind ?? option.name}`,
       icon: key === "培养" ? option.kind ?? "培养" : key,
-      label: key === "培养" ? option.name : categoryLabel(key, t),
+      label: key === "培养" ? solverMessage(option.name, locale, t) : categoryLabel(key, t),
       output: option.units.toFixed(2),
       unit: (key === "线索" ? t("Results.clues") : t("Results.units")),
-      hint: summary?.note,
+      hint: summary?.note ? solverMessage(summary.note, locale, t) : undefined,
     }));
   });
   return <div className="ef-output-summary">
@@ -129,7 +133,7 @@ function FacilityTile({ kind, label, level, plan, room, scores, production, bonu
 }
 
 function ResultDetails({ result, showWeapons }: { result: Result; showWeapons: boolean }) {
-  const { t } = useWorkspace();
+  const { locale, t } = useWorkspace();
   const reason: Record<string, string> = {
     complete: t("Results.searchComplete"), "node-budget": t("Results.nodeBudgetReached"),
     "time-budget": t("Results.timeBudgetReached"), "non-converged-candidate": t("Results.someCandidatesDidNotConverge"),
@@ -138,13 +142,13 @@ function ResultDetails({ result, showWeapons }: { result: Result; showWeapons: b
   const mood = (value: Mood | null) => value ? `${t("Results.drain")} ${percent(value.consumption)} · ${t("Results.recovery")} ${percent(value.recovery)} · ${value.stable ? t("Results.stable") : t("Results.decayingSimulated")}` : "";
   return <Section>
     <Notice>{reason[result.status.stopReason] ?? result.status.stopReason} · {(result.elapsedMs / 1000).toFixed(2)}s · {t("Results.nodes")} {result.status.nodes.toLocaleString()} · {t("Results.centerCandidates")} {result.status.centersVisited}/{result.status.centersTotal}</Notice>
-    {!result.verification.ok ? <Notice error>{result.verification.errors.join("；")}</Notice> : <p className="ef-muted">{t("Results.crewCapacityAndOutputChecksPassed")}</p>}
+    {!result.verification.ok ? <Notice error>{result.verification.errors.map(text => solverMessage(text, locale, t)).join(" / ")}</Notice> : <p className="ef-muted">{t("Results.crewCapacityAndOutputChecksPassed")}</p>}
     {result.center ? <>
-      <div className="ef-stats">{Object.entries(result.scores).map(([key, value]) => <div className="ef-stat" key={key}><span>{key}</span><strong>{value.toFixed(2)}</strong><small>{t("Results.effectiveHDay")}</small></div>)}</div>
+      <div className="ef-stats">{Object.entries(result.scores).map(([key, value]) => <div className="ef-stat" key={key}><span>{gameLabel(t, key)}</span><strong>{value.toFixed(2)}</strong><small>{t("Results.effectiveHDay")}</small></div>)}</div>
       <article className="ef-result"><header><h3>{t("Results.controlCenter")}</h3><span className="ef-muted">{hour(result.center.hour)} {t("Results.shiftChange")}</span></header>
         <div className="ef-shifts">{(["a", "b"] as const).map((s, i) => <div className="ef-shift" key={s}><div className="ef-shift-label"><b>{s.toUpperCase()}</b><span className="ef-shift-time">{i ? `${hour(result.center!.hour)} — 24:00` : `00:00 — ${hour(result.center!.hour)}`}</span></div><div className="ef-crew">{result.center![s].map(n => <OperatorChip key={n} name={n} showWeapon={showWeapons} compact />)}</div></div>)}</div>
       </article>
-      {result.rooms.map(room => <article className="ef-result" key={room.key}><header><h3>{room.key} <span className="ef-muted">/ {room.category}</span></h3><span>{room.value.toFixed(2)} <small className="ef-muted">{t("Results.effectiveHDay")}</small></span></header>
+      {result.rooms.map(room => <article className="ef-result" key={room.key}><header><h3>{gameLabel(t, room.key)} <span className="ef-muted">/ {gameLabel(t, room.category)}</span></h3><span>{room.value.toFixed(2)} <small className="ef-muted">{t("Results.effectiveHDay")}</small></span></header>
         <div className="ef-shifts">{(["a", "b"] as const).map((s, i) => <div className="ef-shift" key={s}>
           <div className="ef-shift-label"><b>{room.single ? (i ? t("Results.rest") : t("Results.work")) : s.toUpperCase()}</b>
             <span className="ef-shift-time">{room.single ? `${(i ? room.restHours : room.workHours)?.toFixed(2) ?? "—"} h` : i ? `${hour(room.hour)} — 24:00` : `00:00 — ${hour(room.hour)}`}</span></div>
@@ -154,12 +158,12 @@ function ResultDetails({ result, showWeapons }: { result: Result; showWeapons: b
         <details className="ef-details"><summary>{t("Results.moraleAndSimulation")}</summary>
           {!room.single ? <><p>A · {mood(room.moodA)}</p><p>B · {mood(room.moodB)}</p></> : null}
           <p>{room.converged ? t("Results.simulationConverged") : t("Results.simulationDidNotConverge")} · {room.days} {t("Results.days")}</p>
-          {room.assist ? <p>{t("Results.centralAssistance")} · {room.assist.shift} · {room.assist.points} {t("Results.pointsDay")} · {room.assist.cycle.map((names, i) => `${i + 1}: ${names.join("、")}`).join(" / ")}</p> : null}
+          {room.assist ? <p>{t("Results.centralAssistance")} · {room.assist.shift} · {room.assist.points} {t("Results.pointsDay")} · {room.assist.cycle.map((names, i) => `${i + 1}: ${names.map(name => operatorName(name, locale)).join(" / ")}`).join(" / ")}</p> : null}
           {room.daily.length ? <div className="ef-table-wrap"><table className="ef-table"><thead><tr><th>{t("Results.day")}</th><th>{t("Results.effectiveOutput")}</th></tr></thead><tbody>{room.daily.slice(-7).map((v, i) => <tr key={i}><td>{Math.max(1, room.daily.length - 6) + i}</td><td>{v.toFixed(3)}</td></tr>)}</tbody></table></div> : null}
         </details>
       </article>)}
     </> : <Notice>{t("Results.noPlanFoundWithinTheBudgetCheckYourRoster")}</Notice>}
-    {result.status.approximations.length ? <Notice>{result.status.approximations.join("；")}</Notice> : null}
-    {result.status.gaps.map((g, i) => <Notice key={i}>{g.cat}: {g.reason} {g.detail}</Notice>)}
+    {result.status.approximations.length ? <Notice>{result.status.approximations.map(text => solverMessage(text, locale, t)).join(" / ")}</Notice> : null}
+    {result.status.gaps.map((g, i) => <Notice key={i}>{gameLabel(t, g.cat)}: {solverMessage(g.reason, locale, t)} {g.detail ? solverMessage(g.detail, locale, t) : null}</Notice>)}
   </Section>;
 }

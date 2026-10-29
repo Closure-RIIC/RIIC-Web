@@ -4,27 +4,30 @@ import { Trash2 } from "lucide-react";
 import { useWorkspace } from "../state";
 import type { StepLogEntry, StepRoom, StepView } from "../step/step-types.ts";
 import { formatClock, formatDuration } from "../step/step-engine.ts";
+import { stepLogText } from "../step/step-presentation";
+import { gameLabel } from "../i18n/game-labels";
+import { operatorName } from "../i18n/game-data";
 
 export function StepLog({ log, startHour, onClear }: { log: StepLogEntry[]; startHour: number; onClear: () => void }) {
-  const { t } = useWorkspace();
+  const { locale, t } = useWorkspace();
   return <Section title={t("StepPanels.eventLog")} actions={<Action id="logClearBtn" size="sm" icon={<Trash2 />} disabled={!log.length} onClick={onClear}>{t("StepPanels.clear")}</Action>}>
     <ScrollArea id="logList" className="ef-step-log" viewportProps={{ "aria-label": t("StepPanels.eventLog") }}>
       {log.length ? log.map((entry, index) => <div className="ef-step-log-entry" data-event={entry.type} key={index}>
-        <time>{formatClock(entry.tSec, startHour)}</time><span>{entry.text.replace(/^[^\p{L}\p{N}]+/u, "")}</span>
+        <time>{formatClock(entry.tSec, startHour)}</time><span>{stepLogText(entry.message, locale, t)}</span>
       </div>) : <p className="ef-muted">{t("StepPanels.noEventsYet")}</p>}
     </ScrollArea>
   </Section>;
 }
 
 export function StepStats({ view, rooms }: { view: StepView; rooms: StepRoom[] }) {
-  const { t } = useWorkspace();
+  const { locale, t } = useWorkspace();
   const rows = rooms.filter(room => view.rooms[room.key]).flatMap(room => {
     if (room.key === "中枢") return [];
     const hours = (view.workTimeSec[room.key] ?? 0) / 3600;
     return room.products.map(product => {
       const output = view.output[room.key];
       const total = typeof output === "number" ? output : output?.[product] ?? 0;
-      return <tr key={`${room.key}:${product}`}><td>{room.label} · {product}</td>
+      return <tr key={`${room.key}:${product}`}><td>{gameLabel(t, room.key)} · {gameLabel(t, product)}</td>
         <td>{total.toFixed(2)}</td><td>{(hours ? total / hours : 0).toFixed(2)}</td>
         <td>{formatDuration(view.workTimeSec[room.key] ?? 0)}</td></tr>;
     });
@@ -48,7 +51,7 @@ export function StepStats({ view, rooms }: { view: StepView; rooms: StepRoom[] }
             if (mood < minimum) minimum = mood;
             if (mood > maximum) maximum = mood;
           }
-          return <tr key={op.name}><td>{op.name}</td><td>{minimum.toFixed(1)}%</td>
+          return <tr key={op.name}><td>{operatorName(op.name, locale)}</td><td>{minimum.toFixed(1)}%</td>
             <td>{maximum.toFixed(1)}%</td><td>{op.mood.toFixed(1)}%</td></tr>;
         })}</tbody>
       </table></ScrollArea>

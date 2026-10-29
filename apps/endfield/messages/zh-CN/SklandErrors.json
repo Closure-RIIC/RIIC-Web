@@ -1,0 +1,17 @@
+{
+  "sessionExpired": "森空岛登录已过期，请重新登录。",
+  "invalidOrigin": "请求来源无效，请刷新页面后重试。",
+  "unavailable": "森空岛服务暂不可用，请稍后重试。",
+  "accountLimit": "最多可登录 5 个森空岛账号，请先退出一个账号。",
+  "consentRequired": "请先阅读并同意服务条款和隐私政策。",
+  "accountBound": "这个森空岛账号已经绑定到其他网站账号。",
+  "notAvailable": "当前站点不提供此功能。",
+  "signInRequired": "请先登录 RIIC 网站账号。",
+  "forbidden": "当前账号无法访问此功能，请确认登录账号。",
+  "invalidCredential": "森空岛凭证格式无效，请重新完整复制 cred,token。",
+  "invalidRequest": "请求格式无效或请求已中断，请重试。",
+  "tooLarge": "提交的数据过大，请精简后重试。",
+  "invalidData": "森空岛账号或角色数据无效，请重新登录并同步。",
+  "rateLimited": "操作过于频繁，请稍后重试。",
+  "roleMismatch": "森空岛返回的角色不匹配，请重新同步。"
+}

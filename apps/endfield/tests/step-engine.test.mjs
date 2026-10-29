@@ -148,7 +148,7 @@ test("a boost adds 30 percentage points and is capped at 100", () => {
   const boost = simulation.view.log.find(entry => entry.type === "boost");
   assert.ok(boost, "boost event must fire");
   assert.ok(Math.abs(boost.tSec - 21_600) <= 2);
-  assert.ok(boost.text.includes("+30"));
+  assert.equal(boost.message.amount, 30);
   const sample = simulation.view.history.reduce((best, item) => Math.abs(item.tSec - 21_600) < Math.abs(best.tSec - 21_600) ? item : best);
   assert.ok(Math.abs(sample.moods.A - (50 - 43.2 + 30)) < 0.5, `mood after boost was ${sample.moods.A}`);
 });

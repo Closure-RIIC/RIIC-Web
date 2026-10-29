@@ -11,7 +11,8 @@ import {
   buildStepConfig, effectTable, ensureBoostDays, maxBoostDays, roomEffectResolver, scheduledNames, validateStepConfig,
 } from "../step/step-model.ts";
 import { applyStored, DEFAULT_STEP_CONTROLS, loadStepConfig, saveStepConfig, toStored, type StoredStep } from "../step/step-store.ts";
-import type { StepBoostConfig } from "../step/step-types.ts";
+import type { StepBoostConfig, StepProblem } from "../step/step-types.ts";
+import { stepProblemText } from "../step/step-presentation";
 import { Action, Notice, Section } from "@riic/endfield-ui";
 import { Play, RotateCcw } from "lucide-react";
 import "../step/step.css";
@@ -28,7 +29,11 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
   const [ready, setReady] = useState(false);
   const { startHour, maxHours } = controls;
   const config = useMemo(() => applyStored(buildStepConfig({ ...workspace, manual: assignments }, null, "manual"), preferences), [workspace, assignments, preferences]);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<"roster" | "facilities" | "schedule" | StepProblem[] | null>(null);
+  const errorText = Array.isArray(error) ? error.map(problem => stepProblemText(problem, locale, t)).join(locale === "en" ? "; " : "；")
+    : error === "roster" ? t("MoodSimulationPanel.setUpYourRosterBeforeStarting")
+      : error === "facilities" ? t("MoodSimulationPanel.enableAtLeastOneFacility")
+        : error === "schedule" ? t("MoodSimulationPanel.assignOperatorsInTheEditorBeforeStarting") : "";
   const [picker, setPicker] = useState<PickerState | null>(null);
   const reportRef = useRef<HTMLDetailsElement>(null);
   const playback = useMoodSimulation(config, resolver, controls, ready);
@@ -65,12 +70,12 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
 
   function validate() {
     if (!ready) return false;
-    if (!workspace.operators.length) { setError(t("MoodSimulationPanel.setUpYourRosterBeforeStarting")); return false; }
-    if (!config.rooms.some(room => room.enabled)) { setError(t("MoodSimulationPanel.enableAtLeastOneFacility")); return false; }
-    if (!scheduled.size) { setError(t("MoodSimulationPanel.assignOperatorsInTheEditorBeforeStarting")); return false; }
+    if (!workspace.operators.length) { setError("roster"); return false; }
+    if (!config.rooms.some(room => room.enabled)) { setError("facilities"); return false; }
+    if (!scheduled.size) { setError("schedule"); return false; }
     const problems = validateStepConfig(config, new Set(workspace.operators.map(operator => operator.name)));
-    if (problems.length) { setError(problems.join("；")); return false; }
-    setError("");
+    if (problems.length) { setError(problems); return false; }
+    setError(null);
     return true;
   }
 
@@ -82,7 +87,7 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
   }
 
   function reset() {
-    setError("");
+    setError(null);
     playback.reset();
     if (reportRef.current) reportRef.current.open = false;
   }
@@ -111,7 +116,7 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
   return <>
   <div className="ef-step-page" id="manual-simulation">
     <Section>
-      {error ? <Notice error>{error}</Notice> : null}
+      {errorText ? <Notice error>{errorText}</Notice> : null}
       {!ready ? <Notice>{t("MoodSimulationPanel.loadingLocalConfiguration")}</Notice> : null}
       <div className="ef-actions ef-step-playback">
         <Action id="showResultBtn" size="sm" variant="yellow" icon={<Play />} onClick={showResults} disabled={!ready}>

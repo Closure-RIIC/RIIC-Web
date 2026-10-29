@@ -156,8 +156,8 @@ test("duplicate or unknown crews are reported before starting", () => {
     ...empty,
     rooms: empty.rooms.map((room, index) => index === 1 || index === 2 ? { ...room, crewA: [NAMES[0], ...room.crewA.slice(1)] } : room),
   };
-  assert.ok(validateStepConfig(duplicate, owned).some(problem => problem.includes("重复")));
-  assert.ok(validateStepConfig(duplicate, new Set()).some(problem => problem.includes("不在名单中")));
+  assert.ok(validateStepConfig(duplicate, owned).some(problem => problem.kind === "duplicate-operator"));
+  assert.ok(validateStepConfig(duplicate, new Set()).some(problem => problem.kind === "unknown-operator"));
   const badHour = { ...empty, rooms: empty.rooms.map((room, index) => index === 0 ? { ...room, hour: 24 } : room) };
-  assert.ok(validateStepConfig(badHour, owned).some(problem => problem.includes("换班时刻")));
+  assert.ok(validateStepConfig(badHour, owned).some(problem => problem.kind === "invalid-hour"));
 });
