@@ -1,4 +1,10 @@
 {
   "featuresAndExperienceUpdatesForTheDijiangInfrastructureTerminal": "帝江號基建終端的功能與體驗更新。",
-  "developmentPreview": "開發預覽"
+  "developmentPreview": "開發預覽",
+  "added": "新增",
+  "improved": "改善",
+  "fixed": "修正",
+  "loadFailed": "暫時無法載入更新日誌，下方仍保留早期開發紀錄。",
+  "retry": "重新整理",
+  "loading": "載入中…"
 }

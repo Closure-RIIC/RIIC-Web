@@ -521,6 +521,81 @@ export const references = [
     "source": "packages/shell/auth/password-strength.tsx:23"
   },
   {
+    "key": "Changelog.added",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ReleaseEntry.tsx:6"
+  },
+  {
+    "key": "Changelog.fixed",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ReleaseEntry.tsx:6"
+  },
+  {
+    "key": "Changelog.improved",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ReleaseEntry.tsx:6"
+  },
+  {
+    "key": "ChangelogAdmin.accessDenied",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:16"
+  },
+  {
+    "key": "ChangelogAdmin.conflict",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:16"
+  },
+  {
+    "key": "ChangelogAdmin.deleteConfirm",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:103"
+  },
+  {
+    "key": "ChangelogAdmin.development",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:15"
+  },
+  {
+    "key": "ChangelogAdmin.invalid",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:16"
+  },
+  {
+    "key": "ChangelogAdmin.local",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:15"
+  },
+  {
+    "key": "ChangelogAdmin.production",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:15"
+  },
+  {
+    "key": "ChangelogAdmin.publishConfirm",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:103"
+  },
+  {
+    "key": "ChangelogAdmin.requestFailed",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:16"
+  },
+  {
+    "key": "ChangelogAdmin.saved",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:17"
+  },
+  {
+    "key": "ChangelogAdmin.updated",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:17"
+  },
+  {
+    "key": "ChangelogAdmin.withdrawConfirm",
+    "prefix": false,
+    "source": "apps/endfield/src/components/ChangelogAdminPage.tsx:103"
+  },
+  {
     "key": "Changes.item0_0",
     "prefix": false,
     "source": "apps/endfield/src/changelog.ts:6"
@@ -754,6 +829,11 @@ export const references = [
     "key": "Navigation.changelog",
     "prefix": false,
     "source": "apps/endfield/src/page-labels.ts:9"
+  },
+  {
+    "key": "Navigation.changelogAdmin",
+    "prefix": false,
+    "source": "apps/endfield/src/page-labels.ts:10"
   },
   {
     "key": "Navigation.docs",
