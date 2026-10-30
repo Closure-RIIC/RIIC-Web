@@ -13,6 +13,7 @@ import {
 import type { SklandInventoryData, SklandQrStatusResponse, SklandScheduleSnapshot, SklandStatusSnapshot } from "@riic/arknights-domain/types";
 import type { SklandPolicyConsentRequest } from "@riic/arknights-domain/legal-policy";
 import { DeviceIdCache } from "./device-id-cache";
+import { createReadAdmission } from "./read-admission";
 import { recentSklandOAuth } from "./recent-oauth";
 import {
   SKLAND_TEENAGER_PATH,
@@ -92,6 +93,8 @@ export class SklandServiceError extends Error {
     super(message);
   }
 }
+
+const admitSessionRead = createReadAdmission(8, () => new SklandServiceError("RATE_LIMITED", "森空岛同步繁忙，请稍后再试。", 429));
 
 function upstreamRetryAfterSeconds(now = Date.now()): number {
   return Math.max(0, Math.ceil(((globalThis.__infraCalcSklandUpstreamCooldownUntil ?? 0) - now) / 1000));
@@ -279,6 +282,7 @@ async function refreshCredentialClient(client: Client): Promise<{ token: string 
 
 /** Reuse the same device, refresh and upstream protection without loading Arknights. */
 export async function withSklandSession<T>(payload: SklandSessionPayload, read: (client: Client) => Promise<T>) {
+  return admitSessionRead(async () => {
   try {
     assertUpstreamCapacity();
     const client = await seedClient(payload);
@@ -289,6 +293,7 @@ export async function withSklandSession<T>(payload: SklandSessionPayload, read: 
     if (error instanceof EndfieldDataError) throw error;
     throw publicError(error);
   }
+  });
 }
 
 export async function withSklandCredential<T>(
@@ -296,6 +301,7 @@ export async function withSklandCredential<T>(
   policyConsent: SklandPolicyConsent,
   read: (client: Client) => Promise<T>,
 ) {
+  return admitSessionRead(async () => {
   try {
     assertUpstreamCapacity();
     const client = createClient({ timeout: 30_000 });
@@ -318,6 +324,7 @@ export async function withSklandCredential<T>(
     if (error instanceof EndfieldDataError) throw error;
     throw publicError(error);
   }
+  });
 }
 
 export async function authenticateSklandCredential(

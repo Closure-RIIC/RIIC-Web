@@ -11,5 +11,9 @@
   "simulationSettings": "模拟设置",
   "eventsAndStatistics": "事件日志与模拟统计",
   "simulationStatistics": "模拟统计",
-  "notStarted": "尚未开始"
+  "notStarted": "尚未开始",
+  "simulating": "正在计算模拟结果，可随时取消或修改设置。",
+  "cancelSimulation": "取消模拟",
+  "simulationFailed": "模拟未能完成，请点击“展示模拟结果”重试。",
+  "simulationTimeout": "模拟耗时过长，已停止。请缩短时长或增大采样间隔后重试。"
 }
