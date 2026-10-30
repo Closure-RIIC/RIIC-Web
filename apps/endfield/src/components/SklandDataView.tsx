@@ -166,13 +166,24 @@ export function SklandDataView({ snapshot }: { snapshot: EndfieldSnapshot }) {
         <SearchInput containerClassName="ef-sync-search" label={t("SklandDataView.searchOperators")} placeholder={t("SklandDataView.searchOperators")} value={search} onChange={event => setSearch(event.target.value)} onClear={() => setSearch("")} clearLabel={t("SklandDataView.clearSearch")} />
         <div className="ef-data-cards">{characters.map((item, i) => {
           const char = record(item), profile = record(char.charData), display = operatorData(nameOf(profile.id) || nameOf(profile.name));
+          const rosterEntry = snapshot.characters.find(entry => entry.id === nameOf(profile.id) || entry.name === nameOf(profile.name));
+          const talentNodes = record(char.talent).latestSpaceshipSkillNodes;
+          const selectedNodes = Array.isArray(talentNodes) ? talentNodes.map(nameOf) : rosterEntry?.latestSpaceshipSkillNodes ?? [];
+          const baseSkills = display?.skills.filter(skill => selectedNodes.includes(skill.id)) ?? [];
+          const detail = Object.fromEntries(Object.entries(char).flatMap(([key, value]) => {
+            if (key === "charData") return [];
+            if (key !== "talent") return [[key, value]];
+            const visibleTalent = Object.fromEntries(Object.entries(record(value)).filter(([field]) => field !== "latestSpaceshipSkillNodes"));
+            return Object.keys(visibleTalent).length ? [[key, visibleTalent]] : [];
+          }));
           const weapon = record(char.weapon), weaponProfile = record(weapon.weaponData), weaponDisplay = weaponData(nameOf(weaponProfile.id) || nameOf(weapon.weaponId));
           const name = (displayText(display, "name", locale)) || nameOf(profile.name) || nameOf(char.name) || nameOf(char.id);
           return <article className="ef-data-card" key={nameOf(char.id) || i}>
             <header><OperatorPortrait name={display?.id || name} size={56} elite={quantity(char.evolvePhase ?? char.elite)} /><div><h3>{name}</h3><p>Lv.{nameOf(char.level) || "—"} · E{nameOf(char.evolvePhase ?? char.elite) || "—"}{char.potentialLevel !== undefined ? ` · ${t("SklandDataView.potential")} ${nameOf(char.potentialLevel)}` : ""}</p></div></header>
             <p className="ef-muted">{[record(profile.profession).value, record(profile.property).value, record(profile.rarity).value].map(nameOf).filter(Boolean).join(" · ")}</p>
             {weaponProfile.name || weaponDisplay ? <div className="ef-equipped-weapon"><GameArtwork src={weaponDisplay?.icon || imageUrl(weaponProfile.iconUrl)} name={nameOf(weaponProfile.name)} size={36} /><span>{(displayText(weaponDisplay, "name", locale)) || nameOf(weaponProfile.name)} · Lv.{nameOf(weapon.level) || "—"}</span></div> : null}
-            <Disclosure title={t("SklandDataView.operatorSkillsEquipment")}><DataFields value={Object.fromEntries(Object.entries(char).filter(([key]) => key !== "charData"))} names={names} /></Disclosure>
+            {baseSkills.length ? <div className="mt-3"><p className="ef-muted mb-2 text-xs">{t("SklandDataView.baseSkills")}</p><div className="flex flex-wrap gap-2">{baseSkills.map(skill => <div key={skill.id} className="flex items-center gap-2 rounded-md border border-border/70 px-2 py-1.5 text-xs"><GameArtwork src={skill.icon} name={displayText(skill, "name", locale) || skill.name} size={32} /><span>{displayText(skill, "name", locale) || skill.name}</span></div>)}</div></div> : null}
+            <Disclosure title={t("SklandDataView.operatorSkillsEquipment")}><DataFields value={detail} names={names} /></Disclosure>
           </article>;
         })}</div>{!characters.length ? <p className="ef-muted">{t("SklandDataView.noMatchingOperators")}</p> : null}
         {snapshot.rosterComplete === false ? <p className="ef-sync-note">{t("SklandDataView.onlyOperatorsMadeVisibleInSklandAreShown")}</p> : null}
