@@ -1,5 +1,71 @@
 # Application release automation
 
+## Release a PR from the command line
+
+Run from this repository with Node.js 22.12+ and an authenticated GitHub CLI
+(`gh auth status`). Use the maintainer account that is authorized to merge and,
+when requested, approve the production environment. The command uses the existing
+GitHub connection; it does not read, print or save tokens or SSH credentials.
+
+```sh
+# Read-only preview: PR, reviewed head, current branches and pending develop changes.
+npm run release:pr -- 123
+
+# Copy the exact head from the preview. This authorizes both environment releases.
+npm run release:pr -- 123 --execute --head <40-character-sha> --approve-production
+```
+
+The first argument may also be a `https://github.com/Closure-RIIC/RIIC-Web/pull/123`
+URL. Only one PR targeting `develop` is accepted. For a batch, first prepare one
+integration PR containing the selected PR commits and any conflict resolutions,
+then pass its number. The command does not execute contributor code locally.
+
+Execution follows this sequence:
+
+```text
+reviewed PR -> required PR CI -> normal develop merge
+  -> exact-commit post-merge checks and development deployment
+  -> automatic release/* PR -> required main PR CI -> normal main merge
+  -> production approval -> production deployment and health verification
+```
+
+The existing GitHub release workflow performs service health checks. The command
+also checks each application's recorded successful deployment against the target
+commit, using the same application release plan as CI. Unchanged applications may
+retain an older successful deployment; any still-unpublished application changes
+prevent success. It fetches Git objects for this comparison without changing the
+current branch, index, working files or dependencies.
+
+By default, other unpublished changes on `develop` stop execution before merging.
+Review that additional scope before using `--include-develop`. The command requires
+the existing `DEPLOY_AUTOMATION_ENABLED`, `PR_AUTOMATION_ENABLED` and
+`RELEASE_PROMOTION_ENABLED` repository variables to be enabled. It never changes
+those settings, branch protection, required checks, reviewers or environment rules.
+
+Without `--approve-production`, execution stops at the production approval gate
+and prints its GitHub run URL. Approve there, or repeat the exact command with the
+flag using an authorized reviewer account. A missing PR review still needs to be
+completed through GitHub. There is no administrator merge override.
+
+Repeat the same command after interruption: it reconstructs progress from GitHub,
+reuses existing merges, runs and the automatic release PR, and verifies current
+branch heads. If a branch has advanced, it stops instead of including new changes.
+If the PR itself changed, preview and review its new head before executing again.
+Resolve conflicts or update a behind branch before retrying; these are never
+force-resolved by the command. For failed CI, inspect the linked run and explicitly
+retry its failed jobs after diagnosing the cause; the command never retries a
+failure automatically. If GitHub did not start a push run, it dispatches the normal
+workflow once with the exact expected commit and all mandatory checks. The optional
+full WebKit suite follows the usual push setting; mandatory browser checks remain.
+
+Each invocation has a 90-minute deadline. Use `--timeout-minutes 120` to change it
+(maximum 240 minutes). Ctrl+C stops local monitoring; already-started GitHub jobs
+continue. No saved credential or local release-state file is needed to resume.
+
+Verification: `npm run test:release-pr` exercises the orchestration with an isolated
+fake GitHub API, including retries, approval boundaries, stale heads, failed checks
+and unshipped application changes. It never contacts GitHub or deploys a service.
+
 ## Release plan and deployment state
 
 `scripts/app-release-plan.mjs` emits `check_apps`, `build_apps`, `deploy_apps` and per-application build/deploy booleans. It combines the current push diff with each application's changes since its own last successful deployment. It compares full trees with renames disabled, so deleting or moving files invalidates their former owner as well as their new owner. Missing history, an unavailable API or a non-ancestor baseline selects full verification and deployment for that application.
