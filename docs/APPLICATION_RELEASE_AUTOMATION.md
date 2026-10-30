@@ -61,6 +61,9 @@ full WebKit suite follows the usual push setting; mandatory browser checks remai
 Each invocation has a 90-minute deadline. Use `--timeout-minutes 120` to change it
 (maximum 240 minutes). Ctrl+C stops local monitoring; already-started GitHub jobs
 continue. No saved credential or local release-state file is needed to resume.
+Transient network/server failures on read-only GitHub requests are retried up to
+three attempts. Writes are never blindly retried: rerun the command so it first
+checks whether GitHub already applied the requested merge or approval.
 
 Verification: `npm run test:release-pr` exercises the orchestration with an isolated
 fake GitHub API, including retries, approval boundaries, stale heads, failed checks

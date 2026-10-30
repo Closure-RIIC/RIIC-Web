@@ -49,18 +49,23 @@ export function parseOptions(args) {
 }
 
 // gh supplies its existing authenticated connection; tokens are never read or saved.
-export function ghApi(path, { method = "GET", body } = {}) {
+export async function ghApi(path, { method = "GET", body } = {}, { execute = execFileSync, sleep = delay } = {}) {
   assert.ok(path === prefix || path.startsWith(`${prefix}/`), "Unexpected repository API path");
   const args = ["api", path, "--method", method];
   if (body !== undefined) args.push("--input", "-");
-  let output;
-  try {
-    output = execFileSync("gh", args, { input: body === undefined ? undefined : JSON.stringify(body),
-      encoding: "utf8", maxBuffer: 16 * 1024 * 1024, timeout: 60_000, stdio: ["pipe", "pipe", "pipe"] });
-  } catch (error) {
-    throw new Error(`${method} ${path} failed. GitHub may require updated checks, a reviewer or additional permissions.\n${String(error.stderr || "").trim()}`, { cause: error });
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const output = execute("gh", args, { input: body === undefined ? undefined : JSON.stringify(body),
+        encoding: "utf8", maxBuffer: 16 * 1024 * 1024, timeout: 60_000, stdio: ["pipe", "pipe", "pipe"] });
+      return output.trim() ? JSON.parse(output) : null;
+    } catch (error) {
+      const detail = String(error.stderr || "").trim();
+      const transient = error.code === "ETIMEDOUT" || /TLS handshake timeout|i\/o timeout|connection reset|unexpected EOF|HTTP 50[234]/i.test(detail);
+      // A write may already have succeeded. Only reads are safe to retry here.
+      if (method === "GET" && transient && attempt < 2) { await sleep(1000 * (attempt + 1)); continue; }
+      throw new Error(`${method} ${path} failed. Repeat the release command after resolving this GitHub API error.\n${detail}`, { cause: error });
+    }
   }
-  return output.trim() ? JSON.parse(output) : null;
 }
 
 export function validatePull(pr, base, head) {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseOptions, ReleaseCommand, requiredChecksState } from "./release-pr.mjs";
+import { ghApi, parseOptions, ReleaseCommand, requiredChecksState } from "./release-pr.mjs";
 import { RELEASE_REPOSITORY } from "./release-provenance.mjs";
 
 const p = `/repos/${RELEASE_REPOSITORY}`;
@@ -9,6 +9,27 @@ const initialTree = "a".repeat(40), releaseTree = "b".repeat(40);
 const repo = { full_name: RELEASE_REPOSITORY };
 const options = { number: 17, execute: true, head: sha.head, approveProduction: true, timeoutMinutes: 90 };
 const successCheck = name => ({ id: 1, name, app: { id: 15368 }, status: "completed", conclusion: "success" });
+
+test("transient GitHub reads retry within a bound; uncertain writes and permission failures do not", async () => {
+  const timeout = Object.assign(new Error("network"), { stderr: "TLS handshake timeout" });
+  let attempts = 0;
+  const waits = [];
+  const dependencies = { execute: () => { if (++attempts < 3) throw timeout; return '{"ok":true}'; }, sleep: async ms => { waits.push(ms); } };
+  assert.deepEqual(await ghApi(`${p}/branches/main`, {}, dependencies), { ok: true });
+  assert.equal(attempts, 3);
+  assert.deepEqual(waits, [1000, 2000]);
+  attempts = 0;
+  await assert.rejects(ghApi(`${p}/pulls/17/merge`, { method: "PUT", body: {} }, dependencies), /TLS handshake timeout/);
+  assert.equal(attempts, 1);
+  attempts = 0;
+  dependencies.execute = () => { attempts++; throw timeout; };
+  await assert.rejects(ghApi(`${p}/branches/main`, {}, dependencies), /TLS handshake timeout/);
+  assert.equal(attempts, 3);
+  attempts = 0;
+  dependencies.execute = () => { attempts++; throw Object.assign(new Error("permission"), { stderr: "HTTP 403" }); };
+  await assert.rejects(ghApi(`${p}/branches/main`, {}, dependencies), /HTTP 403/);
+  assert.equal(attempts, 1);
+});
 
 function fixture() {
   const source = { number: 17, title: "Reviewed change", state: "open", merged: false, draft: false, mergeable: true,
