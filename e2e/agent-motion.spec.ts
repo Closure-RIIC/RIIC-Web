@@ -565,6 +565,11 @@ for (const scenario of [{ width: 1440, reducedMotion: "no-preference" }, { width
     await expect(preview).toContainText(original);
     expect(await viewport.evaluate((el) => getComputedStyle(el).filter)).toBe("none");
     await viewport.focus();
+    // A scroll event from the preceding auto-follow can arrive during Home.
+    // It must not undo the user's new reading intent while still at the bottom.
+    await viewport.evaluate(el => el.addEventListener("keydown", () => {
+      el.dispatchEvent(new Event("scroll"));
+    }, { once: true }));
     await viewport.press("Home");
     await expect.poll(() => viewport.evaluate((el) => el.scrollTop)).toBe(0);
     await expect(preview).toHaveAttribute("data-fading", "false");
