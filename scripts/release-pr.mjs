@@ -159,7 +159,15 @@ export class ReleaseCommand {
     }
   }
   async approve(run, options) {
-    const pending = await this.api(`${prefix}/actions/runs/${run.id}/pending_deployments`);
+    const environments = await this.api(`${prefix}/actions/runs/${run.id}/pending_deployments`);
+    assert.ok(["main", "develop"].includes(run.head_branch));
+    for (const item of environments) {
+      assert.equal(item.environment.name, run.head_branch === "main" ? "production" : "development");
+      assert.ok(Array.isArray(item.reviewers), "Missing environment reviewer metadata");
+    }
+    // GitHub also briefly lists environments waiting on automatic protection
+    // rules or scheduling. Only required-reviewer gates need a review request.
+    const pending = environments.filter(item => item.reviewers.length > 0);
     if (!pending.length) return;
     assert.equal(run.head_branch, "main", "Unexpected development approval requirement; review in GitHub");
     assert.ok(options.approveProduction, `Production awaits approval: ${run.html_url}. Approve in GitHub or repeat with --approve-production`);

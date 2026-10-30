@@ -43,7 +43,7 @@ function fixture() {
   const runs = { develop: run(101, "develop", sha.devMerge), main: run(102, "main", sha.mainMerge) };
   const jobs = ["Change scope", "Repository hygiene", "Static and unit checks", "Database integration", "Build release once", "quality"]
     .map(name => ({ name, conclusion: "success" }));
-  const pending = [{ environment: { name: "production", id: 99 }, current_user_can_approve: true }];
+  const pending = [{ environment: { name: "production", id: 99 }, current_user_can_approve: true, reviewers: [{ type: "User", reviewer: { login: "release-maintainer" } }] }];
   const writes = [], verified = [];
   const f = { source, release, branches, runs, jobs, pending, writes, verified, checks: [successCheck("packages"), successCheck("Release branch only")], intercept: () => undefined };
   const api = async (path, request = {}) => {
@@ -131,6 +131,23 @@ test("permission, environment and quality failures never submit approval", async
     mutate(f);
     await assert.rejects(f.command.run(options));
     assert.ok(f.writes.every(write => !write.path.endsWith("/pending_deployments")));
+  }
+});
+
+test("automatic environment queues wait without approval; unexpected development reviews still stop", async () => {
+  for (const branch of ["develop", "main"]) {
+    const f = fixture();
+    const item = { environment: { name: branch === "main" ? "production" : "development", id: 99 }, reviewers: [], current_user_can_approve: false };
+    f.intercept = path => path.endsWith("/pending_deployments") ? [item] : undefined;
+    await f.command.approve(f.runs[branch], { ...options, approveProduction: false });
+    assert.deepEqual(f.writes, []);
+    if (branch === "develop") {
+      item.reviewers.push({ type: "User", reviewer: { login: "maintainer" } });
+      await assert.rejects(f.command.approve(f.runs.develop, options), /Unexpected development approval/);
+    }
+    delete item.reviewers;
+    await assert.rejects(f.command.approve(f.runs[branch], options), /Missing environment reviewer/);
+    assert.deepEqual(f.writes, []);
   }
 });
 
