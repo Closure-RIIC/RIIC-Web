@@ -44,7 +44,10 @@ export function createModuleGraph(namespaces, root = process.cwd()) {
     const source = fs.readFileSync(file, "utf8"), ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
     const add = value => { const name = value.split(".")[0]; if (namespaces.has(name)) result.namespaces.add(name); };
     const visit = node => {
-      if (ts.isStringLiteral(node) && node.text.includes(".")) add(node.text);
+      if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && node.text.includes(".")) add(node.text);
+      // Dynamic field keys still have a statically known namespace, e.g.
+      // t(`SklandFields.${key}`). Load that catalog before rendering the feature.
+      if (ts.isTemplateExpression(node) && node.head.text.includes(".")) add(node.head.text);
       if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
         const spec = node.moduleSpecifier.text;
         if (spec.includes("/messages/zh-CN/")) add(path.basename(spec, ".json"));

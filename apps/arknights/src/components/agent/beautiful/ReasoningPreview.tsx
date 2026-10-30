@@ -20,6 +20,7 @@ export const ReasoningPreview = memo(function ReasoningPreview({ text, running, 
     let frame = 0;
     let following = true;
     let initialized = false;
+    let previousScrollTop = viewport.scrollTop;
 
     const updateFade = () => {
       const fading = running && following && viewport.scrollTop > 1;
@@ -50,11 +51,26 @@ export const ReasoningPreview = memo(function ReasoningPreview({ text, running, 
       };
       frame = requestAnimationFrame(tick);
     };
-    const pause = () => { following = false; cancelAnimationFrame(frame); frame = 0; updateFade(); };
+    const pause = () => { following = false; previousScrollTop = viewport.scrollTop; cancelAnimationFrame(frame); frame = 0; updateFade(); };
     const wheel = (event: WheelEvent) => { if (event.deltaY < 0) pause(); };
-    const keydown = (event: KeyboardEvent) => { if (["ArrowUp", "PageUp", "Home"].includes(event.key)) pause(); };
+    const keydown = (event: KeyboardEvent) => {
+      if (["ArrowUp", "PageUp", "Home"].includes(event.key)) pause();
+      if (event.key === "Home") {
+        event.preventDefault();
+        viewport.scrollTop = 0;
+        updateFade();
+      }
+      if (event.key === "End") {
+        event.preventDefault();
+        following = true;
+        follow();
+      }
+    };
     const scroll = () => {
-      if (!following && viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 2) following = true;
+      // A queued auto-follow event can arrive after Home, before native scrolling
+      // moves away from the bottom. Resume only on an actual downward return.
+      if (!following && viewport.scrollTop > previousScrollTop && viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 2) following = true;
+      previousScrollTop = viewport.scrollTop;
       updateFade();
     };
     const observer = new ResizeObserver(follow);

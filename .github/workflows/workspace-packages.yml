@@ -39,7 +39,7 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: python3 deploy/endfield-deploy.test.py
       - name: Deployment plan, provenance and automation contracts
-        run: node --test scripts/app-release-plan.test.mjs scripts/release-provenance.test.mjs scripts/release-automation.test.mjs scripts/build-tooling.test.mjs
+        run: node --test scripts/app-release-plan.test.mjs scripts/release-provenance.test.mjs scripts/release-automation.test.mjs scripts/release-pr.test.mjs scripts/build-tooling.test.mjs
       - name: Endfield incremental transfer and interruption recovery
         run: python3 deploy/endfield-transfer.test.py
       - run: npm run check:public-repository && npm run check:types && npm run lint
