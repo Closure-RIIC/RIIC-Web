@@ -1,4 +1,5 @@
 import { operatorName } from "../i18n/game-data";
+import type { SimulationTimeline } from "./worker-protocol.ts";
 import type { MessageTranslator } from "../i18n/types";
 import { gameLabel } from "../i18n/game-labels";
 import { useMemo, useState } from "react";
@@ -11,7 +12,7 @@ import { operatorsAt } from "./presentation";
 
 /** PR #603 的舱室双图与图表实现，接入共享排班回放。 */
 export function MoodCharts({ view, timeline, rooms, onSeek }: {
-  view: StepView; timeline: StepView; rooms: StepRoom[]; onSeek: (seconds: number) => void;
+  view: StepView; timeline: SimulationTimeline; rooms: StepRoom[]; onSeek: (seconds: number) => void;
 }) {
   const { locale, t } = useWorkspace();
   const [roomKey, setRoomKey] = useState("");
@@ -57,7 +58,7 @@ export function MoodCharts({ view, timeline, rooms, onSeek }: {
   </div>;
 }
 
-type ChartProps = { timeline: StepView; room: StepRoom; cursor: number; onSeek: (seconds: number) => void };
+type ChartProps = { timeline: SimulationTimeline; room: StepRoom; cursor: number; onSeek: (seconds: number) => void };
 
 /** 名字决定颜色，切换舱室或增删干员时保持稳定；亮度跟随主题。 */
 export function colorForName(name: string): string {
@@ -216,16 +217,9 @@ export function RoomRateChart({ timeline, room, cursor, onSeek }: ChartProps) {
   </>;
 }
 
-/** 对完整历史（不是降采样后的图）按台阶做积分；产率单位保持引擎口径。 */
-function integrateRate(timeline: StepView, roomKey: string, key: string) {
-  const points = timeline.history;
-  let integral = 0;
-  for (let index = 1; index < points.length; index += 1) {
-    const rate = points[index - 1].rates[roomKey]?.[key] ?? 0;
-    integral += rate * (points[index].tSec - points[index - 1].tSec) / 3600;
-  }
-  const last = points.at(-1);
-  if (last && last.tSec < timeline.maxTSec) integral += (last.rates[roomKey]?.[key] ?? 0) * (timeline.maxTSec - last.tSec) / 3600;
+/** Exact integration is computed from the full history inside the worker. */
+function integrateRate(timeline: SimulationTimeline, roomKey: string, key: string) {
+  const integral = timeline.rateIntegrals[roomKey]?.[key] ?? 0;
   const hours = timeline.maxTSec / 3600;
   return { integral, average: hours > 0 ? integral / hours : 0 };
 }

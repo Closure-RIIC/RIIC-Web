@@ -13,6 +13,7 @@ import { WEBSITE_SESSION_DURATION_SECONDS } from "./session-lifetime";
 import { localTestSession } from "./local-test-account";
 import { sharedSessionConfiguration } from "./shared-session";
 import { memoizeRequest } from "../request-context";
+import { authIpAddressConfiguration } from "./ip-address";
 
 function createAuth() {
   const baseURL = requireAuthBaseUrl();
@@ -22,7 +23,10 @@ function createAuth() {
     appName: "可露希尔基建终端",
     baseURL,
     trustedOrigins: [...localAuthTrustedOrigins(baseURL), ...shared.origins],
-    ...(shared.domain ? { advanced: { crossSubDomainCookies: { enabled: true, domain: shared.domain } } } : {}),
+    advanced: {
+      ipAddress: authIpAddressConfiguration(),
+      ...(shared.domain ? { crossSubDomainCookies: { enabled: true, domain: shared.domain } } : {}),
+    },
     secret: requireAuthSecret(),
     database: drizzleAdapter(getDatabase(), { provider: "pg" }),
     databaseHooks: websiteAccountNameDatabaseHooks,

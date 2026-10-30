@@ -35,26 +35,32 @@ try {
   await page.reload();
   const board = page.locator("[data-schedule-board]");
   // Import the real roster before solving; later equivalent syncs must retain the result.
-  await page.getByRole("link", { name: "森空岛同步", exact: true }).click();
+  await page.locator('a[data-sidebar="menu-button"]').filter({hasText:"森空岛同步"}).click();
   await page.locator('[data-endfield-skland][aria-busy="false"]').waitFor();
-  await page.getByRole("link", { name: "自动排班", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await page.locator('a[data-sidebar="menu-button"]').filter({hasText:"自动排班"}).click();
   await page.getByRole("button", { name: "生成排班", exact: true }).click();
   await expect(board).toBeVisible();
   await page.waitForFunction(key => !!globalThis.localStorage.getItem(key), RESULT_STORAGE_KEY);
   const original = await board.textContent();
-  const goHome = () => page.getByRole("link", { name: "自动排班", exact: true }).click();
+  const goHome = () => page.locator('a[data-sidebar="menu-button"]').filter({hasText:"自动排班"}).click();
   for (const name of ["技能Wiki", "手动排班", "森空岛同步"]) {
-    await page.getByRole("link", { name, exact: true }).click();
-    if (name === "森空岛同步") await page.locator('[data-endfield-skland][aria-busy="false"]').waitFor();
+    await page.locator('a[data-sidebar="menu-button"]').filter({hasText:name}).click();
+    if (name === "森空岛同步") {
+      await page.locator('[data-endfield-skland][aria-busy="false"]').waitFor();
+      await page.keyboard.press("Escape");
+    }
     await goHome();
     await expect(board).toBeVisible();
     assert.equal(await board.textContent(), original, `${name} must retain the original result`);
   }
   // Repeated sync with unchanged facility levels must not invalidate the result.
-  await page.getByRole("link", { name: "森空岛同步", exact: true }).click();
+  await page.locator('a[data-sidebar="menu-button"]').filter({hasText:"森空岛同步"}).click();
   await page.locator('[data-endfield-skland][aria-busy="false"]').waitFor();
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "刷新数据", exact: true }).click();
   await page.locator('[data-endfield-skland][aria-busy="false"]').waitFor();
+  await page.keyboard.press("Escape");
   await goHome();
   await expect(board).toBeVisible();
   await page.reload();

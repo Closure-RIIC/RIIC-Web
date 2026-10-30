@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import { createServer } from "node:http";
+import { ReadableStream } from "node:stream/web";
 import test from "node:test";
+import { URL } from "node:url";
 import { gzipSync } from "node:zlib";
 
 import { verifyPublicCompression } from "./verify-public-compression.mjs";
@@ -104,4 +106,135 @@ test("public release verification rejects HTML that shared caches may retain", a
       /public HTML must not be stored by a shared cache/,
     );
   });
+});
+
+function networkFailure(code) {
+  return new TypeError("fetch failed: https://private.invalid/?token=do-not-log", {
+    cause: Object.assign(new Error("private connection details"), { code }),
+  });
+}
+
+function mockResponse(url) {
+  if (new URL(url).pathname === "/") {
+    return new globalThis.Response(documentBody(expectedBuildId), {
+      headers: { "content-encoding": "gzip", "cache-control": "private, no-store" },
+    });
+  }
+  return new globalThis.Response(scriptBody, { headers: { "content-encoding": "gzip" } });
+}
+
+test("temporary connection failures retry the failed GET and report safe diagnostics", async () => {
+  const messages = [];
+  let requests = 0;
+  const result = await verifyPublicCompression("https://private.invalid/api/health?token=do-not-log", async (url) => {
+    requests += 1;
+    if (requests === 1) throw networkFailure("UND_ERR_CONNECT_TIMEOUT");
+    return mockResponse(url);
+  }, expectedBuildId, { retryDelayMs: 0, onRetry: message => messages.push(message) });
+  assert.equal(result.buildId, expectedBuildId);
+  assert.equal(requests, 3);
+  assert.equal(messages.length, 1);
+  assert.match(messages[0], /public HTML response headers failed \(attempt 1\/3, \d+ms\): UND_ERR_CONNECT_TIMEOUT/);
+  assert.doesNotMatch(messages[0], /private|token|do-not-log/);
+});
+
+test("a connection lost while reading JavaScript retries its entire response body", async () => {
+  const messages = [];
+  let scriptRequests = 0;
+  await verifyPublicCompression("https://example.invalid/api/health", async (url) => {
+    if (new URL(url).pathname !== "/" && ++scriptRequests === 1) {
+      return new globalThis.Response(new ReadableStream({
+        start(controller) { controller.error(networkFailure("UND_ERR_SOCKET")); },
+      }), { headers: { "content-encoding": "gzip" } });
+    }
+    return mockResponse(url);
+  }, expectedBuildId, { retryDelayMs: 0, onRetry: message => messages.push(message) });
+  assert.equal(scriptRequests, 2);
+  assert.match(messages[0], /public JavaScript #1 response body failed.*UND_ERR_SOCKET/);
+});
+
+test("persistent multi-address connection failures stop after three attempts", async () => {
+  const messages = [];
+  let requests = 0;
+  await assert.rejects(verifyPublicCompression("https://example.invalid", async () => {
+    requests += 1;
+    throw new TypeError("private URL and addresses", {
+      cause: new AggregateError([networkFailure("ETIMEDOUT"), networkFailure("ECONNRESET")]),
+    });
+  }, expectedBuildId, { retryDelayMs: 0, onRetry: message => messages.push(message) }), error => {
+    assert.match(error.message, /attempt 3\/3.*ECONNRESET, ETIMEDOUT/);
+    assert.doesNotMatch(error.message, /private|addresses/);
+    return true;
+  });
+  assert.equal(requests, 3);
+  assert.equal(messages.length, 2);
+});
+
+test("certificate failures and unclassified fetch errors fail without retries", async () => {
+  for (const failure of [networkFailure("CERT_HAS_EXPIRED"), new TypeError("fetch failed: private endpoint")]) {
+    let requests = 0;
+    await assert.rejects(verifyPublicCompression("https://example.invalid", async () => {
+      requests += 1;
+      throw failure;
+    }, expectedBuildId, { onRetry: () => assert.fail("Must not retry permanent failures") }), error => {
+      assert.match(error.message, /CERT_HAS_EXPIRED|UNCLASSIFIED_NETWORK_ERROR/);
+      assert.doesNotMatch(error.message, /private/);
+      return true;
+    });
+    assert.equal(requests, 1);
+  }
+});
+
+test("HTTP failures do not retry or become successful release checks", async () => {
+  let requests = 0;
+  await assert.rejects(verifyPublicCompression("https://example.invalid", async () => {
+    requests += 1;
+    return new globalThis.Response("unavailable", { status: 503 });
+  }, expectedBuildId, { onRetry: () => assert.fail("Must not retry HTTP failures") }), /HTTP 503/);
+  assert.equal(requests, 1);
+});
+
+for (const sendHeaders of [false, true]) {
+  test(`request timeout cancels a stalled ${sendHeaders ? "body" : "connection"} and stops after three attempts`, async () => {
+    const messages = [];
+    let requests = 0;
+    const server = createServer((_request, response) => {
+      requests += 1;
+      if (sendHeaders) {
+        response.writeHead(200, { "content-type": "text/html", "content-encoding": "gzip" });
+        response.flushHeaders();
+      }
+    });
+    await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+    try {
+      await assert.rejects(verifyPublicCompression(`http://127.0.0.1:${server.address().port}`, globalThis.fetch,
+        expectedBuildId, { requestTimeoutMs: 100, retryDelayMs: 0, onRetry: message => messages.push(message) }),
+      new RegExp(`response ${sendHeaders ? "body" : "headers"} failed.*attempt 3/3.*REQUEST_TIMEOUT`));
+      assert.equal(requests, 3);
+      assert.equal(messages.length, 2);
+    } finally {
+      server.closeAllConnections();
+      await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+    }
+  });
+}
+
+test("the overall deadline also bounds time spent waiting to retry", async () => {
+  let requests = 0;
+  await assert.rejects(verifyPublicCompression("https://example.invalid", async () => {
+    requests += 1;
+    throw networkFailure("EAI_AGAIN");
+  }, expectedBuildId, { totalTimeoutMs: 30, retryDelayMs: 100, onRetry: () => {} }), /CHECK_TIMEOUT/);
+  assert.equal(requests, 1);
+});
+
+test("the overall deadline aborts an in-flight request before its individual timeout", async () => {
+  let requests = 0;
+  await assert.rejects(verifyPublicCompression("https://example.invalid", async (_url, { signal }) => {
+    requests += 1;
+    return new Promise((_resolve, reject) => {
+      signal.addEventListener("abort", () => reject(signal.reason), { once: true });
+    });
+  }, expectedBuildId, { totalTimeoutMs: 30, requestTimeoutMs: 100, onRetry: () => assert.fail("Total deadline must stop retries") }), /CHECK_TIMEOUT/);
+  assert.equal(requests, 1);
 });

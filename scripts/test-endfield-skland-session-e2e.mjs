@@ -55,7 +55,7 @@ try {
   await expect.poll(roster).toEqual(expected("owner-b"));
   await page.getByRole("link", { name: "Auto schedule", exact: true }).click();
   await expect(page.getByRole("button", { name: "Generate schedule", exact: true })).toBeEnabled();
-  await page.getByRole("link", { name: "Skland sync", exact: true }).click(); await idle();
+  await page.locator('a[data-sidebar="menu-button"][href="/skland"]').click(); await idle();
   await expect.poll(roster).toEqual(expected("owner-b"));
   await pendingRefresh();
   owner = null;

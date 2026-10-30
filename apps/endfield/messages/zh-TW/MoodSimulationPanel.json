@@ -11,5 +11,9 @@
   "simulationSettings": "模擬設定",
   "eventsAndStatistics": "事件日誌與模擬統計",
   "simulationStatistics": "模擬統計",
-  "notStarted": "尚未開始"
+  "notStarted": "尚未開始",
+  "simulating": "正在計算模擬結果，可隨時取消或修改設定。",
+  "cancelSimulation": "取消模擬",
+  "simulationFailed": "模擬未能完成，請點選「展示模擬結果」重試。",
+  "simulationTimeout": "模擬耗時過長，已停止。請縮短時長或增加取樣間隔後重試。"
 }

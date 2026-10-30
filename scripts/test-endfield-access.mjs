@@ -149,7 +149,7 @@ try {
     for (const path of ["/", "/manual", "/skills", "/skland", `/assets/${asset}`]) {
       const response = await request(path, cookie);
       assert.equal(response.status, 200, `Public: ${path}`);
-      assert.match(response.headers.get("cache-control"), /private, no-store/);
+      assert.match(response.headers.get("cache-control"), path.startsWith("/assets/") ? /public, max-age=31536000, immutable/ : /private, no-store/);
     }
   }
   assert.equal(await (await request("/api/auth/get-session")).json(), null);

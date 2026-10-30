@@ -11,5 +11,9 @@
   "simulationSettings": "Simulation settings",
   "eventsAndStatistics": "Events and statistics",
   "simulationStatistics": "Simulation statistics",
-  "notStarted": "Not started"
+  "notStarted": "Not started",
+  "simulating": "Calculating simulation results. You can cancel or change settings at any time.",
+  "cancelSimulation": "Cancel simulation",
+  "simulationFailed": "The simulation could not finish. Select Show results to try again.",
+  "simulationTimeout": "The simulation took too long and was stopped. Try a shorter duration or a longer sampling interval."
 }
