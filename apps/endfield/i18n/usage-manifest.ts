@@ -838,22 +838,27 @@ export const references = [
   {
     "key": "SklandDataView.no",
     "prefix": false,
-    "source": "apps/endfield/src/components/SklandDataView.tsx:41"
+    "source": "apps/endfield/src/components/SklandDataView.tsx:47"
   },
   {
     "key": "SklandDataView.noData",
     "prefix": false,
-    "source": "apps/endfield/src/components/SklandDataView.tsx:40"
+    "source": "apps/endfield/src/components/SklandDataView.tsx:46"
   },
   {
     "key": "SklandDataView.notSet",
     "prefix": false,
-    "source": "apps/endfield/src/components/SklandDataView.tsx:51"
+    "source": "apps/endfield/src/components/SklandDataView.tsx:57"
   },
   {
     "key": "SklandDataView.record",
     "prefix": false,
-    "source": "apps/endfield/src/components/SklandDataView.tsx:57"
+    "source": "apps/endfield/src/components/SklandDataView.tsx:44"
+  },
+  {
+    "key": "SklandDataView.skillEntry",
+    "prefix": false,
+    "source": "apps/endfield/src/components/SklandDataView.tsx:44"
   },
   {
     "key": "SklandDataView.trusted",
@@ -863,12 +868,12 @@ export const references = [
   {
     "key": "SklandDataView.viewDetails",
     "prefix": false,
-    "source": "apps/endfield/src/components/SklandDataView.tsx:66"
+    "source": "apps/endfield/src/components/SklandDataView.tsx:72"
   },
   {
     "key": "SklandDataView.yes",
     "prefix": false,
-    "source": "apps/endfield/src/components/SklandDataView.tsx:41"
+    "source": "apps/endfield/src/components/SklandDataView.tsx:47"
   },
   {
     "key": "SklandErrors.accountBound",

@@ -110,5 +110,6 @@
   "latestSpaceshipSkillNodes": "已解鎖基建技能節點",
   "nodeId": "技能節點編號",
   "weaponId": "武器編號",
-  "skillLevel": "技能等級"
+  "skillLevel": "技能等級",
+  "skillData": "技能資訊"
 }

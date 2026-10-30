@@ -50,5 +50,6 @@
   "trust": "信賴",
   "friendly": "友好",
   "close": "親近",
-  "trusted": "信任"
+  "trusted": "信任",
+  "skillEntry": "技能 {index}"
 }

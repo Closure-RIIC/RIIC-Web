@@ -59,3 +59,25 @@ test("every supported detail field renders a translated label from route resourc
     }
   }
 });
+
+test("skill dictionary keys use readable names or localized ordinals rather than internal hashes", async () => {
+  const ids = ["166d38ccfe9f7486047e9721e7d6adde", "3299d991a0f8417c245adc2997263ae6", "b2c072b0b15f8157f0b11da1c955de74", "ff40dad4b22b95c4a2a765bd6b4f2d8e"];
+  const value = Object.fromEntries(ids.map(id => [id, { level: 1, skillLevel: 1 }]));
+  const before = structuredClone(value);
+  for (const locale of ["zh-CN", "zh-TW", "en"]) {
+    const messages = await loadMessages(locale, pageNamespaces("/skland"));
+    const render = (data, field = "userSkills") => renderToStaticMarkup(createElement(IntlProvider, {
+      locale, messages, timeZone: "Asia/Shanghai", onError: error => { throw error; },
+    }, createElement(DataFields, { value: data, names: new Map(), field })));
+    const markup = render(value);
+    for (const id of ids) assert.ok(!markup.includes(id));
+    for (let index = 1; index <= ids.length; index++) {
+      const label = messages.SklandDataView.skillEntry.replace("{index}", String(index));
+      assert.ok(markup.includes(`<dt>${label}</dt>`), `${locale}: skill ${index}`);
+    }
+    assert.ok(render({ [ids[0]]: { name: "Named skill", level: 1 } }).includes("<dt>Named skill</dt>"));
+    assert.ok(render({ [ids[0]]: { skillData: { name: "Nested skill" } } }).includes("<dt>Nested skill</dt>"));
+    assert.ok(!render(value, "equipData").includes(ids[0]));
+  }
+  assert.deepEqual(value, before);
+});

@@ -1,5 +1,5 @@
 import { displayText } from "../i18n/game-data";
-const detailFieldKeys = new Set(["base","chars","spaceShip","domain","achieve","bpSystem","dailyMission","dungeon","config","currentTs","avatarUrl","charNum","createTime","docNum","exp","gender","lastLoginTime","level","mainMission","description","desc","id","name","roleId","saveTime","serverName","weaponNum","worldLevel","curLevel","maxLevel","ownTs","potentialLevel","evolvePhase","armEquip","bodyEquip","firstAccessory","secondAccessory","weapon","weapons","breakthroughLevel","gem","icon","iconUrl","refineLevel","weaponData","function","rarity","skills","type","charData","avatarRtUrl","avatarSqUrl","illustrationUrl","labelType","profession","property","descLevelParams","descParams","params","tags","weaponType","tacticalItem","activeEffectType","activeEffect","passiveEffect","activeEffectParams","passiveEffectParams","userSkills","skillId","charIds","charSwitch","dailyActivation","maxDailyActivation","collections","blackboxCount","levelId","pieceCount","puzzleCount","trchestCount","domainId","factory","moneyMgr","curStamina","maxStamina","maxTs","settlements","officerCharIds","remainMoney","quickaccess","link","rooms","charId","favorability","physicalStrength","reports","char","createdTimeTs","output","achieveMedals","count","display","equipData","isAccessory","pkg","properties","key","value","talent","latestSpaceshipSkillNodes","nodeId","weaponId","skillLevel"]);
+const detailFieldKeys = new Set(["base","chars","spaceShip","domain","achieve","bpSystem","dailyMission","dungeon","config","currentTs","avatarUrl","charNum","createTime","docNum","exp","gender","lastLoginTime","level","mainMission","description","desc","id","name","roleId","saveTime","serverName","weaponNum","worldLevel","curLevel","maxLevel","ownTs","potentialLevel","evolvePhase","armEquip","bodyEquip","firstAccessory","secondAccessory","weapon","weapons","breakthroughLevel","gem","icon","iconUrl","refineLevel","weaponData","function","rarity","skills","type","charData","avatarRtUrl","avatarSqUrl","illustrationUrl","labelType","profession","property","descLevelParams","descParams","params","tags","weaponType","tacticalItem","activeEffectType","activeEffect","passiveEffect","activeEffectParams","passiveEffectParams","userSkills","skillId","charIds","charSwitch","dailyActivation","maxDailyActivation","collections","blackboxCount","levelId","pieceCount","puzzleCount","trchestCount","domainId","factory","moneyMgr","curStamina","maxStamina","maxTs","settlements","officerCharIds","remainMoney","quickaccess","link","rooms","charId","favorability","physicalStrength","reports","char","createdTimeTs","output","achieveMedals","count","display","equipData","isAccessory","pkg","properties","key","value","talent","latestSpaceshipSkillNodes","nodeId","weaponId","skillLevel","skillData"]);
 import { useState, type ReactNode } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { getCatalog } from "@riic/arknights-domain/i18n/localize";
@@ -37,6 +37,12 @@ export function DataFields({ value, names, field = "" }: { value: DetailValue; n
   const t = useTranslations("SklandDataView");
   const fields = getCatalog<typeof FieldLabels>(locale, "SklandFields");
   const label = (key: string) => detailFieldKeys.has(key) ? fields[key as keyof typeof fields] : names.get(key) ?? key;
+  const entryLabel = (key: string, item: DetailValue, index: number) => {
+    if (field !== "userSkills" && !/^[a-f0-9]{32}$/i.test(key)) return label(key);
+    const row = record(item);
+    return nameOf(row.name) || nameOf(record(row.skillData).name) || names.get(key)
+      || (field === "userSkills" ? t("skillEntry", { index: index + 1 }) : `${t("record")} ${index + 1}`);
+  };
   if (value === null) return <span className="ef-muted">{t("noData")}</span>;
   if (typeof value === "boolean") return <span>{value ? t("yes") : t("no")}</span>;
   if (typeof value === "string" || typeof value === "number") {
@@ -54,15 +60,15 @@ export function DataFields({ value, names, field = "" }: { value: DetailValue; n
   if (Array.isArray(value)) return <div className="ef-data-list">{value.map((item, i) => {
     if (item && typeof item === "object") {
       const row = record(item);
-      return <Disclosure key={i} title={displayText(operatorData(nameOf(row.name)), "name", locale) || nameOf(row.name) || nameOf(row.description) || names.get(nameOf(row.charId)) || `${t("record")} ${i + 1}`}>
+      return <Disclosure key={i} title={displayText(operatorData(nameOf(row.name)), "name", locale) || nameOf(row.name) || nameOf(record(row.skillData).name) || nameOf(row.description) || names.get(nameOf(row.charId)) || (field === "userSkills" ? t("skillEntry", { index: i + 1 }) : `${t("record")} ${i + 1}`)}>
         <DataFields value={item} names={names} />
       </Disclosure>;
     }
     return <div key={i}><DataFields value={item} names={names} field={field} /></div>;
   })}</div>;
-  return <dl className="ef-data-fields">{Object.entries(value).map(([key, item]) =>
+  return <dl className="ef-data-fields">{Object.entries(value).map(([key, item], index) =>
     <div key={key} className={item && typeof item === "object" ? "ef-data-field--nested" : undefined}>
-      <dt>{label(key)}</dt><dd>{item && typeof item === "object"
+      <dt>{entryLabel(key, item, index)}</dt><dd>{item && typeof item === "object"
         ? <Disclosure title={t("viewDetails")} count={countOf(item)}><DataFields value={item} names={names} field={key} /></Disclosure>
         : <DataFields value={item} names={names} field={key} />}</dd>
     </div>)}</dl>;

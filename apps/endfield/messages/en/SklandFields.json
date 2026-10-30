@@ -110,5 +110,6 @@
   "latestSpaceshipSkillNodes": "Unlocked ship skill nodes",
   "nodeId": "Skill node ID",
   "weaponId": "Weapon ID",
-  "skillLevel": "Skill level"
+  "skillLevel": "Skill level",
+  "skillData": "Skill details"
 }
