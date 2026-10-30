@@ -109,7 +109,7 @@ try {
     await sidebar(); await avatar.click();
     await menu.getByRole("menuitemradio", { name: "English", exact: true }).click();
     await expect(menu.getByRole("menuitem")).toHaveText(["Changelog", "Sign out"]);
-    await expect(page).toHaveTitle("Changelog · 帝江号基建终端");
+    await expect(page).toHaveTitle("Changelog · Dijiang Infrastructure Terminal");
     await page.reload(); await ready();
     await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
     await sidebar(); await expect(avatar).toContainText(user.name); await avatar.click();
