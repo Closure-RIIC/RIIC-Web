@@ -5988,157 +5988,157 @@ export const references = [
   {
     "key": "AK_Raw_app_wishes_wishes_client.allWishesShownHereHaveBeenReviewedByAn",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:90"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:95"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.animatedSceneUntilTheEarthBecomesALime",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:72"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:77"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.attachments",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:86"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:91"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.collapse",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:90"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:95"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.describeHowYouWouldUseItAndWhatProblem",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:85"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:90"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.description",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:85"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:90"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.donationCode",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:90"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:95"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.donationsAreNotAvailableYetThankYouForYour",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:90"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:95"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.exampleContent",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:66"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:71"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.exampleTitle",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:66"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:71"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.forExampleSupportAnotherScheduleImportFormat",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:84"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:89"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.pauseMusic",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:92"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:97"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.playMusic",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:92"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:97"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.preview",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:86"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:91"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.publishedWishes",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:90"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:95"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.removeImage",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:86"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:91"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.signInFirst",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:88"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:93"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.signInToSubmitUpTo5WishesPer",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:87"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:92"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.submitFailed",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:88"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:93"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.submitted",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:88"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:93"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.submitWish",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:87"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:92"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.support",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:90"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:95"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.supportThisWish",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:90"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:95"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.thankYouForYourSupportScanTheCodeTo",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:90"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:95"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.title",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:84"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:89"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.untilEveryWishComesTrue",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:68"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:73"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.upTo4Images",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:86"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:91"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.wishAttachment",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:90"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:95"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.wishWall",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:82"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:87"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.wishWallBackgroundMusic",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:91"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:96"
   },
   {
     "key": "AK_Raw_app_wishes_wishes_client.youCanAlsoDragImagesHere",
     "prefix": false,
-    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:86"
+    "source": "apps/arknights/src/app/wishes/wishes-client.tsx:91"
   },
   {
     "key": "AK_Raw_app_wishes2_page.backToMainPage",
