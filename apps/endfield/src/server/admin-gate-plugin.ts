@@ -1,6 +1,7 @@
 import { definePlugin } from "nitro";
 import { canAccessEndfield, endfieldNotFound } from "./admin-access";
 import { restoreHttpsProxyRequest } from "./proxy-request";
+import { applyEndfieldCachePolicy } from "./cache-policy";
 
 // Wrap the runtime before Nitro's static-file middleware can answer a request.
 export default definePlugin(app => {
@@ -9,8 +10,7 @@ export default definePlugin(app => {
     request = restoreHttpsProxyRequest(request);
     if (!await canAccessEndfield(request)) return endfieldNotFound();
     const response = await handle(request);
-    response.headers.set("Cache-Control", "private, no-store");
-    response.headers.append("Vary", "Cookie");
+    applyEndfieldCachePolicy(request, response);
     return response;
   };
 });

@@ -7,15 +7,26 @@ import { formatClock, formatDuration } from "../step/step-engine.ts";
 import { stepLogText } from "../step/step-presentation";
 import { gameLabel } from "../i18n/game-labels";
 import { operatorName } from "../i18n/game-data";
+import { useState } from "react";
 
 export function StepLog({ log, startHour, onClear }: { log: StepLogEntry[]; startHour: number; onClear: () => void }) {
   const { locale, t } = useWorkspace();
+  const [selectedPage, setPage] = useState(0);
+  const pageSize = 50;
+  const pageCount = Math.max(1, Math.ceil(log.length / pageSize));
+  const page = Math.min(selectedPage, pageCount - 1);
+  const first = page * pageSize;
   return <Section title={t("StepPanels.eventLog")} actions={<Action id="logClearBtn" size="sm" icon={<Trash2 />} disabled={!log.length} onClick={onClear}>{t("StepPanels.clear")}</Action>}>
     <ScrollArea id="logList" className="ef-step-log" viewportProps={{ "aria-label": t("StepPanels.eventLog") }}>
-      {log.length ? log.map((entry, index) => <div className="ef-step-log-entry" data-event={entry.type} key={index}>
+      {log.length ? log.slice(first, first + pageSize).map((entry, index) => <div className="ef-step-log-entry" data-event={entry.type} key={first + index}>
         <time>{formatClock(entry.tSec, startHour)}</time><span>{stepLogText(entry.message, locale, t)}</span>
       </div>) : <p className="ef-muted">{t("StepPanels.noEventsYet")}</p>}
     </ScrollArea>
+    {pageCount > 1 ? <div className="ef-actions" aria-label={t("StepPanels.eventLog")}>
+      <Action size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>{t("StepPanels.previousEvents")}</Action>
+      <span className="ef-muted">{t("StepPanels.eventRange", { from: first + 1, to: Math.min(first + pageSize, log.length), total: log.length })}</span>
+      <Action size="sm" disabled={page === pageCount - 1} onClick={() => setPage(page + 1)}>{t("StepPanels.nextEvents")}</Action>
+    </div> : null}
   </Section>;
 }
 
@@ -43,8 +54,8 @@ export function StepStats({ view, rooms }: { view: StepView; rooms: StepRoom[] }
       <ScrollArea direction="both" className="ef-table-wrap"><table className="ef-table">
         <thead><tr><th>{t("StepPanels.operator")}</th><th>{t("StepPanels.minimum")}</th><th>{t("StepPanels.maximum")}</th><th>{t("StepPanels.current")}</th></tr></thead>
         <tbody>{view.ops.map(op => {
-          let minimum = op.mood;
-          let maximum = op.mood;
+          let minimum = view.moodRanges?.[op.name]?.minimum ?? op.mood;
+          let maximum = view.moodRanges?.[op.name]?.maximum ?? op.mood;
           for (const sample of view.history) {
             const mood = sample.moods[op.name];
             if (mood === undefined) continue;

@@ -12,5 +12,8 @@
   "operator": "Operator",
   "minimum": "Minimum",
   "maximum": "Maximum",
-  "current": "Current"
+  "current": "Current",
+  "previousEvents": "Previous events",
+  "nextEvents": "Next events",
+  "eventRange": "Events {from}–{to} of {total}"
 }
