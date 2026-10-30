@@ -12,5 +12,8 @@
   "operator": "幹員",
   "minimum": "最低",
   "maximum": "最高",
-  "current": "當前"
+  "current": "當前",
+  "previousEvents": "上一頁事件",
+  "nextEvents": "下一頁事件",
+  "eventRange": "第 {from}–{to} 項，共 {total} 項事件"
 }

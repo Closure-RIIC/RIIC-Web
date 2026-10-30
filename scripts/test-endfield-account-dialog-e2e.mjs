@@ -46,6 +46,7 @@ try {
     const dialog = page.locator("[data-website-account-dialog]");
     await page.goto(`${origin}/settings`); await ready(); await sidebar();
     await avatar.click();
+    await page.locator("[data-sidebar-sign-in]").click();
     await expect(dialog).toBeVisible();
     await expect(page.locator("[data-sidebar-account-menu]")).toHaveCount(0);
     await expect(dialog.getByLabel("邮箱", { exact: true })).toBeVisible();
@@ -54,6 +55,7 @@ try {
     await expect(dialog).toHaveCount(0);
     await expect(width < 768 ? page.locator("[data-endfield-mobile-navigation]") : avatar).toBeFocused();
     await sidebar(); await avatar.click();
+    await page.locator("[data-sidebar-sign-in]").click();
     await dialog.getByRole("button", { name: "创建账号", exact: true }).click();
     await dialog.getByLabel("昵称").fill(user.name);
     await dialog.getByLabel("邮箱", { exact: true }).fill(user.email);
@@ -105,14 +107,14 @@ try {
     await expect(page.locator("[data-endfield-changelog]")).toBeVisible();
     await expect(page).toHaveTitle("更新日志 · 帝江号基建终端");
     await sidebar(); await avatar.click();
-    await menu.getByRole("menuitemradio", { name: "EN", exact: true }).click();
+    await menu.getByRole("menuitemradio", { name: "English", exact: true }).click();
     await expect(menu.getByRole("menuitem")).toHaveText(["Changelog", "Sign out"]);
     await expect(page).toHaveTitle("Changelog · 帝江号基建终端");
     await page.reload(); await ready();
     await page.evaluate(() => globalThis.dispatchEvent(new Event("focus")));
     await sidebar(); await expect(avatar).toContainText(user.name); await avatar.click();
-    await expect(menu.getByRole("menuitemradio", { name: "EN", exact: true })).toBeChecked();
-    await menu.getByRole("menuitemradio", { name: "中文", exact: true }).click();
+    await expect(menu.getByRole("menuitemradio", { name: "English", exact: true })).toBeChecked();
+    await menu.getByRole("menuitemradio", { name: "简体中文", exact: true }).click();
     await menu.getByRole("menuitem", { name: "退出登录", exact: true }).click();
     await expect(menu.getByRole("alert")).toContainText("退出登录失败");
     rejectSignOut = false;

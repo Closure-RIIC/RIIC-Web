@@ -8,7 +8,7 @@ import { useMoodSimulation } from "../mood-simulation/use-simulation";
 import { StepLog, StepStats } from "./StepPanels";
 import { StepPicker } from "./StepPicker";
 import {
-  buildStepConfig, effectTable, ensureBoostDays, maxBoostDays, roomEffectResolver, scheduledNames, validateStepConfig,
+  buildStepConfig, effectTable, ensureBoostDays, maxBoostDays, scheduledNames, validateStepConfig,
 } from "../step/step-model.ts";
 import { applyStored, DEFAULT_STEP_CONTROLS, loadStepConfig, saveStepConfig, toStored, type StoredStep } from "../step/step-store.ts";
 import type { StepBoostConfig, StepProblem } from "../step/step-types.ts";
@@ -22,7 +22,7 @@ type PickerState = { day: number; index: number };
 /** 只编辑模拟参数；排班由父级提供，排班变化时父级重挂载以清除旧回放。 */
 export function MoodSimulationPanel({ assignments }: { assignments: Assignment[] }) {
   const { workspace, locale, t } = useWorkspace();
-  const resolver = useMemo(() => roomEffectResolver(effectTable(workspace)), [workspace]);
+  const effects = useMemo(() => effectTable(workspace), [workspace]);
 
   const [preferences, setPreferences] = useState<StoredStep | null>(null);
   const [controls, setControls] = useState(DEFAULT_STEP_CONTROLS);
@@ -36,8 +36,16 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
         : error === "schedule" ? t("MoodSimulationPanel.assignOperatorsInTheEditorBeforeStarting") : "";
   const [picker, setPicker] = useState<PickerState | null>(null);
   const reportRef = useRef<HTMLDetailsElement>(null);
-  const playback = useMoodSimulation(config, resolver, controls, ready);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const playback = useMoodSimulation(config, effects, controls, ready);
   const { view, timeline, started } = playback;
+
+  useEffect(() => {
+    if (!timeline) return;
+    const frame = requestAnimationFrame(() => document.getElementById("moodCharts")?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    return () => cancelAnimationFrame(frame);
+  }, [timeline]);
 
   // 客户端挂载后恢复参数，避免服务端与首次渲染不一致。
   useEffect(() => {
@@ -82,8 +90,6 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
   function showResults() {
     if (!validate()) return;
     playback.showResults();
-    if (reportRef.current) reportRef.current.open = true;
-    requestAnimationFrame(() => document.getElementById("moodCharts")?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   function reset() {
@@ -117,13 +123,15 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
   <div className="ef-step-page" id="manual-simulation">
     <Section>
       {errorText ? <Notice error>{errorText}</Notice> : null}
+      {playback.error ? <Notice error>{playback.error === "timeout" ? t("MoodSimulationPanel.simulationTimeout") : t("MoodSimulationPanel.simulationFailed")}</Notice> : null}
+      {playback.pending ? <div role="status"><Notice>{t("MoodSimulationPanel.simulating")}</Notice></div> : null}
       {!ready ? <Notice>{t("MoodSimulationPanel.loadingLocalConfiguration")}</Notice> : null}
       <div className="ef-actions ef-step-playback">
-        <Action id="showResultBtn" size="sm" variant="yellow" icon={<Play />} onClick={showResults} disabled={!ready}>
+        <Action id="showResultBtn" size="sm" variant="yellow" icon={<Play />} onClick={showResults} disabled={!ready || playback.pending}>
           {t("MoodSimulationPanel.showResults")}
         </Action>
         <Action id="resetBtn" size="sm" icon={<RotateCcw />} onClick={reset} disabled={!ready}>
-          {t("MoodSimulationPanel.resetSimulation")}
+          {playback.pending ? t("MoodSimulationPanel.cancelSimulation") : t("MoodSimulationPanel.resetSimulation")}
         </Action>
       </div>
     </Section>
@@ -132,15 +140,15 @@ export function MoodSimulationPanel({ assignments }: { assignments: Assignment[]
       {showResult && view && timeline ? <MoodCharts view={view} timeline={timeline} rooms={config.rooms} onSeek={seek} />
         : <div className="ef-empty"><p>{t("MoodSimulationPanel.assignOperatorsThenChooseShowResults")}</p></div>}
     </Section>
-    <details className="ef-step-report"><summary>{t("MoodSimulationPanel.simulationSettings")}</summary>
-      <StepSettings config={config} controls={controls} scheduled={scheduled} labelOf={labelOf} onControls={setControls}
-        onMood={changeMood} onWork={changeWork} onBoost={changeBoost} onPick={(day, index) => setPicker({ day, index })} />
+    <details className="ef-step-report" onToggle={event => setSettingsOpen(event.currentTarget.open)}><summary>{t("MoodSimulationPanel.simulationSettings")}</summary>
+      {settingsOpen ? <StepSettings config={config} controls={controls} scheduled={scheduled} labelOf={labelOf} onControls={setControls}
+        onMood={changeMood} onWork={changeWork} onBoost={changeBoost} onPick={(day, index) => setPicker({ day, index })} /> : null}
     </details>
-    <details className="ef-step-report" ref={reportRef}><summary>{t("MoodSimulationPanel.eventsAndStatistics")}</summary>
-      <StepLog log={showResult && view ? view.log : []} startHour={startHour} onClear={playback.clearLog} />      <Section title={t("MoodSimulationPanel.simulationStatistics")}>
+    <details className="ef-step-report" ref={reportRef} onToggle={event => setReportOpen(event.currentTarget.open)}><summary>{t("MoodSimulationPanel.eventsAndStatistics")}</summary>
+      {reportOpen ? <><StepLog log={showResult && view ? view.log : []} startHour={startHour} onClear={playback.clearLog} /><Section title={t("MoodSimulationPanel.simulationStatistics")}>
       {showResult && view && config ? <StepStats view={view} rooms={config.rooms} />
         : <p className="ef-muted">{t("MoodSimulationPanel.notStarted")}</p>}
-      </Section>
+      </Section></> : null}
     </details>
   </div>
   <StepPicker open={!!picker} title={pickerTitle} current={currentName} unavailable={unavailable}
