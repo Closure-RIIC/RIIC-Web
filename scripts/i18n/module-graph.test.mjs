@@ -23,3 +23,33 @@ test("compact generated feature indexes preserve every module's resource set", a
     for (const [file, resources] of Object.entries(features)) assert.deepEqual([...resources].sort(), [...graph.resources(path.resolve(file))].sort(), file);
   }
 });
+
+test("every feature loads the namespaces found by the independent translation usage scanner", async () => {
+  for (const app of ['arknights', 'endfield']) {
+    const { features, rootNamespaces } = await import(`../../apps/${app}/src/i18n/feature-manifest.ts`);
+    const { messageNamespaces } = await import(`../../apps/${app}/src/i18n/messages.ts`);
+    const { references } = await import(`../../apps/${app}/i18n/usage-manifest.ts`);
+    const byFile = new Map();
+    for (const reference of references) {
+      const file = path.resolve(reference.source.replace(/:\d+$/, ''));
+      const namespace = reference.key.split('.')[0];
+      if (!messageNamespaces.includes(namespace)) continue;
+      if (!byFile.has(file)) byFile.set(file, new Set());
+      byFile.get(file).add(namespace);
+    }
+    const graph = createModuleGraph(new Set(messageNamespaces));
+    for (const [feature, loaded] of Object.entries(features)) {
+      const available = new Set([...rootNamespaces, ...loaded]);
+      const seen = new Set();
+      function visit(file) {
+        if (seen.has(file)) return;
+        seen.add(file);
+        for (const namespace of byFile.get(file) ?? []) {
+          assert.ok(available.has(namespace), `${feature}: ${namespace} required by ${path.relative(process.cwd(), file)}`);
+        }
+        for (const imported of graph.inspect(file).imports) visit(imported);
+      }
+      visit(path.resolve(feature));
+    }
+  }
+});
