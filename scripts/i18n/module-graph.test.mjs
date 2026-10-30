@@ -23,3 +23,17 @@ test("compact generated feature indexes preserve every module's resource set", a
     for (const [file, resources] of Object.entries(features)) assert.deepEqual([...resources].sort(), [...graph.resources(path.resolve(file))].sort(), file);
   }
 });
+
+test("Skland route loads dynamically named field translations in all locales", async () => {
+  const namespaces = new Set(fs.readdirSync('apps/endfield/messages/zh-CN').map(file => file.replace(/\.json$/, '')));
+  const graph = createModuleGraph(namespaces);
+  assert.ok(graph.resources(path.resolve('apps/endfield/src/routes/skland.tsx')).has('SklandFields'));
+  const { pageNamespaces } = await import('../../apps/endfield/src/i18n/feature-manifest.ts');
+  const { loadMessages } = await import('../../apps/endfield/src/i18n/messages.ts');
+  for (const locale of ['zh-CN', 'zh-TW', 'en']) {
+    const messages = await loadMessages(locale, pageNamespaces('/skland'));
+    for (const key of ['createTime', 'lastLoginTime', 'exp', 'level', 'worldLevel', 'charNum', 'weaponNum']) {
+      assert.equal(typeof messages.SklandFields?.[key], 'string', `${locale}: ${key}`);
+    }
+  }
+});
