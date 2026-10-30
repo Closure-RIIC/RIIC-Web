@@ -50,5 +50,6 @@
   "trust": "Trust",
   "friendly": "Friendly",
   "close": "Close",
-  "trusted": "Trusted"
+  "trusted": "Trusted",
+  "baseSkills": "Unlocked base skills"
 }
