@@ -1,6 +1,9 @@
 import { displayText } from "../i18n/game-data";
 const detailFieldKeys = new Set(["base","chars","spaceShip","domain","achieve","bpSystem","dailyMission","dungeon","config","currentTs","avatarUrl","charNum","createTime","docNum","exp","gender","lastLoginTime","level","mainMission","description","desc","id","name","roleId","saveTime","serverName","weaponNum","worldLevel","curLevel","maxLevel","ownTs","potentialLevel","evolvePhase","armEquip","bodyEquip","firstAccessory","secondAccessory","weapon","weapons","breakthroughLevel","gem","icon","iconUrl","refineLevel","weaponData","function","rarity","skills","type","charData","avatarRtUrl","avatarSqUrl","illustrationUrl","labelType","profession","property","descLevelParams","descParams","params","tags","weaponType","tacticalItem","activeEffectType","activeEffect","passiveEffect","activeEffectParams","passiveEffectParams","userSkills","skillId","charIds","charSwitch","dailyActivation","maxDailyActivation","collections","blackboxCount","levelId","pieceCount","puzzleCount","trchestCount","domainId","factory","moneyMgr","curStamina","maxStamina","maxTs","settlements","officerCharIds","remainMoney","quickaccess","link","rooms","charId","favorability","physicalStrength","reports","char","createdTimeTs","output","achieveMedals","count","display","equipData","isAccessory","pkg","properties","key","value","talent","latestSpaceshipSkillNodes","nodeId","weaponId","skillLevel"]);
 import { useState, type ReactNode } from "react";
+import { useLocale, useTranslations } from "use-intl";
+import { getCatalog } from "@riic/arknights-domain/i18n/localize";
+import type FieldLabels from "../../messages/zh-CN/SklandFields.json";
 import { Section } from "@riic/endfield-ui";
 import { type DetailRecord, type DetailValue } from "@riic/endfield-skland/details";
 import type { EndfieldRole, EndfieldSnapshot } from "@riic/endfield-skland/model";
@@ -29,11 +32,13 @@ function Disclosure({ title, count, children }: { title: string; count?: number;
 }
 
 /** Details within the selected categories render only when expanded. */
-function DataFields({ value, names, field = "" }: { value: DetailValue; names: Map<string, string>; field?: string }) {
-  const { locale, t } = useWorkspace();
-  const label = (key: string) => detailFieldKeys.has(key) ? t(`SklandFields.${key}`) : names.get(key) ?? key;
-  if (value === null) return <span className="ef-muted">{t("SklandDataView.noData")}</span>;
-  if (typeof value === "boolean") return <span>{value ? t("SklandDataView.yes") : t("SklandDataView.no")}</span>;
+export function DataFields({ value, names, field = "" }: { value: DetailValue; names: Map<string, string>; field?: string }) {
+  const locale = useLocale();
+  const t = useTranslations("SklandDataView");
+  const fields = getCatalog<typeof FieldLabels>(locale, "SklandFields");
+  const label = (key: string) => detailFieldKeys.has(key) ? fields[key as keyof typeof fields] : names.get(key) ?? key;
+  if (value === null) return <span className="ef-muted">{t("noData")}</span>;
+  if (typeof value === "boolean") return <span>{value ? t("yes") : t("no")}</span>;
   if (typeof value === "string" || typeof value === "number") {
     const raw = String(value);
     if (imageUrl(value) && /url|icon|avatar|illustration/i.test(field)) {
@@ -43,13 +48,13 @@ function DataFields({ value, names, field = "" }: { value: DetailValue; names: M
       const date = new Date(Number(raw) * (raw.length <= 10 ? 1000 : 1));
       return <time dateTime={date.toISOString()}>{date.toLocaleString(locale)}</time>;
     }
-    return <span>{names.get(raw) ?? (raw.replace(/<[^>]*>/g, "") || t("SklandDataView.notSet"))}</span>;
+    return <span>{names.get(raw) ?? (raw.replace(/<[^>]*>/g, "") || t("notSet"))}</span>;
   }
-  if (!countOf(value)) return <span className="ef-muted">{t("SklandDataView.noData")}</span>;
+  if (!countOf(value)) return <span className="ef-muted">{t("noData")}</span>;
   if (Array.isArray(value)) return <div className="ef-data-list">{value.map((item, i) => {
     if (item && typeof item === "object") {
       const row = record(item);
-      return <Disclosure key={i} title={displayText(operatorData(nameOf(row.name)), "name", locale) || nameOf(row.name) || nameOf(row.description) || names.get(nameOf(row.charId)) || `${t("SklandDataView.record")} ${i + 1}`}>
+      return <Disclosure key={i} title={displayText(operatorData(nameOf(row.name)), "name", locale) || nameOf(row.name) || nameOf(row.description) || names.get(nameOf(row.charId)) || `${t("record")} ${i + 1}`}>
         <DataFields value={item} names={names} />
       </Disclosure>;
     }
@@ -58,7 +63,7 @@ function DataFields({ value, names, field = "" }: { value: DetailValue; names: M
   return <dl className="ef-data-fields">{Object.entries(value).map(([key, item]) =>
     <div key={key} className={item && typeof item === "object" ? "ef-data-field--nested" : undefined}>
       <dt>{label(key)}</dt><dd>{item && typeof item === "object"
-        ? <Disclosure title={t("SklandDataView.viewDetails")} count={countOf(item)}><DataFields value={item} names={names} field={key} /></Disclosure>
+        ? <Disclosure title={t("viewDetails")} count={countOf(item)}><DataFields value={item} names={names} field={key} /></Disclosure>
         : <DataFields value={item} names={names} field={key} />}</dd>
     </div>)}</dl>;
 }
