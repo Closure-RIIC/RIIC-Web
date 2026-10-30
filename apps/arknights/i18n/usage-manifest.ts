@@ -8903,107 +8903,127 @@ export const references = [
   {
     "key": "AK_Raw_skland_components.connecting",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:316"
+    "source": "apps/arknights/src/skland-components.tsx:106"
   },
   {
     "key": "AK_Raw_skland_components.consentPrompt",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:323"
+    "source": "apps/arknights/src/skland-components.tsx:117"
   },
   {
     "key": "AK_Raw_skland_components.expired",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:320"
+    "source": "apps/arknights/src/skland-components.tsx:112"
   },
   {
     "key": "AK_Raw_skland_components.generateANewQrCode",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:398"
+    "source": "apps/arknights/src/skland-components.tsx:224"
   },
   {
     "key": "AK_Raw_skland_components.generateLoginQrCode",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:398"
+    "source": "apps/arknights/src/skland-components.tsx:224"
   },
   {
     "key": "AK_Raw_skland_components.generating",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:316"
+    "source": "apps/arknights/src/skland-components.tsx:106"
   },
   {
     "key": "AK_Raw_skland_components.importCredential",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:357"
+    "source": "apps/arknights/src/skland-components.tsx:151"
   },
   {
     "key": "AK_Raw_skland_components.loadingCredentialImport",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:44"
+    "source": "apps/arknights/src/skland-components.tsx:42"
   },
   {
     "key": "AK_Raw_skland_components.openSklandApp",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:384"
+    "source": "apps/arknights/src/skland-components.tsx:178"
   },
   {
     "key": "AK_Raw_skland_components.pollFailed",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:238"
+    "source": "apps/arknights/src/skland-components.tsx:82"
+  },
+  {
+    "key": "AK_Raw_skland_components.processing",
+    "prefix": false,
+    "source": "apps/arknights/src/skland-components.tsx:108"
   },
   {
     "key": "AK_Raw_skland_components.qrFailed",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:111"
+    "source": "apps/arknights/src/skland-components.tsx:82"
   },
   {
     "key": "AK_Raw_skland_components.qrSignIn",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:357"
+    "source": "apps/arknights/src/skland-components.tsx:151"
   },
   {
     "key": "AK_Raw_skland_components.readyPrompt",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:323"
+    "source": "apps/arknights/src/skland-components.tsx:117"
   },
   {
     "key": "AK_Raw_skland_components.recommendedScanTheQrCodeWithTheSklandApp",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:368"
+    "source": "apps/arknights/src/skland-components.tsx:162"
   },
   {
-    "key": "AK_Raw_skland_components.refreshing",
+    "key": "AK_Raw_skland_components.refreshCooldown",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:320"
+    "source": "apps/arknights/src/skland-components.tsx:226"
+  },
+  {
+    "key": "AK_Raw_skland_components.requestTimeout",
+    "prefix": false,
+    "source": "apps/arknights/src/skland-components.tsx:80"
+  },
+  {
+    "key": "AK_Raw_skland_components.scanAgain",
+    "prefix": false,
+    "source": "apps/arknights/src/skland-components.tsx:224"
   },
   {
     "key": "AK_Raw_skland_components.scanned",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:318"
+    "source": "apps/arknights/src/skland-components.tsx:110"
   },
   {
     "key": "AK_Raw_skland_components.scanPrompt",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:322"
+    "source": "apps/arknights/src/skland-components.tsx:116"
   },
   {
     "key": "AK_Raw_skland_components.scanWithSklandDisplayThisCodeOnAnotherDevice",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:385"
+    "source": "apps/arknights/src/skland-components.tsx:179"
   },
   {
     "key": "AK_Raw_skland_components.sklandLoginQrCode",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:419"
+    "source": "apps/arknights/src/skland-components.tsx:200"
   },
   {
     "key": "AK_Raw_skland_components.sklandSignInIsCurrentlyUnavailableYouCanContinue",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:336"
+    "source": "apps/arknights/src/skland-components.tsx:130"
   },
   {
     "key": "AK_Raw_skland_components.sklandSignInMethod",
     "prefix": false,
-    "source": "apps/arknights/src/skland-components.tsx:340"
+    "source": "apps/arknights/src/skland-components.tsx:134"
+  },
+  {
+    "key": "AK_Raw_skland_components.stopped",
+    "prefix": false,
+    "source": "apps/arknights/src/skland-components.tsx:114"
   },
   {
     "key": "AK_Raw_skland_credential_panel.accountAndCharacters",

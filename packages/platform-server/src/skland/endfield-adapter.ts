@@ -1,5 +1,5 @@
 import { endfieldRolesFromBinding, normalizeEndfieldSnapshot, EndfieldDataError, type EndfieldRole } from "@riic/endfield-skland/model";
-import { consumeScan, pollSklandIdentity, startScan, withSklandSession, withSklandCredential } from "./adapter";
+import { consumeScan, pollSklandIdentity, scanCompletionSignal, startScan, withSklandSession, withSklandCredential } from "./adapter";
 import type { SklandPolicyConsentRequest } from "@riic/platform/legal-policy";
 import type { SklandPolicyConsent, SklandSessionPayload } from "./session";
 import { readEndfieldCalculatorData, type EndfieldInventoryClient } from "./endfield-inventory.ts";
@@ -11,15 +11,20 @@ export const invalidateEndfieldSnapshots = snapshots.invalidateOwner;
 
 const scanOwner = (owner: string) => `endfield:${owner}`;
 export function startEndfieldScan(owner: string, ip: string, consent: SklandPolicyConsentRequest) {
-  return startScan(scanOwner(owner), ip, consent);
+  return startScan(scanOwner(owner), ip, consent, owner);
 }
 export function consumeEndfieldScan(scanId: string, owner: string) {
   consumeScan(scanId, scanOwner(owner));
 }
+export function endfieldScanCompletionSignal(scanId: string, owner: string, signal?: AbortSignal) {
+  return scanCompletionSignal(scanId, scanOwner(owner), signal);
+}
 export async function pollEndfieldScan(scanId: string, owner: string, signal: AbortSignal) {
   const result = await pollSklandIdentity(scanId, scanOwner(owner), signal);
-  if (!result.session) return { status: result.status };
+  if (!result.session) return { status: result.status, processing: result.processing };
+  const completionSignal = endfieldScanCompletionSignal(scanId, owner, signal);
   const loaded = await endfieldRoles(result.session);
+  completionSignal.throwIfAborted();
   if (!loaded.result.length) throw new EndfieldDataError("该森空岛账号没有可用的终末地角色。");
   return { status: "authenticated" as const, ...loaded };
 }

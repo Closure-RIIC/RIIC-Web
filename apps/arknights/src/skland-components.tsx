@@ -9,7 +9,7 @@ const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_skland_components
 
 import { lazy, Suspense } from "react";
 import { ClientOnly } from "@tanstack/react-router";
-import { useCallback, useEffect, useEffectEvent, useId, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useState, type KeyboardEvent } from "react";
 import {
   ExternalLink,
   KeyRound,
@@ -19,16 +19,14 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-import { pollSklandQr, startSklandQr, toDisplayError } from "@/api";
+import { useSklandQr } from "@/use-skland-qr";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { QrCodeFrame } from "@/components/ui/qr-code-frame";
 import { cn } from "@/lib/utils";
 import { buildSklandAppOpenUrl } from "@/skland-auth-url";
-import { nextSklandQrPollDelay, remainingSklandQrPollDelay } from "@/skland-qr-polling";
 import {
-  currentSklandPolicyConsent,
   SklandPolicyConsent,
 } from "@/skland-policy-consent";
 import type { SklandSessionData } from "@riic/arknights-domain/types";
@@ -45,7 +43,6 @@ function SklandCredentialPanel(props: React.ComponentProps<typeof LazyCredential
   return <ClientOnly fallback={fallback}><Suspense fallback={fallback}><LazyCredentialPanel {...props} /></Suspense></ClientOnly>;
 }
 
-type ScanState = "idle" | "loading" | "waiting" | "scanned" | "expired";
 type AuthMethod = "qr" | "credential";
 
 const sklandQrStatusIconClassName = "text-neutral-700 [forced-color-adjust:none]";
@@ -66,239 +63,32 @@ export function SklandLoginPanel({
   dialogPresentation = false,
 }: SklandLoginPanelProps) {
   const rawLocale = useRawLocale();
-  const localeRef = useRef(rawLocale);
-  useEffect(() => { localeRef.current = rawLocale; }, [rawLocale]);
   const sklandAppOpenUrl = buildSklandAppOpenUrl();
   const [authMethod, setAuthMethod] = useState<AuthMethod>("qr");
-  const [scanId, setScanId] = useState<string | null>(null);
-  const [scanUrl, setScanUrl] = useState<string | null>(null);
-  const [scanState, setScanState] = useState<ScanState>("idle");
-  const [scanError, setScanError] = useState<string | null>(null);
-  const [scanExpiresAt, setScanExpiresAt] = useState<number | null>(null);
   const [preparingSlow, setPreparingSlow] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [privacyAccepted, setPrivacyAccepted] = useState(false);
   const authTabsId = useId();
-  const createQrPromiseRef = useRef<Promise<void> | null>(null);
-  const mountedRef = useRef(true);
   const consentReady = termsAccepted && privacyAccepted;
-  const notifyAuthenticated = useEffectEvent(onAuthenticated);
+  const { scan, state: scanState, error: scanError, creating, refreshSeconds, createQr } = useSklandQr({
+    active: authMethod === "qr" && configured,
+    autoStart: consentReady && !dialogPresentation,
+    onAuthenticated,
+  });
+  const scanUrl = scan?.url;
+  const processing = scanState === "scanned" || scanState === "processing";
+  const errorText = scanError?.kind === "timeout" ? rawText.text(rawLocale, "requestTimeout")
+    : scanError?.detail?.message || (scanError?.kind === "generation"
+      ? rawText.text(rawLocale, "qrFailed") : rawText.text(rawLocale, "pollFailed"));
 
   useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  const createQr = useCallback(() => {
-    if (createQrPromiseRef.current) return createQrPromiseRef.current;
-    const task = (async () => {
-      setScanError(null);
-      setScanState("loading");
-      setScanId(null);
-      setScanUrl(null);
-      setScanExpiresAt(null);
-      try {
-        const result = await startSklandQr(currentSklandPolicyConsent());
-        if (!mountedRef.current) return;
-        setScanId(result.scanId);
-        setScanUrl(result.scanUrl);
-        setScanExpiresAt(Date.now() + result.expiresInSeconds * 1000);
-        setScanState("waiting");
-      } catch (error) {
-        if (!mountedRef.current) return;
-        const detail = toDisplayError(error, rawText.text(localeRef.current, "qrFailed"));
-        setScanState("idle");
-        setScanError(`${detail.message}（${detail.code}${detail.requestId ? ` · ${detail.requestId}` : ""}）`);
-      }
-    })();
-    createQrPromiseRef.current = task;
-    void task.finally(() => {
-      if (createQrPromiseRef.current === task) createQrPromiseRef.current = null;
-    });
-    return task;
-  }, []);
-
-  useEffect(() => {
-    if (scanState !== "loading") {
+    if (!creating) {
       setPreparingSlow(false);
       return;
     }
     const timer = window.setTimeout(() => setPreparingSlow(true), 2_000);
     return () => window.clearTimeout(timer);
-  }, [scanState]);
-
-  useEffect(() => {
-    if (!scanId || !scanExpiresAt) return;
-    const remaining = scanExpiresAt - Date.now();
-    if (remaining <= 0) {
-      setScanId(null);
-      setScanState("expired");
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      setScanId(null);
-      setScanState("expired");
-    }, remaining);
-    return () => window.clearTimeout(timer);
-  }, [scanExpiresAt, scanId]);
-
-  useEffect(() => {
-    if (!scanId || !scanExpiresAt || authMethod !== "qr") return;
-    let cancelled = false;
-    let timer: number | null = null;
-    let pollInFlight = false;
-    let failedAttempts = 0;
-    let nextPollAt: number | null = null;
-    let activePollController: AbortController | null = null;
-
-    const clearTimer = () => {
-      if (timer === null) return;
-      window.clearTimeout(timer);
-      timer = null;
-    };
-
-    const canPoll = () => !document.hidden && navigator.onLine && Date.now() < scanExpiresAt;
-
-    const armTimer = (delayMs: number) => {
-      clearTimer();
-      timer = window.setTimeout(() => {
-        timer = null;
-        nextPollAt = null;
-        void poll();
-      }, delayMs);
-    };
-
-    const scheduleNext = (retryAfterSeconds?: number) => {
-      clearTimer();
-      if (cancelled || Date.now() >= scanExpiresAt) return;
-      const delay = nextSklandQrPollDelay({
-        failedAttempts,
-        expiresAt: scanExpiresAt,
-        retryAfterSeconds,
-      });
-      if (delay === null) {
-        nextPollAt = null;
-        return;
-      }
-      nextPollAt = Date.now() + delay;
-      if (!canPoll()) return;
-      armTimer(delay);
-    };
-
-    const poll = async () => {
-      clearTimer();
-      if (cancelled || pollInFlight || !canPoll()) return;
-      pollInFlight = true;
-      const controller = new AbortController();
-      activePollController = controller;
-      let shouldContinue = true;
-      let retryAfterSeconds: number | undefined;
-      try {
-        const result = await pollSklandQr(scanId, controller.signal);
-        if (cancelled) return;
-        failedAttempts = 0;
-        if (
-          result.status === "authenticated"
-          && result.scheduleSnapshot
-          && result.accounts
-          && result.activeAccountId
-        ) {
-          shouldContinue = false;
-          notifyAuthenticated({
-            authenticated: true,
-            configured: true,
-            authMethods: { qr: true, credential: true },
-            accounts: result.accounts,
-            activeAccountId: result.activeAccountId,
-            bindingCount: result.bindingCount ?? result.accounts.length,
-            bindingSummary: result.bindingSummary,
-            scheduleSnapshot: result.scheduleSnapshot,
-            statusSnapshot: result.statusSnapshot,
-          });
-          setScanId(null);
-          setScanUrl(null);
-          setScanExpiresAt(null);
-          setScanState("idle");
-          setScanError(null);
-          return;
-        }
-        if (result.status === "expired") {
-          setScanId(null);
-          setScanState("expired");
-          setScanError(null);
-          shouldContinue = false;
-          return;
-        }
-        setScanState(result.status === "scanned" ? "scanned" : "waiting");
-        setScanError(null);
-      } catch (error) {
-        if (cancelled || controller.signal.aborted) return;
-        const detail = toDisplayError(error, rawText.text(localeRef.current, "pollFailed"));
-        setScanError(`${detail.message}（${detail.code}${detail.requestId ? ` · ${detail.requestId}` : ""}）`);
-        failedAttempts += 1;
-        retryAfterSeconds = detail.retryAfterSeconds;
-        shouldContinue = detail.retryable;
-      } finally {
-        if (activePollController === controller) activePollController = null;
-        pollInFlight = false;
-        if (!cancelled && shouldContinue) scheduleNext(retryAfterSeconds);
-      }
-    };
-
-    const resumePolling = () => {
-      clearTimer();
-      if (cancelled || pollInFlight || document.hidden || !navigator.onLine) return;
-      if (Date.now() >= scanExpiresAt) {
-        setScanId(null);
-        setScanState("expired");
-        return;
-      }
-      const delay = remainingSklandQrPollDelay({ nextPollAt, expiresAt: scanExpiresAt });
-      if (delay === null) {
-        setScanId(null);
-        setScanState("expired");
-      } else if (delay === 0) {
-        nextPollAt = null;
-        void poll();
-      } else {
-        armTimer(delay);
-      }
-    };
-    const handleVisibilityChange = () => {
-      if (document.hidden) clearTimer();
-      else resumePolling();
-    };
-    const handleOffline = () => clearTimer();
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("online", resumePolling);
-    window.addEventListener("offline", handleOffline);
-    scheduleNext();
-    return () => {
-      cancelled = true;
-      clearTimer();
-      activePollController?.abort();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("online", resumePolling);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, [authMethod, scanExpiresAt, scanId]);
-
-  useEffect(() => {
-    if (
-      authMethod !== "qr"
-      || dialogPresentation
-      || !configured
-      || !consentReady
-      || scanError
-      || (scanState !== "idle" && scanState !== "expired")
-    ) {
-      return;
-    }
-    void createQr();
-  }, [authMethod, configured, consentReady, createQr, dialogPresentation, scanError, scanState]);
+  }, [creating]);
 
   function handleAuthTabKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
     const nextMethod = event.key === "ArrowLeft" || event.key === "ArrowUp" || event.key === "Home"
@@ -312,15 +102,19 @@ export function SklandLoginPanel({
     window.requestAnimationFrame(() => document.getElementById(`${authTabsId}-${nextMethod}-tab`)?.focus());
   }
 
-  const pageStatusText = scanState === "loading"
+  const pageStatusText = creating
     ? preparingSlow ? rawText.text(rawLocale, "connecting") : rawText.text(rawLocale, "generating")
-    : scanState === "scanned"
-      ? rawText.text(rawLocale, "scanned")
-      : scanState === "expired"
-        ? dialogPresentation ? rawText.text(rawLocale, "expired") : rawText.text(rawLocale, "refreshing")
-        : scanUrl
-          ? rawText.text(rawLocale, "scanPrompt")
-          : dialogPresentation ? rawText.text(rawLocale, "readyPrompt") : rawText.text(rawLocale, "consentPrompt");
+    : scanState === "processing"
+      ? rawText.text(rawLocale, "processing")
+      : scanState === "scanned"
+        ? rawText.text(rawLocale, "scanned")
+        : scanState === "expired"
+          ? rawText.text(rawLocale, "expired")
+          : scanState === "error" || (scanError && !scanUrl)
+            ? rawText.text(rawLocale, "stopped")
+            : scanUrl
+              ? rawText.text(rawLocale, "scanPrompt")
+              : dialogPresentation ? rawText.text(rawLocale, "readyPrompt") : rawText.text(rawLocale, "consentPrompt");
 
   return (
     <Card
@@ -373,7 +167,7 @@ export function SklandLoginPanel({
                     onTermsChange={setTermsAccepted}
                     onPrivacyChange={setPrivacyAccepted}
                   />
-                  {scanError ? <Alert variant="destructive"><AlertDescription>{scanError}</AlertDescription></Alert> : null}
+                  {scanError ? <Alert variant="destructive"><AlertDescription>{errorText}{scanError.detail ? `（${scanError.detail.code}${scanError.detail.requestId ? ` · ${scanError.detail.requestId}` : ""}）` : ""}</AlertDescription></Alert> : null}
                   {scanUrl ? (
                     <div className="grid gap-2 sm:hidden">
                       <Button
@@ -385,29 +179,16 @@ export function SklandLoginPanel({
                       <p className="text-pretty text-center text-xs leading-5 text-muted-foreground">{rawText.text(rawLocale, "scanWithSklandDisplayThisCodeOnAnotherDevice")}</p>
                     </div>
                   ) : null}
-                  {!scanUrl || scanState === "expired" || scanError ? (
-                    <Button
-                      type="button"
-                      size={dialogPresentation ? "dialog" : "default"}
-                      className={cn("w-full sm:w-fit", dialogPresentation && "sm:w-[196px]")}
-                      variant={scanState === "idle" && !scanError ? "default" : "outline"}
-                      disabled={scanState === "loading" || !consentReady}
-                      onClick={() => void createQr()}
-                    >
-                      {scanState === "loading" ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}
-                      {scanState === "idle" && !scanError ? rawText.text(rawLocale, "generateLoginQrCode") : rawText.text(rawLocale, "generateANewQrCode")}
-                    </Button>
-                  ) : null}
                 </div>
 
                 <div className="order-1 grid place-items-center gap-3 md:order-2">
                   <QrCodeFrame data-skland-qr-visual>
-                    {scanState === "scanned" ? (
+                    {creating || processing ? (
                       <LoaderCircle
                         className={cn("size-9 animate-spin motion-reduce:animate-none", sklandQrStatusIconClassName)}
                         aria-hidden="true"
                         data-skland-login-progress
-                        data-skland-login-status-icon="scanned"
+                        data-skland-login-status-icon={creating ? "loading" : "scanned"}
                       />
                     ) : scanUrl ? (
                       <QRCodeSVG
@@ -420,12 +201,6 @@ export function SklandLoginPanel({
                         role="img"
                         aria-label={rawText.text(rawLocale, "sklandLoginQrCode")}
                       />
-                    ) : scanState === "loading" ? (
-                      <LoaderCircle
-                        className={cn("size-8 animate-spin motion-reduce:animate-none", sklandQrStatusIconClassName)}
-                        aria-hidden="true"
-                        data-skland-login-status-icon="loading"
-                      />
                     ) : (
                       <ScanLine
                         className={cn("size-12", sklandQrStatusIconClassName)}
@@ -435,6 +210,21 @@ export function SklandLoginPanel({
                     )}
                   </QrCodeFrame>
                   <p className="text-center text-sm leading-6 text-muted-foreground" role="status" aria-live="polite">{pageStatusText}</p>
+                  <div className="grid justify-items-center gap-2 text-center">
+                    <Button
+                      data-skland-qr-refresh
+                      type="button"
+                      size={dialogPresentation ? "dialog" : "default"}
+                      className={dialogPresentation ? "w-[196px]" : undefined}
+                      variant={scanState === "idle" && !scanError ? "default" : "outline"}
+                      disabled={creating || !consentReady || refreshSeconds > 0}
+                      onClick={() => void createQr()}
+                    >
+                      {creating ? <LoaderCircle className="animate-spin motion-reduce:animate-none" /> : <RefreshCw />}
+                      {scanState === "idle" && !scanError ? rawText.text(rawLocale, "generateLoginQrCode") : processing ? rawText.text(rawLocale, "scanAgain") : rawText.text(rawLocale, "generateANewQrCode")}
+                    </Button>
+                    {refreshSeconds > 0 ? <p className="text-xs text-muted-foreground" data-skland-qr-cooldown>{rawText.text(rawLocale, "refreshCooldown", { seconds: refreshSeconds })}</p> : null}
+                  </div>
                 </div>
               </div>
             </div>

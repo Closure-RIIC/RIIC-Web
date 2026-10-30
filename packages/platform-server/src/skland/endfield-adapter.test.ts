@@ -10,6 +10,7 @@ test("Endfield reads require current role AND server membership; QR owners are i
     withSklandCredential: async () => { throw new Error("not used"); },
     startScan: async (...args: unknown[]) => { calls.push(args); return {}; },
     consumeScan: (...args: unknown[]) => { calls.push(args); },
+    scanCompletionSignal: () => new AbortController().signal,
     pollSklandIdentity: async () => ({ status: "expired" }),
   } });
   const { readEndfieldSnapshot, startEndfieldScan, consumeEndfieldScan } = await import("./endfield-adapter.ts");
@@ -38,5 +39,6 @@ test("Endfield reads require current role AND server membership; QR owners are i
   await startEndfieldScan("website-user", "local", { termsAccepted: true, privacyAccepted: true, termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION });
   consumeEndfieldScan("scan", "website-user");
   assert.equal((calls[0] as string[])[0], "endfield:website-user");
+  assert.equal((calls[0] as string[])[3], "website-user", "Quota belongs to the website account, not the game namespace");
   assert.deepEqual(calls[1], ["scan", "endfield:website-user"]);
 });

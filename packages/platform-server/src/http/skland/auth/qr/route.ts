@@ -1,7 +1,6 @@
 import {
   assertSameOrigin,
   createRequestId,
-  enforceRateLimit,
   PublicApiError,
   readJsonBody,
   requestClientIp,
@@ -21,7 +20,6 @@ export async function POST(request: Request) {
     const website = await requireWebsiteSession(request);
     assertSklandAvailable(request);
     assertSameOrigin(request);
-    enforceRateLimit("skland-qr-account", website.user.id, 30, 10 * 60_000);
     const ip = requestClientIp(request);
     const body = await readJsonBody(request, 16 * 1024) as { consent?: unknown } | null;
     if (!isCurrentPolicyConsent(body?.consent)) throw new PublicApiError("AIC-AUTH-2005");
