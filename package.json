@@ -10,6 +10,8 @@
   ],
   "type": "module",
   "scripts": {
+    "release:pr": "node scripts/release-pr.mjs",
+    "test:release-pr": "node --test scripts/release-pr.test.mjs",
     "test:pr-batch": "node --test --experimental-strip-types apps/arknights/src/wish-validation.test.ts packages/platform-server/src/auth/session-lifetime.test.ts",
     "posttest": "npm run test:pr-batch && npm run test:training-planner && npm run test:route-preload && npm run test:skland-qr",
     "test:wishes-integration": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test apps/arknights/src/server/wishes.integration.test.mjs",

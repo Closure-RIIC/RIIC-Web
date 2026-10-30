@@ -177,7 +177,7 @@ jobs:
         run: python3 deploy/endfield-deploy.test.py && python3 deploy/endfield-transfer.test.py
 
       - name: Release provenance tests
-        run: node --test scripts/release-provenance.test.mjs scripts/app-release-plan.test.mjs scripts/release-automation.test.mjs
+        run: node --test scripts/release-provenance.test.mjs scripts/app-release-plan.test.mjs scripts/release-automation.test.mjs scripts/release-pr.test.mjs
 
       - name: API contract tests
         run: npm run test:api-contract
