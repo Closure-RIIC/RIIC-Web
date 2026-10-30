@@ -94,7 +94,7 @@ export function ManualPage() {
     <Dialog.Root open={pickerOpen} onOpenChange={setPickerOpen}>
       <fieldset hidden={simulation} disabled={busy || !ready} data-manual-assignments aria-label={t("Manual.manualScheduleSlots")}
         aria-busy={automatic.pending} data-evaluation-state={!panelVisible ? "editing" : automatic.pending ? "pending" : automatic.error ? "error" : automatic.result ? "ready" : "idle"}>
-        <FacilityBoard data-manual-board>{assignments.map((a, index) => {
+        {!simulation ? <FacilityBoard data-manual-board>{assignments.map((a, index) => {
           const kind = facilityKinds[a.key];
           const label = facilityLabel(a.key);
           const roomResult = evaluation?.rooms.find(room => room.key === a.key);
@@ -123,7 +123,7 @@ export function ManualPage() {
             {kind === "center" ? <FacilityOutputSummary scores={evaluation?.scores ?? emptyScores} production={evaluation?.production} animated /> : null}
             {kind === "center" ? <p className="ef-facility-note">{t("Manual.eachFacilityFollowsItsOwnShiftTimes")}</p> : null}
           </FacilityCard>;
-        })}</FacilityBoard>
+        })}</FacilityBoard> : null}
       </fieldset>
       <Dialog.Portal><Dialog.Backdrop className="ef-dialog-backdrop" />
         <DialogFrame className="ef-roster-dialog" bodyClassName="ef-roster-dialog-body" title={t("Manual.selectOperator")} closeLabel={t("Manual.closeOperatorSelection")}

@@ -116,6 +116,8 @@ export interface StepView {
   output: Record<string, number | Record<string, number>>;
   workTimeSec: Record<string, number>;
   history: StepSample[];
+  /** Exact extrema supplied by a worker when full history is omitted from a display snapshot. */
+  moodRanges?: Record<string, { minimum: number; maximum: number }>;
   log: StepLogEntry[];
 }
 
