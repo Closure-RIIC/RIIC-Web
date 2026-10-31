@@ -46,3 +46,18 @@ test("all referenced local artwork has PNG signatures and matches recorded check
     assert.equal(bytes.subarray(1, 4).toString(), "PNG");
   }
 });
+
+test("every base skill icon resolves to its pinned upstream spaceship skill asset", () => {
+  const sourceByTarget = new Map(sources.files.map(file => [file.target, file]));
+  const prefix = `https://raw.githubusercontent.com/555me/EndfieldAssets/${sources.assets.revision}/assets/beyond/dynamicassets/gameplay/ui/sprites/spaceship/spaceshipskillicon/`;
+  let checked = 0;
+  for (const operator of Object.values(data.operators)) for (const skill of operator.skills) {
+    const target = skill.icon.replace(/^\/images\/game\//, "");
+    const asset = sourceByTarget.get(target);
+    assert.ok(asset, `${skill.id}: missing local icon`);
+    assert.ok(asset.source.startsWith(prefix), `${skill.id}: wrong upstream directory or revision`);
+    assert.equal(new URL(asset.source).pathname.split("/").at(-1), target.split("/").at(-1), `${skill.id}: wrong upstream filename`);
+    checked++;
+  }
+  assert.ok(checked > 0);
+});
