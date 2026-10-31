@@ -371,13 +371,21 @@ async function artifactDescriptor(
   }
 }
 
+function isSafePrivateStorageContainer(root: string): boolean {
+  const home = path.resolve(homedir());
+  // A service may use persistent storage as HOME. The container is never
+  // removed: record roots and deletion targets must remain strict children.
+  const disallowedRoots = path.resolve(root) === home ? [repoRoot] : [repoRoot, home];
+  return isSafePrivateStorageRoot(root, disallowedRoots);
+}
+
 async function ensurePrivateStorageBoundaries(): Promise<void> {
   const lexicalStorageRoot = path.resolve(/* turbopackIgnore: true */ storageRoot);
   const lexicalRoots = [
     path.resolve(/* turbopackIgnore: true */ cliRunRoot),
     path.resolve(/* turbopackIgnore: true */ feedbackRoot),
   ];
-  if (!isSafePrivateStorageRoot(lexicalStorageRoot, [repoRoot, homedir()])) {
+  if (!isSafePrivateStorageContainer(lexicalStorageRoot)) {
     throw new Error("整体存储目录配置过于宽泛。");
   }
   if (lexicalRoots.some((root) => !isPrivateStorageChild(lexicalStorageRoot, root))) {
@@ -392,7 +400,7 @@ async function ensurePrivateStorageBoundaries(): Promise<void> {
     ...lexicalRoots.map((root) => realpath(/* turbopackIgnore: true */ root)),
   ]);
   if (
-    !isSafePrivateStorageRoot(resolvedStorageRoot, [repoRoot, homedir()])
+    !isSafePrivateStorageContainer(resolvedStorageRoot)
     || resolvedRoots.some((root) => !isPrivateStorageChild(resolvedStorageRoot, root))
   ) {
     throw new Error("存储目录的真实路径越过了整体存储边界。");
@@ -430,7 +438,7 @@ async function removePrivateDirectory(root: string, target: string): Promise<boo
     if (isObject(error) && error.code === "ENOENT") return false;
     throw error;
   }
-  if (!isSafePrivateStorageRoot(resolvedStorageRoot, [repoRoot, homedir()])) {
+  if (!isSafePrivateStorageContainer(resolvedStorageRoot)) {
     throw new Error("拒绝使用过于宽泛的整体存储根目录删除数据。");
   }
   if (!isPrivateStorageChild(resolvedStorageRoot, resolvedRoot)) {

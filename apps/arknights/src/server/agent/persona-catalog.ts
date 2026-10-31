@@ -39,7 +39,11 @@ export async function listBuiltinAgentPersonas(resources?: AgentResourcePolicy) 
   return cards.filter(card => card !== null);
 }
 
-export async function resolveAgentPersonaContent(persona?: { id?: unknown; kind?: unknown; content?: unknown }, resources?: AgentResourcePolicy): Promise<string | undefined> {
+export async function resolveAgentPersonaContent(persona?: { id?: unknown; kind?: unknown; content?: unknown }, resources?: AgentResourcePolicy): Promise<string | null | undefined> {
+  if (persona?.kind === "none") {
+    if (persona.id !== undefined || persona.content !== undefined) throw new Error("纯净模式不能同时指定人格卡。");
+    return null;
+  }
   if (persona?.kind === "builtin" || builtinAgentPersona(persona?.id)) return readBuiltinAgentPersona(persona?.id, resources);
   return typeof persona?.content === "string" ? persona.content.trim().slice(0, 36_000) || undefined : undefined;
 }

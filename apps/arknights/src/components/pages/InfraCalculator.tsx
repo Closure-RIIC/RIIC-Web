@@ -4,11 +4,10 @@ import { localizedOperationError } from "@/operation-error-presentation";
 
 
 import { lazyWithMessages } from "@/i18n/features-client";
-import { localize as localize_components_pages_InfraCalculator } from "../../i18n/helpers/components_pages_InfraCalculator.ts";
 
-import { useTranslations, useLocale } from "use-intl";
+import { useLocale, useTranslations } from "use-intl";
 
-import { ArrowRight, Download, Ellipsis, FlaskConical, Loader2, PencilLine, Play, RefreshCw, Search, Settings2, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, Download, Ellipsis, FlaskConical, PencilLine, RefreshCw, Search, Settings2, SlidersHorizontal, X } from "lucide-react";
 import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { ScheduleBoard, ShiftTabs } from "@/components";
@@ -29,7 +28,6 @@ import { ScheduleRunButton } from "@/components/ScheduleRunButton";
 import type { FactoryRecipe, TradeOrder } from "@riic/arknights-domain/blueprint";
 import { cn } from "@/lib/utils";
 import type { ShiftDirection } from "@/motion";
-import { onboardingStepStatuses, shouldShowAnonymousSampleTrial } from "@/onboarding";
 import type { RoomRow } from "@/schedule";
 import type { OperatorAssetRecord } from "@/operatorPortraits";
 import { operatorsWithoutRoomSkills } from "@/layout-skill-highlight";
@@ -73,211 +71,6 @@ function Panel({ children, className = "", action, title, icon }: {
   );
 }
 
-function CalculatorStartPanel({
-  websiteAuthenticated,
-  hasPersonalBox,
-  sampleLoading,
-  loading,
-  plannerReady,
-  runCooldownSeconds,
-  accountControl,
-  onStartPersonalFlow,
-  onRunSampleTrial,
-  onRun,
-  onOpenSetup,
-  onDismissOnboarding,
-}: {
-  websiteAuthenticated: boolean;
-  hasPersonalBox: boolean;
-  sampleLoading: boolean;
-  loading: boolean;
-  plannerReady: boolean;
-  runCooldownSeconds: number;
-  accountControl?: ReactNode;
-  onStartPersonalFlow: () => void;
-  onRunSampleTrial: () => Promise<boolean>;
-  onRun: () => void;
-  onOpenSetup: () => void;
-  onDismissOnboarding: () => void;
-}) {
-  const intl = useTranslations();
-  const locale = useLocale();
-  const en = locale;
-  const statuses = onboardingStepStatuses({
-    authenticated: websiteAuthenticated,
-    hasPersonalBox,
-    hasSuccessfulPlan: false,
-  });
-  const steps = [
-    {
-      title: intl("components_pages_InfraCalculator.signIn"),
-      eyebrow: intl("components_pages_InfraCalculator.account"),
-      description: localize_components_pages_InfraCalculator.text(en, "additional1", { choice2: ((websiteAuthenticated) ? ("yes") : ("no")) }),
-      group: "control",
-    },
-    {
-      title: intl("components_pages_InfraCalculator.importYourBox"),
-      eyebrow: intl("components_pages_InfraCalculator.operators"),
-      description: localize_components_pages_InfraCalculator.text(en, "additional2", { choice2: ((hasPersonalBox) ? ("yes") : ("no")) }),
-      group: "trading",
-    },
-    {
-      title: intl("components_pages_InfraCalculator.generateYourFirstPlan"),
-      eyebrow: intl("components_pages_InfraCalculator.baseSchedule"),
-      description: intl("components_pages_InfraCalculator.getThreeShiftsKeyRoomNotesAndAnMaa"),
-      group: "manufacture",
-    },
-  ] as const;
-  const personalActionLabel = runCooldownSeconds > 0 && websiteAuthenticated && hasPersonalBox
-    ? intl("components_pages_InfraCalculator.retryInS2", { runCooldownSeconds: runCooldownSeconds })
-    : localize_components_pages_InfraCalculator.text(en, "additional3", { choice5: ((!websiteAuthenticated) ? ("yes") : ("no")), choice6: (((!websiteAuthenticated)) && (hasPersonalBox) ? ("yes") : ("no")), choice7: ((!(!websiteAuthenticated)) && (hasPersonalBox && !plannerReady) ? ("yes") : ("no")), choice8: ((!(!websiteAuthenticated) && !(hasPersonalBox && !plannerReady)) && (hasPersonalBox) ? ("yes") : ("no")) });
-  const personalActionAriaLabel = hasPersonalBox ? (intl("components_pages_InfraCalculator.generateSchedule")) : (intl("components_pages_InfraCalculator.configureBoxAndLayout"));
-  const personalPlanUnavailable = websiteAuthenticated && hasPersonalBox && !plannerReady;
-  const showAnonymousSampleTrial = shouldShowAnonymousSampleTrial({
-    authenticated: websiteAuthenticated,
-    hasPersonalBox,
-    onboardingActive: true,
-  });
-  const actionControls = (
-    <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center" data-calculator-controls>
-      <Button
-        type="button"
-        size="lg"
-        className="min-h-11 sm:min-w-44"
-        aria-label={personalActionAriaLabel}
-        title={personalPlanUnavailable ? (intl("components_pages_InfraCalculator.plannerUnavailable")) : undefined}
-        disabled={sampleLoading || loading || personalPlanUnavailable || runCooldownSeconds > 0}
-        onClick={hasPersonalBox && websiteAuthenticated ? onRun : onStartPersonalFlow}
-      >
-        {loading && hasPersonalBox ? <Loader2 className="animate-spin" /> : <Play />}
-        {loading && hasPersonalBox ? intl("components_pages_InfraCalculator.generatingYourFirstPlan") : personalActionLabel}
-      </Button>
-      {hasPersonalBox ? (
-        <div className="inline-flex min-w-0 max-sm:[&_[data-skland-account-control]]:rounded-l-none" data-calculator-setup-group>
-          <Button
-            type="button"
-            size="sm"
-            variant="ghost"
-            className={accountControl
-              ? "h-9 rounded-r-none max-sm:h-11"
-              : "h-9 max-sm:h-11"}
-            aria-label={intl("components_pages_InfraCalculator.configureBoxAndBase")}
-            onClick={onOpenSetup}
-          >
-            <Settings2 />{intl("components_pages_InfraCalculator.adjustBoxBase")}
-          </Button>
-          {accountControl}
-        </div>
-      ) : null}
-      {!hasPersonalBox && accountControl ? <div className="self-center">{accountControl}</div> : null}
-      <Button type="button" variant="ghost" className="min-h-11" disabled={sampleLoading} onClick={onDismissOnboarding}>
-        {intl("components_pages_InfraCalculator.skipForNow")}
-      </Button>
-    </div>
-  );
-
-  return (
-    <section
-      className="relative isolate flex min-h-[calc(100svh-3rem)] items-center overflow-hidden bg-[#f7f5ec] px-4 py-8 sm:px-6 md:min-h-svh lg:px-8"
-      aria-label={intl("components_pages_InfraCalculator.scheduleSetup")}
-      data-calculator-start-panel
-      data-onboarding-active="true"
-    >
-      <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[34%] bg-[linear-gradient(135deg,transparent_0_38%,rgb(49_49_49/0.035)_38%_62%,transparent_62%)] lg:block" aria-hidden="true" />
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col justify-center">
-        <ol
-          className="grid w-full gap-3 md:grid-cols-2 xl:grid-cols-3"
-          aria-label={intl("components_pages_InfraCalculator.stepsToGenerateYourSchedule")}
-        >
-            {steps.map((step, index) => {
-              const status = statuses[index];
-              const statusLabel = localize_components_pages_InfraCalculator.text(en, "additional4", { choice3: ((status === "complete") ? ("yes") : ("no")), choice4: ((!(status === "complete")) && (status === "current") ? ("yes") : ("no")) });
-              return (
-                <li
-                  key={step.title}
-                  className={cn(
-                    "min-w-0",
-                    index === 2 && "md:col-span-2 xl:col-span-1",
-                  )}
-                  aria-current={status === "current" ? "step" : undefined}
-                >
-                  <article
-                    className={cn(
-                      "infra-room-surface onboarding-technical-card relative h-full min-h-40 overflow-hidden px-4 py-4 text-white",
-                      status === "current" && "ring-1 ring-[var(--room-accent)]",
-                    )}
-                    data-room-group={step.group}
-                  >
-                    <div className="infra-room-emblem onboarding-technical-card-emblem pointer-events-none absolute inset-0 bg-left bg-no-repeat" aria-hidden="true" />
-                    <div className="relative z-10 flex h-full flex-col">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex min-h-6 items-center gap-2">
-                          <span className="h-5 w-1 shrink-0 bg-[var(--room-accent)]" aria-hidden="true" />
-                          <p className="text-xs font-medium tracking-wide text-white/66">
-                            <span className="font-number">0{index + 1}</span> · {step.eyebrow}
-                          </p>
-                        </div>
-                        <span
-                          className={cn(
-                            "shrink-0 border border-white/14 bg-white/6 px-2 py-1 text-[0.68rem] font-medium tracking-wide text-white/58",
-                            status === "current" && "border-[var(--room-accent)] text-[var(--room-accent)]",
-                            status === "complete" && "text-white/78",
-                          )}
-                        >
-                          {statusLabel}
-                        </span>
-                      </div>
-                      <h2 className="mt-5 text-xl font-semibold tracking-[-0.025em] text-[var(--room-accent)]">
-                        {step.title}
-                      </h2>
-                      <p className="mt-2 text-xs leading-5 text-white/58">{step.description}</p>
-                    </div>
-                  </article>
-                </li>
-              );
-            })}
-        </ol>
-
-        {showAnonymousSampleTrial ? (
-          <section
-            className="mt-5 flex flex-col gap-4 border border-[#d8c64a] bg-[#fffdf2] px-4 py-4 shadow-[0_10px_28px_rgb(49_49_49/0.07)] sm:flex-row sm:items-center sm:justify-between sm:px-5"
-            aria-labelledby="anonymous-sample-trial-title"
-            aria-busy={sampleLoading}
-            data-anonymous-sample-trial
-          >
-            <div className="min-w-0">
-              <div className="flex items-start gap-3">
-                <span className="mt-0.5 grid size-8 shrink-0 place-items-center bg-[#313131] text-[#FFD800]" aria-hidden="true">
-                  <FlaskConical className="size-4" />
-                </span>
-                <div className="min-w-0">
-                  <h2 id="anonymous-sample-trial-title" className="text-sm font-semibold leading-6 text-[#313127]">
-                     {intl("components_pages_InfraCalculator.wantToPreviewSchedulingWithoutSigningIn")}
-                  </h2>
-                  <p className="mt-0.5 text-xs leading-5 text-[#5d5b4d]">{intl("components_pages_InfraCalculator.useServerSideSampleDataToGenerateABrowsable")}</p>
-                </div>
-              </div>
-            </div>
-            <Button
-              type="button"
-              size="lg"
-              variant="outline"
-              className="min-h-11 shrink-0 border-[#313131] bg-[#313131] text-[#FFD800] hover:bg-[#454545] hover:text-[#FFD800] sm:min-w-52"
-              disabled={sampleLoading || loading || !plannerReady || runCooldownSeconds > 0}
-              title={!plannerReady ? (intl("components_pages_InfraCalculator.plannerUnavailable")) : undefined}
-              onClick={() => void onRunSampleTrial()}
-            >
-              {sampleLoading ? <Loader2 className="animate-spin" /> : <Play />}
-              {sampleLoading ? (intl("components_pages_InfraCalculator.generatingSampleSchedule")) : (intl("components_pages_InfraCalculator.viewSampleSchedule"))}
-            </Button>
-          </section>
-        ) : null}
-
-        {actionControls}
-      </div>
-    </section>
-  );
-}
 
 export interface InfraCalculatorProps {
   layout: BaseBlueprint;
@@ -291,17 +84,13 @@ export interface InfraCalculatorProps {
   resultClearNotice: string | null;
   feedbackResult: FeedbackData | null;
   operbox: OperBoxEntry[] | null;
-  sampleLoading: boolean;
   loading: boolean;
   canRun: boolean;
   runOutcome?: "idle" | "success" | "error";
   runCooldownSeconds: number;
   hasBox: boolean;
-  hasPersonalBox: boolean;
   feedbackDisabledForSampleBox: boolean;
   plannerReady: boolean;
-  websiteAuthenticated: boolean;
-  showOnboarding: boolean;
   taskQueue?: {
     queuePosition: number | null;
     etaSeconds: number | null;
@@ -315,9 +104,6 @@ export interface InfraCalculatorProps {
   onPlanEntranceConsumed: (revision: string) => void;
   requiresAccount?: boolean;
   accountControl?: ReactNode;
-  onRunSampleTrial: () => Promise<boolean>;
-  onStartPersonalFlow: () => void;
-  onDismissOnboarding: () => void;
   onOpenSetup: () => void;
   upgradeSimulationOpen: boolean;
   onOpenUpgradeSimulation: () => void;
@@ -367,8 +153,8 @@ export function InfraCalculator(props: InfraCalculatorProps) {
     resultClearNotice,
     feedbackResult,
     operbox,
-    sampleLoading, loading, canRun, runCooldownSeconds, hasBox, hasPersonalBox, feedbackDisabledForSampleBox, plannerReady, websiteAuthenticated, showOnboarding, taskQueue, animateEmptyScheduleEntrance, onPlanEntranceConsumed, requiresAccount = false, accountControl,
-    onRunSampleTrial, onStartPersonalFlow, onDismissOnboarding, onOpenSetup, upgradeSimulationOpen, onOpenUpgradeSimulation, onUpgradeSimulationOpenChange, onRun, onAutoDroneAllocation, onManualDroneAllocation, manualDroneSelection = false, onSimulateUpgrades, upgradeComparison, scheduleVariant, onScheduleVariantChange, onUpgradeTrialReady, onCancelRun,
+    loading, canRun, runCooldownSeconds, hasBox, feedbackDisabledForSampleBox, plannerReady, taskQueue, animateEmptyScheduleEntrance, onPlanEntranceConsumed, requiresAccount = false, accountControl,
+    onOpenSetup, upgradeSimulationOpen, onOpenUpgradeSimulation, onUpgradeSimulationOpenChange, onRun, onAutoDroneAllocation, onManualDroneAllocation, manualDroneSelection = false, onSimulateUpgrades, upgradeComparison, scheduleVariant, onScheduleVariantChange, onUpgradeTrialReady, onCancelRun,
     onSetActiveShift, onMarkIssue, onPerformanceIssue,
     onFactoryRecipeChange, onTradeOrderChange, droneTargetRoomId, onDroneTargetChange,
     onSwapOperators,
@@ -585,12 +371,8 @@ export function InfraCalculator(props: InfraCalculatorProps) {
       >
         <section className="min-w-0">
           <Panel
-            className={cn(
-              "min-h-[calc(100vh-112px)]",
-              !showOnboarding && "max-md:pt-2",
-              !scheduleResult && showOnboarding && "py-0",
-            )}
-            action={!showOnboarding ? (
+            className="min-h-[calc(100vh-112px)] max-md:pt-2"
+            action={(
               <div
                 className="grid w-full grid-cols-[auto_minmax(0,1fr)] items-start gap-2 md:grid-cols-[minmax(14rem,1fr)_auto_auto] md:items-center"
                 data-calculator-controls
@@ -654,7 +436,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
                     <ScheduleRunButton canRun={canRun} hasBox={hasBox} plannerReady={plannerReady} requiresAccount={requiresAccount} runCooldownSeconds={runCooldownSeconds} loading={loading} outcome={props.runOutcome} onRun={onRun} onCancel={() => setCancelConfirmOpen(true)} />
                   </div>
               </div>
-            ) : null}
+            )}
           >
             {!scheduleResult && loading ? <DeferredResultLoading /> : null}
             {scheduleResult ? (
@@ -689,22 +471,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
                 {intl("components_pages_InfraCalculator.exportImageFailed")}
               </p>
             ) : null}
-            {!scheduleResult && showOnboarding ? (
-              <CalculatorStartPanel
-                websiteAuthenticated={websiteAuthenticated}
-                hasPersonalBox={hasPersonalBox}
-                sampleLoading={sampleLoading}
-                loading={loading}
-                plannerReady={plannerReady}
-                runCooldownSeconds={runCooldownSeconds}
-                accountControl={accountControl}
-                onStartPersonalFlow={onStartPersonalFlow}
-                onRunSampleTrial={onRunSampleTrial}
-                onRun={onRun}
-                onOpenSetup={onOpenSetup}
-                onDismissOnboarding={onDismissOnboarding}
-              />
-            ) : rows.length > 0 ? <ScheduleBoard
+            {rows.length > 0 ? <ScheduleBoard
               rows={rows}
               layout={layout}
               planRevision={scheduleResult?.diagnosticId}

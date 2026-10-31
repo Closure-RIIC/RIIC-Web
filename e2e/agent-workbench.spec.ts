@@ -45,12 +45,10 @@ for (const width of [1440, 375]) {
 
     await page.goto("/");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 45_000 });
-    await page.getByRole("button", { name: "暂时跳过引导" }).click();
     await expect(page.locator("[data-plan-board]")).toBeVisible();
     const launcher = page.getByRole("button", { name: "打开可露希尔助理" });
     await expect(launcher).toBeVisible();
-    await expect(launcher.locator("img")).toHaveAttribute("src", "/icon.png");
-    await expect.poll(() => launcher.locator("img").evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+    await expect(launcher.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
     await expect(page.getByText("博士，这页有什么想问的？")).toBeVisible();
 
     const dock = page.locator("[data-agent-dock-trigger]");
@@ -100,8 +98,7 @@ for (const width of [1440, 375]) {
     expect(await page.locator('[data-slot="sidebar-inset"]').boundingBox()).toEqual(frame);
     const floatingTrigger = page.locator("[data-agent-floating-trigger]");
     await expect(floatingTrigger).toHaveAttribute("aria-expanded", "true");
-    await expect(floatingTrigger.locator("img")).toBeVisible();
-    await expect(floatingTrigger.locator("img")).toHaveAttribute("src", "/icon.png");
+    await expect(floatingTrigger.locator("[data-closure-fur-avatar]")).toBeVisible();
     const panel = page.locator("[data-agent-floating-panel]");
     await expect(panel).toBeVisible();
     await expect(panel.locator('[data-agent-chat][data-agent-compact="true"]')).toBeVisible();
@@ -153,10 +150,10 @@ for (const width of [1440, 375]) {
     await expect(dock).toBeFocused();
     await expect(dock).toHaveAttribute("aria-expanded", "false");
     expect(await dock.boundingBox()).toEqual(dockBounds);
-    await expect(floatingTrigger.locator("img")).toHaveCount(0);
+    await expect(floatingTrigger.locator("[data-closure-fur-avatar]")).toHaveCount(0);
     await dock.click();
     await expect(panel).toBeVisible();
-    await expect(floatingTrigger.locator("img")).toBeVisible();
+    await expect(floatingTrigger.locator("[data-closure-fur-avatar]")).toBeVisible();
     await page.getByRole("button", { name: "收起悬浮助理", exact: true }).click();
     await expect(panel).toHaveCount(0);
     await expect(dock).toBeFocused();
@@ -196,7 +193,7 @@ for (const width of [1440, 375]) {
 
     await panel.getByRole("button", { name: "收起助理", exact: true }).click();
     await expect(panel).toHaveCount(0);
-    await expect(floatingTrigger.locator("img")).toBeVisible();
+    await expect(floatingTrigger.locator("[data-closure-fur-avatar]")).toBeVisible();
     await expect(floatingTrigger).toBeFocused();
     await expect(dock).toBeVisible();
     await expect(dock).toHaveAttribute("aria-expanded", "true");
@@ -237,6 +234,37 @@ for (const reason of ["permission", "preference"] as const) {
     await expect(shortcuts).toBeFocused();
   });
 }
+
+test("Floating assistant keeps the selected cloud across navigation without a default-icon flash", async ({ page }) => {
+  test.setTimeout(90_000);
+  await mockWorkbench(page, "static");
+  await page.addInitScript(() => {
+    localStorage.setItem("riic.agent.appearance.v1", "glow-cloud");
+    localStorage.setItem("riic.agent.persona.selection.v1", "silverash");
+  });
+  await page.route("**/api/agent/chat", route => route.fulfill({ json: ready }));
+  await page.goto("/settings");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 45_000 });
+  const launcher = page.locator("[data-agent-floating-trigger]");
+  await expect(launcher.locator('[data-cloud-avatar="glow-cloud"]')).toBeVisible();
+  await page.evaluate(() => {
+    const observation = { fallbackSeen: false };
+    Object.assign(window, { assistantAppearanceObservation: observation });
+    const inspect = () => {
+      if (document.querySelector('[data-agent-floating-trigger] img[src="/icon.png"]')) observation.fallbackSeen = true;
+    };
+    new MutationObserver(inspect).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ["src"] });
+    inspect();
+  });
+  await page.locator('[data-primary-navigation-page="agent"]').click();
+  await expect(launcher).toHaveCount(0);
+  await page.locator('[data-primary-navigation-page="calculator"]').click();
+  await expect(launcher.locator('[data-cloud-avatar="glow-cloud"]')).toBeVisible();
+  await page.locator('[data-primary-navigation-page="account-health"]').click();
+  await expect(launcher.locator('[data-cloud-avatar="glow-cloud"]')).toBeVisible();
+  expect(await page.evaluate(() => (window as typeof window & { assistantAppearanceObservation: { fallbackSeen: boolean } }).assistantAppearanceObservation.fallbackSeen)).toBe(false);
+});
+
 
 test("Restricted accounts cannot see the floating assistant or trigger its availability request", async ({ page }) => {
   await mockWorkbench(page);
@@ -290,7 +318,6 @@ test("Floating assistant contains module load failures and recovers after refres
     failModule ? route.abort("failed") : route.continue());
 
   await page.goto("/");
-  await page.getByRole("button", { name: "暂时跳过引导" }).click();
   await page.getByRole("button", { name: "打开可露希尔助理" }).click();
   const panel = page.locator("[data-agent-floating-panel]");
   await expect(panel.getByRole("alert")).toContainText("对话加载失败");

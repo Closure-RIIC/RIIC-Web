@@ -29,6 +29,7 @@ import {
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { useAccountCloudWorkspace } from "account-cloud-workspace-bridge";
 import { AppSidebar } from "@/components/layout/AppSidebar";
+import { OnboardingChecklist } from "@/components/onboarding/OnboardingChecklist";
 import { FilingLinks } from "@/components/layout/FilingLinks";
 import { AppTopBar, SklandAccountControl } from "@/components/layout/AppTopBar";
 import { WorkbenchDock } from "@/components/layout/WorkbenchDock";
@@ -78,9 +79,18 @@ import {
 import {
   ONBOARDING_COMPLETED_VALUE,
   ONBOARDING_DISMISSED_VALUE,
+  ONBOARDING_FINISHED_VALUE,
+  ONBOARDING_OPENED_STORAGE_KEY,
+  ONBOARDING_VISITS_STORAGE_KEY,
+  ONBOARDING_VISIT_PAGES,
+  ONBOARDING_TASK_COUNT,
   ONBOARDING_STORAGE_KEY,
   resolveOnboardingPreference,
+  onboardingStepStatuses,
+  parseOnboardingVisits,
+  shouldShowAnonymousSampleTrial,
   type OnboardingPreference,
+  type OnboardingVisitPage,
 } from "./onboarding";
 import { normalizeOperboxEntries } from "@riic/arknights-domain/operbox-normalization";
 import { droneStoragePlanIndex } from "@riic/arknights-domain/drone-plan-mapping";
@@ -293,6 +303,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [hasRestoredSession, setHasRestoredSession] = useState(false);
   const restoredLocalSession = useRef(false);
   const [onboardingPreference, setOnboardingPreference] = useState<OnboardingPreference>("active");
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [onboardingVisits, setOnboardingVisits] = useState<OnboardingVisitPage[]>([]);
+  const onboardingEntryChecked = useRef(false);
   const [userSettings, setUserSettings] = useState<UserSettings>(DEFAULT_USER_SETTINGS);
   useEffect(() => {
     if (!userSettings.loadEnglishResources || languageEffectRef.current.locale === "zh-CN") return;
@@ -300,8 +313,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     void import("./i18n/messages").then(({ loadMessages }) => loadMessages(languageEffectRef.current.locale, ["ArknightsGameData"])).catch(() => {});
   }, [userSettings.loadEnglishResources]);
   const [floatingAgentMinimized, setFloatingAgentMinimized] = useState(false);
-  const showFloatingAgent = hasRestoredSession && agentAllowed && userSettings.showFloatingAgent
-    && page !== "agent" && page !== "account" && page !== "gacha";
+  const floatingAgentEnabled = hasRestoredSession && agentAllowed && userSettings.showFloatingAgent;
+  const showFloatingAgent = floatingAgentEnabled && page !== "agent" && page !== "account" && page !== "gacha";
   const showWorkbenchDock = page === "calculator" || showFloatingAgent;
   const [preset, setPreset] = useState<PresetDef>(defaultPreset);
   const [layout, setLayout] = useState<BaseBlueprint>(defaultLayout);
@@ -472,7 +485,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       setManualDroneShifts({});
       setResult(finalizedResult);
       setLoading(false);
-      completeOnboarding();
+      if (currentBoxSourceRef.current !== "sample") completeOnboarding();
       setLayout((current) => resolvePlanPresentationLayout(current, finalizedResult));
       trackTelemetry({ type: "interaction", name: "plan_response", page: "calculator" });
       trackTelemetry({
@@ -596,6 +609,13 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const accountCanUseCurrentBox = boxSource === "sample" || Boolean(websiteSession);
   const hasBox = Boolean(operbox?.length);
   const hasPersonalBox = hasBox && boxSource !== "sample";
+  const onboardingStatuses = onboardingStepStatuses({
+    authenticated: Boolean(websiteSession),
+    hasPersonalBox,
+    hasSuccessfulPlan: (onboardingPreference === "completed" || onboardingPreference === "finished") && hasPersonalBox,
+  });
+  const onboardingCompletedCount = onboardingStatuses.filter(status => status === "complete").length + onboardingVisits.length;
+  const onboardingFinished = onboardingPreference === "finished" || onboardingCompletedCount === ONBOARDING_TASK_COUNT;
   const feedbackDisabledForSampleBox = boxSource === "sample";
   const canRun = Boolean(
     operbox
@@ -764,9 +784,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     try {
       const restored = loadPersistedSession(window.localStorage);
       hadPersistedSession.current = Boolean(restored);
+      setOnboardingVisits(parseOnboardingVisits(window.localStorage.getItem(ONBOARDING_VISITS_STORAGE_KEY)));
       setOnboardingPreference(resolveOnboardingPreference(
         window.localStorage.getItem(ONBOARDING_STORAGE_KEY),
-        Boolean(restored?.result),
+        Boolean(restored?.result && restored.boxSource !== "sample"),
       ));
       const warningDismissed = window.localStorage.getItem(RESULT_CLEAR_WARNING_DISMISSED_KEY) === "1";
       setResultClearWarningDismissed(warningDismissed);
@@ -1859,23 +1880,63 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     }
   }
 
-  function persistOnboardingPreference(value: OnboardingPreference) {
-    setOnboardingPreference(value);
+  useEffect(() => {
+    if (!hasRestoredSession || websiteSessionPending || onboardingEntryChecked.current) return;
+    onboardingEntryChecked.current = true;
+    if (websiteSession || onboardingPreference !== "active") return;
+    try {
+      if (window.localStorage.getItem(ONBOARDING_OPENED_STORAGE_KEY) === "1") return;
+      window.localStorage.setItem(ONBOARDING_OPENED_STORAGE_KEY, "1");
+    } catch {
+      onboardingEntryChecked.current = true;
+    }
+    if (!websiteAuthDialogOpen) setOnboardingOpen(true);
+  }, [hasRestoredSession, websiteSessionPending, websiteSession, onboardingPreference, websiteAuthDialogOpen]);
+
+  useEffect(() => {
+    if (!hasRestoredSession) return;
+    const visitedPage = ONBOARDING_VISIT_PAGES.find(visitPage => visitPage === page);
+    if (!visitedPage || onboardingVisits.includes(visitedPage)) return;
+    const next = [...onboardingVisits, visitedPage];
+    setOnboardingVisits(next);
+    try {
+      window.localStorage.setItem(ONBOARDING_VISITS_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      return;
+    }
+  }, [hasRestoredSession, page, onboardingVisits]);
+
+  useEffect(() => {
+    if (!hasRestoredSession || onboardingPreference === "dismissed" || onboardingPreference === "finished" || onboardingCompletedCount !== ONBOARDING_TASK_COUNT) return;
+    setOnboardingOpen(false);
+    setOnboardingPreference("finished");
+    try {
+      window.localStorage.setItem(ONBOARDING_STORAGE_KEY, ONBOARDING_FINISHED_VALUE);
+    } catch {
+      return;
+    }
+  }, [hasRestoredSession, onboardingPreference, onboardingCompletedCount]);
+
+  function persistOnboardingPreference(value: "completed" | "dismissed") {
     try {
       window.localStorage.setItem(
         ONBOARDING_STORAGE_KEY,
         value === "completed" ? ONBOARDING_COMPLETED_VALUE : ONBOARDING_DISMISSED_VALUE,
       );
+      setOnboardingPreference(value);
+      return true;
     } catch {
-      // The current page can still honor the preference when storage is unavailable.
+      if (value === "completed") setOnboardingPreference(value);
+      return false;
     }
   }
 
   function dismissOnboarding() {
-    persistOnboardingPreference("dismissed");
+    return persistOnboardingPreference("dismissed");
   }
 
   function completeOnboarding() {
+    if (onboardingPreference === "dismissed" || onboardingPreference === "finished") return;
     persistOnboardingPreference("completed");
   }
 
@@ -1964,18 +2025,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     if (authenticated && !next) throw new Error("SESSION_REFRESH_FAILED");
     if (authenticated) setWebsiteAuthResetToken(undefined);
     setWebsiteAuthReloadKey((current) => current + 1);
-  }
-
-  function handleStartPersonalFlow() {
-    if (!websiteSession) {
-      requestWebsiteAccount(hasPersonalBox ? "run" : "setup");
-      return;
-    }
-    if (hasPersonalBox) {
-      void handleRun();
-      return;
-    }
-    openSetup();
   }
 
   function handleProtectedSetup() {
@@ -2273,17 +2322,13 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       resultClearNotice,
       feedbackResult,
       operbox,
-      sampleLoading,
       loading,
       canRun,
       runCooldownSeconds: planRetryCountdown,
       runOutcome: apiError ? "error" as const : planTask.status === "done" ? "success" as const : "idle" as const,
       hasBox,
-      hasPersonalBox,
       feedbackDisabledForSampleBox,
       plannerReady: cliReady,
-      websiteAuthenticated: Boolean(websiteSession),
-      showOnboarding: onboardingPreference === "active" && !result,
       taskQueue: loading && planTask.taskId ? {
         queuePosition: planTask.queuePosition,
         etaSeconds: planTask.etaSeconds,
@@ -2314,9 +2359,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
           onOpenSkland={() => navigateToPage("skland")}
         />
       ) : undefined,
-      onRunSampleTrial: handleRunSampleTrial,
-      onStartPersonalFlow: handleStartPersonalFlow,
-      onDismissOnboarding: dismissOnboarding,
       onOpenSetup: handleProtectedSetup,
       upgradeSimulationOpen,
       onOpenUpgradeSimulation: handleProtectedUpgradeSimulation,
@@ -2518,7 +2560,16 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
           <SklandTrainingSyncBridge options={sklandTrainingSyncOptions} onChange={setTrainingSyncSnapshot} />
         </Suspense>
       ) : null}
-      <AppSidebar page={page} onPageChange={handleAppPageChange} showMower={userSettings.showMower} onSessionChanged={handleWebsiteSessionChanged} />
+      <AppSidebar page={page} onPageChange={handleAppPageChange} showMower={userSettings.showMower} onSessionChanged={handleWebsiteSessionChanged} onboarding={hasRestoredSession && onboardingPreference !== "dismissed" && !onboardingFinished ? { completed: onboardingCompletedCount, total: ONBOARDING_TASK_COUNT, onOpen: () => setOnboardingOpen(true) } : undefined} />
+      <OnboardingChecklist open={onboardingOpen && !onboardingFinished} onOpenChange={setOnboardingOpen}
+        statuses={onboardingStatuses}
+        visitedPages={onboardingVisits} onNavigate={navigateToPage}
+        generating={loading || sampleLoading} generateDisabled={!canRun || loading || sampleLoading || planRetryCountdown > 0} plannerReady={cliReady}
+        showSample={!result && shouldShowAnonymousSampleTrial({ authenticated: Boolean(websiteSession), hasPersonalBox, onboardingActive: onboardingPreference === "active" })}
+        sampleDisabled={sampleLoading || loading || !cliReady || planRetryCountdown > 0}
+        onSample={() => { navigateToPage("calculator"); void handleRunSampleTrial(); }}
+        onSignIn={() => requestWebsiteAccount("setup")} onImport={handleProtectedSetup}
+        onGenerate={() => { navigateToPage("calculator"); handleProtectedRun(); }} onDismiss={dismissOnboarding} />
       <SidebarInset className="isolate">
         <DotDistortionBackground />
         <div data-app-scroll-area={page} data-scroll-restoration-id="workbench-page" data-yeye-scroll={page === "agent" ? undefined : "y"} data-yeye-scroll-slot="workbench-page-scrollbar">
@@ -2586,9 +2637,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         />
 
       <div
-        className={page === "calculator" && !scheduleResult && onboardingPreference === "active"
-          ? "w-full flex-1"
-          : page === "agent" ? "app-content-track py-0 md:py-4" : "app-content-track py-4"}
+        className={page === "agent" ? "app-content-track py-0 md:py-4" : "app-content-track py-4"}
         data-app-content
         inert={!hasRestoredSession}
         aria-busy={!hasRestoredSession}
@@ -2599,8 +2648,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       </div>
 
       <WorkbenchDock showShortcuts={page === "calculator"}>
-      {showFloatingAgent ? <Suspense fallback={null}>
+      {floatingAgentEnabled ? <Suspense fallback={null}>
         <AgentFloatingWidget
+          visible={showFloatingAgent}
           minimized={floatingAgentMinimized}
           onMinimizedChange={setFloatingAgentMinimized}
           automaticContextInput={page === "calculator" ? automaticAgentContextInput : undefined}
@@ -2647,7 +2697,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
       {CLIENT_ACCOUNT_CLOUD_SYNC_ENABLED ? accountCloudWorkspace.syncElement : null}
       {hasRestoredSession ? <Suspense fallback={null}>
-        <ReleaseAnnouncement enabled={page !== "changelog" && !websiteSessionPending && !websiteAuthDialogOpen && !setupOpen && !issueOpen && !pendingProductChange && !pendingManualDraftReplacement && !loading} />
+        <ReleaseAnnouncement enabled={page !== "changelog" && !websiteSessionPending && !websiteAuthDialogOpen && !onboardingOpen && !setupOpen && !issueOpen && !pendingProductChange && !pendingManualDraftReplacement && !loading} />
       </Suspense> : null}
 
       {websiteAuthDialogMounted ? <Suspense fallback={(

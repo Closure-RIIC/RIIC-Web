@@ -1,0 +1,38 @@
+import { expect, test } from "@playwright/test";
+import { mockAnonymousWebsiteSession, mockApis } from "./production-readiness.fixture";
+
+test("onboarding keeps visit progress across all three locales", async ({ page }) => {
+  test.setTimeout(120_000);
+  await mockApis(page, { initialOnboarding: true });
+  await mockAnonymousWebsiteSession(page);
+  await page.goto("/?ui_locale=zh-TW");
+  const checklist = page.locator("[data-onboarding-checklist]");
+  await expect(checklist.getByRole("heading", { name: "入門任務", exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(checklist.locator("[data-onboarding-task]")).toHaveCount(9);
+  await expect(checklist.getByRole("heading", { name: "登入網站帳號", exact: true })).toBeVisible();
+  await expect(checklist.getByRole("heading", { name: "匯入你的 BOX", exact: true })).toBeVisible();
+  await checklist.getByRole("button", { name: "永久關閉引導", exact: true }).click();
+  const confirmation = page.getByRole("alertdialog", { name: "永久關閉入門引導？", exact: true });
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole("button", { name: "保留引導", exact: true }).click();
+  await checklist.getByRole("button", { name: "稍後繼續", exact: true }).click();
+  await page.goto("/settings?ui_locale=en");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  await page.locator("[data-onboarding-trigger]").click();
+  await expect(checklist.getByRole("heading", { name: "Getting started", exact: true })).toBeVisible();
+  await expect(checklist.locator("[data-onboarding-progress]")).toHaveText("1 / 9 done");
+  await expect(checklist.locator('[data-onboarding-task="settings"]')).toHaveAttribute("data-status", "complete");
+  const dismiss = checklist.getByRole("button", { name: "Hide permanently", exact: true });
+  const idleColor = await dismiss.evaluate(element => getComputedStyle(element).color);
+  await dismiss.hover();
+  await expect(dismiss).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect.poll(() => dismiss.evaluate(element => getComputedStyle(element).color)).not.toBe(idleColor);
+  await checklist.getByRole("button", { name: "Continue later", exact: true }).click();
+  await page.goto("/?ui_locale=zh-CN");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  await expect(checklist).toHaveCount(0);
+  await page.locator("[data-onboarding-trigger]").click();
+  await expect(checklist.getByRole("heading", { name: "入门任务", exact: true })).toBeVisible();
+  await expect(checklist.locator("[data-onboarding-progress]")).toHaveText("1 / 9 已完成");
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-onboarding-visits-v1") ?? "[]"))).toContain("settings");
+});

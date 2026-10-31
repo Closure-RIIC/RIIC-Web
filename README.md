@@ -150,7 +150,7 @@ cp .env.example .env.local
 
 - 使用与数据：[键盘和移动端操作](./docs/keyboard-shortcuts.md)、[专精规划](./docs/MASTERY_PLANNER.md)、[预计日产物计算逻辑](./docs/计算逻辑.md)、[森空岛数据能力矩阵](./docs/SKLAND_DATA_CAPABILITIES.md)
 - 求解器与协议：[Frontend Serve Guide](./docs/FRONTEND_SERVE_GUIDE.md)、[`final_efficiency` 接入口径](./docs/TRADE_PRODUCTION_CONTRACT_GAP.md)、[本地求解器目录](./bin/README.md)
-- 部署与仓库管理：[PostgreSQL 部署模板](./deploy/postgres/README.md)、[systemd runtime settings](./deploy/SYSTEMD.md)、[公开仓库管理清单](./docs/REPOSITORY_ADMIN_CHECKLIST.md)
+- 部署与仓库管理：[命令行 PR 双环境发布手册](./docs/PR_RELEASE_GUIDE.md)、[PostgreSQL 部署模板](./deploy/postgres/README.md)、[systemd runtime settings](./deploy/SYSTEMD.md)、[公开仓库管理清单](./docs/REPOSITORY_ADMIN_CHECKLIST.md)
 - 贡献与发布：[参与贡献](./CONTRIBUTING.md)、[网站翻译维护](./apps/arknights/messages/README.md)、[公开仓库迁移说明](./MIGRATION.md)、[Changelog](./CHANGELOG.md)、[Contributors](./CONTRIBUTORS.md)
 - 安全与权利：[安全政策](./SECURITY.md)、[第三方素材来源](./THIRD_PARTY_ASSETS.md)、[许可证](./LICENSE.md)
 - 代码代理说明：[AGENTS.md](./AGENTS.md)、[CLAUDE.md](./CLAUDE.md)

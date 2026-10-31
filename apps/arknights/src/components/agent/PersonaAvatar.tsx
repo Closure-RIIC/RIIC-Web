@@ -7,9 +7,14 @@ const text = createLocalizer<typeof Messages>("AK_components_agent_AgentChat");
 import { RemoteAvatar } from "@/components/ui/remote-avatar";
 import { operatorPortraitFor } from "@/operatorPortraits";
 import { FurAvatar } from "./ClosureFurAvatar";
+import { CloudAvatar } from "./CloudAvatar";
+import { useAgentAppearance, type AgentAppearance } from "./agent-appearance-store";
 
-export function PersonaAvatar({ name, src, size = 38, active = false, blank = false, mascot }: { name: string; src?: string; size?: number; active?: boolean; blank?: boolean; mascot?: "silverash" | "exusiai" | "saileach" | "mountain" }) {
+export function PersonaAvatar({ name, src, size = 38, active = false, blank = false, mascot, appearance: appearanceOverride }: { name: string; src?: string; size?: number; active?: boolean; blank?: boolean; mascot?: "silverash" | "exusiai" | "saileach" | "mountain"; appearance?: AgentAppearance }) {
+  const [savedAppearance] = useAgentAppearance();
+  const appearance = appearanceOverride ?? savedAppearance;
   if (blank) return <span className="block size-full rounded-full bg-card" data-persona-avatar-blank />;
+  if (appearance !== "plush") return <CloudAvatar appearance={appearance} active={active} size={size} />;
   const variant = mascot ?? (name === "可露希尔" || name === "可露希爾" || name === "Closure" ? "closure" : undefined);
   if (!src && variant) return <FurAvatar active={active} variant={variant} surface={size >= 64 ? "portrait" : "chat"} />;
   return <RemoteAvatar
