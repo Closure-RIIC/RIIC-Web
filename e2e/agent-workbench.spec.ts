@@ -35,6 +35,7 @@ for (const width of [1440, 375]) {
   test(`Floating assistant shares a read-only workbench snapshot at ${width}px`, async ({ page }) => {
     test.setTimeout(90_000);
     await mockWorkbench(page);
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await page.setViewportSize({ width, height: 900 });
     let sentPageContext: unknown;
     await page.route("**/api/agent/chat", (route) => {
@@ -183,6 +184,7 @@ for (const width of [1440, 375]) {
     await expect(page).toHaveURL(/\/account-health$/);
     await expect(shortcuts).toHaveCount(0);
     await expect(panel).toBeVisible();
+    await expect(page.locator("[data-account-health-page]")).toBeVisible({ timeout: 30_000 });
     // Route translations and the page summary load independently of the chat.
     await expect(shareToggle).toBeEnabled();
     await expect(shareToggle).toBeChecked();
