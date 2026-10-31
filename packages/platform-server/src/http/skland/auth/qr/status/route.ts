@@ -6,7 +6,7 @@ import {
   requestClientIp,
   successResponse,
 } from "../../../../../api-contract";
-import { consumeScan, pollScan } from "../../../../../skland/adapter";
+import { consumeScan, pollScan, scanCompletionSignal } from "../../../../../skland/adapter";
 import {
   assertSklandAvailable,
   assertSklandFeatureEnabled,
@@ -34,13 +34,14 @@ export async function POST(request: Request) {
     const scanId = body.scanId.trim();
     const result = await pollScan(scanId, website.user.id, request.signal);
     if (result.session && result.response.scheduleSnapshot && result.response.statusSnapshot) {
-      request.signal.throwIfAborted();
+      const completionSignal = scanCompletionSignal(scanId, website.user.id, request.signal);
+      completionSignal.throwIfAborted();
       const completed = await finalizeSklandAuthentication(website.user.id, {
         session: result.session,
         snapshot: result.response.scheduleSnapshot,
         statusSnapshot: result.response.statusSnapshot,
-      }, request.signal);
-      request.signal.throwIfAborted();
+      }, completionSignal);
+      completionSignal.throwIfAborted();
       const response = successResponse({
         status: result.response.status,
         scheduleSnapshot: completed.data.scheduleSnapshot,
@@ -50,13 +51,15 @@ export async function POST(request: Request) {
         bindingCount: completed.data.bindingCount,
         bindingSummary: completed.data.bindingSummary,
       }, requestId);
+      scanCompletionSignal(scanId, website.user.id, completionSignal).throwIfAborted();
       setSklandAccountStoreCookies(response, request, completed.next, completed.previous);
-      request.signal.throwIfAborted();
+      completionSignal.throwIfAborted();
       consumeScan(scanId, website.user.id);
       return response;
     }
     const response = successResponse({
       status: result.response.status,
+      processing: result.response.processing,
       scheduleSnapshot: result.response.scheduleSnapshot,
       statusSnapshot: result.response.statusSnapshot,
     }, requestId);

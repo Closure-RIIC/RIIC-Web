@@ -32,6 +32,7 @@ test("Endfield API authenticates, enforces consent/ownership, encrypts cookies a
     sklandErrorResponse: (error: unknown) => Response.json({ success: false, error: { message: error instanceof Error ? error.message : "Error" } }, { status: error instanceof PublicApiError ? error.status : 500 }),
   } });
   await context.mock.module(new URL("./endfield-adapter.ts", import.meta.url), { namedExports: {
+    endfieldScanCompletionSignal: () => new AbortController().signal,
     invalidateEndfieldSnapshots: () => {},
     endfieldCredential: async () => ({ session: { ...session, selectedUid: "" }, result: roles }),
     endfieldRoles: async (value: SklandSessionPayload) => ({ session: { ...value, token: "refreshed-token" }, result: roles }),
