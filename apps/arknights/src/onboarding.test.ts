@@ -3,15 +3,29 @@ import test from "node:test";
 
 import {
   onboardingStepStatuses,
+  ONBOARDING_TASK_COUNT,
+  parseOnboardingVisits,
   resolveOnboardingPreference,
   shouldShowAnonymousSampleTrial,
 } from "./onboarding.ts";
+
+test("nine tasks include only known, unique visited pages", () => {
+  assert.equal(ONBOARDING_TASK_COUNT, 9);
+  assert.deepEqual(parseOnboardingVisits(null), []);
+  assert.deepEqual(parseOnboardingVisits("broken"), []);
+  assert.deepEqual(parseOnboardingVisits('{"manual":true}'), []);
+  assert.deepEqual(parseOnboardingVisits('["manual","manual","calculator",null,"skill-query","settings"]'), ["manual", "skill-query", "settings"]);
+});
 
 test("onboarding preferences migrate the legacy seen marker and complete after a plan", () => {
   assert.equal(resolveOnboardingPreference(null, false), "active");
   assert.equal(resolveOnboardingPreference("1", false), "dismissed");
   assert.equal(resolveOnboardingPreference("dismissed", false), "dismissed");
   assert.equal(resolveOnboardingPreference(null, true), "completed");
+  assert.equal(resolveOnboardingPreference("1", true), "dismissed");
+  assert.equal(resolveOnboardingPreference("dismissed", true), "dismissed");
+  assert.equal(resolveOnboardingPreference("finished", false), "finished");
+  assert.equal(resolveOnboardingPreference("finished", true), "finished");
 });
 
 test("onboarding step state always points to the next unfinished action", () => {

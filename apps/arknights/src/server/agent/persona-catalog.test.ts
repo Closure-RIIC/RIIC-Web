@@ -11,6 +11,29 @@ registerHooks({ resolve(specifier, context, next) {
 const { readBuiltinAgentPersona, listBuiltinAgentPersonas, resolveAgentPersonaContent } = await import("./persona-catalog.ts");
 const { buildAgentSystemPrompt } = await import("./persona.ts");
 
+test("pure mode omits every persona while retaining system, knowledge and tool policies", async () => {
+  const resources = {
+    schema: 1 as const,
+    systemPrompt: "mandatory-system-policy",
+    defaultPersona: "private-default-persona",
+    personas: [],
+    knowledge: { version: "fixture", policy: "mandatory-knowledge-policy", files: [] },
+    skills: [{ id: "fixture-tool", title: "Tool", purpose: "mandatory-tool-purpose", content: "", enabled: true }],
+  };
+  const selection = await resolveAgentPersonaContent({ kind: "none" }, resources);
+  assert.equal(selection, null);
+  const pure = await buildAgentSystemPrompt(selection, resources);
+  assert.ok(!pure.includes(resources.defaultPersona));
+  for (const required of [resources.systemPrompt, resources.knowledge.policy, resources.skills[0].purpose, "统一回答约束"]) {
+    assert.ok(pure.includes(required));
+  }
+  assert.ok((await buildAgentSystemPrompt(undefined, resources)).startsWith(resources.defaultPersona));
+  for (const persona of [{ kind: "none", id: "silverash" }, { kind: "none", content: "override" }]) {
+    await assert.rejects(resolveAgentPersonaContent(persona, resources), /不能同时指定人格卡/);
+  }
+});
+
+
 test("private preset loading, request selection and missing-resource behavior", async () => {
   const directory = await mkdtemp(path.join(os.tmpdir(), "riic-persona-catalog-"));
   const filename = path.join(directory, "preset.md");

@@ -920,6 +920,122 @@
     {
       "file": "apps/arknights/messages/zh-CN/AK_Raw_skland_components.json",
       "key": "AK_Raw_skland_components.refreshing"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.signIn"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.account"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.importYourBox"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.operators"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.generateYourFirstPlan"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.baseSchedule"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.getThreeShiftsKeyRoomNotesAndAnMaa"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.retryInS2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.configureBoxAndLayout"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.generatingYourFirstPlan"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.adjustBoxBase"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.skipForNow"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.scheduleSetup"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.stepsToGenerateYourSchedule"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.generatingSampleSchedule"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.additional1"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.additional2"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.additional3"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/components_pages_InfraCalculator.json",
+      "key": "components_pages_InfraCalculator.additional4"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.builtInPersonas"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.localPersonas"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.defaultPersonaDescription"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.avatarSavedInThisBrowserPngJpegWebpUp"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.savedInThisBrowserAndSelectedTheNextTime"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.useThePersonaCurrentlyConfiguredOnTheServer"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.addYourPersonaCard"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.importAStyleYouLikeAndCreateYourOwn"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.markdownTxtJsonUpTo36KbSavedIn"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_components_agent_AgentChat.json",
+      "key": "AK_Raw_components_agent_AgentChat.defaultPersona"
     }
   ]
 }

@@ -13,6 +13,159 @@ async function personaControl(page: Page, name: string) {
 
 const savedUpload = { version: 1, id: "upload-existing", name: "原有人格", content: "原来的自定义人格内容", description: "保留上传内容" };
 
+for (const unavailable of ["unconfigured", "payment_required"] as const) {
+  test(`cloud appearance remains available while chat is ${unavailable}`, async ({ page }) => {
+    await prepare(page);
+    await page.addInitScript(() => localStorage.setItem("riic.plush.performance.v1", "static"));
+    await page.route("**/api/agent/chat", route => route.fulfill({
+      status: unavailable === "payment_required" ? 402 : 200,
+      json: { success: true, data: { enabled: false } },
+    }));
+    await page.goto("/agent");
+    await page.getByRole("button", { name: "人格卡：可露希尔", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "人格卡", exact: true });
+    await expect(dialog.getByRole("tablist")).toHaveCount(0);
+    await expect(dialog.locator("[data-cloud-card]")).toHaveCount(2);
+    await expect(dialog.locator("[data-cloud-card]").first()).toHaveAttribute("data-cloud-card", "frost-cloud");
+    await expect(dialog.locator("[data-cloud-card]").nth(1)).toHaveAttribute("data-cloud-card", "glow-cloud");
+    await expect(dialog.locator('[data-persona-card="default"]')).toBeVisible();
+    await dialog.getByRole("button", { name: "使用 纯净模式", exact: true }).click();
+    await expect(dialog.locator('[data-cloud-card="glow-cloud"]')).toHaveAttribute("data-selected", "true");
+    await page.keyboard.press("Escape");
+    await expect(page.locator("[data-agent-composer] textarea")).toHaveCount(0);
+  });
+}
+
+for (const mobile of [false, true]) {
+  test(`cloud selection clears the prior persona and preserves pure replies across reload (${mobile ? "mobile" : "desktop"})`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await prepare(page);
+    await page.addInitScript(() => localStorage.setItem("riic.plush.performance.v1", "static"));
+    await page.setViewportSize(mobile ? { width: 375, height: 812 } : { width: 1280, height: 900 });
+    await page.goto("/agent");
+    await (await personaControl(page, "人格卡：可露希尔")).click();
+    const dialog = page.getByRole("dialog", { name: "人格卡", exact: true });
+    await expect(dialog.getByRole("tablist")).toHaveCount(0);
+    const cloudBounds = await dialog.locator('[data-cloud-card="frost-cloud"]').boundingBox();
+    const plushBounds = await dialog.locator('[data-persona-card="default"]').boundingBox();
+    expect(cloudBounds!.y + cloudBounds!.height).toBeLessThan(plushBounds!.y);
+    await dialog.getByRole("button", { name: "使用银灰", exact: true }).click();
+    expect(await page.evaluate(() => localStorage.getItem("riic.agent.persona.selection.v1"))).toBe("silverash");
+    const glow = dialog.locator('[data-cloud-card="glow-cloud"]');
+    await glow.getByRole("button").click();
+    await expect(glow.getByRole("button")).toHaveAttribute("aria-pressed", "true");
+    await expect(glow).toHaveAttribute("data-persona-theme", "blue");
+    await expect.poll(() => page.evaluate(() => localStorage.getItem("riic.agent.persona.selection.v1"))).toBe("default");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(glow.locator("[data-motion]")).toHaveAttribute("data-motion", "paused");
+    await page.keyboard.press("Escape");
+    const composer = page.locator("[data-agent-composer] textarea");
+    await composer.fill("云朵形象测试");
+    const requestPromise = page.waitForRequest(request => request.url().includes("/api/agent/chat") && request.method() === "POST");
+    await composer.press("Enter");
+    expect((await requestPromise).postDataJSON().persona).toEqual({ kind: "none" });
+    const reply = page.locator('[data-speaker="assistant"]').first();
+    await expect(reply.locator('[data-cloud-avatar="glow-cloud"]')).toBeVisible();
+    await expect(reply.locator("[data-agent-speaker-name]")).toHaveText("纯净模式");
+    await page.reload();
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+    await openAgentHistory(page, "云朵形象测试");
+    await expect(reply.locator('[data-cloud-avatar="glow-cloud"]')).toBeVisible();
+    await (await personaControl(page, "人格卡：纯净模式")).click();
+    await expect(glow.getByRole("button")).toHaveAttribute("aria-pressed", "true");
+    await dialog.getByRole("button", { name: "使用银灰", exact: true }).click();
+    await expect(dialog.locator('[data-persona-card="silverash"]')).toHaveAttribute("data-selected", "true");
+    await page.keyboard.press("Escape");
+    await expect(reply.locator('[data-cloud-avatar="glow-cloud"]')).toBeVisible();
+    await expect(reply.locator("[data-agent-speaker-name]")).toHaveText("纯净模式");
+  });
+}
+
+test("cloud appearance still switches when browser storage rejects saving", async ({ page }) => {
+  test.setTimeout(90_000);
+  await prepare(page);
+  await page.addInitScript(() => {
+    localStorage.setItem("riic.plush.performance.v1", "static");
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key: string, value: string) {
+      if (key === "riic.agent.appearance.v1") throw new DOMException("Quota exceeded", "QuotaExceededError");
+      return setItem.call(this, key, value);
+    };
+  });
+  await page.goto("/agent");
+  await (await personaControl(page, "人格卡：可露希尔")).click();
+  const dialog = page.getByRole("dialog", { name: "人格卡", exact: true });
+  await dialog.getByRole("button", { name: "使用 纯净模式", exact: true }).click();
+  await expect(dialog.getByRole("status")).toContainText("浏览器未能保存");
+  await page.keyboard.press("Escape");
+  await (await personaControl(page, "人格卡：纯净模式")).click();
+  await expect(dialog.locator('[data-cloud-card="glow-cloud"] button')).toHaveAttribute("aria-pressed", "true");
+});
+
+test("cloud appearance persists across locales with a compact header", async ({ page }) => {
+  test.setTimeout(120_000);
+  await prepare(page);
+  await page.addInitScript(() => localStorage.setItem("riic.plush.performance.v1", "static"));
+  await page.route("**/api/agent/chat", route => route.fulfill({ json: { success: true, data: { enabled: false } } }));
+  await page.goto("/agent?ui_locale=zh-TW");
+  await page.getByRole("button", { name: "人格卡：可露希爾", exact: true }).click();
+  await page.getByRole("button", { name: "使用 純淨模式", exact: true }).click();
+  await page.goto("/agent?ui_locale=en");
+  await page.getByRole("button", { name: /^Persona[:：] ?Pure mode$/, exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Persona", exact: true });
+  await expect(dialog.getByRole("button", { name: "Use Pure mode", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await page.setViewportSize({ width: 320, height: 740 });
+  await expect(dialog.getByRole("tablist")).toHaveCount(0);
+  expect(await dialog.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+  await expect(dialog.locator('[data-persona-card="default"] [data-fur-avatar="closure"]')).toHaveCount(1);
+});
+
+test("legacy vinyl preference opens Closure and keyboard selection restores plush", async ({ page }) => {
+  await prepare(page);
+  await page.addInitScript(() => {
+    localStorage.setItem("riic.plush.performance.v1", "static");
+    localStorage.setItem("riic.agent.closure-appearance.v1", "vinyl");
+  });
+  await page.goto("/agent");
+  await (await personaControl(page, "人格卡：可露希尔")).click();
+  const dialog = page.getByRole("dialog", { name: "人格卡", exact: true });
+  await expect(dialog.locator('[data-cloud-card="frost-cloud"] button')).toHaveAttribute("aria-pressed", "true");
+  const plush = dialog.locator('[data-persona-card="default"] button');
+  await plush.focus();
+  await page.keyboard.press("Enter");
+  await expect(plush).toHaveAttribute("aria-pressed", "true");
+  await expect(dialog.locator('[data-cloud-card="frost-cloud"] button')).toHaveAttribute("aria-pressed", "false");
+  expect(await page.evaluate(() => localStorage.getItem("riic.agent.appearance.v1"))).toBe("plush");
+});
+
+test("cloud illustrations animate and honor a live reduced-motion change", async ({ page }) => {
+  await prepare(page);
+  await page.addInitScript(() => localStorage.setItem("riic.plush.performance.v1", "static"));
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/agent");
+  await (await personaControl(page, "人格卡：可露希尔")).click();
+  const cloud = page.locator('[data-cloud-card="frost-cloud"] [role="img"]');
+  const floating = cloud.locator("svg > g");
+  await expect(cloud).toHaveAttribute("data-motion", "running");
+  await expect(floating).toHaveAttribute("transform", /translate/);
+  const initial = await floating.getAttribute("transform");
+  await cloud.hover();
+  await cloud.click();
+  await expect.poll(() => floating.getAttribute("transform")).not.toBe(initial);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(cloud).toHaveAttribute("data-motion", "paused");
+  const transforms = await floating.evaluate(element => new Promise<(string | null)[]>(resolve => {
+    const values: (string | null)[] = [];
+    const sample = () => {
+      values.push(element.getAttribute("transform"));
+      if (values.length === 8) resolve(values);
+      else requestAnimationFrame(sample);
+    };
+    requestAnimationFrame(sample);
+  }));
+  expect(new Set(transforms).size).toBe(1);
+});
+
 test("switching personas preserves reply avatars in old and restored conversations", async ({ page }) => {
   test.setTimeout(120_000);
   await prepare(page);
@@ -374,7 +527,7 @@ for (const mobile of [false, true]) {
     await expect(card.locator('[data-fur-avatar="saileach"]')).toHaveAttribute("data-fur-ready", "true", { timeout: 30_000 });
     await card.getByRole("button", { name: "使用琴柳" }).click();
     await expect(card).toHaveAttribute("data-selected", "true");
-    await expect(card).toHaveCSS("outline-width", "2px");
+    await expect(card).toHaveCSS("outline-width", "1px");
     await expect(page.locator('[data-persona-card="default"]')).not.toHaveAttribute("data-selected", "true");
     await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect(page.locator("[data-agent-chat]")).toHaveCSS("--dialogue-accent", "#ffd800");
@@ -411,12 +564,12 @@ for (const mobile of [false, true]) {
     await (await personaControl(page, "人格卡：琴柳")).click();
     const selected = page.getByRole("button", { name: "使用琴柳" });
     await expect(selected).toHaveAttribute("aria-pressed", "true");
-    await expect(selected).toBeEmpty();
+    await expect(selected).toHaveText("琴柳");
     await selected.focus();
     await page.keyboard.press("Space");
     await expect(selected).toHaveAttribute("aria-pressed", "true");
     const columns = await page.locator('[data-persona-card="saileach"]').evaluate(element => getComputedStyle(element.parentElement!).gridTemplateColumns.split(" ").length);
-    expect(columns).toBe(mobile ? 1 : 3);
+    expect(columns).toBe(mobile ? 2 : 4);
     await expect(page.getByRole("dialog").locator('[data-slot="dialog-footer"]')).toHaveCount(0);
     await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect(page.getByRole("dialog")).not.toBeVisible();
