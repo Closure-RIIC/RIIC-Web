@@ -527,7 +527,7 @@ for (const mobile of [false, true]) {
     await expect(card.locator('[data-fur-avatar="saileach"]')).toHaveAttribute("data-fur-ready", "true", { timeout: 30_000 });
     await card.getByRole("button", { name: "使用琴柳" }).click();
     await expect(card).toHaveAttribute("data-selected", "true");
-    await expect(card).toHaveCSS("outline-width", "2px");
+    await expect(card).toHaveCSS("outline-width", "1px");
     await expect(page.locator('[data-persona-card="default"]')).not.toHaveAttribute("data-selected", "true");
     await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect(page.locator("[data-agent-chat]")).toHaveCSS("--dialogue-accent", "#ffd800");
