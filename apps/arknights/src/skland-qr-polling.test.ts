@@ -63,13 +63,13 @@ test("Skland QR polling preserves a pending backoff deadline across pause and re
 });
 
 test("Skland QR polling keeps callback updates stable and aborts in-flight requests on cleanup", async () => {
-  const component = await readFile(new URL("./skland-components.tsx", import.meta.url), "utf8");
+  const component = await readFile(new URL("./use-skland-qr.ts", import.meta.url), "utf8");
   const api = await readFile(new URL("./api.ts", import.meta.url), "utf8");
 
   assert.match(component, /useEffectEvent\(onAuthenticated\)/);
   assert.match(component, /pollSklandQr\(scanId, controller\.signal\)/);
   assert.match(component, /activePollController\?\.abort\(\)/);
-  assert.match(component, /\}, \[authMethod, scanExpiresAt, scanId\]\);/);
+  assert.match(component, /\}, \[active, scan, creating\]\);/);
   assert.match(api, /pollSklandQr\(scanId: string, signal\?: AbortSignal\)/);
   assert.match(api, /body: JSON\.stringify\(\{ scanId \}\),\s+signal,/);
 });

@@ -32,9 +32,9 @@ import {
 } from "./session";
 import {
   findOwnedScan,
-  findReusableScan,
   hasScanStartCapacity,
   scanActorKey,
+  scanStartRetryAfter,
   SCAN_TTL_MS,
   type ScanStartResult,
 } from "./scan-admission";
@@ -46,6 +46,9 @@ import {
 
 const SCAN_TTL_SECONDS = SCAN_TTL_MS / 1000;
 const TOKEN_REFRESH_MS = 20 * 60 * 1000;
+export const SCAN_AUTH_TIMEOUT_MS = 60_000;
+export const SCAN_START_TIMEOUT_MS = 35_000;
+const SCAN_QUERY_TIMEOUT_MS = 30_000;
 
 type PendingScan = {
   client: Client;
@@ -56,7 +59,12 @@ type PendingScan = {
   policyConsent: SklandPolicyConsent;
   completed?: CompletedSklandAuthentication;
   identity?: SklandSessionPayload;
-  identityTask?: Promise<SklandSessionPayload | null>;
+  displayStatus: "waiting" | "scanned";
+  scanCode?: string;
+  queryTask?: Promise<void>;
+  authenticationTask?: Promise<void>;
+  authenticationError?: SklandServiceError;
+  lifecycle: AbortController;
 };
 
 type RateEntry = { timestamps: number[] };
@@ -88,7 +96,9 @@ export class SklandServiceError extends Error {
   constructor(
     public readonly code: SklandServiceErrorCode,
     message: string,
-    public readonly status = 500
+    public readonly status = 500,
+    public readonly retryAfterSeconds?: number,
+    public readonly retryable?: boolean,
   ) {
     super(message);
   }
@@ -102,7 +112,7 @@ function upstreamRetryAfterSeconds(now = Date.now()): number {
 
 function assertUpstreamCapacity(now = Date.now()): void {
   if (upstreamRetryAfterSeconds(now) > 0) {
-    throw new SklandServiceError("RATE_LIMITED", "森空岛请求正在冷却，请稍后再试。", 429);
+    throw new SklandServiceError("RATE_LIMITED", "森空岛请求正在冷却，请稍后再试。", 429, upstreamRetryAfterSeconds(now));
   }
 }
 
@@ -115,7 +125,7 @@ function beginUpstreamCooldown(now = Date.now()): void {
 
 function cleanupScans(now = Date.now()): void {
   for (const [scanId, scan] of pendingScans) {
-    if (now - scan.createdAt > SCAN_TTL_MS) pendingScans.delete(scanId);
+    if (now - scan.createdAt >= SCAN_TTL_MS) invalidateScan(scanId, scan);
   }
   for (const [key, entry] of rateEntries) {
     const timestamps = entry.timestamps.filter((timestamp) => now - timestamp < SCAN_TTL_MS);
@@ -131,11 +141,6 @@ function assertRate(key: string, limit: number, windowMs: number, now = Date.now
   rateEntries.set(key, { timestamps: current });
 }
 
-export function assertScanStartCapacity(activeStarts: number): void {
-  if (!hasScanStartCapacity(activeStarts)) {
-    throw new SklandServiceError("RATE_LIMITED", "二维码生成请求正在排队，请稍后再试。", 429);
-  }
-}
 
 function publicError(error: unknown): SklandServiceError {
   if (error instanceof SklandServiceError) return error;
@@ -143,7 +148,7 @@ function publicError(error: unknown): SklandServiceError {
   if (classification === "AUTH_EXPIRED") return new SklandServiceError("AUTH_EXPIRED", "森空岛登录已失效，请重新授权。", 401);
   if (classification === "RATE_LIMITED") {
     beginUpstreamCooldown();
-    return new SklandServiceError("RATE_LIMITED", "森空岛请求过于频繁，请稍后再试。", 429);
+    return new SklandServiceError("RATE_LIMITED", "森空岛请求过于频繁，请稍后再试。", 429, upstreamRetryAfterSeconds());
   }
   return new SklandServiceError("UNAVAILABLE", "森空岛暂时不可用，请稍后重试；MAA 导入仍可正常使用。", 502);
 }
@@ -203,41 +208,48 @@ async function scheduleWithClient(client: Client, payload: SklandSessionPayload)
   };
 }
 
+async function completeScanIdentity(
+  client: Client,
+  oauthToken: string,
+  policyConsent: SklandPolicyConsent,
+  assertActive: () => void,
+): Promise<SklandSessionPayload> {
+  assertActive();
+  const grant = await client.collections.hypergryph.grantAuthorizeCode(oauthToken);
+  assertActive();
+  const auth = await client.signIn(grant.code);
+  assertActive();
+  const dId = (await client.storage.getItem(STORAGE_DID_KEY)) ?? "";
+  assertActive();
+  if (!dId) throw new SklandServiceError("BAD_DATA", "森空岛设备凭证生成失败。", 502);
+  const now = Date.now();
+  return {
+    version: 3, cred: auth.cred, token: auth.token, dId, userId: auth.userId, selectedUid: "",
+    refreshedAt: now, expiresAt: now + SKLAND_SESSION_TTL_SECONDS * 1000, policyConsent,
+  };
+}
+
 async function completeOAuthLogin(
   client: Client,
   oauthToken: string,
-  policyConsent: SklandPolicyConsent
+  policyConsent: SklandPolicyConsent,
+  assertActive: () => void,
 ): Promise<CompletedSklandAuthentication> {
-  const grant = await client.collections.hypergryph.grantAuthorizeCode(oauthToken);
-  const auth = await client.signIn(grant.code);
+  const identity = await completeScanIdentity(client, oauthToken, policyConsent, assertActive);
+  assertActive();
   const binding = await client.collections.player.getBinding();
+  assertActive();
   const roles = rolesFromBinding(binding);
   if (roles.length === 0) {
     throw new SklandServiceError("BAD_DATA", "该森空岛账号没有绑定可用的明日方舟角色。", 422);
   }
   const selectedUid = roles.find((role) => role.isDefault)?.uid ?? roles[0].uid;
   const info = await client.collections.player.getInfo({ uid: selectedUid });
-  const dId = (await client.storage.getItem(STORAGE_DID_KEY)) ?? "";
-  if (!dId) throw new SklandServiceError("BAD_DATA", "森空岛设备凭证生成失败。", 502);
-  const session: SklandSessionPayload = {
-    version: 3,
-    cred: auth.cred,
-    token: auth.token,
-    accountOAuthToken: oauthToken,
-    dId,
-    userId: auth.userId,
-    selectedUid,
-    refreshedAt: Date.now(),
-    expiresAt: Date.now() + SKLAND_SESSION_TTL_SECONDS * 1000,
-    policyConsent,
-  };
+  assertActive();
+  const session: SklandSessionPayload = { ...identity, accountOAuthToken: oauthToken, selectedUid };
   const snapshots = snapshotsFromPlayerInfo(info, roles, selectedUid, sklandLayoutSuggestion(info));
   void persistOperatorSnapshot(snapshots.statusSnapshot);
-  return {
-    session,
-    snapshot: snapshots.scheduleSnapshot,
-    statusSnapshot: snapshots.statusSnapshot,
-  };
+  return { session, snapshot: snapshots.scheduleSnapshot, statusSnapshot: snapshots.statusSnapshot };
 }
 
 function upstreamResponseCode(value: unknown): number | null {
@@ -386,24 +398,43 @@ export function requestIp(request: Request): string {
 export async function startScan(
   websiteUserId: string,
   ip: string,
-  consent: SklandPolicyConsentRequest
+  consent: SklandPolicyConsentRequest,
+  quotaOwner = websiteUserId,
 ): Promise<ScanStartResult> {
   cleanupScans();
   const actorKey = scanActorKey(websiteUserId);
-  const reusable = findReusableScan(pendingScans, actorKey, consent);
-  if (reusable) return reusable;
-
-  const activeTask = scanStartTasks.get(actorKey);
-  if (activeTask) return activeTask;
-
-  assertScanStartCapacity(scanStartTasks.size);
-  assertRate(`scan:actor:${actorKey}`, 5, 10 * 60 * 1000);
-  assertRate(`scan:ip:${ip}`, 10, 10 * 60 * 1000);
-
+  const accountRateKey = `scan:actor:${scanActorKey(quotaOwner)}`;
+  const ipRateKey = `scan:ip:${ip}`;
+  const now = Date.now();
+  const accountStarts = rateEntries.get(accountRateKey)?.timestamps ?? [];
+  const ipStarts = rateEntries.get(ipRateKey)?.timestamps ?? [];
+  const retryAfter = Math.max(
+    scanStartRetryAfter(accountStarts, ipStarts, now),
+    scanStartTasks.has(actorKey) || !hasScanStartCapacity(scanStartTasks.size) ? 1 : 0,
+  );
+  if (retryAfter > 0) {
+    throw new SklandServiceError("RATE_LIMITED", `二维码申请过于频繁，请等待 ${retryAfter} 秒后重试。`, 429, retryAfter);
+  }
+  // Reserve both budgets atomically, before the first await. Rejected requests use neither.
+  rateEntries.set(accountRateKey, { timestamps: [...accountStarts, now] });
+  rateEntries.set(ipRateKey, { timestamps: [...ipStarts, now] });
   const task = createScan(actorKey, consent);
   scanStartTasks.set(actorKey, task);
   try {
-    return await task;
+    const result = await task;
+    return {
+      ...result,
+      refreshAfterSeconds: scanStartRetryAfter(
+        rateEntries.get(accountRateKey)?.timestamps ?? [],
+        rateEntries.get(ipRateKey)?.timestamps ?? [],
+      ),
+    };
+  } catch (error) {
+    const known = publicError(error);
+    const retryAfter = Math.max(known.retryAfterSeconds ?? 0, scanStartRetryAfter(
+      rateEntries.get(accountRateKey)?.timestamps ?? [], rateEntries.get(ipRateKey)?.timestamps ?? [],
+    ));
+    throw new SklandServiceError(known.code, known.message, known.status, retryAfter || undefined, known.retryable);
   } finally {
     if (scanStartTasks.get(actorKey) === task) scanStartTasks.delete(actorKey);
   }
@@ -411,36 +442,90 @@ export async function startScan(
 
 async function createScan(
   actorKey: string,
-  consent: SklandPolicyConsentRequest
+  consent: SklandPolicyConsentRequest,
 ): Promise<ScanStartResult> {
   try {
     const client = createClient({ timeout: 30_000 });
-    const result = await deviceIdCache.run(
-      client.storage,
-      STORAGE_DID_KEY,
-      () => client.collections.hypergryph.generateScanLoginUrl()
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const operation = deviceIdCache.run(
+      client.storage, STORAGE_DID_KEY, () => client.collections.hypergryph.generateScanLoginUrl(),
     );
+    const result = await Promise.race([
+      operation,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new SklandServiceError("UNAVAILABLE", "二维码生成超时，请稍后重试。", 504)), SCAN_START_TIMEOUT_MS);
+        timer.unref();
+      }),
+    ]).finally(() => clearTimeout(timer));
     const createdAt = Date.now();
+    // Only a successful replacement invalidates the old code, including its in-flight work.
+    for (const [scanId, pending] of pendingScans) {
+      if (pending.actorKey === actorKey) invalidateScan(scanId, pending);
+    }
     pendingScans.set(result.scanId, {
-      client,
-      actorKey,
-      scanUrl: result.scanUrl,
-      createdAt,
-      lastPollAt: 0,
-      policyConsent: {
-        termsVersion: consent.termsVersion,
-        privacyVersion: consent.privacyVersion,
-        acceptedAt: createdAt,
-      },
+      client, actorKey, scanUrl: result.scanUrl, createdAt, lastPollAt: 0,
+      displayStatus: "waiting", lifecycle: new AbortController(),
+      policyConsent: { termsVersion: consent.termsVersion, privacyVersion: consent.privacyVersion, acceptedAt: createdAt },
     });
-    return { ...result, expiresInSeconds: SCAN_TTL_SECONDS };
+    return { ...result, expiresInSeconds: SCAN_TTL_SECONDS, refreshAfterSeconds: 0 };
   } catch (error) {
     throw publicError(error);
   }
 }
 
-function throwIfAborted(signal?: AbortSignal): void {
-  signal?.throwIfAborted();
+function expiredScanError(): SklandServiceError {
+  return new SklandServiceError("AUTH_EXPIRED", "二维码已失效，请重新生成二维码。", 401, undefined, false);
+}
+
+function invalidateScan(scanId: string, pending: PendingScan): void {
+  if (pendingScans.get(scanId) !== pending) return;
+  pendingScans.delete(scanId);
+  pending.lifecycle.abort(expiredScanError());
+}
+
+function assertPendingScan(scanId: string, pending: PendingScan): void {
+  if (Date.now() - pending.createdAt >= SCAN_TTL_MS) invalidateScan(scanId, pending);
+  if (pendingScans.get(scanId) !== pending) throw expiredScanError();
+  pending.lifecycle.signal.throwIfAborted();
+}
+
+/** Follow the scan lifetime through awaited binding work and check again before writing cookies. */
+export function scanCompletionSignal(scanId: string, websiteUserId: string, requestSignal?: AbortSignal): AbortSignal {
+  const pending = findOwnedScan(pendingScans, scanId, websiteUserId);
+  if (!pending) throw expiredScanError();
+  assertPendingScan(scanId, pending);
+  return AbortSignal.any([
+    pending.lifecycle.signal,
+    AbortSignal.timeout(Math.max(1, pending.createdAt + SCAN_TTL_MS - Date.now())),
+    ...(requestSignal ? [requestSignal] : []),
+  ]);
+}
+
+async function withScanDeadline<T>(
+  scanId: string,
+  pending: PendingScan,
+  timeoutMs: number,
+  timeoutMessage: string,
+  operation: (assertActive: () => void) => Promise<T>,
+): Promise<T> {
+  const timeout = new AbortController();
+  const signal = AbortSignal.any([pending.lifecycle.signal, timeout.signal]);
+  const timer = setTimeout(() => timeout.abort(new SklandServiceError("UNAVAILABLE", timeoutMessage, 504)), timeoutMs);
+  timer.unref();
+  const assertActive = () => { signal.throwIfAborted(); assertPendingScan(scanId, pending); };
+  let onAbort!: () => void;
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(signal.reason);
+    if (signal.aborted) onAbort();
+    else signal.addEventListener("abort", onAbort, { once: true });
+  });
+  try {
+    assertActive();
+    return await Promise.race([operation(assertActive), aborted]);
+  } finally {
+    clearTimeout(timer);
+    signal.removeEventListener("abort", onAbort);
+  }
 }
 
 function completedScanResult(completed: CompletedSklandAuthentication): {
@@ -448,113 +533,120 @@ function completedScanResult(completed: CompletedSklandAuthentication): {
   session: SklandSessionPayload;
 } {
   return {
-    response: {
-      success: true,
-      status: "authenticated",
-      scheduleSnapshot: completed.snapshot,
-      statusSnapshot: completed.statusSnapshot,
-    },
+    response: { success: true, status: "authenticated", scheduleSnapshot: completed.snapshot, statusSnapshot: completed.statusSnapshot },
     session: completed.session,
   };
 }
 
 export function consumeScan(scanId: string, websiteUserId: string): void {
-  if (findOwnedScan(pendingScans, scanId, websiteUserId)) pendingScans.delete(scanId);
+  const pending = findOwnedScan(pendingScans, scanId, websiteUserId);
+  if (pending) invalidateScan(scanId, pending);
 }
 
-/** Endfield uses a separate scan owner namespace and never loads Arknights data. */
+function startScanAuthentication(scanId: string, pending: PendingScan, owner: string, identityOnly: boolean): void {
+  if (pending.authenticationTask || pending.authenticationError || !pending.scanCode) return;
+  // Local admission has not consumed the scan code; a cooldown must remain retryable.
+  assertUpstreamCapacity();
+  const scanCode = pending.scanCode;
+  // A scan code may be single-use. Never restart this exchange, even after an HTTP disconnect.
+  pending.authenticationTask = withScanDeadline(
+    scanId, pending, SCAN_AUTH_TIMEOUT_MS, "森空岛登录处理超时，请重新生成二维码后重试。",
+    async assertActive => {
+      const oauth = await pending.client.collections.hypergryph.getOAuthTokenByScanCode(scanCode);
+      assertActive();
+      if (identityOnly) {
+        const identity = await completeScanIdentity(pending.client, oauth, pending.policyConsent, assertActive);
+        assertActive();
+        pending.identity = identity;
+      } else {
+        const completed = await completeOAuthLogin(pending.client, oauth, pending.policyConsent, assertActive);
+        assertActive();
+        recentSklandOAuth.remember(owner, completed.session.cred, oauth);
+        pending.completed = completed;
+      }
+    },
+  ).catch(error => {
+    if (pendingScans.get(scanId) !== pending) return;
+    const known = publicError(error);
+    pending.authenticationError = new SklandServiceError(known.code, known.message, known.status, known.retryAfterSeconds, false);
+  });
+}
+
+async function queryScanStatus(scanId: string, pending: PendingScan): Promise<void> {
+  try {
+    await withScanDeadline(scanId, pending, SCAN_QUERY_TIMEOUT_MS, "二维码状态查询超时，请稍后重试。", async assertActive => {
+      const status = await pending.client.collections.hypergryph.getScanStatus(scanId);
+      assertActive();
+      if (status.scanCode) {
+        pending.scanCode = status.scanCode;
+        pending.displayStatus = "scanned";
+        return;
+      }
+      const display = scanDisplayStatus(status.scanStatus ?? "");
+      if (display === "expired") invalidateScan(scanId, pending);
+      else if (display === "scanned") pending.displayStatus = "scanned";
+    });
+  } catch (error) {
+    if (pendingScans.get(scanId) !== pending) return;
+    const display = scanStatusFromError(error);
+    if (display) {
+      if (display === "expired") invalidateScan(scanId, pending);
+      else if (display === "scanned") pending.displayStatus = "scanned";
+      return;
+    }
+    throw publicError(error);
+  }
+}
+
+async function pollPendingScan(
+  scanId: string, owner: string, signal: AbortSignal | undefined, identityOnly: boolean,
+): Promise<PendingScan | null> {
+  cleanupScans();
+  signal?.throwIfAborted();
+  const pending = findOwnedScan(pendingScans, scanId, owner);
+  if (!pending) return null;
+  if (pending.authenticationError) throw pending.authenticationError;
+  if (pending.completed || pending.identity) return pending;
+  if (pending.scanCode) {
+    startScanAuthentication(scanId, pending, owner, identityOnly);
+    return pending;
+  }
+  if (!pending.queryTask && Date.now() - pending.lastPollAt >= 1_000) {
+    pending.lastPollAt = Date.now();
+    const task = queryScanStatus(scanId, pending);
+    pending.queryTask = task;
+    void task.finally(() => { if (pending.queryTask === task) pending.queryTask = undefined; }).catch(() => undefined);
+  }
+  if (pending.queryTask) await pending.queryTask;
+  signal?.throwIfAborted();
+  // Return the confirmation first; the next poll starts the exchange after the UI has feedback.
+  return pendingScans.get(scanId) === pending ? pending : null;
+}
+
+/** Endfield has a separate scan owner namespace and never loads Arknights data. */
 export async function pollSklandIdentity(scanId: string, scanOwner: string, signal?: AbortSignal): Promise<{
   status: "waiting" | "scanned" | "expired" | "authenticated";
+  processing?: boolean;
   session?: SklandSessionPayload;
 }> {
-  cleanupScans();
-  throwIfAborted(signal);
-  const pending = findOwnedScan(pendingScans, scanId, scanOwner);
-  if (!pending) return { status: "expired" };
+  const pending = await pollPendingScan(scanId, scanOwner, signal, true);
+  if (!pending || pendingScans.get(scanId) !== pending) return { status: "expired" };
+  signal?.throwIfAborted();
+  assertPendingScan(scanId, pending);
   if (pending.identity) return { status: "authenticated", session: pending.identity };
-  if (pending.identityTask || Date.now() - pending.lastPollAt < 1_000) return { status: "waiting" };
-  pending.lastPollAt = Date.now();
-  let display: "waiting" | "scanned" | "expired" = "waiting";
-  const task = (async () => {
-    assertUpstreamCapacity();
-    const status = await pending.client.collections.hypergryph.getScanStatus(scanId);
-    if (!status.scanCode) { display = scanDisplayStatus(status.scanStatus ?? ""); return null; }
-    const oauth = await pending.client.collections.hypergryph.getOAuthTokenByScanCode(status.scanCode);
-    const grant = await pending.client.collections.hypergryph.grantAuthorizeCode(oauth);
-    const auth = await pending.client.signIn(grant.code);
-    const dId = (await pending.client.storage.getItem(STORAGE_DID_KEY)) ?? "";
-    if (!dId) throw new SklandServiceError("BAD_DATA", "森空岛设备凭证生成失败。", 502);
-    const now = Date.now();
-    const session: SklandSessionPayload = {
-      version: 3, cred: auth.cred, token: auth.token, dId, userId: auth.userId, selectedUid: "",
-      refreshedAt: now, expiresAt: now + SKLAND_SESSION_TTL_SECONDS * 1000, policyConsent: pending.policyConsent,
-    };
-    // Keep a completed exchange for retries; an aborted HTTP request must not lose it.
-    pending.identity = session;
-    return session;
-  })();
-  pending.identityTask = task;
-  try {
-    const session = await task;
-    throwIfAborted(signal);
-    return session ? { status: "authenticated", session } : { status: display };
-  } catch (error) {
-    if (signal?.aborted) throw signal.reason;
-    const status = scanStatusFromError(error);
-    if (status) {
-      if (status === "expired") pendingScans.delete(scanId);
-      return { status };
-    }
-    const known = publicError(error);
-    if (known.code === "AUTH_EXPIRED") pendingScans.delete(scanId);
-    throw known;
-  } finally {
-    if (pending.identityTask === task) pending.identityTask = undefined;
-  }
+  return { status: pending.displayStatus, ...(pending.scanCode ? { processing: true } : {}) };
 }
 
 export async function pollScan(scanId: string, websiteUserId: string, signal?: AbortSignal): Promise<{
   response: SklandQrStatusResponse;
   session?: SklandSessionPayload;
 }> {
-  cleanupScans();
-  throwIfAborted(signal);
-  const pending = findOwnedScan(pendingScans, scanId, websiteUserId);
-  if (!pending) return { response: { success: false, status: "expired", error: "二维码已失效，请刷新后重试。", code: "AUTH_EXPIRED" } };
+  const pending = await pollPendingScan(scanId, websiteUserId, signal, false);
+  if (!pending || pendingScans.get(scanId) !== pending) return { response: { success: false, status: "expired", error: "二维码已失效，请重新生成二维码。", code: "AUTH_EXPIRED" } };
+  signal?.throwIfAborted();
+  assertPendingScan(scanId, pending);
   if (pending.completed) return completedScanResult(pending.completed);
-  const now = Date.now();
-  if (now - pending.lastPollAt < 1_000) return { response: { success: true, status: "waiting" } };
-  pending.lastPollAt = now;
-  try {
-    const status = await pending.client.collections.hypergryph.getScanStatus(scanId);
-    throwIfAborted(signal);
-    if (!status.scanCode) return { response: { success: true, status: scanDisplayStatus(status.scanStatus ?? "") } };
-
-    const oauthToken = await pending.client.collections.hypergryph.getOAuthTokenByScanCode(status.scanCode);
-    throwIfAborted(signal);
-    assertUpstreamCapacity();
-    const completed = await completeOAuthLogin(pending.client, oauthToken, pending.policyConsent);
-    throwIfAborted(signal);
-    recentSklandOAuth.remember(websiteUserId, completed.session.cred, oauthToken);
-    pending.completed = completed;
-    return completedScanResult(completed);
-  } catch (error) {
-    if (signal?.aborted) throw signal.reason;
-    const status = scanStatusFromError(error);
-    if (status) {
-      if (status === "expired") pendingScans.delete(scanId);
-      return {
-        response: {
-          success: status !== "expired",
-          status,
-          ...(status === "expired" ? { error: "二维码已失效，请刷新后重试。", code: "AUTH_EXPIRED" } : {}),
-        },
-      };
-    }
-    const known = publicError(error);
-    if (known.code === "AUTH_EXPIRED") pendingScans.delete(scanId);
-    throw known;
-  }
+  return { response: { success: true, status: pending.displayStatus, ...(pending.scanCode ? { processing: true } : {}) } };
 }
 
 export async function loadSessionSnapshot(payload: SklandSessionPayload, forceRefresh = false): Promise<{

@@ -31,9 +31,13 @@ test("QR identity exchange is owner-scoped, deduplicated, retryable after abort 
   assert.equal((await pollScan("scan-fixture", "owner")).response.status, "expired", "Arknights cannot consume Endfield scan");
   assert.equal(reads, 0);
   const first = pollSklandIdentity("scan-fixture", "endfield:owner", abort.signal);
-  assert.equal((await pollSklandIdentity("scan-fixture", "endfield:owner")).status, "waiting");
+  const duplicate = pollSklandIdentity("scan-fixture", "endfield:owner");
   finish();
-  await assert.rejects(first, { name: "AbortError" });
+  assert.deepEqual(await first, { status: "scanned", processing: true });
+  assert.deepEqual(await duplicate, { status: "scanned", processing: true });
+  assert.deepEqual(await pollSklandIdentity("scan-fixture", "endfield:owner", abort.signal), { status: "scanned", processing: true });
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(abort.signal.aborted, true);
   const retried = await pollSklandIdentity("scan-fixture", "endfield:owner");
   assert.equal(retried.status, "authenticated");
   assert.equal(retried.session?.selectedUid, "");
