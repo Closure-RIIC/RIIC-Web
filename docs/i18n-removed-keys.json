@@ -916,6 +916,10 @@
     {
       "file": "apps/endfield/messages/zh-CN/Skland.json",
       "key": "Skland.endfield"
+    },
+    {
+      "file": "apps/arknights/messages/zh-CN/AK_Raw_skland_components.json",
+      "key": "AK_Raw_skland_components.refreshing"
     }
   ]
 }

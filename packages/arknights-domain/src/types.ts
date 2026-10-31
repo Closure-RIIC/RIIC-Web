@@ -802,6 +802,7 @@ export interface SklandQrStartResponse {
 export interface SklandQrStatusResponse {
   success: boolean;
   status: "waiting" | "scanned" | "expired" | "authenticated";
+  processing?: boolean;
   scheduleSnapshot?: SklandScheduleSnapshot;
   statusSnapshot?: SklandStatusSnapshot;
   bindingCount?: number;
@@ -1517,10 +1518,12 @@ export interface SklandQrStartData {
   scanId: string;
   scanUrl: string;
   expiresInSeconds: number;
+  refreshAfterSeconds?: number;
 }
 
 export interface SklandQrStatusData {
   status: "waiting" | "scanned" | "expired" | "authenticated";
+  processing?: boolean;
   accounts?: SklandAccountSummary[];
   activeAccountId?: string | null;
   bindingCount?: number;

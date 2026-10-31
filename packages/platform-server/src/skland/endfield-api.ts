@@ -6,7 +6,7 @@ import { requireWebsiteSession } from "../auth/authorization";
 import { setResponseCookie } from "../response-cookies";
 import { bindSklandAccount } from "./bindings";
 import { parseSklandCredential, SklandCredentialFormatError } from "./credential";
-import { consumeEndfieldScan, endfieldCredential, endfieldRoles, endfieldSync, invalidateEndfieldSnapshots, pollEndfieldScan, startEndfieldScan } from "./endfield-adapter";
+import { consumeEndfieldScan, endfieldScanCompletionSignal, endfieldCredential, endfieldRoles, endfieldSync, invalidateEndfieldSnapshots, pollEndfieldScan, startEndfieldScan } from "./endfield-adapter";
 import { enforceSklandPollRateLimit } from "./poll-rate-limit";
 import { assertSklandAvailable, readSklandAccountStore, sklandErrorResponse } from "./http";
 import { sealOwnedSklandAccount, websiteUserOwnerTag, sklandAccountCookieName, SklandAccountLimitError, type SklandStoredAccount } from "./session";
@@ -41,7 +41,7 @@ async function handle(request: Request, action: string) {
       enforceRateLimit("endfield-skland-status", owner, 120, 10 * 60_000);
       enforceRateLimit("endfield-skland-status-ip", requestClientIp(request), 300, 10 * 60_000);
     }
-    else {
+    else if (action !== "qr") {
       enforceRateLimit("endfield-skland-account", owner, 30, 10 * 60_000);
       enforceRateLimit("endfield-skland-ip", requestClientIp(request), 90, 10 * 60_000);
     }
@@ -70,12 +70,14 @@ async function handle(request: Request, action: string) {
       if (typeof body?.scanId !== "string" || !body.scanId.trim() || body.scanId.length > 256) throw new PublicApiError("AIC-REQ-1001");
       const scanId = body.scanId.trim();
       const authenticated = await pollEndfieldScan(scanId, owner, request.signal);
-      if (!("session" in authenticated)) return successResponse({ status: authenticated.status }, requestId);
-      request.signal.throwIfAborted();
+      if (!("session" in authenticated)) return successResponse({ status: authenticated.status, processing: authenticated.processing }, requestId);
+      const completionSignal = endfieldScanCompletionSignal(scanId, owner, request.signal);
+      completionSignal.throwIfAborted();
       const account = upsertEndfieldAccount(directAccounts, authenticated.session, authenticated.result);
       await bindSklandAccount(owner, authenticated.session.userId);
-      request.signal.throwIfAborted();
+      completionSignal.throwIfAborted();
       const response = successResponse({ status: "authenticated", accountId: account.accountId, roles: authenticated.result }, requestId);
+      endfieldScanCompletionSignal(scanId, owner, completionSignal).throwIfAborted();
       writeAccount(response, request, account, owner, true);
       consumeEndfieldScan(scanId, owner);
       return response;

@@ -1203,7 +1203,7 @@ test("Skland QR polling pauses while hidden or offline and resumes immediately",
   await expect.poll(() => pollRequests, { timeout: 2_000 }).toBe(2);
 });
 
-test("Skland QR expires locally without polling after its deadline", async ({ page }) => {
+test("Skland QR expires locally and waits for manual refresh without polling after its deadline", async ({ page }) => {
   await mockApis(page, { sklandConfigured: true });
   let qrStartRequests = 0;
   let pollRequests = 0;
@@ -1219,6 +1219,7 @@ test("Skland QR expires locally without polling after its deadline", async ({ pa
           scanId,
           scanUrl: `hypergryph://scan_login?scanId=${scanId}`,
           expiresInSeconds: qrStartRequests === 1 ? 0.2 : 600,
+          refreshAfterSeconds: 0,
         },
         requestId,
       }),
@@ -1240,8 +1241,12 @@ test("Skland QR expires locally without polling after its deadline", async ({ pa
   await page.getByRole("checkbox").nth(0).check();
   await page.getByRole("checkbox").nth(1).check();
 
-  await expect.poll(() => qrStartRequests).toBe(2);
+  await expect(page.locator("[data-skland-login-panel]").getByRole("status")).toContainText("二维码已过期");
+  await expect(page.getByRole("img", { name: "森空岛登录二维码" })).toHaveCount(0);
+  expect(qrStartRequests).toBe(1);
   expect(pollRequests).toBe(0);
+  await page.getByRole("button", { name: "刷新二维码", exact: true }).click();
+  await expect.poll(() => qrStartRequests).toBe(2);
   await expect(page.getByRole("img", { name: "森空岛登录二维码" })).toBeVisible();
 });
 
@@ -1560,7 +1565,7 @@ test("Skland login replaces a scanned QR with progress while authentication fini
   await expect(page.getByRole("img", { name: "森空岛登录二维码" })).toBeVisible();
   await expect(page.locator("[data-skland-login-progress]")).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole("img", { name: "森空岛登录二维码" })).toHaveCount(0);
-  await expect(page.locator("[data-skland-login-panel]").getByRole("status")).toContainText("已扫码，正在等待森空岛 App 确认并完成登录…");
+  await expect(page.locator("[data-skland-login-panel]").getByRole("status")).toContainText("扫码成功，请在森空岛 App 中确认。");
 });
 
 test("Skland restore waits for website authentication and then starts summary and full requests once", async ({ page }) => {

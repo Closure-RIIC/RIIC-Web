@@ -280,7 +280,7 @@ export function sklandErrorResponse(
   }
   if (error instanceof SklandServiceError) {
     const code = publicCodeForSklandServiceError(error.code);
-    return failureResponse(new PublicApiError(code, {cause:error}), requestId, route, startedAt, "AIC-SYS-5000", request);
+    return failureResponse(new PublicApiError(code, { cause: error, message: error.message, retryAfter: error.retryAfterSeconds, retryable: error.retryable }), requestId, route, startedAt, "AIC-SYS-5000", request);
   }
   return failureResponse(new PublicApiError("AIC-SYS-5000", {cause:error}), requestId, route, startedAt, "AIC-SYS-5000", request);
 }

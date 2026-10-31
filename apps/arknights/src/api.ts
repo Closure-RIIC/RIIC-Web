@@ -237,11 +237,12 @@ export function getSklandAccounts(mode: "full" | "summary" = "full"): Promise<Sk
   return requestData(sklandApiPath(mode === "summary" ? "/accounts?mode=summary" : "/accounts"));
 }
 
-export function startSklandQr(consent: SklandPolicyConsentRequest): Promise<SklandQrStartData> {
+export function startSklandQr(consent: SklandPolicyConsentRequest, signal?: AbortSignal): Promise<SklandQrStartData> {
   return requestData(sklandApiPath("/auth/qr"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ consent }),
+    signal,
   });
 }
 

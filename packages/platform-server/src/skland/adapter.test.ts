@@ -5,11 +5,10 @@ import { URL } from "node:url";
 
 import {
   findOwnedScan,
-  findReusableScan,
+  scanStartRetryAfter,
   hasScanStartCapacity,
   MAX_CONCURRENT_SCAN_STARTS,
   scanActorKey,
-  type ReusableScanRecord,
 } from "./scan-admission.ts";
 import {
   classifySklandUpstreamError,
@@ -30,29 +29,19 @@ test("scan actor keys isolate website accounts without retaining raw user ids", 
   assert.equal(first.includes("website-user-one"), false);
 });
 
-test("an active QR code is reused only for the same website account and policy", () => {
-  const now = 10 * 60 * 1000;
-  const actorKey = scanActorKey("website-user");
-  const record: ReusableScanRecord = {
-    actorKey,
-    scanUrl: "https://example.com/scan",
-    createdAt: now - 30_000,
-    policyConsent: consent,
-  };
-  const scans = [["scan-one", record]] as const;
-
-  assert.deepEqual(findReusableScan(scans, actorKey, consent, now), {
-    scanId: "scan-one",
-    scanUrl: record.scanUrl,
-    expiresInSeconds: 570,
-  });
-  assert.equal(findReusableScan(scans, scanActorKey("another-user"), consent, now), null);
-  assert.equal(findReusableScan(scans, actorKey, { ...consent, privacyVersion: "privacy-v2" }, now), null);
-  assert.equal(findReusableScan(scans, actorKey, consent, now + 10 * 60 * 1000), null);
+test("QR admission combines the ten-second interval and both rolling windows", () => {
+  const start = 1_000_000;
+  const account = [0, 10_000, 20_000, 30_000, 40_000].map(offset => start + offset);
+  assert.equal(scanStartRetryAfter([], [], start), 0);
+  assert.equal(scanStartRetryAfter([start], [], start + 9_999), 1);
+  assert.equal(scanStartRetryAfter([start], [], start + 10_000), 0);
+  assert.equal(scanStartRetryAfter(account, [], start + 40_000), 560);
+  assert.equal(scanStartRetryAfter(account, [], start + 600_000), 0);
+  assert.equal(scanStartRetryAfter(account, Array(10).fill(start + 100_000), start + 600_000), 100);
 });
 
 test("QR polling cannot read or consume another website account's scan", () => {
-  const record: ReusableScanRecord = {
+  const record = {
     actorKey: scanActorKey("website-user-a"),
     scanUrl: "https://example.com/scan",
     createdAt: Date.now(),
@@ -71,8 +60,8 @@ test("the QR status route scopes polling and consumption to the authenticated we
     "utf8",
   );
   assert.match(route, /pollScan\(scanId, website\.user\.id, request\.signal\)/);
-  assert.match(route, /finalizeSklandAuthentication\([\s\S]+request\.signal\)/);
-  assert.match(route, /setSklandAccountStoreCookies[\s\S]+request\.signal\.throwIfAborted\(\)[\s\S]+consumeScan\(scanId, website\.user\.id\)/);
+  assert.match(route, /finalizeSklandAuthentication\([\s\S]+completionSignal\)/);
+  assert.match(route, /setSklandAccountStoreCookies[\s\S]+completionSignal\.throwIfAborted\(\)[\s\S]+consumeScan\(scanId, website\.user\.id\)/);
 });
 
 test("global QR protection limits only concurrent upstream starts", () => {
@@ -90,7 +79,8 @@ test("the ten-minute global quota that caused cross-account lockouts cannot retu
   assert.match(source, /scan:actor:/);
   assert.match(source, /scan:ip:/);
   assert.match(source, /scanStartTasks/);
-  assert.match(route, /enforceRateLimit\("skland-qr-account", website\.user\.id/);
+  assert.doesNotMatch(route, /enforceRateLimit/);
+  assert.match(route, /startScan\(website\.user\.id, ip, body\.consent\)/);
 });
 
 test("skland-kit response messages identify expired stored credentials", () => {
