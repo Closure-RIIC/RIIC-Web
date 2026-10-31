@@ -49,6 +49,22 @@ import hashlib, os, shlex, subprocess, sys
 from pathlib import Path
 root = Path(os.environ["TRANSFER_FIXTURE_ROOT"])
 args = sys.argv[1:]
+if "-O" in args:
+    assert args[args.index("-O") + 1] == "exit"
+    Path(args[args.index("-S") + 1]).unlink(missing_ok=True)
+    (root / "connection-closed").touch()
+    sys.exit(0)
+if "-fN" in args:
+    assert "ControlMaster=yes" in args and "ControlPersist=no" in args
+    counter = root / "connection-attempts"
+    count = int(counter.read_text()) + 1 if counter.exists() else 1
+    counter.write_text(str(count))
+    if count <= int(os.environ.get("TRANSFER_CONNECT_FAILURES", "0")):
+        sys.exit(255)
+    Path(next(arg.removeprefix("ControlPath=") for arg in args if arg.startswith("ControlPath="))).touch()
+    sys.exit(0)
+assert "ControlMaster=no" in args and "ProxyCommand=false" in args
+assert Path(args[args.index("-S") + 1]).exists(), "Authenticated transport was lost"
 target = next(i for i, value in enumerate(args) if value == "arkdeploy@fixture.invalid")
 remote = args[target + 1:]
 if len(remote) == 1:
@@ -56,6 +72,10 @@ if len(remote) == 1:
 def localize(value):
     return value.replace("/srv/riic-endfield-deploy", str(root))
 if remote[0] == "sudo":
+    with (root / "install-attempts").open("a") as record:
+        record.write("attempt\n")
+    if os.environ.get("TRANSFER_INSTALL_DISCONNECT"):
+        sys.exit(255)
     environment, sha, tree, digest = remote[-4:]
     archive = root / environment / (sha + ".tar.gz")
     assert hashlib.sha256(archive.read_bytes()).hexdigest() == digest
@@ -68,12 +88,15 @@ if os.environ.get("TRANSFER_CORRUPT_CACHE") and "--sort=name" in script:
 sys.exit(subprocess.run([localize(value) for value in remote], input=localize(script), text=True).returncode)
 ''')
         self.command("rsync", r'''
-import os, subprocess, sys
+import os, shlex, subprocess, sys
 from pathlib import Path
 args = sys.argv[1:]
 if not args:
     sys.exit(0)
 root = os.environ["TRANSFER_FIXTURE_ROOT"]
+transport = shlex.split(args[args.index("-e") + 1])
+assert "ControlMaster=no" in transport and "ProxyCommand=false" in transport
+assert Path(transport[transport.index("-S") + 1]).exists()
 args = [value.replace("arkdeploy@fixture.invalid:/srv/riic-endfield-deploy", root) for value in args]
 result = subprocess.run([os.environ["TRANSFER_FIXTURE_RSYNC"], "--no-whole-file", *args])
 if os.environ.get("TRANSFER_INTERRUPT"):
@@ -104,6 +127,31 @@ sys.exit(1 if os.environ.get("TRANSFER_STALE") else 0)
     def installed(self):
         record = self.remote / "installed"
         return record.read_text().splitlines() if record.exists() else []
+
+    def test_connection_retry_reuses_transport_and_closes_it(self):
+        digest = self.pack()
+        result = self.transfer(TRANSFER_CONNECT_FAILURES="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.installed(), [digest])
+        self.assertEqual((self.remote / "connection-attempts").read_text(), "2")
+        self.assertTrue((self.remote / "connection-closed").exists())
+
+    def test_connection_retry_is_bounded_and_never_installs(self):
+        self.pack()
+        result = self.transfer(TRANSFER_CONNECT_FAILURES="9")
+        self.assertEqual(result.returncode, 255, result.stderr)
+        self.assertEqual((self.remote / "connection-attempts").read_text(), "3")
+        self.assertEqual(self.installed(), [])
+        self.assertTrue((self.remote / "connection-closed").exists())
+
+    def test_install_disconnect_does_not_replay_remote_command(self):
+        self.pack()
+        result = self.transfer(TRANSFER_INSTALL_DISCONNECT="1")
+        self.assertEqual(result.returncode, 255, result.stderr)
+        self.assertEqual((self.remote / "connection-attempts").read_text(), "1")
+        self.assertEqual((self.remote / "install-attempts").read_text().splitlines(), ["attempt"])
+        self.assertEqual(self.installed(), [])
+        self.assertTrue((self.remote / "connection-closed").exists())
 
     def test_delta_deletion_and_isolation(self):
         first = self.pack()
