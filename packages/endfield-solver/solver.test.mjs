@@ -5,6 +5,7 @@ import { prepare } from "./model.mjs";
 import { clueRankOf, resetCaches, solveLayout } from "./upstream/optimizer.mjs";
 import { isUseful } from "./upstream/candidates.mjs";
 import { verifyPlan } from "./upstream/verify-plan.mjs";
+import { randomCase } from "./fuzz-verify.mjs";
 
 const input = {
   operators: catalog.slice(0, 8).map(o => ({ name: o.name, elite: 0 })),
@@ -205,10 +206,10 @@ test("a roster without center recovery skills leaves the center unmanned", () =>
 test("clue-probability priority follows tier, clue 3 and clue 7 tiers", () => {
   const names = ["阿列什", "艾维文娜", "噗切娜", "黎风", "弭弗", "余烬", "赛希", "弧光", "别礼"];
   const expected = {
-    4: [1, 1, 1, 3, 3, 1, 1, 1, 5],
+    4: [1, 1, 1, 3, 3, 1, 1, 1, 7],
     3: [2, 2, 1, 4, 3, 2, 2, 2, 6],
     2: [2, 2, 2, 4, 4, 2, 2, 2, 6],
-    1: [7, 7, 2, 7, 4, 7, 7, 7, 7],
+    1: [5, 5, 2, 5, 4, 5, 5, 5, 5],
   };
   for (const [elite, ranks] of Object.entries(expected)) {
     const { ops } = prepare({
@@ -239,9 +240,75 @@ test("guest-room fillers prefer clue-probability operators over plain whiteboard
   const fillers = [...guest.a, ...guest.b].filter(isFiller);
   assert.ok(fillers.length > 0, "the default plan still uses guest-room fillers");
   for (const name of fillers) {
-    assert.ok(clueRankOf(byName.get(name)) < 7, `${name} should carry a clue-probability skill`);
+    assert.ok(clueRankOf(byName.get(name)) < 5, `${name} should carry a clue-probability skill better than a whiteboard`);
   }
   assert.ok(Math.abs(result.scores["线索"] - 95.04) < 1e-9);
+});
+
+test("clue 7 ranks below a plain whiteboard and is only used when no whiteboard is left", () => {
+  const rankAt = elite => {
+    const { ops } = prepare({
+      operators: [{ name: "别礼", elite }, { name: "伊冯", elite: 4 }],
+      options: { ...DEFAULT_OPTIONS },
+    });
+    return { bila: clueRankOf(ops[0]), plain: clueRankOf(ops[1]) };
+  };
+  const e4 = rankAt(4);
+  const e2 = rankAt(2);
+  assert.equal(e4.bila, 7, "别礼 E4 unlocks β7, and β always sits after α");
+  assert.equal(e2.bila, 6, "without β7 the α7 tier applies");
+  assert.equal(e4.plain, 5, "a plain operator sits on the whiteboard tier");
+  assert.ok(e4.plain < e2.bila && e2.bila < e4.bila, "whiteboard < α7 < β7");
+
+  // 反向：只剩别礼、没有白板时，他仍然要被用上（覆盖下限会优先把他派去填舱，
+  // 所以只断言"出现在方案里"，不限定必须是会客室补位）
+  const guestOnly = solve({
+    operators: ["艾尔黛拉", "洛茜", "别礼"].map(name => ({ name, elite: 4 })),
+    options: { ...DEFAULT_OPTIONS, levels: { center: 5, mfg1: 1, mfg2: 1, grow: 0, guest: 3 }, grow: { 晶植: 0, 菌类: 0, 矿物: 0 } },
+  });
+  const used = guestOnly.rooms.flatMap(room => [...room.a, ...room.b]);
+  assert.ok(used.includes("别礼"), "clue 7 must still be used when nothing else is free");
+});
+
+test("a spare whiteboard displaces clue 7 from the guest room", () => {
+  const roster = [
+    "艾尔黛拉", "洛茜", "别礼",
+    "佩丽卡", "陈千语", "狼卫", "洁尔佩塔", "昼雪", "莱万汀", "伊冯", "大潘",
+  ].map(name => ({ name, elite: 4 }));
+  const result = solve({
+    operators: roster,
+    options: { ...DEFAULT_OPTIONS, levels: { center: 5, mfg1: 1, mfg2: 1, grow: 0, guest: 3 }, grow: { 晶植: 0, 菌类: 0, 矿物: 0 } },
+  });
+  const guest = result.rooms.find(room => room.key === "会客室");
+  assert.ok(![...guest.a, ...guest.b].includes("别礼"), "别礼 must not sit in the guest room while a whiteboard is spare");
+});
+
+test("pair layouts report each facility's value from its own emitted crew", () => {
+  // 回归：同类双舱（2干员）下，pick 曾沿用候选对象上"另一个签名组"的评估结果，
+  // 导致记录的 72.320567 与真实 68.238032 不一致、verifyPlan 判失败。
+  const roster = [
+    "佩丽卡", "陈千语", "狼卫", "洁尔佩塔", "昼雪", "莱万汀", "伊冯", "大潘", "卡契尔",
+    "萤石", "安塔尔", "艾尔黛拉", "别礼", "骏卫", "汤汤", "洛茜", "庄方宜", "诀", "卡缪",
+    "提弗洛斯", "祀",
+  ].map(name => ({ name, elite: 4 }));
+  const result = solve({ operators: roster, options: { ...DEFAULT_OPTIONS, mfg: "2干员", time: 30000, budget: 2000000 } });
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  assert.ok(Math.abs(result.scores["干员经验"] - 127.16) < 0.05, `干员经验 ${result.scores["干员经验"]}`);
+});
+
+test("randomized self-consistency holds for the audit seeds", () => {
+  // 这三组来自随机化审计（fuzz-verify.mjs）：47/136 曾因"人都被塞进前一类别"直接无解，
+  // 156 曾因助力周期指向已被替换掉的旧班底而校验失败。
+  for (const seed of [47, 136, 156]) {
+    const { operators, options } = randomCase(seed);
+    const result = solve({ operators, options });
+    assert.equal(result.verification.ok, true, `seed ${seed}: ${result.verification.errors.join(";")}`);
+    const byCat = {};
+    for (const room of result.rooms) byCat[room.category] = (byCat[room.category] ?? 0) + room.value;
+    for (const [cat, sum] of Object.entries(byCat)) {
+      assert.ok(Math.abs((result.scores[cat] ?? 0) - sum) < 1e-6, `seed ${seed}: 类别 ${cat} 不等于舱室之和`);
+    }
+  }
 });
 
 test("stronger B shift moves to A when the facility efficiency does not drop", () => {
