@@ -107,12 +107,16 @@ function pairMap(root, centerKey) {
 const charIdOf = (op) => op.charId || op.name;
 
 /**
- * 会客室补位优先级（决策 Q13）：只分 α/β 与线索编号，不看 10%/15%。
- *   1 β1/2/4/5/6 → 2 α1/2/4/5/6 → 3 β3 → 4 α3 → 5 β7 → 6 α7 → 7 白板
+ * 会客室补位优先级（决策 Q13，2026-10-30 改）：
+ *   1 β1/2/4/5/6 → 2 α1/2/4/5/6 → 3 β3 → 4 α3 → 5 白板 → 6 α7 → 7 β7
+ * 线索 7 被压到白板之下（只有没有其他线索干员、也没有白板时才用）。
  * `op.skills` 已经按精英化过滤，所以 β 未解锁时这里只会看到 α。
+ * 档位严格按 α/β 排：只要解锁了 β 就按 β 计（β 永远在 α 之后），没有 β 才退回 α。
+ * 因此别礼 E4（α7+β7）按 β7 = 7 计，E2/E3（只有 α7）按 α7 = 6 计。
  */
 export function clueRankOf(op) {
-  let best = 7;
+  let bestBeta = Infinity;
+  let bestAlpha = Infinity;
   for (const s of op.skills) {
     if (s.kind !== '概率') continue;
     const tier = s.tier === 2 ? 2 : 1;
@@ -120,13 +124,16 @@ export function clueRankOf(op) {
     const rank = clue === 3
       ? (tier === 2 ? 3 : 4)
       : clue === 7
-        ? (tier === 2 ? 5 : 6)
+        ? (tier === 2 ? 7 : 6)
         : clue >= 1 && clue <= 6
           ? (tier === 2 ? 1 : 2)
-          : 7;
-    if (rank < best) best = rank;
+          : Infinity;
+    if (tier === 2) { if (rank < bestBeta) bestBeta = rank; }
+    else if (rank < bestAlpha) bestAlpha = rank;
   }
-  return best;
+  if (Number.isFinite(bestBeta)) return bestBeta;
+  if (Number.isFinite(bestAlpha)) return bestAlpha;
+  return 5;
 }
 
 // ───────────────────────── 中枢枚举 ─────────────────────────
@@ -599,6 +606,14 @@ function canonicalCrew(cand, table) {
   return cand;
 }
 
+/** 一份 plan 的"取值签名"：只要这些量相同，模拟结果必然相同（补位身份不影响） */
+function planSig(ctx, spec, stA, stB, nA, nB, h, assist) {
+  const a = assist
+    ? `${assist.points}|${assist.shift}|${(assist.cycle || []).map((day) => day.join('.')).join('/')}`
+    : '-';
+  return `${sigIdOf(stA)}|${stB ? sigIdOf(stB) : 'S'}|${nA}|${nB}|${h}|${a}|${ctx.centerKey}|${spec.key}`;
+}
+
 function simulateCand(ctx, table, cand, assistPlan) {
   canonicalCrew(cand, table);
   const fill = fillCrews(cand, table, table.fillPool);
@@ -613,6 +628,13 @@ function simulateCand(ctx, table, cand, assistPlan) {
     fillA: fill.fillA,
     fillB: fill.fillB,
   };
+  // 记录"这份结果到底是按哪套人算的"，供 buildPick 判断能否直接复用
+  cand.provenSig = planSig(
+    ctx, table.spec,
+    crewStats(ctx.ops, plan.crewA, table.spec, plan.nA),
+    cand.single ? null : crewStats(ctx.ops, plan.crewB, table.spec, plan.nB),
+    plan.nA, plan.nB, plan.h, assistPlan || cand.assist,
+  );
   if (cand.single) {
     return simulateSingleFacility({
       facility: table.spec, ops: ctx.ops, timeline: ctx.center.timeline, plan, limits: ctx.cfg.limits,
@@ -625,8 +647,16 @@ function simulateCand(ctx, table, cand, assistPlan) {
 }
 
 function simKey(ctx, table, cand, assistPlan) {
+  // 关键：用**签名 ID**（unit|d|n）而不是组下标 si/sj。
+  // si/sj 只在"同一张表"里有效，而 `avail` 不同的 DFS 节点会重新分组、下标含义随之改变；
+  // 用下标做键会让"签名 A 的模拟值"被"签名 B 的候选"命中（实测：+60% 组的 72.320567
+  // 被 +50% 组拿去用，导致 verifyPlan 重算不一致）。
+  const gA = table.groups[cand.si];
+  const gB = cand.single ? null : table.groups[cand.sj];
   const a = assistPlan ? `${assistPlan.shift}:${assistPlan.cycle.map((d) => d.join('-')).join('|')}` : '-';
-  return `${ctx.center.hCenter}|${ctx.center.uA}|${ctx.center.uB}|${table.spec.key}|${cand.si}|${cand.sj}|${cand.single ? 'S' : cand.h}|${a}`;
+  return `${ctx.center.hCenter}|${ctx.center.uA}|${ctx.center.uB}|${table.spec.key}`
+    + `|${sigIdOf(gA.st)}|${gB ? sigIdOf(gB.st) : 'S'}|${gA.n}|${gB ? gB.n : 0}`
+    + `|${cand.single ? 'S' : cand.h}|${a}`;
 }
 
 /** 真值：稳定 → 闭式（精确）；衰减 → 逐日模拟（带缓存、不收敛标记） */
@@ -637,6 +667,13 @@ function evaluateCand(ctx, table, cand) {
   if (cand.stable) {
     cand.currentValue = cand.cf;
     cand.converged = true;
+    const gA = table.groups[cand.si];
+    const gB = cand.single ? null : table.groups[cand.sj];
+    cand.provenSig = planSig(
+      ctx, table.spec, gA.st, gB ? gB.st : null,
+      cand.nA ?? table.seats, cand.single ? 0 : (cand.nB ?? table.seats),
+      cand.single ? 24 : cand.h, null,
+    );
     return cand;
   }
   const key = simKey(ctx, table, cand, null);
@@ -648,6 +685,17 @@ function evaluateCand(ctx, table, cand) {
     ctx.simCache.set(key, sim);
     ctx.counters.simulated += 1;
     noteSim(ctx, sim);
+  }
+  // 结果按 (si,sj) 缓存 ⇒ 它代表的是"签名组"的值，不是 cand.stA 的值；
+  // 记下这份值的来源签名，`buildPick` 只在输出人选与之吻合时复用。
+  if (!cand.provenSig) {
+    const gA = table.groups[cand.si];
+    const gB = cand.single ? null : table.groups[cand.sj];
+    cand.provenSig = planSig(
+      ctx, table.spec, gA.st, gB ? gB.st : null,
+      cand.nA ?? table.seats, cand.single ? 0 : (cand.nB ?? table.seats),
+      cand.single ? 24 : cand.h, null,
+    );
   }
   if (!sim.converged) {
     noteUnresolved(ctx, cand.bound ?? cand.cf);
@@ -739,10 +787,14 @@ function applyAssist(ctx, table, cand, assistLeft) {
       best = { value: sim.avg, assist: variant, assistUsed: variant.points, simulation: sim };
     }
   }
+  // 变体评估会改写 cand.provenSig（按变体的助力周期算），若最终没选助力，
+  // 要把签名还原成"无助力那份值"的来源签名，否则后续 buildPick 会白白重算一次。
+  const baseSig = cand.provenSig;
   cand.currentValue = best.value;
   cand.assist = best.assist;
   cand.assistUsed = best.assistUsed;
   cand.simulation = best.simulation;
+  if (!best.assist) cand.provenSig = baseSig;
   return cand;
 }
 
@@ -1320,7 +1372,96 @@ function realizeFillerVariants(ctx, table, cand, subA, subB, catIdx, usedInCateg
   return out;
 }
 
+/**
+ * pick 的数值必须由**它自己要输出的这批人**算出来。
+ *
+ * 候选对象上的 `currentValue` 是"签名组"的评估结果，而 `buildPick` 拿到的是该签名的某个
+ * *具体实现*（`subA/subB`）。同类双舱路径下两者可能不同源（实测：记录的 72.320567 来自
+ * `莱万汀/骏卫/卡缪` 的 +60% 组，实际输出的是 `狼卫/洁尔佩塔/莱万汀` 的 +50% 组），
+ * 于是报告值比真实值高 4.08、`verifyPlan` 判不一致。
+ *
+ * 这里按"实际人选的签名 + 班次人数 + 换班点 + 中枢 + 助力"重新取模拟值并缓存：
+ * 键全部取自将要输出的那份 plan，保证 `trueValue` 与 `simulation` 自洽。
+ */
+function pickValueOf(ctx, table, cand, subA, subB, fillers, assist) {
+  const seats = table.seats;
+  const nA = cand.nA ?? seats;
+  const nB = cand.single ? 0 : (cand.nB ?? seats);
+  const stA = crewStats(ctx.ops, subA, table.spec, nA);
+  const stB = cand.single ? null : crewStats(ctx.ops, subB, table.spec, nB);
+  // 快路径：这份 plan 的取值签名与"候选身上那份结果"的来源签名一致 ⇒ 直接复用，
+  // 保证 `trueValue` 与将要输出的人选/助力周期自洽；对不上就重新模拟。
+  const emittedSig = planSig(ctx, table.spec, stA, stB, nA, nB, cand.single ? 24 : cand.h, assist);
+  if (cand.provenSig === emittedSig && Number.isFinite(cand.currentValue)) {
+    return { value: cand.currentValue, simulation: cand.simulation || null, stA, stB, closedForm: !cand.simulation };
+  }
+  const key = emittedSig;
+  let rec = ctx.pickCache.get(key);
+  if (rec) return rec;
+  const plan = {
+    h: cand.single ? 24 : cand.h,
+    crewA: subA,
+    crewB: cand.single ? EMPTY : subB,
+    fillCrewA: fillers.fillCrewA,
+    fillCrewB: fillers.fillCrewB,
+    nA,
+    nB,
+  };
+  const sim = cand.single
+    ? simulateSingleFacility({
+      facility: table.spec, ops: ctx.ops, timeline: ctx.center.timeline, plan, limits: ctx.cfg.limits,
+    })
+    : simulateFacility({
+      facility: table.spec, ops: ctx.ops, timeline: ctx.center.timeline, plan,
+      limits: ctx.cfg.limits, assistPlan: assist || null,
+    });
+  rec = { value: sim.avg, simulation: sim, stA, stB };
+  ctx.pickCache.set(key, rec);
+  return rec;
+}
+
+/**
+ * 助力周期里的人名索引是"规范人选"的下标；输出时换成同签名的另一批人（`subA/subB`）后，
+ * 这些下标就不再指向受助班次。按**位置**重映射：同一签名组内第 k 个人对第 k 个人，
+ * 人数与签名都一致，所以效果等价（实测：培养舱 A 班原为 别礼/汤汤/安塔尔，
+ * 周期里却写着 噗切娜 → verifyPlan 报"目标不属于受助班次"）。
+ */
+function remapAssistCycle(cycle, fromA, toA, fromB, toB) {
+  const map = new Map();
+  const pairUp = (from, to) => {
+    const a = toIndices(from);
+    const b = toIndices(to);
+    const n = Math.min(a.length, b.length);
+    for (let k = 0; k < n; k += 1) map.set(a[k], b[k]);
+  };
+  pairUp(fromA, toA);
+  pairUp(fromB, toB);
+  return (cycle || []).map((day) => day.map((i) => (map.has(i) ? map.get(i) : i)));
+}
+
 function buildPick(ctx, table, cand, subA, subB, fillers) {
+  // 先按"要输出的人选"重映射助力周期，再据此取值：周期里的人换了，注入对象也得跟着换，
+  // 否则记录值按旧周期算、verifyPlan 按新周期重算，两边对不上。
+  let assist = null;
+  if (cand.assist) {
+    const crewB = cand.single ? EMPTY : subB;
+    let cycle = remapAssistCycle(cand.assist.cycle, cand.subA, subA, cand.subB || EMPTY, crewB);
+    const shiftMembers = cand.assist.shift === 'A'
+      ? toIndices(union(subA, fillers.fillCrewA))
+      : toIndices(union(crewB, fillers.fillCrewB));
+    // 重映射后仍可能指向"已被整体替换掉的旧班底"（实测：周期里写着 噗切娜，A 班却是 别礼/汤汤/安塔尔）。
+    // 这时按受助班次的实际在岗人员重建周期，保留每天的点数与轮转形状。
+    const valid = shiftMembers.length > 0 && cycle.every((day) => day.every((i) => shiftMembers.includes(i)));
+    if (!valid && shiftMembers.length > 0) {
+      cycle = cycle.map((day, d) => Array.from(
+        { length: Math.max(1, day.length) },
+        (_, k) => shiftMembers[(d + k) % shiftMembers.length],
+      ));
+    }
+    assist = valid || shiftMembers.length > 0 ? { ...cand.assist, cycle } : null;
+  }
+  const v = pickValueOf(ctx, table, cand, subA, subB, fillers, assist);
+
   return {
     spec: table.spec,
     single: cand.single,
@@ -1334,13 +1475,13 @@ function buildPick(ctx, table, cand, subA, subB, fillers) {
     fillCrewB: fillers.fillCrewB,
     fillA: (cand.nA ?? table.seats) - sizeOf(subA),
     fillB: cand.single ? 0 : (cand.nB ?? table.seats) - sizeOf(subB),
-    stA: cand.stA,
-    stB: cand.single ? null : cand.stB,
-    trueValue: cand.currentValue,
-    assist: cand.assist || null,
+    stA: v.stA,
+    stB: cand.single ? null : v.stB,
+    trueValue: v.value,
+    assist,
     assistUsed: cand.assistUsed || 0,
-    simulation: cand.simulation || null,
-    closedForm: !cand.simulation,
+    simulation: v.simulation,
+    closedForm: v.closedForm,
   };
 }
 
@@ -1368,7 +1509,13 @@ function categoryBranchesBody(ctx, catIdx, usedMask, assistLeft) {
   // 决策 19 的支配判据：本类别所有设施都排满两班需要 Σ 2×工位数 人；
   // 可用人数够得上这个数时，n<工位数 的候选被"补白板严格更优"支配。
   const needAll = specs.reduce((s, spec) => s + 2 * Math.min(spec.slots || SLOTS, SLOTS), 0);
-  ctx.reducedSizes = sizeOf(ctx.availMask) < needAll;
+  ctx.reducedSizes = ctx.forceReduced || sizeOf(ctx.availMask) < needAll;
+  // 降级重跑时才允许"本类别无人可用 ⇒ 跳过该舱"：否则一个舱排不下会让整轮 dfs 返回空，
+  // 表现为"无方案"（实测：4 人 / 8 人名单 + 特定优先级）。缺口交给覆盖下限/`skipped` 报告。
+  if (ctx.forceReduced && sizeOf(ctx.availMask) === 0) {
+    ctx.approximations.add(`${cat} 无可用干员，已跳过该舱并记入缺口`);
+    return [emptyCategoryBranch()];
+  }
   if (process.env.DEBUG_DFS) {
     const nm = (m) => toIndices(m).map((i) => ctx.ops[i].name).join(',');
     console.error(`[catentry] cat=${cat} hc=${ctx.center.hCenter} avail=${nm(ctx.availMask)} need=${needAll} reduced=${ctx.reducedSizes}`);
@@ -1377,6 +1524,7 @@ function categoryBranchesBody(ctx, catIdx, usedMask, assistLeft) {
     console.error(`  [cat ${cat}] 缺人：可用 ${sizeOf(ctx.availMask)} < 满工位 ${needAll} ⇒ 展开 1..工位数`);
   }
   const tol = ctx.cfg.limits.valueTol;
+  let sameShapePair = true;   // 同类双舱：两座设施形状是否一致（供输出阶段选择各自的表）
 
   const tables = [];
   for (const spec of specs) {
@@ -1393,11 +1541,19 @@ function categoryBranchesBody(ctx, catIdx, usedMask, assistLeft) {
     value = res.value;
     combos = res.ties.map((c) => [c]);
   } else if (tables.length === 2) {
-    let res = maximizePair(ctx, tables[0]);
+    // 同类双舱：联合搜索（两舱共用一张表）只在**两座设施形状完全一致**时成立。
+    // 等级不同（工位数不同）时必须走成对扫描，否则第二座设施会套用第一座的工位数
+    // （实测 mfg 3+2：制造舱2 记了 3 人、实际只有 2 个工位，verifyPlan 判人数不合法）。
+    const sameShape = tables[0].seats === tables[1].seats
+      && JSON.stringify(Object.keys(tables[0].spec.weights)) === JSON.stringify(Object.keys(tables[1].spec.weights));
+    let res = sameShape ? maximizePair(ctx, tables[0]) : null;
     if (!res) {
-      ctx.approximations.add('同类双设施的相关干员过多，联合搜索退化为成对扫描');
+      ctx.approximations.add(sameShape
+        ? '同类双设施的相关干员过多，联合搜索退化为成对扫描'
+        : '同类双设施参数不一致（工位数或产出维度不同），退化为成对扫描');
       res = maximizePairScan(ctx, tables[0], tables[1]);
     }
+    sameShapePair = sameShape;
     if (res.exhausted) return [];
     value = res.value;
     combos = res.combos;
@@ -1503,16 +1659,22 @@ function categoryBranchesBody(ctx, catIdx, usedMask, assistLeft) {
       value = accepted;
     }
   } else {
-    // 两座设施内容相同（同一类别），值只需算一次；但输出要各自带正确的 spec
-    const tableFor = specs.map((spec, k) => (k === 0 ? tables[0] : { ...tables[0], spec }));
+    // 两座设施内容相同（同一类别），值只需算一次；但输出要各自带正确的 spec。
+    // 形状不一致时（等级不同）不能互换身份、也不能套用第一座的工位数，直接用各自的表。
+    const tableFor = specs.map((spec, k) => (k === 0 ? tables[0]
+      : (sameShapePair ? { ...tables[0], spec } : tables[1])));
     for (const combo of combos) {
       const total = combo.reduce((s, e) => s + e.currentValue, 0);
       if (total < value - tol) continue;
-      // 两座同类设施互换身份不改变产量 ⇒ 按占用串 canon 化，保证输出可复现
+      // 两座同类设施互换身份不改变产量 ⇒ 按占用串 canon 化，保证输出可复现（仅限同形状）
       const cidOf = (x) => `${toIndices(x.subA).map((i) => charIdOf(ctx.ops[i])).sort().join(",")}|${toIndices(x.subB || EMPTY).map((i) => charIdOf(ctx.ops[i])).sort().join(",")}`;
-      const ordered = combo.slice().sort((x, y) => (cidOf(x) < cidOf(y) ? -1 : cidOf(x) > cidOf(y) ? 1 : 0));
+      const ordered = sameShapePair
+        ? combo.slice().sort((x, y) => (cidOf(x) < cidOf(y) ? -1 : cidOf(x) > cidOf(y) ? 1 : 0))
+        : combo;
       addBranch(ordered.map((e, k) => ({
-        table: tableFor[k], cand: e, subA: e.subA, subB: e.subB,
+        // 形状一致：两舱共用第一座的候选表，只换 spec；形状不同：各用各的表（工位数/分组都不同）
+        table: sameShapePair ? tableFor[k] : (e.table || tableFor[k]),
+        cand: e, subA: e.subA, subB: e.subB,
       })), total);
     }
   }
@@ -2024,28 +2186,40 @@ export function solveLayout({ ops, cfg, testOptions = null }) {
     simCache: new Map(), availMask: allMask, gapsList: [], incumbent: null,
   };
 
-  let best = null;
   let centersVisited = 0;
-  for (const center of centers) {
-    if (budget.exhausted) break;
-    centersVisited += 1;
-    const ctx = {
-      ...base, center, cum: recoveryTable(center.timeline), memo: new Map(),
-      centerKey: centerFingerprint(center),
-    };
-    const res = dfs(ctx, 0, center.used, cfg.assistPoints, []);
-    if (!res || res === PRUNED) continue;
-    // 补位等价替换（§6.8 第 5 条）：白板换成字典序更小的 charId，值不变；必须在算 usedMask 之前做
-    upgradeFillers(ops, { picks: res.picks, center });
-    const used = res.picks.reduce(
-      (m, p) => union(m, union(union(p.crewA, p.crewB || EMPTY), union(p.fillCrewA || EMPTY, p.fillCrewB || EMPTY))),
-      center.used,
-    );
-    const metrics = metricsOf({ score: res.score, usedCount: sizeOf(used) });
-    const cand = { score: res.score, metrics, center, catRes: res.catRes, usedMask: used, picks: res.picks };
-    if (!best || comparePlans(metrics, best.metrics, cfg) > 0) best = cand;
-    // 跨中枢现任（P5）：下一条中枢就能用上，弱中枢会更早被剪
-    if (!base.incumbent || comparePlans(metrics, base.incumbent, cfg) > 0) base.incumbent = metrics;
+  const runCenters = (forceReduced) => {
+    let chosen = null;
+    for (const center of centers) {
+      if (budget.exhausted) break;
+      centersVisited += 1;
+      const ctx = {
+        ...base, center, cum: recoveryTable(center.timeline), memo: new Map(),
+        centerKey: centerFingerprint(center), pickCache: new Map(), forceReduced,
+      };
+      const res = dfs(ctx, 0, center.used, cfg.assistPoints, []);
+      if (!res || res === PRUNED) continue;
+      // 补位等价替换（§6.8 第 5 条）：白板换成字典序更小的 charId，值不变；必须在算 usedMask 之前做
+      upgradeFillers(ops, { picks: res.picks, center });
+      const used = res.picks.reduce(
+        (m, p) => union(m, union(union(p.crewA, p.crewB || EMPTY), union(p.fillCrewA || EMPTY, p.fillCrewB || EMPTY))),
+        center.used,
+      );
+      const metrics = metricsOf({ score: res.score, usedCount: sizeOf(used) });
+      const cand = { score: res.score, metrics, center, catRes: res.catRes, usedMask: used, picks: res.picks };
+      if (!chosen || comparePlans(metrics, chosen.metrics, cfg) > 0) chosen = cand;
+      // 跨中枢现任（P5）：下一条中枢就能用上，弱中枢会更早被剪
+      if (!base.incumbent || comparePlans(metrics, base.incumbent, cfg) > 0) base.incumbent = metrics;
+    }
+    return chosen;
+  };
+
+  let best = runCenters(false);
+  if (!best) {
+    // 决策 19 的支配判据只在"本类别把人都用完不会饿死后续类别"时成立。人手紧张 + 优先级把它们
+    // 先塞进第一个类别时，正解只能是"减员"，但该档已被剪掉 ⇒ 整轮无解（实测 4 人 / 8 人名单）。
+    // 这里退化成"允许减员"再跑一遍，保证至少给出一个可行方案（值可能低于满编）。
+    approximations.add('人手不足导致无解，已退化为允许减员重跑');
+    best = runCenters(true);
   }
 
   // 决策 65：覆盖下限（除中枢外每舱 ≥1 人）。只在最终方案缺舱时介入，因此满编场景下不影响既有结果。
@@ -2099,3 +2273,6 @@ export function solveLayout({ ops, cfg, testOptions = null }) {
     },
   };
 }
+
+
+
