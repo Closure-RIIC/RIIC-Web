@@ -13,7 +13,7 @@
     "release:pr": "node scripts/release-pr.mjs",
     "test:release-pr": "node --test scripts/release-pr.test.mjs",
     "test:pr-batch": "node --test --experimental-strip-types apps/arknights/src/wish-validation.test.ts packages/platform-server/src/auth/session-lifetime.test.ts",
-    "posttest": "npm run test:pr-batch && npm run test:training-planner && npm run test:route-preload",
+    "posttest": "npm run test:pr-batch && npm run test:training-planner && npm run test:route-preload && npm run test:skland-qr",
     "test:wishes-integration": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test apps/arknights/src/server/wishes.integration.test.mjs",
     "test:agent-resources": "node --experimental-strip-types --experimental-test-module-mocks --test apps/arknights/src/server/agent/message-history.test.ts apps/arknights/src/server/agent/answer-boundary.test.ts apps/arknights/src/server/agent/resource-policy.test.ts apps/arknights/src/server/agent/resource-import.test.ts apps/arknights/src/server/agent/resources-api.test.ts",
     "test:agent-resources-integration": "node --experimental-transform-types --test apps/arknights/src/server/agent/resources.integration.test.mjs",
@@ -108,7 +108,8 @@
     "i18n:check": "x18n check --no-cache",
     "i18n:ui": "x18n ui --no-cache",
     "i18n:generate": "node scripts/generate-i18n-loaders.mjs && node scripts/generate-i18n-features.mjs && node scripts/generate-i18n-usages.mjs",
-    "test:i18n": "node --test --experimental-strip-types scripts/i18n/*.test.mjs packages/contracts/locale.test.ts packages/shell/message-resources.test.ts apps/arknights/src/i18n/config.test.ts"
+    "test:i18n": "node --test --experimental-strip-types scripts/i18n/*.test.mjs packages/contracts/locale.test.ts packages/shell/message-resources.test.ts apps/arknights/src/i18n/config.test.ts",
+    "test:skland-qr": "node --experimental-transform-types --experimental-test-module-mocks --import ./scripts/register-hooks.mjs --test packages/platform-server/src/skland/scan-*.test.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

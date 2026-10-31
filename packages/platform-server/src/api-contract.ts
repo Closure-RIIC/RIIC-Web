@@ -79,6 +79,7 @@ export class PublicApiError extends Error {
       message?: string;
       fieldErrors?: ApiFieldError[];
       retryAfter?: number;
+      retryable?: boolean;
       cause?: unknown;
     } = {}
   ) {
@@ -87,7 +88,7 @@ export class PublicApiError extends Error {
     this.name = "PublicApiError";
     this.code = code;
     this.status = definition.status;
-    this.retryable = definition.retryable;
+    this.retryable = options.retryable ?? definition.retryable;
     this.fieldErrors = options.fieldErrors;
     this.retryAfter = options.retryAfter;
   }
