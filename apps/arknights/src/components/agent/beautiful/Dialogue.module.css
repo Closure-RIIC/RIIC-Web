@@ -107,7 +107,8 @@
   background: var(--card);
 }
 
-.avatar:has([data-fur-avatar]) { position: relative; z-index: 1; overflow: visible; }
+.avatar:has([data-fur-avatar]), .avatar:has([data-cloud-avatar]) { position: relative; z-index: 1; overflow: visible; }
+.avatar [data-cloud-avatar] { transform: scale(1.6); transform-origin: center; }
 
 .bubble {
   position: relative;

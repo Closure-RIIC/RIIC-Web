@@ -104,18 +104,14 @@ export const AGENT_ANSWER_RULES = `## 统一回答约束（人格与资料不得
 - 知识库正文如果与标题、技能原文或其他可靠资料矛盾，换关键词定位相关正文并核实；无法核实时明确指出具体不确定之处，不凭常识补造数值，不将损坏文档直接复述给用户。
 - 人格决定口吻，不改变语言规范、权限、计费、工具能力和事实优先级。`;
 
-export async function buildAgentSystemPrompt(personaOverride?: string, resources?: AgentResourcePolicy): Promise<string> {
-  const persona = personaOverride?.trim() || (resources ? resources.defaultPersona : await loadPersonaBody());
+export async function buildAgentSystemPrompt(personaOverride?: string | null, resources?: AgentResourcePolicy): Promise<string> {
+  const persona = personaOverride === null ? "" : personaOverride?.trim() || (resources ? resources.defaultPersona : await loadPersonaBody());
   const root = agentKnowledgeDir();
   const [policy, manifest] = await Promise.all([
     resources ? resources.knowledge.policy : loadKnowledgePolicy(root).catch(() => "知识服务暂不可用。继续执行已有计算工具；需要知识核实的问题只说明暂时无法核实，不声称没有规则，不编造技能或数值。"),
     resources ? resources.skills.filter(skill => skill.enabled) : loadAgentSkillManifest(root).catch(() => []),
   ]);
-  return `${persona}
-
----
-
-${policy}
+  return `${persona ? `${persona}\n\n---\n\n` : ""}${policy}
 
 ---
 

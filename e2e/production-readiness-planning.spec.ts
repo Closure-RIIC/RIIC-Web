@@ -1418,7 +1418,7 @@ test("the compact mobile navigation stays pinned while the account control belon
   await expect.poll(async () => (await page.locator("[data-app-content]").boundingBox())?.y ?? -1).toBeCloseTo(8, 0);
 });
 
-test("the initial onboarding is full-screen while other primary pages keep one content offset", async ({ page }) => {
+test("the calculator and primary pages share one content offset", async ({ page }) => {
   test.setTimeout(60_000);
   await mockApis(page, { sklandConfigured: true, sklandSnapshot: authenticatedSklandSnapshot });
 
@@ -1455,7 +1455,7 @@ test("the initial onboarding is full-screen while other primary pages keep one c
     for (const [index, pageTop] of regularPageTops.entries()) {
       expect(pageTop, `${viewport.width}px regular page ${index + 1}`).toBeCloseTo(regularPageTops[0], 0);
     }
-    expect(regularPageTops[0] - calculatorTop, `${viewport.width}px full-screen inset`).toBeCloseTo(16, 0);
+    expect(regularPageTops[0] - calculatorTop, `${viewport.width}px consistent content inset`).toBeCloseTo(0, 0);
   }
 });
 

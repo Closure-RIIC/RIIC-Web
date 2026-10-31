@@ -2,19 +2,21 @@ import type { UIMessage } from "ai";
 import type { AgentPersona, BuiltinAgentPersona } from "./agent-personas.ts";
 import { parsePersonaAvatar } from "./agent-persona-avatar.ts";
 
-export type AgentReplyPersona = { name?: string; avatarUrl?: string; mascot?: BuiltinAgentPersona["avatar"] };
+export type AgentReplyPersona = { mode?: "pure"; name?: string; avatarUrl?: string; mascot?: BuiltinAgentPersona["avatar"] };
 
 /** Save presentation with the question, independently of the browser's next selection. */
-export function snapshotAgentReplyPersona(persona: AgentPersona | null): AgentReplyPersona {
+export function snapshotAgentReplyPersona(persona: AgentPersona | null, mode?: "pure"): AgentReplyPersona {
+  if (mode === "pure") return { mode };
   return persona ? {
     name: persona.name,
     ...(persona.kind === "builtin" ? { mascot: persona.avatar } : { avatarUrl: persona.avatarUrl }),
   } : {};
 }
 
-function readReplyPersona(metadata: unknown): AgentReplyPersona {
+export function readAgentReplyPersona(metadata: unknown): AgentReplyPersona {
   const raw = (metadata as { replyPersona?: AgentReplyPersona } | null)?.replyPersona;
   if (!raw || typeof raw !== "object") return {};
+  if (raw.mode === "pure") return { mode: "pure" };
   return {
     name: typeof raw.name === "string" ? raw.name.slice(0, 40) : undefined,
     avatarUrl: parsePersonaAvatar(raw.avatarUrl),
@@ -47,11 +49,11 @@ export function buildAgentDisplayTurns(messages: UIMessage[], busy: boolean): Ag
   for (const message of messages) {
     if (message.role === "user") {
       turns.push({ kind: "user", key: message.id, message });
-      response = { kind: "response", key: `response:${message.id}`, messages: [], pending: false, persona: readReplyPersona(message.metadata) };
+      response = { kind: "response", key: `response:${message.id}`, messages: [], pending: false, persona: readAgentReplyPersona(message.metadata) };
       turns.push(response);
     } else if (message.role === "assistant") {
       if (!response) {
-        response = { kind: "response", key: `response:${message.id}`, messages: [], pending: false, persona: readReplyPersona(message.metadata) };
+        response = { kind: "response", key: `response:${message.id}`, messages: [], pending: false, persona: readAgentReplyPersona(message.metadata) };
         turns.push(response);
       }
       response.messages.push(message);

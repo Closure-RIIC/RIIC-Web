@@ -1,0 +1,35 @@
+.panel {
+  --onboarding-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --onboarding-complete: #2f6bff;
+  display: flex;
+  flex-direction: column;
+  max-width: min(760px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+}
+.header { flex: none; }
+.headingRow { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; }
+.count { flex: none; color: var(--muted-foreground); font-size: 13px; font-variant-numeric: tabular-nums; }
+.body { display: block; flex: 0 1 auto; min-height: 0; max-height: 420px; overflow-y: auto; container-type: inline-size; scrollbar-width: thin; overscroll-behavior: contain; }
+.tasks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
+.task { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 16px 16px 14px; border: 1px solid var(--border); border-radius: 14px; background: var(--card); animation: task-in 480ms var(--onboarding-ease) both; transition: background-color 260ms ease, border-color 260ms ease; }
+.task[data-status="complete"] { background: color-mix(in srgb, var(--card) 50%, var(--muted)); }
+.title { max-width: 100%; margin: 0; overflow-wrap: anywhere; text-align: start; font-size: 14px; font-weight: 500; line-height: 20px; }
+.description { flex: 1; max-width: 100%; margin: 6px 0 14px; overflow-wrap: anywhere; color: var(--muted-foreground); text-align: start; font-size: 13px; line-height: 20px; }
+.taskAction { display: flex; align-items: center; min-height: 32px; max-width: 100%; }
+.actionButton { height: auto; min-height: 32px; max-width: 100%; padding: 5px 12px; border-radius: 9px; white-space: normal; overflow-wrap: anywhere; font-size: 13px; font-weight: 500; line-height: 20px; text-align: start; box-shadow: 0 1px 2px rgb(0 0 0 / 0.04); transition: background-color 160ms ease, transform 160ms ease; }
+.actionButton:active:not(:disabled) { transform: scale(0.98); }
+.done { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; max-width: 100%; color: var(--onboarding-complete); font-size: 13px; font-weight: 500; animation: done-pop 360ms var(--onboarding-ease) both; }
+.checkmark { display: grid; flex: none; width: 16px; height: 16px; place-items: center; border-radius: 50%; background: var(--onboarding-complete); color: white; }
+.sample { margin-top: 14px; padding-top: 16px; border-top: 1px solid var(--border); }
+.sample .actionButton { margin-top: 12px; }
+.footer { flex: none; }
+.dismissButton { min-width: 0; min-height: 36px; padding-inline: 12px; border-radius: 22px; color: var(--muted-foreground); font-size: 12px; font-weight: 400; }
+.dismissButton:hover { background-color: transparent; color: var(--destructive); }
+:global(.dark) .panel, :global([data-theme="dark"]) .panel { --onboarding-complete: #6b95ff; }
+@container (max-width: 560px) { .tasks { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (max-width: 380px) { .tasks { grid-template-columns: minmax(0, 1fr); } }
+@media (pointer: coarse), (max-width: 520px) { .actionButton, .taskAction, .done, .dismissButton { min-height: 44px; } }
+@media (max-width: 520px) { .continueButton { min-width: 0; padding-inline: 14px; } }
+@keyframes task-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes done-pop { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .task, .done { animation: none; } .task, .actionButton { transition: none; } .actionButton:active:not(:disabled) { transform: none; } }
