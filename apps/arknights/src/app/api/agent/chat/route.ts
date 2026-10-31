@@ -137,7 +137,7 @@ export async function POST(request: Request) {
     }
     const pageContext = body.pageContext == null ? null : normalizeAgentPageContext(body.pageContext);
     if (body.pageContext != null && !pageContext) throw new PublicApiError("AIC-REQ-1001", { message: "当前页面摘要无效，请刷新页面后重试。" });
-    let personaContent: string | undefined;
+    let personaContent: string | null | undefined;
     const resources = await activeAgentResources();
     try { personaContent = await resolveAgentPersonaContent(body.persona, resources?.policy); }
     catch (error) {

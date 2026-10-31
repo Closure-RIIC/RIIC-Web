@@ -15,6 +15,10 @@ import { useFeatureAccess } from "@/components/workbench/FeatureAccessProvider";
 import { useAgentHistory } from "@/hooks/use-agent-history";
 import { subscribeBillingUpdates } from "@/lib/billing-events";
 import { restoreAgentMessages } from "@/agent-history";
+import { personaPresentation } from "@/agent-persona-presentation";
+import { useAgentAppearance } from "./agent-appearance-store";
+import { useAgentPersona } from "./agent-persona-store";
+import { PersonaAvatar } from "./PersonaAvatar";
 import { buildAutomaticScheduleContext, type AgentPageContext } from "@/agent-page-context";
 import styles from "./AgentFloatingWidget.module.css";
 import dockStyles from "../layout/WorkbenchDock.module.css";
@@ -53,11 +57,15 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, minimi
   const { data, isPending } = useWebsiteSession();
   const features = useFeatureAccess();
   const { ready, history } = useAgentHistory();
+  const { selectedPersona } = useAgentPersona();
+  const [appearance] = useAgentAppearance();
+  const activePersona = appearance === "plush" ? selectedPersona : null;
   const owner = data?.user.id ?? null;
   const previousOwner = useRef(owner);
   const panelId = useId();
   const floatingId = useId();
-  const [availability, setAvailability] = useState<Availability>("checking");
+  const [access, setAccess] = useState<{ owner: string | null; availability: Availability }>({ owner, availability: "checking" });
+  const availability = access.owner === owner ? access.availability : "checking";
   const [open, setOpen] = useState(false);
   const launcherRef = useRef<HTMLButtonElement>(null);
   const dockRef = useRef<HTMLButtonElement>(null);
@@ -74,30 +82,24 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, minimi
   }, [owner]);
 
   useEffect(() => {
-    if (!visible || !features.agent) {
-      setOpen(false);
-      return;
-    }
-    if (isPending) {
-      setAvailability("checking");
-      return;
-    }
+    if (!visible || !features.agent) setOpen(false);
+  }, [visible, features.agent]);
+
+  useEffect(() => {
+    if (!features.agent || isPending) return;
     let active = true;
     let request: AbortController | undefined;
     const check = async () => {
       request?.abort();
       const controller = new AbortController();
       request = controller;
-      setAvailability((current) => current === "available" ? current : "checking");
       try {
         const response = await fetch("/api/agent/chat", { credentials: "same-origin", cache: "no-store", signal: controller.signal });
         if (!active || controller.signal.aborted) return;
-        if (response.ok) setAvailability("available");
-        else if (response.status === 401) setAvailability("sign_in");
-        else if (response.status === 402) setAvailability("credits");
-        else setAvailability("unavailable");
+        const nextAvailability: Availability = response.ok ? "available" : response.status === 401 ? "sign_in" : response.status === 402 ? "credits" : "unavailable";
+        setAccess({ owner, availability: nextAvailability });
       } catch {
-        if (active && !controller.signal.aborted) setAvailability("unavailable");
+        if (active && !controller.signal.aborted) setAccess({ owner, availability: "unavailable" });
       }
     };
     void check();
@@ -110,7 +112,7 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, minimi
       window.removeEventListener("focus", onFocus);
       unsubscribe();
     };
-  }, [features.agent, isPending, owner, visible]);
+  }, [features.agent, isPending, owner]);
 
   if (!mounted || !visible || !features.agent) return null;
   const conversationId = history.activeId;
@@ -132,7 +134,7 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, minimi
     onMinimizedChange(true);
     dockRef.current?.focus({ preventScroll: true });
   };
-  return (
+  return availability === "checking" ? null : (
     <div className={styles.root} data-agent-floating-widget data-minimized={minimized}>
       <button
         ref={dockRef}
@@ -194,8 +196,7 @@ export function AgentFloatingWidget({ pageContext, automaticContextInput, minimi
         onClick={() => setOpen((value) => !value)}
         data-agent-floating-trigger
       >
-        <span className={styles.launcherAvatar}><img src="/icon.png" alt="" draggable={false} /></span>
-        <span className={styles.status} aria-hidden="true" />
+        <span className={styles.launcherAvatar} aria-hidden="true">{canChat ? <PersonaAvatar name={activePersona ? personaPresentation(activePersona, en).name : "Closure"} src={activePersona?.kind === "upload" ? activePersona.avatarUrl : undefined} mascot={activePersona?.kind === "builtin" ? activePersona.avatar : undefined} appearance={appearance} size={120} active={open} /> : <img src="/icon.png" alt="" draggable={false} />}</span>
       </button>
       </div> : null}
     </div>

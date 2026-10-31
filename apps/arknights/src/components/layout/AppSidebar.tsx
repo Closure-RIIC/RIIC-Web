@@ -15,6 +15,7 @@ import {
   GraduationCap,
   History,
   LoaderCircle,
+  ListChecks,
   Search,
   SquarePen,
   Bot,
@@ -45,13 +46,14 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { workbenchHref, type AppPage } from "@/workbench-routes";
-import { useLocale } from "use-intl";
+import { useLocale, useTranslations } from "use-intl";
 
 const CLIENT_SKLAND_ENABLED = process.env.APP_CLIENT_SKLAND_ENABLED === "1";
 const AgentHistoryNavigation = lazyWithMessages(() => import("@/components/agent/AgentHistoryNavigation").then((module) => ({ default: module.AgentHistoryNavigation })), "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx");
 const SidebarHighlight = createContext<{ target: string; setHovered: (target: string | null) => void }>({ target: "", setHovered: () => undefined });
 
 interface AppSidebarProps {
+  onboarding?: { completed: number; total: number; onOpen: () => void };
   showMower?: boolean;
   page: AppPage;
   onPageChange: (page: AppPage, trigger?: HTMLElement) => boolean;
@@ -115,10 +117,12 @@ function AppNavigationItem({
   );
 }
 
-export function AppSidebar({ page, onPageChange, showMower = false, onSessionChanged }: AppSidebarProps & {
+export function AppSidebar({ page, onPageChange, showMower = false, onSessionChanged, onboarding }: AppSidebarProps & {
   onSessionChanged: (authenticated: boolean) => Promise<void>;
 }) {
   const locale = useLocale();
+  const onboardingText = useTranslations("Onboarding");
+  const { isMobile, setOpenMobile } = useSidebar();
   const { data: websiteSession } = useWebsiteSession();
   const features = useFeatureAccess();
   const labels = messageRecord(locale, "components_layout_AppSidebar_labels");
@@ -177,6 +181,11 @@ export function AppSidebar({ page, onPageChange, showMower = false, onSessionCha
       </LayoutGroup>
       </SidebarHighlight.Provider>
       <SidebarFooter className={styles.footer}>
+        {onboarding ? <SidebarMenu><SidebarMenuItem><SidebarMenuButton tooltip={onboardingText("title")} data-onboarding-trigger onClick={() => { if (isMobile) setOpenMobile(false); onboarding.onOpen(); }}>
+          <ListChecks className="size-5" aria-hidden="true" />
+          <span className={styles.copy}>{onboardingText("title")}</span>
+          <span className="ml-auto text-xs tabular-nums text-muted-foreground group-data-[collapsible=icon]:hidden" aria-hidden="true">{onboarding.completed}/{onboarding.total}</span>
+        </SidebarMenuButton></SidebarMenuItem></SidebarMenu> : null}
         <SidebarAccountMenu page={page} onPageChange={onPageChange} onSessionChanged={onSessionChanged} />
       </SidebarFooter>
       </div>

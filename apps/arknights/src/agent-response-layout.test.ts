@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { UIMessage } from "ai";
-import { buildAgentDisplayTurns, hasActiveAgentContent, snapshotAgentReplyPersona } from "./agent-response-layout.ts";
+import { buildAgentDisplayTurns, hasActiveAgentContent, readAgentReplyPersona, snapshotAgentReplyPersona } from "./agent-response-layout.ts";
 import { BUILTIN_AGENT_PERSONAS } from "./agent-personas.ts";
 import { emptyAgentHistory, parseAgentHistory, restoreAgentMessages, updateAgentConversation } from "./agent-history.ts";
 
@@ -17,6 +17,19 @@ test("persona switches preserve old replies through history restoration and retr
   const legacy = buildAgentDisplayTurns([user, assistant([{ type: "text", text: "旧版回答" }])], false).find(turn => turn.kind === "response");
   assert.deepEqual(legacy?.persona, {});
 });
+
+test("pure mode survives history restoration without inheriting the next selected persona", () => {
+  const metadata = { replyPersona: snapshotAgentReplyPersona(BUILTIN_AGENT_PERSONAS[0], "pure") };
+  assert.deepEqual(metadata, { replyPersona: { mode: "pure" } });
+  const question = { ...user, metadata };
+  const saved = parseAgentHistory(updateAgentConversation(emptyAgentHistory(), "pure-chat", [question, assistant([{ type: "text", text: "回答" }])]));
+  const restored = restoreAgentMessages(saved.conversations[0].messages);
+  const reply = buildAgentDisplayTurns(restored, false).find(turn => turn.kind === "response");
+  assert.deepEqual(reply?.persona, { mode: "pure" });
+  assert.deepEqual(readAgentReplyPersona(restored[0].metadata), { mode: "pure" });
+  assert.deepEqual(readAgentReplyPersona({ replyPersona: { mode: "pure", name: "旧人格", mascot: "silverash" } }), { mode: "pure" });
+});
+
 
 test("uploaded avatar snapshots survive replacing or clearing the local card", () => {
   const card = { id: "upload", kind: "upload" as const, name: "自定义", description: "", content: "prompt", avatarUrl: "/images/old.png" };

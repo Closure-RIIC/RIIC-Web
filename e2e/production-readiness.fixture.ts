@@ -915,10 +915,14 @@ export async function mockApis(
     taskQueueEnabled?: boolean;
     telemetryBatches?: Array<Array<Record<string, unknown>>>;
     dismissSolverWarning?: boolean;
+    initialOnboarding?: boolean;
   } = {}
 ) {
   // UI fixtures use the explicit public rollout in playwright.config.ts.
   await installMockSessionRefresh(page);
+  if (!options.initialOnboarding) {
+    await page.addInitScript(() => localStorage.setItem("arknights-infra-calc-onboarding-opened-v1", "1"));
+  }
   await page.route("**/api/account/feature-access", (route) => route.fulfill({ json: { agent: true, billing: true } }));
   if (options.dismissSolverWarning !== false) {
     // Result tests continue after acknowledging the new solver notice.

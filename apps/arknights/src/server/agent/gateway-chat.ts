@@ -16,7 +16,7 @@ import { agentPageContextPrompt, type AgentPageContext } from "../../agent-page-
 
 export async function gatewayChat(request: Request, userId: string, requestId: string, body: {
   messages: UIMessage[]; id?: unknown; conversationId?: unknown; attemptId?: unknown; pageContext?: AgentPageContext | null;
-}, personaContent?: string, resources?: { id: string; policy: AgentResourcePolicy }) {
+}, personaContent?: string | null, resources?: { id: string; policy: AgentResourcePolicy }) {
   gatewaySettings();
   const conversationId = body.conversationId ?? body.id;
   const attemptId = body.attemptId;

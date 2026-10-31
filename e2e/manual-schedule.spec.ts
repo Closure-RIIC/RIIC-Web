@@ -362,14 +362,17 @@ test("clearing local data from manual scheduling does not recreate its draft", a
   ))).toBeNull();
 });
 
-test("calculator onboarding does not expose manual editing", async ({ page }) => {
+test("the onboarding checklist does not expose manual editing", async ({ page }) => {
+  await mockAnonymousWebsiteSession(page);
   await page.addInitScript(() => {
     window.localStorage.removeItem("arknights-infra-calc-beta-onboarding-v1");
   });
   await page.goto("/");
-  const startPanel = page.locator("[data-calculator-start-panel]");
-  await expect(startPanel).toBeVisible();
-  await expect(startPanel.getByRole("button", { name: "基于当前方案编辑" })).toHaveCount(0);
+  await page.locator("[data-onboarding-trigger]").click();
+  const checklist = page.getByRole("dialog", { name: "入门任务", exact: true });
+  await expect(checklist).toBeVisible();
+  await expect(checklist.getByRole("button", { name: "基于当前方案编辑" })).toHaveCount(0);
+  await expect(page.locator("[data-plan-board]")).toBeVisible();
 });
 
 test("calculator converts a solved schedule into editable manual assignments", async ({ page }) => {

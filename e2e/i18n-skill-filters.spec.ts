@@ -4,6 +4,7 @@ import { installMockSessionRefresh } from "./mock-session-refresh";
 test.setTimeout(90_000);
 
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("arknights-infra-calc-onboarding-opened-v1", "1"));
   await page.route("**/api/skill-annotations", (route) => route.fulfill({ json: { success: true, data: { annotations: [] } } }));
   await page.route("**/api/auth/get-session", (route) => route.fulfill({ json: null }));
   await page.route("**/api/releases**", (route) => route.fulfill({
@@ -66,6 +67,7 @@ for (const locale of ["zh", "zh-TW", "en"] as const) {
     const errors: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.goto("/skills");
+    await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
     const skill = page.getByRole("button", { name: locale === "en" ? /^View skill S/ : locale === "zh-TW" ? /^檢視技能 S/ : /^查看技能 S/ }).first();
     await expect(skill).toBeVisible();
     await skill.click();
