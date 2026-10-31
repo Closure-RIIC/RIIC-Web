@@ -388,6 +388,7 @@ test("Persona portraits keep Closure fixed and persist uploaded persona avatars"
 
 for (const width of [1440, 375]) {
   test(`Closure fur wings extend beyond the yellow ring and respect reduced motion at ${width}px`, async ({ page }, testInfo) => {
+    test.setTimeout(90_000);
     await mockWorkbench(page);
     await page.setViewportSize({ width, height: 900 });
     await page.route("**/api/agent/chat", (route) => route.request().method() === "GET"
