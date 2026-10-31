@@ -21,7 +21,20 @@ read -r digest filename < "$manifest"
 gzip -t "$local_archive"
 archive_bytes="$(stat -c '%s' "$local_archive")"
 release_tree="$(mktemp -d "$RUNNER_TEMP/endfield-transfer.XXXXXX")"
-trap 'rm -rf -- "$release_tree"' EXIT HUP INT TERM
+control_directory=""
+control_socket=""
+target="${DEPLOY_SSH_USER}@${DEPLOY_HOST}"
+cleanup() {
+  if [[ -n "$control_socket" ]]; then
+    ssh -S "$control_socket" -O exit "$target" >/dev/null 2>&1 || true
+  fi
+  rm -rf -- "$release_tree"
+  if [[ -n "$control_directory" ]]; then rm -rf -- "$control_directory"; fi
+}
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 # Reuse the installer's archive policy before any local extraction or transfer.
 python3 -B - "$repository_root/deploy/endfield-deploy.py" "$local_archive" "$release_tree" "$DEPLOY_SHA" "$DEPLOY_TREE_SHA" <<'PY'
 import importlib.util
@@ -32,11 +45,24 @@ installer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(installer)
 installer.extract_release(Path(sys.argv[2]), Path(sys.argv[3]), sys.argv[4], sys.argv[5])
 PY
-target="${DEPLOY_SSH_USER}@${DEPLOY_HOST}"
 incoming="/srv/riic-endfield-deploy/${DEPLOYMENT_ENV}/${DEPLOY_SHA}.tar.gz"
 cache="/srv/riic-endfield-deploy/${DEPLOYMENT_ENV}/tree-cache"
 options=(-o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=15 -o ServerAliveInterval=15 -o ServerAliveCountMax=3)
 command -v rsync >/dev/null
+control_directory="$(mktemp -d /tmp/riic-endfield-ssh.XXXXXX)"
+control_socket="$control_directory/control"
+# Only connection establishment is retried. All remote operations share this
+# authenticated transport; a lost transport must not replay a deployment.
+for attempt in 1 2 3; do
+  if timeout --kill-after=5s 30s ssh "${options[@]}" \
+    -o ControlMaster=yes -o "ControlPath=$control_socket" -o ControlPersist=no -fN "$target"; then
+    break
+  fi
+  if [[ "$attempt" -eq 3 ]]; then exit 255; fi
+  sleep "$attempt"
+done
+# Prevent ssh from silently opening a fresh connection if the master is lost.
+options+=(-S "$control_socket" -o ControlMaster=no -o ProxyCommand=false)
 timeout --kill-after=5s 30s ssh "${options[@]}" "$target" bash -s -- "$DEPLOYMENT_ENV" <<'REMOTE'
 set -euo pipefail
 [[ "$1" == production || "$1" == development ]]
@@ -56,9 +82,10 @@ started="$SECONDS"
 transfer_log="$RUNNER_TEMP/endfield-transfer-stats.log"
 # The disposable cache is separate from releases/current. No hard links or
 # inplace writes: interruption cannot change any running or rollback release.
+printf -v rsync_shell '%q ' ssh "${options[@]}"
 timeout --kill-after=10s 3600s rsync --recursive --times --perms --checksum --compress \
   --delete-delay --partial --no-owner --no-group --stats \
-  -e "ssh ${options[*]}" -- "$release_tree/" "$target:$cache/" | tee "$transfer_log"
+  -e "$rsync_shell" -- "$release_tree/" "$target:$cache/" | tee "$transfer_log"
 timeout --kill-after=10s 900s ssh "${options[@]}" "$target" \
   "bash -s -- '$cache' '$incoming' '$SOURCE_DATE_EPOCH' '$digest' '$archive_bytes'" \
   < "$repository_root/scripts/pack-endfield-release.sh"
