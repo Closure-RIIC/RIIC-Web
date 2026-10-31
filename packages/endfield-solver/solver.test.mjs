@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { catalog, DEFAULT_OPTIONS, evaluateManual, manualTemplate, parseRoster, parseWorkspace, solve, validateOptions } from "./index.mjs";
 import { prepare } from "./model.mjs";
-import { clueRankOf, resetCaches, solveLayout } from "./upstream/optimizer.mjs";
+import { clueBestOf, clueRankOf, resetCaches, solveLayout } from "./upstream/optimizer.mjs";
 import { isUseful } from "./upstream/candidates.mjs";
 import { verifyPlan } from "./upstream/verify-plan.mjs";
 import { randomCase } from "./fuzz-verify.mjs";
@@ -274,13 +274,18 @@ test("a spare whiteboard displaces clue 7 from the guest room", () => {
   const roster = [
     "艾尔黛拉", "洛茜", "别礼",
     "佩丽卡", "陈千语", "狼卫", "洁尔佩塔", "昼雪", "莱万汀", "伊冯", "大潘",
+    "安塔尔", "汤汤", "卡契尔", "萤石", "秋栗",
   ].map(name => ({ name, elite: 4 }));
   const result = solve({
     operators: roster,
     options: { ...DEFAULT_OPTIONS, levels: { center: 5, mfg1: 1, mfg2: 1, grow: 0, guest: 3 }, grow: { 晶植: 0, 菌类: 0, 矿物: 0 } },
   });
   const guest = result.rooms.find(room => room.key === "会客室");
-  assert.ok(![...guest.a, ...guest.b].includes("别礼"), "别礼 must not sit in the guest room while a whiteboard is spare");
+  const guestNames = [...guest.a, ...guest.b];
+  const usedNames = new Set([...result.center.a, ...result.center.b, ...result.rooms.flatMap(room => [...room.a, ...room.b])]);
+  // 前提：确实还有白板闲着（汤汤），别礼也在名单里
+  assert.ok(!guestNames.includes("别礼"), "别礼 must not sit in the guest room while a whiteboard is spare");
+  assert.ok(!usedNames.has("汤汤"), "仍然应该有空闲的白板");
 });
 
 test("pair layouts report each facility's value from its own emitted crew", () => {
@@ -293,7 +298,49 @@ test("pair layouts report each facility's value from its own emitted crew", () =
   ].map(name => ({ name, elite: 4 }));
   const result = solve({ operators: roster, options: { ...DEFAULT_OPTIONS, mfg: "2干员", time: 30000, budget: 2000000 } });
   assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
-  assert.ok(Math.abs(result.scores["干员经验"] - 127.16) < 0.05, `干员经验 ${result.scores["干员经验"]}`);
+  assert.ok(Math.abs(result.scores["干员经验"] - 147.58) < 0.05, `干员经验 ${result.scores["干员经验"]}`);
+});
+
+test("center leaves clue-probability operators to the guest room", () => {
+  // 中枢原来只看加成/减免，带 C2(1–6) 的干员机会成本为 0，会被中枢锁住，
+  // 会客室只能退而用"对会客室是白板"的人。修复后中枢改拿同 u、但没有线索价值的替代者。
+  const roster = ["艾尔黛拉", "洛茜", "佩丽卡", "艾维文娜", "卡契尔", "阿列什", "伊冯", "汤汤", "萤石", "大潘"]
+    .map(name => ({ name, elite: 4 }));
+  const result = solve({
+    operators: roster,
+    options: { ...DEFAULT_OPTIONS, levels: { center: 5, mfg1: 1, mfg2: 1, grow: 0, guest: 3 }, grow: { 晶植: 0, 菌类: 0, 矿物: 0 } },
+  });
+  const centerNames = [...result.center.a, ...result.center.b];
+  const guestNames = [...result.rooms.find(room => room.key === "会客室").a, ...result.rooms.find(room => room.key === "会客室").b];
+  for (const name of ["艾维文娜", "阿列什"]) {
+    assert.ok(!centerNames.includes(name), `${name} 不该被中枢占用`);
+    assert.ok(guestNames.includes(name), `${name} 应该留给会客室`);
+  }
+  assert.ok(result.verification.ok, result.verification.errors.join(";"));
+});
+
+test("clue dedupe keeps one operator per clue index and prefers the higher tier", () => {
+  const one = (name, elite) => prepare({ operators: [{ name, elite }], options: DEFAULT_OPTIONS }).ops[0];
+  // 同一条线索的不同档位：优先高（β）
+  assert.deepEqual(clueBestOf(one("艾维文娜", 4)), { rank: 1, clue: 2 });
+  assert.deepEqual(clueBestOf(one("艾维文娜", 2)), { rank: 2, clue: 2 });
+  assert.deepEqual(clueBestOf(one("黎风", 4)), { rank: 3, clue: 3 });
+  assert.deepEqual(clueBestOf(one("弭弗", 1)), { rank: 4, clue: 3 });
+  // 线索 7 例外：低档（α）优先
+  assert.deepEqual(clueBestOf(one("别礼", 4)), { rank: 7, clue: 7 });
+  assert.deepEqual(clueBestOf(one("别礼", 2)), { rank: 6, clue: 7 });
+  assert.equal(clueBestOf(one("伊冯", 4)), null);
+
+  // 会客室里同一条线索只出现一次（标准 32 人名单）
+  const roster = catalog.map(op => ({ name: op.name, elite: 4 }));
+  const result = solve({ operators: roster, options: { ...DEFAULT_OPTIONS } });
+  const guest = result.rooms.find(room => room.key === "会客室");
+  const { ops } = prepare({ operators: roster, options: { ...DEFAULT_OPTIONS } });
+  const byName = new Map(ops.map(op => [op.name, op]));
+  const indices = [...guest.a, ...guest.b]
+    .map(name => clueBestOf(byName.get(name))?.clue)
+    .filter(index => index !== undefined);
+  assert.equal(new Set(indices).size, indices.length, `会客室出现重复线索编号：${indices.join(",")}`);
 });
 
 test("randomized self-consistency holds for the audit seeds", () => {
