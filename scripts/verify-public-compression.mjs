@@ -107,9 +107,13 @@ export async function verifyPublicCompression(
       const message = `${label} ${phase} failed (attempt ${attempt}/${MAX_REQUEST_ATTEMPTS}, ${Date.now() - requestStarted}ms): ${codes.join(", ") || "UNCLASSIFIED_NETWORK_ERROR"}`;
       const retryable = timedOut ? !limitedByTotal : codes.length > 0 && codes.every(code => RETRYABLE_NETWORK_CODES.has(code));
       if (!retryable || attempt === MAX_REQUEST_ATTEMPTS || Date.now() >= deadline) throw new Error(message);
-      const waitMs = Math.min(retryDelayMs * attempt, Math.max(0, deadline - Date.now()));
+      const retryBudgetMs = Math.max(0, deadline - Date.now());
+      const waitMs = Math.min(retryDelayMs * attempt, retryBudgetMs);
       onRetry(`${message}; retrying in ${waitMs}ms`);
       await delay(waitMs);
+      if (waitMs >= retryBudgetMs) {
+        throw new Error(`${label}: total check deadline exhausted while waiting to retry (CHECK_TIMEOUT)`);
+      }
     }
     throw new Error("Request attempts exhausted");
   }
