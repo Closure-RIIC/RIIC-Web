@@ -7,6 +7,8 @@
   "sixStarsInATenPull": "十連{count, select, 2 {二} 3 {三} 4 {四} 5 {五} 6 {六} 7 {七} 8 {八} 9 {九} 10 {十} other {{count}}}金",
   "recordsBegin": "記錄始於 <part1></part1>",
   "headhuntingRecordActions": "尋訪記錄操作",
+  "expandActions": "展開操作按鈕",
+  "collapseActions": "收起操作按鈕",
   "show5Operators": "展示五星",
   "revokeAuthorization": "解除授權",
   "deleteCloudHeadhuntingHistory": "刪除雲端尋訪記錄",

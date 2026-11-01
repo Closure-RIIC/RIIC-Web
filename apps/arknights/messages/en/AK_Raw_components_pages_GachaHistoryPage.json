@@ -7,6 +7,8 @@
   "sixStarsInATenPull": "{count} six-stars in a ten-pull",
   "recordsBegin": "Records begin <part1></part1>",
   "headhuntingRecordActions": "Headhunting record actions",
+  "expandActions": "Expand actions",
+  "collapseActions": "Collapse actions",
   "show5Operators": "Show 5★ operators",
   "revokeAuthorization": "Revoke authorization",
   "deleteCloudHeadhuntingHistory": "Delete cloud headhunting history",

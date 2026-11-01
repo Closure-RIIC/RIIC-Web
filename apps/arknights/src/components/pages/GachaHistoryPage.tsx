@@ -6,7 +6,7 @@ const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_components_pages_
 
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type CSSProperties } from "react";
-import { RefreshCw, ScanLine, Star, Trash2, Unlink } from "lucide-react";
+import { ChevronUp, RefreshCw, ScanLine, Star, Trash2, Unlink } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { QrCodeFrame } from "@/components/ui/qr-code-frame";
@@ -194,6 +194,8 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
   const historyRequest = useRef(0);
   const [visibleCount, setVisibleCount] = useState(10);
   const [showFiveStars, setShowFiveStars] = useState(true);
+  const [toolbarExpanded, setToolbarExpanded] = useState(false);
+  const toolbarActionsId = useId();
 
   useEffect(() => () => scanRequest.current?.abort(), []);
 
@@ -390,7 +392,8 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
         nameBadge={<GachaRating average={analysis.current.sixAverage} scope="current" currentDraws={loading || error ? undefined : analysis.current.draws} />}
         extraMetadata={recordStartedLabel && <span className="whitespace-nowrap" data-gacha-record-start>{rawText.rich(rawLocale, "recordsBegin", { part1: richValue((<time dateTime={new Date(analysis.startedAt!).toISOString()}>{recordStartedLabel}</time>)) })}</span>} /> : null}
       actions={
-      <div className={`${styles.actionToolbar} ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 max-lg:ml-0 max-lg:w-full max-lg:justify-start`} role="group" aria-label={rawText.text(rawLocale, "headhuntingRecordActions")}>
+      <div className={`${styles.actionToolbar} ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 max-lg:ml-0 max-lg:w-full max-lg:justify-start`} role="group" aria-label={rawText.text(rawLocale, "headhuntingRecordActions")} data-expanded={toolbarExpanded}>
+        <div id={toolbarActionsId} className={`${styles.toolbarActions} flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 max-lg:w-full max-lg:justify-start`}>
         {history && <SetupActionButton type="button" variant="outline" className={`${gachaToolbarActionClassName} ${styles.fiveStarToggle}`} data-gacha-action="five-stars" aria-label={rawText.text(rawLocale, "show5Operators")} aria-pressed={showFiveStars} title={rawText.text(rawLocale, "show5Operators")} onClick={() => setShowFiveStars(current => !current)}><Star /><span className={styles.actionLabel}>{rawText.text(rawLocale, "show5Operators")}</span></SetupActionButton>}
         {authorizedUids.length > 0 && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground`} data-gacha-action="disconnect" aria-label={rawText.text(rawLocale, "revokeAuthorization")} title={rawText.text(rawLocale, "revokeAuthorization")} disabled={busy} onClick={() => void disconnect()}><Unlink className="sm:hidden" /><span className={styles.actionLabel}>{rawText.text(rawLocale, "revokeAuthorization")}</span></SetupActionButton>}
         {history && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground hover:text-destructive`} data-gacha-action="delete" disabled={busy || loading} aria-label={rawText.text(rawLocale, "deleteCloudHeadhuntingHistory")} title={rawText.text(rawLocale, "deleteCloudHeadhuntingHistory")} onClick={() => void clearHistory()}><Trash2 /><span className={styles.actionLabel}>{rawText.text(rawLocale, "delete")}</span></SetupActionButton>}
@@ -421,6 +424,10 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
           </DialogContent>
         </Dialog>
         {authorized && <SetupActionButton type="button" className={`${gachaToolbarActionClassName} max-lg:ml-auto`} aria-label={rawText.text(rawLocale, "refresh")} title={rawText.text(rawLocale, "refresh")} disabled={busy} onClick={() => void refresh()}><RefreshCw className={busy ? "animate-spin" : ""} /><span className={styles.actionLabel}>{rawText.text(rawLocale, "refresh")}</span></SetupActionButton>}
+        </div>
+        <SetupActionButton type="button" variant="outline" className={`${gachaToolbarActionClassName} ${styles.toolbarToggle}`} aria-label={rawText.text(rawLocale, toolbarExpanded ? "collapseActions" : "expandActions")} title={rawText.text(rawLocale, toolbarExpanded ? "collapseActions" : "expandActions")} aria-expanded={toolbarExpanded} aria-controls={toolbarActionsId} onClick={() => setToolbarExpanded(current => !current)}>
+          <ChevronUp /><span className={styles.actionLabel}>{rawText.text(rawLocale, toolbarExpanded ? "collapseActions" : "expandActions")}</span>
+        </SetupActionButton>
       </div>
     } />
     {identityError && <p role="alert" className="text-sm text-muted-foreground">{rawText.rich(rawLocale, "accountDetailsCouldNotSync", { part1: richValue((identityError)), part2: richValue((<button type="button" className="underline underline-offset-4" onClick={onRetryIdentity}>{rawText.text(rawLocale, "syncAgain")}</button>)) })}</p>}

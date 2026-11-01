@@ -311,6 +311,7 @@ test("standalone gacha page follows Skland identity and shows summary metrics wi
   await expect(content.getByRole("button", { name: "导出", exact: true })).toHaveCount(0);
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 844 });
+    if (width < 640) await content.getByRole("button", { name: "展开操作按钮", exact: true }).click();
     for (const action of actions) {
       await expect(action).toBeVisible();
       await expect(action).toHaveCSS("border-radius", width < 640 ? "50%" : "18px");
@@ -804,7 +805,7 @@ test("mobile gacha keeps the zero glyph the same width in 10 and 40 without chan
 test.describe("gacha touch layout", () => {
   test.use({ isMobile: true, hasTouch: true, viewport: { width: 390, height: 844 } });
 
-  test("mobile gacha hides dates and docks round icon actions at the bottom right", async ({ page }) => {
+  test("mobile gacha hides dates and collapses round icon actions at the bottom right", async ({ page }) => {
     await seedPreferences(page);
     await mockGachaSession(page, [{ uid: "10001", nickname: "船仔#2832" }]);
     await page.route("**/api/account/data-consent", (route) => route.fulfill({
@@ -831,6 +832,15 @@ test.describe("gacha touch layout", () => {
       await expect(content.locator("[data-gacha-record-start]")).toBeHidden();
       const toolbar = content.getByRole("group", { name: "寻访记录操作" });
       await expect(toolbar).toHaveCSS("position", "fixed");
+      const toolbarToggle = toolbar.getByRole("button", { name: "展开操作按钮", exact: true });
+      await expect(toolbarToggle).toHaveAttribute("aria-expanded", "false");
+      await expect(toolbar.getByRole("button")).toHaveCount(1);
+      const collapsedBounds = (await toolbarToggle.boundingBox())!;
+      expect(collapsedBounds.width).toBe(48);
+      expect(collapsedBounds.height).toBe(48);
+      await toolbarToggle.click();
+      const collapseActions = toolbar.getByRole("button", { name: "收起操作按钮", exact: true });
+      await expect(collapseActions).toHaveAttribute("aria-expanded", "true");
       const fiveStarToggle = toolbar.getByRole("button", { name: "展示五星", exact: true });
       await expect(fiveStarToggle).toHaveCSS("background-color", "rgb(0, 0, 0)");
       await fiveStarToggle.click();
@@ -852,7 +862,12 @@ test.describe("gacha touch layout", () => {
         previousBottom = bounds.y + bounds.height;
       }
       expect(previousBottom).toBeCloseTo(844 - 16, 1);
+      expect((await collapseActions.boundingBox())!.y).toBeCloseTo(collapsedBounds.y, 1);
+      await collapseActions.click();
+      await expect(fiveStarToggle).toBeHidden();
+      await expect(toolbar.getByRole("button")).toHaveCount(1);
     }
+    await content.getByRole("button", { name: "展开操作按钮", exact: true }).click();
     const syncNotice = page.locator("[data-cloud-sync-error]");
     await expect(syncNotice).toBeVisible();
     const trigger = content.getByRole("button", { name: "授权记录", exact: true });
@@ -864,11 +879,16 @@ test.describe("gacha touch layout", () => {
     const beforeScroll = (await trigger.boundingBox())!;
     await page.locator("[data-app-scroll-area]").evaluate((element) => element.scrollTo(0, element.scrollHeight));
     expect((await trigger.boundingBox())!.y).toBeCloseTo(beforeScroll.y, 1);
+    await content.getByRole("button", { name: "收起操作按钮", exact: true }).click();
     await page.setViewportSize({ width: 1280, height: 844 });
+    await expect(content.getByRole("button", { name: "展开操作按钮", exact: true })).toBeHidden();
     await expect(content.locator("[data-skland-synced-at]")).toBeVisible();
     await expect(content.locator("[data-gacha-record-start]")).toBeVisible();
     await expect(trigger).toHaveCSS("border-radius", "18px");
     await expect(trigger.locator("span")).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(trigger).toBeHidden();
+    await expect(content.getByRole("button", { name: "展开操作按钮", exact: true })).toHaveAttribute("aria-expanded", "false");
   });
 });
 
