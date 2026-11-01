@@ -3,7 +3,7 @@ import catalogJson from "@riic/arknights-domain/generated/arkntools/operator-cat
 import type { OperBoxEntry } from "@riic/arknights-domain/types";
 
 export type MasteryLevel = 1 | 2 | 3;
-type Rule = { kind: "speed"; bonus: number; professions?: number[]; extra?: { stage?: number; branch?: string; bonus: number } }
+type Rule = { kind: "speed"; bonus: number; professions?: number[]; extra?: { stage?: number; branch?: string; branches?: string[]; bonus: number } }
   | { kind: "environment"; environment: string; cap: number | null }
   | { kind: "halve" | "morale" | "unsupported"; reason?: string };
 export type MasteryEnvironment = Record<string, number>;
@@ -120,7 +120,9 @@ export function masteryTrainers(input: MasteryInput): MasteryTrainer[] {
         }
         if (rule.kind !== "speed" || (rule.professions && !rule.professions.includes(target.profession))) return sum;
         const extra = rule.extra;
-        const matches = extra && (extra.stage === undefined || extra.stage === stage) && (extra.branch === undefined || extra.branch === BRANCHES[target.id]);
+        const matches = extra && (extra.stage === undefined || extra.stage === stage)
+          && (extra.branch === undefined || extra.branch === BRANCHES[target.id])
+          && (extra.branches === undefined || extra.branches.includes(BRANCHES[target.id]!));
         return sum + rule.bonus + (matches ? extra.bonus : 0);
       }, 0);
       return { id: operator.id, name: operator.name, skillIds, bonuses: { 1: bonus(1), 2: bonus(2), 3: bonus(3) }, halves: rules.some((rule) => rule.kind === "halve") };

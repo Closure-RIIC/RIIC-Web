@@ -343,6 +343,8 @@
     "特克诺": "特克诺",
     "云迹": "云迹",
     "摆渡人": "摆渡人",
+    "镜匠": "镜匠",
+    "行铃": "行铃",
     "钼铅": "钼铅",
     "行箸": "行箸",
     "诺威尔": "诺威尔",
@@ -397,6 +399,10 @@
     "珊比": "珊比",
     "时隙": "时隙",
     "嘉辛塔": "嘉辛塔",
+    "冻河": "冻河",
+    "奥尔佳": "奥尔佳",
+    "国度": "国度",
+    "塔露拉": "塔露拉",
     "卡涅利安": "卡涅利安",
     "伺夜": "伺夜",
     "远牙": "远牙",
@@ -985,6 +991,10 @@
     "dorm_rec_all&unfull_001": {
       "name": "倾谈者",
       "description": "进驻宿舍时，该宿舍内所有干员的心情每小时恢复<@cc.vup>+0.2</>；同时该宿舍每有<@cc.kw>1</>名心情未满的干员，则恢复效果额外<@cc.vup>+0.01</>（同种效果取最高）"
+    },
+    "dorm_rec_all&unfull_100": {
+      "name": "微小的帮助",
+      "description": "进驻宿舍时，该宿舍内所有干员的心情每小时恢复<@cc.vup>+0.1</>；同时该宿舍每有<@cc.kw>1</>名心情未满的干员，则恢复效果额外<@cc.vup>+0.01</>（同种效果取最高）"
     },
     "dorm_rec_bd_dungeon_000": {
       "name": "森西大食堂",
@@ -2022,6 +2032,14 @@
       "name": "情报探查",
       "description": "进驻会客室时，线索搜集速度提升<@cc.vup>10%</>，与其他<$cc.g.bs><@cc.kw>黑钢国际干员</></>进驻会客室一起工作时，线索搜集速度额外提升<@cc.vup>20%</>"
     },
+    "meet_spd&sami_200": {
+      "name": "外交禀赋",
+      "description": "进驻会客室时，线索搜集速度提升<@cc.vup>10%</>"
+    },
+    "meet_spd&sami_210": {
+      "name": "群策群力",
+      "description": "进驻会客室时，线索搜集速度提升<@cc.vup>10%</>，与其他<$cc.g.ussg><@cc.kw>乌萨斯学生自治团</></>干员进驻会客室一起工作时，线索搜集速度额外提升<@cc.vup>20%</>"
+    },
     "meet_spd&team_000": {
       "name": "线索搜集·α",
       "description": "进驻会客室时，线索搜集速度提升<@cc.vup>10%</>"
@@ -2182,6 +2200,10 @@
       "name": "灯塔供能模块",
       "description": "进驻发电站时，无人机充能速度<@cc.vup>+15%</>"
     },
+    "power_rec_spd_018": {
+      "name": "人造物之畏",
+      "description": "进驻发电站时，无人机充能速度<@cc.vup>+15%</>"
+    },
     "power_rec_spd_020": {
       "name": "静电场",
       "description": "进驻发电站时，无人机充能速度<@cc.vup>+20%</>"
@@ -2262,9 +2284,25 @@
       "name": "拾荒者",
       "description": "进驻回收站时，材料转化效率<@cc.vup>+20%</>"
     },
+    "recycle_spd&cost_001": {
+      "name": "梅里塔精拣",
+      "description": "进驻回收站时，材料转化效率<@cc.vup>+20%</>"
+    },
     "recycle_spd&cost_010": {
       "name": "捡海人",
       "description": "进驻回收站时，材料转化效率<@cc.vup>+30%</>"
+    },
+    "recycle_spd&cost_011": {
+      "name": "花椰菜甄选",
+      "description": "进驻回收站时，材料转化效率<@cc.vup>+30%</>"
+    },
+    "recycle_spd&cost_100": {
+      "name": "无差别回收",
+      "description": "进驻回收站时，材料转化效率<@cc.vup>+20%</>，心情每小时消耗<@cc.vup>-0.1</>"
+    },
+    "recycle_spd&cost_110": {
+      "name": "无差别转化",
+      "description": "进驻回收站时，材料转化效率<@cc.vup>+30%</>，心情每小时消耗<@cc.vup>-0.1</>"
     },
     "trade_cost_000": {
       "name": "暖场",
@@ -2590,6 +2628,14 @@
       "name": "勤俭经营·β",
       "description": "进驻贸易站时，贸易站内除自身以外每名处于工作状态的干员<@cc.vup>+20%</>订单获取效率"
     },
+    "trade_ord_spd&share_100": {
+      "name": "“无用的人脉”",
+      "description": "进驻贸易站时，贸易站内除自身以外每名处于工作状态的干员<@cc.vup>+15%</>订单获取效率"
+    },
+    "trade_ord_spd&share_110": {
+      "name": "“真有用？”",
+      "description": "进驻贸易站时，贸易站内除自身以外每名处于工作状态的干员<@cc.vup>+20%</>订单获取效率"
+    },
     "trade_ord_spd&tag_000": {
       "name": "订单分发·α",
       "description": "进驻贸易站时，订单获取效率<@cc.vup>+20%</>"
@@ -2690,6 +2736,10 @@
       "name": "思而后行",
       "description": "进驻训练室协助位时，每完整协助完成1次专精训练，累计一定<$cc.t.accmuguard1><@cc.rem>武道</></>。<$cc.t.accmuguard1><@cc.rem>武道</></>达到上限时，下一次开始协助<@cc.kw>近卫</>干员训练专精技能至<@cc.kw>1</>级将立即完成，并消耗已有<$cc.t.accmuguard1><@cc.rem>武道</></>"
     },
+    "train_spd_branches_000": {
+      "name": "火旁新事",
+      "description": "进驻训练室协助位时，如果训练位干员分支为<@cc.kw>本源近卫</>或<@cc.kw>本源术师</>，则专精技能训练速度额外<@cc.vup>+45%</>"
+    },
     "train_spd_doubleProf_000": {
       "name": "剑与手炮",
       "description": "进驻训练室协助位时，<@cc.kw>近卫</>与<@cc.kw>狙击</>干员的专精技能训练速度<@cc.vup>+30%</>"
@@ -2717,6 +2767,10 @@
     "train_spd_doubleProf_301": {
       "name": "“我不懂啊”",
       "description": "进驻训练室协助位时，<@cc.kw>术师</>与<@cc.kw>近卫</>干员的专精技能训练速度<@cc.vup>+30%</>"
+    },
+    "train_spd_doubleProf_302": {
+      "name": "剑与昔时",
+      "description": "进驻训练室协助位时，<@cc.kw>近卫</>与<@cc.kw>术师</>干员的专精技能训练速度<@cc.vup>+30%</>"
     },
     "train_spd_doubleProf_310": {
       "name": "“触类旁通”",
@@ -3254,6 +3308,10 @@
       "name": "岩体锚固",
       "description": "进驻加工站加工<@cc.kw>精英材料</>产出<@cc.kw>T3</>品质的副产品时，副产品必定为<@cc.kw>固源岩组</>"
     },
+    "workshop_formula_drop_050": {
+      "name": "浸剂回收",
+      "description": "进驻加工站加工<@cc.kw>精英材料</>产出<@cc.kw>T3</>品质的副产品时，副产品必定为<@cc.kw>酮凝集组</>"
+    },
     "workshop_formula_free_000": {
       "name": "精打细算",
       "description": "进驻加工站加工<@cc.kw>精英材料</>时，减免龙门币消耗"
@@ -3322,9 +3380,17 @@
       "name": "过度发挥",
       "description": "进驻加工站加工<@cc.kw>精英材料</>时，副产品的产出概率提升<@cc.vup>75%</>"
     },
+    "workshop_formula_probability_1111": {
+      "name": "制镜基本功·α",
+      "description": "进驻加工站加工<@cc.kw>精英材料</>时，副产品的产出概率提升<@cc.vup>75%</>"
+    },
     "workshop_formula_probability_112": {
       "name": "爆破材料学·α",
       "description": "进驻加工站加工<@cc.kw>精英材料</>时，副产品的产出概率提升<@cc.vup>75%</>"
+    },
+    "workshop_formula_probability_1121": {
+      "name": "制镜基本功·β",
+      "description": "进驻加工站加工<@cc.kw>精英材料</>时，副产品的产出概率提升<@cc.vup>80%</>"
     },
     "workshop_formula_probability_113": {
       "name": "腐蚀科学·α",
