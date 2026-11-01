@@ -81,7 +81,7 @@ function PoolStatValue({ label, value, mobileDigits }: { label: string; value: n
     return () => observer.disconnect();
   }, [fontMetrics, mobileDigits, value]);
   const mobileTextWidth = mobileDigits * (fontMetrics.advance + .01) + .05;
-  return <><dt className="text-xs text-muted-foreground" style={{ "--gacha-label-shift": `${mobileLabelShift}px` } as CSSProperties}>{label}</dt>
+  return <><dt className="text-xs text-muted-foreground" data-gacha-stat-wide={String(value).length >= 4 ? "" : undefined} style={{ "--gacha-label-shift": `${mobileLabelShift}px` } as CSSProperties}>{label}</dt>
   <dd className={`${styles.poolStatValue} font-number`} title={`${label}：${value}`} aria-label={String(value)}>
     <span aria-hidden="true">{value}</span>
     <svg className={styles.poolStatOutline} aria-hidden="true" focusable="false">
