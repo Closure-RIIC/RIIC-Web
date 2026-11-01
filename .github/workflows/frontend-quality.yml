@@ -201,7 +201,7 @@ jobs:
   type_checks:
     name: Application and tooling types
     needs: changes
-    if: needs.changes.outputs.run_core == 'true'
+    if: always() && (github.event_name == 'schedule' || needs.changes.outputs.run_core == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -464,7 +464,7 @@ jobs:
           compression-level: 0
 
   browser_e2e:
-    name: Chromium E2E (${{ matrix.project }} ${{ matrix.shard }})
+    name: Chromium E2E (${{ matrix.suite || matrix.project }} ${{ matrix.shard }})
     needs: [changes, release_artifact]
     if: needs.changes.outputs.run_browser == 'true'
     runs-on: ubuntu-24.04
@@ -472,8 +472,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chromium, chromium-plush]
+        project: [chromium]
         shard: [1/8, 2/8, 3/8, 4/8, 5/8, 6/8, 7/8, 8/8]
+        include:
+          - { project: chromium-plush, suite: agent, filter: 'agent-.*[.]spec[.]ts', shard: 1/4 }
+          - { project: chromium-plush, suite: agent, filter: 'agent-.*[.]spec[.]ts', shard: 2/4 }
+          - { project: chromium-plush, suite: agent, filter: 'agent-.*[.]spec[.]ts', shard: 3/4 }
+          - { project: chromium-plush, suite: agent, filter: 'agent-.*[.]spec[.]ts', shard: 4/4 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 1/6 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 2/6 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 3/6 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 4/6 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 5/6 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 6/6 }
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
       options: --user 1001
@@ -523,7 +534,15 @@ jobs:
         run: bash scripts/prepare-browser-release.sh "$GITHUB_WORKSPACE/.tmp/browser-download" "$PLAYWRIGHT_RELEASE_DIR" "$GITHUB_SHA" "$(git rev-parse 'HEAD^{tree}')"
 
       - name: Chromium end-to-end tests
-        run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}
+        shell: bash
+        env:
+          TEST_PROJECT: ${{ matrix.project }}
+          TEST_SHARD: ${{ matrix.shard }}
+          TEST_FILTER: ${{ matrix.filter }}
+        run: |
+          args=(test --project="$TEST_PROJECT" --shard="$TEST_SHARD")
+          if [[ -n "$TEST_FILTER" ]]; then args+=("$TEST_FILTER"); fi
+          npx playwright "${args[@]}"
 
       - name: Preserve browser failure evidence
         if: failure()

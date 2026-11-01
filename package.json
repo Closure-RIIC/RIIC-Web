@@ -96,7 +96,7 @@
     "test:billing-orders": "node --test --experimental-transform-types --experimental-test-module-mocks apps/arknights/src/billing-order-visibility.test.ts apps/arknights/src/server/billing/order-visibility-api.test.ts apps/arknights/src/server/billing/order-visibility-service.test.ts",
     "dev:arknights": "npm run dev --workspace @riic/arknights --",
     "build:arknights": "npm run build --workspace @riic/arknights",
-    "build:all": "npm run build:arknights && npm run build:endfield && npm run build:platform",
+    "build:all": "node scripts/build-all.mjs",
     "build:ci:arknights": "node scripts/build-app.mjs arknights --skip-types",
     "build:ci:endfield": "node scripts/build-app.mjs endfield --skip-types",
     "build:ci:all": "npm run build:ci:arknights && npm run build:ci:endfield && npm run build:platform",

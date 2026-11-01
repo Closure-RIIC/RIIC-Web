@@ -344,7 +344,14 @@ test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedul
     packageJson.scripts["test:e2e:webkit:skland-qr"],
     "playwright test e2e/production-readiness-skland.spec.ts --project=webkit --grep \"Skland login exposes both methods\"",
   );
-  assert.match(workflow, /browser_e2e:[\s\S]+project: \[chromium, chromium-plush\][\s\S]+shard: \[1\/8, 2\/8, 3\/8, 4\/8, 5\/8, 6\/8, 7\/8, 8\/8\][\s\S]+npx playwright test --project=\$\{\{ matrix\.project \}\} --shard=\$\{\{ matrix\.shard \}\}/);
+  assert.match(workflow, /browser_e2e:[\s\S]+project: \[chromium\][\s\S]+shard: \[1\/8, 2\/8, 3\/8, 4\/8, 5\/8, 6\/8, 7\/8, 8\/8\]/);
+  for (const [suite, count] of [["agent", 4], ["plush", 6]]) {
+    for (let shard = 1; shard <= count; shard += 1) {
+      assert.ok(workflow.includes("project: chromium-plush, suite: " + suite + ", filter: '" + suite + "-.*[.]spec[.]ts', shard: " + shard + "/" + count));
+    }
+  }
+  assert.match(workflow, /args=\(test --project="\$TEST_PROJECT" --shard="\$TEST_SHARD"\)/);
+  assert.match(workflow, /npx playwright "\$\{args\[@\]\}"/);
   assert.match(playwrightConfig, /const softwareGpuSpecs = \["plush-\*\.spec\.ts", "agent-motion\.spec\.ts", "agent-personas\.spec\.ts", "agent-workbench\.spec\.ts"\]/);
   assert.match(playwrightConfig, /name: "chromium",[\s\S]+testIgnore: \[[^\]]*\.\.\.softwareGpuSpecs\]/);
   assert.match(playwrightConfig, /name: "chromium-plush",\s+testMatch: softwareGpuSpecs,[\s\S]+workers: 1/);

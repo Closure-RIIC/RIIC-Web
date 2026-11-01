@@ -37,6 +37,8 @@ test("the required PR gate accepts only complete checks or a verified documentat
 test("PR path filters cannot strand required checks, and main runs never share a cancellation group", async () => {
   const pr = await read(".github/workflows/workspace-packages.yml");
   const release = await read(".github/workflows/frontend-quality.yml");
+  const automation = await read(".github/workflows/pr-automation-request.yml");
+  assert.match(automation, /group: pr-automation-request-\$\{\{ github\.event\.pull_request\.number \}\}\s+cancel-in-progress: true/);
   assert.doesNotMatch(pr.split("  pull_request:\n")[1].split("  push:\n")[0], /paths/);
   assert.match(pr, /github\.event\.pull_request\.number \|\| github\.ref/);
   assert.match(pr, /cancel-in-progress: \$\{\{ github\.ref != 'refs\/heads\/main' \}\}/);
@@ -46,6 +48,7 @@ test("PR path filters cannot strand required checks, and main runs never share a
 
 test("every new parallel check still participates in the release gate", async () => {
   const release = await read(".github/workflows/frontend-quality.yml");
+  assert.match(release.split("  type_checks:\n")[1].split("  database_checks:\n")[0], /if: always\(\) && \(github\.event_name == 'schedule' \|\| needs\.changes\.outputs\.run_core == 'true'\)/);
   const gate = release.split("  quality:\n")[1].split("  deploy:\n")[0];
   for (const job of ["static_checks", "lint_checks", "type_checks", "database_checks", "release_artifact", "browser_e2e", "browser_boundaries"]) {
     assert.ok(gate.includes("needs." + job + ".result"), job);
@@ -59,4 +62,17 @@ test("every new parallel check still participates in the release gate", async ()
     "endfield-deploy.test.py", "endfield-transfer.test.py", "stage-app-release.mjs --app endfield", "stage-app-release.mjs --app platform"]) {
     assert.ok(pr.includes(command), command);
   }
+});
+
+test("default workspace builds retain both application typechecks and runtime preparation", async () => {
+  const pkg = JSON.parse(await read("package.json"));
+  assert.equal(pkg.scripts["build:all"], "node scripts/build-all.mjs");
+  const all = await read("scripts/build-all.mjs");
+  assert.match(all, /\["scripts\/build-app\.mjs", "arknights"\]/);
+  assert.match(all, /\["scripts\/build-app\.mjs", "endfield"\]/);
+  assert.match(all, /scripts\/build-platform\.mjs/);
+  assert.doesNotMatch(all, /--skip-types/);
+  const app = await read("scripts/build-app.mjs");
+  assert.match(app, /if \(!options\.includes\("--skip-types"\)\)/);
+  assert.match(app, /scripts\/prepare-standalone\.mjs/);
 });
