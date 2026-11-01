@@ -456,3 +456,45 @@ test("the full 32-operator baseline keeps its exact scores after the coverage fl
   assert.ok(Math.abs(result.scores["武器经验"] - 97.02) < 1e-9, String(result.scores["武器经验"]));
   assert.ok(Math.abs(result.scores["培养"] - 775.795) < 5e-4, String(result.scores["培养"]));
 });
+
+test("two workshops with different levels are searched jointly instead of falling back to the pair scan", () => {
+  const roster = catalog.map(op => ({ name: op.name, elite: 4 }));
+  const levels = { center: 5, mfg1: 3, mfg2: 2, grow: 3, guest: 3 };
+  const result = solve({
+    operators: roster,
+    options: { ...DEFAULT_OPTIONS, mfg: "2干员", levels, grow: { 晶植: 9, 菌类: 0, 矿物: 0 }, time: 30000, budget: 2000000 },
+  });
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  const mfg1 = result.rooms.find(room => room.key === "制造舱1");
+  const mfg2 = result.rooms.find(room => room.key === "制造舱2");
+  assert.equal(mfg1.a.length, 3);          // 3 级舱：满 3 人
+  assert.equal(mfg2.a.length, 2);          // 2 级舱：不会套用 3 个工位
+  assert.ok(Math.abs(mfg1.value - 90.420) < 5e-4, String(mfg1.value));
+  assert.ok(Math.abs(mfg2.value - 65.200) < 5e-4, String(mfg2.value));
+  assert.ok(
+    !result.status.approximations.some(text => text.includes("参数不一致")),
+    result.status.approximations.join(";"),
+  );
+});
+
+test("a skill-less roster still pairs two different-level workshops (empty relevance path)", () => {
+  const roster = catalog.slice(0, 7).map(op => ({ name: op.name, elite: 0 }));
+  const result = solve({
+    operators: roster,
+    options: {
+      ...DEFAULT_OPTIONS,
+      mfg: "2干员",
+      levels: { center: 5, mfg1: 2, mfg2: 1, grow: 0, guest: 1 },
+      grow: { 晶植: 0, 菌类: 0, 矿物: 0 },
+    },
+  });
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  const mfg1 = result.rooms.find(room => room.key === "制造舱1");
+  const mfg2 = result.rooms.find(room => room.key === "制造舱2");
+  assert.ok(mfg1.a.length <= 2, String(mfg1.a.length));
+  assert.ok(mfg2.a.length <= 1, String(mfg2.a.length));
+  assert.ok(
+    !result.status.approximations.some(text => text.includes("参数不一致")),
+    result.status.approximations.join(";"),
+  );
+});

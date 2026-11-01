@@ -392,7 +392,7 @@ function makeBudget(cfg) {
  * 班组签名组：签名 = (加成向量, 减免, 满工位人数)；同签名保留全部具体人选 mask。
  * 同时给出"签名对 × 班长"的闭式取值表。
  */
-function buildFacilityTable(ctx, spec, avail) {
+function buildFacilityTable(ctx, spec, avail, forceAllSizes = false) {
   const seats = Math.min(spec.slots || SLOTS, SLOTS);
   const rel = relevantMask(ctx.ops, spec, avail);
   // 班组人数 1..工位数（决策 18）：减少人数**是候选空间的一部分**，不由"满工位是否排得出来"开关。
@@ -400,7 +400,10 @@ function buildFacilityTable(ctx, spec, avail) {
   // 时，任何 n<工位数 的候选都能靠"往空工位塞一个尚未被用到的白板"严格变好（E=(1+0.4n)(1+b) 随 n 严格增，
   // 心情只按设施算 d，不受人数影响），所以这些候选被支配、可以合法剪掉；
   // 人手不足时自动展开 1..工位数（差分族 D/D2/D3 双向护栏：缺人时逐位对齐，富余时也必须对齐）。
-  const sizes = ctx.reducedSizes ? Array.from({ length: seats }, (_, k) => k + 1) : [seats];
+  // `forceAllSizes`（P1）：两舱工位数不同时按"大工位"建表，必须保留 1..最大工位数，否则小工位舱没有候选。
+  const sizes = (forceAllSizes || ctx.reducedSizes)
+    ? Array.from({ length: seats }, (_, k) => k + 1)
+    : [seats];
   const dbg = !!process.env.DEBUG_CAT;
   if (dbg) {
     console.error(`  [table ${spec.key}] seats=${seats} sizes=${sizes.join('/')} avail=${sizeOf(avail)} rel=${sizeOf(rel)} `
@@ -968,7 +971,31 @@ function pairWithoutRelevant(ctx, inst, table) {
   return { value: best, combos };
 }
 
-function maximizePair(ctx, tableA) {
+/**
+ * `rel` 为空 + 两舱工位数不同（P1）：两侧候选各自按工位数过滤后**跨表**两两枚举。
+ * 与 `pairWithoutRelevant` 同口径，只是 a 取自设施 1 的列表、b 取自设施 2 的列表。
+ */
+function pairWithoutRelevantDual(ctx, listA, listB, table) {
+  const mCap = table.fillPool.length;
+  const tol = ctx.cfg.limits.valueTol;
+  const value = (e) => (e.stable ? e.cf : (Number.isFinite(e.currentValue) ? e.currentValue : e.ub));
+  const feasible = (a, b) => a !== b && (a.footprint & b.footprint) === 0n
+    && (a.fillNeed ?? 0) + (b.fillNeed ?? 0) <= mCap;
+  let best = -Infinity;
+  const combos = [];
+  for (const a of listA) {
+    for (const b of listB) {
+      if (!feasible(a, b)) continue;
+      const v = value(a) + value(b);
+      if (v > best + tol) { best = v; combos.length = 0; combos.push([a, b]); }
+      else if (Math.abs(v - best) <= tol && combos.length < 400) combos.push([a, b]);
+    }
+  }
+  if (!combos.length) return { value: 0, combos: [] };
+  return { value: best, combos };
+}
+
+function maximizePair(ctx, tableA, sideCaps = null) {
   const tol = ctx.cfg.limits.valueTol;
   const rel = tableA.rel;
   const bits = toIndices(rel);
@@ -976,6 +1003,13 @@ function maximizePair(ctx, tableA) {
   if (n > 16) return null;
   const size = 1 << n;
   const full = size - 1;
+  // P1 原型：两舱工位数不同时，实例只建一次（大工位表），再按各舱工位数过滤出两份候选
+  const dual = !!sideCaps && sideCaps[0] !== sideCaps[1];
+  const capA = dual ? Math.min(sideCaps[0], tableA.seats) : tableA.seats;
+  const capB = dual ? Math.min(sideCaps[1], tableA.seats) : tableA.seats;
+  const fitsCap = (e, cap) => (e.nA ?? 0) <= cap && (e.single || (e.nB ?? 0) <= cap);
+  let listA = null;
+  let listB = null;
   const localOf = (mask) => {
     let idx = 0;
     for (let p = 0; p < n; p += 1) if (has(mask, bits[p])) idx |= 1 << p;
@@ -1095,8 +1129,8 @@ function maximizePair(ctx, tableA) {
   // 复用缓冲：size 可达 2^16，原来每轮守卫都新建 4 张表（742 轮 ⇒ 数 GB 的分配，GC 的主要来源）
   // `real` = "可确证"表（稳定班 + 已模拟收敛的衰减班），用于下界；P3'' 让含衰减候选的类别也能收敛。
   const buffers = new Map();
-  const bufOf = (t) => {
-    let b = buffers.get(t);
+  const bufOf = (key) => {
+    let b = buffers.get(key);
     if (!b) {
       b = {
         cell: new Array(size), cellStable: new Array(size), cellReal: new Array(size),
@@ -1104,7 +1138,7 @@ function maximizePair(ctx, tableA) {
         valStable: new Float64Array(size), argStable: new Array(size),
         valReal: new Float64Array(size), argReal: new Array(size),
       };
-      buffers.set(t, b);
+      buffers.set(key, b);
     }
     return b;
   };
@@ -1140,50 +1174,62 @@ function maximizePair(ctx, tableA) {
 
   const runLoop = (layered) => {
     const caps = layered ? capList : [fMax];
+    // P1：两舱工位数不同 → 实例只建一次，按各舱工位数过滤出两份候选（同一个实例对象可能两份都进）
+    const listA = dual ? inst.filter((e) => fitsCap(e, capA)) : inst;
+    const listB = dual ? inst.filter((e) => fitsCap(e, capB)) : inst;
+    if (dual && (!listA.length || !listB.length)) return null;
+    const sideOf = dual ? ['A', 'B'] : ['S', 'S'];
+    const lists = [listA, listB];
     for (let guard = 0; guard < 64; guard += 1) {
       // 分层：第 t 层只收"补位数 ≤ t"的实例（顶层 = 不设限）。
-      // 一次遍历 `inst` 同时填"任意实例"和"稳定实例"两张表（原来扫两遍，5 万实例 × 12 轮守卫很贵）。
+      // 一次遍历实例同时填"任意/稳定/可确证"三张表（P3'' 的 real 是下界）。
       const layer = new Map();
-      for (const t of caps) {
-        const buf = bufOf(t);
-        const cell = buf.cell;
-        const cellStable = buf.cellStable;
-        const cellReal = buf.cellReal;
-        cell.fill(null);
-        cellStable.fill(null);
-        cellReal.fill(null);
-        for (let k = 0; k < inst.length; k += 1) {
-          const e = inst[k];
-          if ((e.fillNeed ?? 0) > t) continue;
-          const v = e.evaluated
-            ? (Number.isFinite(e.currentValue) ? e.currentValue : -Infinity)
-            : Math.max(e.cf, e.stable ? e.cf : e.ub);
-          const cur = { v, e };
-          const prev = cell[e.local];
-          if (!prev || better(cur, prev)) cell[e.local] = cur;
-          if (e.stable) {
-            const curS = { v: e.cf, e };
-            const prevS = cellStable[e.local];
-            if (!prevS || better(curS, prevS)) cellStable[e.local] = curS;
+      for (let s = 0; s < 2; s += 1) {
+        if (s === 1 && !dual) break;                    // 形状一致时两侧共用一套网格
+        const side = sideOf[s];
+        const list = lists[s];
+        for (const t of caps) {
+          const buf = bufOf(`${side}|${t}`);
+          const cell = buf.cell;
+          const cellStable = buf.cellStable;
+          const cellReal = buf.cellReal;
+          cell.fill(null);
+          cellStable.fill(null);
+          cellReal.fill(null);
+          for (let k = 0; k < list.length; k += 1) {
+            const e = list[k];
+            if ((e.fillNeed ?? 0) > t) continue;
+            const v = e.evaluated
+              ? (Number.isFinite(e.currentValue) ? e.currentValue : -Infinity)
+              : Math.max(e.cf, e.stable ? e.cf : e.ub);
+            const cur = { v, e };
+            const prev = cell[e.local];
+            if (!prev || better(cur, prev)) cell[e.local] = cur;
+            if (e.stable) {
+              const curS = { v: e.cf, e };
+              const prevS = cellStable[e.local];
+              if (!prevS || better(curS, prevS)) cellStable[e.local] = curS;
+            }
+            // real：稳定班取闭式；衰减班只取"已模拟且收敛"的真值（P3''）
+            const vReal = e.stable ? e.cf
+              : (e.evaluated && e.converged && Number.isFinite(e.currentValue) ? e.currentValue : null);
+            if (vReal !== null) {
+              const curR = { v: vReal, e };
+              const prevR = cellReal[e.local];
+              if (!prevR || better(curR, prevR)) cellReal[e.local] = curR;
+            }
           }
-          // real：稳定班取闭式；衰减班只取"已模拟且收敛"的真值（P3''）
-          const vReal = e.stable ? e.cf
-            : (e.evaluated && e.converged && Number.isFinite(e.currentValue) ? e.currentValue : null);
-          if (vReal !== null) {
-            const curR = { v: vReal, e };
-            const prevR = cellReal[e.local];
-            if (!prevR || better(curR, prevR)) cellReal[e.local] = curR;
-          }
+          sosInto(cell, buf.valAny, buf.argAny);
+          sosInto(cellStable, buf.valStable, buf.argStable);
+          sosInto(cellReal, buf.valReal, buf.argReal);
+          layer.set(`${side}|${t}`, {
+            any: { val: buf.valAny, arg: buf.argAny },
+            stable: { val: buf.valStable, arg: buf.argStable },
+            real: { val: buf.valReal, arg: buf.argReal },
+          });
         }
-        sosInto(cell, buf.valAny, buf.argAny);
-        sosInto(cellStable, buf.valStable, buf.argStable);
-        sosInto(cellReal, buf.valReal, buf.argReal);
-        layer.set(t, {
-          any: { val: buf.valAny, arg: buf.argAny },
-          stable: { val: buf.valStable, arg: buf.argStable },
-          real: { val: buf.valReal, arg: buf.argReal },
-        });
       }
+      const grid = (side, t) => layer.get(`${side}|${t}`);
       const cap2Of = (t1) => (layered ? Math.min(fMax, mCap - t1) : fMax);
       const feasiblePair = (a, b) => !!a && !!b && a !== b
         && (a.footprint & b.footprint) === 0n && needOf(a) + needOf(b) <= mCap;
@@ -1191,11 +1237,11 @@ function maximizePair(ctx, tableA) {
       let lower = -Infinity;
       for (const t1 of caps) {
         const t2 = cap2Of(t1);
-        const anyA = layer.get(t1).any;
-        const anyB = layer.get(t2).any;
+        const anyA = grid(sideOf[0], t1).any;
+        const anyB = grid(sideOf[1], t2).any;
         // 下界用 real（稳定班 + 已确证的衰减班），而不是只看稳定班（P3''）
-        const stA2 = layer.get(t1).real;
-        const stB2 = layer.get(t2).real;
+        const stA2 = grid(sideOf[0], t1).real;
+        const stB2 = grid(sideOf[1], t2).real;
         for (let U = 0; U <= full; U += 1) {
           const up = anyA.val[U] + anyB.val[full - U];
           if (up > upper) upper = up;
@@ -1211,32 +1257,37 @@ function maximizePair(ctx, tableA) {
         // P3''：衰减班只要已模拟收敛，也进入候选（值用 currentValue，不再用闭式 cf）。
         const realValueOf = (e) => (e.stable ? e.cf
           : (e.evaluated && e.converged && Number.isFinite(e.currentValue) ? e.currentValue : -Infinity));
-        const byLocal = new Map();
-        for (const e of inst) {
-          if (!Number.isFinite(realValueOf(e))) continue;
-          const arr = byLocal.get(e.local) || [];
-          arr.push(e);
-          byLocal.set(e.local, arr);
-        }
+        const buildByLocal = (list) => {
+          const map = new Map();
+          for (const e of list) {
+            if (!Number.isFinite(realValueOf(e))) continue;
+            const arr = map.get(e.local) || [];
+            arr.push(e);
+            map.set(e.local, arr);
+          }
+          return map;
+        };
+        const byLocalA = buildByLocal(listA);
+        const byLocalB = dual ? buildByLocal(listB) : byLocalA;
         const combos = [];
         let bestCombo = -Infinity;
         outer:
         for (const t1 of caps) {
           const t2 = cap2Of(t1);
-          const stA2 = layer.get(t1).real;
-          const stB2 = layer.get(t2).real;
+          const stA2 = grid(sideOf[0], t1).real;
+          const stB2 = grid(sideOf[1], t2).real;
           for (let U = 0; U <= full; U += 1) {
             const lo = stA2.val[U] + stB2.val[full - U];
             if (lo < lower - tol) continue;
             const a = stA2.arg[U];
             const b = stB2.arg[full - U];
             if (!feasiblePair(a, b)) continue;
-            const listA = (byLocal.get(a.local) || [])
+            const listA2 = (byLocalA.get(a.local) || [])
               .filter((e) => realValueOf(e) >= stA2.val[U] - tol && needOf(e) <= t1);
-            const listB = (byLocal.get(b.local) || [])
+            const listB2 = (byLocalB.get(b.local) || [])
               .filter((e) => realValueOf(e) >= stB2.val[full - U] - tol && needOf(e) <= t2);
-            for (const x of listA.slice(0, 40)) {
-              for (const y of listB.slice(0, 40)) {
+            for (const x of listA2.slice(0, 40)) {
+              for (const y of listB2.slice(0, 40)) {
                 if (!feasiblePair(x, y)) continue;
                 combos.push([x, y]);
                 const v = realValueOf(x) + realValueOf(y);
@@ -1259,8 +1310,8 @@ function maximizePair(ctx, tableA) {
       let changed = false;
       for (const t1 of caps) {
         const t2 = cap2Of(t1);
-        const anyA = layer.get(t1).any;
-        const anyB = layer.get(t2).any;
+        const anyA = grid(sideOf[0], t1).any;
+        const anyB = grid(sideOf[1], t2).any;
         for (let U = 0; U <= full; U += 1) {
           if (anyA.val[U] + anyB.val[full - U] < upper - tol) continue;
           for (const e of [anyA.arg[U], anyB.arg[full - U]]) {
@@ -1279,8 +1330,8 @@ function maximizePair(ctx, tableA) {
         let bestFeasible = -Infinity;
         for (const t1 of caps) {
           const t2 = cap2Of(t1);
-          const anyA = layer.get(t1).any;
-          const anyB = layer.get(t2).any;
+          const anyA = grid(sideOf[0], t1).any;
+          const anyB = grid(sideOf[1], t2).any;
           for (let U = 0; U <= full; U += 1) {
             const val = anyA.val[U] + anyB.val[full - U];
             if (val < upper - tol) continue;
@@ -1307,13 +1358,23 @@ function maximizePair(ctx, tableA) {
   // SOS 每格只留一条实例，`feasiblePair` 的 a!==b ⇒ 永远配不出两舱 ⇒ 整个类别被记 0
   // （实测：14 人 + 双经验舱 + 零技能，8 个空闲人也排不出两个制造舱）。
   // 此时两舱共享的只有补位池、实例数很小，直接精确枚举两两组合。
-  if (n === 0) return pairWithoutRelevant(ctx, inst, tableA);
+  if (n === 0) {
+    if (!dual) return pairWithoutRelevant(ctx, inst, tableA);
+    return pairWithoutRelevantDual(
+      ctx,
+      inst.filter((e) => fitsCap(e, capA)),
+      inst.filter((e) => fitsCap(e, capB)),
+      tableA,
+    );
+  }
 
   // 先按"不设补位联合约束"的快路径算（多数实例的赢家本来就补得起），
   // 只有当结果依赖"两舱合计补位 > 池"的组合（不可行）时才退回分层精确路径重算。
   let layered = false;
   let result = runLoop(layered);
+  if (!result) return null;                                   // dual：某一侧没有合法候选 ⇒ 交给调用方回退扫描
   if ((result.needLayered || result.approximate) && !jointFree) { layered = true; result = runLoop(layered); }
+  if (!result) return null;
   delete result.needLayered;
   // ── 值驱动展开：把参与最优组合的签名对扩到全部 23 个 h，再跑一遍 ──
   // 同一批人换舱/换班（`(si,sj)` 与 `(sj,si)`）是等值的两种排法，保留 h 集合却按各签名对
@@ -1621,6 +1682,16 @@ function categoryBranchesBody(ctx, catIdx, usedMask, assistLeft) {
     const sameShape = tables[0].seats === tables[1].seats
       && JSON.stringify(Object.keys(tables[0].spec.weights)) === JSON.stringify(Object.keys(tables[1].spec.weights));
     let res = sameShape ? maximizePair(ctx, tables[0]) : null;
+    if (!res && !sameShape) {
+      // P1：不同工位数的同类双舱也走**联合搜索**——用大工位表建一次实例，按各舱工位数过滤出两份候选，
+      // 两侧各建网格后跨表配对（值只由人选 + n + 房间权重决定，与分到哪一舱无关）。
+      const seatsA = tables[0].seats;
+      const seatsB = tables[1].seats;
+      const seatsMax = Math.max(seatsA, seatsB);
+      const bigSpec = seatsA >= seatsB ? specs[0] : specs[1];
+      const tableM = buildFacilityTable(ctx, { ...bigSpec, slots: seatsMax }, ctx.availMask, true) || tables[0];
+      res = maximizePair(ctx, tableM, [seatsA, seatsB]);
+    }
     if (!res) {
       ctx.approximations.add(sameShape
         ? '同类双设施的相关干员过多，联合搜索退化为成对扫描'
