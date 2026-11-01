@@ -2,13 +2,13 @@
   "source": {
     "rules": {
       "repository": "https://github.com/arkntools/arknights-toolbox-data",
-      "commit": "a9342f1c5f49f21a0c49241fb9b56f3ee09685e8"
+      "commit": "3fc3d11079a66f30c19f919ed78c53d0fcd527db"
     },
     "branches": {
       "repository": "https://github.com/Kengxxiao/ArknightsGameData",
-      "commit": "fe7d8d05edc36cf5678a24bfe9e84e891f6cf7ad"
+      "commit": "63c7cec73c3858d0ae913f85cc89af3cef4d744f"
     },
-    "descriptionsHash": "45385fdea4a02975a34c3237fa52f9cab1793aabb769adbb204e0621db7cd18c"
+    "descriptionsHash": "5897f76f471f7f9161ba82b8febea1256d539c8597b69c440cb06e4553068437"
   },
   "branches": {
     "char_002_amiya": "corecaster",
@@ -342,6 +342,8 @@
     "char_4164_tecno": "soulcaster",
     "char_4165_ctrail": "skywalker",
     "char_4166_varkis": "centurion",
+    "char_4169_caledo": "primprotector",
+    "char_4170_hdbell": "dispatcher",
     "char_4171_wulfen": "traper",
     "char_4172_xingzh": "blessing",
     "char_4173_nowell": "healer",
@@ -396,6 +398,10 @@
     "char_4235_thumpy": "primprotector",
     "char_4236_tmslot": "funnel",
     "char_4237_jcinta": "bearer",
+    "char_4244_tocka": "supportiveranger",
+    "char_4245_alga": "instructor",
+    "char_4246_dminon": "stalker",
+    "char_4247_oxi": "primguard",
     "char_426_billro": "phalanx",
     "char_427_vigil": "tactician",
     "char_430_fartth": "longrange",
@@ -1148,6 +1154,17 @@
       "environment": "fireworks",
       "cap": null
     },
+    "train_spd_branches_000": {
+      "kind": "speed",
+      "bonus": 0,
+      "extra": {
+        "branches": [
+          "primguard",
+          "primcaster"
+        ],
+        "bonus": 45
+      }
+    },
     "train_spd_doubleProf2_000": {
       "kind": "speed",
       "bonus": 30,
@@ -1241,6 +1258,14 @@
       ]
     },
     "train_spd_doubleProf_301": {
+      "kind": "speed",
+      "bonus": 30,
+      "professions": [
+        6,
+        1
+      ]
+    },
+    "train_spd_doubleProf_302": {
       "kind": "speed",
       "bonus": 30,
       "professions": [
