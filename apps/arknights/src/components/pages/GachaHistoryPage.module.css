@@ -156,7 +156,8 @@
   --gacha-stat-highlight: color-mix(in oklab, currentColor 55%, white);
   --gacha-stat-shadow: color-mix(in oklab, currentColor 65%, black);
   position: relative;
-  height: .75em;
+  height: 1em;
+  transform: translateY(-6px);
   overflow: hidden;
   font-size: 6rem;
   font-weight: 600;
@@ -216,6 +217,7 @@
   .actionLabel { display: none; }
   .poolCard { --gacha-card-gutter: .75rem; }
   .poolHeader { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: .5rem; padding-top: .5rem; }
+  .poolHeader:has([data-gacha-stat-wide]) { grid-template-columns: minmax(0, .7fr) minmax(0, 1.4fr); }
   .poolIdentity { flex-direction: column; align-items: flex-start; align-self: stretch; justify-content: space-between; gap: .25rem; padding-bottom: .5rem; }
   .poolTitle { font-size: 1.125rem; line-height: 1.25; }
   .poolPeriod { flex-basis: auto; font-size: 10px; }
