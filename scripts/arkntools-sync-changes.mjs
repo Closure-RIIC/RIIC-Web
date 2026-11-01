@@ -13,9 +13,18 @@ const managedPaths = [
   "apps/arknights/src/generated/mastery-data.json",
   "packages/arknights-domain/src/generated/gacha-up.json",
   "fixtures/operbox_full_e2.json",
+  "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json",
+  "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json",
+  "apps/arknights/src/generated/i18n/en/ArknightsGameData.json",
+  "apps/arknights/src/generated/i18n/operator-aliases.json",
+  "apps/arknights/src/generated/i18n/sources.json",
 ];
 
 const provenanceFields = new Map([
+  ["apps/arknights/src/generated/i18n/sources.json", [
+    ["source", "commit"],
+    ["localInputs", "packages/arknights-domain/src/generated/arkntools/source.json"],
+  ]],
   ["packages/arknights-domain/src/generated/arkntools/source.json", [
     ["source", "commit"], ["portraitsSource", "commit"], ["portraitsFallback", "commit"],
   ]],
@@ -31,8 +40,9 @@ function withoutUpstreamCommits(contents, fields) {
     let parent = value;
     for (const key of keys.slice(0, -1)) parent = parent?.[key];
     const key = keys.at(-1);
-    // Ignore only valid, existing commit fields; schema/source changes still publish.
-    if (typeof parent?.[key] === "string" && /^[0-9a-f]{40}$/i.test(parent[key])) {
+    // Ignore only valid, existing provenance fields; schema/source changes still publish.
+    const digestPattern = keys[0] === "localInputs" ? /^[0-9a-f]{64}$/i : /^[0-9a-f]{40}$/i;
+    if (typeof parent?.[key] === "string" && digestPattern.test(parent[key])) {
       parent[key] = ignoredCommit;
     }
   }
