@@ -509,6 +509,33 @@ test("publication ignores only pinned provenance commits, not schema, source or 
   assert.equal(changed("packages/arknights-domain/src/generated/gacha-up.json", { pool: 1 }, { pool: 2 }), true);
 });
 
+test("translation provenance skips commit-only updates but preserves translation and input changes", () => {
+  const file = "apps/arknights/src/generated/i18n/sources.json";
+  const inputFile = "packages/arknights-domain/src/generated/arkntools/source.json";
+  const manifest = {
+    source: { repository: ARKNTOOLS_REPOSITORY, commit: SOURCE_SHA },
+    localInputs: { [inputFile]: "1".repeat(64), overrides: "reviewed" },
+    outputs: { catalog: "translated" },
+    coverage: {},
+  };
+  const next = globalThis.structuredClone(manifest);
+  next.source.commit = PORTRAITS_SHA;
+  next.localInputs[inputFile] = "2".repeat(64);
+  const changed = (value) => hasManagedContentChange(file, JSON.stringify(manifest), JSON.stringify(value));
+  assert.equal(changed(next), false);
+  for (const mutate of [
+    (value) => { value.outputs.catalog = "new translation"; },
+    (value) => { value.localInputs.overrides = "new review"; },
+    (value) => { value.localInputs[inputFile] = "invalid"; },
+    (value) => { delete value.localInputs[inputFile]; },
+    (value) => { value.source.repository = "https://example.test/changed-source"; },
+  ]) {
+    const altered = globalThis.structuredClone(next);
+    mutate(altered);
+    assert.equal(changed(altered), true);
+  }
+});
+
 test("publication detects staged, untracked and deleted managed files without modifying the index", async (t) => {
   const root = await makeTemp(t);
   const catalogRoot = path.join(root, "packages/arknights-domain/src/generated/arkntools");
@@ -530,6 +557,10 @@ test("publication detects staged, untracked and deleted managed files without mo
   const poolFile = path.join(root, "packages/arknights-domain/src/generated/gacha-up.json");
   await writeFile(poolFile, JSON.stringify({ newPool: { six: ["测试甲"] } }));
   assert.deepEqual((await detectManagedChanges(root)).contentFiles, ["packages/arknights-domain/src/generated/gacha-up.json"]);
+  const translationFile = "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json";
+  await mkdir(path.dirname(path.join(root, translationFile)), { recursive: true });
+  await writeFile(path.join(root, translationFile), JSON.stringify({ operatorNames: { "新干员": "新干员" } }));
+  assert.ok((await detectManagedChanges(root)).contentFiles.includes(translationFile));
   git("add", ".");
   assert.equal((await detectManagedChanges(root)).changed, true);
   await unlink(sourceFile);
