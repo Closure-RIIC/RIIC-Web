@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:5184";
 const webServerPort = new URL(baseURL).port || "80";
 const releaseDirectory = process.env.PLAYWRIGHT_RELEASE_DIR;
+const softwareGpuSpecs = ["plush-*.spec.ts", "agent-motion.spec.ts", "agent-personas.spec.ts", "agent-workbench.spec.ts"];
 
 export default defineConfig({
   testDir: "./e2e",
@@ -24,12 +25,12 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts", "agent-resources.spec.ts", "tanstack-*.spec.ts", "plush-*.spec.ts"],
+      testIgnore: ["production-profile.spec.ts", "agent-billing.spec.ts", "agent-resources.spec.ts", "tanstack-*.spec.ts", ...softwareGpuSpecs],
       use: { ...devices["Desktop Chrome"] },
     },
     {
       name: "chromium-plush",
-      testMatch: "plush-*.spec.ts",
+      testMatch: softwareGpuSpecs,
       // Full-quality fur uses software WebGL in CI. Two simultaneous galleries
       // contend for the same CPU renderer and turn idle waits into load tests.
       // Keep every visual assertion while serializing GPU-heavy cases per shard.

@@ -2,7 +2,7 @@
 
 以后发布 RIIC-Web，以本手册作为操作入口。默认顺序是：**先 develop 开发环境，验证成功后再 main 生产环境**。
 
-仓库：`Closure-RIIC/RIIC-Web`。适用于 Windows PowerShell 5.1 / PowerShell 7。最近核对：2026-10-31，依据当时 main 的发布脚本、工作流和实际分支保护。
+仓库：`Closure-RIIC/RIIC-Web`。适用于 Windows PowerShell 5.1 / PowerShell 7。最近核对：2026-11-01，依据当前发布脚本、工作流和实际分支保护。
 
 日常使用下面的五行速用版；首次准备看第一节，遇到问题再看后续章节。同一时间只运行一条发布命令；多个 PR 依次发布，或者先准备经过审查的整合 PR。
 
@@ -130,6 +130,8 @@ npm run release:pr -- $pr --execute --head $head --approve-production --timeout-
 ```
 
 `--approve-production` 授权脚本在质量检查通过、提交仍为当前 main、账号有权限时批准 production 环境。**它不代替 main PR 的 CODEOWNER 审核，也不授予额外权限。**
+
+浏览器门禁包含普通 Chromium 四个分片，以及毛绒和 Agent 高质量渲染测试的四个独立分片；后者每个分片使用一个 worker，避免 CI 软件 GPU 并行争用。所有必需分片通过后才能进入部署，测试断言和渲染质量保持完整。
 
 默认总等待 90 分钟；上面用 120 分钟，上限 240 分钟。超时或 Ctrl+C 只停止本地监控，GitHub 后台任务会继续。失败 CI 不会自动重跑。
 
