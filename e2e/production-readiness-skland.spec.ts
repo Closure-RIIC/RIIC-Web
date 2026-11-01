@@ -685,6 +685,7 @@ test("gacha groups each six-star result with its draw bar and only intervening f
   await expect(content.locator('[data-gacha-summary-metric="orundum"] strong > span').first()).toHaveText("64,200");
   await expect(intervals).toHaveCount(3);
   await expect(lower.getByRole("listitem")).toHaveCount(1);
+  await content.getByRole("button", { name: "展开操作按钮", exact: true }).click();
   const showFiveStars = content.getByRole("group", { name: "寻访记录操作" }).getByRole("button", { name: "展示五星", exact: true });
   await expect(content.locator("[data-gacha-summary-metric]")).toHaveCount(5);
   await expect(content.locator("[data-gacha-summary]").getByRole("button", { name: "展示五星" })).toHaveCount(0);
@@ -957,6 +958,7 @@ test("gacha authorization dialog stops polling when closed and refreshes after Q
   await page.clock.fastForward(10_000);
   expect(polls).toBe(1);
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "展开操作按钮", exact: true }).click();
   await trigger.click();
   const mobileQr = await dialog.locator("[data-gacha-qr]").boundingBox();
   const mobileConsent = await dialog.locator("[data-skland-policy-consent]").boundingBox();
