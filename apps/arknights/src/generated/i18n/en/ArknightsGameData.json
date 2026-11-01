@@ -343,6 +343,8 @@
     "特克诺": "Tecno",
     "云迹": "Contrail",
     "摆渡人": "Varkáris",
+    "镜匠": "Caleido",
+    "行铃": "Herdbells",
     "钼铅": "Wulfenite",
     "行箸": "Xingzhu",
     "诺威尔": "Nowell",
@@ -397,6 +399,10 @@
     "珊比": "Thumpy",
     "时隙": "Timeslot",
     "嘉辛塔": "Jacinta",
+    "冻河": "Тоска",
+    "奥尔佳": "Ольга",
+    "国度": "Территория",
+    "塔露拉": "Talulah",
     "卡涅利安": "Carnelian",
     "伺夜": "Vigil",
     "远牙": "Fartooth",
@@ -985,6 +991,10 @@
     "dorm_rec_all&unfull_001": {
       "name": "Conversationalist",
       "description": "When this Operator is assigned to a Dormitory, restores <@cc.vup>+0.2</> Morale per hour to all Operators assigned to that Dormitory; for every <@cc.kw>1</> Operator whose Morale is not full in that Dormitory, restore an additional <@cc.vup>+0.01</> (Only the strongest effect of this type applies)"
+    },
+    "dorm_rec_all&unfull_100": {
+      "name": "A Little Help",
+      "description": "When assigned to a Dormitory, restores <@cc.vup>+0.1</> Morale per hour to all Operators in that Dormitory; for every <@cc.kw>1</> Operator whose Morale is not full, restores an additional <@cc.vup>+0.01</> Morale per hour (only the strongest effect of this type applies)"
     },
     "dorm_rec_bd_dungeon_000": {
       "name": "Senshi's Diner",
@@ -2022,6 +2032,14 @@
       "name": "Information Gathering",
       "description": "When this Operator is assigned to the Reception Room, increases Clue search speed by <@cc.vup>10%</>, and when assigned together with another <$cc.g.bs><@cc.kw>Blacksteel Worldwide</></> Operator, increases Clue search speed by an additional <@cc.vup>20%</>"
     },
+    "meet_spd&sami_200": {
+      "name": "Diplomatic Aptitude",
+      "description": "When assigned to the Reception Room, increases Clue search speed by <@cc.vup>10%</>"
+    },
+    "meet_spd&sami_210": {
+      "name": "Collective Wisdom",
+      "description": "When assigned to the Reception Room, increases Clue search speed by <@cc.vup>10%</>; when working with other <$cc.g.ussg><@cc.kw>Ursus Student Self-Governing Group</></> Operators in the Reception Room, increases Clue search speed by an additional <@cc.vup>20%</>"
+    },
     "meet_spd&team_000": {
       "name": "Clue Search α",
       "description": "When this Operator is assigned to the Reception Room, Clue search speed increases by <@cc.vup>10%</>"
@@ -2182,6 +2200,10 @@
       "name": "Lighthouse Power Supply Module",
       "description": "When this Operator is assigned to a Power Plant, increases the drone recovery rate by <@cc.vup>+15%</>"
     },
+    "power_rec_spd_018": {
+      "name": "Fear of the Artificial",
+      "description": "When assigned to a Power Plant, increases drone recovery speed by <@cc.vup>+15%</>"
+    },
     "power_rec_spd_020": {
       "name": "Electrostatic Field",
       "description": "When this Operator is assigned to a Power Plant, increases the drone recovery rate by <@cc.vup>+20%</>"
@@ -2262,9 +2284,25 @@
       "name": "Scavenger",
       "description": "When assigned to the Recycling Station, material conversion efficiency <@cc.vup>+20%</>"
     },
+    "recycle_spd&cost_001": {
+      "name": "Melitta Sorting",
+      "description": "When assigned to the Recycling Station, increases material conversion efficiency by <@cc.vup>+20%</>"
+    },
     "recycle_spd&cost_010": {
       "name": "Beachcomber",
       "description": "When assigned to the Recycling Station, material conversion efficiency <@cc.vup>+30%</>"
+    },
+    "recycle_spd&cost_011": {
+      "name": "Cauliflower Selection",
+      "description": "When assigned to the Recycling Station, increases material conversion efficiency by <@cc.vup>+30%</>"
+    },
+    "recycle_spd&cost_100": {
+      "name": "Indiscriminate Recycling",
+      "description": "When assigned to the Recycling Station, material conversion efficiency <@cc.vup>+20%</> and Morale consumed per hour <@cc.vup>-0.1</>"
+    },
+    "recycle_spd&cost_110": {
+      "name": "Indiscriminate Conversion",
+      "description": "When assigned to the Recycling Station, material conversion efficiency <@cc.vup>+30%</> and Morale consumed per hour <@cc.vup>-0.1</>"
     },
     "trade_cost_000": {
       "name": "Warm-Up",
@@ -2590,6 +2628,14 @@
       "name": "Hard-Working Manager β",
       "description": "When this Operator is assigned to a Trading Post, other Operators working in the Trading Post have <@cc.vup>+20%</> order acquisition efficiency"
     },
+    "trade_ord_spd&share_100": {
+      "name": "“Useless Connections”",
+      "description": "When assigned to a Trading Post, grants <@cc.vup>+15%</> order acquisition efficiency for each other Operator working in that Trading Post"
+    },
+    "trade_ord_spd&share_110": {
+      "name": "“Actually Useful?”",
+      "description": "When assigned to a Trading Post, grants <@cc.vup>+20%</> order acquisition efficiency for each other Operator working in that Trading Post"
+    },
     "trade_ord_spd&tag_000": {
       "name": "Order Distribution α",
       "description": "When this Operator is assigned to a Trading Post, order acquisition efficiency <@cc.vup>+20%</>"
@@ -2690,6 +2736,10 @@
       "name": "Think Before Acting",
       "description": "When this Operator is assigned to be the Trainer of the Training Room, for every 1 Specialization training session completed, <$cc.t.accmuguard1><@cc.rem>Martial Arts</></> is accumulated. When <$cc.t.accmuguard1><@cc.rem>Martial Arts</></> reaches its cap, the next <@cc.kw>Guard</> Operator's skill Specialization training to level <@cc.kw>1</> is completed immediately, and all <$cc.t.accmuguard1><@cc.rem>Martial Arts</></> is removed."
     },
+    "train_spd_branches_000": {
+      "name": "New Stories by the Fire",
+      "description": "When assigned to the Training Room as the Trainer, if the trainee is a <@cc.kw>Primal Guard</> or <@cc.kw>Primal Caster</>, increases Specialization training speed by an additional <@cc.vup>+45%</>"
+    },
     "train_spd_doubleProf_000": {
       "name": "Sword and Handcannon",
       "description": "When this Operator is assigned to be the Trainer in the Training Room, <@cc.kw>Guard</> and <@cc.kw>Sniper</> Operators' Specialization training speed<@cc.vup>+30%</>"
@@ -2717,6 +2767,10 @@
     "train_spd_doubleProf_301": {
       "name": "'I Don't Get It'",
       "description": "When this Operator is assigned to be the Trainer in the Training Room, <@cc.kw>Caster</> and <@cc.kw>Guard</> Operators' Specialization training speed <@cc.vup>+30%</>"
+    },
+    "train_spd_doubleProf_302": {
+      "name": "Sword and Bygone Days",
+      "description": "When assigned to the Training Room as the Trainer, increases the Specialization training speed of <@cc.kw>Guard</> and <@cc.kw>Caster</> Operators by <@cc.vup>+30%</>"
     },
     "train_spd_doubleProf_310": {
       "name": "'Learning By Analogy'",
@@ -3254,6 +3308,10 @@
       "name": "Boulder Anchoring",
       "description": "When this Operator is assigned to the Workshop to process <@cc.kw>Elite materials</>, any byproducts of <@cc.kw>T3</> quality produced will be <@cc.kw>Orirock Clusters</>"
     },
+    "workshop_formula_drop_050": {
+      "name": "Reagent Recovery",
+      "description": "When assigned to a Workshop to process <@cc.kw>Elite Materials</>, any <@cc.kw>T3</> byproduct produced is guaranteed to be <@cc.kw>Aketon</>"
+    },
     "workshop_formula_free_000": {
       "name": "Careful Planning",
       "description": "When this Operator is assigned to the Workshop to process <@cc.kw>Elite materials</>, reduces the LMD cost."
@@ -3322,9 +3380,17 @@
       "name": "Overactive",
       "description": "When this Operator is assigned to the Workshop to process <@cc.kw>elite material</>, the production rate of byproduct increases by <@cc.vup>75%</>"
     },
+    "workshop_formula_probability_1111": {
+      "name": "Mirrorcraft Fundamentals α",
+      "description": "When assigned to a Workshop to process <@cc.kw>Elite Materials</>, increases the byproduct rate by <@cc.vup>75%</>"
+    },
     "workshop_formula_probability_112": {
       "name": "Blasting Materiology α",
       "description": "When this Operator is assigned to the Workshop to process <@cc.kw>elite material</>, the production rate of byproduct increases by <@cc.vup>75%</>"
+    },
+    "workshop_formula_probability_1121": {
+      "name": "Mirrorcraft Fundamentals β",
+      "description": "When assigned to a Workshop to process <@cc.kw>Elite Materials</>, increases the byproduct rate by <@cc.vup>80%</>"
     },
     "workshop_formula_probability_113": {
       "name": "Corrosion Studies α",
