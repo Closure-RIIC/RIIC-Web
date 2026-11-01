@@ -16,7 +16,7 @@ function addName(name: string, operator: Operator) {
   node.operator = operator;
 }
 for (const operator of catalogue) {
-  if (/^\/images\/operator-portraits\/[a-zA-Z0-9_-]+\.webp\?v=\d+-[a-f0-9]{12}$/.test(operator.portrait)) addName(operator.name, operator);
+  if (/^\/images\/operator-portraits\/[a-zA-Z0-9_-]+\.webp\?v=(?:\d+-[a-f0-9]{12}|sha256-[a-f0-9]{64})$/.test(operator.portrait)) addName(operator.name, operator);
 }
 const amiya = catalogue.find((operator) => operator.id === "char_002_amiya");
 if (amiya) for (const name of ["阿米娅(近卫)", "阿米娅(医疗)", "阿米娅（近卫）", "阿米娅（医疗）"]) addName(name, amiya);
