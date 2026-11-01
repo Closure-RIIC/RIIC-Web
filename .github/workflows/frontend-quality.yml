@@ -451,9 +451,13 @@ jobs:
         shard: [1/4, 2/4, 3/4, 4/4]
         include:
           - project: chromium-plush
-            shard: 1/2
+            shard: 1/4
           - project: chromium-plush
-            shard: 2/2
+            shard: 2/4
+          - project: chromium-plush
+            shard: 3/4
+          - project: chromium-plush
+            shard: 4/4
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
       options: --user 1001
