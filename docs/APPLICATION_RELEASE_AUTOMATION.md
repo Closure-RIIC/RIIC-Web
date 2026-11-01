@@ -1,5 +1,7 @@
 # Application release automation
 
+日常发布统一从 [命令行 PR 双环境发布手册](PR_RELEASE_GUIDE.md) 开始，涵盖 PowerShell 命令、两种审批和异常恢复。本文说明应用范围与自动化实现。
+
 ## Release a PR from the command line
 
 Run from this repository with Node.js 22.12+ and an authenticated GitHub CLI

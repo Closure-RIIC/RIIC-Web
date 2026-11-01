@@ -130,6 +130,18 @@ test("branch, profession and stage bonuses; upgraded skills replace predecessors
   near(masteryTrainers(input("斩业星熊",["星熊"]))[0]!.bonuses[1],60);
 });
 
+test("Talulah stacks her E2 branch bonus only for Primal Guards and Casters", () => {
+  for (const [targetName, expected] of [["聆音",75],["妮芙",75],["银灰",30],["逻各斯",30],["能天使",0],["镜匠",0]] as const) {
+    const trainer = masteryTrainers(input(targetName,["塔露拉"]))[0]!;
+    assert.deepEqual(trainer.bonuses,{1:expected,2:expected,3:expected});
+  }
+  const value = input("聆音",["塔露拉"],{target:1,controlBonus:false});
+  near(calculateMastery(value).fast.totalSeconds,8*3600/1.8);
+  value.operbox[1]!.elite = 1;
+  assert.deepEqual(unlockedMasterySkills(value.operbox[1]!),["train_spd_doubleProf_302"]);
+  near(masteryTrainers(value)[0]!.bonuses[1],30);
+});
+
 test("environment defaults to zero, stacks separate skills, and obeys per-skill cap", () => {
   const value = input("银灰",["乌尔比安","余"]);
   assert.deepEqual(availableMasteryEnvironments(value.operbox,value.targetId),["fireworks","abyssal"]);

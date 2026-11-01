@@ -922,7 +922,7 @@ test("schedule visuals use a stable technical canvas and responsive level marker
     (image) => (image as HTMLImageElement).naturalWidth
   )).toBe(36);
   const operatorPortrait = page.locator('img[src^="/images/operator-portraits/"]').first();
-  await expect(operatorPortrait).toHaveAttribute("src", /\.webp\?v=\d+-[0-9a-f]{12}$/);
+  await expect(operatorPortrait).toHaveAttribute("src", /\.webp\?v=sha256-[0-9a-f]{64}$/);
   await expect(operatorPortrait).toHaveAttribute("width", "180");
   await expect(operatorPortrait).toHaveAttribute("height", "180");
   await expect(operatorPortrait).toHaveAttribute("loading", "lazy");

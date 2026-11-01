@@ -14,6 +14,19 @@ function tokens(nodes: MarkdownNode<InlineToken[]>[]): InlineToken[] {
 }
 const mentions = (content: string, streaming = false, previousParts: string[] = []) => tokens(prepareAgentMarkdown(content, streaming, previousParts)).flatMap((token) => token.mentions);
 
+test("new operators resolve with content-hashed catalogue portraits", () => {
+  const names = ["塔露拉", "国度", "冻河", "奥尔佳", "镜匠", "行铃"];
+  const matched = mentions(names.join("、"));
+  assert.deepEqual(matched.map(item => item.name), names);
+  for (const mention of matched) {
+    const operator = catalogue.find(item => item.name === mention.name);
+    assert.ok(operator);
+    assert.equal(mention.id, operator.id);
+    assert.equal(mention.portrait, operator.portrait);
+    assert.match(mention.portrait, /\?v=sha256-[a-f0-9]{64}$/);
+  }
+});
+
 test("full names win over prefixes and aliases share an operator identity", () => {
   assert.deepEqual(findOperatorMentions("红云、红、阿米娅（近卫）、阿米娅、假干员").map((item) => item.name), ["红云", "红", "阿米娅", "阿米娅"]);
   const matched = findOperatorMentions("建议优先培养能天使，再部署银灰。");

@@ -1,5 +1,11 @@
 {
   "operatorNames": {
+    "行铃": "Herdbells",
+    "奥尔佳": "Ольга",
+    "镜匠": "Caleido",
+    "冻河": "Тоска",
+    "国度": "Территория",
+    "塔露拉": "Talulah",
     "德·托莱多": "De Toledo",
     "结城理": "Makoto Yuki",
     "埃癸斯": "Aigis",
@@ -473,6 +479,66 @@
     "7004": "Ten-roll Headhunting Permit"
   },
   "buildingSkills": {
+    "power_rec_spd_018": {
+      "name": "Fear of the Artificial",
+      "description": "When assigned to a Power Plant, increases drone recovery speed by <@cc.vup>+15%</>"
+    },
+    "trade_ord_spd&share_100": {
+      "name": "“Useless Connections”",
+      "description": "When assigned to a Trading Post, grants <@cc.vup>+15%</> order acquisition efficiency for each other Operator working in that Trading Post"
+    },
+    "trade_ord_spd&share_110": {
+      "name": "“Actually Useful?”",
+      "description": "When assigned to a Trading Post, grants <@cc.vup>+20%</> order acquisition efficiency for each other Operator working in that Trading Post"
+    },
+    "workshop_formula_probability_1111": {
+      "name": "Mirrorcraft Fundamentals α",
+      "description": "When assigned to a Workshop to process <@cc.kw>Elite Materials</>, increases the byproduct rate by <@cc.vup>75%</>"
+    },
+    "workshop_formula_probability_1121": {
+      "name": "Mirrorcraft Fundamentals β",
+      "description": "When assigned to a Workshop to process <@cc.kw>Elite Materials</>, increases the byproduct rate by <@cc.vup>80%</>"
+    },
+    "workshop_formula_drop_050": {
+      "name": "Reagent Recovery",
+      "description": "When assigned to a Workshop to process <@cc.kw>Elite Materials</>, any <@cc.kw>T3</> byproduct produced is guaranteed to be <@cc.kw>Aketon</>"
+    },
+    "train_spd_doubleProf_302": {
+      "name": "Sword and Bygone Days",
+      "description": "When assigned to the Training Room as the Trainer, increases the Specialization training speed of <@cc.kw>Guard</> and <@cc.kw>Caster</> Operators by <@cc.vup>+30%</>"
+    },
+    "train_spd_branches_000": {
+      "name": "New Stories by the Fire",
+      "description": "When assigned to the Training Room as the Trainer, if the trainee is a <@cc.kw>Primal Guard</> or <@cc.kw>Primal Caster</>, increases Specialization training speed by an additional <@cc.vup>+45%</>"
+    },
+    "dorm_rec_all&unfull_100": {
+      "name": "A Little Help",
+      "description": "When assigned to a Dormitory, restores <@cc.vup>+0.1</> Morale per hour to all Operators in that Dormitory; for every <@cc.kw>1</> Operator whose Morale is not full, restores an additional <@cc.vup>+0.01</> Morale per hour (only the strongest effect of this type applies)"
+    },
+    "meet_spd&sami_200": {
+      "name": "Diplomatic Aptitude",
+      "description": "When assigned to the Reception Room, increases Clue search speed by <@cc.vup>10%</>"
+    },
+    "meet_spd&sami_210": {
+      "name": "Collective Wisdom",
+      "description": "When assigned to the Reception Room, increases Clue search speed by <@cc.vup>10%</>; when working with other <$cc.g.ussg><@cc.kw>Ursus Student Self-Governing Group</></> Operators in the Reception Room, increases Clue search speed by an additional <@cc.vup>20%</>"
+    },
+    "recycle_spd&cost_001": {
+      "name": "Melitta Sorting",
+      "description": "When assigned to the Recycling Station, increases material conversion efficiency by <@cc.vup>+20%</>"
+    },
+    "recycle_spd&cost_011": {
+      "name": "Cauliflower Selection",
+      "description": "When assigned to the Recycling Station, increases material conversion efficiency by <@cc.vup>+30%</>"
+    },
+    "recycle_spd&cost_100": {
+      "name": "Indiscriminate Recycling",
+      "description": "When assigned to the Recycling Station, material conversion efficiency <@cc.vup>+20%</> and Morale consumed per hour <@cc.vup>-0.1</>"
+    },
+    "recycle_spd&cost_110": {
+      "name": "Indiscriminate Conversion",
+      "description": "When assigned to the Recycling Station, material conversion efficiency <@cc.vup>+30%</> and Morale consumed per hour <@cc.vup>-0.1</>"
+    },
     "control_prod_spd_999": {
       "name": "Leadership Charisma",
       "description": "When assigned to the Control Center, all Factories gain <@cc.vup>+2%</> productivity (only the strongest effect of this type applies)"

@@ -33,7 +33,7 @@ import { FluidOrb } from "@/components/ui/fluid-orb";
 import { accountOrbColor } from "@/account-orb";
 import { requestAccountSignIn } from "@riic/shell/account-sign-in";
 import { AgentConversationScrollArea } from "./AgentConversationScrollArea";
-import { Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ChatBubble, ChatPanel, LoadingState, PromptBar, StreamingText, ThinkingState, ToolChip } from "./beautiful/ChatPrimitives";
 import dialogueStyles from "./beautiful/Dialogue.module.css";
 import billingStyles from "@/components/billing/BillingPrototype.module.css";
@@ -41,9 +41,12 @@ import personaStyles from "./PersonaPreview.module.css";
 import { AgentCreditBalance } from "./AgentCreditBalance";
 import { subscribeBillingUpdates } from "@/lib/billing-events";
 import { PersonaAvatar, readPersonaAvatar } from "./PersonaAvatar";
+import { AgentAppearancePicker } from "./AgentAppearancePicker";
+import { useAgentAppearance } from "./agent-appearance-store";
 import { parsePersonaAvatar } from "@/agent-persona-avatar";
-import { AGENT_PERSONA_SELECTION_KEY, builtinAgentPersona, resolveAgentPersonaSelection, type AgentPersona, type BuiltinAgentPersona, type UploadedAgentPersona } from "@/agent-personas";
-import { buildAgentDisplayTurns, hasActiveAgentContent, snapshotAgentReplyPersona } from "@/agent-response-layout";
+import { builtinAgentPersona, type AgentPersona, type BuiltinAgentPersona, type UploadedAgentPersona } from "@/agent-personas";
+import { MAX_PERSONA_LENGTH, clearLocalPersona, saveLocalPersona, setAgentPersonaSelection, useAgentPersona } from "./agent-persona-store";
+import { buildAgentDisplayTurns, hasActiveAgentContent, readAgentReplyPersona, snapshotAgentReplyPersona } from "@/agent-response-layout";
 import { agentChatErrorMessage } from "@/agent-chat-errors";
 import { useAgentRuntime } from "./AgentRuntimeProvider";
 import { useAgentHistory } from "@/hooks/use-agent-history";
@@ -59,59 +62,11 @@ type AgentModelChoice = { id: "deepseek" | "glm"; label: string };
 
 type PersonaCard = UploadedAgentPersona;
 
-const MAX_PERSONA_LENGTH = 36_000;
 const BUILTIN_PERSONA_THEMES = { blue: billingStyles.monthly, red: personaStyles.closure, yellow: personaStyles.sunny } satisfies Record<BuiltinAgentPersona["theme"], string>;
-const LOCAL_PERSONA_STORAGE_KEY = "riic.agent.persona.v1";
 const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
 const MAX_ATTACHMENTS = 4;
 const ACCEPTED_ATTACHMENT_TYPES = ["image/", "text/", "application/pdf", "application/json", "application/vnd.openxmlformats-officedocument", "application/vnd.ms-excel"];
 const ACCEPTED_ATTACHMENT_EXTENSIONS = [".md", ".markdown", ".txt", ".json", ".pdf", ".csv", ".xlsx"];
-
-function readLocalPersona(): PersonaCard | null {
-  try {
-    const raw = window.localStorage.getItem(LOCAL_PERSONA_STORAGE_KEY);
-    if (!raw) return null;
-    const value = JSON.parse(raw) as Record<string, unknown>;
-    if (value.version !== 1 || typeof value.content !== "string" || !value.content.trim() || value.content.length > MAX_PERSONA_LENGTH) return null;
-    return {
-      id: typeof value.id === "string" ? value.id : `local-${Date.now()}`,
-      name: typeof value.name === "string" && value.name.trim() ? value.name.slice(0, 40) : "",
-      description: typeof value.description === "string" ? value.description.slice(0, 120) : "",
-      content: value.content.slice(0, MAX_PERSONA_LENGTH),
-      kind: "upload",
-      filename: typeof value.filename === "string" ? value.filename.slice(0, 120) : undefined,
-      avatarUrl: parsePersonaAvatar(value.avatarUrl),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function saveLocalPersona(persona: PersonaCard) {
-  try {
-    window.localStorage.setItem(LOCAL_PERSONA_STORAGE_KEY, JSON.stringify({
-      version: 1,
-      id: persona.id,
-      name: persona.name,
-      description: persona.description,
-      content: persona.content,
-      filename: persona.filename,
-      avatarUrl: persona.avatarUrl,
-      savedAt: new Date().toISOString(),
-    }));
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-function clearLocalPersona() {
-  try {
-    window.localStorage.removeItem(LOCAL_PERSONA_STORAGE_KEY);
-  } catch {
-    return;
-  }
-}
 
 const TOOL_LABELS: Record<string, keyof typeof RawMessages> = {
   resolve_operator: "tool_resolve_operator",
@@ -352,6 +307,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   const isMobile = useIsMobile();
   const en = useLocale();
   const intl = useTranslations();
+  const appearanceText = useTranslations("AgentAppearance");
   const { store: historyStore, error: historyError } = useAgentHistory();
   const [agentStatus, setAgentStatus] = useState<AgentStatus>("loading");
   const [creditRevision, setCreditRevision] = useState(0);
@@ -363,8 +319,10 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   const [selectedModel, setSelectedModel] = useState<AgentModelChoice["id"]>();
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState<FileUIPart[]>([]);
-  const [activePersona, setActivePersona] = useState<AgentPersona | null>(null);
-  const [uploadedPersona, setUploadedPersona] = useState<PersonaCard | null>(null);
+  const { selectedPersona, uploadedPersona } = useAgentPersona();
+  const [appearance, setAppearance] = useAgentAppearance();
+  const pureMode = appearance === "glow-cloud";
+  const activePersona = appearance === "plush" ? selectedPersona : null;
   const [builtinPersonas, setBuiltinPersonas] = useState<BuiltinAgentPersona[]>([]);
   const [avatarSaving, setAvatarSaving] = useState(false);
   const [personaHydrated, setPersonaHydrated] = useState(false);
@@ -388,8 +346,8 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     throttle: 50,
   });
   const busy = status === "submitted" || status === "streaming";
-  const personaName = activePersona ? personaPresentation(activePersona, en).name : uiText.text(en, "closure");
-  const personaTheme = activePersona?.kind === "builtin" ? BUILTIN_PERSONA_THEMES[activePersona.theme] : !activePersona ? personaStyles.closure : "";
+  const personaName = pureMode ? appearanceText("glowName") : activePersona ? personaPresentation(activePersona, en).name : uiText.text(en, "closure");
+  const personaTheme = pureMode ? billingStyles.monthly : activePersona?.kind === "builtin" ? BUILTIN_PERSONA_THEMES[activePersona.theme] : !activePersona ? personaStyles.closure : "";
   const personaUnavailable = activePersona?.kind === "builtin" && !builtinPersonas.some(persona => persona.id === activePersona.id);
   const displayTurns = useMemo(() => buildAgentDisplayTurns(messages, busy), [messages, busy]);
   const modeLabel = (id?: AgentModelChoice["id"]) => id === "glm" ? (uiText.text(en, "deep")) : (uiText.text(en, "fast"));
@@ -414,13 +372,12 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     else if (delta > 12 && viewport.scrollHeight > viewport.clientHeight + 24) setHeaderHidden(true);
   };
 
+  useEffect(() => setPersonaHydrated(true), []);
+
   useEffect(() => {
-    const stored = readLocalPersona();
-    setUploadedPersona(stored);
-    try { setActivePersona(resolveAgentPersonaSelection(window.localStorage.getItem(AGENT_PERSONA_SELECTION_KEY), stored)); }
-    catch { setActivePersona(stored); }
-    setPersonaHydrated(true);
-  }, []);
+    if (!personaHydrated || appearance === "plush") return;
+    if (!setAgentPersonaSelection(null)) setPersonaError(rawText.text(rawLocale, "personaSelectionNotSaved"));
+  }, [appearance, personaHydrated, rawLocale]);
 
   useEffect(() => {
     let cancelled = false;
@@ -507,11 +464,11 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     runtime.setRequestOptions(runtimeConversation, { body: {
       model: automaticRouting ? undefined : selectedModel,
       conversationId, attemptId: crypto.randomUUID(),
-      ...(activePersona ? { persona: activePersona.kind === "builtin" ? { id: activePersona.id, kind: "builtin" } : { id: activePersona.id, name: activePersona.name, content: activePersona.content } } : {}),
+      ...(pureMode ? { persona: { kind: "none" } } : activePersona ? { persona: activePersona.kind === "builtin" ? { id: activePersona.id, kind: "builtin" } : { id: activePersona.id, name: activePersona.name, content: activePersona.content } } : {}),
       pageContext: compact && sharePageContext ? pageContext ?? null : null,
     } });
     await runtime.run(runtimeConversation, () => sendMessage(
-      { text: trimmed, files, metadata: { replyPersona: snapshotAgentReplyPersona(activePersona) } },
+      { text: trimmed, files, metadata: { replyPersona: snapshotAgentReplyPersona(activePersona, pureMode ? "pure" : undefined) } },
       runtimeConversation.requestOptions,
     ));
   };
@@ -524,6 +481,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     followLatest();
     runtime.setRequestOptions(runtimeConversation, { body: {
       ...runtimeConversation.requestOptions?.body,
+      ...(readAgentReplyPersona(question.metadata).mode === "pure" ? { persona: { kind: "none" } } : {}),
       model: automaticRouting ? undefined : selectedModel,
       conversationId,
       attemptId: crypto.randomUUID(),
@@ -555,9 +513,9 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
 
   const selectPersona = (persona: AgentPersona | null) => {
     setPersonaError(null);
-    setActivePersona(persona);
-    try { window.localStorage.setItem(AGENT_PERSONA_SELECTION_KEY, persona?.id ?? "default"); }
-    catch { setPersonaError(rawText.text(rawLocale, "personaSelectionNotSaved")); }
+    const appearanceSaved = !persona || appearance === "plush" || setAppearance("plush");
+    const personaSaved = setAgentPersonaSelection(persona);
+    if (!appearanceSaved || !personaSaved) setPersonaError(rawText.text(rawLocale, "personaSelectionNotSaved"));
   };
 
   const importPersona = async (file: File) => {
@@ -585,7 +543,6 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
       }
       if (!content.trim()) throw new Error(rawText.text(rawLocale, "emptyPersona"));
       const persona: PersonaCard = { id: `upload-${Date.now()}`, name: name.slice(0, 40), description, content: content.slice(0, MAX_PERSONA_LENGTH), kind: "upload", filename: file.name, avatarUrl };
-      setUploadedPersona(persona);
       selectPersona(persona);
       if (!saveLocalPersona(persona)) setPersonaError(rawText.text(rawLocale, "personaNotSaved"));
       setPersonaOpen(false);
@@ -599,8 +556,6 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     setPersonaError(null);
     const next = { ...uploadedPersona, avatarUrl };
     if (!saveLocalPersona(next)) { setPersonaError(rawText.text(rawLocale, "avatarNotSaved")); return; }
-    setUploadedPersona(next);
-    if (activePersona?.id === next.id) setActivePersona(next);
   };
 
   const importPersonaAvatar = async (file: File) => {
@@ -614,7 +569,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
 
   const pageGuideLines = pageContext?.summary.split("\n").filter(Boolean).slice(0, 3) ?? [];
   return (
-    <section className={`${dialogueStyles.theme} ${dialogueStyles.chat} ${personaTheme} ${compact ? dialogueStyles.compactChat : ""}`} data-agent-chat data-agent-compact={compact ? "true" : undefined} data-agent-persona={activePersona?.id ?? "default"}>
+    <section className={`${dialogueStyles.theme} ${dialogueStyles.chat} ${personaTheme} ${compact ? dialogueStyles.compactChat : ""}`} data-agent-chat data-agent-compact={compact ? "true" : undefined} data-agent-persona={pureMode ? "none" : activePersona?.id ?? "default"}>
       <div className={compact ? dialogueStyles.compactHeaderSlot : dialogueStyles.headerSlot} data-agent-header-slot data-hidden={headerHidden} inert={headerHidden}>
       {compact ? <header className={dialogueStyles.compactHeader} data-agent-header>
         <div className={`${dialogueStyles.avatar} ${dialogueStyles.compactAvatar}`} aria-hidden="true" data-agent-header-avatar><PersonaAvatar name={personaName} src={activePersona?.kind === "upload" ? activePersona.avatarUrl : undefined} mascot={activePersona?.kind === "builtin" ? activePersona.avatar : undefined} size={32} active={busy} /></div>
@@ -689,7 +644,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
             }}
             attachments={attachments.length ? <div className="flex flex-wrap gap-2 p-1">{attachments.map((file, index) => <AttachmentPreview key={`${file.filename}-${index}`} file={file} onRemove={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))} />)}</div> : undefined}
             toolbar={<>
-              <AgentComposerMenu compact={compact} en={en} personaName={activePersona ? personaPresentation(activePersona, en).name : uiText.text(en, "closure")} onAttach={() => fileInputRef.current?.click()} onPersona={() => setPersonaOpen(true)} attachmentCount={attachments.length}>
+              <AgentComposerMenu compact={compact} en={en} personaName={personaName} onAttach={() => fileInputRef.current?.click()} onPersona={() => setPersonaOpen(true)} attachmentCount={attachments.length}>
                 {attachments.map((file, index) => <AttachmentPreview key={`${file.filename}-${index}`} file={file} onRemove={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))} />)}
               </AgentComposerMenu>
               <input ref={fileInputRef} type="file" aria-label={uiText.text(en, "attachFiles")} multiple accept="image/*,.md,.markdown,.txt,.json,.pdf,.csv,.xlsx" className="hidden" onChange={(event) => { void addFiles(event.target.files); event.currentTarget.value = ""; }} />
@@ -698,7 +653,9 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
             </>}
           />
           {uploadError ? <p role="alert" className="mt-2 px-1 text-xs text-destructive">{uploadError}</p> : !compact ? <p className="mt-2 hidden flex-wrap justify-between gap-1 px-1 text-[10px] text-muted-foreground md:flex"><span>{uiText.text(en, "upTo4Attachments8MbEach")}</span><span>{uiText.text(en, "enterToSendShiftEnterForANew")}</span></p> : null}
-        </> : null}
+        </> : agentStatus === "unconfigured" || agentStatus === "payment_required" ? <div className="flex justify-start">
+          <Button type="button" variant="outline" className="min-h-11 rounded-full px-4" onClick={() => setPersonaOpen(true)}><Settings2 className="size-4" aria-hidden="true" />{rawText.text(rawLocale, "persona")}：{personaName}</Button>
+        </div> : null}
       >
         <AgentConversationScrollArea floating={compact} onScrollbarPointerDown={onScrollbarPointerDown} className={`${compact ? dialogueStyles.compactConversation : dialogueStyles.conversation} min-h-0 flex-1 bg-transparent`} viewportClassName={`flex min-w-0 flex-col gap-6 overscroll-contain py-3 md:gap-10 md:py-8 ${compact ? "gap-4 py-2 md:gap-5 md:py-2" : ""}`} viewportProps={{ ref: conversationRef,
           onScroll: (event) => { if (event.currentTarget.scrollTop <= 0) setHeaderHidden(false); },
@@ -745,9 +702,10 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
             }
             const waiting = turn.pending && (status === "submitted" || !hasActiveAgentContent(turn.messages.at(-1)));
             const builtin = builtinAgentPersona(turn.persona.mascot);
-            const personaName = builtin ? personaPresentation(builtin, en).name : turn.persona.name ?? uiText.text(en, "closure");
+            const personaName = turn.persona.mode === "pure" ? appearanceText("glowName") : builtin ? personaPresentation(builtin, en).name : turn.persona.name ?? uiText.text(en, "closure");
             const personaAvatar = turn.persona.avatarUrl;
             const personaMascot = turn.persona.mascot;
+            const replyAppearance = turn.persona.mode === "pure" ? "glow-cloud" : undefined;
             return <div key={turn.key} className={dialogueStyles.assistantTurn} data-agent-assistant-turn data-response-key={turn.key} data-pending={turn.pending}>
               {turn.messages.flatMap((message) => {
                 const active = turn.pending && status !== "submitted" && message.id === messages.at(-1)?.id;
@@ -756,7 +714,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
                   part.type === "text" && part.state === "streaming" && !!part.text.trim() ? index : last, -1) : -1;
                 return message.parts.map((part, partIndex) => {
                 const key = `${message.id}:${partIndex}`;
-                if (part.type === "text") return part.text.trim() ? <ChatBubble key={key} speaker="assistant" name={personaName} label={uiText.text(en, "reply", { value1: personaName })} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} active={partIndex === activeAvatarIndex} />}><StreamingText content={INTERNAL_ANSWER_MARKERS.test(part.text) ? (uiText.text(en, "thisSavedReplyContainsInvalidFormattingPleaseAsk")) : part.text} running={active && part.state === "streaming"} animate={animate} previousParts={message.parts.slice(0, partIndex).flatMap((previous) => previous.type === "text" && !INTERNAL_ANSWER_MARKERS.test(previous.text) ? [previous.text] : [])} /></ChatBubble> : null;
+                if (part.type === "text") return part.text.trim() ? <ChatBubble key={key} speaker="assistant" name={personaName} label={uiText.text(en, "reply", { value1: personaName })} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} appearance={replyAppearance} active={partIndex === activeAvatarIndex} />}><StreamingText content={INTERNAL_ANSWER_MARKERS.test(part.text) ? (uiText.text(en, "thisSavedReplyContainsInvalidFormattingPleaseAsk")) : part.text} running={active && part.state === "streaming"} animate={animate} previousParts={message.parts.slice(0, partIndex).flatMap((previous) => previous.type === "text" && !INTERNAL_ANSWER_MARKERS.test(previous.text) ? [previous.text] : [])} /></ChatBubble> : null;
                 if (part.type === "reasoning") return part.text.trim() || (active && part.state === "streaming") ? <div key={key} className={dialogueStyles.activity}><ThinkingState label={uiText.text(en, "thinking")} activeLabel={uiText.text(en, "thinking2")} running={active && part.state === "streaming"} animate={animate}>{part.text}</ThinkingState></div> : null;
                 if (isToolPart(part)) {
                   // Keep every completed schedule in its original conversation position,
@@ -764,7 +722,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
                   const output = asRecord(part.output);
                   const handoff = part.type === "tool-solve_schedule" && part.state === "output-available" && !output?.error && output?.plan ? agentArtifactFromOutput(part.output) : null;
                   if (handoff) {
-                    return <ChatBubble key={key} speaker="assistant" name={personaName} label={uiText.text(en, "generatedSchedule")} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} active={partIndex === activeAvatarIndex} />}>
+                    return <ChatBubble key={key} speaker="assistant" name={personaName} label={uiText.text(en, "generatedSchedule")} avatar={<PersonaAvatar name={personaName} src={personaAvatar} mascot={personaMascot} appearance={replyAppearance} active={partIndex === activeAvatarIndex} />}>
                       <p className="mb-3 text-sm leading-6">{intl("App.agentArtifactBannerText", { preset: handoff.preset ? `（${handoff.preset}）` : "" })}</p>
                       <ToolResultSummary name="solve_schedule" output={part.output} openLabel={intl("App.agentArtifactOpen")} />
                     </ChatBubble>;
@@ -783,58 +741,39 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
 
       <Dialog open={personaOpen} onOpenChange={(open) => { if (!avatarSaving) setPersonaOpen(open); }}>
         <DialogContent aria-describedby={undefined} className="flex max-h-[calc(100dvh-2rem)] flex-col sm:max-w-[min(1160px,calc(100vw-2rem))]">
-          <DialogHeader><DialogTitle>{rawText.text(rawLocale, "persona")}</DialogTitle></DialogHeader>
-          <DialogBody className="min-h-0 overflow-y-auto overscroll-contain pb-5 sm:pb-7">
-            <div className="grid gap-3">
+          <AgentAppearancePicker title={rawText.text(rawLocale, "persona")} closureName={uiText.text(en, "closure")} disabled={avatarSaving || busy}>
+            {({ appearance, onAppearanceChange, cloudCards }) => <div className="grid gap-3">
+              <div className={personaStyles.cards}>{cloudCards}</div>
               <div className={personaStyles.cards}>
-              {[null, ...builtinPersonas, ...(uploadedPersona ? [uploadedPersona] : [])].map((persona) => {
-                const selected = (persona?.id ?? null) === (activePersona?.id ?? null);
-                const display = persona ? personaPresentation(persona, en) : null;
-                const displayName = display?.name ?? uiText.text(en, "closure");
-                return <WorkbenchCard key={persona?.id ?? "default"} glass className={`${billingStyles.product} ${personaStyles.preview} ${!persona ? personaStyles.closure : persona.kind === "builtin" ? BUILTIN_PERSONA_THEMES[persona.theme] : ""}`} aria-label={rawText.text(en, selected ? "selectedPersonaPreview" : "personaPreview", { name: displayName })} data-persona-card={persona?.id ?? "default"} data-selected={selected ? "true" : undefined} data-persona-theme={persona?.kind === "builtin" ? persona.theme : undefined} data-persona-avatar-settings={selected ? "" : undefined}>
-                <button type="button" className={personaStyles.cardSelect} disabled={avatarSaving || busy} aria-pressed={selected} aria-label={rawText.text(en, "selectPersona", { name: displayName })} onClick={() => { if (!selected) selectPersona(persona); }} />
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-xs font-medium text-muted-foreground">{rawText.text(rawLocale, "persona")}</p>
-                  <span className={`${billingStyles.productBadge} shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium`}>{persona?.kind === "builtin" ? rawText.text(rawLocale, "builtInPersonas") : persona ? rawText.text(rawLocale, "localPersonas") : rawText.text(rawLocale, "defaultPersona")}</span>
-                </div>
-                <div className={personaStyles.identity}>
-                  <div className={personaStyles.portrait} aria-hidden="true"><PersonaAvatar name={displayName} src={persona?.kind === "upload" ? persona.avatarUrl : undefined} mascot={persona?.kind === "builtin" ? persona.avatar : undefined} size={80} /></div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className={personaStyles.name}>{displayName}</h3>
-                    <p className={personaStyles.description}>{display?.description || rawText.text(en, "defaultPersonaDescription")}</p>
-                  </div>
-                </div>
-                {persona?.kind === "upload" ? <div>
-                  <p className={billingStyles.caption}>{rawText.rich(rawLocale, "avatarSavedInThisBrowserPngJpegWebpUp", { part1: richValue((<br />)) })}</p>
-                  <div className={personaStyles.actions}>
-                    <Button type="button" className={`${billingStyles.pill} ${billingStyles.primary}`} disabled={avatarSaving} onClick={() => personaAvatarInputRef.current?.click()}><Upload className="size-3.5" aria-hidden="true" />{avatarSaving ? rawText.text(rawLocale, "saving") : rawText.text(rawLocale, "uploadAvatar")}</Button>
-                    <Button type="button" variant="ghost" className={billingStyles.pill} disabled={avatarSaving || !persona.avatarUrl} onClick={() => updatePersonaAvatar()}>{rawText.text(rawLocale, "resetAvatar")}</Button>
-                  </div>
-                    <p className={`${billingStyles.caption} mt-3 break-words`}>{rawText.rich(rawLocale, "savedInThisBrowserAndSelectedTheNextTime", { part1: richValue((persona.filename)) })}</p>
-                    <Button type="button" variant="link" size="sm" disabled={avatarSaving || busy} className="mt-1 h-auto px-0 text-xs text-muted-foreground" onClick={() => { clearLocalPersona(); setUploadedPersona(null); if (selected) selectPersona(null); }}>{rawText.text(rawLocale, "removeLocalPersonaCard")}</Button>
-                </div> : <div>
-                  <p className={billingStyles.caption}>{display?.caption || rawText.text(rawLocale, "useThePersonaCurrentlyConfiguredOnTheServer")}</p>
-                </div>}
-              </WorkbenchCard>;
-              })}
-              {!uploadedPersona ? <WorkbenchCard glass className={`${billingStyles.product} ${personaStyles.preview}`} aria-label={rawText.text(rawLocale, "importPersonaCard")}>
-                <div>
-                  <Upload className="mb-5 size-6 text-muted-foreground" aria-hidden="true" />
-                  <h3 className="text-lg font-semibold">{rawText.text(rawLocale, "addYourPersonaCard")}</h3>
-                  <p className={personaStyles.description}>{rawText.text(rawLocale, "importAStyleYouLikeAndCreateYourOwn")}</p>
-                </div>
-                <div>
-                  <p className={billingStyles.caption}>{rawText.rich(rawLocale, "markdownTxtJsonUpTo36KbSavedIn", { part1: richValue((<br />)) })}</p>
-                  <Button type="button" variant="outline" className={`${billingStyles.pill} mt-3 w-full`} disabled={avatarSaving} onClick={() => personaInputRef.current?.click()}>{rawText.rich(rawLocale, "uploadPersonaCard", { part1: richValue((<Upload className="size-4" aria-hidden="true" />)) })}</Button>
-                </div>
-              </WorkbenchCard> : null}
+                {[null, ...builtinPersonas, ...(uploadedPersona ? [uploadedPersona] : [])].map((persona) => {
+                  const selected = appearance === "plush" && (persona?.id ?? null) === (activePersona?.id ?? null);
+                  const displayName = persona ? personaPresentation(persona, en).name : uiText.text(en, "closure");
+                  return <WorkbenchCard key={persona?.id ?? "default"} glass className={`${personaStyles.preview} ${!persona ? personaStyles.closure : persona.kind === "builtin" ? BUILTIN_PERSONA_THEMES[persona.theme] : ""}`} aria-label={rawText.text(en, selected ? "selectedPersonaPreview" : "personaPreview", { name: displayName })} data-persona-card={persona?.id ?? "default"} data-selected={selected ? "true" : undefined} data-persona-theme={persona?.kind === "builtin" ? persona.theme : undefined} data-persona-avatar-settings={selected ? "" : undefined}>
+                    <button type="button" className={personaStyles.cardSelect} disabled={avatarSaving || busy} aria-pressed={selected} aria-label={rawText.text(en, "selectPersona", { name: displayName })} onClick={() => { if (!selected) { selectPersona(persona); onAppearanceChange("plush"); } }}>
+                      <div className={personaStyles.identity}>
+                        <div className={personaStyles.portrait} aria-hidden="true"><PersonaAvatar name={displayName} src={persona?.kind === "upload" ? persona.avatarUrl : undefined} mascot={persona?.kind === "builtin" ? persona.avatar : undefined} size={80} appearance="plush" /></div>
+                        <h3 className={personaStyles.name}>{displayName}</h3>
+                      </div>
+                    </button>
+                  </WorkbenchCard>;
+                })}
+                {!uploadedPersona ? <WorkbenchCard glass className={personaStyles.preview} aria-label={rawText.text(rawLocale, "importPersonaCard")}>
+                  <button type="button" className={`${personaStyles.identity} ${personaStyles.name} ${personaStyles.importSelect}`} disabled={avatarSaving} onClick={() => personaInputRef.current?.click()}>
+                    {rawText.rich(rawLocale, "uploadPersonaCard", { part1: richValue((<span className={`${personaStyles.portrait} ${personaStyles.uploadPortrait}`} aria-hidden="true"><Upload className="size-6" /></span>)) })}
+                  </button>
+                </WorkbenchCard> : null}
               </div>
               {uploadedPersona ? <input ref={personaAvatarInputRef} aria-label={rawText.text(rawLocale, "uploadPersonaAvatar")} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" disabled={avatarSaving} onChange={(event) => { const file = event.target.files?.[0]; if (file) void importPersonaAvatar(file); event.currentTarget.value = ""; }} /> : null}
               <input ref={personaInputRef} aria-label={rawText.text(rawLocale, "uploadPersonaFile")} type="file" accept=".md,.markdown,.txt,.json,text/markdown,text/plain,application/json" className="hidden" disabled={avatarSaving} onChange={(event) => { const file = event.target.files?.[0]; if (file) void importPersona(file); event.currentTarget.value = ""; }} />
-              {uploadedPersona ? <Button type="button" variant="outline" disabled={avatarSaving} className={`${billingStyles.pill} justify-self-start`} onClick={() => personaInputRef.current?.click()}>{rawText.rich(rawLocale, "uploadPersonaCard", { part1: richValue((<Upload className="size-4" aria-hidden="true" />)) })}</Button> : null}
+              {uploadedPersona ? <div className={personaStyles.actions}>
+                <Button type="button" variant="outline" disabled={avatarSaving} className={billingStyles.pill} onClick={() => personaInputRef.current?.click()}>{rawText.rich(rawLocale, "uploadPersonaCard", { part1: richValue((<Upload className="size-4" aria-hidden="true" />)) })}</Button>
+                <Button type="button" className={`${billingStyles.pill} ${billingStyles.primary}`} disabled={avatarSaving} onClick={() => personaAvatarInputRef.current?.click()}><Upload className="size-3.5" aria-hidden="true" />{avatarSaving ? rawText.text(rawLocale, "saving") : rawText.text(rawLocale, "uploadAvatar")}</Button>
+                <Button type="button" variant="ghost" className={billingStyles.pill} disabled={avatarSaving || !uploadedPersona.avatarUrl} onClick={() => updatePersonaAvatar()}>{rawText.text(rawLocale, "resetAvatar")}</Button>
+                <Button type="button" variant="link" size="sm" disabled={avatarSaving || busy} className="h-auto px-0 text-xs text-muted-foreground" onClick={() => { clearLocalPersona(); if (uploadedPersona.id === activePersona?.id) selectPersona(null); }}>{rawText.text(rawLocale, "removeLocalPersonaCard")}</Button>
+              </div> : null}
               {personaError ? <p role="alert" className="text-xs text-destructive">{personaError}</p> : null}
-            </div>
-          </DialogBody>
+            </div>}
+          </AgentAppearancePicker>
         </DialogContent>
       </Dialog>
     </section>

@@ -58,16 +58,6 @@
 }
 .minimize:hover { color: var(--foreground); background: var(--accent); }
 .minimize:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
-.status {
-  position: absolute;
-  right: 8px;
-  bottom: 7px;
-  width: 13px;
-  height: 13px;
-  border: 2px solid var(--card);
-  border-radius: 50%;
-  background: #35a56e;
-}
 
 .hint {
   position: absolute;
@@ -76,9 +66,9 @@
   width: max-content;
   max-width: min(208px, calc(100vw - 32px));
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 18px;
   background: var(--card);
-  padding: 10px 13px;
+  padding: 12px 16px;
   color: var(--foreground);
   box-shadow: 0 8px 24px rgb(0 0 0 / .14);
   font-size: 12px;
@@ -88,12 +78,13 @@
 
 .hint::after {
   position: absolute;
-  right: 19px;
+  right: calc(var(--agent-mascot-size) / 2 - 6px);
   bottom: -6px;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  border-bottom-right-radius: 4px;
   background: var(--card);
   content: "";
   transform: rotate(45deg);
@@ -152,7 +143,7 @@
 @media (max-width: 639px) {
   .root { --agent-mascot-size: 96px; --agent-edge-gap: 10px; }
   .minimize { width: 36px; height: 36px; }
-  .hint { right: 0; max-width: min(190px, calc(100vw - 28px)); padding: 8px 10px; }
+  .hint { right: 0; max-width: min(190px, calc(100vw - 28px)); padding: 10px 14px; }
   .panel {
     width: calc(100vw - 20px);
   }

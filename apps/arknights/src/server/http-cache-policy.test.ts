@@ -6,10 +6,11 @@ test("mutable game assets require a complete version before they can be cached i
   for (const directory of ["products", "building-skills", "operator-portraits"]) {
     const base = "https://example.test/images/" + directory + "/asset.png";
     assert.equal(assetCacheControl(new URL(base)), "public, max-age=0");
-    for (const value of ["", "123", "123-abcdef", "123-abcdef123456-extra"]) {
+    for (const value of ["", "123", "123-abcdef", "123-abcdef123456-extra", "sha256-" + "a".repeat(63), "sha256-" + "a".repeat(65), "sha256-" + "g".repeat(64), "sha256-" + "a".repeat(64) + "-extra"]) {
       assert.equal(assetCacheControl(new URL(base + "?v=" + value)), "public, max-age=0");
     }
     assert.equal(assetCacheControl(new URL(base + "?v=123-abcdef123456")), IMMUTABLE_CACHE_CONTROL);
+    assert.equal(assetCacheControl(new URL(base + "?v=sha256-" + "a".repeat(64))), IMMUTABLE_CACHE_CONTROL);
   }
 });
 test("only explicitly immutable asset families receive the long cache lifetime", () => {

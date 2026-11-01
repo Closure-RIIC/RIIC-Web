@@ -339,7 +339,10 @@ test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedul
     packageJson.scripts["test:e2e:webkit:skland-qr"],
     "playwright test e2e/production-readiness-skland.spec.ts --project=webkit --grep \"Skland login exposes both methods\"",
   );
-  assert.match(workflow, /browser_e2e:[\s\S]+project: \[chromium\][\s\S]+shard: \[1\/4, 2\/4, 3\/4, 4\/4\][\s\S]+project: chromium-plush\s+shard: 1\/2[\s\S]+project: chromium-plush\s+shard: 2\/2[\s\S]+npx playwright test --project=\$\{\{ matrix\.project \}\} --shard=\$\{\{ matrix\.shard \}\}/);
+  assert.match(workflow, /browser_e2e:[\s\S]+project: \[chromium\][\s\S]+shard: \[1\/4, 2\/4, 3\/4, 4\/4\][\s\S]+project: chromium-plush\s+shard: 1\/4[\s\S]+project: chromium-plush\s+shard: 2\/4[\s\S]+project: chromium-plush\s+shard: 3\/4[\s\S]+project: chromium-plush\s+shard: 4\/4[\s\S]+npx playwright test --project=\$\{\{ matrix\.project \}\} --shard=\$\{\{ matrix\.shard \}\}/);
+  assert.match(playwrightConfig, /const softwareGpuSpecs = \["plush-\*\.spec\.ts", "agent-motion\.spec\.ts", "agent-personas\.spec\.ts", "agent-workbench\.spec\.ts"\]/);
+  assert.match(playwrightConfig, /name: "chromium",[\s\S]+testIgnore: \[[^\]]*\.\.\.softwareGpuSpecs\]/);
+  assert.match(playwrightConfig, /name: "chromium-plush",\s+testMatch: softwareGpuSpecs,[\s\S]+workers: 1/);
   assert.match(workflow, /browser_boundaries:[\s\S]+npm run test:e2e:webkit:skland-qr[\s\S]+npm run test:e2e:production-profile/);
   assert.match(workflow, /webkit_e2e:[\s\S]+github\.event_name == 'schedule'[\s\S]+npm run test:e2e:webkit/);
   assert.match(workflow, /quality:[\s\S]+needs: \[changes, repository_hygiene, static_checks, database_checks, release_artifact, browser_e2e, browser_boundaries\]/);
@@ -348,7 +351,7 @@ test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedul
   assert.doesNotMatch(workflow, /^\s*pull_request\s*:/m);
   assert.match(workflow, /cancel-in-progress: false/);
   assert.equal(readinessSpecs.length, 4);
-  assert.equal(readinessTestCount, 120);
+  assert.equal(readinessTestCount, 125);
   assert.equal(e2eFiles.includes("production-readiness.spec.ts"), false);
   assert.match(playwrightConfig, /fullyParallel: true/);
   assert.match(playwrightConfig, /workers: process\.env\.CI \? 2 : undefined/);
@@ -699,10 +702,27 @@ test("mastery, gacha UP data and the full fixture follow every managed-resource 
   assert.equal((workflow.match(/test "\$pull_request_base_sha" = "\$remote_base_sha"/g) ?? []).length, 2);
   const guards = workflow.match(/apps\/arknights\/public\/images\/operator-portraits\/\*\|[^\n]+;;/g) ?? [];
   assert.equal(guards.length, 5);
+  const translations = [
+    "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json",
+    "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json",
+    "apps/arknights/src/generated/i18n/en/ArknightsGameData.json",
+    "apps/arknights/src/generated/i18n/operator-aliases.json",
+    "apps/arknights/src/generated/i18n/sources.json",
+  ];
+  for (const guard of guards) {
+    for (const file of translations) assert.ok(guard.includes(`${file}|`));
+  }
+  const staged = workflow.match(/git add --[^\n]+/)?.[0] ?? "";
+  const restored = workflow.match(/git restore --source(?:[^\n]*\\\n)*[^\n]*/)?.[0] ?? "";
+  for (const file of translations) {
+    assert.ok(staged.includes(file));
+    assert.ok(restored.includes(file));
+  }
   for (const guard of guards) assert.match(guard, /\|apps\/arknights\/src\/generated\/mastery-data\.json\|packages\/arknights-domain\/src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
   const regularFileChecks = workflow.match(/git ls-files -s --[^\n]+/g) ?? [];
   assert.equal(regularFileChecks.length, 3);
   for (const check of regularFileChecks) {
+    for (const file of translations) assert.ok(check.includes(file));
     assert.ok(check.includes("apps/arknights/src/generated/mastery-data.json"));
     assert.ok(check.includes("packages/arknights-domain/src/generated/gacha-up.json"));
     assert.ok(check.includes("fixtures/operbox_full_e2.json"));
@@ -710,6 +730,7 @@ test("mastery, gacha UP data and the full fixture follow every managed-resource 
   assert.match(workflow, /git restore --source[^\n]+[\s\S]*?packages\/arknights-domain\/src\/generated\/arkntools \\\n\s+apps\/arknights\/src\/generated\/mastery-data\.json/);
   const generateStep = workflow.slice(workflow.indexOf("      - name: Generate and validate assets"), workflow.indexOf("      - name: Run pre-PR quality gates"));
   assert.ok(generateStep.indexOf("npm run assets:gacha-up") > generateStep.indexOf("npm run assets:sync:arkntools"));
+  assert.ok(generateStep.indexOf("node scripts/sync-arknights-i18n-data.mjs") > generateStep.indexOf("npm run assets:gacha-up"));
   assert.match(workflow, /id: changes\n\s+run: node scripts\/arkntools-sync-changes\.mjs/);
   assert.match(workflow, /git add --[^\n]*packages\/arknights-domain\/src\/generated\/gacha-up\.json/);
   assert.match(workflow, /packages\/arknights-domain\/src\/generated\/gacha-up\.json \\\n\s+fixtures\/operbox_full_e2\.json/);

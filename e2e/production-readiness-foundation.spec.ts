@@ -1,4 +1,4 @@
-import { expect, test, type Route } from "@playwright/test";
+import { expect, test, type Locator, type Route } from "@playwright/test";
 import { TERMS_VERSION, PRIVACY_VERSION } from "@riic/platform/legal-policy";
 import { amiyaPortrait, requestId, diagnosticId, layout243, waitForOwnAnimations, planData, twoShiftPlanData, fourShiftPlanData, adjacentPortraitPlanData, lazyPortraitPlanData, authenticatedSklandSnapshot, mockApis, sidebarNavigation, mockAnonymousWebsiteSession, openSklandOverview, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
 
@@ -13,22 +13,40 @@ test.beforeEach(async ({ page }) => {
   }));
 });
 
+async function expectOnboardingLayout(dialog: Locator, radius = "32px") {
+  await expect(dialog).toHaveClass(/dialog-surface/);
+  await expect(dialog).toHaveCSS("border-radius", radius);
+  await expect(dialog.locator('[data-slot="dialog-title"]')).toHaveCSS("font-size", "18px");
+  await expect(dialog.locator('[data-slot="dialog-description"]')).toHaveCount(0);
+  await expect(dialog.getByRole("progressbar")).toHaveCount(0);
+  const dismiss = dialog.getByRole("button", { name: "永久关闭引导", exact: true });
+  const later = dialog.getByRole("button", { name: "稍后继续", exact: true });
+  await expect(dismiss).toHaveCSS("font-size", "12px");
+  const titleBounds = (await dialog.locator('[data-slot="dialog-title"]').boundingBox())!;
+  const countBounds = (await dialog.locator("[data-onboarding-progress]").boundingBox())!;
+  expect(countBounds.x - titleBounds.x - titleBounds.width).toBeCloseTo(12, 0);
+  const dismissBounds = (await dismiss.boundingBox())!;
+  const laterBounds = (await later.boundingBox())!;
+  expect(dismissBounds.x + dismissBounds.width).toBeLessThan(laterBounds.x);
+  expect(dismissBounds.y + dismissBounds.height / 2).toBeCloseTo(laterBounds.y + laterBounds.height / 2, 0);
+}
+
 test("cold HTML contains the workbench shell instead of only the client loading placeholder", async ({ request }) => {
   const response = await request.get("/");
   expect(response.status()).toBe(200);
   const html = await response.text();
   expect(html).toContain("data-calculator-controls");
-  expect(html).toContain("data-calculator-start-panel");
+  expect(html).not.toContain("data-calculator-start-panel");
+  expect(html).toContain("data-infra-canvas");
   expect(html).not.toContain("从可执行的排班开始");
   expect(html).not.toContain("把你的 BOX 变成今天就能照着换的三班方案");
   expect(html).not.toContain("登录只用于保护个人数据");
   expect(html).not.toContain("生成结果前，不需要先理解所有配置项");
-  expect(html).not.toContain('data-schedule-view="compact"');
-  expect(html).not.toContain('data-schedule-view="list"');
   expect(html).not.toContain("正在加载基建计算器");
 });
 
 test("an anonymous cold start probes the shared session once and does not touch Skland", async ({ page }) => {
+  test.setTimeout(60_000);
   await page.unroute("**/api/auth/get-session");
   let sessionRequests = 0;
   const sklandRequests: string[] = [];
@@ -42,34 +60,43 @@ test("an anonymous cold start probes the shared session once and does not touch 
     contentType: "application/json",
     body: "null",
   }));
-  await mockApis(page, { sklandConfigured: true });
+  await mockApis(page, { sklandConfigured: true, initialOnboarding: true });
   await page.goto("/");
 
-  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
-  await expect(page.locator('[data-calculator-start-panel][data-onboarding-active="true"]')).toBeVisible();
-  await expect(page.getByText("登录网站账号", { exact: true })).toBeVisible();
-  await expect(page.getByText("导入自己的 BOX", { exact: true })).toBeVisible();
-  await expect(page.getByText("支持自主上传或第三方同步。", { exact: true })).toBeVisible();
-  await expect(page.getByText("生成第一份方案", { exact: true })).toBeVisible();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("[data-calculator-start-panel]")).toHaveCount(0);
+  await expect(page.locator("[data-plan-board]")).toBeVisible();
+  const checklist = page.getByRole("dialog", { name: "入门任务", exact: true });
+  await expectOnboardingLayout(checklist);
+  await expect(checklist.getByRole("button", { name: "关闭", exact: true })).toBeVisible();
   const sampleTrial = page.locator("[data-anonymous-sample-trial]");
   await expect(sampleTrial).toBeVisible();
+  const alignment = await checklist.evaluate(element => ({
+    cardLeft: element.querySelector("[data-onboarding-task]")!.getBoundingClientRect().left,
+    sampleLeft: element.querySelector("[data-anonymous-sample-trial] h3")!.getBoundingClientRect().left,
+  }));
+  expect(alignment.sampleLeft).toBeCloseTo(alignment.cardLeft, 0);
   await expect(sampleTrial.getByRole("heading", { name: "不想登录？只想看看全角色导入之后的排班效果" })).toBeVisible();
   await expect(sampleTrial.getByRole("button", { name: "直接查看示例排班" })).toBeVisible();
   await expect(page.getByText("从可执行的排班开始", { exact: true })).toHaveCount(0);
   await expect(page.getByText("把你的 BOX 变成今天就能照着换的三班方案", { exact: true })).toHaveCount(0);
   await expect(page.getByText(/登录只用于保护个人数据|生成结果前，不需要先理解所有配置项/)).toHaveCount(0);
-  const onboardingSteps = page.getByRole("list", { name: "生成个人排班的步骤" }).locator(":scope > li");
-  await expect(onboardingSteps).toHaveCount(3);
-  await expect(onboardingSteps.locator("article.infra-room-surface")).toHaveCount(3);
+  await expect(page.locator("[data-onboarding-checklist]")).toHaveCount(1);
+  await expect(page.locator("[data-calculator-start-panel] article")).toHaveCount(0);
   await expect(page.getByRole("dialog", { name: "登录网站账号" })).toHaveCount(0);
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(1);
   await expect(page.getByText(/正在恢复网站账号|正在确认网站账号|正在打开账号登录/)).toHaveCount(0);
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
   await expect.poll(() => sessionRequests).toBe(1);
   await page.waitForTimeout(100);
   expect(sklandRequests).toEqual([]);
 
-  const importTrigger = page.getByRole("button", { name: "配置Box与布局" });
+  await page.getByRole("button", { name: "稍后继续" }).click();
+  await page.reload();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("[data-onboarding-checklist]")).toHaveCount(0);
+  await expect(page.locator("[data-onboarding-trigger]")).toBeVisible();
+  const importTrigger = page.locator("[data-calculator-setup-group]").getByRole("button", { name: "配置Box与布局", exact: true });
   await importTrigger.click();
   await expect(page.getByRole("dialog", { name: "登录网站账号" })).toBeVisible();
   await page.keyboard.press("Escape");
@@ -79,7 +106,7 @@ test("an anonymous cold start probes the shared session once and does not touch 
 
 test("the anonymous sample trial fetches and solves once before showing the schedule", async ({ page }) => {
   await mockAnonymousWebsiteSession(page);
-  await mockApis(page, { taskQueueEnabled: true, dismissSolverWarning: false });
+  await mockApis(page, { taskQueueEnabled: true, dismissSolverWarning: false, initialOnboarding: true });
   let releasePlan!: () => void;
   const planGate = new Promise<void>((resolve) => {
     releasePlan = resolve;
@@ -108,9 +135,8 @@ test("the anonymous sample trial fetches and solves once before showing the sche
 
   const trialButton = page.getByRole("button", { name: "直接查看示例排班" });
   await trialButton.click();
-  await expect(page.getByRole("button", { name: "正在生成示例排班…" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "配置Box与布局" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "暂时跳过引导" })).toBeDisabled();
+  await expect(page.locator("[data-onboarding-checklist]")).toHaveCount(0);
+  await expect(page.locator('[data-slot="live-activity"]')).toBeVisible();
   await expect.poll(() => ({ sampleRequests, planRequests, taskRequests })).toEqual({ sampleRequests: 1, planRequests: 1, taskRequests: 0 });
   expect(planPayload).toMatchObject({ boxSource: "sample", sourceName: "243 全精二示例" });
   expect(planPayload).not.toHaveProperty("operbox");
@@ -118,7 +144,7 @@ test("the anonymous sample trial fetches and solves once before showing the sche
   releasePlan();
   await expect(page.locator("[data-plan-board]")).toHaveAttribute("data-plan-revision", diagnosticId);
   await expect(page.locator("[data-anonymous-sample-trial]")).toHaveCount(0);
-  await expect.poll(() => page.evaluate(() => window.localStorage.getItem("arknights-infra-calc-beta-onboarding-v1"))).toBe("completed");
+  await expect.poll(() => page.evaluate(() => window.localStorage.getItem("arknights-infra-calc-beta-onboarding-v1"))).toBeNull();
 
   // Acknowledge the completion notice before opening another modal. The result
   // board can mount before the notice opens, so an automatic handler can race
@@ -137,28 +163,34 @@ test("the anonymous sample trial fetches and solves once before showing the sche
   await expect(adjustmentTrigger).toBeFocused();
 });
 
-test("the anonymous sample trial is absent for a signed-in onboarding session", async ({ page }) => {
+test("returning signed-in visitors open onboarding from the sidebar without an automatic dialog", async ({ page }) => {
   await mockApis(page);
   await page.goto("/");
 
-  await expect(page.locator('[data-calculator-start-panel][data-onboarding-active="true"]')).toBeVisible();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("[data-plan-board]")).toBeVisible();
+  await expect(page.locator("[data-onboarding-checklist]")).toHaveCount(0);
+  await page.locator("[data-onboarding-trigger]").click();
+  await expect(page.locator("[data-onboarding-progress]")).toHaveText("1 / 9 已完成");
   await expect(page.locator("[data-anonymous-sample-trial]")).toHaveCount(0);
 });
 
 test("an anonymous session with a personal BOX does not render the sample trial", async ({ page }) => {
   await mockAnonymousWebsiteSession(page);
-  await mockApis(page);
+  await mockApis(page, { initialOnboarding: true });
   await seedV4Session(page, null, { boxSource: "maa", onboardingValue: null });
   await page.goto("/");
 
-  await expect(page.locator('[data-calculator-start-panel][data-onboarding-active="true"]')).toBeVisible();
-  await expect(page.getByText("个人 BOX 已就绪，可以配置布局并生成方案。", { exact: true })).toBeVisible();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("[data-plan-board]")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "入门任务", exact: true })).toBeVisible();
+  await expect(page.locator('[data-onboarding-task="box"]')).toHaveAttribute("data-status", "complete");
   await expect(page.locator("[data-anonymous-sample-trial]")).toHaveCount(0);
 });
 
 test("a failed anonymous sample solve keeps the trial available for retry", async ({ page }) => {
   await mockAnonymousWebsiteSession(page);
-  await mockApis(page);
+  await mockApis(page, { initialOnboarding: true });
   let planRequests = 0;
   await page.unroute("**/api/plan");
   await page.route("**/api/plan", async (route) => {
@@ -186,6 +218,7 @@ test("a failed anonymous sample solve keeps the trial available for retry", asyn
   const trial = page.locator("[data-anonymous-sample-trial]");
   await trial.getByRole("button", { name: "直接查看示例排班" }).click();
   await expect(page.locator('[data-slot="live-activity"]')).toHaveAttribute("data-activity-phase", "error");
+  await page.locator("[data-onboarding-trigger]").click();
   await expect(trial).toBeVisible();
   await expect(trial.getByRole("button", { name: "直接查看示例排班" })).toBeEnabled();
   expect(planRequests).toBe(1);
@@ -195,99 +228,194 @@ test("a failed anonymous sample solve keeps the trial available for retry", asyn
   expect(planRequests).toBe(2);
 });
 
-test("the onboarding cards reuse the Skland technical grid and dismiss into the empty schedule", async ({ page }) => {
+test("the sidebar checklist closes temporarily and only dismisses permanently after confirmation", async ({ page }) => {
+  test.setTimeout(90_000);
   await mockApis(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-
-  const onboardingList = page.getByRole("list", { name: "生成个人排班的步骤" });
-  const cards = onboardingList.locator(":scope > li");
-  const startPanel = page.getByRole("region", { name: "生成排班起步区" });
-  const sidebarInset = page.locator('[data-slot="sidebar-inset"]');
-  await expect(cards).toHaveCount(3);
-
-  const expectFullScreenAndCentered = async (viewportHeight: number, mobile: boolean) => {
-    const geometry = await page.evaluate(() => {
-      const panel = document.querySelector<HTMLElement>('[data-calculator-start-panel]')?.getBoundingClientRect();
-      const inset = document.querySelector<HTMLElement>('[data-slot="sidebar-inset"]')?.getBoundingClientRect();
-      const list = document.querySelector<HTMLElement>('ol[aria-label="生成个人排班的步骤"]')?.getBoundingClientRect();
-      const topbar = document.querySelector<HTMLElement>('[data-app-topbar]')?.getBoundingClientRect();
-      if (!panel || !inset || !list) throw new Error("Onboarding geometry is unavailable.");
-      return {
-        panel: { left: panel.left, right: panel.right, top: panel.top, bottom: panel.bottom, height: panel.height },
-        inset: { left: inset.left, right: inset.right, top: inset.top },
-        topbarBottom: topbar?.bottom ?? null,
-        listCenter: list.left + list.width / 2,
-        panelCenter: panel.left + panel.width / 2,
-      };
-    });
-    expect(geometry.panel.left).toBeCloseTo(geometry.inset.left, 0);
-    expect(geometry.panel.right).toBeCloseTo(geometry.inset.right, 0);
-    expect(geometry.panel.top).toBeCloseTo(mobile ? geometry.topbarBottom ?? 0 : geometry.inset.top, 0);
-    expect(geometry.panel.bottom).toBeGreaterThanOrEqual(viewportHeight - 1);
-    expect(geometry.panel.height).toBeGreaterThanOrEqual(viewportHeight - (mobile ? geometry.topbarBottom ?? 0 : 0) - 1);
-    expect(geometry.listCenter).toBeCloseTo(geometry.panelCenter, 0);
-    await expect(startPanel).toBeVisible();
-    await expect(sidebarInset).toBeVisible();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  const openSidebarTasks = async () => {
+    await page.locator("[data-app-topbar]").getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i, exact: true }).click();
+    await page.locator("[data-onboarding-trigger]").click();
+    await expect(page.getByRole("dialog", { name: /^(侧边栏|側邊欄|Sidebar)$/i, exact: true })).toHaveCount(0);
   };
-
-  await expectFullScreenAndCentered(844, true);
-
-  const mobileBoxes = await cards.evaluateAll((elements) => elements.map((element) => {
-    const box = element.getBoundingClientRect();
-    return { left: box.left, top: box.top, width: box.width };
-  }));
-  expect(mobileBoxes[0].left).toBeCloseTo(mobileBoxes[1].left, 0);
-  expect(mobileBoxes[1].left).toBeCloseTo(mobileBoxes[2].left, 0);
-  expect(mobileBoxes[0].width).toBeCloseTo(mobileBoxes[2].width, 0);
-  expect(mobileBoxes[1].top).toBeGreaterThan(mobileBoxes[0].top);
-  expect(mobileBoxes[2].top).toBeGreaterThan(mobileBoxes[1].top);
-  let dimensions = await page.evaluate(() => ({
-    clientWidth: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-  }));
-  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
-
-  await page.setViewportSize({ width: 768, height: 900 });
-  await expectFullScreenAndCentered(900, false);
-  const tabletBoxes = await cards.evaluateAll((elements) => elements.map((element) => {
-    const box = element.getBoundingClientRect();
-    return { left: box.left, top: box.top, width: box.width };
-  }));
-  expect(tabletBoxes[0].top).toBeCloseTo(tabletBoxes[1].top, 0);
-  expect(tabletBoxes[0].width).toBeCloseTo(tabletBoxes[1].width, 0);
-  expect(tabletBoxes[2].top).toBeGreaterThan(tabletBoxes[0].top);
-  expect(tabletBoxes[2].width).toBeGreaterThan(tabletBoxes[0].width * 1.8);
-  dimensions = await page.evaluate(() => ({
-    clientWidth: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-  }));
-  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
-
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await expectFullScreenAndCentered(900, false);
-  const desktopBoxes = await cards.evaluateAll((elements) => elements.map((element) => {
-    const box = element.getBoundingClientRect();
-    return { top: box.top, width: box.width };
-  }));
-  expect(desktopBoxes[0].top).toBeCloseTo(desktopBoxes[1].top, 0);
-  expect(desktopBoxes[1].top).toBeCloseTo(desktopBoxes[2].top, 0);
-  expect(desktopBoxes[0].width).toBeCloseTo(desktopBoxes[2].width, 0);
-
-  dimensions = await page.evaluate(() => ({
-    clientWidth: document.documentElement.clientWidth,
-    scrollWidth: document.documentElement.scrollWidth,
-  }));
-  expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
-
-  await page.getByRole("button", { name: "暂时跳过引导" }).click();
+  await openSidebarTasks();
+  const checklist = page.getByRole("dialog", { name: "入门任务", exact: true });
+  await expect(checklist).toBeVisible();
+  await expect(checklist.locator("[data-onboarding-progress]")).toHaveText("1 / 9 已完成");
+  await expect(checklist.locator("[data-onboarding-task]")).toHaveCount(9);
+  await expect(checklist.locator('[data-onboarding-task="account"]')).toHaveAttribute("data-status", "complete");
+  await expect(checklist.locator('[data-onboarding-task="box"]')).toHaveAttribute("data-status", "current");
+  await expect(checklist.getByRole("button", { name: "生成排班", exact: true })).toBeDisabled();
+  const bounds = await checklist.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(bounds!.x).toBeGreaterThanOrEqual(0);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(391);
+  expect(bounds!.height).toBeLessThanOrEqual(844);
+  await checklist.getByRole("button", { name: "稍后继续" }).click();
+  await expect(checklist).toHaveCount(0);
+  expect(await page.evaluate(() => localStorage.getItem("arknights-infra-calc-beta-onboarding-v1"))).toBeNull();
+  await openSidebarTasks();
+  await checklist.getByRole("button", { name: "永久关闭引导" }).click();
+  const confirmation = page.getByRole("alertdialog", { name: "永久关闭入门引导？" });
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole("button", { name: "保留引导" }).click();
+  await expect(confirmation).toHaveCount(0);
+  await expect(checklist).toBeVisible();
+  await checklist.getByRole("button", { name: "永久关闭引导" }).click();
+  await confirmation.getByRole("button", { name: "确认永久关闭" }).click();
+  await expect(checklist).toHaveCount(0);
   await expect(page.locator("[data-calculator-start-panel]")).toHaveCount(0);
-  await expect(page.locator("[data-calculator-regenerate-panel]")).toHaveCount(0);
   await expect(page.locator("[data-plan-board]")).toBeVisible();
-  await expect(page.locator('[data-operator-identity="empty"]').first()).toBeVisible();
-  await expect(onboardingList).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "重新查看三步起步卡" })).toHaveCount(0);
-  await expect.poll(() => page.evaluate(() => window.localStorage.getItem("arknights-infra-calc-beta-onboarding-v1"))).toBe("dismissed");
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("arknights-infra-calc-beta-onboarding-v1"))).toBe("dismissed");
+  await page.reload();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  await page.locator("[data-app-topbar]").getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i, exact: true }).click();
+  await expect(page.locator("[data-onboarding-trigger]")).toHaveCount(0);
+});
+
+test("opening a task action does not complete it", async ({ page }) => {
+  await mockApis(page, { initialOnboarding: true });
+  await mockAnonymousWebsiteSession(page);
+  await page.goto("/");
+  const checklist = page.getByRole("dialog", { name: "入门任务", exact: true });
+  await expect(checklist.locator("[data-onboarding-progress]")).toHaveText("0 / 9 已完成");
+  await checklist.getByRole("button", { name: "去登录", exact: true }).click();
+  const login = page.getByRole("dialog", { name: "登录网站账号", exact: true });
+  await expect(login).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(login).toHaveCount(0);
+  await page.locator("[data-onboarding-trigger]").click();
+  await expect(checklist.locator("[data-onboarding-progress]")).toHaveText("0 / 9 已完成");
+});
+
+test("personal onboarding reflects imported operators and a successful personal plan", async ({ page }) => {
+  test.setTimeout(60_000);
+  await mockApis(page);
+  await seedV4Session(page, null, { boxSource: "maa", onboardingValue: null });
+  await page.goto("/");
+  await page.locator("[data-onboarding-trigger]").click();
+  const checklist = page.getByRole("dialog", { name: "入门任务", exact: true });
+  await expect(checklist.locator("[data-onboarding-progress]")).toHaveText("2 / 9 已完成");
+  await checklist.getByRole("button", { name: "生成排班", exact: true }).click();
+  await expect(page.locator("[data-plan-board]")).toHaveAttribute("data-plan-revision", diagnosticId);
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("arknights-infra-calc-beta-onboarding-v1"))).toBe("completed");
+  await page.locator("[data-onboarding-trigger]").click();
+  await expect(checklist.locator("[data-onboarding-progress]")).toHaveText("3 / 9 已完成");
+  await checklist.getByRole("button", { name: "永久关闭引导" }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "确认永久关闭" }).click();
+  await page.reload();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  await expect(page.locator("[data-onboarding-trigger]")).toHaveCount(0);
+  await expect(page.locator("[data-plan-board]")).toBeVisible();
+});
+
+test("all nine tasks automatically hide onboarding and keep it hidden after reload", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await mockApis(page);
+  await seedV4Session(page, planData, { boxSource: "maa", onboardingValue: null });
+  await page.goto("/");
+  await page.locator("[data-onboarding-trigger]").click();
+  const checklist = page.getByRole("dialog", { name: "入门任务", exact: true });
+  await expect(checklist.locator("[data-onboarding-progress]")).toHaveText("3 / 9 已完成");
+  await expect(checklist.locator("[data-onboarding-task]")).toHaveCount(9);
+  const columns = await checklist.getByRole("list", { name: "入门任务列表" }).evaluate(element => getComputedStyle(element).gridTemplateColumns.split(" ").length);
+  expect(columns).toBe(3);
+  await expect(checklist.locator("[data-onboarding-done]").first()).toHaveCSS("animation-duration", "0.36s");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(checklist.locator("[data-onboarding-done]").first()).toHaveCSS("animation-name", "none");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const destinations = [
+    { id: "manual", href: "/manual" },
+    { id: "training", href: "/training" },
+    { id: "skill-query", href: "/skills" },
+    { id: "recruitment", href: "/recruitment" },
+    { id: "training-planner", href: "/training-plan" },
+    { id: "settings", href: "/settings" },
+  ];
+  for (const [index, destination] of destinations.entries()) {
+    const task = checklist.locator('[data-onboarding-task="' + destination.id + '"]');
+    if (destination.id === "training") {
+      await checklist.getByRole("button", { name: "稍后继续" }).click();
+      await (await sidebarNavigation(page, "练卡建议")).click();
+    } else {
+      await task.getByRole("button", { name: "去看看", exact: true }).click();
+    }
+    await expect(page).toHaveURL(new RegExp(destination.href + "$"));
+    await expect(page.locator('[data-primary-page="' + destination.id + '"]')).toBeVisible();
+    if (index === destinations.length - 1) {
+      await expect(page.locator("[data-onboarding-trigger]")).toHaveCount(0);
+      await expect(checklist).toHaveCount(0);
+      continue;
+    }
+    await page.locator("[data-onboarding-trigger]").click();
+    await expect(task).toHaveAttribute("data-status", "complete");
+    await expect(task.locator("[data-onboarding-done]")).toBeVisible();
+    await expect(checklist.locator("[data-onboarding-progress]")).toHaveText((index + 4) + " / 9 已完成");
+  }
+  await expect.poll(() => page.evaluate(() => localStorage.getItem("arknights-infra-calc-beta-onboarding-v1"))).toBe("finished");
+  await page.reload();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("[data-onboarding-trigger]")).toHaveCount(0);
+  await expect(checklist).toHaveCount(0);
+});
+
+test("a first mobile guest sees onboarding once with a contained task list", async ({ page }) => {
+  test.setTimeout(60_000);
+  await mockApis(page, { initialOnboarding: true });
+  await mockAnonymousWebsiteSession(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const checklist = page.getByRole("dialog", { name: "入门任务", exact: true });
+  await expect(checklist).toBeVisible({ timeout: 30_000 });
+  await expectOnboardingLayout(checklist, "24px");
+  await expect(checklist.locator("[data-onboarding-task]")).toHaveCount(9);
+  const geometry = await checklist.evaluate(element => ({
+    width: element.getBoundingClientRect().width,
+    height: element.getBoundingClientRect().height,
+    contentWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+    columns: getComputedStyle(element.querySelector("ol")!).gridTemplateColumns.split(" ").length,
+    cardLeft: element.querySelector("[data-onboarding-task]")!.getBoundingClientRect().left,
+    sampleLeft: element.querySelector("[data-anonymous-sample-trial] h3")!.getBoundingClientRect().left,
+  }));
+  expect(geometry.width).toBeLessThanOrEqual(390);
+  expect(geometry.height).toBeLessThanOrEqual(844);
+  expect(geometry.scrollWidth).toBeLessThanOrEqual(geometry.contentWidth + 1);
+  expect(geometry.columns).toBe(1);
+  expect(geometry.sampleLeft).toBeCloseTo(geometry.cardLeft, 0);
+  await checklist.getByRole("button", { name: "稍后继续" }).click();
+  await expect(page.locator("[data-plan-board]")).toBeVisible();
+  await page.reload();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  await expect(checklist).toHaveCount(0);
+  await page.locator("[data-app-topbar]").getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i, exact: true }).click();
+  await page.locator("[data-onboarding-trigger]").click();
+  await expect(checklist).toBeVisible();
+  await expect(checklist.locator("[data-onboarding-progress]")).toHaveText("0 / 9 已完成");
+});
+
+test("failed preference storage keeps onboarding available", async ({ page }) => {
+  await mockApis(page);
+  await page.addInitScript(() => {
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (key === "arknights-infra-calc-beta-onboarding-v1") throw new DOMException("Storage unavailable", "QuotaExceededError");
+      return originalSetItem.call(this, key, value);
+    };
+  });
+  await page.goto("/");
+  await page.locator("[data-onboarding-trigger]").click();
+  await page.getByRole("button", { name: "永久关闭引导" }).click();
+  const confirmation = page.getByRole("alertdialog");
+  await confirmation.getByRole("button", { name: "确认永久关闭" }).click();
+  await expect(confirmation.getByRole("alert")).toContainText("浏览器未能保存关闭设置");
+  await confirmation.getByRole("button", { name: "保留引导" }).click();
+  await page.getByRole("button", { name: "稍后继续" }).click();
+  await expect(page.locator("[data-onboarding-trigger]")).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("arknights-infra-calc-beta-onboarding-v1"))).toBeNull();
 });
 
 test("completed onboarding returns to the empty schedule after changing the layout", async ({ page }) => {
@@ -945,7 +1073,7 @@ test("server auth boundaries reject anonymous planning and every development Skl
 });
 
 test("serves versioned WebP portraits with immutable caching only when versioned", async ({ request }) => {
-  expect(amiyaPortrait).toMatch(/^\/images\/operator-portraits\/002_amiya\.webp\?v=\d+-[0-9a-f]{12}$/);
+  expect(amiyaPortrait).toMatch(/^\/images\/operator-portraits\/002_amiya\.webp\?v=sha256-[0-9a-f]{64}$/);
   const versioned = await request.get(amiyaPortrait);
   expect(versioned.ok()).toBe(true);
   expect(versioned.headers()["content-type"]).toContain("image/webp");
