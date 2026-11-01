@@ -1,21 +1,21 @@
 {
   "source": {
     "repository": "https://github.com/arkntools/arknights-toolbox-data",
-    "commit": "a9342f1c5f49f21a0c49241fb9b56f3ee09685e8"
+    "commit": "3fc3d11079a66f30c19f919ed78c53d0fcd527db"
   },
   "localInputs": {
-    "packages/arknights-domain/src/generated/arkntools/source.json": "cf34faa39242b203bd8162f019056fc6c9efa97f880c5829cf74ecb9e67f3a8e",
-    "packages/arknights-domain/src/generated/arkntools/operator-catalog.json": "f1b6c8a62b38b2af35c1a48ead376b7d51ada2c695cf433f62d314f9b80fe1a2",
-    "packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json": "3d0ec6cd1405ca202c71c61b4885ad5c8e5132b7c97ea08370062efb80c897ff",
+    "packages/arknights-domain/src/generated/arkntools/source.json": "e627b71217bed8a7c7ed8a5fc43edd0868be34d3a6e0604a745b952a7a93db20",
+    "packages/arknights-domain/src/generated/arkntools/operator-catalog.json": "dfe183061b8a27975836c7d8ec45b29e2ada771cd9fa0ec6d45dc9801e34a53f",
+    "packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json": "ce544edc18b429503dd9bdcae6d1fe890ef94c49fff65516af3de3545f64a3f7",
     "apps/arknights/src/generated/item-name-catalog.json": "fa3fb34a8e17479bfbbf31f53488c75890f91f54d201450b0996e3555202e11a",
     "packages/arknights-domain/src/generated/operator-english-names.json": "fb16929757c2e3d7aa7292de5b2d58331d8843cbe9d5dffe4e2d42766650c7de",
     "apps/arknights/src/generated/building-skill-english.json": "9bf697ec02013f0685654eba6a546afb05a538243c1ae959c45a81a5cf2e6d23",
     "apps/arknights/src/generated/building-skill-english-manual.json": "bf42ababa9313cbf4af3d743e3c57560ce732df0f01ab0c0654fe6d7291d214c",
-    "apps/arknights/i18n/game-overrides/en.json": "87970a73f8b5cabd6e4a1f21447115a9dd70112f44d5a48293ebc2d0efe793cd",
-    "apps/arknights/i18n/game-overrides/zh-TW.json": "7d6323ee66ab3920a35a89a6df0b51fbe7ddd209d2bb5f9a4cad79162726647d"
+    "apps/arknights/i18n/game-overrides/en.json": "a80449b45f8b165d3fcc6e174b397a7011971ebd41a8ac20211b5d545bb5ddaf",
+    "apps/arknights/i18n/game-overrides/zh-TW.json": "012f8182b4a5dc8137b0e93d915ee087409001d658214232771b911b74de0b79"
   },
   "inputs": {
-    "assets/data/building.json": "453617c8bca06e5100fa1790991838c1d064ddeb992bf9e75beb3627aec1d204",
+    "assets/data/building.json": "519cd999e765c4904394e666f3df479895274dadaad964d1b04f1f4791feacf7",
     "assets/locales/tw/building.json": "e48379b3144b53e0f61da13fa9d5954bb24863e8d5cb163018416075e63d5669",
     "assets/locales/tw/character.json": "afa670323f6214c4fdbd4b645dd909251412e584ee15c380e911d64f57beba4a",
     "assets/locales/tw/material.json": "667a525e0565cca0529409576d59bf0be43e18ddbb7b199a1b01aa1491aece02",
@@ -24,10 +24,10 @@
     "assets/locales/us/material.json": "630a53355e2eb486f64fe0e6b3b2fda879d517f1dcf0cb6ac30eb1bf49674af7"
   },
   "outputs": {
-    "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json": "13ed2379ac937bfdffccee9b01f1b615741670ec5053b3e3699e91fab87f3c2f",
-    "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json": "688975a1fd9f7ea1cbe490373247eb8334ff94d78f17bfce78b52587bedf49ef",
-    "apps/arknights/src/generated/i18n/en/ArknightsGameData.json": "58762e3e8652b681cd0b7298e0e1aa55dad803151d996150fe6cd555cd82b88f",
-    "apps/arknights/src/generated/i18n/operator-aliases.json": "5b17bb0e5bf59e5550b8387926cad01433147b1f927b17d2c012c3ee8733a674"
+    "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json": "ca8c7f5d47be3e7af31d9527fd46c1aae2d926018eed81a4ed24e8f91af557dc",
+    "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json": "1f54c41e9de9f6d002dc3a5a0636e85a9a09016de1b2eebc58d0ee8605fa8538",
+    "apps/arknights/src/generated/i18n/en/ArknightsGameData.json": "f64262e4adb87b2e0b3c4a982bf0c8766d887db49d0c91661e80810f4ebb3be5",
+    "apps/arknights/src/generated/i18n/operator-aliases.json": "1fa3ff906477ca68c99441a28d484b31deffcfab797ebc26eaca176e70a7aa72"
   },
   "coverage": {
     "zh-CN": [],
@@ -65,6 +65,20 @@
         "id": "char_393_toledo",
         "source": "德·托莱多",
         "translation": "德·托萊多",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4169_caledo",
+        "source": "镜匠",
+        "translation": "鏡匠",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4170_hdbell",
+        "source": "行铃",
+        "translation": "行鈴",
         "resolution": "manual"
       },
       {
@@ -187,6 +201,34 @@
         "resolution": "manual"
       },
       {
+        "kind": "operator",
+        "id": "char_4244_tocka",
+        "source": "冻河",
+        "translation": "凍河",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4245_alga",
+        "source": "奥尔佳",
+        "translation": "奧爾佳",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4246_dminon",
+        "source": "国度",
+        "translation": "國度",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4247_oxi",
+        "source": "塔露拉",
+        "translation": "塔露拉",
+        "resolution": "manual"
+      },
+      {
         "kind": "skill",
         "id": "control_hire_spd_all_000",
         "resolution": "manual"
@@ -209,6 +251,11 @@
       {
         "kind": "skill",
         "id": "dorm_rec_all_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "dorm_rec_all&unfull_100",
         "resolution": "manual"
       },
       {
@@ -323,7 +370,22 @@
       },
       {
         "kind": "skill",
+        "id": "meet_spd&sami_200",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&sami_210",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
         "id": "power_rec_spd_0010",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "power_rec_spd_018",
         "resolution": "manual"
       },
       {
@@ -348,7 +410,27 @@
       },
       {
         "kind": "skill",
+        "id": "recycle_spd&cost_001",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
         "id": "recycle_spd&cost_010",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "recycle_spd&cost_011",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "recycle_spd&cost_100",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "recycle_spd&cost_110",
         "resolution": "manual"
       },
       {
@@ -368,12 +450,32 @@
       },
       {
         "kind": "skill",
+        "id": "trade_ord_spd&share_100",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "trade_ord_spd&share_110",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
         "id": "trade_ord_wt&cost_004",
         "resolution": "manual"
       },
       {
         "kind": "skill",
+        "id": "train_spd_branches_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
         "id": "train_spd_doubleProf_301",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd_doubleProf_302",
         "resolution": "manual"
       },
       {
@@ -409,6 +511,21 @@
       {
         "kind": "skill",
         "id": "workshop_formula_device_080",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_formula_drop_050",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_formula_probability_1111",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_formula_probability_1121",
         "resolution": "manual"
       },
       {
@@ -454,6 +571,20 @@
         "id": "char_393_toledo",
         "source": "德·托莱多",
         "translation": "De Toledo",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4169_caledo",
+        "source": "镜匠",
+        "translation": "Caleido",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4170_hdbell",
+        "source": "行铃",
+        "translation": "Herdbells",
         "resolution": "manual"
       },
       {
@@ -548,6 +679,34 @@
         "resolution": "manual"
       },
       {
+        "kind": "operator",
+        "id": "char_4244_tocka",
+        "source": "冻河",
+        "translation": "Тоска",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4245_alga",
+        "source": "奥尔佳",
+        "translation": "Ольга",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4246_dminon",
+        "source": "国度",
+        "translation": "Территория",
+        "resolution": "manual"
+      },
+      {
+        "kind": "operator",
+        "id": "char_4247_oxi",
+        "source": "塔露拉",
+        "translation": "Talulah",
+        "resolution": "manual"
+      },
+      {
         "kind": "skill",
         "id": "control_hire_spd_all_000",
         "resolution": "legacy-english"
@@ -565,6 +724,11 @@
       {
         "kind": "skill",
         "id": "dorm_rec_all_999",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "dorm_rec_all&unfull_100",
         "resolution": "manual"
       },
       {
@@ -659,6 +823,21 @@
       },
       {
         "kind": "skill",
+        "id": "meet_spd&sami_200",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "meet_spd&sami_210",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "power_rec_spd_018",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
         "id": "power_rec_spd_027",
         "resolution": "legacy-english"
       },
@@ -674,7 +853,27 @@
       },
       {
         "kind": "skill",
+        "id": "recycle_spd&cost_001",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
         "id": "recycle_spd&cost_010",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "recycle_spd&cost_011",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "recycle_spd&cost_100",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "recycle_spd&cost_110",
         "resolution": "manual"
       },
       {
@@ -689,8 +888,28 @@
       },
       {
         "kind": "skill",
+        "id": "trade_ord_spd&share_100",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "trade_ord_spd&share_110",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
         "id": "trade_ord_wt&cost_004",
         "resolution": "legacy-english"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd_branches_000",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "train_spd_doubleProf_302",
+        "resolution": "manual"
       },
       {
         "kind": "skill",
@@ -720,6 +939,21 @@
       {
         "kind": "skill",
         "id": "workshop_formula_device_080",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_formula_drop_050",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_formula_probability_1111",
+        "resolution": "manual"
+      },
+      {
+        "kind": "skill",
+        "id": "workshop_formula_probability_1121",
         "resolution": "manual"
       },
       {

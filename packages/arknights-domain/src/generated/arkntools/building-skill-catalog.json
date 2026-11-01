@@ -1183,6 +1183,16 @@
     ],
     "icon": "/images/building-skills/bskill_dorm_unfull.png"
   },
+  "dorm_rec_all&unfull_100": {
+    "id": "dorm_rec_all&unfull_100",
+    "name": "微小的帮助",
+    "descriptionRich": "进驻宿舍时，该宿舍内所有干员的心情每小时恢复<@cc.vup>+0.1</>；同时该宿舍每有<@cc.kw>1</>名心情未满的干员，则恢复效果额外<@cc.vup>+0.01</>（同种效果取最高）",
+    "tags": [
+      "群体恢复",
+      "特殊恢复"
+    ],
+    "icon": "/images/building-skills/bskill_dorm_unfull2.png"
+  },
   "dorm_rec_bd_dungeon_000": {
     "id": "dorm_rec_bd_dungeon_000",
     "name": "森西大食堂",
@@ -3515,6 +3525,25 @@
     ],
     "icon": "/images/building-skills/bskill_meet_spd&blacksteel2.png"
   },
+  "meet_spd&sami_200": {
+    "id": "meet_spd&sami_200",
+    "name": "外交禀赋",
+    "descriptionRich": "进驻会客室时，线索搜集速度提升<@cc.vup>10%</>",
+    "tags": [
+      "无特别加成"
+    ],
+    "icon": "/images/building-skills/bskill_meet_spd1.png"
+  },
+  "meet_spd&sami_210": {
+    "id": "meet_spd&sami_210",
+    "name": "群策群力",
+    "descriptionRich": "进驻会客室时，线索搜集速度提升<@cc.vup>10%</>，与其他<$cc.g.ussg><@cc.kw>乌萨斯学生自治团</></>干员进驻会客室一起工作时，线索搜集速度额外提升<@cc.vup>20%</>",
+    "tags": [
+      "无特别加成",
+      "线索4"
+    ],
+    "icon": "/images/building-skills/bskill_meet_spd&ussg1.png"
+  },
   "meet_spd&team_000": {
     "id": "meet_spd&team_000",
     "name": "线索搜集·α",
@@ -3839,6 +3868,13 @@
     "tags": [],
     "icon": "/images/building-skills/bskill_pow_spd2.png"
   },
+  "power_rec_spd_018": {
+    "id": "power_rec_spd_018",
+    "name": "人造物之畏",
+    "descriptionRich": "进驻发电站时，无人机充能速度<@cc.vup>+15%</>",
+    "tags": [],
+    "icon": "/images/building-skills/bskill_pow_spd2.png"
+  },
   "power_rec_spd_020": {
     "id": "power_rec_spd_020",
     "name": "静电场",
@@ -3981,6 +4017,15 @@
     ],
     "icon": "/images/building-skills/bskill_recycle_spd&cost1.png"
   },
+  "recycle_spd&cost_001": {
+    "id": "recycle_spd&cost_001",
+    "name": "梅里塔精拣",
+    "descriptionRich": "进驻回收站时，材料转化效率<@cc.vup>+20%</>",
+    "tags": [
+      "转化效率"
+    ],
+    "icon": "/images/building-skills/bskill_recycle_spd&cost1.png"
+  },
   "recycle_spd&cost_010": {
     "id": "recycle_spd&cost_010",
     "name": "捡海人",
@@ -3989,6 +4034,33 @@
       "转化效率"
     ],
     "icon": "/images/building-skills/bskill_recycle_spd&cost2.png"
+  },
+  "recycle_spd&cost_011": {
+    "id": "recycle_spd&cost_011",
+    "name": "花椰菜甄选",
+    "descriptionRich": "进驻回收站时，材料转化效率<@cc.vup>+30%</>",
+    "tags": [
+      "转化效率"
+    ],
+    "icon": "/images/building-skills/bskill_recycle_spd&cost2.png"
+  },
+  "recycle_spd&cost_100": {
+    "id": "recycle_spd&cost_100",
+    "name": "无差别回收",
+    "descriptionRich": "进驻回收站时，材料转化效率<@cc.vup>+20%</>，心情每小时消耗<@cc.vup>-0.1</>",
+    "tags": [
+      "转化效率"
+    ],
+    "icon": "/images/building-skills/bskill_recycle_spd&cost4.png"
+  },
+  "recycle_spd&cost_110": {
+    "id": "recycle_spd&cost_110",
+    "name": "无差别转化",
+    "descriptionRich": "进驻回收站时，材料转化效率<@cc.vup>+30%</>，心情每小时消耗<@cc.vup>-0.1</>",
+    "tags": [
+      "转化效率"
+    ],
+    "icon": "/images/building-skills/bskill_recycle_spd&cost5.png"
   },
   "trade_cost_000": {
     "id": "trade_cost_000",
@@ -4714,6 +4786,24 @@
     ],
     "icon": "/images/building-skills/bskill_tra_share3.png"
   },
+  "trade_ord_spd&share_100": {
+    "id": "trade_ord_spd&share_100",
+    "name": "“无用的人脉”",
+    "descriptionRich": "进驻贸易站时，贸易站内除自身以外每名处于工作状态的干员<@cc.vup>+15%</>订单获取效率",
+    "tags": [
+      "订单效率"
+    ],
+    "icon": "/images/building-skills/bskill_tra_share4.png"
+  },
+  "trade_ord_spd&share_110": {
+    "id": "trade_ord_spd&share_110",
+    "name": "“真有用？”",
+    "descriptionRich": "进驻贸易站时，贸易站内除自身以外每名处于工作状态的干员<@cc.vup>+20%</>订单获取效率",
+    "tags": [
+      "订单效率"
+    ],
+    "icon": "/images/building-skills/bskill_tra_share5.png"
+  },
   "trade_ord_spd&tag_000": {
     "id": "trade_ord_spd&tag_000",
     "name": "订单分发·α",
@@ -4938,6 +5028,16 @@
     ],
     "icon": "/images/building-skills/bskill_train_accmu_guard1.png"
   },
+  "train_spd_branches_000": {
+    "id": "train_spd_branches_000",
+    "name": "火旁新事",
+    "descriptionRich": "进驻训练室协助位时，如果训练位干员分支为<@cc.kw>本源近卫</>或<@cc.kw>本源术师</>，则专精技能训练速度额外<@cc.vup>+45%</>",
+    "tags": [
+      "术师",
+      "近卫"
+    ],
+    "icon": "/images/building-skills/bskill_train_branches1.png"
+  },
   "train_spd_doubleProf_000": {
     "id": "train_spd_doubleProf_000",
     "name": "剑与手炮",
@@ -5002,6 +5102,16 @@
     "id": "train_spd_doubleProf_301",
     "name": "“我不懂啊”",
     "descriptionRich": "进驻训练室协助位时，<@cc.kw>术师</>与<@cc.kw>近卫</>干员的专精技能训练速度<@cc.vup>+30%</>",
+    "tags": [
+      "术师",
+      "近卫"
+    ],
+    "icon": "/images/building-skills/bskill_train_caster&vanguard1.png"
+  },
+  "train_spd_doubleProf_302": {
+    "id": "train_spd_doubleProf_302",
+    "name": "剑与昔时",
+    "descriptionRich": "进驻训练室协助位时，<@cc.kw>近卫</>与<@cc.kw>术师</>干员的专精技能训练速度<@cc.vup>+30%</>",
     "tags": [
       "术师",
       "近卫"
@@ -6156,6 +6266,13 @@
     "tags": [],
     "icon": "/images/building-skills/bskill_ws_drop_orirock.png"
   },
+  "workshop_formula_drop_050": {
+    "id": "workshop_formula_drop_050",
+    "name": "浸剂回收",
+    "descriptionRich": "进驻加工站加工<@cc.kw>精英材料</>产出<@cc.kw>T3</>品质的副产品时，副产品必定为<@cc.kw>酮凝集组</>",
+    "tags": [],
+    "icon": "/images/building-skills/bskill_ws_drop_aketon.png"
+  },
   "workshop_formula_free_000": {
     "id": "workshop_formula_free_000",
     "name": "精打细算",
@@ -6305,6 +6422,15 @@
     ],
     "icon": "/images/building-skills/bskill_ws_evolve2.png"
   },
+  "workshop_formula_probability_1111": {
+    "id": "workshop_formula_probability_1111",
+    "name": "制镜基本功·α",
+    "descriptionRich": "进驻加工站加工<@cc.kw>精英材料</>时，副产品的产出概率提升<@cc.vup>75%</>",
+    "tags": [
+      "精英材料"
+    ],
+    "icon": "/images/building-skills/bskill_ws_evolve2.png"
+  },
   "workshop_formula_probability_112": {
     "id": "workshop_formula_probability_112",
     "name": "爆破材料学·α",
@@ -6313,6 +6439,15 @@
       "精英材料"
     ],
     "icon": "/images/building-skills/bskill_ws_evolve2.png"
+  },
+  "workshop_formula_probability_1121": {
+    "id": "workshop_formula_probability_1121",
+    "name": "制镜基本功·β",
+    "descriptionRich": "进驻加工站加工<@cc.kw>精英材料</>时，副产品的产出概率提升<@cc.vup>80%</>",
+    "tags": [
+      "精英材料"
+    ],
+    "icon": "/images/building-skills/bskill_ws_evolve3.png"
   },
   "workshop_formula_probability_113": {
     "id": "workshop_formula_probability_113",

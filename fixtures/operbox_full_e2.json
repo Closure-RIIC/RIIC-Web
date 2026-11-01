@@ -387,6 +387,15 @@
     "rarity": 5
   },
   {
+    "id": "char_4244_tocka",
+    "name": "冻河",
+    "elite": 2,
+    "level": 90,
+    "own": true,
+    "potential": 6,
+    "rarity": 6
+  },
+  {
     "id": "char_115_headbr",
     "name": "凛冬",
     "elite": 2,
@@ -711,6 +720,15 @@
     "rarity": 5
   },
   {
+    "id": "char_4246_dminon",
+    "name": "国度",
+    "elite": 2,
+    "level": 90,
+    "own": true,
+    "potential": 6,
+    "rarity": 6
+  },
+  {
     "id": "char_402_tuye",
     "name": "图耶",
     "elite": 2,
@@ -776,6 +794,15 @@
   {
     "id": "char_245_cello",
     "name": "塑心",
+    "elite": 2,
+    "level": 90,
+    "own": true,
+    "potential": 6,
+    "rarity": 6
+  },
+  {
+    "id": "char_4247_oxi",
+    "name": "塔露拉",
     "elite": 2,
     "level": 90,
     "own": true,
@@ -884,6 +911,15 @@
   {
     "id": "char_4213_skybx",
     "name": "天空盒",
+    "elite": 2,
+    "level": 80,
+    "own": true,
+    "potential": 6,
+    "rarity": 5
+  },
+  {
+    "id": "char_4245_alga",
+    "name": "奥尔佳",
     "elite": 2,
     "level": 80,
     "own": true,
@@ -3150,6 +3186,15 @@
     "rarity": 5
   },
   {
+    "id": "char_4170_hdbell",
+    "name": "行铃",
+    "elite": 2,
+    "level": 70,
+    "own": true,
+    "potential": 6,
+    "rarity": 4
+  },
+  {
     "id": "char_4140_lasher",
     "name": "衡沙",
     "elite": 2,
@@ -3530,6 +3575,15 @@
   {
     "id": "char_348_ceylon",
     "name": "锡兰",
+    "elite": 2,
+    "level": 80,
+    "own": true,
+    "potential": 6,
+    "rarity": 5
+  },
+  {
+    "id": "char_4169_caledo",
+    "name": "镜匠",
     "elite": 2,
     "level": 80,
     "own": true,
