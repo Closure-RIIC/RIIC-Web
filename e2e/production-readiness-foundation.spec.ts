@@ -1073,7 +1073,7 @@ test("server auth boundaries reject anonymous planning and every development Skl
 });
 
 test("serves versioned WebP portraits with immutable caching only when versioned", async ({ request }) => {
-  expect(amiyaPortrait).toMatch(/^\/images\/operator-portraits\/002_amiya\.webp\?v=\d+-[0-9a-f]{12}$/);
+  expect(amiyaPortrait).toMatch(/^\/images\/operator-portraits\/002_amiya\.webp\?v=sha256-[0-9a-f]{64}$/);
   const versioned = await request.get(amiyaPortrait);
   expect(versioned.ok()).toBe(true);
   expect(versioned.headers()["content-type"]).toContain("image/webp");
