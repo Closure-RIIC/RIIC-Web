@@ -105,6 +105,7 @@ function DrawPortrait({ record, large = false, offBanner = false }: { record: Ga
   const gameCatalog = useGameCatalog();
   return <div className="relative" title={`${localizedOperatorName(record.charName, rawLocale, gameCatalog)} · ${record.stars}★${record.isNew ? " · NEW" : ""}`} data-gacha-record data-gacha-stars={record.stars}>
     <RemoteAvatar src={operatorPortraitFor(record.charName, record.charId)} alt={rawText.text(rawLocale, "avatar", { name: localizedOperatorName(record.charName, rawLocale, gameCatalog) })} pixelSize={large ? 40 : 28} loading="lazy" className={`${large ? "size-10" : "size-7"} rounded-[4px] bg-muted`} emptyFallback={<span aria-hidden="true" className="text-xs text-muted-foreground">{record.charName.slice(0, 1)}</span>} />
+    {record.isNew && <span data-gacha-new className="absolute -left-1 -top-1 z-10 rounded-[2px] bg-yellow-400 px-0.5 text-[7px] font-bold leading-[10px] text-black">NEW</span>}
     {offBanner && <span data-gacha-off-banner aria-label={rawText.text(rawLocale, "6OperatorOutsideThisBannerSRateUpPool")} className="absolute -right-1 -top-1 z-10 grid size-4 place-items-center rounded-[2px] bg-destructive text-[10px] font-semibold leading-none text-white">{rawText.text(rawLocale, "offBanner")}</span>}
   </div>;
 }
