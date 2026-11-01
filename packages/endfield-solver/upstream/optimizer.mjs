@@ -107,16 +107,12 @@ function pairMap(root, centerKey) {
 const charIdOf = (op) => op.charId || op.name;
 
 /**
- * 会客室补位优先级（决策 Q13，2026-10-30 改）：
- *   1 β1/2/4/5/6 → 2 α1/2/4/5/6 → 3 β3 → 4 α3 → 5 白板 → 6 α7 → 7 β7
- * 线索 7 被压到白板之下（只有没有其他线索干员、也没有白板时才用）。
- * `op.skills` 已经按精英化过滤，所以 β 未解锁时这里只会看到 α。
- * 档位严格按 α/β 排：只要解锁了 β 就按 β 计（β 永远在 α 之后），没有 β 才退回 α。
- * 因此别礼 E4（α7+β7）按 β7 = 7 计，E2/E3（只有 α7）按 α7 = 6 计。
+ * 取该干员**最优的那条**线索概率技能：有 β 就只看 β（β 永远在 α 之后），没有 β 才看 α。
+ * 返回 `{ rank, clue }`；没有任何线索概率技能时返回 `null`（= 白板档）。
  */
-export function clueRankOf(op) {
-  let bestBeta = Infinity;
-  let bestAlpha = Infinity;
+export function clueBestOf(op) {
+  let bestBeta = null;
+  let bestAlpha = null;
   for (const s of op.skills) {
     if (s.kind !== '概率') continue;
     const tier = s.tier === 2 ? 2 : 1;
@@ -127,13 +123,26 @@ export function clueRankOf(op) {
         ? (tier === 2 ? 7 : 6)
         : clue >= 1 && clue <= 6
           ? (tier === 2 ? 1 : 2)
-          : Infinity;
-    if (tier === 2) { if (rank < bestBeta) bestBeta = rank; }
-    else if (rank < bestAlpha) bestAlpha = rank;
+          : null;
+    if (rank === null) continue;
+    const rec = { rank, clue };
+    if (tier === 2) { if (!bestBeta || rank < bestBeta.rank) bestBeta = rec; }
+    else if (!bestAlpha || rank < bestAlpha.rank) bestAlpha = rec;
   }
-  if (Number.isFinite(bestBeta)) return bestBeta;
-  if (Number.isFinite(bestAlpha)) return bestAlpha;
-  return 5;
+  return bestBeta || bestAlpha;
+}
+
+/**
+ * 会客室补位优先级（决策 Q13，2026-10-30 改）：
+ *   1 β1/2/4/5/6 → 2 α1/2/4/5/6 → 3 β3 → 4 α3 → 5 白板 → 6 α7 → 7 β7
+ * 线索 7 被压到白板之下（只有没有其他线索干员、也没有白板时才用）。
+ * `op.skills` 已经按精英化过滤，所以 β 未解锁时这里只会看到 α。
+ * 档位严格按 α/β 排：只要解锁了 β 就按 β 计（β 永远在 α 之后），没有 β 才退回 α。
+ * 因此别礼 E4（α7+β7）按 β7 = 7 计，E2/E3（只有 α7）按 α7 = 6 计。
+ */
+export function clueRankOf(op) {
+  const best = clueBestOf(op);
+  return best ? best.rank : 5;
 }
 
 // ───────────────────────── 中枢枚举 ─────────────────────────
@@ -161,7 +170,7 @@ export function enumerateCenters(ops, cfg) {
     return { idx: g, mask, u };
   });
   // skillValueOf 与 u 的四位小数字符串都预计算：下面那个 a×b 双循环是 20 万级的
-  const skillValueCache = ops.map((op) => skillValueOf(op));
+  const skillValueCache = ops.map((op) => skillValueOf(op, cfg));
   for (const info of infos) {
     info.uKey = info.u.toFixed(4);
     info.cost = info.idx.reduce((s, i) => s + skillValueCache[i], 0);
@@ -253,17 +262,57 @@ export function enumerateCenters(ops, cfg) {
   return out;
 }
 
-/** 该干员在非中枢舱的最高技能价值，用于中枢补位的机会成本排序（§6.8） */
-function skillValueOf(op) {
+/**
+ * 线索概率技能折算成"会客室价值"（决策 Q13 的档位单调递减，白板及以下一律 0）：
+ *   β(1/2/4/5/6)=1 → 0.60、α(1/2/4/5/6)=2 → 0.45、β3=3 → 0.30、α3=4 → 0.15
+ *   白板(5)/α7(6)/β7(7) → 0
+ * 只用来给中枢挑"该把谁留在外面"，不参与任何产能计算。
+ */
+const CLUE_PROB_VALUE = { 1: 0.60, 2: 0.45, 3: 0.30, 4: 0.15 };
+
+function clueValueOf(op) {
+  return CLUE_PROB_VALUE[clueRankOf(op)] ?? 0;
+}
+
+/** 各舱室能产出的类别 → 该类别在优先级里的位置（用来给机会成本加权） */
+const ROOM_CATS = [
+  ['制造舱', { 干员经验: '干员经验', 武器经验: '武器经验' }],
+  ['培养舱', { 晶植: '培养', 菌类: '培养', 矿物: '培养' }],
+  ['会客室', { 线索: '线索' }],
+];
+
+/**
+ * 该干员在非中枢舱的"机会成本"：中枢占用他会让别的舱室损失多少。
+ *
+ * 两个口径（决策 69）：
+ *  1. **按类别优先级加权**：优先级第 k 名权重 = N − k。所以"只有培养舱用得上的人"比
+ *     "会客室用得上的人"便宜，中枢会先拿前者（用户要求：从低优先级往高优先级占用）。
+ *  2. **线索概率也算价值**：中枢原来只看加成/减免，带 C2(1–6) 却无其它加成的人成本为 0，
+ *     会被中枢无条件抢走，逼会客室改用"只有中枢技能、对会客室是白板"的人。
+ *     现在按 Q13 的档位折算（见 CLUE_PROB_VALUE），线索 7/白板不折算。
+ */
+function skillValueOf(op, cfg) {
+  const cats = (cfg && cfg.priority) || ['线索', '干员经验', '武器经验', '培养'];
+  const n = cats.length;
+  const wOf = (cat) => {
+    const i = cats.indexOf(cat);
+    return i < 0 ? 1 : n - i;
+  };
   let best = 0;
-  for (const room of ['制造舱', '培养舱', '会客室']) {
-    for (const cat of ['干员经验', '武器经验', '晶植', '菌类', '矿物', '线索']) {
-      const v = val(op, room, '加成', cat);
-      if (v > best) best = v;
+  const bump = (weight, v) => {
+    if (!(v > 0)) return;
+    const s = v * weight;
+    if (s > best) best = s;
+  };
+  for (const [room, catMap] of ROOM_CATS) {
+    for (const [cat, prioCat] of Object.entries(catMap)) {
+      bump(wOf(prioCat), val(op, room, '加成', cat));
     }
+    // 心情减免按该舱室能产出的类别里"最高的那个优先级权重"计
     const r = val(op, room, '减免');
-    if (r * 0.8 > best) best = r * 0.8;
+    if (r > 0) bump(Math.max(...Object.values(catMap).map(wOf)), r * 0.8);
   }
+  bump(wOf('线索'), clueValueOf(op));
   return best;
 }
 
@@ -343,7 +392,7 @@ function makeBudget(cfg) {
  * 班组签名组：签名 = (加成向量, 减免, 满工位人数)；同签名保留全部具体人选 mask。
  * 同时给出"签名对 × 班长"的闭式取值表。
  */
-function buildFacilityTable(ctx, spec, avail) {
+function buildFacilityTable(ctx, spec, avail, forceAllSizes = false) {
   const seats = Math.min(spec.slots || SLOTS, SLOTS);
   const rel = relevantMask(ctx.ops, spec, avail);
   // 班组人数 1..工位数（决策 18）：减少人数**是候选空间的一部分**，不由"满工位是否排得出来"开关。
@@ -351,7 +400,10 @@ function buildFacilityTable(ctx, spec, avail) {
   // 时，任何 n<工位数 的候选都能靠"往空工位塞一个尚未被用到的白板"严格变好（E=(1+0.4n)(1+b) 随 n 严格增，
   // 心情只按设施算 d，不受人数影响），所以这些候选被支配、可以合法剪掉；
   // 人手不足时自动展开 1..工位数（差分族 D/D2/D3 双向护栏：缺人时逐位对齐，富余时也必须对齐）。
-  const sizes = ctx.reducedSizes ? Array.from({ length: seats }, (_, k) => k + 1) : [seats];
+  // `forceAllSizes`（P1）：两舱工位数不同时按"大工位"建表，必须保留 1..最大工位数，否则小工位舱没有候选。
+  const sizes = (forceAllSizes || ctx.reducedSizes)
+    ? Array.from({ length: seats }, (_, k) => k + 1)
+    : [seats];
   const dbg = !!process.env.DEBUG_CAT;
   if (dbg) {
     console.error(`  [table ${spec.key}] seats=${seats} sizes=${sizes.join('/')} avail=${sizeOf(avail)} rel=${sizeOf(rel)} `
@@ -919,7 +971,31 @@ function pairWithoutRelevant(ctx, inst, table) {
   return { value: best, combos };
 }
 
-function maximizePair(ctx, tableA) {
+/**
+ * `rel` 为空 + 两舱工位数不同（P1）：两侧候选各自按工位数过滤后**跨表**两两枚举。
+ * 与 `pairWithoutRelevant` 同口径，只是 a 取自设施 1 的列表、b 取自设施 2 的列表。
+ */
+function pairWithoutRelevantDual(ctx, listA, listB, table) {
+  const mCap = table.fillPool.length;
+  const tol = ctx.cfg.limits.valueTol;
+  const value = (e) => (e.stable ? e.cf : (Number.isFinite(e.currentValue) ? e.currentValue : e.ub));
+  const feasible = (a, b) => a !== b && (a.footprint & b.footprint) === 0n
+    && (a.fillNeed ?? 0) + (b.fillNeed ?? 0) <= mCap;
+  let best = -Infinity;
+  const combos = [];
+  for (const a of listA) {
+    for (const b of listB) {
+      if (!feasible(a, b)) continue;
+      const v = value(a) + value(b);
+      if (v > best + tol) { best = v; combos.length = 0; combos.push([a, b]); }
+      else if (Math.abs(v - best) <= tol && combos.length < 400) combos.push([a, b]);
+    }
+  }
+  if (!combos.length) return { value: 0, combos: [] };
+  return { value: best, combos };
+}
+
+function maximizePair(ctx, tableA, sideCaps = null) {
   const tol = ctx.cfg.limits.valueTol;
   const rel = tableA.rel;
   const bits = toIndices(rel);
@@ -927,6 +1003,13 @@ function maximizePair(ctx, tableA) {
   if (n > 16) return null;
   const size = 1 << n;
   const full = size - 1;
+  // P1 原型：两舱工位数不同时，实例只建一次（大工位表），再按各舱工位数过滤出两份候选
+  const dual = !!sideCaps && sideCaps[0] !== sideCaps[1];
+  const capA = dual ? Math.min(sideCaps[0], tableA.seats) : tableA.seats;
+  const capB = dual ? Math.min(sideCaps[1], tableA.seats) : tableA.seats;
+  const fitsCap = (e, cap) => (e.nA ?? 0) <= cap && (e.single || (e.nB ?? 0) <= cap);
+  let listA = null;
+  let listB = null;
   const localOf = (mask) => {
     let idx = 0;
     for (let p = 0; p < n; p += 1) if (has(mask, bits[p])) idx |= 1 << p;
@@ -1044,16 +1127,18 @@ function maximizePair(ctx, tableA) {
   const better = (a, b) => (Math.abs(a.v - b.v) > tol ? a.v > b.v : false);
 
   // 复用缓冲：size 可达 2^16，原来每轮守卫都新建 4 张表（742 轮 ⇒ 数 GB 的分配，GC 的主要来源）
+  // `real` = "可确证"表（稳定班 + 已模拟收敛的衰减班），用于下界；P3'' 让含衰减候选的类别也能收敛。
   const buffers = new Map();
-  const bufOf = (t) => {
-    let b = buffers.get(t);
+  const bufOf = (key) => {
+    let b = buffers.get(key);
     if (!b) {
       b = {
-        cell: new Array(size), cellStable: new Array(size),
+        cell: new Array(size), cellStable: new Array(size), cellReal: new Array(size),
         valAny: new Float64Array(size), argAny: new Array(size),
         valStable: new Float64Array(size), argStable: new Array(size),
+        valReal: new Float64Array(size), argReal: new Array(size),
       };
-      buffers.set(t, b);
+      buffers.set(key, b);
     }
     return b;
   };
@@ -1089,38 +1174,62 @@ function maximizePair(ctx, tableA) {
 
   const runLoop = (layered) => {
     const caps = layered ? capList : [fMax];
+    // P1：两舱工位数不同 → 实例只建一次，按各舱工位数过滤出两份候选（同一个实例对象可能两份都进）
+    const listA = dual ? inst.filter((e) => fitsCap(e, capA)) : inst;
+    const listB = dual ? inst.filter((e) => fitsCap(e, capB)) : inst;
+    if (dual && (!listA.length || !listB.length)) return null;
+    const sideOf = dual ? ['A', 'B'] : ['S', 'S'];
+    const lists = [listA, listB];
     for (let guard = 0; guard < 64; guard += 1) {
       // 分层：第 t 层只收"补位数 ≤ t"的实例（顶层 = 不设限）。
-      // 一次遍历 `inst` 同时填"任意实例"和"稳定实例"两张表（原来扫两遍，5 万实例 × 12 轮守卫很贵）。
+      // 一次遍历实例同时填"任意/稳定/可确证"三张表（P3'' 的 real 是下界）。
       const layer = new Map();
-      for (const t of caps) {
-        const buf = bufOf(t);
-        const cell = buf.cell;
-        const cellStable = buf.cellStable;
-        cell.fill(null);
-        cellStable.fill(null);
-        for (let k = 0; k < inst.length; k += 1) {
-          const e = inst[k];
-          if ((e.fillNeed ?? 0) > t) continue;
-          const v = e.evaluated
-            ? (Number.isFinite(e.currentValue) ? e.currentValue : -Infinity)
-            : Math.max(e.cf, e.stable ? e.cf : e.ub);
-          const cur = { v, e };
-          const prev = cell[e.local];
-          if (!prev || better(cur, prev)) cell[e.local] = cur;
-          if (e.stable) {
-            const curS = { v: e.cf, e };
-            const prevS = cellStable[e.local];
-            if (!prevS || better(curS, prevS)) cellStable[e.local] = curS;
+      for (let s = 0; s < 2; s += 1) {
+        if (s === 1 && !dual) break;                    // 形状一致时两侧共用一套网格
+        const side = sideOf[s];
+        const list = lists[s];
+        for (const t of caps) {
+          const buf = bufOf(`${side}|${t}`);
+          const cell = buf.cell;
+          const cellStable = buf.cellStable;
+          const cellReal = buf.cellReal;
+          cell.fill(null);
+          cellStable.fill(null);
+          cellReal.fill(null);
+          for (let k = 0; k < list.length; k += 1) {
+            const e = list[k];
+            if ((e.fillNeed ?? 0) > t) continue;
+            const v = e.evaluated
+              ? (Number.isFinite(e.currentValue) ? e.currentValue : -Infinity)
+              : Math.max(e.cf, e.stable ? e.cf : e.ub);
+            const cur = { v, e };
+            const prev = cell[e.local];
+            if (!prev || better(cur, prev)) cell[e.local] = cur;
+            if (e.stable) {
+              const curS = { v: e.cf, e };
+              const prevS = cellStable[e.local];
+              if (!prevS || better(curS, prevS)) cellStable[e.local] = curS;
+            }
+            // real：稳定班取闭式；衰减班只取"已模拟且收敛"的真值（P3''）
+            const vReal = e.stable ? e.cf
+              : (e.evaluated && e.converged && Number.isFinite(e.currentValue) ? e.currentValue : null);
+            if (vReal !== null) {
+              const curR = { v: vReal, e };
+              const prevR = cellReal[e.local];
+              if (!prevR || better(curR, prevR)) cellReal[e.local] = curR;
+            }
           }
+          sosInto(cell, buf.valAny, buf.argAny);
+          sosInto(cellStable, buf.valStable, buf.argStable);
+          sosInto(cellReal, buf.valReal, buf.argReal);
+          layer.set(`${side}|${t}`, {
+            any: { val: buf.valAny, arg: buf.argAny },
+            stable: { val: buf.valStable, arg: buf.argStable },
+            real: { val: buf.valReal, arg: buf.argReal },
+          });
         }
-        sosInto(cell, buf.valAny, buf.argAny);
-        sosInto(cellStable, buf.valStable, buf.argStable);
-        layer.set(t, {
-          any: { val: buf.valAny, arg: buf.argAny },
-          stable: { val: buf.valStable, arg: buf.argStable },
-        });
       }
+      const grid = (side, t) => layer.get(`${side}|${t}`);
       const cap2Of = (t1) => (layered ? Math.min(fMax, mCap - t1) : fMax);
       const feasiblePair = (a, b) => !!a && !!b && a !== b
         && (a.footprint & b.footprint) === 0n && needOf(a) + needOf(b) <= mCap;
@@ -1128,10 +1237,11 @@ function maximizePair(ctx, tableA) {
       let lower = -Infinity;
       for (const t1 of caps) {
         const t2 = cap2Of(t1);
-        const anyA = layer.get(t1).any;
-        const anyB = layer.get(t2).any;
-        const stA2 = layer.get(t1).stable;
-        const stB2 = layer.get(t2).stable;
+        const anyA = grid(sideOf[0], t1).any;
+        const anyB = grid(sideOf[1], t2).any;
+        // 下界用 real（稳定班 + 已确证的衰减班），而不是只看稳定班（P3''）
+        const stA2 = grid(sideOf[0], t1).real;
+        const stB2 = grid(sideOf[1], t2).real;
         for (let U = 0; U <= full; U += 1) {
           const up = anyA.val[U] + anyB.val[full - U];
           if (up > upper) upper = up;
@@ -1144,35 +1254,44 @@ function maximizePair(ctx, tableA) {
       if (upper <= lower + tol) {
         // 收齐"同一占用集里的同分实现"（不同班长/不同人选），交给父层按 §6.8 + 决定性尾序裁决；
         // 只在单元内取一条会让"自己需求略大但班长更长/人选更优"的同分方案提前出局。
-        const byLocal = new Map();
-        for (const e of inst) {
-          if (!e.stable) continue;
-          const arr = byLocal.get(e.local) || [];
-          arr.push(e);
-          byLocal.set(e.local, arr);
-        }
+        // P3''：衰减班只要已模拟收敛，也进入候选（值用 currentValue，不再用闭式 cf）。
+        const realValueOf = (e) => (e.stable ? e.cf
+          : (e.evaluated && e.converged && Number.isFinite(e.currentValue) ? e.currentValue : -Infinity));
+        const buildByLocal = (list) => {
+          const map = new Map();
+          for (const e of list) {
+            if (!Number.isFinite(realValueOf(e))) continue;
+            const arr = map.get(e.local) || [];
+            arr.push(e);
+            map.set(e.local, arr);
+          }
+          return map;
+        };
+        const byLocalA = buildByLocal(listA);
+        const byLocalB = dual ? buildByLocal(listB) : byLocalA;
         const combos = [];
         let bestCombo = -Infinity;
         outer:
         for (const t1 of caps) {
           const t2 = cap2Of(t1);
-          const stA2 = layer.get(t1).stable;
-          const stB2 = layer.get(t2).stable;
+          const stA2 = grid(sideOf[0], t1).real;
+          const stB2 = grid(sideOf[1], t2).real;
           for (let U = 0; U <= full; U += 1) {
             const lo = stA2.val[U] + stB2.val[full - U];
             if (lo < lower - tol) continue;
             const a = stA2.arg[U];
             const b = stB2.arg[full - U];
             if (!feasiblePair(a, b)) continue;
-            const listA = (byLocal.get(a.local) || [])
-              .filter((e) => e.cf >= stA2.val[U] - tol && needOf(e) <= t1);
-            const listB = (byLocal.get(b.local) || [])
-              .filter((e) => e.cf >= stB2.val[full - U] - tol && needOf(e) <= t2);
-            for (const x of listA.slice(0, 40)) {
-              for (const y of listB.slice(0, 40)) {
+            const listA2 = (byLocalA.get(a.local) || [])
+              .filter((e) => realValueOf(e) >= stA2.val[U] - tol && needOf(e) <= t1);
+            const listB2 = (byLocalB.get(b.local) || [])
+              .filter((e) => realValueOf(e) >= stB2.val[full - U] - tol && needOf(e) <= t2);
+            for (const x of listA2.slice(0, 40)) {
+              for (const y of listB2.slice(0, 40)) {
                 if (!feasiblePair(x, y)) continue;
                 combos.push([x, y]);
-                if (x.cf + y.cf > bestCombo) bestCombo = x.cf + y.cf;
+                const v = realValueOf(x) + realValueOf(y);
+                if (v > bestCombo) bestCombo = v;
                 if (combos.length > 400) break;
               }
               if (combos.length > 400) break;
@@ -1191,8 +1310,8 @@ function maximizePair(ctx, tableA) {
       let changed = false;
       for (const t1 of caps) {
         const t2 = cap2Of(t1);
-        const anyA = layer.get(t1).any;
-        const anyB = layer.get(t2).any;
+        const anyA = grid(sideOf[0], t1).any;
+        const anyB = grid(sideOf[1], t2).any;
         for (let U = 0; U <= full; U += 1) {
           if (anyA.val[U] + anyB.val[full - U] < upper - tol) continue;
           for (const e of [anyA.arg[U], anyB.arg[full - U]]) {
@@ -1203,13 +1322,16 @@ function maximizePair(ctx, tableA) {
         }
       }
       if (!changed) {
+        // 注：曾尝试在这里"补模拟"未评估的衰减候选来消除该标记，实测**无效**——
+        // 卡住的是 `simulateFacility` 本身不收敛的候选（converged=false），多模拟几次也确认不了，
+        // 反而把 21 人案例的模拟量从 922 抬到 2563。故保留"如实标记"。
         ctx.approximations.add('同类双设施存在无法确证的衰减候选');
         const combos = [];
         let bestFeasible = -Infinity;
         for (const t1 of caps) {
           const t2 = cap2Of(t1);
-          const anyA = layer.get(t1).any;
-          const anyB = layer.get(t2).any;
+          const anyA = grid(sideOf[0], t1).any;
+          const anyB = grid(sideOf[1], t2).any;
           for (let U = 0; U <= full; U += 1) {
             const val = anyA.val[U] + anyB.val[full - U];
             if (val < upper - tol) continue;
@@ -1236,13 +1358,23 @@ function maximizePair(ctx, tableA) {
   // SOS 每格只留一条实例，`feasiblePair` 的 a!==b ⇒ 永远配不出两舱 ⇒ 整个类别被记 0
   // （实测：14 人 + 双经验舱 + 零技能，8 个空闲人也排不出两个制造舱）。
   // 此时两舱共享的只有补位池、实例数很小，直接精确枚举两两组合。
-  if (n === 0) return pairWithoutRelevant(ctx, inst, tableA);
+  if (n === 0) {
+    if (!dual) return pairWithoutRelevant(ctx, inst, tableA);
+    return pairWithoutRelevantDual(
+      ctx,
+      inst.filter((e) => fitsCap(e, capA)),
+      inst.filter((e) => fitsCap(e, capB)),
+      tableA,
+    );
+  }
 
   // 先按"不设补位联合约束"的快路径算（多数实例的赢家本来就补得起），
   // 只有当结果依赖"两舱合计补位 > 池"的组合（不可行）时才退回分层精确路径重算。
   let layered = false;
   let result = runLoop(layered);
+  if (!result) return null;                                   // dual：某一侧没有合法候选 ⇒ 交给调用方回退扫描
   if ((result.needLayered || result.approximate) && !jointFree) { layered = true; result = runLoop(layered); }
+  if (!result) return null;
   delete result.needLayered;
   // ── 值驱动展开：把参与最优组合的签名对扩到全部 23 个 h，再跑一遍 ──
   // 同一批人换舱/换班（`(si,sj)` 与 `(sj,si)`）是等值的两种排法，保留 h 集合却按各签名对
@@ -1541,12 +1673,25 @@ function categoryBranchesBody(ctx, catIdx, usedMask, assistLeft) {
     value = res.value;
     combos = res.ties.map((c) => [c]);
   } else if (tables.length === 2) {
-    // 同类双舱：联合搜索（两舱共用一张表）只在**两座设施形状完全一致**时成立。
-    // 等级不同（工位数不同）时必须走成对扫描，否则第二座设施会套用第一座的工位数
-    // （实测 mfg 3+2：制造舱2 记了 3 人、实际只有 2 个工位，verifyPlan 判人数不合法）。
+    // 同类双舱：两座设施各自有自己的工位数（等级可以不同）。
+    // 形状一致 → 共享表的联合搜索；形状不一致（等级不同）→ 成对扫描。
+    // 注意：成对扫描也是**两舱联合**枚举（a 取自 tableA、b 取自 tableB，成对检查人员互斥），
+    // 不是"先定一舱再补另一舱"；它只是用 ub 做了剪枝、并标注为近似。
+    // 曾尝试"用大工位表做联合搜索、再按各舱工位数过滤朝向"，实测不可行：价值最优组合全是
+    // n=3+3，过滤后 0 条合法朝向；只用小工位表又会让大舱吃亏（3+2 合计 1003.5 < 扫描 1023.4）。
     const sameShape = tables[0].seats === tables[1].seats
       && JSON.stringify(Object.keys(tables[0].spec.weights)) === JSON.stringify(Object.keys(tables[1].spec.weights));
     let res = sameShape ? maximizePair(ctx, tables[0]) : null;
+    if (!res && !sameShape) {
+      // P1：不同工位数的同类双舱也走**联合搜索**——用大工位表建一次实例，按各舱工位数过滤出两份候选，
+      // 两侧各建网格后跨表配对（值只由人选 + n + 房间权重决定，与分到哪一舱无关）。
+      const seatsA = tables[0].seats;
+      const seatsB = tables[1].seats;
+      const seatsMax = Math.max(seatsA, seatsB);
+      const bigSpec = seatsA >= seatsB ? specs[0] : specs[1];
+      const tableM = buildFacilityTable(ctx, { ...bigSpec, slots: seatsMax }, ctx.availMask, true) || tables[0];
+      res = maximizePair(ctx, tableM, [seatsA, seatsB]);
+    }
     if (!res) {
       ctx.approximations.add(sameShape
         ? '同类双设施的相关干员过多，联合搜索退化为成对扫描'
@@ -1562,7 +1707,8 @@ function categoryBranchesBody(ctx, catIdx, usedMask, assistLeft) {
         + ` 组合值=${combos.slice(0, 6).map((c) => c.reduce((s, e) => s + (e.currentValue ?? e.cf), 0).toFixed(3)).join(',')}`);
     }
     if (ctx.cfg.assistOn && assistLeft > 0) {
-      ctx.approximations.add('同类双舱类别在仍有剩余助力时按无助力估值');
+      // 助力现在会真正分配给两条 pick（见下方 applyAssist），但组合的**挑选**仍按无助力值。
+      ctx.approximations.add('同类双舱的助力在组合选定后分配（不参与组合选择）');
     }
   } else {
     return [];
@@ -1664,18 +1810,29 @@ function categoryBranchesBody(ctx, catIdx, usedMask, assistLeft) {
     const tableFor = specs.map((spec, k) => (k === 0 ? tables[0]
       : (sameShapePair ? { ...tables[0], spec } : tables[1])));
     for (const combo of combos) {
-      const total = combo.reduce((s, e) => s + e.currentValue, 0);
-      if (total < value - tol) continue;
+      const preTotal = combo.reduce((s, e) => s + e.currentValue, 0);
+      if (preTotal < value - tol) continue;
       // 两座同类设施互换身份不改变产量 ⇒ 按占用串 canon 化，保证输出可复现（仅限同形状）
       const cidOf = (x) => `${toIndices(x.subA).map((i) => charIdOf(ctx.ops[i])).sort().join(",")}|${toIndices(x.subB || EMPTY).map((i) => charIdOf(ctx.ops[i])).sort().join(",")}`;
       const ordered = sameShapePair
         ? combo.slice().sort((x, y) => (cidOf(x) < cidOf(y) ? -1 : cidOf(x) > cidOf(y) ? 1 : 0))
         : combo;
-      addBranch(ordered.map((e, k) => ({
-        // 形状一致：两舱共用第一座的候选表，只换 spec；形状不同：各用各的表（工位数/分组都不同）
-        table: sameShapePair ? tableFor[k] : (e.table || tableFor[k]),
-        cand: e, subA: e.subA, subB: e.subB,
-      })), total);
+      // 决策 74（P2）：双舱也接助力——依次用剩余点数给两条 pick 各挑一个助力方案。
+      // 组合的挑选仍按无助力值（见上面的 approximation 标记），但交付值 / assist 字段都含助力。
+      let left = assistLeft;
+      const entries = ordered.map((e, k) => {
+        const table = sameShapePair ? tableFor[k] : tables[k];
+        let cand = e;
+        if (ctx.cfg.assistOn && left > 0) {
+          cand = applyAssist(ctx, table, { ...e }, left);
+          left -= cand.assistUsed ?? 0;
+        }
+        return { table, cand, subA: cand.subA, subB: cand.subB };
+      });
+      const total = entries.reduce(
+        (s, x) => s + (Number.isFinite(x.cand.currentValue) ? x.cand.currentValue : x.cand.cf), 0,
+      );
+      addBranch(entries, total);
     }
   }
   const flatBranches = [...seen.values()];
@@ -1889,6 +2046,21 @@ function upgradeFillers(ops, plan) {
     kept.add(p);
     for (const i of fills) taken.add(i);
   }
+  // 会客室"同一条线索只留一个"：把**不会被替换**的成员（班底 + 助力保留的补位）占掉的线索编号先记上。
+  // 注意：不能把"搜索阶段的补位"也播种进来——它们马上要被重新分配，播种会导致本人被自己的编号挡住
+  // （实测：艾维文娜先被跳过、最终被挤到制造舱，会客室反而留下白板）。
+  const usedClue = new Set();
+  for (const p of picks) {
+    if (p.spec.key !== '会客室') continue;
+    const members = [...toIndices(p.crewA), ...toIndices(p.crewB || EMPTY)];
+    if (kept.has(p)) {
+      members.push(...toIndices(p.fillCrewA || EMPTY), ...toIndices(p.fillCrewB || EMPTY));
+    }
+    for (const i of members) {
+      const b = clueBestOf(ops[i]);
+      if (b) usedClue.add(b.clue);
+    }
+  }
   // 会客室先处理：C2 干员优先留给会客室
   const ordered = slots.slice().sort((x, y) => {
     const kx = x.pick.spec.key === '会客室' ? 0 : 1;
@@ -1898,16 +2070,28 @@ function upgradeFillers(ops, plan) {
   const next = new Map();                      // pick -> {A, B}
   for (const slot of ordered) {
     if (kept.has(slot.pick)) continue;
-    const list = slot.pick.spec.key === '会客室' ? byClue : byCharId;
+    const isGuest = slot.pick.spec.key === '会客室';
+    const list = isGuest ? byClue : byCharId;
     let chosen = -1;
-    for (const i of list) {
-      if (taken.has(i)) continue;
-      if (isUseful(ops[i], { room: slot.pick.spec.room, weights: slot.pick.spec.weights })) continue;
-      chosen = i;
-      break;
+    // 第一轮避开重复线索编号；第二轮（缺人时）允许重复
+    for (let pass = 0; pass < 2 && chosen < 0; pass += 1) {
+      for (const i of list) {
+        if (taken.has(i)) continue;
+        if (isUseful(ops[i], { room: slot.pick.spec.room, weights: slot.pick.spec.weights })) continue;
+        if (isGuest && pass === 0) {
+          const b = clueBestOf(ops[i]);
+          if (b && usedClue.has(b.clue)) continue;
+        }
+        chosen = i;
+        break;
+      }
     }
     if (chosen < 0) return;                    // 凑不齐 ⇒ 保持原方案不动
     taken.add(chosen);
+    if (isGuest) {
+      const b = clueBestOf(ops[chosen]);
+      if (b) usedClue.add(b.clue);
+    }
     const rec = next.get(slot.pick) || { A: EMPTY, B: EMPTY };
     const bit = 1n << BigInt(chosen);
     if (slot.which === 'A') rec.A = union(rec.A, bit); else rec.B = union(rec.B, bit);
@@ -2128,6 +2312,47 @@ function enforceCoverageFloor(ops, cfg, plan, specs) {
   return { skipped };
 }
 
+/**
+ * 最小可行方案（决策 72）：两轮搜索都没有任何可行分支时的最后兜底。
+ *
+ * 触发实测：3 或 5 人、全员无技能、优先级把会客室排在最后——前面两个类别各占 2 人（双班），
+ * 会客室只剩 1 人而双班至少要 2 人 ⇒ 该类目没有任何分支，dfs 整轮返回 null。
+ *
+ * 做法：按类别优先级给每个舱各派 1 人、单班；选人优先该舱的相关干员，其次 charId 升序。
+ * 好处是只要名单里还有干员，就一定给出方案（缺口记进 `skipped`）；代价是产出低于满编。
+ */
+function buildMinimalPlan({ ops, cfg, specs, center }) {
+  if (!center) return null;
+  const picks = [];
+  let used = center.used || EMPTY;
+  const ordered = specs.slice().sort((a, b) => specPriorityIndex(cfg, a) - specPriorityIndex(cfg, b));
+  for (const spec of ordered) {
+    const free = toIndices(without(maskAll(ops.length), used));
+    if (!free.length) break;
+    const weight = (i) => (isUseful(ops[i], spec) ? 1 : 0);
+    free.sort((a, b) => {
+      const wa = weight(a);
+      const wb = weight(b);
+      if (wa !== wb) return wb - wa;                 // 先派对该舱有用的人
+      const ia = charIdOf(ops[a]);
+      const ib = charIdOf(ops[b]);
+      return ia < ib ? -1 : ia > ib ? 1 : 0;
+    });
+    const person = free[0];
+    const pick = makeFloorPick({
+      ops, cfg, center, spec,
+      crewA: 1n << BigInt(person), crewB: EMPTY, single: true, h: null,
+    });
+    picks.push(pick);
+    used = union(used, pick.crewA);
+  }
+  const plan = { center, picks, score: [], catRes: {} };
+  plan.skipped = enforceCoverageFloor(ops, cfg, plan, specs).skipped;
+  finalizePlan(ops, cfg, plan);
+  plan.metrics = metricsOf({ score: plan.score, usedCount: sizeOf(plan.usedMask) });
+  return plan;
+}
+
 /** 最终方案的缺口（决策 20 + 本轮 Q4=a）：只描述这次结果，不掺搜索过程中被放弃的分支。 */
 function finalGaps(skipped) {
   return skipped.map((s) => ({ key: s.key, cat: s.cat, reason: s.reason, detail: s.detail }));
@@ -2200,13 +2425,15 @@ export function solveLayout({ ops, cfg, testOptions = null }) {
       if (!res || res === PRUNED) continue;
       // 补位等价替换（§6.8 第 5 条）：白板换成字典序更小的 charId，值不变；必须在算 usedMask 之前做
       upgradeFillers(ops, { picks: res.picks, center });
-      const used = res.picks.reduce(
-        (m, p) => union(m, union(union(p.crewA, p.crewB || EMPTY), union(p.fillCrewA || EMPTY, p.fillCrewB || EMPTY))),
-        center.used,
-      );
-      const metrics = metricsOf({ score: res.score, usedCount: sizeOf(used) });
-      const cand = { score: res.score, metrics, center, catRes: res.catRes, usedMask: used, picks: res.picks };
-      if (!chosen || comparePlans(metrics, chosen.metrics, cfg) > 0) chosen = cand;
+      // 决策 71：候选必须在**补齐缺口之后**才参与比较。
+      // 原来按 `res.score` 选优、只对赢家补缺口；补缺口会抽人并改写 `score`（`finalizePlan` 2134-2135），
+      // 导致"按 A 排序、交付 B"——实测赢家 floor 前 69.52、floor 后 48.73，反而低于另一候选的交付分。
+      const plan = { center, picks: res.picks, score: res.score, catRes: res.catRes, usedMask: EMPTY };
+      plan.skipped = enforceCoverageFloor(ops, cfg, plan, specs).skipped;
+      finalizePlan(ops, cfg, plan);          // 幂等：score / catRes / usedMask 与 picks 对齐
+      const metrics = metricsOf({ score: plan.score, usedCount: sizeOf(plan.usedMask) });
+      plan.metrics = metrics;
+      if (!chosen || comparePlans(metrics, chosen.metrics, cfg) > 0) chosen = plan;
       // 跨中枢现任（P5）：下一条中枢就能用上，弱中枢会更早被剪
       if (!base.incumbent || comparePlans(metrics, base.incumbent, cfg) > 0) base.incumbent = metrics;
     }
@@ -2221,9 +2448,16 @@ export function solveLayout({ ops, cfg, testOptions = null }) {
     approximations.add('人手不足导致无解，已退化为允许减员重跑');
     best = runCenters(true);
   }
+  if (!best) {
+    // 决策 72：两轮搜索都没有可行分支时（实测：3/5 人 + 零技能 + 会客室排在优先级末尾，
+    // 前面的类别各占 2 人、最后只剩 1 人而双班至少要 2 人 ⇒ 整轮 null），
+    // 直接构造"最小可行方案"：按优先级给每个舱各派 1 人做单班。保证只要还有干员就不返回"无方案"。
+    approximations.add('搜索无解，已回退到最小可行方案（每舱 1 人单班）');
+    best = buildMinimalPlan({ ops, cfg, specs, center: centers.find((c) => sizeOf(c.used) === 0) || centers[0] });
+  }
 
-  // 决策 65：覆盖下限（除中枢外每舱 ≥1 人）。只在最终方案缺舱时介入，因此满编场景下不影响既有结果。
-  const coverage = enforceCoverageFloor(ops, cfg, best, specs);
+  // 决策 65/71：覆盖下限已在候选循环内逐条执行，这里只取赢家自带的缺口记录。
+  const coverage = { skipped: best && best.skipped ? best.skipped : [] };
 
   // A/B 朝向规范化：必须放在覆盖下限**之后**——补位/抽人会改变两班人数，
   // 若不重跑，会出现"强班在 B"（实测：制造舱Ⅰ A=2 人 +80%、B=3 人 +120%）。
@@ -2273,6 +2507,9 @@ export function solveLayout({ ops, cfg, testOptions = null }) {
     },
   };
 }
+
+
+
 
 
 
