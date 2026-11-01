@@ -8,9 +8,11 @@ The public repository deliberately separates code review from release verificati
 | --- | --- | --- |
 | Pull request to `develop` | `packages` verifies both application packages and required contracts | Never |
 | Pull request to `main` | `packages`, release-branch / `develop` ancestry policy, and required CODEOWNER review | Never |
-| Push/merge to `develop` | Changed-path classification, then parallel static, database, build, four-shard Chromium, and browser-boundary checks | Development after `quality` passes |
+| Push/merge to `develop` | Changed-path classification, then parallel static, database, build, four-shard Chromium plus four-shard software-GPU checks, and browser-boundary checks | Development after `quality` passes |
 | Push/merge to `main` | The same post-merge gate | Production after `quality` and Environment approval |
 | Nightly/manual compatibility run | Full WebKit suite | Never for the scheduled event |
+
+`chromium-plush` runs the full-quality plush suites and the Agent motion, persona, and workbench suites with one worker per shard. These suites share CPU-heavy software WebGL on CI; isolating them avoids renderer contention without reducing quality, assertions, or coverage. The general `chromium` project excludes the same file set, so every Chromium scenario runs exactly once across both projects.
 
 The release build is immutable within one workflow run. `Build release once` creates the solver-free standalone archive. Deployment artifacts are retained for seven days; the separate browser-verification copy is retained for one day. The deploy job downloads and validates the exact deployment artifact; it must not install dependencies or rebuild the application.
 

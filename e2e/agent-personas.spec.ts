@@ -292,7 +292,7 @@ for (const mobile of [false, true]) {
     const card = page.locator('[data-persona-card="silverash"]');
     await card.scrollIntoViewIfNeeded();
     await expect(card).toHaveCSS("--dialogue-accent", "#84bfff");
-    await expect(card.locator("[data-silverash-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
+    await expect(card.locator("[data-silverash-fur-avatar]")).toHaveAttribute("data-fur-ready", "true", { timeout: 30_000 });
     await expect(card.locator("img:visible")).toHaveCount(0);
     await card.getByRole("button", { name: "使用银灰" }).click();
     await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
