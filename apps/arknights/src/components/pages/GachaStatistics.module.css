@@ -56,7 +56,7 @@
 .pityNote { grid-column: 1 / -1; grid-row: 3; }
 .pityItem b { color: var(--foreground); font-weight: 500; }
 .pityBar { grid-column: 1 / -1; grid-row: 2; position: relative; isolation: isolate; overflow: hidden; height: 18px; text-align: center; background: color-mix(in srgb, var(--foreground) 7%, transparent); }
-.pityFill { position: absolute; inset: 0 auto 0 0; z-index: -1; background: color-mix(in srgb, var(--primary) 40%, transparent); }
+.pityFill { position: absolute; inset: 0 auto 0 0; z-index: -1; background: color-mix(in srgb, var(--color-yellow-400) 40%, transparent); }
 .pityValue { display: block; font-size: 11px; font-weight: 600; line-height: 18px; font-variant-numeric: tabular-nums; }
 .rules { font-size: 11px; line-height: 1.7; color: var(--muted-foreground); }
 .rules summary { width: fit-content; cursor: pointer; }
