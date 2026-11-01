@@ -131,7 +131,9 @@ npm run release:pr -- $pr --execute --head $head --approve-production --timeout-
 
 `--approve-production` 授权脚本在质量检查通过、提交仍为当前 main、账号有权限时批准 production 环境。**它不代替 main PR 的 CODEOWNER 审核，也不授予额外权限。**
 
-浏览器门禁包含普通 Chromium 四个分片，以及毛绒和 Agent 高质量渲染测试的四个独立分片；后者每个分片使用一个 worker，避免 CI 软件 GPU 并行争用。所有必需分片通过后才能进入部署，测试断言和渲染质量保持完整。
+浏览器门禁包含普通 Chromium 八个分片，以及毛绒和 Agent 高质量渲染测试的八个独立分片；后者每个分片使用一个 worker，避免 CI 软件 GPU 并行争用。类型检查、lint 和其余静态及单元检查并行执行，quality 汇总全部结果。所有必需分片通过后才能进入部署，测试断言和渲染质量保持完整。
+
+PR 的必需检查仍为 packages；它汇总变更判定、静态检查及构建运行时检查。纯文档 PR 仅执行轻量范围和仓库内容检查，并完成 packages，避免路径过滤让必需检查永久 pending。main/develop 的纯文档 push 不触发发布工作流。每次非文档发布运行有独立的并发组，不会挤掉较早提交的待运行质量检查；实际部署仍由各应用的部署锁、提交新鲜度检查和环境审批保护。
 
 默认总等待 90 分钟；上面用 120 分钟，上限 240 分钟。超时或 Ctrl+C 只停止本地监控，GitHub 后台任务会继续。失败 CI 不会自动重跑。
 

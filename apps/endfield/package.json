@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "node ../../scripts/run-vite.mjs endfield dev --host 127.0.0.1 --port 5176 --strictPort",
-    "build": "node ../../scripts/run-vite.mjs endfield build && tsc --noEmit",
+    "build": "node ../../scripts/build-app.mjs endfield",
     "check:types": "node ../../scripts/generate-route-types.mjs endfield && tsc --noEmit",
     "start": "node .output/server/index.mjs"
   },

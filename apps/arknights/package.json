@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node ../../scripts/run-vite.mjs arknights dev --host 0.0.0.0 --port 5174",
-    "build": "node ../../scripts/run-vite.mjs arknights build && tsc --noEmit",
-    "postbuild": "node ../../scripts/prepare-standalone.mjs",
+    "build": "node ../../scripts/build-app.mjs arknights",
     "check:types": "node ../../scripts/generate-route-types.mjs arknights && tsc --noEmit",
     "start": "node ../../scripts/start-standalone.mjs"
   },

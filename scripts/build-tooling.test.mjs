@@ -120,7 +120,11 @@ test("TanStack Start commands use Vite", async () => {
   const app = JSON.parse(await readRepoFile("apps/arknights/package.json"));
   assert.equal(packageJson.scripts.build, "npm run build --workspace @riic/arknights");
   assert.equal(packageJson.scripts.dev, "npm run dev --workspace @riic/arknights --");
-  assert.match(app.scripts.build, /run-vite.mjs arknights build && tsc --noEmit/);
+  assert.equal(app.scripts.build, "node ../../scripts/build-app.mjs arknights");
+  const builder = await readRepoFile("scripts/build-app.mjs");
+  assert.match(builder, /run-vite\.mjs/);
+  assert.match(builder, /typescript\/package\.json/);
+  assert.match(builder, /\["--noEmit"\]/);
   assert.equal(app.dependencies.next, undefined);
   assert.equal(app.dependencies["next-intl"], undefined);
   assert.ok(app.dependencies["@tanstack/react-start"]);
@@ -184,7 +188,8 @@ test("production builds prepare a solver-free standalone runtime with static ass
   assert.match(config, /preset: "node-server"/);
   assert.match(config, /APP_CLIENT_BUILD_ID: environment.APP_BUILD_ID/);
   const app = JSON.parse(await readRepoFile("apps/arknights/package.json"));
-  assert.equal(app.scripts.postbuild, "node ../../scripts/prepare-standalone.mjs");
+  assert.equal(app.scripts.build, "node ../../scripts/build-app.mjs arknights");
+  assert.match(await readRepoFile("scripts/build-app.mjs"), /if \(app === "arknights"\) await run\(path\.join\(root, "scripts\/prepare-standalone\.mjs"\)/);
   assert.equal(packageJson.scripts.start, "node scripts/start-standalone.mjs");
   assert.equal(packageJson.scripts["release:stage"], "node scripts/stage-standalone-release.mjs");
   for (const entry of ["bin/infra-cli", "bin/infra-cli.exe", ".env", ".env.production", ".env.local", ".env.production.local"]) assert.ok(prepare.includes('"' + entry + '"'));
@@ -339,13 +344,13 @@ test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedul
     packageJson.scripts["test:e2e:webkit:skland-qr"],
     "playwright test e2e/production-readiness-skland.spec.ts --project=webkit --grep \"Skland login exposes both methods\"",
   );
-  assert.match(workflow, /browser_e2e:[\s\S]+project: \[chromium\][\s\S]+shard: \[1\/4, 2\/4, 3\/4, 4\/4\][\s\S]+project: chromium-plush\s+shard: 1\/4[\s\S]+project: chromium-plush\s+shard: 2\/4[\s\S]+project: chromium-plush\s+shard: 3\/4[\s\S]+project: chromium-plush\s+shard: 4\/4[\s\S]+npx playwright test --project=\$\{\{ matrix\.project \}\} --shard=\$\{\{ matrix\.shard \}\}/);
+  assert.match(workflow, /browser_e2e:[\s\S]+project: \[chromium, chromium-plush\][\s\S]+shard: \[1\/8, 2\/8, 3\/8, 4\/8, 5\/8, 6\/8, 7\/8, 8\/8\][\s\S]+npx playwright test --project=\$\{\{ matrix\.project \}\} --shard=\$\{\{ matrix\.shard \}\}/);
   assert.match(playwrightConfig, /const softwareGpuSpecs = \["plush-\*\.spec\.ts", "agent-motion\.spec\.ts", "agent-personas\.spec\.ts", "agent-workbench\.spec\.ts"\]/);
   assert.match(playwrightConfig, /name: "chromium",[\s\S]+testIgnore: \[[^\]]*\.\.\.softwareGpuSpecs\]/);
   assert.match(playwrightConfig, /name: "chromium-plush",\s+testMatch: softwareGpuSpecs,[\s\S]+workers: 1/);
   assert.match(workflow, /browser_boundaries:[\s\S]+npm run test:e2e:webkit:skland-qr[\s\S]+npm run test:e2e:production-profile/);
   assert.match(workflow, /webkit_e2e:[\s\S]+github\.event_name == 'schedule'[\s\S]+npm run test:e2e:webkit/);
-  assert.match(workflow, /quality:[\s\S]+needs: \[changes, repository_hygiene, static_checks, database_checks, release_artifact, browser_e2e, browser_boundaries\]/);
+  assert.match(workflow, /quality:[\s\S]+needs: \[changes, repository_hygiene, static_checks, lint_checks, type_checks, database_checks, release_artifact, browser_e2e, browser_boundaries\]/);
   assert.doesNotMatch(workflow, /quality:[\s\S]+needs: \[[^\]]*webkit_e2e/);
   assert.match(workflow, /deploy:[\s\S]+needs: \[changes, quality, release_artifact\]/);
   assert.doesNotMatch(workflow, /^\s*pull_request\s*:/m);
@@ -363,7 +368,7 @@ test("CI change scope keeps one required quality gate and fails closed", async (
   const classifier = await readRepoFile("scripts/ci-change-scope.mjs");
   const planner = await readRepoFile("scripts/app-release-plan.mjs");
 
-  assert.doesNotMatch(workflow, /paths-ignore:/);
+  assert.match(workflow, /push:\s+branches: \[main, develop\]\s+paths-ignore: \["docs\/\*\*", "\*\.md"\]/);
   assert.match(workflow, /changes:[\s\S]+name: Change scope/);
   assert.match(workflow, /repository_hygiene:[\s\S]+npm run check:public-repository/);
   assert.match(workflow, /fetch-depth: 0/);
@@ -480,7 +485,7 @@ test("CI builds once and deploy transfers the verified solver-free standalone ar
   assert.match(deployWorkflow, /Use Node\.js 22[\s\S]+actions\/setup-node@[0-9a-f]{40}[\s\S]+node-version: 22/);
   assert.match(deployWorkflow, /Resolve verified release identity[\s\S]+git rev-parse 'HEAD\^\{tree\}'[\s\S]+DEPLOY_TREE_SHA=%s/);
   assert.match(deployWorkflow, /Validate deployment configuration[\s\S]+\[\[ "\$DEPLOY_TREE_SHA" =~ \^\[0-9a-f\]\{40\}\$ \]\]/);
-  assert.match(qualityWorkflow, /Build standalone application and worker[\s\S]+APP_BUILD_ID: \$\{\{ github\.sha \}\}[\s\S]+APP_DEPLOYMENT_ENV:[\s\S]+SKLAND_FEATURE_ENABLED: "1"[\s\S]+ACCOUNT_CLOUD_SYNC_ENABLED: "1"[\s\S]+npm run build && npm run worker:build && node --check dist\/plan-worker\.cjs/);
+  assert.match(qualityWorkflow, /Build standalone application and worker[\s\S]+APP_BUILD_ID: \$\{\{ github\.sha \}\}[\s\S]+APP_DEPLOYMENT_ENV:[\s\S]+SKLAND_FEATURE_ENABLED: "1"[\s\S]+ACCOUNT_CLOUD_SYNC_ENABLED: "1"[\s\S]+npm run build:ci:arknights && npm run worker:build && node --check dist\/plan-worker\.cjs/);
   assert.match(qualityWorkflow, /RELEASE_SHA="\$GITHUB_SHA" RELEASE_TREE_SHA="\$release_tree_sha"[\s\S]+npm run release:stage -- --output "\$release_root"/);
   assert.match(qualityWorkflow, /tar --sort=name[\s\S]+--mtime="@\$source_date_epoch"[\s\S]+--mode='u\+rwX,go\+rX,go-w'[\s\S]+gzip --best --no-name --rsyncable[\s\S]+gzip -t "\$archive"/);
   assert.match(qualityWorkflow, /actions\/upload-artifact@[0-9a-f]{40}[\s\S]+name: riic-web-release-\$\{\{ github\.sha \}\}[\s\S]+compression-level: 0/);

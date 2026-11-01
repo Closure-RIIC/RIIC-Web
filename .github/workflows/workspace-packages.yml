@@ -4,20 +4,89 @@ on:
   pull_request:
     branches: [main, develop]
   push:
-    branches: ["refactor/dual-app-platform-*"]
+    branches: ["refactor/dual-app-platform-*", "ci/actions-performance-*"]
+    paths-ignore: ["docs/**", "*.md"]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: workspace-packages-${{ github.ref }}
-  cancel-in-progress: true
+  group: workspace-packages-${{ github.event.pull_request.number || github.ref }}-${{ github.ref == 'refs/heads/main' && github.run_id || 'latest' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  packages:
+  changes:
+    name: PR change scope
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 5
+    outputs:
+      run_core: ${{ steps.scope.outputs.run_core }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Reject private paths and sensitive content
+        run: npm run check:public-repository
+      - name: Classify the complete change set
+        id: scope
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          options=(--github-output "$GITHUB_OUTPUT" --summary "$GITHUB_STEP_SUMMARY")
+          if [[ "$EVENT_NAME" == 'workflow_dispatch' || ! "$BASE_SHA" =~ ^[0-9a-f]{40}$ || "$BASE_SHA" =~ ^0+$ ]]; then
+            node scripts/ci-change-scope.mjs --force-full "${options[@]}"
+          else
+            if [[ "$EVENT_NAME" == 'pull_request' ]]; then range="$BASE_SHA...HEAD"; else range="$BASE_SHA..HEAD"; fi
+            git diff --name-only --no-renames -z "$range" > "$RUNNER_TEMP/changed-paths"
+            node scripts/ci-change-scope.mjs --input "$RUNNER_TEMP/changed-paths" "${options[@]}"
+          fi
+
+  checks:
+    name: PR checks (${{ matrix.suite }})
+    needs: changes
+    if: needs.changes.outputs.run_core == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [types, lint, logic]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund --prefer-offline
+      - name: Type checks
+        if: matrix.suite == 'types'
+        run: npm run check:types
+      - name: Lint and translations
+        if: matrix.suite == 'lint'
+        run: npm run lint && npm run check:i18n
+      - name: Workspace, platform and Endfield logic
+        if: matrix.suite == 'logic'
+        run: npm run test:workspace && npm run test:platform && npm run test:endfield && npm run test:endfield:skland
+      - name: Deployment and automation contracts
+        if: matrix.suite == 'logic'
+        run: |
+          python3 deploy/endfield-deploy.test.py
+          python3 deploy/endfield-transfer.test.py
+          node --test scripts/app-release-plan.test.mjs scripts/release-provenance.test.mjs scripts/release-automation.test.mjs scripts/release-pr.test.mjs scripts/build-tooling.test.mjs scripts/ci-performance.test.mjs scripts/ci-timings.test.mjs scripts/build-cache.test.mjs
+
+  runtime:
+    name: PR build and runtime
+    needs: changes
+    if: needs.changes.outputs.run_core == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:18.4@sha256:a02db8cac496f15b094798a38254f14d6e00741f709360e5e00bb6668ea31636
@@ -27,28 +96,20 @@ jobs:
         ports: ["5432:5432"]
         options: >-
           --health-cmd "pg_isready -U postgres -d riic_platform_test"
-          --health-interval 10s --health-timeout 5s --health-retries 10
+          --health-interval 1s --health-timeout 5s --health-retries 100
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
           cache: npm
-      - run: npm ci --no-audit --no-fund
-      - run: python3 deploy/endfield-deploy.test.py
-      - name: Deployment plan, provenance and automation contracts
-        run: node --test scripts/app-release-plan.test.mjs scripts/release-provenance.test.mjs scripts/release-automation.test.mjs scripts/release-pr.test.mjs scripts/build-tooling.test.mjs
-      - name: Endfield incremental transfer and interruption recovery
-        run: python3 deploy/endfield-transfer.test.py
-      - run: npm run check:public-repository && npm run check:types && npm run lint
-      - run: npm run check:i18n
-      - run: npm run test:workspace && npm run test:platform && npm run test:endfield && npm run test:endfield:skland
+      - run: npm ci --no-audit --no-fund --prefer-offline
       - name: Build independent artifacts
         env:
           APP_BUILD_ID: ${{ github.sha }}
-        run: npm run build:all
+        run: npm run build:ci:all
       - name: Validate isolated platform runtime
         run: node scripts/test-platform-runtime.mjs
       - name: Validate private Endfield runtime
@@ -60,14 +121,13 @@ jobs:
           DATABASE_MIGRATION_URL: postgresql://postgres@127.0.0.1:5432/riic_platform_test
           AUTH_INTEGRATION_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/riic_platform_test
         run: npm run db:migrate && npm run test:platform:integration
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
       - name: Validate unified changelog workbench
         env:
           PGPASSWORD: platform-test-only
           AUTH_INTEGRATION_DATABASE_URL: postgresql://postgres@127.0.0.1:5432/riic_platform_test
-        run: |
-          npm run test:admin-preview
-          npx playwright install --with-deps chromium
-          node scripts/test-endfield-changelog-e2e.mjs
+        run: npm run test:admin-preview && node scripts/test-endfield-changelog-e2e.mjs
       - name: Stage Endfield and platform artifacts
         env:
           RELEASE_SHA: ${{ github.sha }}
@@ -79,6 +139,33 @@ jobs:
         with:
           name: independent-apps-${{ github.sha }}
           include-hidden-files: true
+          retention-days: 1
+          if-no-files-found: error
           path: |
             ${{ runner.temp }}/endfield-release
             ${{ runner.temp }}/platform-release
+
+  packages:
+    name: packages
+    needs: [changes, checks, runtime]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify every required PR check
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          RUN_CORE: ${{ needs.changes.outputs.run_core }}
+          CHECKS_RESULT: ${{ needs.checks.result }}
+          RUNTIME_RESULT: ${{ needs.runtime.result }}
+        run: |
+          set -euo pipefail
+          test "$SCOPE_RESULT" = success
+          if [[ "$RUN_CORE" == true ]]; then
+            test "$CHECKS_RESULT" = success
+            test "$RUNTIME_RESULT" = success
+          else
+            test "$RUN_CORE" = false
+            test "$CHECKS_RESULT" = skipped
+            test "$RUNTIME_RESULT" = skipped
+          fi

@@ -25,6 +25,7 @@ on:
         type: string
   push:
     branches: [main, develop]
+    paths-ignore: ["docs/**", "*.md"]
   schedule:
     - cron: "23 18 * * *"
 
@@ -34,7 +35,7 @@ permissions:
   deployments: write
 
 concurrency:
-  group: post-merge-release-${{ github.ref }}
+  group: post-merge-release-${{ github.ref }}-${{ github.run_id }}
   cancel-in-progress: false
 
 env:
@@ -124,7 +125,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Reject private paths and sensitive content
@@ -140,7 +140,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -150,7 +149,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --prefer-offline
 
       - name: Security audit
         run: npm run audit:security
@@ -158,14 +157,8 @@ jobs:
       - name: Generated asset consistency
         run: npm run assets:check
 
-      - name: Lint
-        run: npm run lint
-
       - name: Trilingual messages and translation usage
         run: npm run check:i18n
-
-      - name: Check both application types
-        run: npm run check:types
 
       - name: Workspace boundaries and Endfield logic
         run: npm run test:workspace && npm run test:platform && npm run test:endfield && npm run test:endfield:skland
@@ -177,7 +170,7 @@ jobs:
         run: python3 deploy/endfield-deploy.test.py && python3 deploy/endfield-transfer.test.py
 
       - name: Release provenance tests
-        run: node --test scripts/release-provenance.test.mjs scripts/app-release-plan.test.mjs scripts/release-automation.test.mjs scripts/release-pr.test.mjs
+        run: node --test scripts/release-provenance.test.mjs scripts/app-release-plan.test.mjs scripts/release-automation.test.mjs scripts/release-pr.test.mjs scripts/ci-performance.test.mjs scripts/ci-timings.test.mjs scripts/build-cache.test.mjs
 
       - name: API contract tests
         run: npm run test:api-contract
@@ -187,6 +180,40 @@ jobs:
 
       - name: Shift comparison tests
         run: npm run test:shift-comparison
+
+  lint_checks:
+    name: Lint
+    needs: changes
+    if: needs.changes.outputs.run_core == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund --prefer-offline
+      - run: npm run lint
+
+  type_checks:
+    name: Application and tooling types
+    needs: changes
+    if: needs.changes.outputs.run_core == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund --prefer-offline
+      - run: npm run check:types
 
   database_checks:
     name: Database integration
@@ -205,14 +232,13 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d arknights_auth_test"
-          --health-interval 10s
+          --health-interval 1s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 100
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -222,7 +248,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --prefer-offline
 
       - name: Validate public database deployment files
         shell: bash
@@ -305,7 +331,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -315,7 +340,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --prefer-offline
 
       - name: Build standalone application and worker
         if: needs.changes.outputs.build_arknights == 'true' || github.event_name == 'schedule' || inputs.run_webkit
@@ -330,11 +355,11 @@ jobs:
           BETTER_AUTH_URL: ""
           RESEND_API_KEY: ""
           AUTH_EMAIL_FROM: ""
-        run: npm run build && npm run worker:build && node --check dist/plan-worker.cjs
+        run: npm run build:ci:arknights && npm run worker:build && node --check dist/plan-worker.cjs
 
       - name: Build independent Endfield application
         if: needs.changes.outputs.build_endfield == 'true' || github.event_name == 'schedule'
-        run: npm run build:endfield && node scripts/test-endfield-access.mjs
+        run: npm run build:ci:endfield && node scripts/test-endfield-access.mjs
 
       - name: Build platform API verification artifact
         run: npm run build:platform
@@ -447,17 +472,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chromium]
-        shard: [1/4, 2/4, 3/4, 4/4]
-        include:
-          - project: chromium-plush
-            shard: 1/4
-          - project: chromium-plush
-            shard: 2/4
-          - project: chromium-plush
-            shard: 3/4
-          - project: chromium-plush
-            shard: 4/4
+        project: [chromium, chromium-plush]
+        shard: [1/8, 2/8, 3/8, 4/8, 5/8, 6/8, 7/8, 8/8]
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
       options: --user 1001
@@ -475,14 +491,13 @@ jobs:
           POSTGRES_PASSWORD: e2e-test-only
         options: >-
           --health-cmd "pg_isready -U arknights_e2e -d arknights_auth_test"
-          --health-interval 10s
+          --health-interval 1s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 100
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -492,7 +507,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --prefer-offline
 
       - name: Apply committed authentication migrations
         run: npm run db:migrate
@@ -540,14 +555,13 @@ jobs:
           POSTGRES_PASSWORD: e2e-test-only
         options: >-
           --health-cmd "pg_isready -U arknights_e2e -d arknights_auth_test"
-          --health-interval 10s
+          --health-interval 1s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 100
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -557,7 +571,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --prefer-offline
 
       - name: Apply committed authentication migrations
         run: npm run db:migrate
@@ -601,14 +615,13 @@ jobs:
           POSTGRES_PASSWORD: e2e-test-only
         options: >-
           --health-cmd "pg_isready -U arknights_e2e -d arknights_auth_test"
-          --health-interval 10s
+          --health-interval 1s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 100
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -648,7 +661,7 @@ jobs:
     name: quality
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [changes, repository_hygiene, static_checks, database_checks, release_artifact, browser_e2e, browser_boundaries]
+    needs: [changes, repository_hygiene, static_checks, lint_checks, type_checks, database_checks, release_artifact, browser_e2e, browser_boundaries]
     if: always() && github.event_name != 'schedule'
     steps:
       - name: Verify all post-merge checks passed
@@ -656,6 +669,8 @@ jobs:
           CHANGES_RESULT: ${{ needs.changes.result }}
           HYGIENE_RESULT: ${{ needs.repository_hygiene.result }}
           STATIC_RESULT: ${{ needs.static_checks.result }}
+          LINT_RESULT: ${{ needs.lint_checks.result }}
+          TYPES_RESULT: ${{ needs.type_checks.result }}
           DATABASE_RESULT: ${{ needs.database_checks.result }}
           BUILD_RESULT: ${{ needs.release_artifact.result }}
           BROWSER_E2E_RESULT: ${{ needs.browser_e2e.result }}
@@ -683,6 +698,8 @@ jobs:
           }
 
           verify_result "$RUN_CORE" "$STATIC_RESULT" static
+          verify_result "$RUN_CORE" "$LINT_RESULT" lint
+          verify_result "$RUN_CORE" "$TYPES_RESULT" types
           verify_result "$RUN_CORE" "$DATABASE_RESULT" database
           verify_result "$RUN_CORE" "$BUILD_RESULT" build
           verify_result "$RUN_BROWSER" "$BROWSER_E2E_RESULT" chromium
