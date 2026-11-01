@@ -4,6 +4,7 @@ import test from "node:test";
 import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
 import { stablePlanCacheHmac, type StablePlanCacheKeyInput } from "./plan-cache-key.ts";
 import { normalizeSolverOperbox } from "./plan-solver-input.ts";
+import catalog from "@riic/arknights-domain/generated/arkntools/operator-catalog.json" with { type: "json" };
 
 const key = Buffer.alloc(32, 3);
 const layout = {
@@ -54,4 +55,23 @@ test("solver-effective input removes unowned, duplicate, and unsupported Amiya v
     { ...operbox[0], id: "amiya", name: "阿米娅（近卫）" },
   ] as OperBoxEntry[];
   assert.deepEqual(normalizeSolverOperbox(entries), operbox);
+});
+
+test("new web operators remain owned in the roster but are omitted from solver input and cache identity", () => {
+  const names = ["镜匠", "行铃", "冻河", "奥尔佳", "国度", "塔露拉"];
+  const added = names.map((name) => {
+    const operator = catalog.find((entry) => entry.name === name);
+    assert.ok(operator, name);
+    return { ...operbox[0]!, id: operator.id, name };
+  });
+  const entries = [...operbox, ...added];
+  const before = structuredClone(entries);
+  const normalized = normalizeSolverOperbox(entries);
+  assert.deepEqual(normalized, operbox);
+  assert.deepEqual(entries, before);
+  assert.ok(added.every((entry) => entry.own));
+  assert.equal(stablePlanCacheHmac(key, { ...base, operbox: normalized }), stablePlanCacheHmac(key, base));
+  assert.deepEqual(normalizeSolverOperbox(added.map((entry) => ({ ...entry, name: "localized name" }))), []);
+  assert.deepEqual(normalizeSolverOperbox(added.map((entry) => ({ ...entry, id: entry.id.replace(/^char_/, ""), name: "localized name" }))), []);
+  assert.deepEqual(normalizeSolverOperbox(added.map((entry) => ({ ...entry, id: "legacy-id", name: ` ${entry.name} ` }))), []);
 });
