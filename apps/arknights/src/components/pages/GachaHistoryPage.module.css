@@ -31,6 +31,8 @@
   border-color: #000;
 }
 
+.toolbarToggle { display: none; }
+
 @media (max-width: 639px) {
   .statistics { --gacha-stat-padding: 8px; }
 }
@@ -210,6 +212,11 @@
   :global(body):has(.page) :global([data-cloud-sync-error]) { right: calc(5rem + env(safe-area-inset-right, 0px)); }
   .page [data-status-center-actions] { display: contents; }
   .actionToolbar { position: fixed; z-index: 30; right: calc(1rem + env(safe-area-inset-right, 0px)); bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); flex-direction: column; flex-wrap: nowrap; width: auto; margin: 0; gap: .5rem; }
+  .toolbarActions { flex-direction: column; flex-wrap: nowrap; width: auto; gap: .5rem; }
+  .actionToolbar[data-expanded="false"] .toolbarActions { display: none; }
+  .toolbarToggle { display: inline-flex; }
+  .toolbarToggle > svg { transition: transform 160ms ease-out; }
+  .toolbarToggle[aria-expanded="true"] > svg { transform: rotate(180deg); }
   .toolbarAction { width: 48px; height: 48px; padding: 0; margin: 0; border-radius: 50% !important; box-shadow: 0 3px 12px rgb(0 0 0 / .16); }
   .toolbarAction > svg { width: 20px; height: 20px; }
   .toolbarAction[data-gacha-action] { border-color: var(--border); background: var(--background); }
@@ -228,6 +235,10 @@
   .poolStatOutline { transform: none; height: 100%; }
   .poolStatDesktop { display: none; }
   .poolStatMobile { display: block; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toolbarToggle > svg { transition: none; }
 }
 
 .drawBar {
