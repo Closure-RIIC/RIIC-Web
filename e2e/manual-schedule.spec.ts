@@ -150,13 +150,19 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await expect(tradeEfficiency).toContainText("等效");
   await expect(tradeEfficiency).toContainText("贸易");
   await expect(tradeEfficiency).toContainText("赤金");
+  const personalBoxBeforeBulk = await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox);
   await workbench.getByRole("button", { name: "批量填写排班" }).click();
   const bulk = page.getByLabel("批量排班文本");
   const shiftCount = await poster.locator('[data-poster-room="trade_1"] [data-poster-shift]').count();
-  const tradeLine = `贸易站1：巫恋、龙舌兰、柏喙 @自动 #龙门币${Array.from({ length: shiftCount - 1 }, () => " | -").join("")}`;
+  const tradeLine = `贸易站1：巫恋、龙舌兰、调香师 @自动 #龙门币${Array.from({ length: shiftCount - 1 }, () => " | -").join("")}`;
   const controlLine = `中枢：阿米娅、锡兰、auto、Free${Array.from({ length: shiftCount - 1 }, () => " | =").join("")}`;
   await bulk.fill(`${tradeLine}\n${controlLine}`);
   await page.getByRole("button", { name: "检查并应用" }).click();
+  await expect.poll(() => page.evaluate(() => {
+    const operator = JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).operators.find((entry: { name: string }) => entry.name === "调香师");
+    return operator ? { elite: operator.elite, level: operator.level, rarity: operator.rarity } : null;
+  })).toEqual({ elite: 2, level: 70, rarity: 4 });
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox)).toEqual(personalBoxBeforeBulk);
   await expect(tradeEfficiency).toContainText(/(?:[1-9]\d*|\d+\.\d+)%赤金/);
   await expect(tradeEfficiency).toHaveAttribute("title", /巫恋 E2 \+ 龙舌兰 E2/);
   const control = poster.locator('[data-poster-room="control"] [data-poster-shift="0"]');
@@ -233,7 +239,8 @@ for (const entry of ["handoff", "code"] as const) {
     test.setTimeout(90_000);
     const draft = createManualScheduleDraft([24], "08:00", "period");
     draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", null, null] };
-    const document = createPosterDocument(layout243, draft, operators);
+    const authorTraining = [{ ...operators[0]!, elite: 1, level: 42 }];
+    const document = createPosterDocument(layout243, draft, authorTraining);
     document.meta.title = "导入的作业";
     if (entry === "handoff") {
       await page.addInitScript(doc => sessionStorage.setItem("riic.schedule-poster.handoff.v1.manual", JSON.stringify(doc)), document);
@@ -243,8 +250,18 @@ for (const entry of ["handoff", "code"] as const) {
     await page.goto(entry === "handoff" ? "/manual" : "/manual?tab=poster&code=abcdef123456");
     const workbench = page.locator("[data-poster-workbench]");
     await expect(workbench.getByLabel("作业名称", { exact: true })).toHaveValue("导入的作业", { timeout: 30_000 });
+    const readPosterOperators = () => page.evaluate(() => JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).operators);
+    await expect.poll(readPosterOperators).toEqual(authorTraining);
     await workbench.getByLabel("作业名称", { exact: true }).fill("修改后的作业");
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).meta.title)).toBe("修改后的作业");
+    await workbench.getByRole("button", { name: "批量填写排班" }).click();
+    await page.getByLabel("批量排班文本").fill("贸易站1：阿米娅、芬");
+    await page.getByRole("button", { name: "检查并应用" }).click();
+    await expect.poll(readPosterOperators).toEqual([
+      authorTraining[0],
+      { id: "char_123_fang", name: "芬", elite: 1, level: 55, own: true, potential: 1, rarity: 3 },
+    ]);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox)).toEqual(operators);
     await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
     await expect(page.locator("[data-manual-editor-board]")).toBeVisible();
     await page.getByRole("tab", { name: "作业图", exact: true }).click();

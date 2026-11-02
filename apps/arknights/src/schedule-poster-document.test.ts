@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { createPosterDocument, readPosterFile, posterDataOnly, posterDraftForManual } from "./schedule-poster-document.ts";
 import { assignManualOperator, createManualScheduleDraft, createManualScheduleDraftFromCalculator, manualScheduleToMaa, reconcileManualScheduleDraft, loadManualScheduleDraft } from "./manual-schedule.ts";
 import type { BaseBlueprint } from "@riic/arknights-domain/types";
+import { defaultPosterOperator, posterOperators } from "./schedule-poster-operators.ts";
+import { OPERATOR_CATALOG } from "./operatorPortraits.ts";
 
 const layout = JSON.parse(readFileSync(new URL("../../../packages/arknights-domain/src/layouts/252.json", import.meta.url), "utf8")) as BaseBlueprint;
 test("editable work file preserves shift products, efficiency, training roles and dormant facilities", () => {
@@ -31,6 +33,28 @@ test("editable work file preserves shift products, efficiency, training roles an
   assert.deepEqual(edited.shifts[1], manual.shifts[1]);
   const persisted = loadManualScheduleDraft({ getItem: () => JSON.stringify(edited), setItem: () => {} });
   assert.deepEqual(persisted?.shifts[1]!.rooms.trade_1?.product, draft.shifts[1]!.rooms.trade_1?.product);
+});
+test("downloaded schedule files retain exact training for assigned operators only", () => {
+  const draft = createManualScheduleDraft([24]);
+  draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", "巫恋", null] };
+  const training = [
+    { id: "char_002_amiya", name: "阿米娅", elite: 2, level: 73, own: true, potential: 4, rarity: 5 },
+    { id: "char_254_vodfox", name: "巫恋", elite: 1, level: 42, own: true, potential: 2, rarity: 5 },
+    { id: "char_348_ceylon", name: "锡兰", elite: 2, level: 60, own: true, potential: 1, rarity: 5 },
+  ];
+  const downloaded = readPosterFile(JSON.stringify(posterDataOnly(createPosterDocument(layout, draft, training))));
+  assert.deepEqual(downloaded.operators, training.slice(0, 2));
+  assert.deepEqual(posterOperators(downloaded), training.slice(0, 2));
+  assert.equal(training.length, 3);
+});
+test("external operators default to the highest training permitted by their rarity", () => {
+  const maximums = [[0, 30], [0, 30], [1, 55], [2, 70], [2, 80], [2, 90]];
+  for (const operator of OPERATOR_CATALOG) {
+    const entry = defaultPosterOperator(operator.name)!;
+    assert.deepEqual([entry.elite, entry.level], maximums[operator.rarity - 1], operator.name);
+    assert.equal(entry.rarity, operator.rarity);
+  }
+  assert.equal(defaultPosterOperator("not-an-operator"), undefined);
 });
 test("per-shift products survive MAA conversion and reconciliation", () => {
   const draft = createManualScheduleDraft([12, 12]);

@@ -15,7 +15,12 @@ test("Nitro poster API validates and persists a share document outside the relea
   const storage = await mkdtemp(path.join(os.tmpdir(), "riic-poster-api-"));
   const previous = process.env.SCHEDULE_POSTER_STORAGE_DIR;
   process.env.SCHEDULE_POSTER_STORAGE_DIR = storage;
-  const document = createPosterDocument(layoutJson, createManualScheduleDraft([12, 12]));
+  const draft = createManualScheduleDraft([12, 12]);
+  draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", "巫恋", null] };
+  const document = createPosterDocument(layoutJson, draft, [
+    { id: "char_002_amiya", name: "阿米娅", elite: 2, level: 73, own: true, potential: 4, rarity: 5 },
+    { id: "char_254_vodfox", name: "巫恋", elite: 1, level: 42, own: true, potential: 2, rarity: 5 },
+  ]);
   try {
     const rejected = await createSchedulePoster(new Request("http://localhost/api/schedule-posters", {
       method: "POST",
