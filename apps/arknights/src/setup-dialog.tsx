@@ -28,6 +28,7 @@ import { ManualShiftStartStepper, ManualShiftTimeline } from "@/components/setup
 import { SetupStepper } from "@/components/setup/SetupStepper";
 import { RotationSettings } from "@/components/RotationSettings";
 import { FiammettaSettings } from "@/components/FiammettaSettings";
+import { SupportCombinationsSettings } from "@/components/SupportCombinationsSettings";
 import { WizardSteps } from "@/components/interior/wizard-steps";
 import { useWebsiteSession } from "@/website-session";
 
@@ -45,7 +46,9 @@ import { messageRecord } from "@/i18n/translate";
 import { LayoutEditor, PresetSelector } from "./components";
 import { countOwned } from "@riic/arknights-domain/operbox";
 import type { SetupStep } from "./onboarding";
-import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, RotationProfile, RoomProduct, SklandScheduleSnapshot } from "@riic/arknights-domain/types";
+import { DEFAULT_ROTATION_PROFILE } from "@riic/arknights-domain/rotation-settings";
+import type { CustomRotation, RotationSelection } from "@riic/arknights-domain/rotation-settings";
+import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, RoomProduct, SklandScheduleSnapshot } from "@riic/arknights-domain/types";
 
 import type { MaaIssue } from "@riic/arknights-domain/maa-review";
 
@@ -86,8 +89,12 @@ type SetupDialogProps = {
   configurationKey: string;
   manualDraft?: ManualScheduleDraft | null;
   onManualProductChange?: (shiftIndex: number, roomId: string, product: RoomProduct) => void;
-  rotationProfile: RotationProfile;
-  onRotationProfileChange: (value: RotationProfile) => void;
+  rotationProfile: RotationSelection;
+  onRotationProfileChange: (value: RotationSelection) => void;
+  customRotation: CustomRotation;
+  onCustomRotationChange: (value: CustomRotation) => void;
+  supportCombinationsEnabled: boolean;
+  onSupportCombinationsEnabledChange: (enabled: boolean) => void;
   manualShiftDurations?: number[];
   onManualShiftDurationsChange?: (durations: number[]) => void;
   manualShiftStartTime?: string;
@@ -156,6 +163,10 @@ export function SetupDialog({
   onManualProductChange,
   rotationProfile,
   onRotationProfileChange,
+  customRotation,
+  onCustomRotationChange,
+  supportCombinationsEnabled,
+  onSupportCombinationsEnabledChange,
   manualShiftDurations = [12, 6, 6],
   onManualShiftDurationsChange,
   manualShiftStartTime = DEFAULT_MANUAL_SHIFT_START_TIME,
@@ -740,16 +751,28 @@ export function SetupDialog({
                             </Tabs>
                           </div>
                         </section>
-                      ) : <RotationSettings value={rotationProfile} onChange={onRotationProfileChange} />}
+                      ) : <RotationSettings
+                        value={rotationProfile}
+                        onChange={onRotationProfileChange}
+                        custom={customRotation}
+                        onCustomChange={onCustomRotationChange}
+                      />}
                     </div>
 
                     <div className="border-t border-border/70 pt-5">
                       <FiammettaSettings
                         enabled={fiammettaEnabled}
                         operbox={operbox}
-                        rotation={rotationProfile}
+                        rotation={rotationProfile === "custom" ? DEFAULT_ROTATION_PROFILE : rotationProfile}
                         onEnabledChange={onFiammettaEnabledChange}
                         mode={mode}
+                      />
+                    </div>
+
+                    <div className="border-t border-border/70 pt-5">
+                      <SupportCombinationsSettings
+                        enabled={supportCombinationsEnabled}
+                        onEnabledChange={onSupportCombinationsEnabledChange}
                       />
                     </div>
 

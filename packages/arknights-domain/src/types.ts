@@ -964,7 +964,7 @@ export interface FeedbackApiResponse {
 }
 
 export interface PlanComputeParams {
-  schema_version: 3;
+  schema_version: 7;
   layout: BaseBlueprint;
   operbox: OperBoxEntry[];
   labels?: {
@@ -972,11 +972,13 @@ export interface PlanComputeParams {
     operbox?: string | null;
   };
   options?: {
-    rotation?: RotationProfile;
+    rotation?: RotationTiming;
     top?: number;
     system_preferences?: Record<string, string>;
     maa_title?: string | null;
     fiammetta_enable?: boolean;
+    /** 受控组合主动补挂件；缺省 false，与求解器一致。 */
+    support_combinations_enable?: boolean;
   };
 }
 
@@ -984,8 +986,25 @@ export type RotationProfile =
   | "abc_12_6_6"
   | "abc_12_12_12"
   | "main_backup_12_12"
+  | "main_backup_24_24"
   | "fiammetta_8_8_4_4"
-  | "abyssal_7_5_7_5";
+  | "abyssal_7_5_7_5"
+  /** 求解器对自定义二班的归一化名字：只知道两班，时长看 `shifts[].duration_hours`。 */
+  | "generic_main_backup"
+  /** 求解器对自定义三班的归一化名字：只知道三班，时长看 `shifts[].duration_hours`。 */
+  | "generic_abc";
+
+/** v7 换班拓扑：主备两班或 ABC 三班。 */
+export type RotationTopology = "main_backup" | "abc";
+
+/**
+ * `plan.compute` 的 `options.rotation`：
+ * named profile 字符串，或 v7 的 `{ topology, shift_hours }` 自定义时长。
+ */
+export type RotationTiming =
+  | RotationProfile
+  | { topology: "main_backup"; shift_hours: [number, number] }
+  | { topology: "abc"; shift_hours: [number, number, number] };
 
 export interface PlanApiResponse {
   success: boolean;

@@ -133,6 +133,7 @@ export const loaders: Record<string, () => Promise<unknown>> = {
   "components_RichTextInteractive": () => import("../../../messages/zh-CN/components_RichTextInteractive.json", { with: { type: "json" } }).then(module => module.default),
   "components_RotationSettings": () => import("../../../messages/zh-CN/components_RotationSettings.json", { with: { type: "json" } }).then(module => module.default),
   "components_ShiftComparisonCard": () => import("../../../messages/zh-CN/components_ShiftComparisonCard.json", { with: { type: "json" } }).then(module => module.default),
+  "components_SupportCombinationsSettings": () => import("../../../messages/zh-CN/components_SupportCombinationsSettings.json", { with: { type: "json" } }).then(module => module.default),
   "components_UpgradeSimulationDialog": () => import("../../../messages/zh-CN/components_UpgradeSimulationDialog.json", { with: { type: "json" } }).then(module => module.default),
   "components_auth_WebsiteAccountDialog": () => import("../../../messages/zh-CN/components_auth_WebsiteAccountDialog.json", { with: { type: "json" } }).then(module => module.default),
   "components_auth_WebsiteAccountDialogLoading": () => import("../../../messages/zh-CN/components_auth_WebsiteAccountDialogLoading.json", { with: { type: "json" } }).then(module => module.default),

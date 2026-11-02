@@ -12,7 +12,7 @@ import { TELEMETRY_SESSION_STORAGE_KEY } from "./telemetry-contract.ts";
 import { parseTrainingAdviceReport } from "./training-advice-contract.ts";
 import { parseTrainingRoomSchedule } from "./training-room-contract.ts";
 import { sanitizeMaaJson } from "./maa-safety.ts";
-import { normalizeRotationProfile } from "./rotation-settings.ts";
+import { DEFAULT_ROTATION_PROFILE, isRotationProfile, normalizeRotationProfile } from "./rotation-settings.ts";
 import { normalizeRotationResult } from "./rotation-result.ts";
 
 export const SESSION_KEY_V4 = "arknights-infra-calc-session-v4";
@@ -110,7 +110,10 @@ function validOperbox(value: unknown): value is OperBoxEntry[] {
     );
 }
 
-export function normalizePersistedPlanData(value: unknown, fallbackProfile: RotationProfile): PublicPlanData | null {
+export function normalizePersistedPlanData(
+  value: unknown,
+  fallbackProfile: RotationProfile | string,
+): PublicPlanData | null {
   if (!isObject(value)) return null;
 
   const profile = (value.profile ?? value.profileJson) as UserProfile | undefined;
@@ -143,7 +146,8 @@ export function normalizePersistedPlanData(value: unknown, fallbackProfile: Rota
     rotation: normalizeRotationResult({
       source: rotation,
       profile,
-      fallbackProfile,
+      // 自定义时长的编码没有 named profile 语义，兜底用默认 profile。
+      fallbackProfile: isRotationProfile(fallbackProfile) ? fallbackProfile : DEFAULT_ROTATION_PROFILE,
     }),
     ...(trainingRoom ? { trainingRoom } : {}),
     ...(trainingAdvice ? { trainingAdvice } : {}),
