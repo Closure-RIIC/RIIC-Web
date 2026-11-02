@@ -6953,17 +6953,17 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.5OperatorsInThisSegment",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:159"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:160"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.6OperatorOutsideThisBannerSRateUpPool",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:108"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:109"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.accountDetailsCouldNotSync",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:426"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:427"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.accountFailed",
@@ -6973,12 +6973,12 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.authorizeHeadhuntingHistory",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:401"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:402"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.authorizeHistory",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:398"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:399"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.avatar",
@@ -6988,27 +6988,27 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.bannerDates",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:458"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:459"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.bannerDatesNotAvailableYet",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:458"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:459"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.bannerStatistics",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:460"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:461"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.beijingTimeUtc8",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:458"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:459"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.careerScore",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:435"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:436"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.cloudFailed",
@@ -7018,17 +7018,17 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.delete",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:396"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:397"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.deleteCloudHeadhuntingHistory",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:396"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:397"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.deleteConfirm",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:262"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:263"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.deleteFailed",
@@ -7038,22 +7038,22 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.equivalent",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:440"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:441"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.generateQrCode",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:412"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:413"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.generatingQrCode",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:412"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:413"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.headhuntingRecordActions",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:393"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:394"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.historyFailed",
@@ -7063,27 +7063,27 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.iAgreeToReadHeadhuntingHistoryLinkItTo",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:409"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:410"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.ifYouAreSignedInToSklandTrySyncing",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:414"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:415"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.interval",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:151"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:152"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.loadingCloudHistory",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:427"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:428"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.loadMore",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:468"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:469"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.loginFailed",
@@ -7093,47 +7093,47 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.lowerStars",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:438"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:439"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.noHeadhuntingHistory",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:466"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:467"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.noSavedHeadhuntingRecordsSelectAuthorizeHistoryToGet",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:427"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:428"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.noSavedHeadhuntingRecordsSelectRefreshToLoadThem",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:427"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:428"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.offBanner",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:108"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:109"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.orundum",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:441"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:442"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.orundumTotal",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:434"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:435"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.pulls",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:157"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:158"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.qrCodeExpiredPleaseRefresh",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:415"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:416"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.qrFailed",
@@ -7143,32 +7143,32 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.rateUpOperators",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:453"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:454"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.rateUpOperatorsAreMatchedToGameDataBy",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:469"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:470"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.recordsBegin",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:391"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:392"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.refresh",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:423"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:424"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.refreshQrCode",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:412"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:413"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.revokeAuthorization",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:395"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:396"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.roleMismatch",
@@ -7178,17 +7178,17 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.savedHeadhuntingStatistics",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:431"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:432"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.savedPulls",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:436"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:437"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.scanAndConfirmWithTheSklandAppToRead",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:402"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:403"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.scanFailed",
@@ -7203,57 +7203,57 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.scannedPleaseConfirmOnYourPhone",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:415"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:416"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.segmentsEndingInA6PullNewestFirst",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:147"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:148"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.segmentsEndWithA6PullAndAppearNewest",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:470"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:471"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.show5Operators",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:394"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:395"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.sixStars",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:437"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:438"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.sixStarsInATenPull",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:164"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:165"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.stars",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:160"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:161"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.syncAgain",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:426"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:427"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.syncingSignInStatus",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:411"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:412"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.syncThisSiteSSklandSignIn",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:411"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:412"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.totalPulls",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:461"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:462"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.unlinkFailed",
@@ -7263,12 +7263,12 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.uploadedHistoryIsLinkedToYourWebsiteAccountAnd",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:407"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:408"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.waitingForScanConfirmation",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:415"
+    "source": "apps/arknights/src/components/pages/GachaHistoryPage.tsx:416"
   },
   {
     "key": "AK_Raw_components_pages_GachaStatistics.6Count",
