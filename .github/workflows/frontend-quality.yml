@@ -25,6 +25,7 @@ on:
         type: string
   push:
     branches: [main, develop]
+    paths-ignore: ["docs/**", "*.md"]
   schedule:
     - cron: "23 18 * * *"
 
@@ -34,7 +35,7 @@ permissions:
   deployments: write
 
 concurrency:
-  group: post-merge-release-${{ github.ref }}
+  group: post-merge-release-${{ github.ref }}-${{ github.run_id }}
   cancel-in-progress: false
 
 env:
@@ -66,6 +67,9 @@ jobs:
       documentation_only: ${{ steps.scope.outputs.documentation_only }}
       run_core: ${{ steps.scope.outputs.run_core }}
       run_browser: ${{ steps.scope.outputs.run_browser }}
+      run_database: ${{ steps.scope.outputs.run_database }}
+      check_arknights: ${{ steps.scope.outputs.check_arknights }}
+      check_endfield: ${{ steps.scope.outputs.check_endfield }}
       deploy_required: ${{ steps.scope.outputs.deploy_required }}
       deploy_arknights: ${{ steps.scope.outputs.deploy_arknights }}
       deploy_endfield: ${{ steps.scope.outputs.deploy_endfield }}
@@ -124,7 +128,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Reject private paths and sensitive content
@@ -140,7 +143,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -150,48 +152,121 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --prefer-offline
 
       - name: Security audit
         run: npm run audit:security
 
       - name: Generated asset consistency
+        if: needs.changes.outputs.check_arknights == 'true'
         run: npm run assets:check
-
-      - name: Lint
-        run: npm run lint
 
       - name: Trilingual messages and translation usage
         run: npm run check:i18n
 
-      - name: Check both application types
-        run: npm run check:types
+      - name: Workspace boundaries and shared platform logic
+        run: npm run test:workspace && npm run test:platform
 
-      - name: Workspace boundaries and Endfield logic
-        run: npm run test:workspace && npm run test:platform && npm run test:endfield && npm run test:endfield:skland
+      - name: Endfield logic
+        if: needs.changes.outputs.check_endfield == 'true'
+        run: npm run test:endfield && npm run test:endfield:skland
 
       - name: Unit tests
+        if: needs.changes.outputs.check_arknights == 'true'
         run: npm test
 
+      - name: Shared build and deployment contracts
+        if: needs.changes.outputs.check_arknights == 'false'
+        run: node --test scripts/build-tooling.test.mjs
+
       - name: Endfield release archive safety
+        if: needs.changes.outputs.check_endfield == 'true'
         run: python3 deploy/endfield-deploy.test.py && python3 deploy/endfield-transfer.test.py
 
       - name: Release provenance tests
-        run: node --test scripts/release-provenance.test.mjs scripts/app-release-plan.test.mjs scripts/release-automation.test.mjs scripts/release-pr.test.mjs
+        run: node --test scripts/release-provenance.test.mjs scripts/app-release-plan.test.mjs scripts/release-automation.test.mjs scripts/release-pr.test.mjs scripts/ci-performance.test.mjs scripts/ci-timings.test.mjs scripts/build-cache.test.mjs
 
       - name: API contract tests
+        if: needs.changes.outputs.check_arknights == 'true'
         run: npm run test:api-contract
 
       - name: Feedback workbench tests
+        if: needs.changes.outputs.check_arknights == 'true'
         run: npm run test:feedback-workbench
 
       - name: Shift comparison tests
+        if: needs.changes.outputs.check_arknights == 'true'
         run: npm run test:shift-comparison
+
+  lint_checks:
+    name: Lint
+    needs: changes
+    if: needs.changes.outputs.run_core == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund --prefer-offline
+      - run: npm run lint
+
+  type_checks:
+    name: Application and tooling types
+    needs: changes
+    if: always() && (github.event_name == 'schedule' || needs.changes.outputs.run_core == 'true')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund --prefer-offline
+      - name: Arknights types
+        if: github.event_name == 'schedule' || needs.changes.outputs.check_arknights == 'true'
+        run: npm run check:arknights
+      - name: Endfield types
+        if: github.event_name == 'schedule' || needs.changes.outputs.check_endfield == 'true'
+        run: npm run check:endfield
+      - name: Platform and tooling types
+        run: npm run check:platform && npx tsc --noEmit -p tsconfig.json
 
   database_checks:
     name: Database integration
+    needs: [changes, database_integration]
+    if: always() && needs.changes.outputs.run_core == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify the planned database check
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          RUN_DATABASE: ${{ needs.changes.outputs.run_database }}
+          DATABASE_RESULT: ${{ needs.database_integration.result }}
+        run: |
+          set -euo pipefail
+          test "$CHANGES_RESULT" = "success"
+          if [[ "$RUN_DATABASE" == "true" ]]; then
+            test "$DATABASE_RESULT" = "success"
+          elif [[ "$RUN_DATABASE" == "false" ]]; then
+            test "$DATABASE_RESULT" = "skipped"
+          else
+            exit 1
+          fi
+          printf 'Database integration required=%s result=%s\n' "$RUN_DATABASE" "$DATABASE_RESULT" >> "$GITHUB_STEP_SUMMARY"
+
+  database_integration:
+    name: Database integration tests
     needs: changes
-    if: needs.changes.outputs.run_core == 'true'
+    if: needs.changes.outputs.run_database == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
@@ -205,14 +280,13 @@ jobs:
           - 5432:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d arknights_auth_test"
-          --health-interval 10s
+          --health-interval 1s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 100
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -222,7 +296,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --prefer-offline
 
       - name: Validate public database deployment files
         shell: bash
@@ -305,7 +379,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -315,7 +388,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --prefer-offline
 
       - name: Build standalone application and worker
         if: needs.changes.outputs.build_arknights == 'true' || github.event_name == 'schedule' || inputs.run_webkit
@@ -330,11 +403,11 @@ jobs:
           BETTER_AUTH_URL: ""
           RESEND_API_KEY: ""
           AUTH_EMAIL_FROM: ""
-        run: npm run build && npm run worker:build && node --check dist/plan-worker.cjs
+        run: npm run build:ci:arknights && npm run worker:build && node --check dist/plan-worker.cjs
 
       - name: Build independent Endfield application
         if: needs.changes.outputs.build_endfield == 'true' || github.event_name == 'schedule'
-        run: npm run build:endfield && node scripts/test-endfield-access.mjs
+        run: npm run build:ci:endfield && node scripts/test-endfield-access.mjs
 
       - name: Build platform API verification artifact
         run: npm run build:platform
@@ -439,7 +512,7 @@ jobs:
           compression-level: 0
 
   browser_e2e:
-    name: Chromium E2E (${{ matrix.project }} ${{ matrix.shard }})
+    name: Chromium E2E (${{ matrix.suite || matrix.project }} ${{ matrix.shard }})
     needs: [changes, release_artifact]
     if: needs.changes.outputs.run_browser == 'true'
     runs-on: ubuntu-24.04
@@ -448,16 +521,18 @@ jobs:
       fail-fast: false
       matrix:
         project: [chromium]
-        shard: [1/4, 2/4, 3/4, 4/4]
+        shard: [1/8, 2/8, 3/8, 4/8, 5/8, 6/8, 7/8, 8/8]
         include:
-          - project: chromium-plush
-            shard: 1/4
-          - project: chromium-plush
-            shard: 2/4
-          - project: chromium-plush
-            shard: 3/4
-          - project: chromium-plush
-            shard: 4/4
+          - { project: chromium-plush, suite: agent, filter: 'agent-.*[.]spec[.]ts', shard: 1/4 }
+          - { project: chromium-plush, suite: agent, filter: 'agent-.*[.]spec[.]ts', shard: 2/4 }
+          - { project: chromium-plush, suite: agent, filter: 'agent-.*[.]spec[.]ts', shard: 3/4 }
+          - { project: chromium-plush, suite: agent, filter: 'agent-.*[.]spec[.]ts', shard: 4/4 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 1/6 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 2/6 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 3/6 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 4/6 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 5/6 }
+          - { project: chromium-plush, suite: plush, filter: 'plush-.*[.]spec[.]ts', shard: 6/6 }
     container:
       image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
       options: --user 1001
@@ -475,14 +550,13 @@ jobs:
           POSTGRES_PASSWORD: e2e-test-only
         options: >-
           --health-cmd "pg_isready -U arknights_e2e -d arknights_auth_test"
-          --health-interval 10s
+          --health-interval 1s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 100
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -492,7 +566,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --prefer-offline
 
       - name: Apply committed authentication migrations
         run: npm run db:migrate
@@ -508,7 +582,15 @@ jobs:
         run: bash scripts/prepare-browser-release.sh "$GITHUB_WORKSPACE/.tmp/browser-download" "$PLAYWRIGHT_RELEASE_DIR" "$GITHUB_SHA" "$(git rev-parse 'HEAD^{tree}')"
 
       - name: Chromium end-to-end tests
-        run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}
+        shell: bash
+        env:
+          TEST_PROJECT: ${{ matrix.project }}
+          TEST_SHARD: ${{ matrix.shard }}
+          TEST_FILTER: ${{ matrix.filter }}
+        run: |
+          args=(test --project="$TEST_PROJECT" --shard="$TEST_SHARD")
+          if [[ -n "$TEST_FILTER" ]]; then args+=("$TEST_FILTER"); fi
+          npx playwright "${args[@]}"
 
       - name: Preserve browser failure evidence
         if: failure()
@@ -540,14 +622,13 @@ jobs:
           POSTGRES_PASSWORD: e2e-test-only
         options: >-
           --health-cmd "pg_isready -U arknights_e2e -d arknights_auth_test"
-          --health-interval 10s
+          --health-interval 1s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 100
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -557,7 +638,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        run: npm ci --no-audit --no-fund --prefer-offline
 
       - name: Apply committed authentication migrations
         run: npm run db:migrate
@@ -601,14 +682,13 @@ jobs:
           POSTGRES_PASSWORD: e2e-test-only
         options: >-
           --health-cmd "pg_isready -U arknights_e2e -d arknights_auth_test"
-          --health-interval 10s
+          --health-interval 1s
           --health-timeout 5s
-          --health-retries 10
+          --health-retries 100
     steps:
       - name: Checkout
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          fetch-depth: 0
           persist-credentials: false
 
       - name: Use Node.js 22
@@ -648,7 +728,7 @@ jobs:
     name: quality
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [changes, repository_hygiene, static_checks, database_checks, release_artifact, browser_e2e, browser_boundaries]
+    needs: [changes, repository_hygiene, static_checks, lint_checks, type_checks, database_checks, release_artifact, browser_e2e, browser_boundaries]
     if: always() && github.event_name != 'schedule'
     steps:
       - name: Verify all post-merge checks passed
@@ -656,6 +736,8 @@ jobs:
           CHANGES_RESULT: ${{ needs.changes.result }}
           HYGIENE_RESULT: ${{ needs.repository_hygiene.result }}
           STATIC_RESULT: ${{ needs.static_checks.result }}
+          LINT_RESULT: ${{ needs.lint_checks.result }}
+          TYPES_RESULT: ${{ needs.type_checks.result }}
           DATABASE_RESULT: ${{ needs.database_checks.result }}
           BUILD_RESULT: ${{ needs.release_artifact.result }}
           BROWSER_E2E_RESULT: ${{ needs.browser_e2e.result }}
@@ -683,6 +765,8 @@ jobs:
           }
 
           verify_result "$RUN_CORE" "$STATIC_RESULT" static
+          verify_result "$RUN_CORE" "$LINT_RESULT" lint
+          verify_result "$RUN_CORE" "$TYPES_RESULT" types
           verify_result "$RUN_CORE" "$DATABASE_RESULT" database
           verify_result "$RUN_CORE" "$BUILD_RESULT" build
           verify_result "$RUN_BROWSER" "$BROWSER_E2E_RESULT" chromium

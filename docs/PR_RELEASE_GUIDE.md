@@ -36,6 +36,8 @@ npm run release:pr -- $pr --execute --head $head --approve-production --timeout-
 
 **双环境不等于每次都部署两个站点。** 方舟和终末地按实际影响分别部署；只改终末地时，方舟保留原来的成功部署 SHA 是正常的。
 
+develop 的合并后检查按应用影响范围执行：纯终末地变更不再运行方舟专属单测、浏览器套件和数据库集成，纯方舟变更不再运行终末地专属检查。共享检查和 PR 的 packages 门禁保留；main、手动全量验证及无法确认部署历史时仍使用完整应用检查。Database integration 的成功可能表示按已验证计划无需执行，其具体结果见该 job 的摘要；quality 仍严格验证所有本次必需检查。仅发布 develop 时，在开发部署和健康检查成功后结束，不执行双环境发布命令的 main 阶段。
+
 ## 一、标准流程
 
 ### 1. 准备工作目录和原 PR
@@ -131,7 +133,9 @@ npm run release:pr -- $pr --execute --head $head --approve-production --timeout-
 
 `--approve-production` 授权脚本在质量检查通过、提交仍为当前 main、账号有权限时批准 production 环境。**它不代替 main PR 的 CODEOWNER 审核，也不授予额外权限。**
 
-浏览器门禁包含普通 Chromium 四个分片，以及毛绒和 Agent 高质量渲染测试的四个独立分片；后者每个分片使用一个 worker，避免 CI 软件 GPU 并行争用。所有必需分片通过后才能进入部署，测试断言和渲染质量保持完整。
+浏览器门禁包含普通 Chromium 八个分片、Agent 交互四个分片和毛绒 gallery 渲染六个分片。后两组仍属于 chromium-plush 项目，每个分片使用一个 worker，避免 CI 软件 GPU 并行争用；按文件类型分组避免慢速 gallery 用例堆积在最后一个分片。类型检查、lint 和其余静态及单元检查并行执行，quality 汇总全部结果。所有必需分片通过后才能进入部署，测试断言和渲染质量保持完整；计划任务也保留独立类型校验。
+
+PR 的必需检查仍为 packages；它汇总变更判定、静态检查及构建运行时检查。纯文档 PR 仅执行轻量范围和仓库内容检查，并完成 packages，避免路径过滤让必需检查永久 pending。main/develop 的纯文档 push 不触发发布工作流。每次非文档发布运行有独立的并发组，不会挤掉较早提交的待运行质量检查；实际部署仍由各应用的部署锁、提交新鲜度检查和环境审批保护。
 
 默认总等待 90 分钟；上面用 120 分钟，上限 240 分钟。超时或 Ctrl+C 只停止本地监控，GitHub 后台任务会继续。失败 CI 不会自动重跑。
 
