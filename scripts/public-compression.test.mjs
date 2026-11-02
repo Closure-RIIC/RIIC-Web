@@ -228,6 +228,17 @@ test("the overall deadline also bounds time spent waiting to retry", async () =>
   assert.equal(requests, 1);
 });
 
+test("a deadline-limited retry wait cannot start another request if the wall clock trails the timer", async context => {
+  let now = 0;
+  let requests = 0;
+  context.mock.method(Date, "now", () => now);
+  await assert.rejects(verifyPublicCompression("https://example.invalid", async () => {
+    requests += 1;
+    throw networkFailure("EAI_AGAIN");
+  }, expectedBuildId, { totalTimeoutMs: 30, retryDelayMs: 100, onRetry: () => { now = 29; } }), /CHECK_TIMEOUT/);
+  assert.equal(requests, 1);
+});
+
 test("the overall deadline aborts an in-flight request before its individual timeout", async () => {
   let requests = 0;
   await assert.rejects(verifyPublicCompression("https://example.invalid", async (_url, { signal }) => {
