@@ -42,6 +42,7 @@ test("PR path filters cannot strand required checks, and main runs never share a
   assert.doesNotMatch(pr.split("  pull_request:\n")[1].split("  push:\n")[0], /paths/);
   assert.match(pr, /github\.event\.pull_request\.number \|\| github\.ref/);
   assert.match(pr, /cancel-in-progress: \$\{\{ github\.ref != 'refs\/heads\/main' \}\}/);
+  assert.doesNotMatch(pr.split("  push:\n")[1].split("  workflow_dispatch:")[0], /ci\/actions-performance/);
   assert.match(release, /group: post-merge-release-\$\{\{ github\.ref \}\}-\$\{\{ github\.run_id \}\}/);
   assert.match(release, /cancel-in-progress: false/);
 });

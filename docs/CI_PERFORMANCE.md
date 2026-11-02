@@ -111,6 +111,8 @@ lint、国际化、依赖审计、workspace 边界、共享平台逻辑、发布
 
 数据库实际执行与稳定汇总分开：仅当计划明确表示不需要数据库且执行 job 为 skipped 时，Database integration 才允许通过；失败、取消、缺失结果或未知计划均失败。发布证明继续要求 Database integration 和 quality 成功。
 
+远端复查还发现，临时 ci/actions-performance-* 分支会同时触发 push 和 pull_request 两份相同的 packages 检查。已移除这个临时 push 入口；该分支通过 PR 正常验证，未开 PR 时可手动触发 workflow_dispatch。原有重构分支的 push 验证保留。
+
 计算范围同时考虑每个应用上次成功部署至当前提交的差异，未成功发布的历史改动不能被后续单应用提交隐藏。main 的完整检查、夜间完整 WebKit 和手动全量验证保持原策略。本轮属于条件执行优化，纯终末地推送减少 20 个重型执行 job；实际节约时间须以该类推送实测，不能用 CI 配置变更的全量运行代替。
 
 ## 数据与复查
