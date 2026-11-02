@@ -6213,7 +6213,7 @@ export const references = [
   {
     "key": "AK_Raw_App.cloudComputingProvidedBy",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2763"
+    "source": "apps/arknights/src/App.tsx:2775"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.6Elite2Operators",
@@ -10338,197 +10338,197 @@ export const references = [
   {
     "key": "App.about",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2738"
+    "source": "apps/arknights/src/App.tsx:2750"
   },
   {
     "key": "App.additional1",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1202"
+    "source": "apps/arknights/src/App.tsx:1197"
   },
   {
     "key": "App.additional2",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1258"
+    "source": "apps/arknights/src/App.tsx:1253"
   },
   {
     "key": "App.additional3",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1485"
+    "source": "apps/arknights/src/App.tsx:1480"
   },
   {
     "key": "App.additional4",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1950"
+    "source": "apps/arknights/src/App.tsx:1962"
   },
   {
     "key": "App.agentArtifactAppliedText",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2673"
+    "source": "apps/arknights/src/App.tsx:2685"
   },
   {
     "key": "App.agentArtifactBannerText",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2651"
+    "source": "apps/arknights/src/App.tsx:2663"
   },
   {
     "key": "App.agentArtifactErrorText",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2686"
+    "source": "apps/arknights/src/App.tsx:2698"
   },
   {
     "key": "App.agentArtifactIgnore",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2666"
+    "source": "apps/arknights/src/App.tsx:2678"
   },
   {
     "key": "App.agentArtifactLoading",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2659"
+    "source": "apps/arknights/src/App.tsx:2671"
   },
   {
     "key": "App.agentArtifactOpen",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2659"
+    "source": "apps/arknights/src/App.tsx:2671"
   },
   {
     "key": "App.changedTo",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1804"
+    "source": "apps/arknights/src/App.tsx:1816"
   },
   {
     "key": "App.couldNotDeleteSklandDataTryAgainLater",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2256"
+    "source": "apps/arknights/src/App.tsx:2268"
   },
   {
     "key": "App.couldNotLoadTheStatusCenterTryAgainLater",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1177"
+    "source": "apps/arknights/src/App.tsx:1172"
   },
   {
     "key": "App.couldNotReadSampleDataTryAgainLater",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1486"
+    "source": "apps/arknights/src/App.tsx:1481"
   },
   {
     "key": "App.couldNotRestoreTheSklandSessionRefreshAndTry",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1143"
+    "source": "apps/arknights/src/App.tsx:1138"
   },
   {
     "key": "App.couldNotSaveFeedbackTryAgainLater",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1744"
+    "source": "apps/arknights/src/App.tsx:1739"
   },
   {
     "key": "App.couldNotSignOutOfSklandTryAgainLater",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1312"
+    "source": "apps/arknights/src/App.tsx:1307"
   },
   {
     "key": "App.couldNotSwitchCharacter",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1279"
+    "source": "apps/arknights/src/App.tsx:1274"
   },
   {
     "key": "App.couldNotSwitchCharacterTryAgainLater",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1284"
+    "source": "apps/arknights/src/App.tsx:1279"
   },
   {
     "key": "App.currentFacility",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2861"
+    "source": "apps/arknights/src/App.tsx:2873"
   },
   {
     "key": "App.environment",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1700"
+    "source": "apps/arknights/src/App.tsx:1695"
   },
   {
     "key": "App.environmentDetails",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1699"
+    "source": "apps/arknights/src/App.tsx:1694"
   },
   {
     "key": "App.generateAScheduleBeforeSubmittingAnIssue",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1691"
+    "source": "apps/arknights/src/App.tsx:1686"
   },
   {
     "key": "App.importOperatorDataFirst",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1427"
+    "source": "apps/arknights/src/App.tsx:1422"
   },
   {
     "key": "App.invalidLayoutFileCheckRoomNamesTypesAndFacility",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1939"
+    "source": "apps/arknights/src/App.tsx:1951"
   },
   {
     "key": "App.layout",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1854"
+    "source": "apps/arknights/src/App.tsx:1866"
   },
   {
     "key": "App.manuallySelectedBox",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1267"
+    "source": "apps/arknights/src/App.tsx:1262"
   },
   {
     "key": "App.newSetting",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2863"
+    "source": "apps/arknights/src/App.tsx:2875"
   },
   {
     "key": "App.pastedArknightsOperboxExportJson",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1253"
+    "source": "apps/arknights/src/App.tsx:1248"
   },
   {
     "key": "App.powerShortfallSummary",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1370"
+    "source": "apps/arknights/src/App.tsx:1365"
   },
   {
     "key": "App.privacy",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2736"
+    "source": "apps/arknights/src/App.tsx:2748"
   },
   {
     "key": "App.progressionAdjustedBox",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1448"
+    "source": "apps/arknights/src/App.tsx:1443"
   },
   {
     "key": "App.progressionAdjustmentBoxJson",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1436"
+    "source": "apps/arknights/src/App.tsx:1431"
   },
   {
     "key": "App.progressionAdjustmentFailedPleaseTryAgainLater",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1454"
+    "source": "apps/arknights/src/App.tsx:1449"
   },
   {
     "key": "App.rotationCycleInvalidSummary",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1362"
+    "source": "apps/arknights/src/App.tsx:1357"
   },
   {
     "key": "App.savedOperatorData",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:844"
+    "source": "apps/arknights/src/App.tsx:840"
   },
   {
     "key": "App.selectAtLeastOneOperatorForTheSimulation",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1428"
+    "source": "apps/arknights/src/App.tsx:1423"
   },
   {
     "key": "App.settingsChanged",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1804"
+    "source": "apps/arknights/src/App.tsx:1816"
   },
   {
     "key": "App.sFacilityLevelMustBeBetween1And",
@@ -10538,37 +10538,37 @@ export const references = [
   {
     "key": "App.sponsoredBy",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2753"
+    "source": "apps/arknights/src/App.tsx:2765"
   },
   {
     "key": "App.sponsoredByRainyunOpensInANewTab",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2749"
+    "source": "apps/arknights/src/App.tsx:2761"
   },
   {
     "key": "App.terms",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2735"
+    "source": "apps/arknights/src/App.tsx:2747"
   },
   {
     "key": "App.theBrowserCouldNotClearLocalDataCheckSite",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2291"
+    "source": "apps/arknights/src/App.tsx:2303"
   },
   {
     "key": "App.theBrowserCouldNotReadLocalDataButSchedules",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:866"
+    "source": "apps/arknights/src/App.tsx:861"
   },
   {
     "key": "App.theBrowserCouldNotRetainImportedDataSeparatelyThe",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2229"
+    "source": "apps/arknights/src/App.tsx:2241"
   },
   {
     "key": "App.theBrowserCouldNotSaveLocalDataButSchedules",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:948"
+    "source": "apps/arknights/src/App.tsx:943"
   },
   {
     "key": "App.theLayoutMustIncludeAControlCenter",
@@ -10578,22 +10578,22 @@ export const references = [
   {
     "key": "App.theScheduleRequestFailedTryAgainLater",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1408"
+    "source": "apps/arknights/src/App.tsx:1403"
   },
   {
     "key": "App.theSchedulingServiceIsTemporarilyUnavailableTryAgainLater",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:993"
+    "source": "apps/arknights/src/App.tsx:988"
   },
   {
     "key": "App.thisSolveTookNoticeablyLongerThanExpected",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1683"
+    "source": "apps/arknights/src/App.tsx:1678"
   },
   {
     "key": "App.wishes",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2739"
+    "source": "apps/arknights/src/App.tsx:2751"
   },
   {
     "key": "ChangelogPage.description",
@@ -10648,12 +10648,12 @@ export const references = [
   {
     "key": "Common.copiedTraining",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2481"
+    "source": "apps/arknights/src/App.tsx:2493"
   },
   {
     "key": "Common.factoryRecipe",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2862"
+    "source": "apps/arknights/src/App.tsx:2874"
   },
   {
     "key": "Common.language",
@@ -10673,7 +10673,7 @@ export const references = [
   {
     "key": "Common.personalBoxRequired",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1695"
+    "source": "apps/arknights/src/App.tsx:1690"
   },
   {
     "key": "Common.requestFailed",
@@ -10698,7 +10698,7 @@ export const references = [
   {
     "key": "Common.tradeStrategy",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2862"
+    "source": "apps/arknights/src/App.tsx:2874"
   },
   {
     "key": "Common.unknownOperator",
@@ -11258,7 +11258,7 @@ export const references = [
   {
     "key": "components_CompactScheduleView.battleRecord",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1797"
+    "source": "apps/arknights/src/App.tsx:1809"
   },
   {
     "key": "components_CompactScheduleView.clear",
@@ -11293,7 +11293,7 @@ export const references = [
   {
     "key": "components_CompactScheduleView.lmdOrder",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1799"
+    "source": "apps/arknights/src/App.tsx:1811"
   },
   {
     "key": "components_CompactScheduleView.noLayoutRoomsToDisplay",
@@ -11303,22 +11303,22 @@ export const references = [
   {
     "key": "components_CompactScheduleView.originiumOrder",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1799"
+    "source": "apps/arknights/src/App.tsx:1811"
   },
   {
     "key": "components_CompactScheduleView.originiumShard",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1797"
+    "source": "apps/arknights/src/App.tsx:1809"
   },
   {
     "key": "components_CompactScheduleView.pureGold",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1797"
+    "source": "apps/arknights/src/App.tsx:1809"
   },
   {
     "key": "components_CompactScheduleView.recipe",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:1797"
+    "source": "apps/arknights/src/App.tsx:1809"
   },
   {
     "key": "components_CompactScheduleView.reportScheduleIssue",
@@ -13153,12 +13153,12 @@ export const references = [
   {
     "key": "components_pages_SklandStatus.sklandLinkSReachedTheSevenDayLimitAnd",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:676"
+    "source": "apps/arknights/src/App.tsx:672"
   },
   {
     "key": "components_pages_SklandStatus.sklandStatus",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:675"
+    "source": "apps/arknights/src/App.tsx:671"
   },
   {
     "key": "components_pages_SklandStatus.slot",
@@ -13523,7 +13523,7 @@ export const references = [
   {
     "key": "components_pages_TrainingAdvice.syncFailed",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:693"
+    "source": "apps/arknights/src/App.tsx:689"
   },
   {
     "key": "components_pages_TrainingAdvice.syncing",
@@ -14033,7 +14033,7 @@ export const references = [
   {
     "key": "components_RotationSettings.rotation",
     "prefix": false,
-    "source": "apps/arknights/src/components/RotationSettings.tsx:128"
+    "source": "apps/arknights/src/App.tsx:1768"
   },
   {
     "key": "components_RotationSettings.shiftCount",
