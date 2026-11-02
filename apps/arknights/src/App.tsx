@@ -366,10 +366,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
    * （`custom_zb_16_8`）。渲染时解析，发请求前解码。
    */
   const [rotationKey, setRotationKey] = useState<string>(DEFAULT_ROTATION_PROFILE);
-  /** 自定义时长的编辑入口：把新的拓扑与时长编码回 rotationKey。 */
-  const setCustomRotation = useCallback((next: CustomRotation) => {
-    setRotationKey(encodeRotationKey(toRotationTiming(next)));
-  }, []);
   /** 受控组合主动补挂件；对应求解器 support_combinations_enable。 */
   const [supportCombinationsEnabled, setSupportCombinationsEnabled] = useState(false);
   const [fiammettaEnabled, setFiammettaEnabled] = useState(false);
@@ -851,7 +847,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         setLocalLayoutBackup(CLIENT_SKLAND_ENABLED ? restored.localLayoutBackup : null);
         // 选中值与自定义时长一起恢复，避免刷新后回到默认换班方式。
       setRotationKey(restored.rotationSelection ?? restored.rotationProfile);
-      if (restored.customRotation) setCustomRotation(restored.customRotation);
         setFiammettaEnabled(Boolean(restored.fiammettaEnabled));
         setResult(restored.result);
         automaticMaaRef.current = restored.result ? { diagnosticId: restored.result.diagnosticId, maa: structuredClone(restored.result.maa) } : null;
@@ -867,7 +862,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     } finally {
       setHasRestoredSession(true);
     }
-  }, [setBoxSource, setCustomRotation, setLayoutDirty, setOperbox]);
+  }, [setBoxSource, setLayoutDirty, setOperbox]);
 
   // 将 agent 生成的排班产物注入工作台：复用会话恢复路径设置全部状态，
   // 使班次切换、手动排班导入、效率视图等现有功能立即可用。
@@ -1764,6 +1759,23 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   function handleFiammettaEnabledChange(enabled: boolean) {
     setFiammettaEnabled(enabled);
+    clearPlanResult();
+  }
+
+  /** 换班方式（含自定义时长）变化后，旧结果已失效，等待重新求解。 */
+  function handleRotationKeyChange(next: string) {
+    if (next === rotationKey) return;
+    showResultClearNotice(intl("components_RotationSettings.rotation"));
+    setRotationKey(next);
+    clearPlanResult();
+  }
+
+  /** 自定义时长变化：编码回 rotationKey，同样清空旧结果。 */
+  function handleCustomRotationChange(next: CustomRotation) {
+    const key = encodeRotationKey(toRotationTiming(next));
+    if (key === rotationKey) return;
+    showResultClearNotice(intl("components_RotationSettings.rotation"));
+    setRotationKey(key);
     clearPlanResult();
   }
 
@@ -2815,9 +2827,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         manualDraft={setupMode === "manual" ? manualDraftSnapshot : null}
         onManualProductChange={setupMode === "manual" ? handleManualSetupProductChange : undefined}
         rotationProfile={setupMode === "manual" ? DEFAULT_ROTATION_PROFILE : rotationKey}
-        onRotationProfileChange={setRotationKey}
+        onRotationProfileChange={handleRotationKeyChange}
         customRotation={customRotation}
-        onCustomRotationChange={setCustomRotation}
+        onCustomRotationChange={handleCustomRotationChange}
         supportCombinationsEnabled={supportCombinationsEnabled}
         onSupportCombinationsEnabledChange={setSupportCombinationsEnabled}
         manualShiftDurations={manualShiftDurations}
