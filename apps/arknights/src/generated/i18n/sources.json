@@ -1,10 +1,10 @@
 {
   "source": {
     "repository": "https://github.com/arkntools/arknights-toolbox-data",
-    "commit": "3fc3d11079a66f30c19f919ed78c53d0fcd527db"
+    "commit": "979536fda0c5cdc63d4ce62e61d3a4d58df55701"
   },
   "localInputs": {
-    "packages/arknights-domain/src/generated/arkntools/source.json": "e627b71217bed8a7c7ed8a5fc43edd0868be34d3a6e0604a745b952a7a93db20",
+    "packages/arknights-domain/src/generated/arkntools/source.json": "3d3252b0b4d9e3bbc1b02dbec48731f96a7e5d91272468338f3ae6f55747e19a",
     "packages/arknights-domain/src/generated/arkntools/operator-catalog.json": "dfe183061b8a27975836c7d8ec45b29e2ada771cd9fa0ec6d45dc9801e34a53f",
     "packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json": "ce544edc18b429503dd9bdcae6d1fe890ef94c49fff65516af3de3545f64a3f7",
     "apps/arknights/src/generated/item-name-catalog.json": "fa3fb34a8e17479bfbbf31f53488c75890f91f54d201450b0996e3555202e11a",
@@ -16,9 +16,9 @@
   },
   "inputs": {
     "assets/data/building.json": "519cd999e765c4904394e666f3df479895274dadaad964d1b04f1f4791feacf7",
-    "assets/locales/tw/building.json": "e48379b3144b53e0f61da13fa9d5954bb24863e8d5cb163018416075e63d5669",
-    "assets/locales/tw/character.json": "afa670323f6214c4fdbd4b645dd909251412e584ee15c380e911d64f57beba4a",
-    "assets/locales/tw/material.json": "667a525e0565cca0529409576d59bf0be43e18ddbb7b199a1b01aa1491aece02",
+    "assets/locales/tw/building.json": "0e17e8fa8cd3aed318e88032cf8e379f68eacf9c93dad559d87b41b58c13b64f",
+    "assets/locales/tw/character.json": "e47b37d4c63f400f50455062d06283cef6da0127ffb8de2a623ab72ac38cc1d7",
+    "assets/locales/tw/material.json": "4d1c334411fa0c415fcc91c6ef6fc30ac2c8d6e31553b3624697722b8e721c05",
     "assets/locales/us/building.json": "cb5fb5285cdcbe2e4abc166225c5a79e063ded09febff3361b52d842e924132b",
     "assets/locales/us/character.json": "7b92bf7d622021e9904024a3296c48337744daa02a76f0b579dd75f6433589ef",
     "assets/locales/us/material.json": "630a53355e2eb486f64fe0e6b3b2fda879d517f1dcf0cb6ac30eb1bf49674af7"
@@ -51,13 +51,6 @@
         "id": "char_1049_catap2",
         "source": "雷狼龙S空爆",
         "translation": "雷狼龍S空爆",
-        "resolution": "manual"
-      },
-      {
-        "kind": "operator",
-        "id": "char_1052_kalts2",
-        "source": "凯尔希·思衡托",
-        "translation": "凱爾希·思衡托",
         "resolution": "manual"
       },
       {
@@ -114,34 +107,6 @@
         "id": "char_4220_kormr",
         "source": "虎狼丸",
         "translation": "虎狼丸",
-        "resolution": "manual"
-      },
-      {
-        "kind": "operator",
-        "id": "char_4225_tanya",
-        "source": "裂响",
-        "translation": "裂響",
-        "resolution": "manual"
-      },
-      {
-        "kind": "operator",
-        "id": "char_4226_veen",
-        "source": "维伊",
-        "translation": "維伊",
-        "resolution": "manual"
-      },
-      {
-        "kind": "operator",
-        "id": "char_4227_gallus",
-        "source": "GALLUS²",
-        "translation": "GALLUS²",
-        "resolution": "manual"
-      },
-      {
-        "kind": "operator",
-        "id": "char_4228_closur",
-        "source": "可露希尔",
-        "translation": "可露希爾",
         "resolution": "manual"
       },
       {
@@ -235,11 +200,6 @@
       },
       {
         "kind": "skill",
-        "id": "control_mp_cost_014",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
         "id": "control_prod_spd_999",
         "resolution": "manual"
       },
@@ -261,11 +221,6 @@
       {
         "kind": "skill",
         "id": "dorm_rec_oneself_002",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
-        "id": "dorm_rec_oneself_040",
         "resolution": "manual"
       },
       {
@@ -295,11 +250,6 @@
       },
       {
         "kind": "skill",
-        "id": "hire_spd_tag_000",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
         "id": "manu_formula_spd_011",
         "resolution": "manual"
       },
@@ -310,17 +260,7 @@
       },
       {
         "kind": "skill",
-        "id": "manu_formula_spd&limit&cost_100",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
         "id": "manu_prod_cost_min_001",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
-        "id": "manu_prod_spd_train&lv_000",
         "resolution": "manual"
       },
       {
@@ -380,22 +320,12 @@
       },
       {
         "kind": "skill",
-        "id": "power_rec_spd_0010",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
         "id": "power_rec_spd_018",
         "resolution": "manual"
       },
       {
         "kind": "skill",
         "id": "power_rec_spd_027",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
-        "id": "power_rec_spd_ext&tag_000",
         "resolution": "manual"
       },
       {
@@ -435,11 +365,6 @@
       },
       {
         "kind": "skill",
-        "id": "trade_ord_closure_000",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
         "id": "trade_ord_spd_022",
         "resolution": "manual"
       },
@@ -470,17 +395,7 @@
       },
       {
         "kind": "skill",
-        "id": "train_spd_doubleProf_301",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
         "id": "train_spd_doubleProf_302",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
-        "id": "train_spd_doubleProf_310",
         "resolution": "manual"
       },
       {
@@ -531,16 +446,6 @@
       {
         "kind": "skill",
         "id": "workshop_formula_probability_301",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
-        "id": "workshop_proc_probability_041",
-        "resolution": "manual"
-      },
-      {
-        "kind": "skill",
-        "id": "workshop_proc_probability_050",
         "resolution": "manual"
       }
     ],
