@@ -42,6 +42,7 @@ test("PR path filters cannot strand required checks, and main runs never share a
   assert.doesNotMatch(pr.split("  pull_request:\n")[1].split("  push:\n")[0], /paths/);
   assert.match(pr, /github\.event\.pull_request\.number \|\| github\.ref/);
   assert.match(pr, /cancel-in-progress: \$\{\{ github\.ref != 'refs\/heads\/main' \}\}/);
+  assert.doesNotMatch(pr.split("  push:\n")[1].split("  workflow_dispatch:")[0], /ci\/actions-performance/);
   assert.match(release, /group: post-merge-release-\$\{\{ github\.ref \}\}-\$\{\{ github\.run_id \}\}/);
   assert.match(release, /cancel-in-progress: false/);
 });
@@ -75,4 +76,28 @@ test("default workspace builds retain both application typechecks and runtime pr
   const app = await read("scripts/build-app.mjs");
   assert.match(app, /if \(!options\.includes\("--skip-types"\)\)/);
   assert.match(app, /scripts\/prepare-standalone\.mjs/);
+});
+
+test("the database gate accepts only the planned success or deliberate skip", async () => {
+  const release = await read(".github/workflows/frontend-quality.yml");
+  const gate = release.split("  database_checks:\n")[1].split("  database_integration:\n")[0];
+  assert.match(gate, /needs: \[changes, database_integration\]/);
+  assert.match(gate, /if: always\(\) && needs\.changes\.outputs\.run_core == 'true'/);
+  const script = gate.split("        run: |\n")[1].split("\n").map(line => line.replace(/^ {10}/, "")).join("\n");
+  const gitExec = process.platform === "win32" ? spawnSync("git", ["--exec-path"], { encoding: "utf8" }).stdout.trim() : null;
+  const gitBash = gitExec ? resolve(gitExec, "../../../bin/bash.exe") : null;
+  const bash = process.env.TEST_BASH_PATH ?? (gitBash && existsSync(gitBash) ? gitBash : "bash");
+  const run = values => spawnSync(bash, ["--noprofile", "--norc", "-c", script], { encoding: "utf8", windowsHide: true,
+    env: { ...process.env, GITHUB_STEP_SUMMARY: "/dev/null", CHANGES_RESULT: "success", RUN_DATABASE: "true", DATABASE_RESULT: "success", ...values } });
+  assert.equal(run({}).status, 0);
+  assert.equal(run({ RUN_DATABASE: "false", DATABASE_RESULT: "skipped" }).status, 0);
+  for (const status of ["failure", "cancelled", "skipped", ""]) assert.notEqual(run({ DATABASE_RESULT: status }).status, 0);
+  for (const status of ["failure", "cancelled", "success", ""]) assert.notEqual(run({ RUN_DATABASE: "false", DATABASE_RESULT: status }).status, 0);
+  for (const status of ["failure", "cancelled", "skipped", ""]) assert.notEqual(run({ CHANGES_RESULT: status }).status, 0);
+  for (const value of ["", "unknown"]) assert.notEqual(run({ RUN_DATABASE: value }).status, 0);
+  const integration = release.split("  database_integration:\n")[1].split("  release_artifact:\n")[0];
+  assert.match(integration, /if: needs\.changes\.outputs\.run_database == 'true'/);
+  for (const command of ["npm run db:generate", "npm run db:migrate", "npm run auth:check", "npm run test:auth-integration", "npm run test:quality-integration"]) {
+    assert.ok(integration.includes(command), command);
+  }
 });

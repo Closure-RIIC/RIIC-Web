@@ -3,6 +3,7 @@ import { execFileSync } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
+import { classifyChanges } from "./ci-change-scope.mjs";
 import { APPLICATIONS, ENDFIELD_SHARED_LEAVES, classifyAppChanges, createReleasePlan, gitRepository, workspaceConsumers } from "./app-release-plan.mjs";
 
 const a = "a".repeat(40), b = "b".repeat(40), c = "c".repeat(40);
@@ -120,6 +121,60 @@ test("empty, missing, non-ancestor, same-commit and docs-only cases are distinct
   const manual = await createReleasePlan(planOptions({ forceFull: true, baselines: { arknights: c, endfield: c } }));
   assert.deepEqual(manual.deployApps, []);
   assert.equal(manual.runCore, true);
+});
+
+test("only develop narrows checks to affected applications", async () => {
+  for (const file of ["apps/endfield/src/App.tsx", "packages/endfield-data/operators.json", "apps/endfield/tests/logic.test.mjs"]) {
+    const options = planOptions({ diff: () => [file] });
+    const develop = await createReleasePlan({ ...options, branch: "develop" });
+    assert.deepEqual(develop.checkApps, ["endfield"], file);
+    assert.deepEqual(develop.buildApps, ["endfield"], file);
+    assert.equal(develop.runBrowser, false, file);
+    assert.equal(develop.runDatabase, false, file);
+    assert.equal(develop.validationMode, "affected-apps");
+    for (const branch of ["main", "feature/ci", ""]) {
+      const complete = await createReleasePlan({ ...options, branch });
+      assert.deepEqual(complete.checkApps, APPLICATIONS);
+      assert.equal(complete.runDatabase, true);
+      assert.equal(complete.validationMode, "full");
+      if (!file.endsWith(".test.mjs")) assert.equal(complete.runBrowser, true);
+    }
+  }
+  const arknights = await createReleasePlan(planOptions({ branch: "develop" }));
+  assert.deepEqual(arknights.checkApps, ["arknights"]);
+  assert.equal(arknights.runDatabase, true);
+  assert.equal(arknights.runBrowser, true);
+});
+
+test("develop retains full checks for shared, backend, tooling and uncertain changes", async () => {
+  for (const file of ["packages/shell/GameSwitcher.tsx", "packages/platform-server/src/auth/endfield-access.ts",
+    "apps/arknights/src/routes/api.endfield.skland.$action.ts", "package-lock.json", "package.json",
+    ".github/workflows/frontend-quality.yml", "scripts/app-release-plan.mjs", "unclassified-runtime.mjs"]) {
+    const result = await createReleasePlan(planOptions({ branch: "develop", diff: () => [file] }));
+    assert.deepEqual(result.checkApps, APPLICATIONS, file);
+    assert.equal(result.runBrowser, classifyChanges([file]).runBrowser, file);
+    assert.equal(result.runDatabase, true, file);
+  }
+  for (const overrides of [{ forceFull: true }, { baselines: {} }, { diff: () => { throw new Error("unavailable history"); } }]) {
+    const result = await createReleasePlan(planOptions({ branch: "develop", diff: () => ["apps/endfield/src/App.tsx"], ...overrides }));
+    assert.deepEqual(result.checkApps, APPLICATIONS);
+    assert.equal(result.runBrowser, true);
+    assert.equal(result.runDatabase, true);
+  }
+});
+
+test("develop scope includes pending releases and retains documentation-only skips", async () => {
+  const pending = await createReleasePlan(planOptions({ branch: "develop", baselines: { arknights: a, endfield: b },
+    diff: base => base === a ? ["apps/arknights/src/App.tsx", "apps/endfield/src/App.tsx"] : ["apps/endfield/src/App.tsx"],
+  }));
+  assert.deepEqual(pending.checkApps, APPLICATIONS);
+  assert.equal(pending.runBrowser, true);
+  assert.equal(pending.runDatabase, true);
+  const docs = await createReleasePlan(planOptions({ branch: "develop", diff: () => ["docs/new.md"] }));
+  assert.deepEqual(docs.checkApps, []);
+  assert.equal(docs.runCore, false);
+  assert.equal(docs.runDatabase, false);
+  assert.equal(docs.runBrowser, false);
 });
 
 test("operator data hints cannot hide an unshipped runtime change", async () => {
