@@ -26,6 +26,12 @@ test("custom timings encode to a compact key and decode back", () => {
   assert.equal(rotationShiftCountFromKey("custom_abc_6_12_6"), 3);
 });
 
+test("cycle validity is checked separately from shape", () => {
+  // 形状合法、周期不合法：解析仍然成功，由 validateCustomRotation 判定。
+  assert.deepEqual(decodeRotationKey("custom_zb_10_10"), { topology: "main_backup", shift_hours: [10, 10] });
+  assert.deepEqual(decodeRotationKey("custom_abc_8_6_6"), { topology: "abc", shift_hours: [8, 6, 6] });
+});
+
 test("malformed custom keys are rejected", () => {
   // 班次数与拓扑不符
   assert.equal(decodeRotationKey("custom_zb_12_12_12"), null);
@@ -33,8 +39,6 @@ test("malformed custom keys are rejected", () => {
   // 非正整数
   assert.equal(decodeRotationKey("custom_zb_0_24"), null);
   assert.equal(decodeRotationKey("custom_zb_12_x"), null);
-  // 周期不是 24/36/48
-  assert.equal(decodeRotationKey("custom_zb_10_10"), null);
   // 未知前缀 / 拓扑
   assert.equal(decodeRotationKey("custom_xx_12_12"), null);
   assert.equal(decodeRotationKey("nonsense"), null);

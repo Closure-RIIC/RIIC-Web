@@ -48,5 +48,7 @@
   "agentArtifactOpen": "Open in Base Calculator",
   "agentArtifactIgnore": "Dismiss",
   "agentArtifactLoading": "Loading…",
-  "environmentDetails": "Solve time: {duration} ms; Shift: {shift}; Rotation: {rotation}; Layout: {layout}"
+  "environmentDetails": "Solve time: {duration} ms; Shift: {shift}; Rotation: {rotation}; Layout: {layout}",
+  "powerShortfallSummary": "Power shortfall {value1} · {consumed}/{generated}",
+  "rotationCycleInvalidSummary": "Total hours must be one of {allowed}"
 }

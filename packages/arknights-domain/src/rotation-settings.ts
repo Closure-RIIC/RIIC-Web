@@ -189,21 +189,32 @@ export function encodeRotationKey(timing: RotationTiming): string {
 }
 
 /**
- * 解析换班方式字符串；非法返回 null。
- * 自定义部分会校验班次数、正整数以及 24/36/48 小时周期。
+ * 解析换班方式字符串，只做**形状**解析，不做周期校验。
+ *
+ * `custom_zb_10_10` 是合法形状（10 小时不是合法周期，那是业务校验的事），
+ * 这样 UI 可以把用户正在编辑的中间态也存成 key。形状非法才返回 null。
  */
 export function decodeRotationKey(key: string): RotationTiming | null {
   if (isRotationProfile(key)) return key;
+  const custom = customRotationFromKey(key);
+  return custom ? toRotationTiming(custom) : null;
+}
+
+/** 把 `custom_{zb|abc}_{h...}` 解析成拓扑与时长；形状非法返回 null。 */
+export function customRotationFromKey(key: string): CustomRotation | null {
   if (!key.startsWith(CUSTOM_ROTATION_PREFIX)) return null;
   const parts = key.slice(CUSTOM_ROTATION_PREFIX.length).split("_");
-  if (parts.length < 3) return null;
-  const topology = KEY_TOPOLOGIES[parts[0]!];
+  const topology = KEY_TOPOLOGIES[parts[0] ?? ""];
   if (!topology) return null;
   const hours = parts.slice(1).map((part) => (/^\d+$/.test(part) ? Number(part) : Number.NaN));
+  if (hours.length !== ROTATION_TOPOLOGY_SHIFTS[topology]) return null;
   if (!hours.every((hour) => Number.isInteger(hour) && hour > 0)) return null;
-  const custom: CustomRotation = { topology, hours: parts.length - 1 === ROTATION_TOPOLOGY_SHIFTS[topology] ? hours : [] };
-  if (validateCustomRotation(custom)) return null;
-  return toRotationTiming(custom);
+  return { topology, hours };
+}
+
+/** key 是否为自定义形状（`custom_` 开头）。 */
+export function isCustomRotationKey(key: string): boolean {
+  return key.startsWith(CUSTOM_ROTATION_PREFIX);
 }
 
 /** 从字符串推断班次数；无法识别返回 null。 */

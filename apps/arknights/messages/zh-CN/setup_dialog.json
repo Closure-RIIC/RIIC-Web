@@ -77,5 +77,6 @@
   "closeSettings": "关闭设置",
   "rich1": "<element1><value2></value2></element1> 名干员 · <element1><value3></value3></element1> 名可用",
   "rich2": "数据在此浏览器保存 <element1>30</element1> 天。",
-  "additional1": "{choice2, select, yes {将删除此浏览器中的布局、干员数据、最近排班和提示偏好。森空岛登录状态不会退出。} other {将删除此浏览器中的布局、干员数据、最近排班和提示偏好。}}"
+  "additional1": "{choice2, select, yes {将删除此浏览器中的布局、干员数据、最近排班和提示偏好。森空岛登录状态不会退出。} other {将删除此浏览器中的布局、干员数据、最近排班和提示偏好。}}",
+  "rotationCycleInvalid": "总计时长只支持 {allowed} 小时"
 }

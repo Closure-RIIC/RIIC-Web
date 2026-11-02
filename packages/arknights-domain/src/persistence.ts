@@ -12,7 +12,15 @@ import { TELEMETRY_SESSION_STORAGE_KEY } from "./telemetry-contract.ts";
 import { parseTrainingAdviceReport } from "./training-advice-contract.ts";
 import { parseTrainingRoomSchedule } from "./training-room-contract.ts";
 import { sanitizeMaaJson } from "./maa-safety.ts";
-import { DEFAULT_ROTATION_PROFILE, isRotationProfile, normalizeRotationProfile } from "./rotation-settings.ts";
+import {
+  DEFAULT_CUSTOM_ROTATION,
+  DEFAULT_ROTATION_PROFILE,
+  ROTATION_TOPOLOGY_SHIFTS,
+  decodeRotationKey,
+  isRotationProfile,
+  normalizeRotationProfile,
+  type CustomRotation,
+} from "./rotation-settings.ts";
 import { normalizeRotationResult } from "./rotation-result.ts";
 
 export const SESSION_KEY_V4 = "arknights-infra-calc-session-v4";
@@ -37,6 +45,10 @@ export interface PersistedSessionV5 {
   layoutSource: "local" | "skland";
   localLayoutBackup: BaseBlueprint | null;
   rotationProfile: RotationProfile;
+  /** 换班方式的字符串 key：named profile 或 custom_zb_16_8 一类的编码。 */
+  rotationSelection?: string;
+  /** 自定义二/三班时长，仅当 rotationSelection 为 "custom" 时生效。 */
+  customRotation?: CustomRotation;
   fiammettaEnabled?: boolean;
   result: PublicPlanData | null;
   activeShift: number;
@@ -193,6 +205,8 @@ function normalizeSession(value: unknown, now: number): PersistedSessionV5 | nul
         : null;
   const hasLegacySklandIdentity = boxSource === "skland" && rawSourceName?.startsWith("skland:");
   const rotationProfile = normalizeRotationProfile(value.rotationProfile);
+  const rotationSelection = normalizeRotationSelection(value.rotationSelection, rotationProfile);
+  const customRotation = normalizeStoredCustomRotation(value.customRotation);
   const result = hasLegacySklandIdentity ? null : normalizePersistedPlanData(value.result, rotationProfile);
   const layoutDirty = Boolean(value.layoutDirty);
   return {
@@ -217,10 +231,31 @@ function normalizeSession(value: unknown, now: number): PersistedSessionV5 | nul
         : "local",
     localLayoutBackup: localLayoutBackup ? structuredClone(localLayoutBackup) : null,
     rotationProfile,
+    rotationSelection,
+    customRotation,
     fiammettaEnabled: Boolean(value.fiammettaEnabled),
     result,
     activeShift: clampActiveShift(value.activeShift, result),
   };
+}
+
+/** 旧会话没有 rotationSelection 时，跟随已保存的 named profile。 */
+function normalizeRotationSelection(value: unknown, fallback: RotationProfile): string {
+  if (typeof value !== "string") return fallback;
+  return decodeRotationKey(value) ? value : fallback;
+}
+
+/** 自定义时长只接受形状与班次数合法的记录；否则退回默认值。 */
+function normalizeStoredCustomRotation(value: unknown): CustomRotation {
+  if (!isObject(value)) return DEFAULT_CUSTOM_ROTATION;
+  const topology = value.topology === "main_backup" || value.topology === "abc" ? value.topology : null;
+  if (!topology) return DEFAULT_CUSTOM_ROTATION;
+  const hours = Array.isArray(value.hours) ? value.hours : null;
+  if (!hours || hours.length !== ROTATION_TOPOLOGY_SHIFTS[topology]) return DEFAULT_CUSTOM_ROTATION;
+  if (!hours.every((hour) => typeof hour === "number" && Number.isInteger(hour) && hour > 0)) {
+    return DEFAULT_CUSTOM_ROTATION;
+  }
+  return { topology, hours: [...hours] };
 }
 
 export function loadPersistedSession(storage: StorageLike, now = Date.now()): PersistedSessionV5 | null {
