@@ -107,7 +107,7 @@ export function classifyAppChanges(paths, { beforeManifests, afterManifests, bef
   return { checkApps: ordered(check), deployApps: ordered(deploy), reasons };
 }
 
-export async function createReleasePlan({ head, before, baselines, diff, snapshot, forceFull = false, operatorDataBase = "" }) {
+export async function createReleasePlan({ head, before, baselines, diff, snapshot, branch = "main", forceFull = false, operatorDataBase = "" }) {
   assert.match(head, shaPattern);
   const current = snapshot(head);
   const impact = (base, paths) => classifyAppChanges(paths, {
@@ -115,6 +115,7 @@ export async function createReleasePlan({ head, before, baselines, diff, snapsho
     beforeLock: snapshot(base).lock, afterLock: current.lock,
   });
   let validationPaths = [];
+  const pendingChecks = new Set();
   let full = forceFull;
   if (before) {
     try { validationPaths = diff(before, head); } catch { full = true; }
@@ -131,6 +132,7 @@ export async function createReleasePlan({ head, before, baselines, diff, snapsho
       reason = required ? "application-inputs-changed" : "application-unchanged";
       // Missed deployments remain in validation even after a docs-only push.
       validationPaths.push(...changes.reasons.filter((item) => item.deployApps.includes(app)).map((item) => item.path));
+      if (required) for (const consumer of changes.checkApps) pendingChecks.add(consumer);
     } catch { full = true; }
     if (required) deployApps.push(app);
     applications[app] = { baseSha: base, deployRequired: required, reason, changedFiles: paths };
@@ -145,12 +147,13 @@ export async function createReleasePlan({ head, before, baselines, diff, snapsho
   const scope = validationPaths.length || full
     ? classifyChanges(validationPaths, { forceFull: full })
     : { scope: "unchanged", reason: "no-pending-changes", documentationOnly: true, runCore: false, runBrowser: false };
-  // Keep existing required checks intact in this rollout. Builds needed by those
-  // checks are deliberately broader than deployment; a test is never permission to deploy.
-  const checkApps = scope.runCore ? [...APPLICATIONS] : [];
-  const affected = full ? [...APPLICATIONS] : impact(before || head, validationPaths).checkApps;
-  const buildApps = ordered(new Set([...deployApps, ...affected, ...(scope.runBrowser ? ["arknights"] : [])]));
-  return { formatVersion: 1, headSha: head, ...scope, deployRequired: deployApps.length > 0, checkApps, buildApps, deployApps, applications };
+  const affected = full ? [...APPLICATIONS] : ordered(new Set([...pendingChecks, ...impact(before || head, validationPaths).checkApps]));
+  const validationMode = branch === "develop" && !full ? "affected-apps" : "full";
+  const checkApps = scope.runCore ? (validationMode === "affected-apps" ? affected : [...APPLICATIONS]) : [];
+  const runBrowser = scope.runBrowser && checkApps.includes("arknights");
+  const runDatabase = scope.runCore && checkApps.includes("arknights");
+  const buildApps = ordered(new Set([...deployApps, ...affected, ...(runBrowser ? ["arknights"] : [])]));
+  return { formatVersion: 1, headSha: head, ...scope, runBrowser, runDatabase, validationMode, deployRequired: deployApps.length > 0, checkApps, buildApps, deployApps, applications };
 }
 
 export function gitRepository(cwd = process.cwd()) {
@@ -186,15 +189,16 @@ async function main() {
     catch { process.stderr.write(`${app}: deployment history unavailable; full validation selected.\n`); }
   }
   const plan = await createReleasePlan({
-    ...gitRepository(), head: env.GITHUB_SHA, before: env.PUSH_BEFORE_SHA || env.GITHUB_SHA,
+    ...gitRepository(), head: env.GITHUB_SHA, before: env.PUSH_BEFORE_SHA || env.GITHUB_SHA, branch: env.GITHUB_REF_NAME,
     baselines, forceFull: env.GITHUB_EVENT_NAME !== "push" && !env.OPERATOR_DATA_BASE_SHA, operatorDataBase: env.OPERATOR_DATA_BASE_SHA || "",
   });
   const outputs = {
     scope: plan.scope, reason: plan.reason, documentation_only: plan.documentationOnly,
-    run_core: plan.runCore, run_browser: plan.runBrowser, deploy_required: plan.deployRequired,
+    run_core: plan.runCore, run_browser: plan.runBrowser, run_database: plan.runDatabase, deploy_required: plan.deployRequired,
     check_apps: JSON.stringify(plan.checkApps), build_apps: JSON.stringify(plan.buildApps), deploy_apps: JSON.stringify(plan.deployApps),
   };
   for (const app of APPLICATIONS) {
+    outputs[`check_${app}`] = plan.checkApps.includes(app);
     outputs[`deploy_${app}`] = plan.deployApps.includes(app);
     outputs[`build_${app}`] = plan.buildApps.includes(app);
   }
