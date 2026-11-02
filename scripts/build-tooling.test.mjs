@@ -17,7 +17,7 @@ async function readRepoFile(relativePath) {
 test("CI avoids duplicate installation audits without weakening its security gate", async () => {
   const workflow = (await readRepoFile(".github/workflows/frontend-quality.yml")).replaceAll("\r\n", "\n");
   const packageJson = JSON.parse(await readRepoFile("package.json"));
-  for (const job of ["static_checks", "database_checks", "release_artifact", "browser_e2e", "browser_boundaries"]) {
+  for (const job of ["static_checks", "database_integration", "release_artifact", "browser_e2e", "browser_boundaries"]) {
     const section = workflow.split(`  ${job}:\n`)[1]?.split(/^ {2}\w+:/m)[0];
     assert.ok(section, job);
     assert.match(section, /run: npm ci --no-audit --no-fund/);
@@ -388,7 +388,8 @@ test("CI change scope keeps one required quality gate and fails closed", async (
   assert.match(planner, /classifyChanges\(operatorPaths\)\.scope, "operator-data"/);
   assert.match(planner, /validationPaths\.every\(\(file\) => operatorPaths\.includes\(file\)\)/);
   assert.match(workflow, /static_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
-  assert.match(workflow, /database_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
+  assert.match(workflow, /database_checks:[\s\S]+needs: \[changes, database_integration\][\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
+  assert.match(workflow, /database_integration:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_database == 'true'/);
   assert.match(workflow, /release_artifact:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /browser_e2e:[\s\S]+needs: \[changes, release_artifact\][\s\S]+needs\.changes\.outputs\.run_browser == 'true'/);
   assert.match(workflow, /quality:[\s\S]+test "\$CHANGES_RESULT" = "success"[\s\S]+test "\$HYGIENE_RESULT" = "success"[\s\S]+"\$DEPLOY_REQUIRED" == "true"[\s\S]+"\$required" == "true"[\s\S]+verify_result "\$RUN_CORE" "\$STATIC_RESULT"[\s\S]+verify_result "\$RUN_BROWSER" "\$BROWSER_E2E_RESULT"/);
