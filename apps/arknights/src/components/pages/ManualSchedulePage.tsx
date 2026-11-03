@@ -323,7 +323,10 @@ export function ManualSchedulePage({
     return [...entries.values()];
   }, [sourceOperbox, posterOperatorsKey, assignedNamesKey, draft.fiammettaEnabled]);
   const evaluationKey = JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, posterSettings?.efficiencyMode ?? "native"]);
-  const result = evaluatedKey === evaluationKey ? suppliedResult : null;
+  /** 算过一次之后，输入又被改动：结果仍在手里，但已不对应当前排班。 */
+  const resultOutdated = Boolean(suppliedResult) && evaluatedKey !== "" && evaluatedKey !== evaluationKey;
+  // 过期时保留上一份结果，避免房间行在「有效率」和「等待排班」之间来回跳；由页面顶部提示告知需重算。
+  const result = suppliedResult;
   const posterDocument = useMemo(() => {
     if (!posterSettings) return null;
     const names = new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators).concat(shift.fiammettaTarget)).filter((name): name is string => Boolean(name)));
@@ -922,6 +925,9 @@ export function ManualSchedulePage({
   async function calculateSchedule(mode: "native" | "manual") {
     if (evaluationPending) return;
     setCalculationError("");
+    // posterSettings 为空时（海报尚未初始化）先把它建出来：否则 efficiencyMode 写不进去，
+    // evaluationKey 末尾会一直停在 "native"，纸面模式算完的结果会被当作过期数据丢掉。
+    if (!posterSettings) await ensurePosterReady();
     setPosterSettings(current => current ? { ...current, efficiencyMode: mode } : current);
     try {
       await (mode === "native" ? onEvaluate : onPaperEvaluate)({ draft, operbox });
@@ -1151,6 +1157,11 @@ export function ManualSchedulePage({
             {draft.source ? " · " : null}
             {sourceName ?? (intl("components_pages_ManualSchedulePage.currentOperatorBox"))} · {ownedOperators.length} {intl("components_pages_ManualSchedulePage.owned")}
           </p>
+          {resultOutdated ? (
+            <p className="shrink-0 whitespace-nowrap text-xs font-medium text-destructive" role="status" data-manual-result-outdated>
+              {intl("components_pages_ManualSchedulePage.resultOutdated")}
+            </p>
+          ) : null}
         </div>
       </div>
 

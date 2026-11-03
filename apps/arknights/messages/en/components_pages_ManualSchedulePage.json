@@ -70,5 +70,6 @@
   "restPreviousShift": "Rest previous-shift operators",
   "room": "room",
   "facility": "facility",
-  "thisOperator": "this operator"
+  "thisOperator": "this operator",
+  "resultOutdated": "Result is out of date"
 }

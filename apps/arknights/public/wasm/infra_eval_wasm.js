@@ -32,9 +32,19 @@ export function evaluate_v1(request_json) {
         wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
     }
 }
+
+/**
+ * 把 panic 打到控制台，便于定位 wasm 侧崩溃。
+ */
+export function start() {
+    wasm.start();
+}
 function __wbg_get_imports() {
     const import0 = {
         __proto__: null,
+        __wbg_error_1523853ab20394fc: function(arg0, arg1) {
+            console.error(getStringFromWasm0(arg0, arg1));
+        },
         __wbindgen_init_externref_table: function() {
             const table = wasm.__wbindgen_externrefs;
             const offset = table.grow(4);
