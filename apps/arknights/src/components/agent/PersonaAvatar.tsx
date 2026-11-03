@@ -6,6 +6,7 @@ import type Messages from "../../../messages/zh-CN/AK_components_agent_AgentChat
 const text = createLocalizer<typeof Messages>("AK_components_agent_AgentChat");
 import { RemoteAvatar } from "@/components/ui/remote-avatar";
 import { operatorPortraitFor } from "@/operatorPortraits";
+import { detectPersonaAvatarImageType } from "@/agent-persona-avatar";
 import { FurAvatar } from "./ClosureFurAvatar";
 import { CloudAvatar } from "./CloudAvatar";
 import { useAgentAppearance, type AgentAppearance } from "./agent-appearance-store";
@@ -28,7 +29,7 @@ export function PersonaAvatar({ name, src, size = 38, active = false, blank = fa
 
 /** Keep uploaded portraits small enough to persist with the persona in localStorage. */
 export async function readPersonaAvatar(file: File, locale: AppLocale): Promise<string> {
-  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type) || file.size > 2 * 1024 * 1024) {
+  if (file.size > 2 * 1024 * 1024 || !detectPersonaAvatarImageType(new Uint8Array(await file.slice(0, 12).arrayBuffer()))) {
     throw new Error(text.text(locale, "avatarSizeError"));
   }
   const bitmap = await createImageBitmap(file);

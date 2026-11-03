@@ -2,42 +2,22 @@
 
 import { useSyncExternalStore } from "react";
 import { AGENT_PERSONA_SELECTION_KEY, resolveAgentPersonaSelection, type AgentPersona, type UploadedAgentPersona } from "@/agent-personas";
-import { parsePersonaAvatar } from "@/agent-persona-avatar";
+import { LEGACY_PERSONA_STORAGE_KEY, LOCAL_PERSONAS_STORAGE_KEY, readLocalPersonas, writeLocalPersonas } from "@/agent-persona-storage";
 
-export const MAX_PERSONA_LENGTH = 36_000;
-const LOCAL_PERSONA_STORAGE_KEY = "riic.agent.persona.v1";
-type PersonaPreferences = { selectedPersona: AgentPersona | null; uploadedPersona: UploadedAgentPersona | null };
-const emptyPreferences: PersonaPreferences = { selectedPersona: null, uploadedPersona: null };
+export { MAX_PERSONA_LENGTH } from "@/agent-persona-storage";
+type PersonaPreferences = { selectedPersona: AgentPersona | null; uploadedPersonas: UploadedAgentPersona[] };
+const emptyPreferences: PersonaPreferences = { selectedPersona: null, uploadedPersonas: [] };
 const listeners = new Set<() => void>();
 let preferences: PersonaPreferences | undefined;
 let storageWriteFailed = false;
 
-function readLocalPersona(): UploadedAgentPersona | null {
-  try {
-    const raw = window.localStorage.getItem(LOCAL_PERSONA_STORAGE_KEY);
-    if (!raw) return null;
-    const value = JSON.parse(raw) as Record<string, unknown>;
-    if (value.version !== 1 || typeof value.content !== "string" || !value.content.trim() || value.content.length > MAX_PERSONA_LENGTH) return null;
-    return {
-      id: typeof value.id === "string" ? value.id : `local-${Date.now()}`,
-      name: typeof value.name === "string" && value.name.trim() ? value.name.slice(0, 40) : "",
-      description: typeof value.description === "string" ? value.description.slice(0, 120) : "",
-      content: value.content.slice(0, MAX_PERSONA_LENGTH),
-      kind: "upload",
-      filename: typeof value.filename === "string" ? value.filename.slice(0, 120) : undefined,
-      avatarUrl: parsePersonaAvatar(value.avatarUrl),
-    };
-  } catch {
-    return null;
-  }
-}
-
 function readPreferences(): PersonaPreferences {
-  const uploadedPersona = readLocalPersona();
+  let uploadedPersonas: UploadedAgentPersona[] = [];
   try {
-    return { uploadedPersona, selectedPersona: resolveAgentPersonaSelection(window.localStorage.getItem(AGENT_PERSONA_SELECTION_KEY), uploadedPersona) };
+    uploadedPersonas = readLocalPersonas(window.localStorage);
+    return { uploadedPersonas, selectedPersona: resolveAgentPersonaSelection(window.localStorage.getItem(AGENT_PERSONA_SELECTION_KEY), uploadedPersonas) };
   } catch {
-    return { uploadedPersona, selectedPersona: uploadedPersona };
+    return { uploadedPersonas, selectedPersona: uploadedPersonas[0] ?? null };
   }
 }
 
@@ -52,7 +32,7 @@ function publish(next: PersonaPreferences) {
 }
 
 function onStorage(event: StorageEvent) {
-  if (event.key !== null && event.key !== LOCAL_PERSONA_STORAGE_KEY && event.key !== AGENT_PERSONA_SELECTION_KEY) return;
+  if (event.key !== null && event.key !== LOCAL_PERSONAS_STORAGE_KEY && event.key !== LEGACY_PERSONA_STORAGE_KEY && event.key !== AGENT_PERSONA_SELECTION_KEY) return;
   storageWriteFailed = false;
   publish(readPreferences());
 }
@@ -80,28 +60,33 @@ export function setAgentPersonaSelection(persona: AgentPersona | null): boolean 
 
 export function saveLocalPersona(persona: UploadedAgentPersona): boolean {
   const current = snapshot();
+  const uploadedPersonas = current.uploadedPersonas.some(card => card.id === persona.id)
+    ? current.uploadedPersonas.map(card => card.id === persona.id ? persona : card)
+    : [...current.uploadedPersonas, persona];
   let saved = true;
-  try {
-    window.localStorage.setItem(LOCAL_PERSONA_STORAGE_KEY, JSON.stringify({
-      version: 1,
-      id: persona.id,
-      name: persona.name,
-      description: persona.description,
-      content: persona.content,
-      filename: persona.filename,
-      avatarUrl: persona.avatarUrl,
-      savedAt: new Date().toISOString(),
-    }));
-  } catch { saved = false; storageWriteFailed = true; }
-  publish({ uploadedPersona: persona, selectedPersona: current.selectedPersona?.id === persona.id ? persona : current.selectedPersona });
+  try { writeLocalPersonas(window.localStorage, uploadedPersonas); }
+  catch { saved = false; storageWriteFailed = true; }
+  publish({ uploadedPersonas, selectedPersona: current.selectedPersona?.id === persona.id ? persona : current.selectedPersona });
   return saved;
 }
 
-export function clearLocalPersona() {
+export function updateLocalPersonaAvatar(id: string, avatarUrl?: string): boolean {
+  const persona = snapshot().uploadedPersonas.find(card => card.id === id);
+  return persona ? saveLocalPersona({ ...persona, avatarUrl }) : false;
+}
+
+export function removeLocalPersona(id: string): boolean {
   const current = snapshot();
-  try { window.localStorage.removeItem(LOCAL_PERSONA_STORAGE_KEY); }
-  catch { storageWriteFailed = true; }
-  publish({ ...current, uploadedPersona: null });
+  const uploadedPersonas = current.uploadedPersonas.filter(persona => persona.id !== id);
+  try { writeLocalPersonas(window.localStorage, uploadedPersonas); }
+  catch { storageWriteFailed = true; return false; }
+  const selectedPersona = current.selectedPersona?.id === id ? null : current.selectedPersona;
+  if (current.selectedPersona?.id === id) {
+    try { window.localStorage.setItem(AGENT_PERSONA_SELECTION_KEY, "default"); }
+    catch { storageWriteFailed = true; }
+  }
+  publish({ uploadedPersonas, selectedPersona });
+  return true;
 }
 
 const serverSnapshot = () => emptyPreferences;
