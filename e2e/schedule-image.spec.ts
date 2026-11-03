@@ -25,10 +25,13 @@ for (const { width, mode, dark } of [
     // transitions in an offscreen card must not stall this static image test.
     await page.addStyleTag({ content: "*, *::before, *::after { transition: none !important; }" });
     await page.evaluate((enabled) => document.documentElement.classList.toggle("dark", enabled), dark);
+    await expect(board.locator("[data-operator-portrait]")).toHaveCount(4);
     await board.locator("img").evaluateAll(images => Promise.all(images.map(image => {
       image.loading = "eager";
       return image.decode().catch(() => {});
     })));
+    await expect(board.locator('[data-operator-portrait-state]:not([data-operator-portrait-state="loaded"])')).toHaveCount(0);
+    await page.evaluate(() => document.fonts.ready);
     const feedback = board.locator("[data-html2canvas-ignore]");
     await expect(feedback.first()).toBeVisible();
     const feedbackCount = await feedback.count();

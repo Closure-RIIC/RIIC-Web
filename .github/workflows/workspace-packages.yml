@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main, develop]
   push:
-    branches: ["refactor/dual-app-platform-*", "ci/actions-performance-*"]
+    branches: ["refactor/dual-app-platform-*"]
     paths-ignore: ["docs/**", "*.md"]
   workflow_dispatch:
 

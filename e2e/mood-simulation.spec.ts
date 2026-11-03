@@ -3,8 +3,7 @@ import { switchWorkbenchLanguage } from "./workbench-language";
 import layout from "@riic/arknights-domain/layouts/243.json" with {type:"json"};
 import { mockApis, mockSignedInWebsiteSession } from "./production-readiness.fixture";
 
-test("manual morale worker, timeline, shared targets and simulation-only settings",async ({page}) => {
-  test.setTimeout(120_000);
+test.beforeEach(async ({page}) => {
   await mockApis(page);
   await mockSignedInWebsiteSession(page);
   await page.addInitScript(({layout}) => {
@@ -27,6 +26,10 @@ test("manual morale worker, timeline, shared targets and simulation-only setting
         {durationHours:12,fiammettaTarget:"锡兰",droneTargetRoomId:null,rooms:{trade_1:{operators:["锡兰"]},dorm_1:{operators:["菲亚梅塔"]}}}],
     }));
   },{layout});
+});
+
+test("manual morale worker, timeline, shared targets and simulation-only settings",async ({page}) => {
+  test.setTimeout(120_000);
   const errors: string[]=[];
   page.on("pageerror",e => errors.push(e.message));
   await page.goto("/manual");
@@ -123,3 +126,94 @@ test("manual morale worker, timeline, shared targets and simulation-only setting
   await page.keyboard.press("Escape");
   expect(errors).toEqual([]);
 });
+
+for (const width of [1440,390]) {
+  test(`manual morale playback preserves layout and expanded details at ${width}px`,async ({page}) => {
+    test.setTimeout(120_000);
+    await page.setViewportSize({width,height:900});
+    await page.goto("/manual");
+    const panel=page.locator("[data-mood-simulation]");
+    await expect(panel.getByRole("button",{name:"开始播放",exact:true})).toBeEnabled({timeout:60_000});
+    await panel.getByRole("combobox",{name:"周期数",exact:true}).click();
+    await page.getByRole("option",{name:"7",exact:true}).click();
+    await expect(panel.getByRole("button",{name:"开始播放",exact:true})).toBeEnabled();
+    await panel.getByRole("tab",{name:"心情回放",exact:true}).click();
+    const detail=panel.locator("[data-mood-detail]");
+    const ledger=detail.locator("details").filter({hasText:"查看消耗与恢复明细"});
+    await expect(ledger).toBeVisible();
+    const rate=detail.locator("[aria-busy]");
+    await expect(rate).toHaveAttribute("aria-busy","false");
+    const initialRate=await rate.locator(":scope > p").innerText();
+    const disclosures=await detail.locator("details").all();
+    const timeline=panel.getByLabel("模拟时间轴");
+
+    for (const speed of [1,3600]) {
+      await panel.getByRole("combobox",{name:"播放速度",exact:true}).click();
+      await page.getByRole("option",{name:`${speed}×`,exact:true}).click();
+      for (const expanded of [false,true]) {
+        if (expanded) for (const disclosure of disclosures) await disclosure.locator("summary").click();
+        const originalLedger=await ledger.elementHandle();
+        const detailElement=await detail.elementHandle();
+        const height=(await detail.boundingBox())!.height;
+        const startTime=Number(await timeline.getAttribute("value"));
+        await panel.getByRole("button",{name:"开始播放",exact:true}).click();
+        const observed=await page.evaluate(async ({detail,ledger}) => {
+          if (!detail || !ledger) throw new Error("Mood details are missing");
+          const heights:number[]=[],chartPositions:number[]=[],openStates:boolean[]=[];
+          let detached=false;
+          const sample=() => {
+            heights.push(detail.getBoundingClientRect().height);
+            chartPositions.push(detail.querySelector('[data-slot="chart"]')!.getBoundingClientRect().top);
+            detached ||= !ledger.isConnected;
+            openStates.push((ledger as HTMLDetailsElement).open);
+          };
+          // Observe both painted frames and DOM removal between worker replies.
+          const observer=new MutationObserver(sample);
+          observer.observe(detail,{childList:true,subtree:true});
+          const start=performance.now();
+          await new Promise<void>(resolve => {
+            const frame=() => {
+              sample();
+              if (performance.now()-start<2000) requestAnimationFrame(frame);
+              else resolve();
+            };
+            frame();
+          });
+          observer.disconnect();
+          return {
+            samples:heights.length,detached,openStates:[...new Set(openStates)],
+            minHeight:Math.min(...heights),maxHeight:Math.max(...heights),
+            chartTravel:Math.max(...chartPositions)-Math.min(...chartPositions),
+          };
+        },{detail:detailElement,ledger:originalLedger});
+        await panel.getByRole("button",{name:"暂停",exact:true}).click();
+        expect(Number(await timeline.getAttribute("value"))).toBeGreaterThan(startTime);
+        await expect(rate).toHaveAttribute("aria-busy","false");
+        await test.info().attach(`playback-${width}-${speed}-${expanded}`,{body:JSON.stringify(observed),contentType:"application/json"});
+        expect(observed.samples).toBeGreaterThan(10);
+        expect(observed.detached).toBe(false);
+        expect(observed.openStates).toEqual([expanded]);
+        expect(observed.minHeight).toBeCloseTo(height,0);
+        expect(observed.maxHeight).toBeCloseTo(height,0);
+        expect(observed.chartTravel).toBeLessThanOrEqual(1);
+        for (const disclosure of disclosures) {
+          await expect(disclosure).toHaveJSProperty("open",expanded);
+          if (expanded) await disclosure.locator("summary").click();
+        }
+        await originalLedger?.dispose();
+        await detailElement?.dispose();
+      }
+    }
+    // A seek must refresh the actual rate without discarding the open disclosure.
+    await ledger.locator("summary").click();
+    await timeline.press("End");
+    await expect(detail).toContainText("阿米娅");
+    await expect(rate).toHaveAttribute("aria-busy","false");
+    await expect(rate.locator(":scope > p")).not.toHaveText(initialRate);
+    await expect(ledger).toHaveJSProperty("open",true);
+    await expect(ledger.locator("tbody tr")).not.toHaveCount(0);
+    await panel.getByRole("group",{name:"选择干员查看心情"}).getByRole("button",{name:/锡兰/}).click();
+    await expect(detail.getByRole("heading")).toContainText("锡兰");
+    await expect(ledger).toBeVisible();
+  });
+}

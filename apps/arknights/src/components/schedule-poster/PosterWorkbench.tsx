@@ -57,7 +57,6 @@ export default function PosterWorkbench({ document: doc, onChange, onImport, onS
   const [share, setShare] = useState<{ key: string; code: string; url: string } | null>(null);
   const [sharing, setSharing] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [auto, setAuto] = useState(true);
   const [codeInput, setCodeInput] = useState("");
   const [shareOrigin, setShareOrigin] = useState("");
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -66,23 +65,11 @@ export default function PosterWorkbench({ document: doc, onChange, onImport, onS
   const [bulkBase, setBulkBase] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
   const preview = useRef<HTMLDivElement>(null);
-  const calculate = useRef(onCalculate);
-  const attemptedCalculation = useRef("");
-  useEffect(() => { calculate.current = onCalculate; }, [onCalculate]);
   const snapshotKey = JSON.stringify(posterSnapshot(doc));
-  const scheduledNames = new Set(doc.draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators)).filter((name): name is string => Boolean(name)));
-  if (doc.draft.fiammettaEnabled) scheduledNames.add("菲亚梅塔");
-  const calculationOperators = doc.operators.filter(operator => scheduledNames.has(operator.name));
-  const calculationKey = JSON.stringify([doc.layout, { ...doc.draft, activeShift: 0 }, calculationOperators, doc.efficiencyMode]);
   const validShare = share?.key === snapshotKey ? share : null;
   const supported = doc.draft.shifts.length >= 1 && doc.draft.shifts.length <= 4;
   useEffect(() => { setShareOrigin(window.location.origin); }, []);
   useEffect(() => () => { if (background) URL.revokeObjectURL(background); }, [background]);
-  useEffect(() => {
-    if (!auto || !supported || pending || result || attemptedCalculation.current === calculationKey) return;
-    const timer = window.setTimeout(() => { attemptedCalculation.current = calculationKey; void calculate.current(doc.efficiencyMode).catch(e => setError(String(e))); }, 650);
-    return () => window.clearTimeout(timer);
-  }, [calculationKey, auto, supported, doc.efficiencyMode, pending, result]);
 
   function meta(key: keyof SchedulePosterDocument["meta"], value: string) { onChange({ ...doc, meta: { ...doc.meta, [key]: value } }); }
   function updateDraft(draft: ManualScheduleDraft) {
@@ -193,7 +180,7 @@ export default function PosterWorkbench({ document: doc, onChange, onImport, onS
             durations[index] = value; updateDraft(resizeManualScheduleDraft(doc.draft, durations));
           }} /></Field></div>)}<p className="self-end pb-2 text-xs text-muted-foreground">{rawText.rich(rawLocale, "rotationCycleH", { part1: richValue((doc.draft.shifts.reduce((sum, shift) => sum + shift.durationHours, 0))) })}</p></div>
           <Field title={rawText.text(rawLocale, "productionCalculation")}><Choice label={rawText.text(rawLocale, "productionCalculation")} value={doc.efficiencyMode} options={[{ value: "native", label: rawText.text(rawLocale, "automaticProduction") }, { value: "manual", label: rawText.text(rawLocale, "manualProduction") }]} onChange={value => onChange({ ...doc, efficiencyMode: value as "native" | "manual" })} /></Field>
-          <div className="flex flex-wrap items-center gap-3"><label className="flex items-center gap-2 text-sm">{rawText.rich(rawLocale, "calculateAutomaticallyAfterChanges", { part1: richValue((<Switch checked={auto} onCheckedChange={setAuto} />)) })}</label><Button size="sm" variant="outline" disabled={pending} onClick={() => void onCalculate(doc.efficiencyMode).catch(e => setError(String(e)))}>{pending ? rawText.text(rawLocale, "calculating") : rawText.text(rawLocale, "recalculate")}</Button></div>
+          <div className="flex flex-wrap items-center gap-3"><Button size="sm" variant="outline" disabled={pending} onClick={() => void onCalculate(doc.efficiencyMode).catch(e => setError(String(e)))}>{pending ? rawText.text(rawLocale, "calculating") : rawText.text(rawLocale, "recalculate")}</Button></div>
           <details className="text-xs leading-5 text-muted-foreground"><summary className="cursor-pointer">{rawText.text(rawLocale, "productionMethodology")}</summary><div className="mt-2 space-y-1">
             <p>{rawText.text(rawLocale, "tradingPostsShowSkillEfficiencyAndEquivalentEfficiencySeparately")}</p>
             <p>{rawText.text(rawLocale, "automaticModeCalculatesSkillEfficiencyFromTheScheduleS")}</p>

@@ -12,6 +12,7 @@ function parseArguments(argv) {
     if (argument === "--before-operators") options.beforeOperators = argv[++index];
     else if (argument === "--before-skills") options.beforeSkills = argv[++index];
     else if (argument === "--before-gacha-up") options.beforeGachaUp = argv[++index];
+    else if (argument === "--before-training-planner") options.beforeTrainingPlanner = argv[++index];
     else throw new Error(`未知参数：${argument}`);
   }
   return options;
@@ -41,12 +42,14 @@ function list(values) {
 const options = parseArguments(process.argv.slice(2));
 const root = process.cwd();
 const generatedRoot = path.join(root, "packages/arknights-domain/src/generated/arkntools");
-const [beforeOperators, beforeSkills, operators, skills, source] = await Promise.all([
+const [beforeOperators, beforeSkills, operators, skills, source, beforeTrainingPlanner, trainingPlanner] = await Promise.all([
   json(options.beforeOperators, []),
   json(options.beforeSkills, {}),
   json(path.join(generatedRoot, "operator-catalog.json"), []),
   json(path.join(generatedRoot, "building-skill-catalog.json"), {}),
   json(path.join(generatedRoot, "source.json"), null),
+  json(options.beforeTrainingPlanner, { operators: {} }),
+  json(path.join(root, "apps/arknights/src/generated/training-planner-data.json"), null),
 ]);
 
 const beforeNames = new Set(beforeOperators.map((operator) => operator.name));
@@ -75,6 +78,8 @@ console.log(`## arkntools 自动资源同步
 - 干员头像：${source.counts.portraits}
 - 去重后的基建技能图标：${source.counts.buildingSkillIcons}
 - 产物图标：${source.counts.productIcons}
+- 养成成本数据来源：${trainingPlanner.source.repository}（\`${trainingPlanner.source.commit}\`）
+- 养成成本覆盖：${Object.keys(trainingPlanner.operators).length} 名干员（${delta(Object.keys(trainingPlanner.operators).length, Object.keys(beforeTrainingPlanner.operators ?? {}).length)}）
 - 新增干员：${list(addedOperators)}
 - 移除干员：${list(removedOperators)}
 - 新增技能定义：${[...afterSkillIds].filter((id) => !beforeSkillIds.has(id)).length}
