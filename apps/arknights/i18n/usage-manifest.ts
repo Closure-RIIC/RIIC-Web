@@ -6953,7 +6953,7 @@ export const references = [
   {
     "key": "AK_Raw_components_manual_mood_MoodSimulationPanel.schedulePoster",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:179"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:181"
   },
   {
     "key": "AK_Raw_components_pages_GachaHistoryPage.5OperatorsInThisSegment",
@@ -17088,332 +17088,332 @@ export const references = [
   {
     "key": "MoodSimulation.all",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:269"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:271"
   },
   {
     "key": "MoodSimulation.assumptions",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:240"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:242"
   },
   {
     "key": "MoodSimulation.automatic",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:275"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:277"
   },
   {
     "key": "MoodSimulation.autoTarget",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:253"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:255"
   },
   {
     "key": "MoodSimulation.base",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:234"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:236"
   },
   {
     "key": "MoodSimulation.boardMode",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:179"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:181"
   },
   {
     "key": "MoodSimulation.bottleneck",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:202"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:204"
   },
   {
     "key": "MoodSimulation.calculating",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:187"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:189"
   },
   {
     "key": "MoodSimulation.consume",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:234"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:236"
   },
   {
     "key": "MoodSimulation.cycles",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:190"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:192"
   },
   {
     "key": "MoodSimulation.dorm_unavailable",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:237"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:239"
   },
   {
     "key": "MoodSimulation.editMode",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:179"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:181"
   },
   {
     "key": "MoodSimulation.effect",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:234"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:236"
   },
   {
     "key": "MoodSimulation.entry",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:237"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:239"
   },
   {
     "key": "MoodSimulation.entry_target_missing",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:237"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:239"
   },
   {
     "key": "MoodSimulation.error",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:188"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:190"
   },
   {
     "key": "MoodSimulation.events",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:237"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:239"
   },
   {
     "key": "MoodSimulation.fiammetta",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:244"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:246"
   },
   {
     "key": "MoodSimulation.fiammettaEnabled",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:245"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:247"
   },
   {
     "key": "MoodSimulation.idle",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:237"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:239"
   },
   {
     "key": "MoodSimulation.idleEnabled",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:261"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:263"
   },
   {
     "key": "MoodSimulation.idleRules",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:262"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:264"
   },
   {
     "key": "MoodSimulation.idleTarget",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:273"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:275"
   },
   {
     "key": "MoodSimulation.ledger",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:233"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:235"
   },
   {
     "key": "MoodSimulation.meanNet",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:227"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:229"
   },
   {
     "key": "MoodSimulation.minimum",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:227"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:229"
   },
   {
     "key": "MoodSimulation.missingTraining",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:240"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:242"
   },
   {
     "key": "MoodSimulation.mood",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:213"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:215"
   },
   {
     "key": "MoodSimulation.needCycles",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:201"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:203"
   },
   {
     "key": "MoodSimulation.no_candidate",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:237"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:239"
   },
   {
     "key": "MoodSimulation.noIdle",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:281"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:283"
   },
   {
     "key": "MoodSimulation.none",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:269"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:271"
   },
   {
     "key": "MoodSimulation.noRed",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:202"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:204"
   },
   {
     "key": "MoodSimulation.notStable",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:201"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:203"
   },
   {
     "key": "MoodSimulation.operators",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:207"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:209"
   },
   {
     "key": "MoodSimulation.pause",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:191"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:193"
   },
   {
     "key": "MoodSimulation.play",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:191"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:193"
   },
   {
     "key": "MoodSimulation.position",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:200"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:202"
   },
   {
     "key": "MoodSimulation.previous",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:253"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:255"
   },
   {
     "key": "MoodSimulation.rates",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:232"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:234"
   },
   {
     "key": "MoodSimulation.recover",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:234"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:236"
   },
   {
     "key": "MoodSimulation.reset",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:192"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:194"
   },
   {
     "key": "MoodSimulation.search",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:206"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:208"
   },
   {
     "key": "MoodSimulation.settings",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:243"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:245"
   },
   {
     "key": "MoodSimulation.settingsDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:243"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:245"
   },
   {
     "key": "MoodSimulation.shift",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:251"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:253"
   },
   {
     "key": "MoodSimulation.shiftLabel",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:227"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:229"
   },
   {
     "key": "MoodSimulation.shiftStats",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:226"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:228"
   },
   {
     "key": "MoodSimulation.simulationMode",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:179"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:181"
   },
   {
     "key": "MoodSimulation.simulationOnly",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:246"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:248"
   },
   {
     "key": "MoodSimulation.skipped",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:237"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:239"
   },
   {
     "key": "MoodSimulation.source",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:234"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:236"
   },
   {
     "key": "MoodSimulation.specified",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:253"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:255"
   },
   {
     "key": "MoodSimulation.speed",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:193"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:195"
   },
   {
     "key": "MoodSimulation.stable",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:201"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:203"
   },
   {
     "key": "MoodSimulation.storageWarning",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:186"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:188"
   },
   {
     "key": "MoodSimulation.summary",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:225"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:227"
   },
   {
     "key": "MoodSimulation.target",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:254"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:256"
   },
   {
     "key": "MoodSimulation.target_not_higher",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:237"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:239"
   },
   {
     "key": "MoodSimulation.targetMode",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:253"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:255"
   },
   {
     "key": "MoodSimulation.timeline",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:196"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:198"
   },
   {
     "key": "MoodSimulation.title",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:176"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:178"
   },
   {
     "key": "MoodSimulation.unassigned",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:212"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:214"
   },
   {
     "key": "MoodSimulation.vacancy",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:275"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:277"
   },
   {
     "key": "MoodSimulation.value",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:234"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:236"
   },
   {
     "key": "MoodSimulation.wait",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:256"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:258"
   },
   {
     "key": "Onboarding.boxAction",

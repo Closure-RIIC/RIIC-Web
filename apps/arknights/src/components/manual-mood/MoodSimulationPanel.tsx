@@ -71,7 +71,9 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
   const [pending,setPending]=useState(true),[cursor,setCursor]=useState(0),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(1);
   const [selected,setSelected]=useState(""),[query,setQuery]=useState("");
   const [detailState,setDetail]=useState<{name:string;time:number;rate:MoodRate}|null>(null);
-  const detail=detailState?.name===selected && detailState.time===cursor ? detailState.rate : null;
+  // Keep the last completed detail mounted while the worker catches up with the
+  // playback clock. Removing it each tick shifts the layout and resets <details>.
+  const detail=detailState?.name===selected ? detailState.rate : null;
   const worker=useRef<Worker|null>(null),requestId=useRef(0),detailId=useRef(0);
   const initialSignature=useRef(signature);
   const configScope=JSON.stringify({shifts:draft.shifts.length,names:[...new Set([...operbox.filter(o => o.own).map(o => o.name),...draft.shifts.flatMap(s => Object.values(s.rooms).flatMap(r => r.operators.filter(Boolean)))])],rooms:layout.rooms.filter(r => r.kind==="dormitory").map(r => r.id)});
@@ -228,7 +230,7 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
               {shiftStats.map(s => <tr key={s.start}><td className="py-1">{t("position",{cycle:s.cycle+1,shift:s.shift+1})}</td><td className="font-number">{round(s.min)}</td><td className="font-number">{round(s.meanNet)}</td></tr>)}
             </tbody></table></ScrollArea>
           </details>
-          {detail && <div className="space-y-2">
+          {detail && <div className="space-y-2" aria-busy={detailState?.time!==cursor}>
             <p className="text-sm">{t("rates",{consume:round(detail.consume),recover:round(detail.recover),net:round(detail.net)})}</p>
             <details><summary className="cursor-pointer text-sm text-muted-foreground">{t("ledger")}</summary><ScrollArea direction="both" className="mt-2 max-h-64 rounded-md border">
               <table className="w-full text-sm"><thead><tr className="border-b text-left"><th className="p-2">{t("source")}</th><th className="p-2">{t("effect")}</th><th className="p-2">{t("value")}</th></tr></thead><tbody>{detail.items.map((item,i) => <tr key={i} className={item.applied?"":"text-muted-foreground line-through"}><td className="p-2">{item.owner?name(item.owner):t("base")}{item.skill?` · ${localizedBuildingSkill(item.skill.split("#")[0]!,locale,{name:item.label,description:""},gameCatalog).name}`:""}</td><td className="p-2">{t(item.side==="consume"?"consume":"recover")}</td><td className="p-2 font-number">{round(item.value)}</td></tr>)}</tbody></table>
