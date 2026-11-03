@@ -4348,7 +4348,7 @@ export const references = [
   {
     "key": "AK_components_pages_ManualSchedulePage.retry",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1184"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1194"
   },
   {
     "key": "AK_components_pages_MowerSchedulePage.activityRoom",
@@ -7738,27 +7738,27 @@ export const references = [
   {
     "key": "AK_Raw_components_pages_ManualSchedulePage.calculationFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1173"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1183"
   },
   {
     "key": "AK_Raw_components_pages_ManualSchedulePage.chooseADormitoryDecorationOperator",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1219"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1229"
   },
   {
     "key": "AK_Raw_components_pages_ManualSchedulePage.clearDecorationSlot",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1264"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1274"
   },
   {
     "key": "AK_Raw_components_pages_ManualSchedulePage.exampleTrainingLevelsFromThisScheduleNotPersonalOwnership",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1157"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1167"
   },
   {
     "key": "AK_Raw_components_pages_ManualSchedulePage.usedOnlyInTheSchedulePosterThisOperatorIs",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1220"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1230"
   },
   {
     "key": "AK_Raw_components_pages_SklandStatus.allProfessions",
@@ -8143,427 +8143,427 @@ export const references = [
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.12CharacterScheduleCode",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:214"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:221"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.19201080SelectAPortraitToOpenTheOperator",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:218"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:225"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.author",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:180"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:187"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.automaticModeCalculatesSkillEfficiencyFromTheScheduleS",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:199"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:206"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.automaticProduction",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:195"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:202"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.backgroundAndVisibleFacilities",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:208"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:215"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.backgroundColor",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:211"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:218"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.backgroundTooLarge",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:211"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:218"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.bulkScheduleText",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:225"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:232"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.calculateAutomaticallyAfterChanges",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:196"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:203"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.calculated",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:218"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:225"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.calculating",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:196"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:203"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.calculating2",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:218"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:225"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.cancel",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:227"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:234"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.checkAndApply",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:227"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:234"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.clearBackground",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:211"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:218"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.clearFirstShiftStartTime",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:188"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:195"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.clearingUsesTheDefaultTime",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:188"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:195"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.copied",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:219"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:226"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.copy",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:219"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:226"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.copyManually",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:219"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:226"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.currentLayoutAdjustFacilityLayoutAndLevelsInRoster",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:185"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:192"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.default0800",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:188"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:195"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.downloadScheduleFile",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:170"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:177"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.draftChanged",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:97"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:104"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.droneStatisticsCurrentlyCoverLmdOrdersPureGoldAnd",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:202"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:209"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.exportFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:151"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:158"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.exporting",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:173"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:180"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.exportMaa",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:171"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:178"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.exportSinglePagePng",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:173"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:180"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.fileImported",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:107"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:114"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.filename",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:150"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:157"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.fileTooLarge",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:106"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:113"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.fillFacilitiesAndOperatorsInBulk",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:221"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:228"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.fillScheduleInBulk",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:168"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:175"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.firstShiftStartTime",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:188"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:195"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.forLocalPhoneScanningEnterThisComputerSLan",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:214"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:221"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.generateANewScheduleCodeAfterMakingChanges",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:219"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:226"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.generateFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:119"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:126"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.generateScheduleCode",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:172"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:179"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.generating",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:172"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:179"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.hidingAFacilityAffectsOnlyTheImageItsAssignments",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:210"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:217"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.imageExported",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:150"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:157"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.importFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:108"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:115"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.importScheduleFile",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:169"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:176"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.instructions",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:181"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:188"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.invalidCode",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:124"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:131"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.invalidUrl",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:114"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:121"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.label",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:223"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:230"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.label2",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:223"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:230"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.label3",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:223"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:230"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.loaded",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:129"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:136"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.loadFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:130"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:137"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.loadSchedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:214"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:221"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.loadScheduleCodeAndQrDestination",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:214"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:221"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.maaExported",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:163"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:170"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.maaExportFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:164"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:171"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.manualProduction",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:195"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:202"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.notCalculatedYet",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:218"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:225"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.productionCalculation",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:195"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:202"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.productionIsConvertedToADailyRateUsingThe",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:200"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:207"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.productionMethodology",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:197"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:204"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.pureGoldValueManufacturingDronesImplicitGoldImplicitGold",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:201"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:208"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.qrDestinationUrl",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:214"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:221"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.recalculate",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:196"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:203"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.reloadCurrentSchedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:227"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:234"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.replaceBackgroundImage",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:211"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:218"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.rotationCycleH",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:194"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:201"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.rowsApplied",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:102"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:109"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.scheduleCode",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:214"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:221"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.scheduleCode2",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:219"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:226"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.scheduleDetailsAndShifts",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:177"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:184"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.scheduleName",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:180"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:187"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.separateOperatorsWithUseOrInASlotFor",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:223"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:230"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.shiftCount",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:187"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:194"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.shiftDuration",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:190"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:197"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.shifts",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:187"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:194"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.show",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:209"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:216"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.showInstructions",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:182"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:189"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.singlePagePostersSupport14ShiftsYourCurrent",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:218"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:225"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.theBackgroundImageIsUsedOnlyForThisExport",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:212"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:219"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.theQrCodeContainsOnlyTheUrlAnd12",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:214"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:221"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.tradingPostsShowSkillEfficiencyAndEquivalentEfficiencySeparately",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:198"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:205"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.useOneFacilityPerLineAndSeparateShiftsWith",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:221"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:228"
   },
   {
     "key": "AK_Raw_components_schedule_poster_PosterWorkbench.whenExportingToMaaAnyAutoEntryEnablesFor",
     "prefix": false,
-    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:224"
+    "source": "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx:231"
   },
   {
     "key": "AK_Raw_components_schedule_poster_SchedulePoster.author",
@@ -12028,12 +12028,12 @@ export const references = [
   {
     "key": "components_pages_ManualSchedulePage.applyDormBatch",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1407"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1417"
   },
   {
     "key": "components_pages_ManualSchedulePage.assign",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1219"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1229"
   },
   {
     "key": "components_pages_ManualSchedulePage.assignmentsLabel",
@@ -12043,27 +12043,27 @@ export const references = [
   {
     "key": "components_pages_ManualSchedulePage.backToCalculation",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1105"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1110"
   },
   {
     "key": "components_pages_ManualSchedulePage.basedOn",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1150"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1155"
   },
   {
     "key": "components_pages_ManualSchedulePage.buildAManualSchedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:989"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:994"
   },
   {
     "key": "components_pages_ManualSchedulePage.calculateBasedOnEfficiency",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1110"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1115"
   },
   {
     "key": "components_pages_ManualSchedulePage.calculateBasedOnSchedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1109"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1114"
   },
   {
     "key": "components_pages_ManualSchedulePage.cancel",
@@ -12073,72 +12073,72 @@ export const references = [
   {
     "key": "components_pages_ManualSchedulePage.changesRemainAvailableForThisVisitButCouldNot",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:478"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:480"
   },
   {
     "key": "components_pages_ManualSchedulePage.chooseAnOperatorBoxBaseLayoutShiftCountAnd",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:990"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:995"
   },
   {
     "key": "components_pages_ManualSchedulePage.clearCurrentShift",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1211"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1221"
   },
   {
     "key": "components_pages_ManualSchedulePage.clearEveryFacilityInShift",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1028"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1033"
   },
   {
     "key": "components_pages_ManualSchedulePage.clearEveryFacilityQuestion",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1204"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1214"
   },
   {
     "key": "components_pages_ManualSchedulePage.clearShiftDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1206"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1216"
   },
   {
     "key": "components_pages_ManualSchedulePage.clearSlot",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1246"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1256"
   },
   {
     "key": "components_pages_ManualSchedulePage.configureBoxLayout",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:991"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:996"
   },
   {
     "key": "components_pages_ManualSchedulePage.currentOperatorBox",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1149"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1154"
   },
   {
     "key": "components_pages_ManualSchedulePage.dormBatchDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1323"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1333"
   },
   {
     "key": "components_pages_ManualSchedulePage.dormBatchEdit",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1021"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1026"
   },
   {
     "key": "components_pages_ManualSchedulePage.dormBatchEditTitle",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1321"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1331"
   },
   {
     "key": "components_pages_ManualSchedulePage.dormBatchSelected",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1340"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1350"
   },
   {
     "key": "components_pages_ManualSchedulePage.durationParenthetical",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1041"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1046"
   },
   {
     "key": "components_pages_ManualSchedulePage.expandedFromPlans",
@@ -12148,22 +12148,22 @@ export const references = [
   {
     "key": "components_pages_ManualSchedulePage.exportMaa",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1141"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1146"
   },
   {
     "key": "components_pages_ManualSchedulePage.exportMower",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1142"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1147"
   },
   {
     "key": "components_pages_ManualSchedulePage.facility",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1219"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1229"
   },
   {
     "key": "components_pages_ManualSchedulePage.fiammettaMoraleTarget",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1219"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1229"
   },
   {
     "key": "components_pages_ManualSchedulePage.fileLabel",
@@ -12198,87 +12198,87 @@ export const references = [
   {
     "key": "components_pages_ManualSchedulePage.importScheduleFile",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1112"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1117"
   },
   {
     "key": "components_pages_ManualSchedulePage.invalidMaaSchedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:966"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:971"
   },
   {
     "key": "components_pages_ManualSchedulePage.invalidMowerOrMaaSchedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:965"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:970"
   },
   {
     "key": "components_pages_ManualSchedulePage.isAlreadyAssignedToMoveThemToAndLeave",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1437"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1447"
   },
   {
     "key": "components_pages_ManualSchedulePage.manualDraft",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1148"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1153"
   },
   {
     "key": "components_pages_ManualSchedulePage.moveOperator",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1438"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1448"
   },
   {
     "key": "components_pages_ManualSchedulePage.moveThisOperator",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1437"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1447"
   },
   {
     "key": "components_pages_ManualSchedulePage.mowerExportDetails",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1418"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1428"
   },
   {
     "key": "components_pages_ManualSchedulePage.mowerExportFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1427"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1437"
   },
   {
     "key": "components_pages_ManualSchedulePage.mowerExportQuestion",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1417"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1427"
   },
   {
     "key": "components_pages_ManualSchedulePage.noMatchingOperators",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1305"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1315"
   },
   {
     "key": "components_pages_ManualSchedulePage.noSkillTagsAvailable",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1251"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1261"
   },
   {
     "key": "components_pages_ManualSchedulePage.onlyOwnedOperatorsInTheCurrentBoxAreShown",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1220"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1230"
   },
   {
     "key": "components_pages_ManualSchedulePage.operatorCount",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1281"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1291"
   },
   {
     "key": "components_pages_ManualSchedulePage.originalPlan",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1002"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1007"
   },
   {
     "key": "components_pages_ManualSchedulePage.owned",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1149"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1154"
   },
   {
     "key": "components_pages_ManualSchedulePage.progressionAdjustedPlan",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1001"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1006"
   },
   {
     "key": "components_pages_ManualSchedulePage.replaceDraft",
@@ -12288,72 +12288,77 @@ export const references = [
   {
     "key": "components_pages_ManualSchedulePage.restPreviousShift",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1025"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1030"
   },
   {
     "key": "components_pages_ManualSchedulePage.restRequired",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1355"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1365"
   },
   {
     "key": "components_pages_ManualSchedulePage.restRequiredDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1348"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1358"
+  },
+  {
+    "key": "components_pages_ManualSchedulePage.resultOutdated",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1161"
   },
   {
     "key": "components_pages_ManualSchedulePage.room",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1219"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1229"
   },
   {
     "key": "components_pages_ManualSchedulePage.scheduleFileTooLarge",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:934"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:939"
   },
   {
     "key": "components_pages_ManualSchedulePage.searchAvailableOperators",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1333"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1343"
   },
   {
     "key": "components_pages_ManualSchedulePage.searchOperatorSkillOrEffect",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1230"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1240"
   },
   {
     "key": "components_pages_ManualSchedulePage.searchOperatorsOrRooms",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1130"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1135"
   },
   {
     "key": "components_pages_ManualSchedulePage.searchSelectableOperatorsAndSkills",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1229"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1239"
   },
   {
     "key": "components_pages_ManualSchedulePage.searchThisManualSchedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1130"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1135"
   },
   {
     "key": "components_pages_ManualSchedulePage.selectAll",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1358"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1368"
   },
   {
     "key": "components_pages_ManualSchedulePage.selected",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1388"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1398"
   },
   {
     "key": "components_pages_ManualSchedulePage.shift",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1039"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1044"
   },
   {
     "key": "components_pages_ManualSchedulePage.shiftRange",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1043"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1048"
   },
   {
     "key": "components_pages_ManualSchedulePage.shiftsLabel",
@@ -12363,17 +12368,17 @@ export const references = [
   {
     "key": "components_pages_ManualSchedulePage.theManualDraftCouldNotBeRestored",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:445"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:447"
   },
   {
     "key": "components_pages_ManualSchedulePage.thisOperator",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1437"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1447"
   },
   {
     "key": "components_pages_ManualSchedulePage.thisTargetIsStoredOnlyForTheActiveShift",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1220"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1230"
   },
   {
     "key": "components_pages_ManualSchedulePage.unassigned",
@@ -16223,7 +16228,7 @@ export const references = [
   {
     "key": "FileUpload.scheduleDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1113"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1118"
   },
   {
     "key": "FileUpload.singleFile",
@@ -19943,17 +19948,17 @@ export const references = [
   {
     "key": "SkillFilters.rarity",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1268"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1278"
   },
   {
     "key": "SkillFilters.room",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1242"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1252"
   },
   {
     "key": "SkillFilters.tag",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1248"
+    "source": "apps/arknights/src/components/pages/ManualSchedulePage.tsx:1258"
   },
   {
     "key": "SkillTags.仓库容量",

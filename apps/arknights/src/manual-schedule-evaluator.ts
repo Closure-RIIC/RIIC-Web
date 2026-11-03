@@ -116,7 +116,9 @@ function lineForEvaluation(room: ManualRoomEvaluation, facility: Facility): Rota
   const line: RotationRoomLine = {
     room_id: room.roomId,
     ...(facility === "power" ? {} : { base_efficiency: room.baseEfficiency }),
-    equivalent_efficiency: tradeEquivalentEfficiency,
+    // 与求解器 rotation 的语义保持一致：equivalent_efficiency 存的是纸面技能效率，
+    // 贸易站的等效效率另由 trade_equivalent_efficiency 承载。
+    equivalent_efficiency: room.skillEfficiency,
     global_efficiency: room.globalEfficiency,
     total_efficiency: room.totalEfficiency,
     final_efficiency: room.finalEfficiency,

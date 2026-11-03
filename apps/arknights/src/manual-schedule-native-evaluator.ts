@@ -155,6 +155,8 @@ function roomEvaluation(input: {
   layout: BaseBlueprint;
   operbox: readonly OperBoxEntry[] | null;
   shiftIndex: number;
+  /** 纸面模式：用用户手填的纸面技能效率替换 WASM 的结算值，其余字段仍取 WASM。 */
+  useManualSkillEfficiency?: boolean;
 }): ManualRoomEvaluation[] {
   const nativeShift = input.response.shifts[input.shiftIndex];
   if (!nativeShift) return [];
@@ -187,7 +189,7 @@ function roomEvaluation(input: {
           }),
         })
       : undefined;
-    return [{
+    return [withManualSkillEfficiency({
       roomId: room.room_id,
       members: namesForRoom(input.draft, input.shiftIndex, room.room_id, manualRoomCapacity(layoutRoom)),
       baseEfficiency: room.display_base_basis_points / 1_000,
@@ -201,17 +203,39 @@ function roomEvaluation(input: {
       ...(specialTrade?.rule ? { specialTradeAnchor: specialTrade.rule } : {}),
       dailyOutput: null,
       ...(outputKind ? { outputKind } : {}),
-    }];
+    }, input.draft.shifts[input.shiftIndex]?.rooms[room.room_id]?.manualSkillEfficiencyPct, input.useManualSkillEfficiency)];
   });
+}
+
+/** 纸面模式：把技能效率换成手填值，并沿基础/技能/跨设施 → 总效率 → 倍率 → 最终效率
+ *  这条链重算下游字段；订单倍率由结算规则打表决定，与技能效率无关，直接沿用 WASM 值。 */
+function withManualSkillEfficiency(
+  room: ManualRoomEvaluation,
+  manualSkillEfficiencyPct: number | undefined,
+  enabled: boolean | undefined,
+): ManualRoomEvaluation {
+  if (!enabled || manualSkillEfficiencyPct === undefined || !Number.isFinite(manualSkillEfficiencyPct)) return room;
+  const skillEfficiency = manualSkillEfficiencyPct / 100;
+  const totalEfficiency = rounded(room.baseEfficiency + skillEfficiency + room.globalEfficiency);
+  const finalEfficiency = rounded(totalEfficiency * room.orderMultiplier);
+  return {
+    ...room,
+    skillEfficiency,
+    totalEfficiency,
+    finalEfficiency,
+    tradeEquivalentEfficiency: room.outputKind === "power" || room.members.length === 0
+      ? room.tradeEquivalentEfficiency
+      : rounded(finalEfficiency - room.baseEfficiency - room.globalEfficiency),
+  };
 }
 
 function roomLine(room: ManualRoomEvaluation, kind: BaseBlueprint["rooms"][number]["kind"]): RotationRoomLine {
   const line: RotationRoomLine = {
     room_id: room.roomId,
     ...(kind === "power_plant" ? {} : { base_efficiency: room.baseEfficiency }),
-    equivalent_efficiency: kind === "trade_post"
-      ? room.tradeEquivalentEfficiency ?? room.skillEfficiency
-      : room.skillEfficiency,
+    // 与求解器 rotation 的语义保持一致：equivalent_efficiency 存的是纸面技能效率，
+    // 贸易站的等效效率另由 trade_equivalent_efficiency 承载。
+    equivalent_efficiency: room.skillEfficiency,
     global_efficiency: room.globalEfficiency,
     total_efficiency: room.totalEfficiency,
     final_efficiency: room.finalEfficiency,
@@ -240,6 +264,8 @@ export async function evaluateManualScheduleWithNativeEngine(input: {
   draft: ManualScheduleDraft;
   layout: BaseBlueprint;
   operbox: readonly OperBoxEntry[] | null;
+  /** 纸面模式：用手填的纸面技能效率替换 WASM 结算值，其余数据仍来自 WASM。 */
+  useManualSkillEfficiency?: boolean;
 }): Promise<ManualScheduleEvaluation> {
   const startedAt = performance.now();
   const response = await evaluateShiftProducts(input);
@@ -249,22 +275,27 @@ export async function evaluateManualScheduleWithNativeEngine(input: {
     const nativeShift = response.shifts[index];
     if (!nativeShift) throw new Error(`WASM response is missing shift ${index + 1}`);
     const rooms = roomsByShift[index] ?? [];
-    const trade = nativeShift.totals.trade_final_basis_points / 1_000;
-    const manufacture = nativeShift.totals.manufacture_basis_points / 1_000;
-    const power = nativeShift.totals.power_basis_points / 1_000;
+    const kindOf = (roomId: string) => input.layout.rooms.find((candidate) => candidate.id === roomId)?.kind;
+    // 纸面模式下房间效率已被手填值改写，汇总必须按改写后的房间重算，不能再用 WASM 的 totals。
+    const trade = input.useManualSkillEfficiency
+      ? rooms.filter((room) => kindOf(room.roomId) === "trade_post").reduce((sum, room) => sum + room.finalEfficiency, 0)
+      : nativeShift.totals.trade_final_basis_points / 1_000;
+    const manufacture = input.useManualSkillEfficiency
+      ? rooms.filter((room) => kindOf(room.roomId) === "factory").reduce((sum, room) => sum + room.finalEfficiency, 0)
+      : nativeShift.totals.manufacture_basis_points / 1_000;
+    const power = input.useManualSkillEfficiency
+      ? rooms.filter((room) => kindOf(room.roomId) === "power_plant").reduce((sum, room) => sum + room.finalEfficiency - 1, 0)
+      : nativeShift.totals.power_basis_points / 1_000;
     return {
       index,
       duration_hours: shift.durationHours,
       active_teams: [],
       resting_team: "",
       scores: {
-        trade_score: trade,
-        manu_prod_sum: manufacture,
-        power_charge_sum: power,
-        room_lines: rooms.map((room) => {
-          const kind = input.layout.rooms.find((candidate) => candidate.id === room.roomId)?.kind;
-          return roomLine(room, kind ?? "workshop");
-        }),
+        trade_score: rounded(trade),
+        manu_prod_sum: rounded(manufacture),
+        power_charge_sum: rounded(power > 0 ? 1 + power : 0),
+        room_lines: rooms.map((room) => roomLine(room, kindOf(room.roomId) ?? "workshop")),
       },
       weighted_trade: rounded(trade * shift.durationHours / totalHours),
       weighted_manu: rounded(manufacture * shift.durationHours / totalHours),
