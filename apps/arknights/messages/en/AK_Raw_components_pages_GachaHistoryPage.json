@@ -64,5 +64,15 @@
   "savedPulls": "Saved pulls",
   "sixStars": "6★ operators",
   "lowerStars": "5★ / 4★ / 3★",
-  "equivalent": "Equivalent"
+  "equivalent": "Equivalent",
+  "captureScreenshot": "Capture screen",
+  "capturingScreenshot": "Capturing screen",
+  "saveScreenshot": "Save screenshot",
+  "screenshotDescription": "The visible page is ready to save or share as an image.",
+  "screenshotPreview": "Screenshot of the visible headhunting records",
+  "downloadScreenshot": "Download PNG",
+  "shareScreenshot": "System share",
+  "screenshotFailed": "Could not capture the screen. Close this dialog and try again.",
+  "screenshotShareFailed": "Could not open system sharing. Press and hold the image to save it, or download the PNG.",
+  "authorizationRequired": "Your cloud records are retained. Authorize again to refresh them."
 }
