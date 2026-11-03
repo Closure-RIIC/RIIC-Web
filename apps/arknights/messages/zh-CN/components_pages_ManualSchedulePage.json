@@ -70,5 +70,6 @@
   "restPreviousShift": "让上一班下班休息",
   "facility": "设施",
   "room": "房间",
-  "thisOperator": "该干员"
+  "thisOperator": "该干员",
+  "resultOutdated": "当前结果已过期"
 }

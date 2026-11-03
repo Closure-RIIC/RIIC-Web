@@ -3,17 +3,27 @@ import { readFile, writeFile } from "node:fs/promises";
 import process from "node:process";
 
 const args = process.argv.slice(2);
-const valueFor = (name, fallback) => {
-  const index = args.indexOf(name);
-  return index >= 0 ? args[index + 1] : fallback;
-};
+const options = { check: false };
+for (let index = 0; index < args.length; index += 1) {
+  const argument = args[index];
+  if (argument === "--check") options.check = true;
+  else if (["--character-table", "--uniequip-table", "--building-data", "--item-table", "--output", "--source-sha"].includes(argument)) {
+    const value = args[++index];
+    if (!value || value.startsWith("--")) throw new Error(`缺少 ${argument} 参数值。`);
+    options[argument.slice(2).replaceAll("-", "")] = value;
+  } else throw new Error(`未知参数：${argument}`);
+}
 const inputPaths = {
-  characterTable: valueFor("--character-table", ".tmp/training-planner/character_table.json"),
-  uniequipTable: valueFor("--uniequip-table", ".tmp/training-planner/uniequip_table.json"),
-  buildingData: valueFor("--building-data", ".tmp/training-planner/building_data.json"),
-  itemTable: valueFor("--item-table", ".tmp/training-planner/item_table.json"),
+  characterTable: options.charactertable ?? ".tmp/training-planner/character_table.json",
+  uniequipTable: options.uniequiptable ?? ".tmp/training-planner/uniequip_table.json",
+  buildingData: options.buildingdata ?? ".tmp/training-planner/building_data.json",
+  itemTable: options.itemtable ?? ".tmp/training-planner/item_table.json",
 };
-const outputPath = valueFor("--output", "apps/arknights/src/generated/training-planner-data.json");
+const outputPath = options.output ?? "apps/arknights/src/generated/training-planner-data.json";
+const sourceSha = options.sourcesha;
+if (!/^[0-9a-f]{40}$/i.test(sourceSha ?? "")) {
+  throw new Error("必须提供当前 ArknightsGameData 固定提交的 --source-sha。 ");
+}
 const read = async (file) => JSON.parse(await readFile(file, "utf8"));
 const [characters, uniequips, building, itemsTable, operatorCatalog, itemCatalog] = await Promise.all([
   read(inputPaths.characterTable),
@@ -89,10 +99,14 @@ for (const id of materialIds) {
 const data = {
   source: {
     repository: "https://github.com/Kengxxiao/ArknightsGameData",
-    commit: "bee3f83c5d60590b5e1cd42b8d09d00ce32ab10d",
+    commit: sourceSha,
   },
   operators,
   items,
 };
-await writeFile(outputPath, `${JSON.stringify(data)}\n`);
-console.log(`Generated planner data for ${Object.keys(operators).length} operators and ${Object.keys(items).length} items.`);
+const serialized = `${JSON.stringify(data)}\n`;
+if (options.check) {
+  const current = await readFile(outputPath, "utf8");
+  if (current !== serialized) throw new Error("Training planner data is stale for the pinned ArknightsGameData source.");
+} else await writeFile(outputPath, serialized);
+console.log(`${options.check ? "Verified" : "Generated"} planner data for ${Object.keys(operators).length} operators and ${Object.keys(items).length} items from ${sourceSha.slice(0, 12)}.`);

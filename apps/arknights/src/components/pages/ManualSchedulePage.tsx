@@ -310,20 +310,22 @@ export function ManualSchedulePage({
   const [evaluatedKey, setEvaluatedKey] = useState("");
   const [calculationError, setCalculationError] = useState("");
   const assignedNamesKey = JSON.stringify([...new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators)).filter(Boolean))]);
-  const posterOperatorsKey = JSON.stringify(posterSettings?.operators ?? []);
   const operbox = useMemo(() => {
     const entries = new Map((sourceOperbox ?? []).map(operator => [operator.name, operator]));
     const names = new Set<string>(JSON.parse(assignedNamesKey));
     if (draft.fiammettaEnabled) names.add("菲亚梅塔");
     for (const name of names) {
       if (!name || entries.get(name)?.own) continue;
-      const operator = (JSON.parse(posterOperatorsKey) as OperBoxEntry[]).find(item => item.name === name) ?? defaultPosterOperator(name);
+      const operator = defaultPosterOperator(name);
       if (operator) entries.set(name, { ...operator, own: true });
     }
     return [...entries.values()];
-  }, [sourceOperbox, posterOperatorsKey, assignedNamesKey, draft.fiammettaEnabled]);
+  }, [sourceOperbox, assignedNamesKey, draft.fiammettaEnabled]);
   const evaluationKey = JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, posterSettings?.efficiencyMode ?? "native"]);
-  const result = evaluatedKey === evaluationKey ? suppliedResult : null;
+  /** 算过一次之后，输入又被改动：结果仍在手里，但已不对应当前排班。 */
+  const resultOutdated = Boolean(suppliedResult) && evaluatedKey !== "" && evaluatedKey !== evaluationKey;
+  // 过期时保留上一份结果，避免房间行在「有效率」和「等待排班」之间来回跳；由页面顶部提示告知需重算。
+  const result = suppliedResult;
   const posterDocument = useMemo(() => {
     if (!posterSettings) return null;
     const names = new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators).concat(shift.fiammettaTarget)).filter((name): name is string => Boolean(name)));
@@ -331,7 +333,7 @@ export function ManualSchedulePage({
     const hangerNames = new Set(posterSettings.presentation.dormHangerOperators.filter((name): name is string => Boolean(name)));
     for (const name of hangerNames) names.add(name);
     const operators = [...names].flatMap(name => {
-      const operator = operbox.find(entry => entry.name === name) ?? posterSettings.operators.find(entry => entry.name === name) ?? defaultPosterOperator(name);
+      const operator = operbox.find(entry => entry.name === name && entry.own) ?? defaultPosterOperator(name);
       return operator ? [{ ...operator, own: true }] : [];
     });
     return {
@@ -894,10 +896,6 @@ export function ManualSchedulePage({
   }
 
   function updatePoster(next: SchedulePosterDocument) {
-    const scheduledNames = new Set(next.draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators)).filter((name): name is string => Boolean(name)));
-    if (next.draft.fiammettaEnabled) scheduledNames.add("菲亚梅塔");
-    const additions = posterOperators(next).filter(operator => scheduledNames.has(operator.name) && !operbox.some(current => current.name === operator.name && current.own));
-    if (additions.length) onPosterWorkingBoxChange?.([...operbox, ...additions]);
     setPosterSettings(next);
     setDraft(next.draft);
     if (JSON.stringify(next.draft.shifts.map(shift => shift.durationHours)) !== JSON.stringify(shiftDurations)) onShiftDurationsChange(next.draft.shifts.map(shift => shift.durationHours));
@@ -908,7 +906,10 @@ export function ManualSchedulePage({
   }
   function importPoster(next: SchedulePosterDocument) {
     if (onImportPoster) { onImportPoster(next); return; }
-    onImportedLayoutChange(next.layout); updatePoster({ ...next, operators: posterOperators(next) });
+    const operators = posterOperators(next);
+    onPosterWorkingBoxChange?.(operators);
+    onImportedLayoutChange(next.layout);
+    updatePoster({ ...next, operators });
   }
   function selectPosterSlot(target: PosterTarget) {
     setPickerQuery(""); setPickerRoomFilter(null); setPickerSkillTag(null); setPickerRarity(null); setPickerPage(1);
@@ -922,6 +923,9 @@ export function ManualSchedulePage({
   async function calculateSchedule(mode: "native" | "manual") {
     if (evaluationPending) return;
     setCalculationError("");
+    // posterSettings 为空时（海报尚未初始化）先把它建出来：否则 efficiencyMode 写不进去，
+    // evaluationKey 末尾会一直停在 "native"，纸面模式算完的结果会被当作过期数据丢掉。
+    if (!posterSettings) await ensurePosterReady();
     setPosterSettings(current => current ? { ...current, efficiencyMode: mode } : current);
     try {
       await (mode === "native" ? onEvaluate : onPaperEvaluate)({ draft, operbox });
@@ -1151,6 +1155,11 @@ export function ManualSchedulePage({
             {draft.source ? " · " : null}
             {sourceName ?? (intl("components_pages_ManualSchedulePage.currentOperatorBox"))} · {ownedOperators.length} {intl("components_pages_ManualSchedulePage.owned")}
           </p>
+          {resultOutdated ? (
+            <p className="shrink-0 whitespace-nowrap text-xs font-medium text-destructive" role="status" data-manual-result-outdated>
+              {intl("components_pages_ManualSchedulePage.resultOutdated")}
+            </p>
+          ) : null}
         </div>
       </div>
 

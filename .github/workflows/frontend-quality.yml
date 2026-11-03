@@ -67,6 +67,9 @@ jobs:
       documentation_only: ${{ steps.scope.outputs.documentation_only }}
       run_core: ${{ steps.scope.outputs.run_core }}
       run_browser: ${{ steps.scope.outputs.run_browser }}
+      run_database: ${{ steps.scope.outputs.run_database }}
+      check_arknights: ${{ steps.scope.outputs.check_arknights }}
+      check_endfield: ${{ steps.scope.outputs.check_endfield }}
       deploy_required: ${{ steps.scope.outputs.deploy_required }}
       deploy_arknights: ${{ steps.scope.outputs.deploy_arknights }}
       deploy_endfield: ${{ steps.scope.outputs.deploy_endfield }}
@@ -155,30 +158,44 @@ jobs:
         run: npm run audit:security
 
       - name: Generated asset consistency
+        if: needs.changes.outputs.check_arknights == 'true'
         run: npm run assets:check
 
       - name: Trilingual messages and translation usage
         run: npm run check:i18n
 
-      - name: Workspace boundaries and Endfield logic
-        run: npm run test:workspace && npm run test:platform && npm run test:endfield && npm run test:endfield:skland
+      - name: Workspace boundaries and shared platform logic
+        run: npm run test:workspace && npm run test:platform
+
+      - name: Endfield logic
+        if: needs.changes.outputs.check_endfield == 'true'
+        run: npm run test:endfield && npm run test:endfield:skland
 
       - name: Unit tests
+        if: needs.changes.outputs.check_arknights == 'true'
         run: npm test
 
+      - name: Shared build and deployment contracts
+        if: needs.changes.outputs.check_arknights == 'false'
+        run: node --test scripts/build-tooling.test.mjs
+
       - name: Endfield release archive safety
+        if: needs.changes.outputs.check_endfield == 'true'
         run: python3 deploy/endfield-deploy.test.py && python3 deploy/endfield-transfer.test.py
 
       - name: Release provenance tests
         run: node --test scripts/release-provenance.test.mjs scripts/app-release-plan.test.mjs scripts/release-automation.test.mjs scripts/release-pr.test.mjs scripts/ci-performance.test.mjs scripts/ci-timings.test.mjs scripts/build-cache.test.mjs
 
       - name: API contract tests
+        if: needs.changes.outputs.check_arknights == 'true'
         run: npm run test:api-contract
 
       - name: Feedback workbench tests
+        if: needs.changes.outputs.check_arknights == 'true'
         run: npm run test:feedback-workbench
 
       - name: Shift comparison tests
+        if: needs.changes.outputs.check_arknights == 'true'
         run: npm run test:shift-comparison
 
   lint_checks:
@@ -213,12 +230,43 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund --prefer-offline
-      - run: npm run check:types
+      - name: Arknights types
+        if: github.event_name == 'schedule' || needs.changes.outputs.check_arknights == 'true'
+        run: npm run check:arknights
+      - name: Endfield types
+        if: github.event_name == 'schedule' || needs.changes.outputs.check_endfield == 'true'
+        run: npm run check:endfield
+      - name: Platform and tooling types
+        run: npm run check:platform && npx tsc --noEmit -p tsconfig.json
 
   database_checks:
     name: Database integration
+    needs: [changes, database_integration]
+    if: always() && needs.changes.outputs.run_core == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify the planned database check
+        env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          RUN_DATABASE: ${{ needs.changes.outputs.run_database }}
+          DATABASE_RESULT: ${{ needs.database_integration.result }}
+        run: |
+          set -euo pipefail
+          test "$CHANGES_RESULT" = "success"
+          if [[ "$RUN_DATABASE" == "true" ]]; then
+            test "$DATABASE_RESULT" = "success"
+          elif [[ "$RUN_DATABASE" == "false" ]]; then
+            test "$DATABASE_RESULT" = "skipped"
+          else
+            exit 1
+          fi
+          printf 'Database integration required=%s result=%s\n' "$RUN_DATABASE" "$DATABASE_RESULT" >> "$GITHUB_STEP_SUMMARY"
+
+  database_integration:
+    name: Database integration tests
     needs: changes
-    if: needs.changes.outputs.run_core == 'true'
+    if: needs.changes.outputs.run_database == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:

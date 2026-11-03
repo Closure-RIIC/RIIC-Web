@@ -17,7 +17,7 @@ async function readRepoFile(relativePath) {
 test("CI avoids duplicate installation audits without weakening its security gate", async () => {
   const workflow = (await readRepoFile(".github/workflows/frontend-quality.yml")).replaceAll("\r\n", "\n");
   const packageJson = JSON.parse(await readRepoFile("package.json"));
-  for (const job of ["static_checks", "database_checks", "release_artifact", "browser_e2e", "browser_boundaries"]) {
+  for (const job of ["static_checks", "database_integration", "release_artifact", "browser_e2e", "browser_boundaries"]) {
     const section = workflow.split(`  ${job}:\n`)[1]?.split(/^ {2}\w+:/m)[0];
     assert.ok(section, job);
     assert.match(section, /run: npm ci --no-audit --no-fund/);
@@ -388,7 +388,8 @@ test("CI change scope keeps one required quality gate and fails closed", async (
   assert.match(planner, /classifyChanges\(operatorPaths\)\.scope, "operator-data"/);
   assert.match(planner, /validationPaths\.every\(\(file\) => operatorPaths\.includes\(file\)\)/);
   assert.match(workflow, /static_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
-  assert.match(workflow, /database_checks:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
+  assert.match(workflow, /database_checks:[\s\S]+needs: \[changes, database_integration\][\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
+  assert.match(workflow, /database_integration:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_database == 'true'/);
   assert.match(workflow, /release_artifact:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /browser_e2e:[\s\S]+needs: \[changes, release_artifact\][\s\S]+needs\.changes\.outputs\.run_browser == 'true'/);
   assert.match(workflow, /quality:[\s\S]+test "\$CHANGES_RESULT" = "success"[\s\S]+test "\$HYGIENE_RESULT" = "success"[\s\S]+"\$DEPLOY_REQUIRED" == "true"[\s\S]+"\$required" == "true"[\s\S]+verify_result "\$RUN_CORE" "\$STATIC_RESULT"[\s\S]+verify_result "\$RUN_BROWSER" "\$BROWSER_E2E_RESULT"/);
@@ -705,10 +706,17 @@ test("resource PR file validation fails closed on a partial GitHub API response"
   }
 });
 
-test("mastery, gacha UP data and the full fixture follow every managed-resource publication and parity gate", async () => {
+test("mastery, training costs, gacha UP data and the full fixture follow every managed-resource publication and parity gate", async () => {
   const workflow = await readRepoFile(".github/workflows/sync-arkntools-assets.yml");
   assert.match(workflow, /npm run assets:mastery -- \.tmp\/arknights-game-data\/zh_CN\/gamedata\/excel\/character_table\.json --game-source-sha=/);
   assert.match(workflow, /game_sha=\$\(git -C \.tmp\/arknights-game-data rev-parse HEAD\)/);
+  for (const table of ["character_table.json", "uniequip_table.json", "building_data.json", "item_table.json"]) {
+    assert.match(workflow, new RegExp(`/${table.replaceAll(".", "\\.")}`));
+  }
+  assert.match(workflow, /npm run assets:training-planner -- "\$\{planner_arguments\[@\]\}"/);
+  assert.match(workflow, /planner_arguments=\(--source-sha "\$\{\{ steps\.upstream\.outputs\.game_sha \}\}"\)/);
+  assert.match(workflow, /--before-training-planner "\$RUNNER_TEMP\/training-planner-before\.json"/);
+  assert.match(workflow, /apps\/arknights\/src\/generated\/training-planner-data\.json/);
   assert.match(workflow, /\/assets\/img\/avatar/);
   assert.match(workflow, /\/item\/AP_BASE\.png/);
   assert.equal((workflow.match(/test "\$pull_request_base_sha" = "\$remote_base_sha"/g) ?? []).length, 2);
@@ -730,12 +738,13 @@ test("mastery, gacha UP data and the full fixture follow every managed-resource 
     assert.ok(staged.includes(file));
     assert.ok(restored.includes(file));
   }
-  for (const guard of guards) assert.match(guard, /\|apps\/arknights\/src\/generated\/mastery-data\.json\|packages\/arknights-domain\/src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
+  for (const guard of guards) assert.match(guard, /\|apps\/arknights\/src\/generated\/mastery-data\.json\|apps\/arknights\/src\/generated\/training-planner-data\.json\|packages\/arknights-domain\/src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
   const regularFileChecks = workflow.match(/git ls-files -s --[^\n]+/g) ?? [];
   assert.equal(regularFileChecks.length, 3);
   for (const check of regularFileChecks) {
     for (const file of translations) assert.ok(check.includes(file));
     assert.ok(check.includes("apps/arknights/src/generated/mastery-data.json"));
+    assert.ok(check.includes("apps/arknights/src/generated/training-planner-data.json"));
     assert.ok(check.includes("packages/arknights-domain/src/generated/gacha-up.json"));
     assert.ok(check.includes("fixtures/operbox_full_e2.json"));
   }

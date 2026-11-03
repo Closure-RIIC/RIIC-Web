@@ -1,8 +1,8 @@
 import { estimateDailyProduction } from "./daily-production.ts";
 import { droneProductionForSelectedMaaTargets, equivalentGoldForRotation } from "@riic/arknights-domain/drone-production-core";
 import { manualScheduleToMaa, type ManualScheduleDraft } from "./manual-schedule.ts";
-import { evaluateManualSchedule, type ManualEvaluationWarning, type ManualRoomEvaluation } from "./manual-schedule-evaluator.ts";
-import { evaluateCrossFacilityEfficiency, evaluateManualScheduleWithNativeEngine } from "./manual-schedule-native-evaluator.ts";
+import type { ManualEvaluationWarning, ManualRoomEvaluation } from "./manual-schedule-evaluator.ts";
+import { evaluateManualScheduleWithNativeEngine } from "./manual-schedule-native-evaluator.ts";
 import type { BaseBlueprint, MaaJson, OperBoxEntry, RotationJson } from "@riic/arknights-domain/types";
 
 export type ManualPlanResult = {
@@ -64,8 +64,13 @@ export async function assemblePaperManualPlanResult(input: {
   const layout = structuredClone(input.layout);
   const draft = structuredClone(input.draft);
   const maa = manualScheduleToMaa(draft, layout, draft.fiammettaEnabled);
-  const crossFacilityEfficiencyByShift = await evaluateCrossFacilityEfficiency({ draft, layout, operbox: input.operbox });
-  const evaluation = evaluateManualSchedule({ draft, layout, operbox: input.operbox, crossFacilityEfficiencyByShift });
+  // 与「根据排班计算」走同一套 WASM 流程，只把房间的纸面技能效率换成手填值。
+  const evaluation = await evaluateManualScheduleWithNativeEngine({
+    draft,
+    layout,
+    operbox: input.operbox,
+    useManualSkillEfficiency: true,
+  });
   const rotation = structuredClone(evaluation.rotation);
   applyManualProduction({ layout, maa, rotation });
   return {
