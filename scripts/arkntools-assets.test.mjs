@@ -466,6 +466,7 @@ test("legacy portrait catalogs remain valid until a generated content-hash migra
 test("publication ignores only pinned provenance commits, not schema, source or mastery changes", () => {
   const manifestFile = "packages/arknights-domain/src/generated/arkntools/source.json";
   const masteryFile = "apps/arknights/src/generated/mastery-data.json";
+  const trainingPlannerFile = "apps/arknights/src/generated/training-planner-data.json";
   const manifest = {
     version: 2, source: { repository: ARKNTOOLS_REPOSITORY, commit: SOURCE_SHA },
     portraitsSource: { repository: ARKNIGHTS_GAME_RESOURCE_REPOSITORY, commit: PORTRAITS_SHA },
@@ -473,6 +474,7 @@ test("publication ignores only pinned provenance commits, not schema, source or 
     counts: { operators: 2 },
   };
   const mastery = { source: { rules: manifest.source, branches: manifest.portraitsSource, descriptionsHash: "reviewed" }, branches: { char_001_alpha: "fighter" }, rules: { train: { speed: 0.3 } } };
+  const trainingPlanner = { source: { repository: "https://github.com/Kengxxiao/ArknightsGameData", commit: SOURCE_SHA }, operators: { char_001_alpha: {} }, items: {} };
   const changed = (file, before, after) => hasManagedContentChange(file, JSON.stringify(before), JSON.stringify(after));
   const nextManifest = globalThis.structuredClone(manifest);
   for (const source of [nextManifest.source, nextManifest.portraitsSource, nextManifest.portraitsFallback]) source.commit = "d".repeat(40);
@@ -481,6 +483,9 @@ test("publication ignores only pinned provenance commits, not schema, source or 
   nextMastery.source.rules.commit = "e".repeat(40);
   nextMastery.source.branches.commit = "f".repeat(40);
   assert.equal(changed(masteryFile, mastery, nextMastery), false);
+  const nextTrainingPlanner = globalThis.structuredClone(trainingPlanner);
+  nextTrainingPlanner.source.commit = "a".repeat(40);
+  assert.equal(changed(trainingPlannerFile, trainingPlanner, nextTrainingPlanner), false);
   for (const mutate of [
     (data) => { data.source.repository = "https://example.test/changed-source"; },
     (data) => { data.counts.operators = 1; },
@@ -502,6 +507,14 @@ test("publication ignores only pinned provenance commits, not schema, source or 
     const data = globalThis.structuredClone(nextMastery);
     mutate(data);
     assert.equal(changed(masteryFile, mastery, data), true);
+  }
+  for (const mutate of [
+    (data) => { data.source.repository = "https://example.test/changed-source"; },
+    (data) => { data.operators.char_001_alpha.cost = 1; },
+  ]) {
+    const data = globalThis.structuredClone(nextTrainingPlanner);
+    mutate(data);
+    assert.equal(changed(trainingPlannerFile, trainingPlanner, data), true);
   }
   assert.throws(() => hasManagedContentChange(manifestFile, JSON.stringify(manifest), "broken JSON"));
   assert.equal(hasManagedContentChange(manifestFile, null, JSON.stringify(manifest)), true);
@@ -543,14 +556,21 @@ test("publication detects staged, untracked and deleted managed files without mo
   const sourceFile = path.join(catalogRoot, "source.json");
   const source = { source: { commit: SOURCE_SHA } };
   await writeFile(sourceFile, JSON.stringify(source));
+  const trainingPlannerFile = path.join(root, "apps/arknights/src/generated/training-planner-data.json");
+  await mkdir(path.dirname(trainingPlannerFile), { recursive: true });
+  const trainingPlanner = { source: { repository: "https://github.com/Kengxxiao/ArknightsGameData", commit: SOURCE_SHA }, operators: {}, items: {} };
+  await writeFile(trainingPlannerFile, JSON.stringify(trainingPlanner));
   const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: "pipe" });
   git("init", "--quiet");
   git("add", ".");
   git("-c", "user.name=Resource test", "-c", "user.email=resource@example.test", "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "baseline");
   source.source.commit = PORTRAITS_SHA;
   await writeFile(sourceFile, JSON.stringify(source));
+  trainingPlanner.source.commit = PORTRAITS_SHA;
+  await writeFile(trainingPlannerFile, JSON.stringify(trainingPlanner));
   git("add", ".");
   const indexBefore = git("diff", "--cached");
+  assert.deepEqual((await detectManagedChanges(root)).provenanceOnlyFiles, [trainingPlannerFile.replace(`${root}${path.sep}`, "").replaceAll(path.sep, "/"), "packages/arknights-domain/src/generated/arkntools/source.json"]);
   assert.equal((await detectManagedChanges(root)).changed, false);
   assert.equal(git("diff", "--cached"), indexBefore);
 

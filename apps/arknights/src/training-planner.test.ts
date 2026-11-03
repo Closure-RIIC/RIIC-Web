@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import operatorCatalogJson from "@riic/arknights-domain/generated/arkntools/operator-catalog.json" with { type: "json" };
+import { manualLevelFor, maxEliteForRarity } from "@riic/arknights-domain/manual-operbox";
+import trainingPlannerDataJson from "./generated/training-planner-data.json" with { type: "json" };
 import { calculateTrainingPlan, defaultTrainingGoal, isTrainingFullyComplete, mergeTrainingGoalCurrent, type TrainingPlannerData, type TrainingGoal } from "./training-planner.ts";
 import { trainingCost } from "./inventory-estimates.ts";
+
+const generatedTrainingData = trainingPlannerDataJson as TrainingPlannerData;
+const generatedOperators = operatorCatalogJson as Array<{ id: string; name: string; rarity: number }>;
 
 const goal = (operatorId: string, overrides: Partial<TrainingGoal> = {}): TrainingGoal => ({
   operatorId,
@@ -16,6 +22,44 @@ const goal = (operatorId: string, overrides: Partial<TrainingGoal> = {}): Traini
   currentModules: {},
   targetModules: {},
   ...overrides,
+});
+
+test("generated training costs cover every catalog operator, including the latest six", () => {
+  assert.deepEqual(
+    Object.keys(generatedTrainingData.operators).sort(),
+    generatedOperators.map(({ id }) => id).sort(),
+  );
+  assert.match(generatedTrainingData.source.commit, /^[0-9a-f]{40}$/);
+
+  const latestIds = [
+    "char_4169_caledo", "char_4170_hdbell", "char_4244_tocka",
+    "char_4245_alga", "char_4246_dminon", "char_4247_oxi",
+  ];
+  const latestOperators = latestIds.map((id) => {
+    const operator = generatedOperators.find((candidate) => candidate.id === id);
+    assert.ok(operator, `missing catalog entry ${id}`);
+    const costs = generatedTrainingData.operators[id];
+    assert.ok(costs, `missing training costs for ${operator.name}`);
+    assert.equal(costs.phases.length, 3, operator.name);
+    assert.equal(costs.skillLevels.length, 6, operator.name);
+    assert.ok(costs.skills.length > 0, operator.name);
+    return operator;
+  });
+
+  const plan = calculateTrainingPlan({
+    goals: latestOperators.map(({ id, rarity }) => goal(id, {
+      targetElite: maxEliteForRarity(rarity),
+      targetLevel: manualLevelFor(rarity, maxEliteForRarity(rarity)),
+      targetSkillLevel: 7,
+      targetMasteries: { 1: 3 },
+    })),
+    operators: latestOperators.map(({ id, rarity }) => ({ id, rarity })),
+    data: generatedTrainingData,
+    inventory: {},
+  });
+  assert.ok(plan.lmd > 0);
+  assert.equal(plan.goals, latestOperators.length);
+  assert.ok(Object.keys(plan.requirements).length > 0);
 });
 
 const data: TrainingPlannerData = {
