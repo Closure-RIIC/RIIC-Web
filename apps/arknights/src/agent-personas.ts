@@ -59,7 +59,8 @@ export function builtinAgentPersona(id: unknown): BuiltinAgentPersona | undefine
 }
 
 /** A missing selection preserves uploaded cards saved before built-in choices existed. */
-export function resolveAgentPersonaSelection(selection: string | null, uploaded: UploadedAgentPersona | null): AgentPersona | null {
+export function resolveAgentPersonaSelection(selection: string | null, uploaded: readonly UploadedAgentPersona[]): AgentPersona | null {
   if (selection === "default") return null;
-  return builtinAgentPersona(selection) ?? uploaded;
+  if (selection === null) return uploaded[0] ?? null;
+  return builtinAgentPersona(selection) ?? uploaded.find(persona => persona.id === selection) ?? null;
 }

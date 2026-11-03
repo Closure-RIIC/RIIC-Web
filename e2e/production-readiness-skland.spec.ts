@@ -186,7 +186,7 @@ test("standalone gacha page preserves login and redirects the former Skland URL"
   const navigation = page.locator('[data-primary-navigation-page="gacha"]:visible');
   await expect(navigation).toHaveAttribute("aria-current", "page");
   const accountGroup = navigation.locator('xpath=ancestor::*[@data-slot="sidebar-group"]');
-  await expect(accountGroup).toContainText("我的角色");
+  await expect(accountGroup).toContainText("我的账号");
   expect(await accountGroup.locator("[data-primary-navigation-page]").evaluateAll(nodes =>
     nodes.map(node => node.getAttribute("data-primary-navigation-page"))
   )).toEqual(["skland", "gacha"]);
@@ -837,8 +837,9 @@ test.describe("gacha touch layout", () => {
       await expect(toolbarToggle).toHaveAttribute("aria-expanded", "false");
       await expect(toolbar.getByRole("button")).toHaveCount(1);
       const collapsedBounds = (await toolbarToggle.boundingBox())!;
-      expect(collapsedBounds.width).toBe(48);
-      expect(collapsedBounds.height).toBe(48);
+      expect(collapsedBounds.width).toBe(36);
+      expect(collapsedBounds.height).toBe(36);
+      await expect(toolbarToggle).toHaveCSS("background-color", "rgb(255, 255, 255)");
       await toolbarToggle.click();
       const collapseActions = toolbar.getByRole("button", { name: "收起操作按钮", exact: true });
       await expect(collapseActions).toHaveAttribute("aria-expanded", "true");
@@ -851,14 +852,18 @@ test.describe("gacha touch layout", () => {
       await fiveStarToggle.click();
       await expect(fiveStarToggle).toHaveAttribute("aria-pressed", "true");
       let previousBottom = -1;
+      await expect(toolbar.getByRole("button", { name: "授权记录", exact: true })).toBeHidden();
+      await expect(toolbar.getByRole("button", { name: "解除授权", exact: true })).toBeHidden();
+      await expect(toolbar.locator('[data-gacha-action="screenshot"]')).toBeVisible();
       for (const button of await toolbar.getByRole("button").all()) {
         await expect(button).toHaveCSS("border-radius", "50%");
         await expect(button.locator("svg")).toBeVisible();
         await expect(button.locator("span")).toBeHidden();
         const bounds = (await button.boundingBox())!;
-        expect(bounds.width).toBe(48);
-        expect(bounds.height).toBe(48);
-        expect(bounds.x + bounds.width).toBeCloseTo(width - 16, 1);
+        const isToggle = await button.getAttribute("aria-expanded") !== null;
+        expect(bounds.width).toBe(isToggle ? 36 : 48);
+        expect(bounds.height).toBe(isToggle ? 36 : 48);
+        expect(bounds.x + bounds.width / 2).toBeCloseTo(width - 40, 1);
         expect(bounds.y).toBeGreaterThan(previousBottom);
         previousBottom = bounds.y + bounds.height;
       }
@@ -871,22 +876,23 @@ test.describe("gacha touch layout", () => {
     await content.getByRole("button", { name: "展开操作按钮", exact: true }).click();
     const syncNotice = page.locator("[data-cloud-sync-error]");
     await expect(syncNotice).toBeVisible();
-    const trigger = content.getByRole("button", { name: "授权记录", exact: true });
+    const screenshot = content.locator('[data-gacha-action="screenshot"]');
     const noticeBounds = (await syncNotice.boundingBox())!;
-    expect(noticeBounds.x + noticeBounds.width).toBeLessThan((await trigger.boundingBox())!.x);
-    await trigger.click();
-    await expect(page.getByRole("dialog", { name: "授权寻访记录" })).toBeVisible();
-    await page.getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
-    const beforeScroll = (await trigger.boundingBox())!;
+    expect(noticeBounds.x + noticeBounds.width).toBeLessThan((await screenshot.boundingBox())!.x);
+    const beforeScroll = (await screenshot.boundingBox())!;
     await page.locator("[data-app-scroll-area]").evaluate((element) => element.scrollTo(0, element.scrollHeight));
-    expect((await trigger.boundingBox())!.y).toBeCloseTo(beforeScroll.y, 1);
+    expect((await screenshot.boundingBox())!.y).toBeCloseTo(beforeScroll.y, 1);
     await content.getByRole("button", { name: "收起操作按钮", exact: true }).click();
     await page.setViewportSize({ width: 1280, height: 844 });
     await expect(content.getByRole("button", { name: "展开操作按钮", exact: true })).toBeHidden();
     await expect(content.locator("[data-skland-synced-at]")).toBeVisible();
     await expect(content.locator("[data-gacha-record-start]")).toBeVisible();
+    const trigger = content.getByRole("button", { name: "授权记录", exact: true });
     await expect(trigger).toHaveCSS("border-radius", "18px");
     await expect(trigger.locator("span")).toBeVisible();
+    await trigger.click();
+    await expect(page.getByRole("dialog", { name: "授权寻访记录" })).toBeVisible();
+    await page.getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(trigger).toBeHidden();
     await expect(content.getByRole("button", { name: "展开操作按钮", exact: true })).toHaveAttribute("aria-expanded", "false");

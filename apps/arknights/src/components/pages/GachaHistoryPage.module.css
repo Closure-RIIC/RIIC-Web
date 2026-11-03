@@ -32,6 +32,8 @@
 }
 
 .toolbarToggle { display: none; }
+.screenshotAction { display: none; }
+.screenshotPreview { display: block; max-width: 100%; max-height: 50dvh; width: auto; height: auto; margin-inline: auto; object-fit: contain; user-select: auto; -webkit-touch-callout: default; }
 
 @media (max-width: 639px) {
   .statistics { --gacha-stat-padding: 8px; }
@@ -220,6 +222,10 @@
   .toolbarAction { width: 48px; height: 48px; padding: 0; margin: 0; border-radius: 50% !important; box-shadow: 0 3px 12px rgb(0 0 0 / .16); }
   .toolbarAction > svg { width: 20px; height: 20px; }
   .toolbarAction[data-gacha-action] { border-color: var(--border); background: var(--background); }
+  .toolbarAction.toolbarToggle { width: 36px; height: 36px; min-height: 36px; align-self: center; background: #fff; color: #111; border: 0; box-shadow: none; }
+  .toolbarAction.toolbarToggle > svg { width: 18px; height: 18px; }
+  .toolbarAction.screenshotAction { display: inline-flex; }
+  .toolbarAction[data-gacha-action="disconnect"], .toolbarAction[data-gacha-action="authorize"] { display: none; }
   .actionLabel { display: none; }
   .poolCard { --gacha-card-gutter: .75rem; }
   .poolHeader { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: .5rem; padding-top: .5rem; }
@@ -253,6 +259,10 @@
     transparent 5px 11px
   );
   box-shadow: none;
+}
+
+@media (max-width: 639px) {
+  .drawBar { --gacha-bar-cut: 1.75rem; }
 }
 
 .drawFill {

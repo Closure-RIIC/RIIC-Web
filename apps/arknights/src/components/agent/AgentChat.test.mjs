@@ -40,10 +40,11 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
           export const personaPresentation=()=>({});
           export const resolveAgentPersonaSelection=()=>null;
           export const MAX_PERSONA_LENGTH=36000;
-          export const useAgentPersona=()=>({selectedPersona:null,uploadedPersona:null});
+          export const useAgentPersona=()=>({selectedPersona:null,uploadedPersonas:[]});
           export const setAgentPersonaSelection=()=>true;
           export const saveLocalPersona=()=>true;
-          export const clearLocalPersona=()=>{};
+          export const removeLocalPersona=()=>true;
+          export const updateLocalPersonaAvatar=()=>true;
           export const useAgentAppearance=()=>["plush",()=>true];
           export const AgentAppearancePicker=()=>null;
           export const accountOrbColor=()=>"";
