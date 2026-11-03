@@ -68,6 +68,7 @@
     "assets:site-icon": "node scripts/generate-site-icons.mjs",
     "assets:check": "node scripts/generate-site-icons.mjs --check && node scripts/sync-arkntools-assets.mjs --check && node scripts/generate-mastery-data.mjs --check",
     "assets:mastery": "node scripts/generate-mastery-data.mjs",
+    "assets:training-planner": "node scripts/generate-training-planner-data.mjs",
     "assets:gacha-up": "node scripts/sync-gacha-up.mjs",
     "assets:gacha-titles": "node scripts/sync-gacha-titles.mjs",
     "test:mastery": "node --test --experimental-strip-types apps/arknights/src/mastery.test.ts",
