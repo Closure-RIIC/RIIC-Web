@@ -754,15 +754,16 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
                 {[null, ...builtinPersonas, ...uploadedPersonas].map((persona) => {
                   const selected = appearance === "plush" && (persona?.id ?? null) === (activePersona?.id ?? null);
                   const displayName = persona ? personaPresentation(persona, en).name : uiText.text(en, "closure");
-                  return <WorkbenchCard key={persona?.id ?? "default"} glass className={`${personaStyles.preview} ${!persona ? personaStyles.closure : persona.kind === "builtin" ? BUILTIN_PERSONA_THEMES[persona.theme] : ""}`} aria-label={rawText.text(en, selected ? "selectedPersonaPreview" : "personaPreview", { name: displayName })} data-persona-card={persona?.id ?? "default"} data-selected={selected ? "true" : undefined} data-persona-theme={persona?.kind === "builtin" ? persona.theme : undefined} data-persona-avatar-settings={selected ? "" : undefined}>
-                    <button type="button" className={personaStyles.cardSelect} disabled={personaSaving || busy} aria-pressed={selected} aria-label={rawText.text(en, "selectPersona", { name: displayName })} onClick={() => { if (!selected) { selectPersona(persona); onAppearanceChange("plush"); } }} />
-                    <div className={`${personaStyles.identity} ${personaStyles.cardIdentity}`}>
-                      <div className={personaStyles.portrait}>
-                        <span className="block size-full" aria-hidden="true"><PersonaAvatar name={displayName} src={persona?.kind === "upload" ? persona.avatarUrl : undefined} mascot={persona?.kind === "builtin" ? persona.avatar : undefined} size={80} appearance="plush" /></span>
-                        {persona?.kind === "upload" ? <button type="button" className={personaStyles.avatarUpload} disabled={personaSaving} aria-label={rawText.text(rawLocale, avatarSaving === persona.id ? "saving" : "uploadAvatar")} title={rawText.text(rawLocale, "uploadAvatar")} onClick={() => { personaAvatarIdRef.current = persona.id; personaAvatarInputRef.current?.click(); }} /> : null}
-                      </div>
-                      <h3 className={personaStyles.name}>{displayName}</h3>
+                  const identity = <div className={`${personaStyles.identity} ${persona?.kind === "upload" ? personaStyles.cardIdentity : ""}`}>
+                    <div className={personaStyles.portrait}>
+                      <span className="block size-full" aria-hidden="true"><PersonaAvatar name={displayName} src={persona?.kind === "upload" ? persona.avatarUrl : undefined} mascot={persona?.kind === "builtin" ? persona.avatar : undefined} size={80} appearance="plush" /></span>
+                      {persona?.kind === "upload" ? <button type="button" className={personaStyles.avatarUpload} disabled={personaSaving} aria-label={rawText.text(rawLocale, avatarSaving === persona.id ? "saving" : "uploadAvatar")} title={rawText.text(rawLocale, "uploadAvatar")} onClick={() => { personaAvatarIdRef.current = persona.id; personaAvatarInputRef.current?.click(); }} /> : null}
                     </div>
+                    <h3 className={personaStyles.name}>{displayName}</h3>
+                  </div>;
+                  return <WorkbenchCard key={persona?.id ?? "default"} glass className={`${personaStyles.preview} ${!persona ? personaStyles.closure : persona.kind === "builtin" ? BUILTIN_PERSONA_THEMES[persona.theme] : ""}`} aria-label={rawText.text(en, selected ? "selectedPersonaPreview" : "personaPreview", { name: displayName })} data-persona-card={persona?.id ?? "default"} data-selected={selected ? "true" : undefined} data-persona-theme={persona?.kind === "builtin" ? persona.theme : undefined} data-persona-avatar-settings={selected ? "" : undefined}>
+                    <button type="button" className={personaStyles.cardSelect} disabled={personaSaving || busy} aria-pressed={selected} aria-label={rawText.text(en, "selectPersona", { name: displayName })} onClick={() => { if (!selected) { selectPersona(persona); onAppearanceChange("plush"); } }}>{persona?.kind === "upload" ? null : identity}</button>
+                    {persona?.kind === "upload" ? identity : null}
                     {persona?.kind === "upload" ? <Button type="button" variant="destructive" size="icon-xs" className={personaStyles.deletePersona} disabled={personaSaving || busy} aria-label={rawText.text(rawLocale, "removeLocalPersonaCard")} title={rawText.text(rawLocale, "removeLocalPersonaCard")} onClick={() => { setPersonaError(removeLocalPersona(persona.id) ? null : rawText.text(rawLocale, "personaRemovalNotSaved")); }}><Trash2 className="size-3" aria-hidden="true" /></Button> : null}
                   </WorkbenchCard>;
                 })}
