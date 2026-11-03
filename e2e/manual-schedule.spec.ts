@@ -144,6 +144,7 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await expect(firstShiftStart).toHaveValue("");
   expect(await poster.innerText()).not.toMatch(/\b\d{2}:\d{2}\b/);
   await expect(poster).toContainText("24 h");
+  await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem("arknights-infra-manual-evaluation-v1"))).not.toBeNull();
   const tradeEfficiency = poster.locator('[data-poster-room="trade_1"] .poster-efficiency-pair');
   await expect(tradeEfficiency).toContainText("纸面");
@@ -163,6 +164,9 @@ test("manual schedule poster loads, calculates and restores its metadata", async
     return operator ? { elite: operator.elite, level: operator.level, rarity: operator.rarity } : null;
   })).toEqual({ elite: 2, level: 70, rarity: 4 });
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox)).toEqual(personalBoxBeforeBulk);
+  await expect(page.locator("[data-manual-result-outdated]")).toBeVisible();
+  await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
+  await expect(page.locator("[data-manual-result-outdated]")).toHaveCount(0);
   await expect(tradeEfficiency).toContainText(/(?:[1-9]\d*|\d+\.\d+)%赤金/);
   await expect(tradeEfficiency).toHaveAttribute("title", /巫恋 E2 \+ 龙舌兰 E2/);
   const control = poster.locator('[data-poster-room="control"] [data-poster-shift="0"]');
@@ -175,6 +179,8 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await workbench.getByLabel("班次数", { exact: true }).click();
   await page.getByRole("option", { name: "4 班", exact: true }).click();
   await expect(poster).toHaveAttribute("data-shift-count", "4");
+  await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
+  await expect(page.locator("[data-manual-result-outdated]")).toHaveCount(0);
   const productAlignment = await poster.locator('[data-poster-room="trade_1"] [data-poster-shift="0"]').evaluate(node => {
     const heading = node.querySelector(".poster-production-heading")!.getBoundingClientRect();
     const shift = node.querySelector(".poster-shift-label b")!.getBoundingClientRect();
@@ -199,6 +205,8 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await workbench.getByLabel("班次数", { exact: true }).click();
   await page.getByRole("option", { name: "3 班", exact: true }).click();
   await expect(poster).toHaveAttribute("data-shift-count", "3");
+  await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
+  await expect(page.locator("[data-manual-result-outdated]")).toHaveCount(0);
   const dormLayout = await poster.locator('[data-poster-room="dorm_1"] [data-poster-shift]').evaluateAll(nodes =>
     nodes.map(node => {
       const members = node.querySelector(".poster-members")!.getBoundingClientRect();
