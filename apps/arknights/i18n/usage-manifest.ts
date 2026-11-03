@@ -6318,7 +6318,7 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.importPersonaCard",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:769"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:770"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.layout",
@@ -6333,7 +6333,7 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.localPersonaStorage",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:777"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:778"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.masteryControlCenterSwapAllowanceMin",
@@ -6398,7 +6398,7 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.personaPreview",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:757"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:764"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaReadFailed",
@@ -6408,7 +6408,7 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.personaRemovalNotSaved",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:766"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:767"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaSelectionNotSaved",
@@ -6438,7 +6438,7 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.removeLocalPersonaCard",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:766"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:767"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.roster",
@@ -6458,17 +6458,17 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.saving",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:762"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:760"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.selectedPersonaPreview",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:757"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:764"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.selectPersona",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:758"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:765"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.simplePlan",
@@ -6623,22 +6623,22 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadAvatar",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:762"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:760"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadPersonaAvatar",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:775"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:776"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadPersonaCard",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:771"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:772"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadPersonaFile",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:776"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:777"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.viewTheFullScheduleInChatSwitchBetweenShifts",
