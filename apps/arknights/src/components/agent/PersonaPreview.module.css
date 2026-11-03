@@ -27,6 +27,9 @@
 .preview[data-selected="true"] { outline: 1px solid var(--dialogue-accent); outline-offset: -1px; }
 
 .cardSelect {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: absolute;
   inset: 0;
   z-index: 2;
