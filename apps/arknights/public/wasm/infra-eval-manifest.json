@@ -2,5 +2,5 @@
   "api": "riic-infra-eval/v1",
   "ruleset": "solver-port-v1",
   "glueUrl": "/wasm/infra_eval_wasm.js",
-  "wasmUrl": "/wasm/infra-eval.solver-port-v1.45a49af029cb.wasm"
+  "wasmUrl": "/wasm/infra-eval.solver-port-v1.749e9612c0d2.wasm"
 }
