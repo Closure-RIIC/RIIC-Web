@@ -337,6 +337,122 @@ test("Floating assistant contains module load failures and recovers after refres
   await expect(panel.getByRole("textbox", { name: "发给可露希尔的消息" })).toBeEnabled();
 });
 
+test("Uploaded personas keep independent avatars and persist on mobile", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.setViewportSize({ width: 375, height: 812 });
+  await mockWorkbench(page, "static");
+  await page.route("**/api/agent/chat", route => route.fulfill({ json: ready }));
+  await page.addInitScript(() => {
+    if (!localStorage.getItem("riic.agent.personas.v1") && !localStorage.getItem("riic.agent.persona.v1")) {
+      localStorage.setItem("riic.agent.persona.v1", JSON.stringify({ version: 1, id: "upload-existing", name: "原有人格", content: "已有的本地人格", avatarUrl: "/images/operator-portraits/4228_closur.webp" }));
+    }
+  });
+  const content = "只在本机保存的测试人格";
+  const uploadRequests: string[] = [];
+  page.on("request", request => {
+    const body = request.postData();
+    if (body?.includes(content) || body?.includes("data:image/")) uploadRequests.push(request.url());
+  });
+  const openPicker = async () => {
+    const menu = page.getByRole("button", { name: "附件与人格卡", exact: true });
+    await expect(menu).toBeVisible({ timeout: 30_000 });
+    if (await menu.getAttribute("aria-expanded") !== "true") await menu.click();
+    await page.getByRole("button", { name: /^人格卡：/ }).click();
+  };
+  await page.goto("/agent");
+  await openPicker();
+  const dialog = page.getByRole("dialog", { name: "人格卡", exact: true });
+  const legacyCard = dialog.locator('[data-persona-card="upload-existing"]');
+  await expect(legacyCard).toHaveAttribute("data-selected", "true");
+  await expect(legacyCard.locator("img")).toHaveAttribute("src", "/images/operator-portraits/4228_closur.webp");
+  expect(await page.evaluate(() => localStorage.getItem("riic.agent.persona.v1"))).toBeNull();
+  const fileInput = page.getByLabel("上传人格卡文件", { exact: true });
+  await expect(fileInput).toHaveAttribute("multiple", "");
+  await fileInput.setInputFiles([
+    { name: "同名人格.md", mimeType: "text/markdown", buffer: Buffer.from(content) },
+    { name: "空白.txt", mimeType: "text/plain", buffer: Buffer.from(" ") },
+    { name: "同名人格.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ name: "同名人格", content: content + "二" })) },
+  ]);
+  await expect(dialog.locator('[data-persona-card^="upload-"]')).toHaveCount(3);
+  await expect(dialog.getByRole("alert")).toContainText("空白.txt");
+  await expect(dialog.getByRole("button", { name: "上传人格卡", exact: true })).toBeVisible();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("riic.agent.personas.v1")!).personas as { id: string; filename?: string; avatarUrl?: string }[]);
+  expect(new Set(saved.map(card => card.id)).size).toBe(3);
+  const firstId = saved.find(card => card.filename === "同名人格.md")!.id;
+  const secondId = saved.find(card => card.filename === "同名人格.json")!.id;
+  const first = dialog.locator('[data-persona-card="' + firstId + '"]');
+  const second = dialog.locator('[data-persona-card="' + secondId + '"]');
+  await expect(dialog.getByRole("button", { name: "重置头像", exact: true })).toHaveCount(0);
+  await expect(first.getByRole("button", { name: "上传头像", exact: true })).toHaveText("");
+  await expect(first.getByRole("button", { name: "上传头像", exact: true }).locator("svg")).toHaveCount(0);
+  await expect(first.getByRole("button", { name: "上传头像", exact: true })).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  await expect(first.getByRole("button", { name: "删除人格卡", exact: true })).toHaveText("");
+  const controls = await first.evaluate(card => {
+    const upload = card.querySelector<HTMLButtonElement>('[aria-label="上传头像"]')!;
+    const remove = card.querySelector<HTMLButtonElement>('[aria-label="删除人格卡"]')!;
+    const uploadBounds = upload.getBoundingClientRect();
+    const portraitBounds = upload.parentElement!.getBoundingClientRect();
+    const removeBounds = remove.getBoundingClientRect();
+    const cardBounds = card.getBoundingClientRect();
+    return {
+      uploadSize: [uploadBounds.width, uploadBounds.height],
+      removeSize: [removeBounds.width, removeBounds.height],
+      uploadOnPortrait: uploadBounds.x === portraitBounds.x && uploadBounds.y === portraitBounds.y && uploadBounds.width === portraitBounds.width && uploadBounds.height === portraitBounds.height,
+      removeTop: removeBounds.top - cardBounds.top,
+      removeRight: cardBounds.right - removeBounds.right,
+      removeRadius: getComputedStyle(remove).borderRadius,
+    };
+  });
+  expect(controls.uploadSize).toEqual([64, 64]);
+  expect(controls.removeSize).toEqual([24, 24]);
+  expect(controls.uploadOnPortrait).toBe(true);
+  expect(controls.removeTop).toBeLessThanOrEqual(8);
+  expect(controls.removeRight).toBeLessThanOrEqual(8);
+  expect(controls.removeRadius).toBe("50%");
+  await expect(second).toHaveAttribute("data-selected", "true");
+  const [firstChooser] = await Promise.all([page.waitForEvent("filechooser"), first.getByRole("button", { name: "上传头像", exact: true }).click()]);
+  await firstChooser.setFiles("apps/arknights/public/images/operator-portraits/4228_closur.webp");
+  await expect(first.locator("img")).toHaveAttribute("src", /^data:image\/webp;base64,/);
+  const firstAvatar = await first.locator("img").getAttribute("src");
+  await expect(second).toHaveAttribute("data-selected", "true");
+  await expect(second.locator("img")).toHaveCount(0);
+  const [secondChooser] = await Promise.all([page.waitForEvent("filechooser"), second.getByRole("button", { name: "上传头像", exact: true }).click()]);
+  await secondChooser.setFiles("apps/arknights/public/images/operator-portraits/4195_radian.webp");
+  await expect(second.locator("img")).toHaveAttribute("src", /^data:image\/webp;base64,/);
+  const secondAvatar = await second.locator("img").getAttribute("src");
+  expect(secondAvatar).not.toBe(firstAvatar);
+  await first.getByRole("button", { name: "使用同名人格", exact: true }).click({ position: { x: 12, y: 12 } });
+  await expect(first).toHaveAttribute("data-selected", "true");
+  await page.reload();
+  await openPicker();
+  await expect(dialog.locator('[data-persona-card^="upload-"]')).toHaveCount(3);
+  await expect(first).toHaveAttribute("data-selected", "true");
+  await expect(first.locator("img")).toHaveAttribute("src", firstAvatar!);
+  await expect(first.locator("img")).toHaveJSProperty("naturalWidth", 256);
+  await expect(second.locator("img")).toHaveAttribute("src", secondAvatar!);
+  await expect(legacyCard.locator("img")).toHaveAttribute("src", "/images/operator-portraits/4228_closur.webp");
+  const restored = await page.evaluate(() => JSON.parse(localStorage.getItem("riic.agent.personas.v1")!).personas);
+  expect(restored).toEqual(expect.arrayContaining([
+    expect.objectContaining({ id: firstId, content, avatarUrl: firstAvatar }),
+    expect.objectContaining({ id: secondId, content: content + "二", avatarUrl: secondAvatar }),
+  ]));
+  await expect(dialog.getByRole("button", { name: "重置头像", exact: true })).toHaveCount(0);
+  await expect(first.locator("img")).toHaveAttribute("src", firstAvatar!);
+  await second.getByRole("button", { name: "删除人格卡", exact: true }).click();
+  await expect(second).toHaveCount(0);
+  await expect(first).toHaveAttribute("data-selected", "true");
+  await first.getByRole("button", { name: "删除人格卡", exact: true }).click();
+  await expect(first).toHaveCount(0);
+  await expect(dialog.locator('[data-persona-card="default"]')).toHaveAttribute("data-selected", "true");
+  await page.reload();
+  await openPicker();
+  await expect(dialog.locator('[data-persona-card^="upload-"]')).toHaveCount(1);
+  await expect(legacyCard).toContainText("原有人格");
+  await expect(dialog.locator('[data-persona-card="default"]')).toHaveAttribute("data-selected", "true");
+  expect(await page.evaluate(() => localStorage.getItem("riic.agent.persona.selection.v1"))).toBe("default");
+  expect(uploadRequests).toEqual([]);
+});
+
 test("Persona portraits keep Closure fixed and persist uploaded persona avatars", async ({ page }) => {
   await mockWorkbench(page);
   await page.addInitScript(() => localStorage.setItem("riic.agent.persona.closure.avatar.v1", "/images/operator-portraits/4195_radian.webp"));
@@ -358,25 +474,31 @@ test("Persona portraits keep Closure fixed and persist uploaded persona avatars"
   await expect(page.getByRole("button", { name: "重置头像", exact: true })).toHaveCount(0);
   await expect(preview.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
   await page.getByLabel("上传人格卡文件", { exact: true }).setInputFiles({ name: "测试人格.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({ name: "测试人格", content: "简洁回答。", avatarUrl: "/images/operator-portraits/4228_closur.webp" })) });
-  await expect(page.getByRole("button", { name: "人格卡：测试人格" })).toBeVisible();
+  await expect(preview.getByRole("button", { name: "使用测试人格", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(assistantAvatar.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
-  await page.getByRole("button", { name: /人格卡：/ }).click();
+  await expect(page.getByRole("dialog", { name: "人格卡", exact: true })).toBeVisible();
+  await expect(page.getByText("支持上传多张人格卡。人格卡及各自的头像保存在当前浏览器，不会跨设备同步。", { exact: true })).toBeVisible();
   await expect(preview.locator("img")).toHaveAttribute("src", "/images/operator-portraits/4228_closur.webp");
-  await avatarInput.setInputFiles("apps/arknights/public/images/operator-portraits/4228_closur.webp");
+  const [avatarChooser] = await Promise.all([page.waitForEvent("filechooser"), preview.getByRole("button", { name: "上传头像", exact: true }).click()]);
+  await avatarChooser.setFiles("apps/arknights/public/images/operator-portraits/4228_closur.webp");
   await expect(preview.locator("img")).toHaveAttribute("src", /^data:image\/webp;base64,/);
   const customAvatar = await preview.locator("img").getAttribute("src");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic.agent.personas.v1")!).personas)).toMatchObject([{ name: "测试人格", content: "简洁回答。", avatarUrl: customAvatar }]);
   await avatarInput.setInputFiles({ name: "invalid.svg", mimeType: "image/svg+xml", buffer: Buffer.from("<svg/>") });
   await expect(page.getByRole("dialog").getByRole("alert")).toContainText("PNG、JPEG 或 WebP");
   await expect(preview.locator("img")).toHaveAttribute("src", customAvatar!);
   await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
+  await expect(page.getByRole("button", { name: "人格卡：测试人格", exact: true })).toBeVisible();
   await page.reload();
   await openAgentHistory(page, "你好");
   await expect(assistantAvatar.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
   await page.getByRole("button", { name: /人格卡：/ }).click();
   await expect(preview.locator("img")).toHaveAttribute("src", customAvatar!);
-  await page.getByRole("button", { name: "重置头像", exact: true }).click();
-  await expect(preview.locator("img")).toHaveCount(0);
-  await expect(preview.locator("[data-remote-avatar-state]")).toHaveText("测");
+  await expect(page.getByRole("button", { name: "重置头像", exact: true })).toHaveCount(0);
+  const [replacementChooser] = await Promise.all([page.waitForEvent("filechooser"), preview.getByRole("button", { name: "上传头像", exact: true }).click()]);
+  await replacementChooser.setFiles("apps/arknights/public/images/operator-portraits/4195_radian.webp");
+  await expect(preview.locator("img")).toHaveAttribute("src", /^data:image\/webp;base64,/);
+  await expect(preview.locator("img")).not.toHaveAttribute("src", customAvatar!);
   await page.getByRole("button", { name: "使用可露希尔", exact: true }).click();
   await expect(assistantAvatar.locator("[data-closure-fur-avatar]")).toHaveAttribute("data-fur-ready", "true");
   await expect(assistantAvatar.locator("img:visible")).toHaveCount(0);
@@ -584,6 +706,8 @@ for (const width of [1440, 375]) {
     if (width < 768) await page.getByRole("button", { name: "附件与人格卡", exact: true }).click();
     await page.getByRole("button", { name: /人格卡：/ }).click();
     await page.getByLabel("上传人格卡文件", { exact: true }).setInputFiles({ name: "测试人格.md", mimeType: "text/markdown", buffer: Buffer.from("回答请使用简洁中文。") });
+    await expect(page.getByRole("dialog", { name: "人格卡", exact: true })).toBeVisible();
+    await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     if (width < 768) await page.getByRole("button", { name: "附件与人格卡", exact: true }).click();
     await expect(page.getByRole("button", { name: "人格卡：测试人格" })).toBeVisible();
     if (width < 768) await page.keyboard.press("Escape");

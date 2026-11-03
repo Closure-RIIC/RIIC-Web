@@ -44,7 +44,7 @@ for (const width of [1440, 375]) {
     await expect(name).toHaveCSS("text-overflow", "ellipsis");
     expect(await name.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true);
     await expect(footer.getByRole("link", { name: "帮助文档", exact: true })).toHaveAttribute("href", "/docs");
-    await expect(page.getByText("我的角色", { exact: true })).toBeVisible();
+    await expect(page.getByText("我的账号", { exact: true })).toBeVisible();
     const skland = page.locator('[data-primary-navigation-page="skland"]');
     await expect(skland).toHaveAccessibleName("森空岛同步");
     await expect(skland.locator("..").locator("xpath=following-sibling::li[1]")).toContainText("抽卡分析");

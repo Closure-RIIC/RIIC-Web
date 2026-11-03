@@ -334,9 +334,13 @@ for (const mobile of [false, true]) {
     await expect(page.locator('[data-agent-chat] h1 > span[aria-hidden="true"]')).toHaveCSS("background-color", "rgb(189, 53, 75)");
     await page.reload();
     await expect((await personaControl(page, "人格卡：可露希尔"))).toBeVisible({ timeout: 30_000 });
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("riic.agent.persona.v1")!))).toEqual(savedUpload);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("riic.agent.personas.v1")!).personas)).toMatchObject([{ id: savedUpload.id, name: savedUpload.name, content: savedUpload.content }]);
     await (await personaControl(page, "人格卡：可露希尔")).click();
-    await page.getByRole("button", { name: "使用原有人格" }).click();
+    const savedCard = page.locator('[data-persona-card="upload-existing"]');
+    const savedTitle = (await savedCard.locator("h3").boundingBox())!;
+    const savedSelect = savedCard.getByRole("button", { name: "使用原有人格" });
+    const savedBounds = (await savedSelect.boundingBox())!;
+    await savedSelect.click({ position: { x: savedTitle.x + savedTitle.width / 2 - savedBounds.x, y: savedTitle.y + savedTitle.height / 2 - savedBounds.y } });
     await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();
     await expect((await personaControl(page, "人格卡：原有人格"))).toBeVisible();
   });
@@ -564,6 +568,7 @@ for (const mobile of [false, true]) {
     await (await personaControl(page, "人格卡：琴柳")).click();
     const selected = page.getByRole("button", { name: "使用琴柳" });
     await expect(selected).toHaveAttribute("aria-pressed", "true");
+    await expect(selected).toHaveAccessibleName("使用琴柳");
     await expect(selected).toHaveText("琴柳");
     await selected.focus();
     await page.keyboard.press("Space");

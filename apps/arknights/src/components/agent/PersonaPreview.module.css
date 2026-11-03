@@ -27,10 +27,14 @@
 .preview[data-selected="true"] { outline: 1px solid var(--dialogue-accent); outline-offset: -1px; }
 
 .cardSelect {
-  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  inset: 0;
   z-index: 2;
-  flex: 1;
   width: 100%;
+  height: 100%;
   border: 0;
   padding: 0;
   border-radius: inherit;
@@ -42,6 +46,37 @@
 .cardSelect:focus-visible { outline: 2px solid var(--ring); outline-offset: -5px; }
 .cardSelect:disabled { cursor: not-allowed; }
 .preview button:not(.cardSelect) { position: relative; z-index: 3; }
+
+.cardIdentity { pointer-events: none; }
+
+.preview button.avatarUpload,
+.preview button.deletePersona {
+  position: absolute;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  pointer-events: auto;
+}
+
+.preview button.avatarUpload {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.preview button.avatarUpload:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.preview button.avatarUpload:disabled { cursor: not-allowed; }
+
+.preview button.deletePersona {
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+}
 
 .closure, .closure[data-agent-chat] {
   --dialogue-accent: #bd354b;
