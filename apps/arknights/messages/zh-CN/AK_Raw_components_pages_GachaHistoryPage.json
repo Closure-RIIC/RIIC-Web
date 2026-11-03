@@ -64,5 +64,15 @@
   "savedPulls": "已保存寻访",
   "sixStars": "六星干员",
   "lowerStars": "五星 / 四星 / 三星",
-  "equivalent": "折算"
+  "equivalent": "折算",
+  "captureScreenshot": "截取一屏",
+  "capturingScreenshot": "正在截图",
+  "saveScreenshot": "保存截图",
+  "screenshotDescription": "当前可见页面已生成图片，可保存或分享。",
+  "screenshotPreview": "当前屏幕的寻访记录截图",
+  "downloadScreenshot": "下载 PNG",
+  "shareScreenshot": "系统分享",
+  "screenshotFailed": "截图未能生成，请关闭后重试。",
+  "screenshotShareFailed": "无法打开系统分享，请长按图片保存或下载 PNG。",
+  "authorizationRequired": "云端记录仍然保留，重新授权后可继续刷新。"
 }

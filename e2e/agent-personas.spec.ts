@@ -334,7 +334,7 @@ for (const mobile of [false, true]) {
     await expect(page.locator('[data-agent-chat] h1 > span[aria-hidden="true"]')).toHaveCSS("background-color", "rgb(189, 53, 75)");
     await page.reload();
     await expect((await personaControl(page, "人格卡：可露希尔"))).toBeVisible({ timeout: 30_000 });
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("riic.agent.persona.v1")!))).toEqual(savedUpload);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("riic.agent.personas.v1")!).personas)).toMatchObject([{ id: savedUpload.id, name: savedUpload.name, content: savedUpload.content }]);
     await (await personaControl(page, "人格卡：可露希尔")).click();
     await page.getByRole("button", { name: "使用原有人格" }).click();
     await page.getByRole("dialog").getByRole("button", { name: /^(关闭|關閉|Close)$/, exact: true }).click();

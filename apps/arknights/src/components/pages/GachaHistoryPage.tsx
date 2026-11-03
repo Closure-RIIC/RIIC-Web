@@ -25,6 +25,7 @@ import styles from "./GachaHistoryPage.module.css";
 import titleManifest from "@/generated/gacha-titles.json";
 import { analyzeGachaHistory } from "@/gacha-analytics";
 import { GachaAnalysisOverview, GachaAnalysisRules, GachaRating } from "./GachaStatistics";
+import { GachaScreenshotButton } from "./GachaScreenshotButton";
 
 import type { AppLocale } from "@riic/contracts/locale";
 import { useGameCatalog } from "@/i18n/game-data-client";
@@ -104,7 +105,8 @@ function DrawPortrait({ record, large = false, offBanner = false }: { record: Ga
   const rawLocale = useRawLocale();
   const gameCatalog = useGameCatalog();
   return <div className="relative" title={`${localizedOperatorName(record.charName, rawLocale, gameCatalog)} · ${record.stars}★${record.isNew ? " · NEW" : ""}`} data-gacha-record data-gacha-stars={record.stars}>
-    <RemoteAvatar src={operatorPortraitFor(record.charName, record.charId)} alt={rawText.text(rawLocale, "avatar", { name: localizedOperatorName(record.charName, rawLocale, gameCatalog) })} pixelSize={large ? 40 : 28} loading="lazy" className={`${large ? "size-10" : "size-7"} rounded-[4px] bg-muted`} emptyFallback={<span aria-hidden="true" className="text-xs text-muted-foreground">{record.charName.slice(0, 1)}</span>} />
+    <RemoteAvatar src={operatorPortraitFor(record.charName, record.charId)} alt={rawText.text(rawLocale, "avatar", { name: localizedOperatorName(record.charName, rawLocale, gameCatalog) })} pixelSize={large ? 40 : 28} loading="lazy" className={`${large ? "size-10 max-sm:size-7" : "size-7 max-sm:size-6"} rounded-[4px] bg-muted`} emptyFallback={<span aria-hidden="true" className="text-xs text-muted-foreground">{record.charName.slice(0, 1)}</span>} />
+    {record.isNew && <span data-gacha-new className="absolute -left-1 -top-1 z-10 rounded-[2px] bg-yellow-400 px-0.5 text-[7px] font-bold leading-[10px] text-black max-sm:-left-0.5 max-sm:-top-0.5 max-sm:px-px max-sm:text-[6px] max-sm:leading-[8px]">NEW</span>}
     {offBanner && <span data-gacha-off-banner aria-label={rawText.text(rawLocale, "6OperatorOutsideThisBannerSRateUpPool")} className="absolute -right-1 -top-1 z-10 grid size-4 place-items-center rounded-[2px] bg-destructive text-[10px] font-semibold leading-none text-white">{rawText.text(rawLocale, "offBanner")}</span>}
   </div>;
 }
@@ -148,13 +150,13 @@ function GachaDrawIntervals({ intervals, showFiveStars }: { intervals: GachaSixS
     {intervals.map((interval) => {
       if (!interval.sixStar) return null;
       const color = interval.drawCount <= 30 ? workbenchPageAccent("gacha") : interval.drawCount <= 60 ? workbenchPageAccent("calculator") : "var(--destructive)";
-      return <div key={interval.key} data-gacha-interval role="listitem" aria-label={rawText.text(rawLocale, "interval", { name: localizedOperatorName(interval.sixStar.charName, rawLocale, gameCatalog), count: interval.drawCount })} className="grid grid-cols-[40px_minmax(0,1fr)] items-start gap-x-3 gap-y-2 py-4 max-sm:gap-x-2 max-sm:gap-y-1.5 max-sm:py-3">
+      return <div key={interval.key} data-gacha-interval role="listitem" aria-label={rawText.text(rawLocale, "interval", { name: localizedOperatorName(interval.sixStar.charName, rawLocale, gameCatalog), count: interval.drawCount })} className="grid grid-cols-[40px_minmax(0,1fr)] items-start gap-x-3 gap-y-2 py-4 max-sm:grid-cols-[28px_minmax(0,1fr)] max-sm:gap-x-2 max-sm:gap-y-1 max-sm:py-1.5">
       <div className={showFiveStars && interval.lowerStars.length > 0 ? "row-span-2" : undefined}>
         <DrawPortrait record={interval.sixStar} large offBanner={interval.offBanner} />
       </div>
-      <div className={`${styles.drawBar} relative flex h-10 min-w-0 items-center overflow-hidden`} style={{ "--gacha-accent": color, "--gacha-saturation": interval.drawCount <= 60 ? 2.3 : 1.45 } as CSSProperties} data-gacha-draw-bar data-gacha-interval-key={interval.key}>
+      <div className={`${styles.drawBar} relative flex h-10 min-w-0 items-center overflow-hidden max-sm:h-7`} style={{ "--gacha-accent": color, "--gacha-saturation": interval.drawCount <= 60 ? 2.3 : 1.45 } as CSSProperties} data-gacha-draw-bar data-gacha-interval-key={interval.key}>
         <div aria-hidden="true" className={`${styles.drawFill} absolute inset-y-0 left-0`} style={{ width: `${Math.min(100, interval.drawCount / 80 * 100)}%`, minWidth: "min(100%, calc(5rem + var(--gacha-bar-cut)))", backgroundColor: "var(--gacha-bar-fill)" } as CSSProperties} />
-        <span className="relative z-10 flex items-baseline gap-2 whitespace-nowrap px-3" style={{ color: "var(--gacha-bar-foreground, var(--foreground))" }}><strong className="font-number text-xl font-semibold leading-none tabular-nums">{interval.drawCount}</strong><span className="text-xs font-medium opacity-75">{rawText.text(rawLocale, "pulls")}</span></span>
+        <span className="relative z-10 flex items-baseline gap-2 whitespace-nowrap px-3 max-sm:gap-1.5 max-sm:px-2" style={{ color: "var(--gacha-bar-foreground, var(--foreground))" }}><strong className="font-number text-xl font-semibold leading-none tabular-nums max-sm:text-lg">{interval.drawCount}</strong><span className="text-xs font-medium opacity-75">{rawText.text(rawLocale, "pulls")}</span></span>
       </div>
       {showFiveStars && interval.lowerStars.length > 0 && <div className="col-start-2 flex min-w-0 flex-wrap gap-1.5" role="list" aria-label={rawText.text(rawLocale, "5OperatorsInThisSegment")}>
         {interval.lowerStars.map((record) => <div key={record.id} role="listitem" aria-label={rawText.text(rawLocale, "stars", { name: localizedOperatorName(record.charName, rawLocale, gameCatalog), stars: record.stars })}><DrawPortrait record={record} /></div>)}
@@ -392,13 +394,14 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
         nameBadge={<GachaRating average={analysis.current.sixAverage} scope="current" currentDraws={loading || error ? undefined : analysis.current.draws} />}
         extraMetadata={recordStartedLabel && <span className="whitespace-nowrap" data-gacha-record-start>{rawText.rich(rawLocale, "recordsBegin", { part1: richValue((<time dateTime={new Date(analysis.startedAt!).toISOString()}>{recordStartedLabel}</time>)) })}</span>} /> : null}
       actions={
-      <div className={`${styles.actionToolbar} ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 max-lg:ml-0 max-lg:w-full max-lg:justify-start`} role="group" aria-label={rawText.text(rawLocale, "headhuntingRecordActions")} data-expanded={toolbarExpanded}>
+      <div className={`${styles.actionToolbar} ml-auto flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 max-lg:ml-0 max-lg:w-full max-lg:justify-start`} role="group" aria-label={rawText.text(rawLocale, "headhuntingRecordActions")} data-expanded={toolbarExpanded} data-html2canvas-ignore>
         <div id={toolbarActionsId} className={`${styles.toolbarActions} flex min-w-0 max-w-full flex-wrap items-center justify-end gap-1.5 max-lg:w-full max-lg:justify-start`}>
         {history && <SetupActionButton type="button" variant="outline" className={`${gachaToolbarActionClassName} ${styles.fiveStarToggle}`} data-gacha-action="five-stars" aria-label={rawText.text(rawLocale, "show5Operators")} aria-pressed={showFiveStars} title={rawText.text(rawLocale, "show5Operators")} onClick={() => setShowFiveStars(current => !current)}><Star /><span className={styles.actionLabel}>{rawText.text(rawLocale, "show5Operators")}</span></SetupActionButton>}
+        {history && <GachaScreenshotButton className={gachaToolbarActionClassName} />}
         {authorizedUids.length > 0 && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground`} data-gacha-action="disconnect" aria-label={rawText.text(rawLocale, "revokeAuthorization")} title={rawText.text(rawLocale, "revokeAuthorization")} disabled={busy} onClick={() => void disconnect()}><Unlink className="sm:hidden" /><span className={styles.actionLabel}>{rawText.text(rawLocale, "revokeAuthorization")}</span></SetupActionButton>}
         {history && <SetupActionButton type="button" variant="ghost" className={`${gachaToolbarActionClassName} text-muted-foreground hover:text-destructive`} data-gacha-action="delete" disabled={busy || loading} aria-label={rawText.text(rawLocale, "deleteCloudHeadhuntingHistory")} title={rawText.text(rawLocale, "deleteCloudHeadhuntingHistory")} onClick={() => void clearHistory()}><Trash2 /><span className={styles.actionLabel}>{rawText.text(rawLocale, "delete")}</span></SetupActionButton>}
         <Dialog open={authorizationOpen} onOpenChange={changeAuthorizationOpen}>
-          <DialogTrigger render={<SetupActionButton type="button" variant={authorized ? "outline" : "default"} aria-label={rawText.text(rawLocale, "authorizeHistory")} title={rawText.text(rawLocale, "authorizeHistory")} disabled={busy} className={gachaToolbarActionClassName} />}><ScanLine /><span className={styles.actionLabel}>{rawText.text(rawLocale, "authorizeHistory")}</span></DialogTrigger>
+          <DialogTrigger render={<SetupActionButton type="button" variant={authorized ? "outline" : "default"} data-gacha-action="authorize" aria-label={rawText.text(rawLocale, "authorizeHistory")} title={rawText.text(rawLocale, "authorizeHistory")} disabled={busy} className={gachaToolbarActionClassName} />}><ScanLine /><span className={styles.actionLabel}>{rawText.text(rawLocale, "authorizeHistory")}</span></DialogTrigger>
           <DialogContent className="max-h-[calc(100dvh-2rem)] grid-rows-[auto_minmax(0,1fr)] sm:max-w-[min(720px,calc(100vw-2rem))]">
             <DialogHeader>
               <DialogTitle>{rawText.text(rawLocale, "authorizeHeadhuntingHistory")}</DialogTitle>
@@ -432,6 +435,7 @@ export default function GachaHistoryPage({ uid, accountId, player, syncedAt = nu
     } />
     {identityError && <p role="alert" className="text-sm text-muted-foreground">{rawText.rich(rawLocale, "accountDetailsCouldNotSync", { part1: richValue((identityError)), part2: richValue((<button type="button" className="underline underline-offset-4" onClick={onRetryIdentity}>{rawText.text(rawLocale, "syncAgain")}</button>)) })}</p>}
     {!history && <p className="border-y border-border py-12 text-center text-sm text-muted-foreground">{loading ? rawText.text(rawLocale, "loadingCloudHistory") : authorized ? rawText.text(rawLocale, "noSavedHeadhuntingRecordsSelectRefreshToLoadThem") : rawText.text(rawLocale, "noSavedHeadhuntingRecordsSelectAuthorizeHistoryToGet")}</p>}
+    {!authorized && !loading && <p className="text-sm text-muted-foreground sm:hidden">{history && rawText.text(rawLocale, "authorizationRequired")} <button type="button" className="inline-flex min-h-11 items-center underline underline-offset-4" disabled={busy} onClick={() => changeAuthorizationOpen(true)}>{rawText.text(rawLocale, "authorizeHistory")}</button></p>}
     {error && <p role="alert" className="border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">{gachaError(error, rawLocale)}</p>}
     {history && <>
       <div className={styles.statistics} data-gacha-statistics>

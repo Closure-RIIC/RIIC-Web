@@ -117,7 +117,10 @@ export function SidebarAccountMenu({ user, pending, busy = false, unavailable = 
           </Menu.RadioGroup>
           {language.pending ? <p role="status" className={styles.error}>{labels.languageLoading}</p> : null}
           {language.error ? <p role="alert" className={styles.error}>{labels.languageFailed}</p> : null}
-          {!user ? <Menu.Item className={styles.item} data-sidebar-sign-in onClick={() => { closeForNavigation(); if (triggerRef.current) onSignIn(triggerRef.current); }}><UserRound aria-hidden="true" />{labels.signIn}</Menu.Item> : null}
+          {!user ? <Menu.Item className={styles.item} data-sidebar-sign-in onClick={() => { closeForNavigation(); if (triggerRef.current) onSignIn(triggerRef.current); }}
+            render={(props, state) => <div {...props}>{renderItemContent(state.highlighted, props.children)}</div>}>
+            <UserRound aria-hidden="true" />{labels.signIn}
+          </Menu.Item> : null}
           <Menu.Separator className={styles.separator} />
           {billingEnabled && billingLink ? <Menu.LinkItem closeOnClick className={styles.item} aria-current={currentPage === "billing" ? "page" : undefined}
             onClick={event => navigate(event, "billing")} data-primary-navigation-page="billing"
