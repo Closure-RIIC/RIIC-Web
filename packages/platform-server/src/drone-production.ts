@@ -3,7 +3,7 @@ import {
   droneDailyProductionForActualShift,
   droneProductionForShift as calculateDroneProductionForShift,
   droneTradeOutputForEfficiency as calculateDroneTradeOutputForEfficiency,
-  droneTradeTarget,
+  NORMAL_TRADE_DAILY,
   normalizeDroneDailyProduction,
   powerEfficiencyForShift as calculatePowerEfficiencyForShift,
   powerStationsFromRotation as corePowerStationsFromRotation,
@@ -12,7 +12,7 @@ import {
   type DroneTradeTarget,
   type PowerStationContribution,
 } from "@riic/arknights-domain/drone-production-core";
-import type { BaseBlueprint, MaaJson, MaaPlan, MaaRoom, RotationJson, RotationShift } from "@riic/arknights-domain/types";
+import type { BaseBlueprint, MaaJson, MaaPlan, RotationJson, RotationShift } from "@riic/arknights-domain/types";
 
 export type { DroneDailyProduction, DroneTradeTarget } from "@riic/arknights-domain/drone-production-core";
 
@@ -104,32 +104,52 @@ export function powerStationsFromRotation(layout: BaseBlueprint, shift: Rotation
   return corePowerStationsFromRotation(layout, shift, plan);
 }
 
-function operatorName(operator: MaaRoom["operators"][number]): string {
-  return typeof operator === "string" ? operator : operator?.name ?? "";
+/**
+ * 由求解器 rotation 的房间行构造无人机目标。
+ *
+ * 不再按干员名打表：订单倍率直接取求解器的 `order_multiplier`，
+ * 赤金系数用 `gold_equivalent_efficiency / total_efficiency` 反推
+ * （求解器省略 0 值字段，缺失按 0 处理）。
+ */
+function evaluatedTradeProfile(
+  level: 1 | 2 | 3,
+  line: RotationShift["scores"]["room_lines"][number] | undefined,
+): DroneTradeTarget {
+  const orderMultiplier = positive(line?.order_multiplier) && line.order_multiplier > 0
+    ? line.order_multiplier
+    : 1;
+  const total = positive(line?.total_efficiency) ? line.total_efficiency : 0;
+  const goldEquivalent = positive(line?.gold_equivalent_efficiency) ? line.gold_equivalent_efficiency : 0;
+  return {
+    kind: "evaluated",
+    level,
+    orderMultiplier,
+    goldValuePerBase: total > 0 ? goldEquivalent / total * 10_000 : 0,
+  };
 }
 
-const TAILORING_OPERATORS = new Set(["折光", "明椒", "卡夫卡", "柏喙"]);
-
-export function tradeTargetPriority(level: number, operators: MaaRoom["operators"]): number {
-  const names = operators.map(operatorName).filter(Boolean);
-  const has = (name: string) => names.includes(name);
-  if (level === 1 && has("但书")) return 600;
-  if (level === 2 && has("但书")) return 500;
-  if (level === 3 && has("但书") && has("龙舌兰")) return 400;
-  if (level === 3 && has("龙舌兰") && names.some((name) => TAILORING_OPERATORS.has(name))) return 300;
-  if (level === 3 && has("但书")) return 200;
-  if (has("可露希尔")) return 100;
+/** 每单位等效效率的龙门币产量，用于在多座贸易站中挑最优目标。 */
+function tradeValuePerBase(profile: DroneTradeTarget): number {
+  // bestTradeRoom 只产出 evaluated；normal 分支保留给其它调用形态。
+  if (profile.kind === "evaluated") return NORMAL_TRADE_DAILY[profile.level] * profile.orderMultiplier;
+  if (profile.kind === "normal") return NORMAL_TRADE_DAILY[profile.level];
   return 0;
 }
 
-function bestTradeRoom(layout: BaseBlueprint, plan: MaaPlan): { target: DroneRoomTarget; outputTarget: DroneOutputTarget } | null {
+function bestTradeRoom(
+  layout: BaseBlueprint,
+  plan: MaaPlan,
+  shift: RotationShift,
+): { target: DroneRoomTarget; outputTarget: DroneOutputTarget } | null {
   const rooms = layout.rooms.filter((room) => room.kind === "trade_post");
   return rooms.map((room, index) => {
-    const maaRoom = plan.rooms.trading?.[index];
+    const level = room.level === 1 || room.level === 2 ? room.level : 3;
+    const line = shift.scores.room_lines.find((candidate) => candidate.room_id === room.id);
+    const profile = evaluatedTradeProfile(level, line);
     return {
       target: { room: "trading" as const, index: index + 1, roomId: room.id, product: "lmd" as const },
-      outputTarget: { room: "trading" as const, index: index + 1, profile: droneTradeTarget(room.level, maaRoom?.operators ?? []) },
-      priority: tradeTargetPriority(room.level, maaRoom?.operators ?? []),
+      outputTarget: { room: "trading" as const, index: index + 1, profile },
+      priority: tradeValuePerBase(profile),
       level: room.level,
     };
   }).sort((left, right) => right.priority - left.priority || right.level - left.level)[0] ?? null;
@@ -174,7 +194,7 @@ export function chooseDroneAllocations(input: {
     const plan = input.plans[shift.index] ?? input.plans[position];
     if (!plan) return [];
     const powerStations = corePowerStationsFromRotation(input.layout, shift, plan);
-    const trade = bestTradeRoom(input.layout, plan);
+    const trade = bestTradeRoom(input.layout, plan, shift);
     const gold = bestFactoryRoom(input.layout, plan, "gold");
     const experience = bestFactoryRoom(input.layout, plan, "experience");
     if (input.layout.template === "153") {
