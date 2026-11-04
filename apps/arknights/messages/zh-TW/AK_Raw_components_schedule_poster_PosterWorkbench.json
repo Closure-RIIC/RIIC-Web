@@ -20,7 +20,6 @@
   "clearingUsesTheDefaultTime": "清除後使用預設時間",
   "rotationCycleH": "輪換週期 <part1></part1> h",
   "productionCalculation": "產出計算",
-  "calculateAutomaticallyAfterChanges": "<part1></part1>修改後自動計算",
   "calculating": "正在計算…",
   "recalculate": "重新計算",
   "productionMethodology": "產出統計口徑",

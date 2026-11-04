@@ -36,11 +36,12 @@ test("paper evaluation carries special anchors and computes trade-equivalent eff
   assert.equal(room.skillEfficiency, 0.9);
   assert.equal(room.globalEfficiency, 0.07);
   assert.equal(room.totalEfficiency, 2);
-  assert.equal(room.orderMultiplier, 1.552);
-  assert.equal(room.finalEfficiency, 3.104);
-  assert.equal(room.tradeEquivalentEfficiency, 2.004);
-  assert.equal(room.specialTradeAnchor?.tradeUnitOutputPerDay, 15_929.2);
-  assert.equal(evaluation.rotation.shifts[0]?.scores.room_lines[0]?.trade_equivalent_efficiency, 2.004);
+  // 但书 E2 + 龙舌兰 E2 + 第三人（3 级站）命中组合规则，倍率 = 14771.57 / 10265。
+  assert.equal(room.orderMultiplier, 1.439);
+  assert.equal(room.finalEfficiency, 2.878);
+  assert.equal(room.tradeEquivalentEfficiency, 1.778);
+  assert.equal(room.specialTradeAnchor?.tradeUnitOutputPerDay, 14_771.57);
+  assert.equal(evaluation.rotation.shifts[0]?.scores.room_lines[0]?.trade_equivalent_efficiency, 1.778);
 });
 
 test("paper evaluation reports witch-tequila hidden gold output from its special anchor", () => {
