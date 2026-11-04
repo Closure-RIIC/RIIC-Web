@@ -1292,6 +1292,7 @@ export function ScheduleBoard({
   onFactoryRecipeChange,
   onTradeOrderChange,
   onViewModeChange,
+  toolbarNoticeSlot,
   viewModeControl = "tabs",
   hideImages = false,
   onSlotClick,
@@ -1323,6 +1324,8 @@ export function ScheduleBoard({
   mobileActionsSlot?: ReactNode;
   shiftInfoSlot?: ReactNode;
   shiftTabsSlot?: ReactNode;
+  /** 结算提示，渲染在排班工具栏下方、排班板之上。 */
+  toolbarNoticeSlot?: ReactNode;
   activeShift: number;
   shiftDirection?: ShiftDirection;
   activePlan?: MaaPlan;
@@ -1923,6 +1926,7 @@ export function ScheduleBoard({
         </div>
         {shiftInfoSlot ? <div className="min-w-0 max-sm:w-full">{shiftInfoSlot}</div> : null}
       </div>
+      {toolbarNoticeSlot ? <div className="-my-4">{toolbarNoticeSlot}</div> : null}
       <motion.div
         data-plan-board
         data-hide-images={hideImages ? "" : undefined}

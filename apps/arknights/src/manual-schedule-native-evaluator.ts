@@ -306,6 +306,17 @@ export async function evaluateManualScheduleWithNativeEngine(input: {
     code: "unsupported-rule",
     message: `Rust 原生评估 ${response.engine.ruleset}：各班独立结算，不模拟跨班心情、库存、无人机或菲亚梅塔运行时状态。`,
   }];
+  // WASM 会把「有特殊订单机制但没有产出锚点」的房间降级为普通订单，并回报到 diagnostics。
+  for (const diagnostic of response.diagnostics ?? []) {
+    if (diagnostic.code !== "UNSUPPORTED_SPECIAL_TRADE") continue;
+    const match = /^\/shifts\/(\d+)\/rooms\/(.+)$/.exec(diagnostic.path);
+    warnings.push({
+      code: "unsupported-special-trade",
+      ...(match ? { shiftIndex: Number(match[1]), roomId: match[2] } : {}),
+      operators: diagnostic.operators ?? [],
+      message: diagnostic.message,
+    });
+  }
   const evaluation = {
     rotation: {
       profile: "abc_12_12_12" as const,

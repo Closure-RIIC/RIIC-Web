@@ -71,7 +71,7 @@ export type NativeEvalResponseV1 = {
   engine: { api: string; ruleset: string };
   shifts: Array<{ index: number; duration_hours: number; totals: NativeEvalTotals; rooms: NativeEvalRoom[] }>;
   weighted: NativeEvalTotals;
-  diagnostics: Array<{ code: string; path: string; message: string }>;
+  diagnostics: Array<{ code: string; path: string; message: string; operators?: string[] }>;
 };
 
 type NativeEvalErrorResponseV1 = {

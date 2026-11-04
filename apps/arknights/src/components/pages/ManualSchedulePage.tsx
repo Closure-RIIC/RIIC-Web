@@ -326,6 +326,11 @@ export function ManualSchedulePage({
   const resultOutdated = Boolean(suppliedResult) && evaluatedKey !== "" && evaluatedKey !== evaluationKey;
   // 过期时保留上一份结果，避免房间行在「有效率」和「等待排班」之间来回跳；由页面顶部提示告知需重算。
   const result = suppliedResult;
+  /** 未支持的贸易特殊订单：WASM 已按普通贸易站结算，这里提示用户具体房间与干员。 */
+  const unsupportedSpecialTradeNotices = useMemo(
+    () => (result?.warnings ?? []).filter((warning) => warning.code === "unsupported-special-trade"),
+    [result],
+  );
   const posterDocument = useMemo(() => {
     if (!posterSettings) return null;
     const names = new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators).concat(shift.fiammettaTarget)).filter((name): name is string => Boolean(name)));
@@ -1018,6 +1023,26 @@ export function ManualSchedulePage({
         activeShift={simulation?.shift ?? activeShift}
         activePlan={simulation ? undefined : activePlan}
         searchQuery={scheduleQuery}
+        toolbarNoticeSlot={!simulation && unsupportedSpecialTradeNotices.length ? (
+          <div className="flex flex-col gap-1" data-unsupported-special-trade>
+            {unsupportedSpecialTradeNotices.map((warning, index) => {
+              const room = rows.find((row) => row.roomId === warning.roomId);
+              const operators = (warning.operators ?? []).map((token) => {
+                const [name, elite] = token.split("#");
+                return `${intl("components_pages_ManualSchedulePage.eliteShort")}${elite}_${name}`;
+              }).join("、");
+              return (
+                <p key={`unsupported-special-trade-${index}`} role="status" className="text-sm text-amber-700">
+                  {intl("components_pages_ManualSchedulePage.unsupportedSpecialTrade", {
+                    shift: (warning.shiftIndex ?? 0) + 1,
+                    room: room?.title ?? warning.roomId ?? "",
+                    operators,
+                  })}
+                </p>
+              );
+            })}
+          </div>
+        ) : null}
         viewModeActionSlot={!simulation && (
           <div className="flex flex-wrap items-center gap-2">
             {dormRooms.length > 0 ? (

@@ -15,9 +15,12 @@ const FACTORY_BASE_DAILY: Record<Exclude<Recipe, "all">, number> = {
 };
 
 export type ManualEvaluationWarning = {
-  code: "unknown-operator" | "unsupported-rule" | "ambiguous-recipe";
+  code: "unknown-operator" | "unsupported-rule" | "ambiguous-recipe" | "unsupported-special-trade";
   roomId?: string;
   operator?: string;
+  /** 未结算特殊订单时涉及的干员，格式 `名称#精英等级`。 */
+  operators?: string[];
+  shiftIndex?: number;
   message: string;
 };
 
