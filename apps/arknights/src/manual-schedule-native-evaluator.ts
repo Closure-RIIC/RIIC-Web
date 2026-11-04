@@ -199,6 +199,7 @@ function roomEvaluation(input: {
       orderMultiplier: room.order_multiplier_basis_points / 1_000,
       finalEfficiency: room.display_final_basis_points / 1_000,
       goldEquivalentEfficiency: room.gold_equivalent_basis_points / 1_000,
+      goldOutputMultiplier: (room.gold_output_multiplier_basis_points ?? 0) / 1_000,
       tradeEquivalentEfficiency: room.trade_equivalent_basis_points / 1_000,
       ...(specialTrade?.rule ? { specialTradeAnchor: specialTrade.rule } : {}),
       dailyOutput: null,
@@ -218,11 +219,14 @@ function withManualSkillEfficiency(
   const skillEfficiency = manualSkillEfficiencyPct / 100;
   const totalEfficiency = rounded(room.baseEfficiency + skillEfficiency + room.globalEfficiency);
   const finalEfficiency = rounded(totalEfficiency * room.orderMultiplier);
+  // 赤金等效系数只由订单规则决定（赤金日产出 / 10000），与效率无关，0 表示没有等效赤金。
+  const goldMultiplier = room.goldOutputMultiplier ?? 0;
   return {
     ...room,
     skillEfficiency,
     totalEfficiency,
     finalEfficiency,
+    goldEquivalentEfficiency: goldMultiplier > 0 ? rounded(totalEfficiency * goldMultiplier) : room.goldEquivalentEfficiency,
     tradeEquivalentEfficiency: room.outputKind === "power" || room.members.length === 0
       ? room.tradeEquivalentEfficiency
       : rounded(finalEfficiency - room.baseEfficiency - room.globalEfficiency),
@@ -247,6 +251,8 @@ function roomLine(room: ManualRoomEvaluation, kind: BaseBlueprint["rooms"][numbe
     line.trade_display_pct = (room.skillEfficiency + room.globalEfficiency) * 100;
     line.trade_equivalent_efficiency = room.tradeEquivalentEfficiency ?? room.skillEfficiency;
     line.gold_equivalent_efficiency = room.goldEquivalentEfficiency;
+    // 赤金系数随状态一起保存，无人机计算据此得出精确的赤金单位日产出。
+    line.gold_output_multiplier = room.goldOutputMultiplier;
   } else if (kind === "factory") {
     line.manu_score = room.finalEfficiency * 100;
     line.manu_prod_skill = room.skillEfficiency * 100;
