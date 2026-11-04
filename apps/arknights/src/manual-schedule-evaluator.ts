@@ -34,6 +34,8 @@ export type ManualRoomEvaluation = {
   orderMultiplier: number;
   finalEfficiency: number;
   goldEquivalentEfficiency: number;
+  /** 赤金产出系数（赤金日产出 / 10000）。纸面模式改技能效率后用它重算赤金等效。 */
+  goldOutputMultiplier?: number;
   tradeEquivalentEfficiency?: number;
   specialTradeAnchor?: SpecialTradeAnchor;
   dailyOutput: number | null;

@@ -9,28 +9,9 @@ import {
   droneTradeOutputForShift,
   equivalentGoldForRotation,
   powerEfficiencyForShift,
-  tradeTargetPriority,
 } from "./drone-production.ts";
 
-test("drone trade targets follow the configured priority chain", () => {
-  const operators = (...names: string[]) => names;
-  assert.ok(tradeTargetPriority(1, operators("但书")) > tradeTargetPriority(2, operators("但书")));
-  assert.ok(tradeTargetPriority(2, operators("但书")) > tradeTargetPriority(3, operators("但书")));
-  assert.ok(tradeTargetPriority(3, operators("但书", "龙舌兰")) > tradeTargetPriority(3, operators("龙舌兰", "柏喙")));
-  assert.ok(tradeTargetPriority(3, operators("龙舌兰", "柏喙")) > tradeTargetPriority(3, operators("但书")));
-  assert.ok(tradeTargetPriority(3, operators("但书")) > tradeTargetPriority(1, operators("可露希尔")));
-  assert.equal(tradeTargetPriority(1, operators("可露希尔")), 100);
-});
-
-test("level 3 Tequila priority accepts every Tailoring operator", () => {
-  const operators = (...names: string[]) => names;
-  for (const tailoringOperator of ["折光", "明椒", "卡夫卡", "柏喙"]) {
-    assert.equal(tradeTargetPriority(3, operators("龙舌兰", tailoringOperator)), 300);
-  }
-  assert.equal(tradeTargetPriority(3, operators("龙舌兰")), 0);
-});
-
-test("automatic allocation selects the highest-priority trade room", () => {
+test("automatic allocation selects the highest-value trade room", () => {
   const layout = {
     template: "153", drone_cap: 0, scenario: {}, rooms: [
       { id: "trade_1", kind: "trade_post" as const, level: 3, product: { trade: { order: "gold" as const } } },
@@ -45,9 +26,18 @@ test("automatic allocation selects the highest-priority trade room", () => {
     ],
     power: [{ operators: ["雷蛇"] }],
   } };
+  // 求解器会为每座贸易站输出房间行：倍率来自实际命中的特殊机制。
+  // 3 级「但书+龙舌兰」单位产出 14771.57，1 级「但书」单位产出 20000，后者更高。
   const shift = {
     index: 0, duration_hours: 12, active_teams: [], resting_team: "", weighted_trade: 0, weighted_manu: 0, weighted_power: 0,
-    scores: { trade_score: 0, manu_prod_sum: 0, power_charge_sum: 0, room_lines: [{ room_id: "power_1", equivalent_efficiency: 0.2 }] },
+    scores: {
+      trade_score: 0, manu_prod_sum: 0, power_charge_sum: 0,
+      room_lines: [
+        { room_id: "power_1", equivalent_efficiency: 0.2 },
+        { room_id: "trade_1", total_efficiency: 1.4, order_multiplier: 1.439 },
+        { room_id: "trade_2", total_efficiency: 1.1, order_multiplier: 1.9484 },
+      ],
+    },
   };
   const [allocation] = chooseDroneAllocations({ layout, plans: [plan], shifts: [shift], dailyProduction: { lmd: 0, pure_gold: 0 } });
   assert.equal(allocation.target.roomId, "trade_2");

@@ -24,7 +24,7 @@ export type DroneOutputTarget =
   | { room: "trading"; index: number; profile: DroneTradeTarget }
   | { room: "manufacture"; index: number; product: "gold" | "experience" };
 
-const NORMAL_TRADE_DAILY: Record<1 | 2 | 3, number> = { 1: 10_000, 2: 10_141, 3: 10_265 };
+export const NORMAL_TRADE_DAILY: Record<1 | 2 | 3, number> = { 1: 10_000, 2: 10_141, 3: 10_265 };
 const DANTSHU_DAILY: Record<1 | 2 | 3, number> = { 1: 20_000, 2: 18_591.55, 3: 15_929.2 };
 const SPECIAL_TRADE_DAILY = {
   tequila: { lmd: 12_739.73, gold: 2_328.77 },
@@ -160,8 +160,8 @@ function selectedTarget(input: {
       profile: {
         kind: "evaluated", level: blueprint.level === 1 || blueprint.level === 2 ? blueprint.level : 3,
         orderMultiplier: line.order_multiplier,
-        goldValuePerBase: positive(line.total_efficiency) && line.total_efficiency > 0 && positive(line.gold_equivalent_efficiency)
-          ? line.gold_equivalent_efficiency / line.total_efficiency * 10_000 : 0,
+        // 评估总是给出赤金系数，没有等效赤金时为 0。
+        goldValuePerBase: (line.gold_output_multiplier ?? 0) * 10_000,
       },
     };
     return { room: "trading", index: input.drones.index, profile: droneTradeTarget(blueprint.level, room.operators) };

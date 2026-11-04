@@ -51,6 +51,8 @@ type NativeEvalRoom = {
   order_multiplier_basis_points: number;
   trade_equivalent_basis_points: number;
   gold_equivalent_basis_points: number;
+  /** 赤金产出系数（赤金日产出 / 10000），纸面模式用它重算赤金等效。 */
+  gold_output_multiplier_basis_points?: number;
   total_basis_points: number;
   final_basis_points: number;
   breakdown: NativeEvalBreakdown | null;
