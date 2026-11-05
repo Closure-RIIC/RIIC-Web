@@ -45,7 +45,7 @@ import type { SchedulePosterDocument } from "@/schedule-poster-document";
 import { defaultPosterOperator, posterOperators } from "@/schedule-poster-operators";
 import { POSTER_STORAGE_KEY } from "@/schedule-poster-storage";
 import type { PosterTarget } from "@/components/schedule-poster/SchedulePoster";
-import { assignPosterDormOperator, posterDormOperators } from "@/schedule-poster-dorm";
+import { assignPosterDormOperator, posterDormOperators, posterDormPosition } from "@/schedule-poster-dorm";
 import { droneStoragePlanIndex } from "@riic/arknights-domain/drone-plan-mapping";
 import type { ManualPlanResult } from "@/manual-plan-result";
 import { buildManualScheduleContext, type AgentPageContext } from "@/agent-page-context";
@@ -1024,7 +1024,11 @@ export function ManualSchedulePage({
     : (intl("components_pages_ManualSchedulePage.originalPlan"));
   const previousRoomTitle = pendingMove ? rows.find((row) => row.roomId === pendingMove.conflict.roomId)?.title ?? pendingMove.conflict.roomId : "";
   const pendingSlotTarget = pendingMove?.target.kind === "slot" ? pendingMove.target : null;
-  const nextRoomTitle = pendingMove ? pendingSlotTarget ? rows.find((row) => row.roomId === pendingSlotTarget.roomId)?.title ?? pendingSlotTarget.roomId : rows.find(row => row.group === "dormitory")?.title ?? "" : "";
+  const pendingPosterPosition = pendingMove?.target.kind === "poster-hanger" ? posterDormPosition(layout, pendingMove.target.posterSlot) : null;
+  const nextRoomId = pendingSlotTarget?.roomId ?? pendingPosterPosition?.roomId;
+  const nextRoomTitle = pendingMove ? nextRoomId
+    ? rows.find((row) => row.roomId === nextRoomId)?.title ?? nextRoomId
+    : rows.find(row => row.group === "dormitory")?.title ?? "" : "";
   const renderBoard = (simulation: MoodBoardState | null) => (
     <div data-manual-editor-board data-board-mode={simulation ? "simulation" : "edit"}>
       <ScheduleBoard

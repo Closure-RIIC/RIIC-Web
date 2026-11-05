@@ -10,6 +10,11 @@ function dormPositions(layout: BaseBlueprint) {
     .map(room => ({ roomId: room.id, slotIndex }))).flat();
 }
 
+export function posterDormPosition(layout: BaseBlueprint, posterSlot: number) {
+  if (!Number.isInteger(posterSlot) || posterSlot < 0 || posterSlot >= POSTER_DORM_SLOTS) return null;
+  return dormPositions(layout)[posterSlot] ?? null;
+}
+
 /** Read fixed occupants vertically, without letting AUTO or empty beds consume poster slots. */
 export function posterDormOperators(layout: BaseBlueprint, draft: ManualScheduleDraft, shiftIndex: number, legacyHanger: string | null = null): (string | null)[] {
   const shift = draft.shifts[shiftIndex];

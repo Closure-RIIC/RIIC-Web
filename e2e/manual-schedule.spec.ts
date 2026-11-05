@@ -557,6 +557,23 @@ test("poster dorm cards skip AUTO and write all six occupants vertically back to
   await expect(page.getByLabel("批量排班文本")).toHaveValue(/\| 森蚺、auto、塑心、虎狼丸 \| -/);
 });
 
+test("poster dorm conflict prompt names the room mapped from the selected card", async ({ page }) => {
+  const draft = createManualScheduleDraft([24], "08:00", "period");
+  draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", null, null] };
+  await page.addInitScript(value => {
+    localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify(value));
+  }, draft);
+  await page.goto("/manual");
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  const cards = page.locator('[data-poster-room="dorm_1"] [data-poster-shift="0"] [data-poster-hanger-slot]');
+  await cards.nth(5).getByRole("button", { name: "空位", exact: true }).click();
+  const picker = page.getByRole("dialog");
+  await picker.getByLabel("搜索可选干员或基建技能").fill("阿米娅");
+  await picker.getByRole("button", { name: /阿米娅/ }).click();
+  const moveDialog = page.getByRole("dialog", { name: "移动该干员？" });
+  await expect(moveDialog).toContainText("是否移动到宿舍 2");
+});
+
 test("poster bulk text derives facility autofill from slot markers and defaults empty facilities to auto", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/manual");
