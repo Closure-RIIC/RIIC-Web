@@ -82,5 +82,9 @@
   "fileImported": "Imported {name}. Layout and shifts are synchronized.",
   "shiftCount": "{count, plural, one {# shift} other {# shifts}}",
   "shiftDuration": "Shift {shift} duration / h",
-  "maaExported": "{multi, select, yes {The multi-day cycle was exported as sequential MAA shifts. } other {}}MAA schedule JSON exported. Title, instructions, and poster settings remain in the site schedule file."
+  "maaExported": "{multi, select, yes {The multi-day cycle was exported as sequential MAA shifts. } other {}}MAA schedule JSON exported. Title, instructions, and poster settings remain in the site schedule file.",
+  "shareUnavailable": "Could not generate a schedule code. Your schedule is preserved. Download the schedule file to share it, or retry when the network recovers.",
+  "loadUnavailable": "Could not load the schedule. Check the code, website address and network, or import a schedule file. Your current schedule was not replaced.",
+  "exportUnavailable": "Image export failed or timed out. Download your schedule file as a backup, then refresh and retry. Your schedule is preserved.",
+  "imageExportedWithFallback": "Image exported. Some fonts, portraits or backgrounds could not load. Fallback fonts or omitted images were used; please check the exported image."
 }
