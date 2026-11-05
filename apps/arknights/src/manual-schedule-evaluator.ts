@@ -15,9 +15,12 @@ const FACTORY_BASE_DAILY: Record<Exclude<Recipe, "all">, number> = {
 };
 
 export type ManualEvaluationWarning = {
-  code: "unknown-operator" | "unsupported-rule" | "ambiguous-recipe";
+  code: "unknown-operator" | "unsupported-rule" | "ambiguous-recipe" | "unsupported-special-trade";
   roomId?: string;
   operator?: string;
+  /** 未结算特殊订单时涉及的干员，格式 `名称#精英等级`。 */
+  operators?: string[];
+  shiftIndex?: number;
   message: string;
 };
 
@@ -31,6 +34,8 @@ export type ManualRoomEvaluation = {
   orderMultiplier: number;
   finalEfficiency: number;
   goldEquivalentEfficiency: number;
+  /** 赤金产出系数（赤金日产出 / 10000）。纸面模式改技能效率后用它重算赤金等效。 */
+  goldOutputMultiplier?: number;
   tradeEquivalentEfficiency?: number;
   specialTradeAnchor?: SpecialTradeAnchor;
   dailyOutput: number | null;

@@ -199,6 +199,7 @@ function roomEvaluation(input: {
       orderMultiplier: room.order_multiplier_basis_points / 1_000,
       finalEfficiency: room.display_final_basis_points / 1_000,
       goldEquivalentEfficiency: room.gold_equivalent_basis_points / 1_000,
+      goldOutputMultiplier: (room.gold_output_multiplier_basis_points ?? 0) / 1_000,
       tradeEquivalentEfficiency: room.trade_equivalent_basis_points / 1_000,
       ...(specialTrade?.rule ? { specialTradeAnchor: specialTrade.rule } : {}),
       dailyOutput: null,
@@ -218,11 +219,14 @@ function withManualSkillEfficiency(
   const skillEfficiency = manualSkillEfficiencyPct / 100;
   const totalEfficiency = rounded(room.baseEfficiency + skillEfficiency + room.globalEfficiency);
   const finalEfficiency = rounded(totalEfficiency * room.orderMultiplier);
+  // 赤金等效系数只由订单规则决定（赤金日产出 / 10000），与效率无关，0 表示没有等效赤金。
+  const goldMultiplier = room.goldOutputMultiplier ?? 0;
   return {
     ...room,
     skillEfficiency,
     totalEfficiency,
     finalEfficiency,
+    goldEquivalentEfficiency: goldMultiplier > 0 ? rounded(totalEfficiency * goldMultiplier) : room.goldEquivalentEfficiency,
     tradeEquivalentEfficiency: room.outputKind === "power" || room.members.length === 0
       ? room.tradeEquivalentEfficiency
       : rounded(finalEfficiency - room.baseEfficiency - room.globalEfficiency),
@@ -247,6 +251,8 @@ function roomLine(room: ManualRoomEvaluation, kind: BaseBlueprint["rooms"][numbe
     line.trade_display_pct = (room.skillEfficiency + room.globalEfficiency) * 100;
     line.trade_equivalent_efficiency = room.tradeEquivalentEfficiency ?? room.skillEfficiency;
     line.gold_equivalent_efficiency = room.goldEquivalentEfficiency;
+    // 赤金系数随状态一起保存，无人机计算据此得出精确的赤金单位日产出。
+    line.gold_output_multiplier = room.goldOutputMultiplier;
   } else if (kind === "factory") {
     line.manu_score = room.finalEfficiency * 100;
     line.manu_prod_skill = room.skillEfficiency * 100;
@@ -306,6 +312,17 @@ export async function evaluateManualScheduleWithNativeEngine(input: {
     code: "unsupported-rule",
     message: `Rust 原生评估 ${response.engine.ruleset}：各班独立结算，不模拟跨班心情、库存、无人机或菲亚梅塔运行时状态。`,
   }];
+  // WASM 会把「有特殊订单机制但没有产出锚点」的房间降级为普通订单，并回报到 diagnostics。
+  for (const diagnostic of response.diagnostics ?? []) {
+    if (diagnostic.code !== "UNSUPPORTED_SPECIAL_TRADE") continue;
+    const match = /^\/shifts\/(\d+)\/rooms\/(.+)$/.exec(diagnostic.path);
+    warnings.push({
+      code: "unsupported-special-trade",
+      ...(match ? { shiftIndex: Number(match[1]), roomId: match[2] } : {}),
+      operators: diagnostic.operators ?? [],
+      message: diagnostic.message,
+    });
+  }
   const evaluation = {
     rotation: {
       profile: "abc_12_12_12" as const,

@@ -55,10 +55,39 @@ WASM 是手动排班的房间效率结算器，不是当前手动日产量的权
 | `display_final_basis_points` | `finalEfficiency` → `final_efficiency` | 订单倍率后的最终房间效率。 |
 | `trade_equivalent_basis_points` | `tradeEquivalentEfficiency` → `trade_equivalent_efficiency` | 贸易展示/等效指标，不是自然产量直接输入。 |
 | `gold_equivalent_basis_points` | `goldEquivalentEfficiency` → `gold_equivalent_efficiency` | 前端计算等效赤金价值使用的指标，不是赤金枚数。 |
+| `gold_output_multiplier_basis_points` | `goldOutputMultiplier` | 赤金产出系数（赤金日产出 / `10000`）。纸面模式改技能效率后，用它按新总效率重算 `gold_equivalent`，无需从已取整的值反推。 |
 
 WASM response 可以携带逐房/聚合的 per-day output 信息，但 RIIC-Web 当前手动产量流程不消费这些字段；手动路径使用上述映射后的房间效率，再由前端完成产量计算。
 
 对于手动“根据效率计算”，WASM 只提供 `display_global_basis_points`。用户填写的纸面技能效率仍是技能项，前端以基础项、纸面技能项和 WASM 跨设施项构成房间效率。
+
+### 纸面模式的重算链
+
+“根据效率计算”拿到 WASM 结果后，用用户手填的纸面技能效率替换技能项，其余全部沿用 WASM 的值：
+
+```
+skill    = 手填值
+total    = base + skill + global                       ← 重算
+final    = total × order_multiplier                    ← 倍率沿用 WASM，与效率无关
+trade_eq = final - base - global                       ← 重算
+gold_eq  = total × gold_output_multiplier / 1000       ← 系数沿用 WASM
+```
+
+订单倍率 `order_multiplier` 和赤金系数 `gold_output_multiplier` 都由命中的订单规则决定，与技能效率无关，所以不需要重算。
+
+### 为什么需要 `gold_output_multiplier_basis_points`
+
+先前前端靠 `gold_eq / total` 反推赤金系数。但 `gold_eq` 已经取整到整数 basis points，反推会引入约 0.1% 误差（例：`223 / 1330 = 0.16767`，真实系数 `1675.127 / 10000 = 0.16751`）。
+
+WASM 直接给出系数后：
+
+```
+gold_eq = total × 168 / 1000
+1330 × 168 / 1000 = 223   ✅ 精确
+```
+
+字段为可选；旧版 WASM 缺失时前端仍回退到反推。
+
 
 ## 前端产量职责
 
@@ -94,11 +123,30 @@ rotation.daily.drone_production = {
 | 发电站是否在岗 | 决定在岗加成。 |
 | 班次时长 | 计算该班无人机数量与等效产能。 |
 | 实际班次目标房 | 决定无人机加速产物。 |
-| 目标房人员、等级、配方/订单 | 识别普通贸易站、但书、龙舌兰、可露希尔、赤金制造或经验制造规则。 |
+| 目标房的订单倍率 | 决定无人机投进去之后每单位效率产出多少龙门币。 |
+| 目标房的赤金系数 | 决定无人机投进去之后每单位效率产出多少赤金。 |
 
-自动方案由服务端先枚举/选择目标；手动方案尊重用户选择的目标。两条路径共用前端 target-output 规则并按完整轮换时长日化。
+自动方案由服务端先枚举/选择目标；手动方案尊重用户选择的目标。两条路径共用同一套目标产出口径并按完整轮换时长日化。
 
-无人机目标产出**不**套用通用的“目标房 `final_efficiency`”乘法。普通贸易站、特殊贸易站、赤金制造站和经验制造站各自使用对应的前端目标产出口径。当前无人机 DTO 不含源石碎片或合成玉字段；这两类无人机目标不会由该 DTO 表示。
+#### 两条路径的取值来源
+
+特殊订单机制（但书 / 龙舌兰 / 可露希尔 / 巫恋组 …）不再由前端按干员名硬编码判断，改为**沿用评估结果**：
+
+| 路径 | 订单倍率 | 赤金系数 | 说明 |
+| --- | --- | --- | --- |
+| 手动「根据排班计算」 | `RotationRoomLine.order_multiplier` | `RotationRoomLine.gold_output_multiplier` | WASM 直接给出，精确值 |
+| 自动求解器结果 | `rotation.room_lines[].order_multiplier` | `gold_equivalent_efficiency / total_efficiency` 反推 | 求解器省略 0 值字段，缺失按 0 处理 |
+
+两条路径的订单倍率都是「单位日产出 / 10265」，赤金系数都是「单位日赤金 / 10000」，因此无人机产出可以直接写成：
+
+```
+龙门币 = 等效效率 × 普通站基准[等级] × 订单倍率
+赤金   = 等效效率 × 赤金系数
+```
+
+自动路径反推的精度取决于求解器保存的 `gold_equivalent_efficiency` 小数位（存的是 0.466 这类三位小数，与真实系数 0.232877 相比误差在 0.1% 量级）。
+
+无人机目标产出**不**套用通用的“目标房 `final_efficiency`”乘法。普通贸易站、特殊贸易站、赤金制造站和经验制造站各自使用对应的目标产出口径。当前无人机 DTO 不含源石碎片或合成玉字段；这两类无人机目标不会由该 DTO 表示。
 
 ## 展示层
 
