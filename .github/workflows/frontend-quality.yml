@@ -61,6 +61,7 @@ jobs:
     permissions:
       contents: read
       deployments: read
+      actions: read
     outputs:
       scope: ${{ steps.scope.outputs.scope }}
       reason: ${{ steps.scope.outputs.reason }}

@@ -150,10 +150,10 @@ export function classifyChanges(rawPaths, { forceFull = false } = {}) {
     };
   }
 
-  if (paths.some(isOperatorData) && paths.every((filePath) => isOperatorData(filePath) || isDocumentationOrMetadata(filePath) || RESOURCE_PUBLICATION_SUPPORT.has(filePath))) {
+  if (paths.some(filePath => isOperatorData(filePath) || RESOURCE_PUBLICATION_SUPPORT.has(filePath)) && paths.every((filePath) => isOperatorData(filePath) || isDocumentationOrMetadata(filePath) || RESOURCE_PUBLICATION_SUPPORT.has(filePath))) {
     return {
       scope: "operator-data",
-      reason: "managed-operator-data-only",
+      reason: paths.some(isOperatorData) ? "managed-operator-data-only" : "resource-publication-support-only",
       changedFiles: paths,
       documentationOnly: false,
       runCore: true,
