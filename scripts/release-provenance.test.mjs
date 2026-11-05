@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { assertCurrentRelease, deploymentBaseline, finishDeployment, githubApi, prepareDeployment, RELEASE_REPOSITORY, verifyReleaseRun } from "./release-provenance.mjs";
+import { assertCurrentRelease, deploymentBaseline, finishDeployment, githubApi, prepareDeployment, RELEASE_REPOSITORY, verifyQualityRun, verifyReleaseRun } from "./release-provenance.mjs";
 
 const sha = "a".repeat(40);
 const otherSha = "b".repeat(40);
@@ -84,6 +84,16 @@ test("validates inputs before using them as API paths", async () => {
   for (const override of [{ branch: "feature/x" }, { repository: "other/repo" }, { sha: "bad" }, { runId: "123/../../456" }]) {
     await assert.rejects(verifyReleaseRun({ ...fixture().options, ...override }));
   }
+});
+
+test("completed quality may support resource checks while deployment waits, without permitting artifact reuse", async () => {
+  const f = fixture();
+  f.run.status = "waiting";
+  f.run.conclusion = null;
+  await assert.doesNotReject(verifyQualityRun({ ...f.options, allowPendingDeployment: true }));
+  await assert.rejects(verifyReleaseRun(f.options));
+  f.jobs.find(job => job.name === "quality").conclusion = null;
+  await assert.rejects(verifyQualityRun({ ...f.options, allowPendingDeployment: true }));
 });
 
 test("organization releases reject the former repository before any API request", async () => {

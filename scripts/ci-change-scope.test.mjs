@@ -65,16 +65,19 @@ test("browser tests run Chromium but do not create an application release", () =
   });
 });
 
-test("release workflow changes skip business E2E but exercise deployment", () => {
+test("resource publication infrastructure skips tests while other release workflows retain checks", () => {
   assertScope([".github/workflows/frontend-quality.yml"], {
-    scope: "tooling-or-tests",
-    reason: "release-workflow-change",
+    scope: "operator-data",
+    reason: "resource-publication-support-only",
     documentationOnly: false,
     runCore: true,
     runBrowser: false,
     deployRequired: true,
   });
   assert.equal(classifyChanges([".github/workflows/deploy-verified.yml"]).deployRequired, true);
+  assert.equal(classifyChanges([".github/workflows/deploy-verified.yml"]).scope, "tooling-or-tests");
+  assert.equal(classifyChanges(["scripts/app-release-plan.mjs", "scripts/app-release-plan.test.mjs", "docs/PR_RELEASE_GUIDE.md"]).scope, "operator-data");
+  assert.equal(classifyChanges(["scripts/app-release-plan.mjs", "apps/endfield/src/App.tsx"]).scope, "full");
 });
 
 test("runtime and unclassified changes always use the full gate", () => {
