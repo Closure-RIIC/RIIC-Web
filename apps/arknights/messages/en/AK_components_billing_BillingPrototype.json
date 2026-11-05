@@ -35,7 +35,8 @@
   "orderFailed": "Could not create the order.",
   "simulateFailed": "Could not simulate payment.",
   "redeemFailed": "Could not redeem the code.",
-  "orderCreated": "Order created. Complete payment on Afdian to receive your credits automatically.",
+  "orderCreated": "Order created. Use Resume payment in the order list on this page to continue; to switch products, return to this site and create a new order.",
+  "resumePayment": "Resume payment",
   "simulated": "Simulated payment received. Your credit balance has been updated.",
   "ordersCleared": "{count, plural, one {Cleared # unpaid order.} other {Cleared # unpaid orders.}}",
   "expires": "Expires {date}"

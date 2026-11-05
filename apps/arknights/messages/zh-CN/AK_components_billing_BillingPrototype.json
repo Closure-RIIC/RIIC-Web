@@ -35,7 +35,8 @@
   "orderFailed": "订单创建失败。",
   "simulateFailed": "模拟到账失败。",
   "redeemFailed": "兑换码操作失败。",
-  "orderCreated": "订单已创建。请在爱发电完成支付，积分将自动到账。",
+  "orderCreated": "订单已创建。请在当前页面的订单中使用“恢复支付”链接继续付款；如需更换商品，请返回本站重新建单。",
+  "resumePayment": "恢复支付",
   "simulated": "模拟支付已到账，积分余额已更新。",
   "ordersCleared": "已清空 {count} 笔未支付订单。",
   "expires": "到期 {date}"

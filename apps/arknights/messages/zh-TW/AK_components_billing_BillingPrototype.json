@@ -35,7 +35,8 @@
   "orderFailed": "訂單建立失敗。",
   "simulateFailed": "模擬入帳失敗。",
   "redeemFailed": "兌換碼操作失敗。",
-  "orderCreated": "訂單已建立。請在愛發電完成支付，積分將自動入帳。",
+  "orderCreated": "訂單已建立。請在目前頁面的訂單中使用「恢復付款」連結繼續付款；如需更換商品，請返回本站重新建立訂單。",
+  "resumePayment": "恢復付款",
   "simulated": "模擬支付已入帳，積分餘額已更新。",
   "ordersCleared": "已清除 {count} 筆未支付訂單。",
   "expires": "到期日 {date}"

@@ -100,15 +100,28 @@ export function BillingPrototype() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ key: keyof typeof UiMessages; values?: Record<string, string | number> } | null>(null);
   const [cdkCode, setCdkCode] = useState("");
+  const reloadInFlight = useRef<Promise<void> | null>(null);
   const redeemBusy = useRef(false);
   const codeInput = useRef<HTMLInputElement>(null);
+  const hasPendingOrders = visibleOrders.some(order => order.status === "pending");
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (afterMutation = false) => {
+    if (reloadInFlight.current && !afterMutation) return reloadInFlight.current;
+    if (reloadInFlight.current) await reloadInFlight.current;
+    if (reloadInFlight.current) return reloadInFlight.current;
+    const request = (async () => {
+      try {
+        setError(null);
+        setData(await readBilling());
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "@billing:unavailable");
+      }
+    })();
+    reloadInFlight.current = request;
     try {
-      setError(null);
-      setData(await readBilling());
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "@billing:unavailable");
+      await request;
+    } finally {
+      if (reloadInFlight.current === request) reloadInFlight.current = null;
     }
   }, []);
 
@@ -129,8 +142,8 @@ export function BillingPrototype() {
     return () => window.removeEventListener("hashchange", readLink);
   }, []);
 
-  // The API is ordered newest first; show the latest order so an older duplicate
-  // pending order cannot hide a newer paid callback.
+  // The API is ordered newest first. The latest pending order drives the test
+  // payment action; each pending order has its own recovery link below.
   const activeOrder = visibleOrders[0] ?? null;
 
   const clearPendingOrders = async () => {
@@ -143,25 +156,22 @@ export function BillingPrototype() {
       if (!response.ok) throw new Error(payload.error?.message ?? "@billing:clearFailed");
       setNotice({ key: "ordersCleared", values: { count: payload.data?.deleted ?? 0 } });
       notifyBillingUpdated();
-      await reload();
+      await reload(true);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "@billing:clearFailed"); }
     finally { setBusy(null); }
   };
 
   useEffect(() => {
-    if (!activeOrder || activeOrder.status !== "pending") return;
+    if (!hasPendingOrders) return;
     let cancelled = false;
-    const timer = window.setInterval(async () => {
-      try {
-        const response = await fetch(`/api/billing/orders/${encodeURIComponent(activeOrder.id)}`, { credentials: "same-origin", cache: "no-store" });
-        const payload = await response.json() as { data?: { order?: { status?: string } } };
-        if (!cancelled && payload.data?.order?.status === "paid") await reload();
-      } catch {
-        // 轮询失败不打断当前购买页，下一轮继续。
-      }
-    }, 5_000);
-    return () => { cancelled = true; window.clearInterval(timer); };
-  }, [activeOrder, reload]);
+    let timer: number | undefined;
+    const refresh = async () => {
+      await reload();
+      if (!cancelled) timer = window.setTimeout(refresh, 5_000);
+    };
+    timer = window.setTimeout(refresh, 5_000);
+    return () => { cancelled = true; if (timer !== undefined) window.clearTimeout(timer); };
+  }, [hasPendingOrders, reload]);
 
   const createOrder = async (productId: string) => {
     setBusy(productId);
@@ -177,7 +187,7 @@ export function BillingPrototype() {
       if (!response.ok || !payload.data) throw new Error(payload.error?.message ?? "@billing:orderFailed");
       if (payload.data.paymentUrl) window.open(payload.data.paymentUrl, "_blank", "noopener,noreferrer");
       setNotice({ key: "orderCreated" });
-      await reload();
+      await reload(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "@billing:orderFailed");
     } finally {
@@ -192,7 +202,7 @@ export function BillingPrototype() {
       const payload = await response.json() as { error?: { message?: string } };
       if (!response.ok) throw new Error(payload.error?.message ?? "@billing:simulateFailed");
       setNotice({ key: "simulated" });
-      await reload();
+      await reload(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "@billing:simulateFailed");
     } finally {
@@ -299,9 +309,9 @@ export function BillingPrototype() {
         {visibleOrders.length === 0 ? <p className={styles.empty}>{rawText.text(rawLocale, "noOrdersToShowCreditPackagePurchasesWillAppear")}</p> : <ul className={styles.records}>
           {visibleOrders.slice(0, 6).map((order) => {
             const status = orderStatus(order.status, locale);
-            return <li key={order.id} className={styles.row}>
+            return <li key={order.id} className={styles.row} data-billing-order-id={order.id}>
               <div><h3 className={styles.recordTitle}>{data.products.find((product) => product.id === order.productId)?.name ?? order.productId}</h3><p className={styles.meta}>{rawText.rich(rawLocale, "credits", { part1: richValue((order.points.toLocaleString(locale))), part2: richValue((<span aria-hidden="true"> · </span>)), part3: richValue((<time dateTime={order.createdAt}>{formatMinute(order.createdAt, locale)}</time>)) })}</p></div>
-              <div className="text-right"><p className={`${styles.amount} font-number`}>{money(order.amountFen, locale)}</p><span className={`${styles.status} ${status.className}`}>{status.label}</span></div>
+              <div className="text-right"><p className={`${styles.amount} font-number`}>{money(order.amountFen, locale)}</p><span className={`${styles.status} ${status.className}`}>{status.label}</span>{order.status === "pending" && order.paymentUrl ? <Button nativeButton={false} variant="outline" className={`${styles.pill} mt-2`} render={<a data-billing-payment-recovery href={order.paymentUrl} target="_blank" rel="noopener noreferrer" />}>{uiText.text(locale, "resumePayment")}</Button> : null}</div>
             </li>;
           })}
         </ul>}

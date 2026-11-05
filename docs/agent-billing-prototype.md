@@ -2,11 +2,15 @@
 
 ## 本地联调
 
-1. 使用项目的迁移配置执行 `npm run db:migrate`，会安装 `drizzle/0019_agent_billing.sql`。
+1. 使用项目的迁移配置执行 `npm run db:migrate`，会应用当前迁移链，其中包括 `drizzle/0019_agent_billing.sql`。
 2. 登录管理员网站账号后打开 `/billing`。默认仅管理员可用，开放开关见 [开放策略](FEATURE_ROLLOUT.md)。
 3. 配置各档位独立的爱发电商品地址：`AFDIAN_PAYMENT_URL_POINTS_1_TEST`、`AFDIAN_PAYMENT_URL_POINTS_5`、`AFDIAN_PAYMENT_URL_POINTS_10`、`AFDIAN_PAYMENT_URL_MONTHLY_19_9`。旧变量 `AFDIAN_TEST_PAYMENT_URL` 只作为 ¥5 档位的本地迁移兼容项；未配置的档位会禁用购买按钮，不会错误跳到其它金额。
 4. 管理员可在本地开发环境点击“模拟爱发电回调到账”；生产环境还须设置 `BILLING_PROTOTYPE_MODE=1`。按钮和接口都受限制，公开模式不向普通用户开放此入口。
-5. 在爱发电开发者后台（`https://afdian.com/dashboard/dev`）把 Webhook 地址设置为 `https://你的域名/api/billing/webhooks/afdian`。接口兼容官方 `data.order` 回调，成功响应为 `{"ec":200,"em":""}`；若配置 `AFDIAN_WEBHOOK_SECRET`，同时验证 `x-afdian-prototype-secret`。每次回调均使用 `AFDIAN_API_TOKEN` + `AFDIAN_USER_ID` 主动查询真实订单，只采用查询得到的交易号、订单关联、成功状态与金额，查询未成功不入账。
+5. Webhook、主动查询 API 和恢复时间边界按 [支付配置与迁移](PAYMENT_CHAIN.md#6-上线配置与迁移) 设置。
+
+## 爱发电支付链路
+
+支付接入、状态流、异常恢复、人工处理、上线配置与验证的当前 owner 为 [支付链路与对账](PAYMENT_CHAIN.md)。本页保留 Agent 计费与本地联调入口，不重复维护支付恢复规则。
 
 ## 当前规则
 
@@ -32,7 +36,7 @@
 
 ## 仍需上线前补齐
 
-- 爱发电真实签名、订单退款冲正和定时 query-order 对账任务。
+- 爱发电现金退款与已到账积分冲正；官方签名算法用于主动查询请求，回调通过主动查询验证，定时 query-order 对账已接入。
 - 支付宝/微信适配器、退款冲正、订单过期和人工审计。
 - 价格版本表与管理员发布流程；目前模型价格代码用于原型验证，历史调用的价格快照应迁入数据库。
 - Agent 多轮预扣/结算、并发预算和模型 token 费用入账策略。目前已接入单次工具调用的收尾结算；多工具、多轮调用仍应在上线前增加统一预算与欠费追缴策略。

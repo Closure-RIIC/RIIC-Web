@@ -1,9 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { mockAnonymousWebsiteSession, mockApis, sidebarNavigation } from "./production-readiness.fixture";
+import { mockAnonymousWebsiteSession, mockSignedInWebsiteSession, mockApis, sidebarNavigation } from "./production-readiness.fixture";
 
 test("pending orders expire and can be removed while paid history remains", async ({ page }) => {
-  await mockAnonymousWebsiteSession(page);
   await mockApis(page);
+  await mockSignedInWebsiteSession(page);
   const now = Date.now();
   const order = (id: string, status: string, age: number) => ({ id, status, productId: "points_10", amountFen: 1000, points: 110, paymentUrl: null, paidAt: null, createdAt: new Date(now - age).toISOString() });
   let orders = [order("recent", "pending", 0), order("another", "pending", 0), order("expired", "pending", 4 * 86400000), order("paid", "paid", 5 * 86400000)];
@@ -23,6 +23,8 @@ test("pending orders expire and can be removed while paid history remains", asyn
     return route.fulfill({ json: { data: { order: { status: "pending" } } } });
   });
   await page.goto("/billing");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 45_000 });
+  await expect(page.locator("[data-billing-prototype]")).toBeVisible({ timeout: 15_000 });
   const section = page.locator("[data-billing-orders]");
   const heading = section.getByRole("heading", { name: "最近订单", exact: true });
   const clearButton = heading.locator("..").getByRole("button", { name: "一键清空未支付订单", exact: true });
@@ -41,6 +43,81 @@ test("pending orders expire and can be removed while paid history remains", asyn
   await page.reload();
   await expect(section.locator("li")).toHaveCount(1);
   await expect(section.getByRole("button", { name: "一键清空未支付订单", exact: true })).toBeDisabled();
+});
+
+test("pending orders expose recovery links and refresh the full billing list", async ({ page }) => {
+  await mockApis(page);
+  await mockSignedInWebsiteSession(page);
+  const createdAt = new Date().toISOString();
+  const order = (id: string, status: string, amountFen: number, paymentUrl: string | null) => ({
+    id, status, productId: id === "older" ? "points_10" : "points_20", amountFen, points: amountFen / 10,
+    paymentUrl, paidAt: status === "paid" ? createdAt : null, createdAt,
+  });
+  let billingReads = 0;
+  let detailReads = 0;
+  let paidOrderVisible = false;
+  await page.route("**/api/billing/orders/**", route => {
+    detailReads += 1;
+    return route.fulfill({ json: { data: { order: { status: "paid" } } } });
+  });
+  await page.route("**/api/billing", route => {
+    expect(route.request().method()).toBe("GET");
+    billingReads += 1;
+    return route.fulfill({ json: { data: {
+      wallet: { totalPoints: 0, paidPoints: 0, monthlyPoints: 0, monthlyExpiresAt: null },
+      products: [
+        { id: "points_10", name: "10 元积分包", amountFen: 1000, points: 100, description: "100 积分", kind: "topup", checkoutConfigured: true },
+        { id: "points_20", name: "20 元积分包", amountFen: 2000, points: 200, description: "200 积分", kind: "topup", checkoutConfigured: true },
+      ],
+      orders: [
+        order("newer", "pending", 2000, "https://pay.example/newer"),
+        order("older", paidOrderVisible ? "paid" : "pending", 1000, "https://pay.example/older"),
+      ],
+      ledger: [], usage: [],
+    } } });
+  });
+
+  await page.goto("/billing");
+  await expect(page.locator("[data-billing-prototype]")).toBeVisible({ timeout: 15_000 });
+  const section = page.locator("[data-billing-orders]");
+  const recoveryLinks = section.locator("[data-billing-payment-recovery]");
+  await expect(recoveryLinks).toHaveCount(2);
+  await expect(section.locator('[data-billing-order-id="older"]').locator("[data-billing-payment-recovery]"))
+    .toHaveAttribute("href", "https://pay.example/older");
+  const readsBeforeRefresh = billingReads;
+  paidOrderVisible = true;
+  await page.clock.install();
+  await page.clock.fastForward(5_100);
+  await expect.poll(() => billingReads).toBeGreaterThan(readsBeforeRefresh);
+  await expect(section.locator('[data-billing-order-id="older"]')).toContainText("已付款 · 已到账");
+  await expect(recoveryLinks).toHaveCount(1);
+  expect(detailReads).toBe(0);
+});
+
+test("order creation keeps a recovery link when window.open returns null", async ({ page }) => {
+  await mockApis(page);
+  await mockSignedInWebsiteSession(page);
+  await page.addInitScript(() => { window.open = () => null; });
+  let orders: Array<Record<string, unknown>> = [];
+  const createdAt = new Date().toISOString();
+  await page.route("**/api/billing", route => {
+    if (route.request().method() === "POST") {
+      orders = [{ id: "created", productId: "points_10", status: "pending", amountFen: 1000, points: 100, paymentUrl: "https://pay.example/created", paidAt: null, createdAt }];
+      return route.fulfill({ json: { data: { paymentUrl: "https://pay.example/created", customOrderId: "custom-created" } } });
+    }
+    return route.fulfill({ json: { data: {
+      wallet: { totalPoints: 0, paidPoints: 0, monthlyPoints: 0, monthlyExpiresAt: null },
+      products: [{ id: "points_10", name: "10 元积分包", amountFen: 1000, points: 100, description: "100 积分", kind: "topup", checkoutConfigured: true }],
+      orders, ledger: [], usage: [],
+    } } });
+  });
+
+  await page.goto("/billing");
+  await page.getByRole("button", { name: "爱发电购买", exact: true }).click();
+  await expect(page.getByRole("status").first()).toContainText("请在当前页面的订单中使用“恢复支付”链接继续付款");
+  const recoveryLink = page.locator("[data-billing-payment-recovery]");
+  await expect(recoveryLink).toHaveAttribute("href", "https://pay.example/created");
+  await expect(recoveryLink).toHaveAttribute("target", "_blank");
 });
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
