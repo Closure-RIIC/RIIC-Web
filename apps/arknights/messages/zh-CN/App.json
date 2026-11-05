@@ -48,5 +48,7 @@
   "agentArtifactOpen": "在基建计算器打开",
   "agentArtifactIgnore": "忽略",
   "agentArtifactLoading": "正在载入…",
-  "environmentDetails": "求解耗时：{duration} ms；班次：{shift}；换班方式：{rotation}；布局：{layout}"
+  "environmentDetails": "求解耗时：{duration} ms；班次：{shift}；换班方式：{rotation}；布局：{layout}",
+  "powerShortfallSummary": "电力不足 {value1} · {consumed}/{generated}",
+  "rotationCycleInvalidSummary": "总计时长只支持 {allowed} 小时"
 }

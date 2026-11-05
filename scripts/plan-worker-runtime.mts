@@ -1,4 +1,5 @@
 import { normalizePersistedPlanData } from "@riic/arknights-domain/persistence";
+import { DEFAULT_ROTATION_PROFILE, decodeRotationKey } from "@riic/arknights-domain/rotation-settings";
 import { PublicApiError } from "@riic/platform-server/api-contract";
 import { diagnosticText } from "@riic/platform-server/diagnostic-text";
 import { makeDiagnostic, persistDiagnostic } from "@riic/platform-server/request-diagnostics";
@@ -206,8 +207,10 @@ export async function executePlanTask(
       layout: structuredClone(payload.layout),
       operbox: structuredClone(payload.operbox),
       sourceName: payload.sourceName,
-      rotation: payload.rotation,
+      // 任务里存的是编码后的字符串，发给求解器前还原成对象/已知 profile。
+      rotation: decodeRotationKey(payload.rotation) ?? DEFAULT_ROTATION_PROFILE,
       fiammettaEnable: payload.fiammettaEnable,
+      supportCombinationsEnable: payload.supportCombinationsEnable,
       dataOwnerTag: payload.dataOwnerTag,
     }, { serveLane, deferArtifacts: true });
     await dependencies.markSolverFinished(id, {

@@ -1,5 +1,12 @@
 {
   "rotation": "换班方式",
   "chooseARotation": "选择换班方式",
-  "noMatchingRotation": "没有匹配的换班方式"
+  "noMatchingRotation": "没有匹配的换班方式",
+  "custom": "自定义",
+  "shiftCount": "班次",
+  "shiftCountN": "{count} 班",
+  "shiftHoursLabel": "第 {index} 班时长（小时）",
+  "cycleTotal": "总计 {total} 小时",
+  "cycleNotAllowed": "总计 {total} 小时，只支持 {allowed} 小时",
+  "hourMustBePositiveInteger": "每班至少 1 小时，且必须是整数"
 }

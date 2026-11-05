@@ -28,6 +28,7 @@ import { ManualShiftStartStepper, ManualShiftTimeline } from "@/components/setup
 import { SetupStepper } from "@/components/setup/SetupStepper";
 import { RotationSettings } from "@/components/RotationSettings";
 import { FiammettaSettings } from "@/components/FiammettaSettings";
+import { SupportCombinationsSettings } from "@/components/SupportCombinationsSettings";
 import { WizardSteps } from "@/components/interior/wizard-steps";
 import { useWebsiteSession } from "@/website-session";
 
@@ -45,7 +46,9 @@ import { messageRecord } from "@/i18n/translate";
 import { LayoutEditor, PresetSelector } from "./components";
 import { countOwned } from "@riic/arknights-domain/operbox";
 import type { SetupStep } from "./onboarding";
-import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, RotationProfile, RoomProduct, SklandScheduleSnapshot } from "@riic/arknights-domain/types";
+import { ALLOWED_CYCLE_HOURS, DEFAULT_ROTATION_PROFILE, isRotationProfile } from "@riic/arknights-domain/rotation-settings";
+import type { CustomRotation } from "@riic/arknights-domain/rotation-settings";
+import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, RoomProduct, SklandScheduleSnapshot } from "@riic/arknights-domain/types";
 
 import type { MaaIssue } from "@riic/arknights-domain/maa-review";
 
@@ -86,8 +89,13 @@ type SetupDialogProps = {
   configurationKey: string;
   manualDraft?: ManualScheduleDraft | null;
   onManualProductChange?: (shiftIndex: number, roomId: string, product: RoomProduct) => void;
-  rotationProfile: RotationProfile;
-  onRotationProfileChange: (value: RotationProfile) => void;
+  /** 换班方式 key：named profile 或 custom_zb_16_8 一类的编码。 */
+  rotationProfile: string;
+  onRotationProfileChange: (value: string) => void;
+  customRotation: CustomRotation;
+  onCustomRotationChange: (value: CustomRotation) => void;
+  supportCombinationsEnabled: boolean;
+  onSupportCombinationsEnabledChange: (enabled: boolean) => void;
   manualShiftDurations?: number[];
   onManualShiftDurationsChange?: (durations: number[]) => void;
   manualShiftStartTime?: string;
@@ -156,6 +164,10 @@ export function SetupDialog({
   onManualProductChange,
   rotationProfile,
   onRotationProfileChange,
+  customRotation,
+  onCustomRotationChange,
+  supportCombinationsEnabled,
+  onSupportCombinationsEnabledChange,
   manualShiftDurations = [12, 6, 6],
   onManualShiftDurationsChange,
   manualShiftStartTime = DEFAULT_MANUAL_SHIFT_START_TIME,
@@ -261,6 +273,7 @@ export function SetupDialog({
   const facilitiesPanelRef = useRef<HTMLDivElement>(null);
   const hasBox = Boolean(operbox?.length);
   const ownedCount = countOwned(operbox);
+  const [rotationValid, setRotationValid] = useState(true);
   const mustReviewFacilities = needsFacilityReview || !powerBudget.ok;
   const persistedDataLabel = fileName || sourceLabel(boxSource, en);
   const currentDataLabel = CLIENT_SKLAND_ENABLED && boxSource === "skland" && !sklandSnapshot
@@ -740,16 +753,29 @@ export function SetupDialog({
                             </Tabs>
                           </div>
                         </section>
-                      ) : <RotationSettings value={rotationProfile} onChange={onRotationProfileChange} />}
+                      ) : <RotationSettings
+                        value={rotationProfile}
+                        onChange={onRotationProfileChange}
+                        custom={customRotation}
+                        onCustomChange={onCustomRotationChange}
+                        onValidityChange={setRotationValid}
+                      />}
                     </div>
 
                     <div className="border-t border-border/70 pt-5">
                       <FiammettaSettings
                         enabled={fiammettaEnabled}
                         operbox={operbox}
-                        rotation={rotationProfile}
+                        rotation={isRotationProfile(rotationProfile) ? rotationProfile : DEFAULT_ROTATION_PROFILE}
                         onEnabledChange={onFiammettaEnabledChange}
                         mode={mode}
+                      />
+                    </div>
+
+                    <div className="border-t border-border/70 pt-5">
+                      <SupportCombinationsSettings
+                        enabled={supportCombinationsEnabled}
+                        onEnabledChange={onSupportCombinationsEnabledChange}
                       />
                     </div>
 
@@ -854,20 +880,32 @@ export function SetupDialog({
           ) : (
             <>
               <span
-                className={`mr-auto min-w-0 truncate text-left text-xs tabular-nums sm:text-sm ${powerBudget.ok ? "text-emerald-700" : "text-red-600"}`}
+                className={`mr-auto grid min-w-0 gap-0.5 text-left text-xs tabular-nums sm:text-sm ${!rotationValid || !powerBudget.ok ? "text-red-600" : "text-emerald-700"}`}
                 role="status"
               >
-                <span className={`sm:hidden ${powerBudget.ok ? "text-emerald-700" : "text-red-600"}`}>
-                  {powerBudget.ok ? (intl("setup_dialog.powerOk")) : (intl("setup_dialog.short", { value1: powerBudget.consumed - powerBudget.generated }))}
-                </span>
-                <span className={`max-sm:hidden ${powerBudget.ok ? "text-emerald-700" : "text-red-600"}`}>
-                  {powerBudget.ok
-                    ? (intl("setup_dialog.powerOk2", { consumed: powerBudget.consumed, generated: powerBudget.generated }))
-                    : (intl("setup_dialog.powerShortfall", { value1: powerBudget.consumed - powerBudget.generated, consumed: powerBudget.consumed, generated: powerBudget.generated }))}
-                </span>
+                {/* 时长与电力各自独立提示，两者都不满足时同时显示。 */}
+                {!rotationValid ? (
+                  <span>{intl("setup_dialog.rotationCycleInvalid", { allowed: ALLOWED_CYCLE_HOURS.join(" / ") })}</span>
+                ) : null}
+                {!powerBudget.ok ? (
+                  <span className="truncate">
+                    <span className="sm:hidden">{intl("setup_dialog.short", { value1: powerBudget.consumed - powerBudget.generated })}</span>
+                    <span className="max-sm:hidden">
+                      {intl("setup_dialog.powerShortfall", { value1: powerBudget.consumed - powerBudget.generated, consumed: powerBudget.consumed, generated: powerBudget.generated })}
+                    </span>
+                  </span>
+                ) : null}
+                {rotationValid && powerBudget.ok ? (
+                  <span className="truncate">
+                    <span className="sm:hidden">{intl("setup_dialog.powerOk")}</span>
+                    <span className="max-sm:hidden">
+                      {intl("setup_dialog.powerOk2", { consumed: powerBudget.consumed, generated: powerBudget.generated })}
+                    </span>
+                  </span>
+                ) : null}
               </span>
               <Button className="max-sm:min-w-16 sm:min-w-[88px]" size="dialog" type="button" variant="ghost" onClick={goToBasics}>{intl("setup_dialog.back")}</Button>
-              <Button className="shrink-0" size="dialog" type="button" disabled={!powerBudget.ok} onClick={onFinish}><Check />{intl("setup_dialog.done")}</Button>
+              <Button className="shrink-0" size="dialog" type="button" disabled={!powerBudget.ok || !rotationValid} onClick={onFinish}><Check />{intl("setup_dialog.done")}</Button>
             </>
           )}
         </footer>
