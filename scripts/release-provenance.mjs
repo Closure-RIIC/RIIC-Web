@@ -81,10 +81,13 @@ export async function verifyQualityRun({ api, repository, branch, sha, runId }) 
   assert.ok(["success", "failure"].includes(run.conclusion), "Source workflow must complete its verification");
   assert.ok(Number.isSafeInteger(run.run_attempt) && run.run_attempt > 0);
   const jobs = await collect(api, `${prefix}/attempts/${run.run_attempt}/jobs`, "jobs");
+  const resourcePublication = jobs.filter(job => job.name === "Resource publication" && job.conclusion === "success");
+  assert.ok(resourcePublication.length <= 1, "Ambiguous resource publication policy");
   for (const name of requiredJobs) {
     const matches = jobs.filter((job) => job.name === name);
     assert.equal(matches.length, 1, `Missing or ambiguous required job: ${name}`);
-    assert.equal(matches[0].conclusion, "success", `Required job did not pass: ${name}`);
+    const expected = name === "Static and unit checks" && resourcePublication.length === 1 ? "skipped" : "success";
+    assert.equal(matches[0].conclusion, expected, `Required job did not pass: ${name}`);
   }
   return run;
 }

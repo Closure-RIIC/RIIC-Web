@@ -3153,6 +3153,101 @@
           "icon": "/images/game/skills/facskill_spaceship_physical_power.png"
         }
       ]
+    },
+    "chr_0037_minghe": {
+      "id": "chr_0037_minghe",
+      "name": "明河",
+      "enName": "Argent Flow",
+      "twName": "明河",
+      "rarity": 6,
+      "profession": "近卫",
+      "enProfession": "Guard",
+      "twProfession": "近衛",
+      "icon": "/images/game/operators/portrait_chr_0037_minghe.png",
+      "skills": [
+        {
+          "id": "spaceship_skill_chr_0037_minghe_1_1",
+          "name": "百兵一理·β",
+          "enName": "Axiom of Combat β",
+          "twName": "百兵一理·β",
+          "description": "进驻制造舱时，干员经验素材的生产效率提升20%",
+          "enDescription": "Assign to Manufacturing Cabin to grant operator EXP material production efficiency +20%",
+          "twDescription": "進駐製造艙時，幹員經驗材料的生產效率提升20%",
+          "unlock": 1,
+          "roomType": 1,
+          "room": "制造舱",
+          "enRoom": "Manufacturing",
+          "twRoom": "製造艙",
+          "effectKey": "ManufactureEfficiencyUp",
+          "effectName": "制造舱 · 指定经验素材生产效率提升",
+          "enEffectName": "Production efficiency",
+          "twEffectName": "製造艙 · 指定經驗素材生產效率提升",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
+        },
+        {
+          "id": "spaceship_skill_chr_0037_minghe_1_2",
+          "name": "百兵一理·γ",
+          "enName": "Axiom of Combat γ",
+          "twName": "百兵一理·γ",
+          "description": "进驻制造舱时，干员经验素材的生产效率提升30%",
+          "enDescription": "Assign to Manufacturing Cabin to grant operator EXP material production efficiency +30%",
+          "twDescription": "進駐製造艙時，幹員經驗材料的生產效率提升30%",
+          "unlock": 3,
+          "roomType": 1,
+          "room": "制造舱",
+          "enRoom": "Manufacturing",
+          "twRoom": "製造艙",
+          "effectKey": "ManufactureEfficiencyUp",
+          "effectName": "制造舱 · 指定经验素材生产效率提升",
+          "enEffectName": "Production efficiency",
+          "twEffectName": "製造艙 · 指定經驗素材生產效率提升",
+          "targetId": 1,
+          "target": "干员经验",
+          "enTarget": "Operator EXP",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
+        },
+        {
+          "id": "spaceship_skill_chr_0037_minghe_2_1",
+          "name": "因势应物·β",
+          "enName": "Tools of Momentum β",
+          "twName": "因勢應物·β",
+          "description": "进驻制造舱时，舱室内干员心情消耗降低14%",
+          "enDescription": "Assign to Manufacturing Cabin to slow Mood Drop of all operators in it by 14%",
+          "twDescription": "進駐製造艙時，艙室內幹員心情消耗降低14%",
+          "unlock": 2,
+          "roomType": 1,
+          "room": "制造舱",
+          "enRoom": "Manufacturing",
+          "twRoom": "製造艙",
+          "effectKey": "RoomMoodConsumeDown",
+          "effectName": "舱室内干员心情消耗降低",
+          "enEffectName": "Room morale consumption",
+          "twEffectName": "艙室內幹員心情消耗降低",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_power_consume.png"
+        },
+        {
+          "id": "spaceship_skill_chr_0037_minghe_2_2",
+          "name": "因势应物·γ",
+          "enName": "Tools of Momentum γ",
+          "twName": "因勢應物·γ",
+          "description": "进驻制造舱时，舱室内干员心情消耗降低18%",
+          "enDescription": "Assign to Manufacturing Cabin to slow Mood Drop of all operators in it by 18%",
+          "twDescription": "進駐製造艙時，艙室內幹員心情消耗降低18%",
+          "unlock": 4,
+          "roomType": 1,
+          "room": "制造舱",
+          "enRoom": "Manufacturing",
+          "twRoom": "製造艙",
+          "effectKey": "RoomMoodConsumeDown",
+          "effectName": "舱室内干员心情消耗降低",
+          "enEffectName": "Room morale consumption",
+          "twEffectName": "艙室內幹員心情消耗降低",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_power_consume.png"
+        }
+      ]
     }
   },
   "weapons": {
@@ -3827,6 +3922,14 @@
       "twName": "遙望",
       "rarity": 6,
       "icon": "/images/game/weapons/wpn_sword_0026.png"
+    },
+    "wpn_sword_0025": {
+      "id": "wpn_sword_0025",
+      "name": "唤月",
+      "enName": "Lunar Calling",
+      "twName": "喚月",
+      "rarity": 6,
+      "icon": "/images/game/weapons/wpn_sword_0025.png"
     }
   }
 }

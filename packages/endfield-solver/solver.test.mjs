@@ -7,6 +7,14 @@ import { isUseful } from "./upstream/candidates.mjs";
 import { verifyPlan } from "./upstream/verify-plan.mjs";
 import { randomCase } from "./fuzz-verify.mjs";
 
+// Exact-score regressions use the original roster; new operators have separate coverage.
+const baselineRoster = [
+  "佩丽卡", "陈千语", "狼卫", "弧光", "余烬", "赛希", "艾维文娜", "洁尔佩塔",
+  "昼雪", "黎风", "莱万汀", "伊冯", "大潘", "秋栗", "卡契尔", "埃特拉",
+  "萤石", "安塔尔", "阿列什", "艾尔黛拉", "别礼", "骏卫", "汤汤", "洛茜",
+  "庄方宜", "弭弗", "诀", "卡缪", "提弗洛斯", "噗切娜", "梨诺", "祀",
+].map(name => ({ name, elite: 4 }));
+
 const input = {
   operators: catalog.slice(0, 8).map(o => ({ name: o.name, elite: 0 })),
   options: { ...DEFAULT_OPTIONS, levels: { center: 1, mfg1: 1, mfg2: 1, grow: 0, guest: 0 }, grow: { 晶植: 0, 菌类: 0, 矿物: 0 }, time: 30000, budget: 10000 },
@@ -147,7 +155,7 @@ test("growth bonuses are weighted by occupied plots without treating plot count 
 
 test("center staffs only recovery operators and keeps the baseline production", () => {
   const result = solve({
-    operators: catalog.map(op => ({ name: op.name, elite: 4 })),
+    operators: baselineRoster,
     options: { ...DEFAULT_OPTIONS },
   });
   assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
@@ -359,7 +367,7 @@ test("randomized self-consistency holds for the audit seeds", () => {
 });
 
 test("stronger B shift moves to A when the facility efficiency does not drop", () => {
-  const roster = catalog.map(op => ({ name: op.name, elite: 4 }));
+  const roster = baselineRoster;
   const options = { ...DEFAULT_OPTIONS, mfg: "2干员" };
   const { ops, cfg } = prepare({ operators: roster, options });
   const { plan } = solveLayout({ ops, cfg });
@@ -448,7 +456,7 @@ test("the coverage floor keeps the stronger shift in A", () => {
 });
 
 test("the full 32-operator baseline keeps its exact scores after the coverage floor", () => {
-  const result = solve({ operators: catalog.map(op => ({ name: op.name, elite: 4 })), options: { ...DEFAULT_OPTIONS, time: 30000, budget: 2000000 } });
+  const result = solve({ operators: baselineRoster, options: { ...DEFAULT_OPTIONS, time: 30000, budget: 2000000 } });
   assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
   assert.deepEqual(result.verification.skipped, []);
   assert.ok(Math.abs(result.scores["线索"] - 95.04) < 1e-9, String(result.scores["线索"]));
@@ -458,7 +466,7 @@ test("the full 32-operator baseline keeps its exact scores after the coverage fl
 });
 
 test("two workshops with different levels are searched jointly instead of falling back to the pair scan", () => {
-  const roster = catalog.map(op => ({ name: op.name, elite: 4 }));
+  const roster = baselineRoster;
   const levels = { center: 5, mfg1: 3, mfg2: 2, grow: 3, guest: 3 };
   const result = solve({
     operators: roster,
