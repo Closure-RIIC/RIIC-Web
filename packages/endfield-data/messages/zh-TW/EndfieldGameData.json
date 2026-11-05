@@ -135,6 +135,10 @@
     "name": "梨諾",
     "profession": "輔助"
   },
+  "chr_0037_minghe": {
+    "name": "明河",
+    "profession": "近衛"
+  },
   "wpn_claym_0003": {
     "name": "工業零點一"
   },
@@ -386,6 +390,9 @@
   },
   "wpn_sword_0026": {
     "name": "遙望"
+  },
+  "wpn_sword_0025": {
+    "name": "喚月"
   },
   "spaceship_skill_chr_0015_lifeng_1_1": {
     "name": "少年意氣·β",
@@ -1242,5 +1249,31 @@
     "description": "進駐總控中樞時，所有幹員心情恢復提升16%",
     "room": "總控中樞",
     "effectName": "全員心情恢復提升"
+  },
+  "spaceship_skill_chr_0037_minghe_1_1": {
+    "name": "百兵一理·β",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0037_minghe_1_2": {
+    "name": "百兵一理·γ",
+    "description": "進駐製造艙時，幹員經驗材料的生產效率提升30%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "幹員經驗"
+  },
+  "spaceship_skill_chr_0037_minghe_2_1": {
+    "name": "因勢應物·β",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低14%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0037_minghe_2_2": {
+    "name": "因勢應物·γ",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低18%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
   }
 }

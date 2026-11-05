@@ -19,7 +19,7 @@ on:
         default: ""
         type: string
       operator_data_base_sha:
-        description: Optional pre-update commit; only a verified managed-data diff may skip browser E2E
+        description: Optional pre-update commit; only a verified resource publication may skip test gates
         required: false
         default: ""
         type: string
@@ -136,7 +136,7 @@ jobs:
   static_checks:
     name: Static and unit checks
     needs: changes
-    if: needs.changes.outputs.run_core == 'true'
+    if: needs.changes.outputs.run_core == 'true' && needs.changes.outputs.scope != 'operator-data'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -201,7 +201,7 @@ jobs:
   lint_checks:
     name: Lint
     needs: changes
-    if: needs.changes.outputs.run_core == 'true'
+    if: needs.changes.outputs.run_core == 'true' && needs.changes.outputs.scope != 'operator-data'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -218,7 +218,7 @@ jobs:
   type_checks:
     name: Application and tooling types
     needs: changes
-    if: always() && (github.event_name == 'schedule' || needs.changes.outputs.run_core == 'true')
+    if: always() && (github.event_name == 'schedule' || (needs.changes.outputs.run_core == 'true' && needs.changes.outputs.scope != 'operator-data'))
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -407,7 +407,11 @@ jobs:
 
       - name: Build independent Endfield application
         if: needs.changes.outputs.build_endfield == 'true' || github.event_name == 'schedule'
-        run: npm run build:ci:endfield && node scripts/test-endfield-access.mjs
+        run: npm run build:ci:endfield
+
+      - name: Verify Endfield runtime access
+        if: (needs.changes.outputs.build_endfield == 'true' || github.event_name == 'schedule') && needs.changes.outputs.scope != 'operator-data'
+        run: node scripts/test-endfield-access.mjs
 
       - name: Build platform API verification artifact
         run: npm run build:platform
@@ -724,11 +728,21 @@ jobs:
           path: test-results/
           retention-days: 3
 
+  resource_publication:
+    name: Resource publication
+    needs: changes
+    if: needs.changes.outputs.scope == 'operator-data'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Record resource publication policy
+        run: echo 'Reviewed resource publication; test, lint and type gates are not required. Build and deployment health checks still apply.' >> "$GITHUB_STEP_SUMMARY"
+
   quality:
     name: quality
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [changes, repository_hygiene, static_checks, lint_checks, type_checks, database_checks, release_artifact, browser_e2e, browser_boundaries]
+    needs: [changes, repository_hygiene, static_checks, lint_checks, type_checks, database_checks, release_artifact, browser_e2e, browser_boundaries, resource_publication]
     if: always() && github.event_name != 'schedule'
     steps:
       - name: Verify all post-merge checks passed
@@ -743,6 +757,9 @@ jobs:
           BROWSER_E2E_RESULT: ${{ needs.browser_e2e.result }}
           BROWSER_BOUNDARIES_RESULT: ${{ needs.browser_boundaries.result }}
           RUN_CORE: ${{ needs.changes.outputs.run_core }}
+          RUN_CHECKS: ${{ needs.changes.outputs.run_core == 'true' && needs.changes.outputs.scope != 'operator-data' }}
+          RESOURCE_PUBLICATION_RESULT: ${{ needs.resource_publication.result }}
+          RESOURCE_PUBLICATION: ${{ needs.changes.outputs.scope == 'operator-data' }}
           RUN_BROWSER: ${{ needs.changes.outputs.run_browser }}
           DEPLOY_REQUIRED: ${{ needs.changes.outputs.deploy_required }}
         run: |
@@ -764,9 +781,10 @@ jobs:
             printf '%s required=%s result=%s\n' "$label" "$required" "$actual"
           }
 
-          verify_result "$RUN_CORE" "$STATIC_RESULT" static
-          verify_result "$RUN_CORE" "$LINT_RESULT" lint
-          verify_result "$RUN_CORE" "$TYPES_RESULT" types
+          verify_result "$RESOURCE_PUBLICATION" "$RESOURCE_PUBLICATION_RESULT" resource-publication
+          verify_result "$RUN_CHECKS" "$STATIC_RESULT" static
+          verify_result "$RUN_CHECKS" "$LINT_RESULT" lint
+          verify_result "$RUN_CHECKS" "$TYPES_RESULT" types
           verify_result "$RUN_CORE" "$DATABASE_RESULT" database
           verify_result "$RUN_CORE" "$BUILD_RESULT" build
           verify_result "$RUN_BROWSER" "$BROWSER_E2E_RESULT" chromium

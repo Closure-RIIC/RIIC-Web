@@ -11,3 +11,9 @@ The project owner identified this as the site's own solver. No third-party UI or
 `index.mjs` is the validated website boundary. Run each solve in a fresh Worker, terminate on cancel, and never persist BigInt masks as JSON. Display search status and verification separately; a successful verifier is not a proof of global optimality.
 
 Production inputs, inventory load, EXP and sanity conversion formulas are documented in [ENDFIELD_PRODUCTION_REFERENCE.md](../../docs/ENDFIELD_PRODUCTION_REFERENCE.md).
+
+New operators can be generated independently of the pinned algorithm and facility formulas with
+`node scripts/sync-endfield-solver-operators.mjs`. The script updates only its reviewed operator ID list,
+using the same pinned TableCfg source as the display catalog. `ship-data.json` records that source,
+input hashes and affected IDs in `meta.operatorUpdates`. Missing unlock nodes or unsupported effect types
+fail generation. Float32 representation noise is rounded only for the reviewed percentage effects.

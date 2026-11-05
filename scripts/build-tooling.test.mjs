@@ -27,7 +27,7 @@ test("CI avoids duplicate installation audits without weakening its security gat
   assert.doesNotMatch(scheduled, /--no-audit/);
   assert.match(workflow, /name: Security audit\s+run: npm run audit:security/);
   assert.equal(packageJson.scripts["audit:security"], "npm audit --audit-level=high");
-  assert.match(workflow, /verify_result "\$RUN_CORE" "\$STATIC_RESULT" static/);
+  assert.match(workflow, /verify_result "\$RUN_CHECKS" "\$STATIC_RESULT" static/);
 });
 
 test("batched deployment inspections make one SSH call and fail closed on invalid responses", async (t) => {
@@ -357,7 +357,7 @@ test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedul
   assert.match(playwrightConfig, /name: "chromium-plush",\s+testMatch: softwareGpuSpecs,[\s\S]+workers: 1/);
   assert.match(workflow, /browser_boundaries:[\s\S]+npm run test:e2e:webkit:skland-qr[\s\S]+npm run test:e2e:production-profile/);
   assert.match(workflow, /webkit_e2e:[\s\S]+github\.event_name == 'schedule'[\s\S]+npm run test:e2e:webkit/);
-  assert.match(workflow, /quality:[\s\S]+needs: \[changes, repository_hygiene, static_checks, lint_checks, type_checks, database_checks, release_artifact, browser_e2e, browser_boundaries\]/);
+  assert.match(workflow, /quality:[\s\S]+needs: \[changes, repository_hygiene, static_checks, lint_checks, type_checks, database_checks, release_artifact, browser_e2e, browser_boundaries, resource_publication\]/);
   assert.doesNotMatch(workflow, /quality:[\s\S]+needs: \[[^\]]*webkit_e2e/);
   assert.match(workflow, /deploy:[\s\S]+needs: \[changes, quality, release_artifact\]/);
   assert.doesNotMatch(workflow, /^\s*pull_request\s*:/m);
@@ -392,7 +392,7 @@ test("CI change scope keeps one required quality gate and fails closed", async (
   assert.match(workflow, /database_integration:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_database == 'true'/);
   assert.match(workflow, /release_artifact:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /browser_e2e:[\s\S]+needs: \[changes, release_artifact\][\s\S]+needs\.changes\.outputs\.run_browser == 'true'/);
-  assert.match(workflow, /quality:[\s\S]+test "\$CHANGES_RESULT" = "success"[\s\S]+test "\$HYGIENE_RESULT" = "success"[\s\S]+"\$DEPLOY_REQUIRED" == "true"[\s\S]+"\$required" == "true"[\s\S]+verify_result "\$RUN_CORE" "\$STATIC_RESULT"[\s\S]+verify_result "\$RUN_BROWSER" "\$BROWSER_E2E_RESULT"/);
+  assert.match(workflow, /quality:[\s\S]+test "\$CHANGES_RESULT" = "success"[\s\S]+test "\$HYGIENE_RESULT" = "success"[\s\S]+"\$DEPLOY_REQUIRED" == "true"[\s\S]+"\$required" == "true"[\s\S]+verify_result "\$RUN_CHECKS" "\$STATIC_RESULT"[\s\S]+verify_result "\$RUN_BROWSER" "\$BROWSER_E2E_RESULT"/);
   assert.match(workflow, /deploy:[\s\S]+needs\.changes\.outputs\.deploy_required == 'true'/);
 
   assert.match(classifier, /fullScope\(paths, "empty-change-set"\)/);
@@ -749,7 +749,8 @@ test("mastery, training costs, gacha UP data and the full fixture follow every m
     assert.ok(check.includes("fixtures/operbox_full_e2.json"));
   }
   assert.match(workflow, /git restore --source[^\n]+[\s\S]*?packages\/arknights-domain\/src\/generated\/arkntools \\\n\s+apps\/arknights\/src\/generated\/mastery-data\.json/);
-  const generateStep = workflow.slice(workflow.indexOf("      - name: Generate and validate assets"), workflow.indexOf("      - name: Run pre-PR quality gates"));
+  const generateStep = workflow.slice(workflow.indexOf("      - name: Generate and validate assets"), workflow.indexOf("      - name: Detect generated changes"));
+  assert.doesNotMatch(generateStep, /npm run check|npm run build|npm test/);
   assert.ok(generateStep.indexOf("npm run assets:gacha-up") > generateStep.indexOf("npm run assets:sync:arkntools"));
   assert.ok(generateStep.indexOf("node scripts/sync-arknights-i18n-data.mjs") > generateStep.indexOf("npm run assets:gacha-up"));
   assert.match(workflow, /id: changes\n\s+run: node scripts\/arkntools-sync-changes\.mjs/);

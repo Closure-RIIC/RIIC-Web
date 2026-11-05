@@ -10,7 +10,7 @@ import { classifyChanges } from "./ci-change-scope.mjs";
 
 const read = relative => readFile(new URL("../" + relative, import.meta.url), "utf8");
 
-test("the required PR gate accepts only complete checks or a verified documentation-only skip", async () => {
+test("the required PR status accepts complete checks or a planned documentation/resource skip", async () => {
   const workflow = await read(".github/workflows/workspace-packages.yml");
   const gate = workflow.split("  packages:\n")[1];
   assert.ok(gate);
@@ -34,6 +34,24 @@ test("the required PR gate accepts only complete checks or a verified documentat
   assert.equal(classifyChanges([]).runCore, true);
 });
 
+test("resource publication skips test gates while requiring its build and exact planned statuses", async () => {
+  const workflow = await read(".github/workflows/frontend-quality.yml");
+  const gate = workflow.split("  quality:\n")[1].split("  deploy:\n")[0];
+  const script = gate.split("        run: |\n")[1].split("\n").map(line => line.replace(/^ {10}/, "")).join("\n");
+  const gitExec = process.platform === "win32" ? spawnSync("git", ["--exec-path"], { encoding: "utf8" }).stdout.trim() : null;
+  const gitBash = gitExec ? resolve(gitExec, "../../../bin/bash.exe") : null;
+  const bash = process.env.TEST_BASH_PATH ?? (gitBash && existsSync(gitBash) ? gitBash : "bash");
+  const run = values => spawnSync(bash, ["--noprofile", "--norc", "-c", script], { encoding: "utf8", windowsHide: true,
+    env: { ...process.env, CHANGES_RESULT: "success", HYGIENE_RESULT: "success", DEPLOY_REQUIRED: "true", RUN_CORE: "true",
+      RUN_CHECKS: "false", RUN_BROWSER: "false", RESOURCE_PUBLICATION: "true", RESOURCE_PUBLICATION_RESULT: "success",
+      STATIC_RESULT: "skipped", LINT_RESULT: "skipped", TYPES_RESULT: "skipped", DATABASE_RESULT: "success", BUILD_RESULT: "success",
+      BROWSER_E2E_RESULT: "skipped", BROWSER_BOUNDARIES_RESULT: "skipped", ...values } });
+  assert.equal(run({}).status, 0);
+  for (const result of ["failure", "skipped", "cancelled"]) assert.notEqual(run({ BUILD_RESULT: result }).status, 0);
+  assert.notEqual(run({ RESOURCE_PUBLICATION_RESULT: "skipped" }).status, 0);
+  assert.notEqual(run({ RUN_CHECKS: "true" }).status, 0, "ordinary code releases cannot skip tests");
+});
+
 test("PR path filters cannot strand required checks, and main runs never share a cancellation group", async () => {
   const pr = await read(".github/workflows/workspace-packages.yml");
   const release = await read(".github/workflows/frontend-quality.yml");
@@ -49,12 +67,13 @@ test("PR path filters cannot strand required checks, and main runs never share a
 
 test("every new parallel check still participates in the release gate", async () => {
   const release = await read(".github/workflows/frontend-quality.yml");
-  assert.match(release.split("  type_checks:\n")[1].split("  database_checks:\n")[0], /if: always\(\) && \(github\.event_name == 'schedule' \|\| needs\.changes\.outputs\.run_core == 'true'\)/);
+  assert.match(release.split("  type_checks:\n")[1].split("  database_checks:\n")[0], /if: always\(\) && \(github\.event_name == 'schedule' \|\| \(needs\.changes\.outputs\.run_core == 'true' && needs\.changes\.outputs\.scope != 'operator-data'\)\)/);
   const gate = release.split("  quality:\n")[1].split("  deploy:\n")[0];
   for (const job of ["static_checks", "lint_checks", "type_checks", "database_checks", "release_artifact", "browser_e2e", "browser_boundaries"]) {
     assert.ok(gate.includes("needs." + job + ".result"), job);
   }
-  for (const result of ["STATIC", "LINT", "TYPES", "DATABASE", "BUILD"]) assert.ok(gate.includes('verify_result "$RUN_CORE" "$' + result + '_RESULT"'), result);
+  for (const result of ["STATIC", "LINT", "TYPES"]) assert.ok(gate.includes('verify_result "$RUN_CHECKS" "$' + result + '_RESULT"'), result);
+  for (const result of ["DATABASE", "BUILD"]) assert.ok(gate.includes('verify_result "$RUN_CORE" "$' + result + '_RESULT"'), result);
   for (const result of ["BROWSER_E2E", "BROWSER_BOUNDARIES"]) assert.ok(gate.includes('verify_result "$RUN_BROWSER" "$' + result + '_RESULT"'), result);
   const pr = await read(".github/workflows/workspace-packages.yml");
   for (const command of ["npm run check:types", "npm run lint", "npm run check:i18n", "npm run test:workspace",
