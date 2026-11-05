@@ -3,27 +3,24 @@ import { createHash } from "node:crypto";
 import { fileURLToPath, URL } from "node:url";
 import path from "node:path";
 import { Converter } from "opencc-js";
-import { parseLosslessJson } from "./i18n/lossless-json.mjs";
+import { loadEndfieldTables } from "./endfield-upstream.mjs";
 import { writeGenerated } from "./i18n/write-generated.mjs";
 
 // Deliberately pinned: upstream updates are reviewed independently of solver updates.
-const dataRevision = "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2";
-const assetRevision = "659fa8d40061616433722bdd803ef432e887f89e";
+const assetRevision = "444cd59e43dd2171a98c51950759a7f47b0a2bad";
 const root = fileURLToPath(new URL("../", import.meta.url));
-const cache = path.join(root, ".tmp/endfield-upstream", dataRevision);
 const output = path.join(root, "packages/endfield-data");
 const publicDir = path.join(root, "apps/endfield/public/images/game");
 const tables = ["CharacterTable", "CharGrowthTable", "WeaponBasicTable", "ItemTable", "SpaceshipCharSkillTable", "SpaceshipSkillTable", "I18nTextTable_CN", "I18nTextTable_EN", "I18nTextTable_TC"];
 const check = process.argv.includes("--check");
 const offline = process.argv.includes("--offline") || check;
 const textOnly = process.argv.includes("--text-only") || check;
-const tableHashes = {}, outputHashes = {};
+const outputHashes = {};
 async function emit(file, contents) {
   outputHashes[file] = createHash("sha256").update(contents).digest("hex");
   await writeGenerated(path.join(output, file), contents);
 }
 const traditional = Converter({ from: "cn", to: "twp" });
-await mkdir(cache, { recursive: true });
 await mkdir(output, { recursive: true });
 
 async function fetchBytes(url) {
@@ -31,25 +28,15 @@ async function fetchBytes(url) {
   if (!response.ok) throw new Error(`Upstream ${response.status}: ${url}`);
   return Buffer.from(await response.arrayBuffer());
 }
-// Text IDs exceed Number.MAX_SAFE_INTEGER. Retain the original JSON token.
-const parse = parseLosslessJson;
-const tableData = {};
-for (const name of tables) {
-  const file = path.join(cache, `${name}.json`);
-  let bytes;
-  try { bytes = await readFile(file); }
-  catch (cause) {
-    if (offline) throw new Error(`Missing pinned upstream cache: ${file}; run the sync once without --offline.`, { cause });
-    bytes = await fetchBytes(`https://raw.githubusercontent.com/rmxlinux/EndfieldData/${dataRevision}/TableCfg/${name}.json`);
-    await writeFile(file, bytes);
-  }
-  tableHashes[name] = createHash("sha256").update(bytes).digest("hex");
-  tableData[name] = parse(bytes.toString("utf8"));
-}
+const { tableData, provenance } = await loadEndfieldTables(tables, { offline });
 const { CharacterTable: characters, CharGrowthTable: growth, WeaponBasicTable: weapons, ItemTable: items,
   SpaceshipCharSkillTable: charSkills, SpaceshipSkillTable: skills, I18nTextTable_CN: zh, I18nTextTable_EN: en, I18nTextTable_TC: tw } = tableData;
 const localize = (field, dict) => dict[field?.id] || field?.text || "";
 const clean = text => text.replace(/<[^>]*>/g, "");
+// Dump providers serialize dictionaries differently. Preserve established UI/catalog order.
+const previousCatalog = JSON.parse(await readFile(path.join(output, "catalog.json"), "utf8"));
+const orderedEntries = (records, previous) => [...new Set([...Object.keys(previous), ...Object.keys(records)])]
+  .filter(id => Object.hasOwn(records, id)).map(id => [id, records[id]]);
 
 // Upstream only stores numeric ids for effects, professions and room types; these tables mirror
 // packages/endfield-solver/data/ship-data.json so both data sets stay readable side by side.
@@ -127,7 +114,7 @@ function asset(folder, name, source, sourceRoot = assetRoot) {
   downloads.set(target, { target, source: sourceRoot + source });
   return `/images/game/${target}`;
 }
-const operators = Object.fromEntries(Object.entries(characters).filter(([id]) => id !== "chr_9000_endmin").map(([id, char]) => [id, {
+const operators = Object.fromEntries(orderedEntries(characters, previousCatalog.operators).filter(([id]) => id !== "chr_9000_endmin").map(([id, char]) => [id, {
   id, name: localize(char.name, zh), enName: localize(char.name, en) || char.engName, twName: localize(char.name, tw), rarity: char.rarity,
   profession: lookUp(PROFESSIONS, char.profession, "profession").zh,
   enProfession: lookUp(PROFESSIONS, char.profession, "profession").en,
@@ -149,7 +136,7 @@ const operators = Object.fromEntries(Object.entries(characters).filter(([id]) =>
       icon: asset("skills", skill.icon, `gameplay/ui/sprites/spaceship/spaceshipskillicon/${skill.icon}.png`) };
   }),
 }]));
-const weaponData = Object.fromEntries(Object.entries(weapons).map(([id, weapon]) => [id, {
+const weaponData = Object.fromEntries(orderedEntries(weapons, previousCatalog.weapons).map(([id, weapon]) => [id, {
   id, name: localize(items[id]?.name, zh) || id, enName: localize(items[id]?.name, en) || id, twName: localize(items[id]?.name, tw) || id, rarity: weapon.rarity,
   icon: asset("weapons", id, `gameplay/ui/sprites/itemicon/${items[id]?.iconId || id}.png`),
 }]));
@@ -201,7 +188,7 @@ for (const [locale, prefix] of [["zh-CN", ""], ["zh-TW", "tw"], ["en", "en"]]) {
 }
 await emit("workbench.json", JSON.stringify(workbench, null, 2) + "\n");
 await writeGenerated(path.join(output, "sources.json"), JSON.stringify({
-  data: { repository: "https://github.com/rmxlinux/EndfieldData", revision: dataRevision, tables, inputs: tableHashes },
+  data: provenance,
   translations: { outputs: outputHashes, "zh-TW": { textTable: "I18nTextTable_TC", siteDefinedLabels: "OpenCC cn→twp; reviewed separately from upstream game text" } },
   assets: { repository: "https://github.com/555me/EndfieldAssets", revision: assetRevision },
   files: manifest.sort((a, b) => a.target.localeCompare(b.target)),

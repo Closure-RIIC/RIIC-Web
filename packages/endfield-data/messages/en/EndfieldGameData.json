@@ -135,6 +135,10 @@
     "name": "Liino",
     "profession": "Support"
   },
+  "chr_0037_minghe": {
+    "name": "Argent Flow",
+    "profession": "Guard"
+  },
   "wpn_claym_0003": {
     "name": "Industry 0.1"
   },
@@ -386,6 +390,9 @@
   },
   "wpn_sword_0026": {
     "name": "Farsight"
+  },
+  "wpn_sword_0025": {
+    "name": "Lunar Calling"
   },
   "spaceship_skill_chr_0015_lifeng_1_1": {
     "name": "Youthful Ambition β",
@@ -1242,5 +1249,31 @@
     "description": "Assign to Control Nexus to grant all operators' Mood Regen +16%",
     "room": "Control center",
     "effectName": "Ship-wide morale recovery"
+  },
+  "spaceship_skill_chr_0037_minghe_1_1": {
+    "name": "Axiom of Combat β",
+    "description": "Assign to Manufacturing Cabin to grant operator EXP material production efficiency +20%",
+    "room": "Manufacturing",
+    "effectName": "Production efficiency",
+    "target": "Operator EXP"
+  },
+  "spaceship_skill_chr_0037_minghe_1_2": {
+    "name": "Axiom of Combat γ",
+    "description": "Assign to Manufacturing Cabin to grant operator EXP material production efficiency +30%",
+    "room": "Manufacturing",
+    "effectName": "Production efficiency",
+    "target": "Operator EXP"
+  },
+  "spaceship_skill_chr_0037_minghe_2_1": {
+    "name": "Tools of Momentum β",
+    "description": "Assign to Manufacturing Cabin to slow Mood Drop of all operators in it by 14%",
+    "room": "Manufacturing",
+    "effectName": "Room morale consumption"
+  },
+  "spaceship_skill_chr_0037_minghe_2_2": {
+    "name": "Tools of Momentum γ",
+    "description": "Assign to Manufacturing Cabin to slow Mood Drop of all operators in it by 18%",
+    "room": "Manufacturing",
+    "effectName": "Room morale consumption"
   }
 }

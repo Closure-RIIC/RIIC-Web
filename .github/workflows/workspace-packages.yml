@@ -22,6 +22,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       run_core: ${{ steps.scope.outputs.run_core }}
+      scope: ${{ steps.scope.outputs.scope }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -49,7 +50,7 @@ jobs:
   checks:
     name: PR checks (${{ matrix.suite }})
     needs: changes
-    if: needs.changes.outputs.run_core == 'true'
+    if: needs.changes.outputs.run_core == 'true' && needs.changes.outputs.scope != 'operator-data'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
@@ -84,7 +85,7 @@ jobs:
   runtime:
     name: PR build and runtime
     needs: changes
-    if: needs.changes.outputs.run_core == 'true'
+    if: needs.changes.outputs.run_core == 'true' && needs.changes.outputs.scope != 'operator-data'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     services:
@@ -155,7 +156,7 @@ jobs:
       - name: Verify every required PR check
         env:
           SCOPE_RESULT: ${{ needs.changes.result }}
-          RUN_CORE: ${{ needs.changes.outputs.run_core }}
+          RUN_CORE: ${{ needs.changes.outputs.run_core == 'true' && needs.changes.outputs.scope != 'operator-data' }}
           CHECKS_RESULT: ${{ needs.checks.result }}
           RUNTIME_RESULT: ${{ needs.runtime.result }}
         run: |

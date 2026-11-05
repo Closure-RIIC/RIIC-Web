@@ -183,6 +183,7 @@ test("operator data hints cannot hide an unshipped runtime change", async () => 
   }));
   assert.deepEqual(data.deployApps, ["arknights"]);
   assert.equal(data.runBrowser, false);
+  assert.equal(data.runDatabase, false);
   const result = await createReleasePlan(planOptions({ operatorDataBase: b, baselines: { arknights: a, endfield: b },
     diff: (base) => base === a ? ["packages/arknights-domain/src/generated/gacha-up.json", "apps/arknights/src/App.tsx"] : ["packages/arknights-domain/src/generated/gacha-up.json"],
   }));

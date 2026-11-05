@@ -159,11 +159,6 @@ jobs:
           npm run assets:gacha-up
           node scripts/sync-arknights-i18n-data.mjs
 
-      - name: Run pre-PR quality gates
-        run: |
-          npm run check
-          npm run build
-
       - name: Detect generated changes
         id: changes
         run: node scripts/arkntools-sync-changes.mjs

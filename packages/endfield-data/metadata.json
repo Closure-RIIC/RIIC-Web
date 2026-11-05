@@ -1938,6 +1938,63 @@
         "Liino",
         "梨諾"
       ]
+    },
+    "chr_0037_minghe": {
+      "id": "chr_0037_minghe",
+      "name": "明河",
+      "rarity": 6,
+      "profession": "近卫",
+      "icon": "/images/game/operators/portrait_chr_0037_minghe.png",
+      "skills": [
+        {
+          "id": "spaceship_skill_chr_0037_minghe_1_1",
+          "name": "百兵一理·β",
+          "unlock": 1,
+          "roomType": 1,
+          "room": "制造舱",
+          "effectKey": "ManufactureEfficiencyUp",
+          "effectName": "制造舱 · 指定经验素材生产效率提升",
+          "targetId": 1,
+          "target": "干员经验",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
+        },
+        {
+          "id": "spaceship_skill_chr_0037_minghe_1_2",
+          "name": "百兵一理·γ",
+          "unlock": 3,
+          "roomType": 1,
+          "room": "制造舱",
+          "effectKey": "ManufactureEfficiencyUp",
+          "effectName": "制造舱 · 指定经验素材生产效率提升",
+          "targetId": 1,
+          "target": "干员经验",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
+        },
+        {
+          "id": "spaceship_skill_chr_0037_minghe_2_1",
+          "name": "因势应物·β",
+          "unlock": 2,
+          "roomType": 1,
+          "room": "制造舱",
+          "effectKey": "RoomMoodConsumeDown",
+          "effectName": "舱室内干员心情消耗降低",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_power_consume.png"
+        },
+        {
+          "id": "spaceship_skill_chr_0037_minghe_2_2",
+          "name": "因势应物·γ",
+          "unlock": 4,
+          "roomType": 1,
+          "room": "制造舱",
+          "effectKey": "RoomMoodConsumeDown",
+          "effectName": "舱室内干员心情消耗降低",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_power_consume.png"
+        }
+      ],
+      "aliases": [
+        "明河",
+        "Argent Flow"
+      ]
     }
   },
   "weapons": {
@@ -2838,6 +2895,17 @@
         "遥望",
         "Farsight",
         "遙望"
+      ]
+    },
+    "wpn_sword_0025": {
+      "id": "wpn_sword_0025",
+      "name": "唤月",
+      "rarity": 6,
+      "icon": "/images/game/weapons/wpn_sword_0025.png",
+      "aliases": [
+        "唤月",
+        "Lunar Calling",
+        "喚月"
       ]
     }
   }
