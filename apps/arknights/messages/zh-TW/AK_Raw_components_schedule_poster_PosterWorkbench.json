@@ -82,5 +82,9 @@
   "fileImported": "已匯入 {name}，設施配置與班次已同步。",
   "shiftCount": "{count} 班",
   "shiftDuration": "第 {shift} 班時長 / h",
-  "maaExported": "{multi, select, yes {多日週期已依 MAA 順序班次匯出。} other {}}已匯出 MAA 排班 JSON；標題、說明和海報設定仍保留在網站排班檔案中。"
+  "maaExported": "{multi, select, yes {多日週期已依 MAA 順序班次匯出。} other {}}已匯出 MAA 排班 JSON；標題、說明和海報設定仍保留在網站排班檔案中。",
+  "shareUnavailable": "作業碼暫時無法產生。排班已保留，可先下載作業檔案分享；網路恢復後再重試。",
+  "loadUnavailable": "暫時無法讀取作業。請核對作業碼、網站位址和網路，也可匯入作業檔案；目前排班未替換。",
+  "exportUnavailable": "圖片匯出失敗或逾時。請先下載作業檔案備份，再重新整理頁面重試；排班仍保留。",
+  "imageExportedWithFallback": "圖片已匯出。部分字型、頭像或背景載入失敗，已使用替代字型或省略圖片，請核對匯出內容。"
 }
