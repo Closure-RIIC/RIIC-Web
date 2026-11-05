@@ -79,7 +79,30 @@
         "职业/属性字典",
         "6 / 5"
       ]
-    ]
+    ],
+    "operatorUpdates": {
+      "repository": "https://github.com/nagiyume/akedatabase",
+      "revision": "1.6.4@11529267-11",
+      "manifest": "https://data.akedata.wiki/manifest.json",
+      "tableCfgUrl": "https://data.akedata.wiki/public/1.6.4/11529267-11/TableCfg",
+      "tables": [
+        "CharacterTable",
+        "CharGrowthTable",
+        "SpaceshipCharSkillTable",
+        "SpaceshipSkillTable",
+        "I18nTextTable_CN"
+      ],
+      "inputs": {
+        "CharacterTable": "f94bf917af3f4d3d059f8fb0c92a6f05c91955daa5755441b42ecbf4d200d32e",
+        "CharGrowthTable": "b9c1a7bd2d390824e82feced74becbafbdfef6d419bf55c803d76818373d5abc",
+        "SpaceshipCharSkillTable": "4028ddad487c1cf3dbe85ae0f12e2f68ed32cdd56f0b8c9ac08fce2617995c2c",
+        "SpaceshipSkillTable": "1db58cfd4b067800d6d64bf840a0e2e28a9a8497aa58e383dc47c9b356ec7b0d",
+        "I18nTextTable_CN": "2a92b375d44eae019fa119ca71df67b5779372e109ea513c060549b62adf9643"
+      },
+      "operatorIds": [
+        "chr_0037_minghe"
+      ]
+    }
   },
   "enums": {
     "roomType": {
@@ -5435,6 +5458,117 @@
       ],
       "behaviourTypes": [
         7
+      ]
+    },
+    {
+      "charId": "chr_0037_minghe",
+      "name": "明河",
+      "enName": "Argent Flow",
+      "rarity": 6,
+      "profession": 0,
+      "professionName": "近卫",
+      "charType": "Pulse",
+      "charTypeName": "电磁",
+      "weaponType": 1,
+      "weaponTypeName": "单手剑",
+      "sortOrder": 37,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0037_minghe_1_1",
+          "name": "百兵一理·β",
+          "talentName": "百兵一理",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.2,
+            1
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0037_minghe_1_2",
+          "name": "百兵一理·γ",
+          "talentName": "百兵一理",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，干员经验素材的生产效率提升30%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.3,
+            "expType": 1,
+            "expTypeName": "干员经验素材"
+          },
+          "rawParams": [
+            0.3,
+            1
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0037_minghe_2_1",
+          "name": "因势应物·β",
+          "talentName": "因势应物",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0037_minghe_2_2",
+          "name": "因势应物·γ",
+          "talentName": "因势应物",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 4
+        }
       ]
     }
   ]

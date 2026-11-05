@@ -151,7 +151,7 @@ export async function createReleasePlan({ head, before, baselines, diff, snapsho
   const validationMode = branch === "develop" && !full ? "affected-apps" : "full";
   const checkApps = scope.runCore ? (validationMode === "affected-apps" ? affected : [...APPLICATIONS]) : [];
   const runBrowser = scope.runBrowser && checkApps.includes("arknights");
-  const runDatabase = scope.runCore && checkApps.includes("arknights");
+  const runDatabase = scope.runCore && scope.scope !== "operator-data" && checkApps.includes("arknights");
   const buildApps = ordered(new Set([...deployApps, ...affected, ...(runBrowser ? ["arknights"] : [])]));
   return { formatVersion: 1, headSha: head, ...scope, runBrowser, runDatabase, validationMode, deployRequired: deployApps.length > 0, checkApps, buildApps, deployApps, applications };
 }
