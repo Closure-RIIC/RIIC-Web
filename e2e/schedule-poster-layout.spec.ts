@@ -55,6 +55,94 @@ async function expectReadableEfficiencies(poster: Locator) {
   expect(alignments.flat().every(difference => difference <= .5)).toBe(true);
 }
 
+async function expectReadableSupportNotes(poster: Locator) {
+  const failures = await poster.locator(".poster-support-notes>div").evaluateAll(columns => {
+    const failures: string[] = [];
+    for (const [index, column] of columns.entries()) {
+      const bounds = column.getBoundingClientRect();
+      const notes = column.parentElement!.getBoundingClientRect();
+      const walker = document.createTreeWalker(column, NodeFilter.SHOW_TEXT);
+      const rects: DOMRect[] = [];
+      while (walker.nextNode()) {
+        if (!walker.currentNode.textContent?.trim()) continue;
+        const range = document.createRange();
+        range.selectNodeContents(walker.currentNode);
+        for (const rect of range.getClientRects()) {
+          if (rect.left < bounds.left - .5 || rect.right > bounds.right + .5 ||
+              rect.top < notes.top - .5 || rect.bottom > notes.bottom + .5) {
+            failures.push(`${index}: overflowing support text ${walker.currentNode.textContent}`);
+          }
+          if (rects.some(previous => rect.left < previous.right - .5 && rect.right > previous.left + .5 &&
+            rect.top < previous.bottom - .5 && rect.bottom > previous.top + .5)) {
+            failures.push(`${index}: overlapping support text ${walker.currentNode.textContent}`);
+          }
+          rects.push(rect);
+        }
+      }
+      for (const image of column.querySelectorAll("img")) {
+        const rect = image.getBoundingClientRect();
+        if (rect.right > bounds.right + .5 || rect.bottom > notes.bottom + .5 ||
+            rects.some(text => rect.left < text.right - .5 && rect.right > text.left + .5 &&
+              rect.top < text.bottom - .5 && rect.bottom > text.top + .5)) {
+          failures.push(`${index}: overlapping support portrait`);
+        }
+      }
+    }
+    return failures;
+  });
+  expect(failures).toEqual([]);
+}
+
+test("four-shift poster keeps cross-day timing and support targets clear in preview and PNG", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
+  await mockApis(page);
+  const draft = createManualScheduleDraft([6, 6, 6, 6]);
+  draft.startTime = "23:00";
+  draft.fiammettaEnabled = true;
+  for (const [index, shift] of draft.shifts.entries()) {
+    for (const room of layout243.rooms) {
+      const members = (sampleTeams as Record<string, string[][]>)[room.id]?.[index % 3] ?? [];
+      shift.rooms[room.id] = { operators: members.slice(0, manualRoomCapacity(room)) };
+    }
+    shift.droneTargetRoomId = layout243.rooms.find(room => room.kind === "factory")!.id;
+    shift.fiammettaTarget = "维什戴尔";
+  }
+  const doc = createPosterDocument(layout243 as BaseBlueprint, draft);
+  doc.efficiencyMode = "manual";
+  await page.addInitScript(document => {
+    localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", "1");
+    sessionStorage.setItem("riic.schedule-poster.handoff.v1.manual", JSON.stringify(document));
+  }, doc);
+  await page.setViewportSize({ width: 1600, height: 1200 });
+  await page.goto("/manual?tab=poster");
+  const workbench = page.locator("[data-poster-workbench]");
+  const poster = workbench.locator("[data-schedule-poster]");
+  await expect(poster).toHaveAttribute("data-shift-count", "4", { timeout: 60_000 });
+  await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
+  await expect(poster.locator('.poster-output[data-production-ready="true"]')).toBeAttached({ timeout: 30_000 });
+  await page.evaluate(() => document.fonts.ready);
+  await expect(poster.locator(".poster-support-notes")).toContainText("次日");
+  await expect(poster.locator(".poster-fiammetta")).toHaveCount(4);
+  await expectReadableSupportNotes(poster);
+  await expectReadableEfficiencies(poster);
+  const download = page.waitForEvent("download");
+  await workbench.getByRole("button", { name: "导出一页 PNG", exact: true }).click();
+  const imagePath = testInfo.outputPath("243-4-shifts-cross-day.png");
+  await (await download).saveAs(imagePath);
+  const image = await readFile(imagePath);
+  expect(image.readUInt32BE(16)).toBe(1920);
+  expect(image.readUInt32BE(20)).toBe(1080);
+  await testInfo.attach("four-shift-cross-day", { path: imagePath, contentType: "image/png" });
+  const instructions = workbench.locator("label").filter({ hasText: "显示说明栏" }).getByRole("switch");
+  await instructions.click();
+  await expect(poster.locator(".poster-header-no-instructions")).toBeAttached();
+  await expectReadableSupportNotes(poster);
+  await expectReadableEfficiencies(poster);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expectReadableSupportNotes(poster);
+  await expectReadableEfficiencies(poster);
+});
+
 for (const layout of [layout153, layout243, layout252, layout333, layout342] as BaseBlueprint[]) {
   test(`${layout.template} poster keeps efficiency labels clear for one to four shifts and PNG export`, async ({ page }, testInfo) => {
     test.setTimeout(120_000);
@@ -102,10 +190,12 @@ for (const layout of [layout153, layout243, layout252, layout333, layout342] as 
       await expect(page.locator("[data-manual-result-outdated]")).toBeVisible();
       await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
       await expect(page.locator("[data-manual-result-outdated]")).toHaveCount(0);
+      await expectReadableSupportNotes(poster);
       await expectReadableEfficiencies(poster);
     }
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(poster).toHaveAttribute("data-shift-count", "1");
+    await expectReadableSupportNotes(poster);
     await expectReadableEfficiencies(poster);
   });
 }

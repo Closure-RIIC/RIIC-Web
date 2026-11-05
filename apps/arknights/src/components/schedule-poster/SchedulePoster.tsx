@@ -21,6 +21,7 @@ import { posterProduct, posterRoomTitle, posterDisplayTitle, ROOM_GROUP } from "
 import { DEFAULT_MANUAL_SHIFT_START_TIME } from "@/manual-schedule-config";
 import type { SchedulePosterDocument } from "@/schedule-poster-document";
 import type { ManualPlanResult } from "@/manual-plan-result";
+import { posterDormOperators, POSTER_DORM_SLOTS } from "@/schedule-poster-dorm";
 
 export type PosterTarget = { roomId: string; shift: number; slot?: number; presentationOnly?: "dorm-hanger" };
 type Props = {
@@ -139,10 +140,11 @@ export function SchedulePoster(props: Props) {
               ].join("；")
             : rawText.text(rawLocale, "explainEfficiency");
           const timing = timingFor(index);
-          const visibleCapacity = variant === "dorm" ? 6 : capacity;
+          const dormMembers = variant === "dorm" ? posterDormOperators(doc.layout, doc.draft, index, doc.presentation.dormHangerOperators[index]) : [];
+          const visibleCapacity = variant === "dorm" ? POSTER_DORM_SLOTS : capacity;
           const memberSlots = Array.from({ length: visibleCapacity }, (_, slot) => {
-                const isDormHanger = variant === "dorm" && slot === 5;
-                const name = isDormHanger ? doc.presentation.dormHangerOperators[index] ?? undefined : members[slot];
+                const isDormHanger = variant === "dorm";
+                const name = isDormHanger ? dormMembers[slot] : members[slot];
                 const autofill = !name && !isDormHanger && slot < capacity && facilityAutofill;
                 const presentation = name ? operatorPresentationFor({ name }) : undefined;
                 const training = name ? doc.operators.find(operator => operator.name === name) : undefined;
@@ -206,7 +208,16 @@ export function SchedulePoster(props: Props) {
             const drone = doc.layout.rooms.find(room => room.id === shift.droneTargetRoomId);
             const target = shift.fiammettaTarget ? operatorPresentationFor({ name: shift.fiammettaTarget }) : undefined;
             const timing = timingFor(index);
-            return <div key={index}><b>{rawText.rich(rawLocale, "shift", { part1: richValue((index + 1)) })}</b><span>{timing.range ? `${timing.range} · ` : ""}{timing.duration}</span><span>{rawText.rich(rawLocale, "drones", { part1: richValue((drone ? posterRoomTitle(drone, doc.layout, rawLocale) : rawText.text(rawLocale, "unspecified"))) })}</span><span className="poster-fiammetta"><span>{rawText.text(rawLocale, "fiammetta")}</span>{doc.draft.fiammettaEnabled && shift.fiammettaTarget ? <>{target?.portrait ? <img src={target.portrait} alt="" /> : null}{localizedOperatorName(shift.fiammettaTarget, rawLocale, gameCatalog)}</> : <span>{doc.draft.fiammettaEnabled ? rawText.text(rawLocale, "unspecified") : rawText.text(rawLocale, "notEnabled")}</span>}</span></div>;
+            return <div key={index}>
+              <div className="poster-support-timing">
+                <b>{rawText.rich(rawLocale, "shift", { part1: richValue((index + 1)) })}</b>
+                <span>{timing.range ? `${timing.range} · ` : ""}{timing.duration}</span>
+              </div>
+              <div className="poster-support-actions">
+                <span>{rawText.rich(rawLocale, "drones", { part1: richValue((drone ? posterRoomTitle(drone, doc.layout, rawLocale) : rawText.text(rawLocale, "unspecified"))) })}</span>
+                {doc.draft.fiammettaEnabled && !shift.fiammettaTarget ? null : <span className="poster-fiammetta"><span>{rawText.text(rawLocale, "fiammetta")}</span>{doc.draft.fiammettaEnabled && shift.fiammettaTarget ? <>{target?.portrait ? <img src={target.portrait} alt="" /> : null}{localizedOperatorName(shift.fiammettaTarget, rawLocale, gameCatalog)}</> : <span>{doc.draft.fiammettaEnabled ? rawText.text(rawLocale, "unspecified") : rawText.text(rawLocale, "notEnabled")}</span>}</span>}
+              </div>
+            </div>;
           })}
         </div>
       </header>

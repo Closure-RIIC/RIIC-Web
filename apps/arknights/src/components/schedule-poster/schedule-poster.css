@@ -30,6 +30,7 @@
 .poster-instructions[data-dense="true"],.poster-instructions[data-dense="true"] p { font-size:12px; line-height:12px; }
 .poster-support-notes { grid-column:1/4; grid-row:3; display:grid; gap:14px; align-items:center; font-size:15px; }
 .poster-support-notes>div { display:flex; align-items:center; gap:10px; white-space:nowrap; }
+.poster-support-timing,.poster-support-actions { display:flex; align-items:center; gap:10px; }
 .poster-support-notes b { font-size:16px; font-weight:600; }
 .poster-support-notes span { color:#566050; }
 .poster-fiammetta { display:inline-flex; align-items:center; gap:4px; }
@@ -102,6 +103,12 @@
 .poster-dorm .poster-members { display:grid; flex:1; grid-template-columns:repeat(6,minmax(0,1fr)); align-items:center; justify-items:center; column-gap:6px; }
 .poster-dorm .poster-shift { padding:5px 12px; }
 .schedule-poster[data-shift-count='2'] .poster-control .poster-members { row-gap:30px; }
+/* Keep each shift's timing and support actions in its own column without shrinking text. */
+.schedule-poster[data-shift-count='4'] .poster-header { height:232px; grid-template-rows:132px 48px 52px; }
+.schedule-poster[data-shift-count='4'] .poster-header-no-instructions { height:184px; grid-template-rows:132px 0 52px; }
+.schedule-poster[data-shift-count='4'] .poster-body { height:786px; }
+.schedule-poster[data-shift-count='4']:has(.poster-header-no-instructions) .poster-body { height:834px; }
+.schedule-poster[data-shift-count='4'] .poster-support-notes>div { flex-direction:column; align-items:flex-start; gap:2px; min-width:0; line-height:24px; }
 .schedule-poster[data-shift-count='4'] .poster-production .poster-shift { padding:3px 6px; }
 .schedule-poster[data-shift-count='4'] .poster-production .poster-shift-label { font-size:14px; }
 .schedule-poster[data-shift-count='4'] .poster-production .poster-shift-label>span { display:none; }

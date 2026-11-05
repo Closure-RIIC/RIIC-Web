@@ -124,18 +124,16 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await expect(workbench).toBeVisible();
   await expect(poster.locator('[data-poster-room="trade_1"]')).toBeVisible();
   const dorm = poster.locator('[data-poster-room="dorm_1"]');
-  const hanger = dorm.locator('[data-poster-shift="0"] [data-poster-hanger-slot]');
+  const hangerSlots = dorm.locator('[data-poster-shift="0"] [data-poster-hanger-slot]');
   await expect(dorm.locator('[data-poster-shift="0"] .poster-member')).toHaveCount(6);
   await expect(poster.locator('[data-poster-room="trade_1"] [data-poster-shift="0"]')).toContainText("08:00—次日07:59");
-  const scheduledDormBefore = await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).shifts[0].rooms.dorm_1.operators);
-  await hanger.getByRole("button", { name: "空位", exact: true }).click();
+  await hangerSlots.nth(5).getByRole("button", { name: "空位", exact: true }).click();
   const hangerPicker = page.getByRole("dialog");
-  await expect(hangerPicker).toContainText("不会加入宿舍排班或参与效率计算");
+  await expect(hangerPicker).toContainText("其余床位自动填充");
   await hangerPicker.getByLabel("搜索可选干员或基建技能").fill("锡兰");
   await hangerPicker.getByRole("button", { name: /锡兰/ }).click();
-  await expect(hanger).toContainText("锡兰");
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).presentation.dormHangerOperators[0])).toBe("锡兰");
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).shifts[0].rooms.dorm_1.operators)).toEqual(scheduledDormBefore);
+  await expect(hangerSlots.first()).toContainText("锡兰");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).shifts[0].rooms.dorm_2.operators[1])).toBe("锡兰");
   await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
   await expect(page.locator('[data-manual-editor-board] [data-room-title="宿舍 1"] .infra-operator-slot')).toHaveCount(5);
   await page.getByRole("tab", { name: "作业图", exact: true }).click();
@@ -157,7 +155,8 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   const shiftCount = await poster.locator('[data-poster-room="trade_1"] [data-poster-shift]').count();
   const tradeLine = `贸易站1：巫恋、龙舌兰、调香师 @自动 #龙门币${Array.from({ length: shiftCount - 1 }, () => " | -").join("")}`;
   const controlLine = `中枢：阿米娅、锡兰、auto、Free${Array.from({ length: shiftCount - 1 }, () => " | =").join("")}`;
-  await bulk.fill(`${tradeLine}\n${controlLine}`);
+  const dormLine = `宿舍2：auto${Array.from({ length: shiftCount - 1 }, () => " | =").join("")}`;
+  await bulk.fill(`${tradeLine}\n${controlLine}\n${dormLine}`);
   await page.getByRole("button", { name: "检查并应用" }).click();
   await expect.poll(() => page.evaluate(() => {
     const operator = JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).operators.find((entry: { name: string }) => entry.name === "调香师");
@@ -510,6 +509,52 @@ test("manual MAA downloads normalize dorm autofill without changing the editor s
     }
   }
   await expect(autofill).toHaveAttribute("aria-pressed", "false");
+});
+
+test("poster hides an unspecified Fiammetta target but retains specified targets", async ({ page }) => {
+  const draft = createManualScheduleDraft([12, 12]);
+  draft.fiammettaEnabled = true;
+  draft.shifts[1]!.fiammettaTarget = "阿米娅";
+  draft.shifts[1]!.rooms.control = { operators: ["阿米娅"] };
+  await page.addInitScript(draft => {
+    localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify(draft));
+  }, draft);
+  await page.goto("/manual");
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  const notes = page.locator("[data-schedule-poster] .poster-support-notes > div");
+  await expect(notes).toHaveCount(2);
+  await expect(notes.nth(0).locator(".poster-fiammetta")).toHaveCount(0);
+  await expect(notes.nth(1).locator(".poster-fiammetta")).toContainText("阿米娅");
+});
+
+test("poster dorm cards skip AUTO and write all six occupants vertically back to the batch editor", async ({ page }) => {
+  await page.goto("/manual");
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  const workbench = page.locator("[data-poster-workbench]");
+  await workbench.getByRole("button", { name: "批量填写排班" }).click();
+  await page.getByLabel("批量排班文本").fill("宿舍1：森蚺、auto、塑心、虎狼丸 | = | -\n宿舍2：auto、爱丽丝、车尔尼 | = | -");
+  await page.getByRole("button", { name: "检查并应用" }).click();
+  const cards = workbench.locator('[data-poster-room="dorm_1"] [data-poster-shift="0"] [data-poster-hanger-slot]');
+  for (const [index, name] of ["森蚺", "爱丽丝", "塑心", "车尔尼", "虎狼丸"].entries()) await expect(cards.nth(index)).toContainText(name);
+  await cards.nth(5).getByRole("button", { name: "空位", exact: true }).click();
+  const picker = page.getByRole("dialog");
+  await picker.getByLabel("搜索可选干员或基建技能").fill("锡兰");
+  await picker.getByRole("button", { name: /锡兰/ }).click();
+  await expect(cards.nth(5)).toContainText("锡兰");
+  await expect.poll(() => page.evaluate(() => {
+    const draft = JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!);
+    return [1, 2, 3, 4].map(index => draft.shifts[0].rooms[`dorm_${index}`].operators);
+  })).toEqual([
+    ["森蚺", "虎狼丸", null, null, null], ["爱丽丝", "锡兰", null, null, null],
+    ["塑心", null, null, null, null], ["车尔尼", null, null, null, null],
+  ]);
+  await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
+  await expect(page.locator('[data-manual-editor-board] [data-room-title="宿舍 1"]')).toContainText("虎狼丸");
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  await workbench.getByRole("button", { name: "批量填写排班" }).click();
+  await expect(page.getByLabel("批量排班文本")).toHaveValue(/宿舍1：森蚺、虎狼丸、auto、auto、auto/);
+  await expect(page.getByLabel("批量排班文本")).toHaveValue(/宿舍2：爱丽丝、锡兰、auto、auto、auto/);
+  await expect(page.getByLabel("批量排班文本")).toHaveValue(/\| 森蚺、auto、塑心、虎狼丸 \| -/);
 });
 
 test("poster bulk text derives facility autofill from slot markers and defaults empty facilities to auto", async ({ page }) => {
