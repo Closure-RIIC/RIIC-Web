@@ -4,7 +4,7 @@ import { appendFile } from "node:fs/promises";
 import process from "node:process";
 import { pathToFileURL } from "node:url";
 import { classifyChanges } from "./ci-change-scope.mjs";
-import { deploymentBaseline, githubApi, RELEASE_REPOSITORY } from "./release-provenance.mjs";
+import { deploymentBaseline, githubApi, RELEASE_REPOSITORY, verifyQualityRun } from "./release-provenance.mjs";
 
 export const APPLICATIONS = ["arknights", "endfield"];
 // These packages also contain Arknights-only implementation. Endfield consumes
@@ -107,8 +107,12 @@ export function classifyAppChanges(paths, { beforeManifests, afterManifests, bef
   return { checkApps: ordered(check), deployApps: ordered(deploy), reasons };
 }
 
-export async function createReleasePlan({ head, before, baselines, diff, snapshot, branch = "main", forceFull = false, operatorDataBase = "" }) {
+export async function createReleasePlan({ head, before, baselines, diff, snapshot, branch = "main", forceFull = false, operatorDataBase = "", verifiedResourceBase = "" }) {
   assert.match(head, shaPattern);
+  if (verifiedResourceBase) {
+    assert.match(verifiedResourceBase, shaPattern);
+    assert.equal(verifiedResourceBase, operatorDataBase, "Verified checks must cover the resource update's base");
+  }
   const current = snapshot(head);
   const impact = (base, paths) => classifyAppChanges(paths, {
     beforeManifests: snapshot(base).manifests, afterManifests: current.manifests,
@@ -130,6 +134,8 @@ export async function createReleasePlan({ head, before, baselines, diff, snapsho
       const changes = impact(base, paths);
       required = changes.deployApps.includes(app);
       reason = required ? "application-inputs-changed" : "application-unchanged";
+      // A reused check must include every pending application change. diff also checks ancestry.
+      if (required && verifiedResourceBase) diff(base, verifiedResourceBase);
       // Missed deployments remain in validation even after a docs-only push.
       validationPaths.push(...changes.reasons.filter((item) => item.deployApps.includes(app)).map((item) => item.path));
       if (required) for (const consumer of changes.checkApps) pendingChecks.add(consumer);
@@ -140,8 +146,8 @@ export async function createReleasePlan({ head, before, baselines, diff, snapsho
   if (operatorDataBase) {
     const operatorPaths = diff(operatorDataBase, head);
     assert.equal(classifyChanges(operatorPaths).scope, "operator-data", "Operator-data release includes non-data changes or an empty diff");
-    // This hint may narrow checks only when it also covers every pending release.
-    if (!full && validationPaths.every((file) => operatorPaths.includes(file))) validationPaths = operatorPaths;
+    // Every pending change must be resource-only or covered by verified prior checks.
+    if (!full && (verifiedResourceBase || validationPaths.every((file) => operatorPaths.includes(file)))) validationPaths = operatorPaths;
   }
   validationPaths = [...new Set(validationPaths)].sort();
   const scope = validationPaths.length || full
@@ -154,6 +160,28 @@ export async function createReleasePlan({ head, before, baselines, diff, snapsho
   const runDatabase = scope.runCore && scope.scope !== "operator-data" && checkApps.includes("arknights");
   const buildApps = ordered(new Set([...deployApps, ...affected, ...(runBrowser ? ["arknights"] : [])]));
   return { formatVersion: 1, headSha: head, ...scope, runBrowser, runDatabase, validationMode, deployRequired: deployApps.length > 0, checkApps, buildApps, deployApps, applications };
+}
+
+export async function reuseVerifiedResourceChecks({ api, options, plan }) {
+  if (options.forceFull || plan.scope !== "full") return plan;
+  const resourceBase = options.operatorDataBase || options.before;
+  if (!resourceBase || classifyChanges(options.diff(resourceBase, options.head)).scope !== "operator-data") return plan;
+  const prefix = `/repos/${RELEASE_REPOSITORY}/actions/workflows/frontend-quality.yml/runs`;
+  const { workflow_runs: runs } = await api(`${prefix}?branch=${options.branch}&per_page=30`);
+  for (const run of runs) {
+    if (run.head_sha === options.head) continue;
+    try {
+      const paths = options.diff(run.head_sha, options.head);
+      if (classifyChanges(paths).scope !== "operator-data") continue;
+      await verifyQualityRun({ api, repository: RELEASE_REPOSITORY, branch: options.branch,
+        sha: run.head_sha, runId: run.id, allowPendingDeployment: true });
+      const reused = await createReleasePlan({ ...options, operatorDataBase: run.head_sha, verifiedResourceBase: run.head_sha });
+      if (reused.scope === "operator-data") return { ...reused, reusedQuality: { sha: run.head_sha, runId: run.id } };
+    } catch {
+      // Invalid, unfinished or unrelated checks cannot exempt pending code from validation.
+    }
+  }
+  return plan;
 }
 
 export function gitRepository(cwd = process.cwd()) {
@@ -188,10 +216,13 @@ async function main() {
     try { baselines[app] = await deploymentBaseline({ api, repository: env.GITHUB_REPOSITORY, branch: env.GITHUB_REF_NAME, application: app }); }
     catch { process.stderr.write(`${app}: deployment history unavailable; full validation selected.\n`); }
   }
-  const plan = await createReleasePlan({
+  const options = {
     ...gitRepository(), head: env.GITHUB_SHA, before: env.PUSH_BEFORE_SHA || env.GITHUB_SHA, branch: env.GITHUB_REF_NAME,
     baselines, forceFull: env.GITHUB_EVENT_NAME !== "push" && !env.OPERATOR_DATA_BASE_SHA, operatorDataBase: env.OPERATOR_DATA_BASE_SHA || "",
-  });
+  };
+  let plan = await createReleasePlan(options);
+  try { plan = await reuseVerifiedResourceChecks({ api, options, plan }); }
+  catch { process.stderr.write("Verified resource baseline unavailable; existing validation retained.\n"); }
   const outputs = {
     scope: plan.scope, reason: plan.reason, documentation_only: plan.documentationOnly,
     run_core: plan.runCore, run_browser: plan.runBrowser, run_database: plan.runDatabase, deploy_required: plan.deployRequired,
@@ -203,6 +234,8 @@ async function main() {
     outputs[`build_${app}`] = plan.buildApps.includes(app);
   }
   await appendFile(env.GITHUB_OUTPUT, Object.entries(outputs).map(([key, value]) => `${key}=${value}\n`).join(""));
+  if (plan.reusedQuality) await appendFile(env.GITHUB_STEP_SUMMARY,
+    `Resource publication reuses completed checks for ${plan.reusedQuality.sha}: https://github.com/${RELEASE_REPOSITORY}/actions/runs/${plan.reusedQuality.runId}. Current artifacts are rebuilt; deployment baselines and approvals are unchanged.\n\n`);
   await appendFile(env.GITHUB_STEP_SUMMARY, `### Application release plan\n\nChecks: ${plan.checkApps.join(", ") || "none"}; builds: ${plan.buildApps.join(", ") || "none"}; deploys: ${plan.deployApps.join(", ") || "none"}.\n\n| Application | Last success | Deploy | Reason |\n| --- | --- | --- | --- |\n${APPLICATIONS.map((app) => `| ${app} | ${plan.applications[app].baseSha || "unknown"} | ${plan.applications[app].deployRequired} | ${plan.applications[app].reason} |`).join("\n")}\n`);
   process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`);
 }
