@@ -74,7 +74,7 @@ export function AccountHealthReportSection({ en, authenticated, onRecordChange }
         return;
       }
       const uncertain: string[] = [];
-      const needsManualReading = file.type === "image/jpeg" || result.warnings.includes("low-resolution") || result.warnings.includes("odd-aspect-ratio");
+      const needsManualReading = result.warnings.includes("low-resolution") || result.warnings.includes("odd-aspect-ratio");
       const next = result.days.map((day, index) => {
         const item = blankDay();
         for (const key of GAME_REPORT_KEYS) {
