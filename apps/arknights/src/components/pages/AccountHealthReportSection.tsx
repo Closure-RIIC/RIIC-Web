@@ -50,8 +50,10 @@ export function AccountHealthReportSection({ en, authenticated, onRecordChange }
 
   async function handleImage(file: File, signal: AbortSignal) {
     if (!file.type.startsWith("image/") || file.size > 15 * 1024 * 1024) throw new Error(uiText.text(en, "chooseAPngOrJpegUnder15Mb"));
-    const bitmap = await createImageBitmap(file);
+    let bitmap: ImageBitmap | undefined;
     try {
+      try { bitmap = await createImageBitmap(file); }
+      catch { throw new Error(uiText.text(en, "theImageCouldNotBeDecodedTryExporting")); }
       if (signal.aborted) return;
       if (bitmap.width * bitmap.height > 16_000_000) throw new Error(uiText.text(en, "imageIsTooLarge"));
       const canvas = document.createElement("canvas");
@@ -68,7 +70,6 @@ export function AccountHealthReportSection({ en, authenticated, onRecordChange }
           : (uiText.text(en, "reportPanelsWereNotFoundUploadAComplete")));
       }
       if (result.kind === "single-day") {
-        setDraft([blankDay(), blankDay(), blankDay()]);
         setNotice(uiText.text(en, "pleaseSubmitAThreeDayReport"));
         setError(null);
         return;
@@ -86,13 +87,13 @@ export function AccountHealthReportSection({ en, authenticated, onRecordChange }
       }) as [Draft, Draft, Draft];
       setDraft(next);
       setMode("screenshot");
-      const reviewReason = file.type === "image/jpeg"
-        ? (uiText.text(en, "jpegCompressionRequiresManualChecking"))
-        : result.warnings.includes("low-resolution")
+      const reviewReason = result.warnings.includes("low-resolution")
           ? (uiText.text(en, "theImageIsLowResolutionCheckTheBlank"))
           : result.warnings.includes("odd-aspect-ratio")
             ? (uiText.text(en, "thisScreenshotLayoutIsNotSupportedYetCheck"))
-            : (uiText.text(en, "checkTheBlankFieldsBeforeSaving"));
+            : file.type === "image/jpeg"
+              ? (uiText.text(en, "jpegCompressionRequiresManualChecking"))
+              : (uiText.text(en, "checkTheBlankFieldsBeforeSaving"));
       setNotice(uncertain.length || result.warnings.length || file.type === "image/jpeg"
         ? reviewReason
         : (uiText.text(en, "recognitionCompleteCheckAllValuesBeforeSaving")));
@@ -104,7 +105,7 @@ export function AccountHealthReportSection({ en, authenticated, onRecordChange }
         setError(message);
       }
       throw cause;
-    } finally { bitmap.close(); }
+    } finally { bitmap?.close(); }
   }
 
   function update(day: number, key: ReportMetricKey, value: string) {

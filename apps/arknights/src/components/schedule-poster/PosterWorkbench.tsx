@@ -118,11 +118,16 @@ export default function PosterWorkbench({ document: doc, onChange, onImport, onS
   }
   async function exportImage() {
     setExporting(true);
+    setError("");
+    setNotice("");
     try {
       const board = preview.current?.querySelector<HTMLElement>("[data-schedule-poster]"); if (!board) return;
       const { default: html2canvas } = await import("html2canvas-pro");
       const { downloadCanvasImage } = await import("@/schedule-image");
-      await Promise.all([400, 500, 600, 700].map(weight => document.fonts.load(`${weight} 16px "Poster Source Han Sans"`, board.textContent ?? "")));
+      // A missing font subset must not prevent exporting an otherwise usable
+      // poster. Use the system CJK fallback in the clone when any face fails.
+      const fonts = await Promise.allSettled([400, 500, 600, 700].map(weight => document.fonts.load(`${weight} 16px "Poster Source Han Sans"`, board.textContent ?? "")));
+      const useFallbackFont = fonts.some(font => font.status === "rejected");
       await document.fonts.ready;
       await Promise.all(Array.from(board.querySelectorAll("img"), image => {
         // Export also needs portraits outside the scroll viewport.
@@ -132,7 +137,10 @@ export default function PosterWorkbench({ document: doc, onChange, onImport, onS
       const canvas = await html2canvas(board, { scale: 1, width: 1920, height: 1080, windowWidth: 1920, windowHeight: 1080, logging: false, useCORS: true, onclone(clone) {
         const poster = clone.querySelector<HTMLElement>("[data-schedule-poster]");
         // Move out of scaled/animated workbench ancestors before rasterizing.
-        if (poster) { clone.body.appendChild(poster); poster.style.transform = "none"; poster.style.position = "fixed"; poster.style.left = "0"; poster.style.top = "0"; }
+        if (poster) {
+          clone.body.appendChild(poster); poster.style.transform = "none"; poster.style.position = "fixed"; poster.style.left = "0"; poster.style.top = "0";
+          if (useFallbackFont) poster.style.fontFamily = '"Microsoft YaHei", "PingFang SC", sans-serif';
+        }
       } });
       await downloadCanvasImage(canvas, `${posterDisplayTitle(doc, rawLocale) || rawText.text(rawLocale, "filename")}.png`); setNotice(rawText.text(rawLocale, "imageExported"));
     } catch (e) { setError(e instanceof Error ? e.message : rawText.text(rawLocale, "exportFailed")); }

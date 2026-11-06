@@ -44,9 +44,17 @@ test("screenshot recognition, correction and three-day average stay on account h
   await expect(page.getByLabel("合成玉 第 1 天")).toHaveValue("20");
   await expect(page.getByRole("button", { name: "确认并保存" })).toBeEnabled();
   await page.getByRole("button", { name: "选择截图" }).click();
+  await page.locator('[data-file-upload-dialog] input[type="file"]').setInputFiles({
+    name: "broken.jpg", mimeType: "image/jpeg", buffer: Buffer.from("invalid image"),
+  });
+  await expect(page.locator("[data-file-upload-dialog]")).toContainText("图片无法解码，请重新导出为 PNG 或 JPEG 后重试。");
+  await page.locator("[data-file-upload-dialog]").getByRole("button", { name: "取消", exact: true }).click();
+  await expect(page.getByLabel("贵金属价值 第 1 天")).toHaveValue("54000");
+  await page.getByRole("button", { name: "选择截图" }).click();
   await page.locator('[data-file-upload-dialog] input[type="file"]').setInputFiles(fixture("single-day.png"));
-  await expect(page.getByLabel("贵金属价值 第 1 天")).toHaveValue("");
-  await expect(page.getByRole("button", { name: "确认并保存" })).toBeDisabled();
+  await expect(page.getByText("请提交三日报表。")).toBeVisible();
+  await expect(page.getByLabel("贵金属价值 第 1 天")).toHaveValue("54000");
+  await expect(page.getByRole("button", { name: "确认并保存" })).toBeEnabled();
   await page.getByRole("button", { name: "选择截图" }).click();
   await page.locator('[data-file-upload-dialog] input[type="file"]').setInputFiles(fixture("three-day.png"));
   await page.getByLabel("贵金属价值 第 2 天").fill("46000");
