@@ -61,6 +61,7 @@ test("every preset stays solver-compatible and adds exactly one recycling editor
   for (const preset of ["153", "243", "252", "333", "342"]) {
     const layout: BaseBlueprint = JSON.parse(readFileSync(new URL(`../../../packages/arknights-domain/src/layouts/${preset}.json`, import.meta.url), "utf8"));
     assert.deepEqual(validateLayoutJson(layout), [], preset);
+    assert.equal(layout.rooms.find(room => room.kind === "control_center")?.level, 5, `${preset} control center default`);
     const rooms = manualEditableRooms(layout);
     assert.equal(new Set(rooms.map(room => room.id)).size, rooms.length, preset);
     assert.deepEqual(rooms.filter(room => room.id === "recycling_station"), [{ id: "recycling_station", kind: "recycling", level: 3 }]);
