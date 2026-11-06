@@ -24,5 +24,7 @@
   "agent": "可露希爾助理",
   "billing": "付費方案",
   "plush": "毛絨小夥伴",
-  "plan": "排班結果"
+  "plan": "排班結果",
+  "scheduleGallery": "作業廣場",
+  "admin_schedule_gallery": "作業審核"
 }

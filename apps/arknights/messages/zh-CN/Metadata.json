@@ -24,5 +24,7 @@
   "agent": "可露希尔助理",
   "billing": "付费计划",
   "plush": "毛绒小伙伴",
-  "plan": "排班结果"
+  "plan": "排班结果",
+  "scheduleGallery": "作业广场",
+  "admin_schedule_gallery": "作业审核"
 }

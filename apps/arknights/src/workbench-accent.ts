@@ -12,6 +12,7 @@ const CATEGORY_ACCENTS = {
 const PAGE_CATEGORIES: Record<AppPage, keyof typeof CATEGORY_ACCENTS> = {
   calculator: "scheduling",
   manual: "scheduling",
+  "schedule-gallery": "scheduling",
   mower: "scheduling",
   training: "scheduling",
   "training-planner": "progression",

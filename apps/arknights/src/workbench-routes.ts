@@ -1,4 +1,4 @@
-export type AppPage = "calculator" | "manual" | "mower" | "training" | "training-planner" | "mastery" | "recruitment" | "inventory" | "gacha" | "skill-query" | "skland" | "account" | "account-health" | "settings" | "billing" | "agent" | "changelog";
+export type AppPage = "calculator" | "schedule-gallery" | "manual" | "mower" | "training" | "training-planner" | "mastery" | "recruitment" | "inventory" | "gacha" | "skill-query" | "skland" | "account" | "account-health" | "settings" | "billing" | "agent" | "changelog";
 
 export const SKLAND_TABS = ["overview", "inventory", "infrastructure"] as const;
 export type SklandTab = typeof SKLAND_TABS[number];
@@ -22,6 +22,7 @@ export function sklandTabHref(tab: SklandTab): string {
 export const WORKBENCH_PAGE_PATHS: Record<AppPage, string> = {
   calculator: "/",
   manual: "/manual",
+  "schedule-gallery": "/schedule-gallery",
   mower: "/mower",
   training: "/training",
   "training-planner": "/training-plan",
@@ -40,6 +41,7 @@ export const WORKBENCH_PAGE_PATHS: Record<AppPage, string> = {
 };
 
 export function workbenchPageFromPathname(pathname: string): AppPage {
+  if (pathname === WORKBENCH_PAGE_PATHS["schedule-gallery"]) return "schedule-gallery";
   if (pathname === WORKBENCH_PAGE_PATHS.manual) return "manual";
   if (pathname === WORKBENCH_PAGE_PATHS.mower) return "mower";
   if (pathname === WORKBENCH_PAGE_PATHS.training) return "training";

@@ -100,6 +100,7 @@ export const loaders: Record<string, () => Promise<unknown>> = {
   "ReleaseNotes": () => import("../../../messages/zh-CN/ReleaseNotes.json", { with: { type: "json" } }).then(module => module.default),
   "Rooms": () => import("../../../messages/zh-CN/Rooms.json", { with: { type: "json" } }).then(module => module.default),
   "RotationPresentation": () => import("../../../messages/zh-CN/RotationPresentation.json", { with: { type: "json" } }).then(module => module.default),
+  "ScheduleGallery": () => import("../../../messages/zh-CN/ScheduleGallery.json", { with: { type: "json" } }).then(module => module.default),
   "SkillFilters": () => import("../../../messages/zh-CN/SkillFilters.json", { with: { type: "json" } }).then(module => module.default),
   "SkillTags": () => import("../../../messages/zh-CN/SkillTags.json", { with: { type: "json" } }).then(module => module.default),
   "Static": () => import("../../../messages/zh-CN/Static.json", { with: { type: "json" } }).then(module => module.default),

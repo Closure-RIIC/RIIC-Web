@@ -1728,7 +1728,7 @@ export const references = [
   {
     "key": "AdminWorkspace.agent",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:49"
   },
   {
     "key": "AdminWorkspace.agentHint",
@@ -1753,12 +1753,12 @@ export const references = [
   {
     "key": "AdminWorkspace.backToSite",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:60"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:61"
   },
   {
     "key": "AdminWorkspace.billing",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:49"
   },
   {
     "key": "AdminWorkspace.billingHint",
@@ -2073,7 +2073,7 @@ export const references = [
   {
     "key": "AdminWorkspace.changelog",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:49"
   },
   {
     "key": "AdminWorkspace.changelogHint",
@@ -2103,7 +2103,7 @@ export const references = [
   {
     "key": "AdminWorkspace.issues",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:49"
   },
   {
     "key": "AdminWorkspace.issuesHint",
@@ -2113,7 +2113,7 @@ export const references = [
   {
     "key": "AdminWorkspace.management",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:42"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:43"
   },
   {
     "key": "AdminWorkspace.nameOrder",
@@ -2123,7 +2123,7 @@ export const references = [
   {
     "key": "AdminWorkspace.navigation",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:38"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:39"
   },
   {
     "key": "AdminWorkspace.newest",
@@ -2158,12 +2158,12 @@ export const references = [
   {
     "key": "AdminWorkspace.operations",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:42"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:43"
   },
   {
     "key": "AdminWorkspace.overview",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:49"
   },
   {
     "key": "AdminWorkspace.overviewHint",
@@ -2213,7 +2213,7 @@ export const references = [
   {
     "key": "AdminWorkspace.quality",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:49"
   },
   {
     "key": "AdminWorkspace.qualityHint",
@@ -2246,6 +2246,16 @@ export const references = [
     "source": "apps/arknights/src/app/admin/users/users-client.tsx:173"
   },
   {
+    "key": "AdminWorkspace.scheduleGallery",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:49"
+  },
+  {
+    "key": "AdminWorkspace.scheduleGalleryHint",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/admin-shell.tsx:25"
+  },
+  {
     "key": "AdminWorkspace.searchDescription",
     "prefix": false,
     "source": "apps/arknights/src/app/admin/admin-shell.tsx:65"
@@ -2268,7 +2278,7 @@ export const references = [
   {
     "key": "AdminWorkspace.skills",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:49"
   },
   {
     "key": "AdminWorkspace.skillsHint",
@@ -2313,7 +2323,7 @@ export const references = [
   {
     "key": "AdminWorkspace.users",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:49"
   },
   {
     "key": "AdminWorkspace.usersHint",
@@ -2328,7 +2338,7 @@ export const references = [
   {
     "key": "AdminWorkspace.wishes",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:49"
   },
   {
     "key": "AdminWorkspace.wishesHint",
@@ -2338,7 +2348,7 @@ export const references = [
   {
     "key": "AdminWorkspace.workspace",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:32"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:33"
   },
   {
     "key": "AgentAppearance.glowName",
@@ -3983,22 +3993,27 @@ export const references = [
   {
     "key": "AK_components_layout_AppSidebar.accountHealth",
     "prefix": false,
-    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:153"
+    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:155"
   },
   {
     "key": "AK_components_layout_AppSidebar.aiAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:166"
+    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:168"
   },
   {
     "key": "AK_components_layout_AppSidebar.closureAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:168"
+    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:170"
   },
   {
     "key": "AK_components_layout_AppSidebar.mowerSchedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:146"
+    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:148"
+  },
+  {
+    "key": "AK_components_layout_AppSidebar.scheduleGallery",
+    "prefix": false,
+    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:147"
   },
   {
     "key": "AK_components_mastery_MasteryTargetPicker.trainThisSpecialOperationsOperatorInTheSpecified",
@@ -16238,22 +16253,22 @@ export const references = [
   {
     "key": "FileUpload.cancel",
     "prefix": false,
-    "source": "apps/arknights/src/components/FileUploadDialog.tsx:174"
+    "source": "apps/arknights/src/components/FileUploadDialog.tsx:189"
   },
   {
     "key": "FileUpload.chooseFiles",
     "prefix": false,
-    "source": "apps/arknights/src/components/FileUploadDialog.tsx:156"
+    "source": "apps/arknights/src/components/FileUploadDialog.tsx:171"
   },
   {
     "key": "FileUpload.dropNow",
     "prefix": false,
-    "source": "apps/arknights/src/components/FileUploadDialog.tsx:154"
+    "source": "apps/arknights/src/components/FileUploadDialog.tsx:169"
   },
   {
     "key": "FileUpload.dropOrChoose",
     "prefix": false,
-    "source": "apps/arknights/src/components/FileUploadDialog.tsx:154"
+    "source": "apps/arknights/src/components/FileUploadDialog.tsx:169"
   },
   {
     "key": "FileUpload.layoutDescription",
@@ -16263,17 +16278,17 @@ export const references = [
   {
     "key": "FileUpload.multipleFiles",
     "prefix": false,
-    "source": "apps/arknights/src/components/FileUploadDialog.tsx:155"
+    "source": "apps/arknights/src/components/FileUploadDialog.tsx:170"
   },
   {
     "key": "FileUpload.processing",
     "prefix": false,
-    "source": "apps/arknights/src/components/FileUploadDialog.tsx:154"
+    "source": "apps/arknights/src/components/FileUploadDialog.tsx:169"
   },
   {
     "key": "FileUpload.readFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/FileUploadDialog.tsx:99"
+    "source": "apps/arknights/src/components/FileUploadDialog.tsx:113"
   },
   {
     "key": "FileUpload.rosterDescription",
@@ -16293,22 +16308,22 @@ export const references = [
   {
     "key": "FileUpload.singleFile",
     "prefix": false,
-    "source": "apps/arknights/src/components/FileUploadDialog.tsx:155"
+    "source": "apps/arknights/src/components/FileUploadDialog.tsx:170"
   },
   {
     "key": "FileUpload.singleFileOnly",
     "prefix": false,
-    "source": "apps/arknights/src/components/FileUploadDialog.tsx:75"
+    "source": "apps/arknights/src/components/FileUploadDialog.tsx:89"
   },
   {
     "key": "FileUpload.tooManyFiles",
     "prefix": false,
-    "source": "apps/arknights/src/components/FileUploadDialog.tsx:79"
+    "source": "apps/arknights/src/components/FileUploadDialog.tsx:93"
   },
   {
     "key": "FileUpload.unsupportedFile",
     "prefix": false,
-    "source": "apps/arknights/src/components/FileUploadDialog.tsx:84"
+    "source": "apps/arknights/src/components/FileUploadDialog.tsx:98"
   },
   {
     "key": "gacha_archive_privacy.body",
@@ -16986,6 +17001,11 @@ export const references = [
     "source": "apps/arknights/src/routes/admin.issues.tsx:10"
   },
   {
+    "key": "Metadata.admin_schedule_gallery",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/admin.schedule-gallery.tsx:10"
+  },
+  {
     "key": "Metadata.admin_skills",
     "prefix": false,
     "source": "apps/arknights/src/routes/admin.skills.tsx:11"
@@ -17059,6 +17079,11 @@ export const references = [
     "key": "Metadata.recruitment",
     "prefix": false,
     "source": "apps/arknights/src/routes/_workbench.recruitment.tsx:9"
+  },
+  {
+    "key": "Metadata.scheduleGallery",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/_workbench.schedule-gallery.tsx:9"
   },
   {
     "key": "Metadata.settings",
@@ -17593,7 +17618,7 @@ export const references = [
   {
     "key": "Onboarding.title",
     "prefix": false,
-    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:184"
+    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:186"
   },
   {
     "key": "Onboarding.trainingDescription",
@@ -18958,7 +18983,7 @@ export const references = [
   {
     "key": "records.components_layout_AppSidebar_labels",
     "prefix": true,
-    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:128"
+    "source": "apps/arknights/src/components/layout/AppSidebar.tsx:129"
   },
   {
     "key": "records.components_operators_OperatorPickerParts_labels",
@@ -19559,6 +19584,761 @@ export const references = [
     "key": "RotationPresentation.working",
     "prefix": false,
     "source": "apps/arknights/src/rotation-presentation.ts:39"
+  },
+  {
+    "key": "ScheduleGallery.add",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:147"
+  },
+  {
+    "key": "ScheduleGallery.addDescription",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:147"
+  },
+  {
+    "key": "ScheduleGallery.added",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:124"
+  },
+  {
+    "key": "ScheduleGallery.addTitle",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:147"
+  },
+  {
+    "key": "ScheduleGallery.adminBoxShared",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:134"
+  },
+  {
+    "key": "ScheduleGallery.adminDescription",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:124"
+  },
+  {
+    "key": "ScheduleGallery.adminEmpty",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:128"
+  },
+  {
+    "key": "ScheduleGallery.adminEntry",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:149"
+  },
+  {
+    "key": "ScheduleGallery.adminImport",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:124"
+  },
+  {
+    "key": "ScheduleGallery.adminImportHint",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:124"
+  },
+  {
+    "key": "ScheduleGallery.adminLoadFailed",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:91"
+  },
+  {
+    "key": "ScheduleGallery.adminPublished",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:121"
+  },
+  {
+    "key": "ScheduleGallery.adminReviewHint",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:129"
+  },
+  {
+    "key": "ScheduleGallery.adminSearch",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:126"
+  },
+  {
+    "key": "ScheduleGallery.adminStatusFilter",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:126"
+  },
+  {
+    "key": "ScheduleGallery.adminTitle",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:124"
+  },
+  {
+    "key": "ScheduleGallery.allEntries",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:126"
+  },
+  {
+    "key": "ScheduleGallery.allLayouts",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:162"
+  },
+  {
+    "key": "ScheduleGallery.allOwned",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:22"
+  },
+  {
+    "key": "ScheduleGallery.anonymous",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:174"
+  },
+  {
+    "key": "ScheduleGallery.anyShifts",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:163"
+  },
+  {
+    "key": "ScheduleGallery.approve",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:137"
+  },
+  {
+    "key": "ScheduleGallery.authorBackups",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:133"
+  },
+  {
+    "key": "ScheduleGallery.authorNotes",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:51"
+  },
+  {
+    "key": "ScheduleGallery.authorOnly",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:25"
+  },
+  {
+    "key": "ScheduleGallery.autoSlot",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:62"
+  },
+  {
+    "key": "ScheduleGallery.backupConflict",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:189"
+  },
+  {
+    "key": "ScheduleGallery.backupHint",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:52"
+  },
+  {
+    "key": "ScheduleGallery.backupLimit",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:36"
+  },
+  {
+    "key": "ScheduleGallery.bookmarkLabel",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:174"
+  },
+  {
+    "key": "ScheduleGallery.boxComparison",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:18"
+  },
+  {
+    "key": "ScheduleGallery.boxFileMethod",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxPicker.tsx:35"
+  },
+  {
+    "key": "ScheduleGallery.boxNotShared",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:134"
+  },
+  {
+    "key": "ScheduleGallery.boxScanMethod",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxPicker.tsx:35"
+  },
+  {
+    "key": "ScheduleGallery.boxSourceMethod",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxPicker.tsx:35"
+  },
+  {
+    "key": "ScheduleGallery.cardMissing",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:175"
+  },
+  {
+    "key": "ScheduleGallery.chooseComparisonBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxPicker.tsx:34"
+  },
+  {
+    "key": "ScheduleGallery.communityNotice",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:153"
+  },
+  {
+    "key": "ScheduleGallery.communityUnavailable",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:73"
+  },
+  {
+    "key": "ScheduleGallery.comparingBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:155"
+  },
+  {
+    "key": "ScheduleGallery.comparisonBoxHint",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxPicker.tsx:34"
+  },
+  {
+    "key": "ScheduleGallery.comparisonBoxInvalid",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxPicker.tsx:31"
+  },
+  {
+    "key": "ScheduleGallery.comparisonFileLimit",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxPicker.tsx:22"
+  },
+  {
+    "key": "ScheduleGallery.comparisonPrivate",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:19"
+  },
+  {
+    "key": "ScheduleGallery.configureBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:18"
+  },
+  {
+    "key": "ScheduleGallery.connectedSklandBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySklandBox.tsx:66"
+  },
+  {
+    "key": "ScheduleGallery.copyNotice",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:183"
+  },
+  {
+    "key": "ScheduleGallery.currentBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:56"
+  },
+  {
+    "key": "ScheduleGallery.cycle",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:177"
+  },
+  {
+    "key": "ScheduleGallery.details",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:180"
+  },
+  {
+    "key": "ScheduleGallery.download",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:190"
+  },
+  {
+    "key": "ScheduleGallery.downloadError",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:136"
+  },
+  {
+    "key": "ScheduleGallery.duplicate",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:119"
+  },
+  {
+    "key": "ScheduleGallery.editRequiresReview",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:60"
+  },
+  {
+    "key": "ScheduleGallery.editSubmission",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:137"
+  },
+  {
+    "key": "ScheduleGallery.empty",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:168"
+  },
+  {
+    "key": "ScheduleGallery.emptyHint",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:168"
+  },
+  {
+    "key": "ScheduleGallery.emptySlot",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:62"
+  },
+  {
+    "key": "ScheduleGallery.fileLimit",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:109"
+  },
+  {
+    "key": "ScheduleGallery.fullBoxSummary",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:25"
+  },
+  {
+    "key": "ScheduleGallery.hidden",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:84"
+  },
+  {
+    "key": "ScheduleGallery.hideFilters",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:161"
+  },
+  {
+    "key": "ScheduleGallery.importBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:163"
+  },
+  {
+    "key": "ScheduleGallery.includedOperators",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:178"
+  },
+  {
+    "key": "ScheduleGallery.inspectReview",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:128"
+  },
+  {
+    "key": "ScheduleGallery.intro",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:146"
+  },
+  {
+    "key": "ScheduleGallery.keepPrimary",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:27"
+  },
+  {
+    "key": "ScheduleGallery.layout",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:162"
+  },
+  {
+    "key": "ScheduleGallery.layoutLabel",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:173"
+  },
+  {
+    "key": "ScheduleGallery.libraryFull",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:118"
+  },
+  {
+    "key": "ScheduleGallery.loadingAccount",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySklandBox.tsx:57"
+  },
+  {
+    "key": "ScheduleGallery.loadingSklandBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxPicker.tsx:37"
+  },
+  {
+    "key": "ScheduleGallery.local",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:175"
+  },
+  {
+    "key": "ScheduleGallery.lowerCount",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:21"
+  },
+  {
+    "key": "ScheduleGallery.matchHint",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:26"
+  },
+  {
+    "key": "ScheduleGallery.missingCount",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:21"
+  },
+  {
+    "key": "ScheduleGallery.moreFilters",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:161"
+  },
+  {
+    "key": "ScheduleGallery.myEntries",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:158"
+  },
+  {
+    "key": "ScheduleGallery.mySubmissions",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:158"
+  },
+  {
+    "key": "ScheduleGallery.noBackups",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:133"
+  },
+  {
+    "key": "ScheduleGallery.noComparisonBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:56"
+  },
+  {
+    "key": "ScheduleGallery.noDescription",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:128"
+  },
+  {
+    "key": "ScheduleGallery.notesPlaceholder",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:51"
+  },
+  {
+    "key": "ScheduleGallery.notOwned",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:27"
+  },
+  {
+    "key": "ScheduleGallery.openError",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:132"
+  },
+  {
+    "key": "ScheduleGallery.operatorCount",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:177"
+  },
+  {
+    "key": "ScheduleGallery.ownedOnly",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:163"
+  },
+  {
+    "key": "ScheduleGallery.pending",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:84"
+  },
+  {
+    "key": "ScheduleGallery.primaryOperator",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:53"
+  },
+  {
+    "key": "ScheduleGallery.published",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:84"
+  },
+  {
+    "key": "ScheduleGallery.publishNow",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:62"
+  },
+  {
+    "key": "ScheduleGallery.refresh",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:124"
+  },
+  {
+    "key": "ScheduleGallery.reject",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:137"
+  },
+  {
+    "key": "ScheduleGallery.rejected",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:84"
+  },
+  {
+    "key": "ScheduleGallery.rejectReason",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:135"
+  },
+  {
+    "key": "ScheduleGallery.remove",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:190"
+  },
+  {
+    "key": "ScheduleGallery.removed",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:140"
+  },
+  {
+    "key": "ScheduleGallery.replacementWarning",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:27"
+  },
+  {
+    "key": "ScheduleGallery.requestFailed",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:104"
+  },
+  {
+    "key": "ScheduleGallery.requiredCount",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:21"
+  },
+  {
+    "key": "ScheduleGallery.reset",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:167"
+  },
+  {
+    "key": "ScheduleGallery.results",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:167"
+  },
+  {
+    "key": "ScheduleGallery.reviewFlow",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:48"
+  },
+  {
+    "key": "ScheduleGallery.reviewNote",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:135"
+  },
+  {
+    "key": "ScheduleGallery.reviewSaved",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:103"
+  },
+  {
+    "key": "ScheduleGallery.revisionConflict",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:104"
+  },
+  {
+    "key": "ScheduleGallery.rosterMatched",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:175"
+  },
+  {
+    "key": "ScheduleGallery.sample",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:175"
+  },
+  {
+    "key": "ScheduleGallery.sampleAuthor",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:174"
+  },
+  {
+    "key": "ScheduleGallery.sampleDescription",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:176"
+  },
+  {
+    "key": "ScheduleGallery.sampleTitle",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:103"
+  },
+  {
+    "key": "ScheduleGallery.sampleWarning",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:184"
+  },
+  {
+    "key": "ScheduleGallery.saved",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:158"
+  },
+  {
+    "key": "ScheduleGallery.savedCount",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:152"
+  },
+  {
+    "key": "ScheduleGallery.savedLocally",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:117"
+  },
+  {
+    "key": "ScheduleGallery.saveLocally",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:62"
+  },
+  {
+    "key": "ScheduleGallery.saving",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:139"
+  },
+  {
+    "key": "ScheduleGallery.scanAnotherBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySklandBox.tsx:68"
+  },
+  {
+    "key": "ScheduleGallery.scanBoxDescription",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxPicker.tsx:34"
+  },
+  {
+    "key": "ScheduleGallery.scanBoxHint",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySklandBox.tsx:63"
+  },
+  {
+    "key": "ScheduleGallery.scheduleAssignments",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:49"
+  },
+  {
+    "key": "ScheduleGallery.scope",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:158"
+  },
+  {
+    "key": "ScheduleGallery.search",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:159"
+  },
+  {
+    "key": "ScheduleGallery.searchBackup",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:55"
+  },
+  {
+    "key": "ScheduleGallery.shareAuthorBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:58"
+  },
+  {
+    "key": "ScheduleGallery.shareBoxHint",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:58"
+  },
+  {
+    "key": "ScheduleGallery.shiftCount",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:128"
+  },
+  {
+    "key": "ScheduleGallery.shiftDurations",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:186"
+  },
+  {
+    "key": "ScheduleGallery.shiftHours",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:53"
+  },
+  {
+    "key": "ScheduleGallery.shifts",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:163"
+  },
+  {
+    "key": "ScheduleGallery.shiftTab",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:51"
+  },
+  {
+    "key": "ScheduleGallery.signInSubmit",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:59"
+  },
+  {
+    "key": "ScheduleGallery.sklandBoxLoadFailed",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySklandBox.tsx:36"
+  },
+  {
+    "key": "ScheduleGallery.sklandBoxMissing",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySklandBox.tsx:46"
+  },
+  {
+    "key": "ScheduleGallery.sklandBoxName",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySklandBox.tsx:45"
+  },
+  {
+    "key": "ScheduleGallery.storageError",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:65"
+  },
+  {
+    "key": "ScheduleGallery.submissionInvalid",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:45"
+  },
+  {
+    "key": "ScheduleGallery.submissionTitle",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:50"
+  },
+  {
+    "key": "ScheduleGallery.submitReview",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySubmissionDialog.tsx:62"
+  },
+  {
+    "key": "ScheduleGallery.submitted",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:121"
+  },
+  {
+    "key": "ScheduleGallery.title",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:146"
+  },
+  {
+    "key": "ScheduleGallery.total",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:151"
+  },
+  {
+    "key": "ScheduleGallery.trainingGap",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:24"
+  },
+  {
+    "key": "ScheduleGallery.unknownTraining",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:23"
+  },
+  {
+    "key": "ScheduleGallery.unpublish",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/schedule-gallery/page.tsx:137"
+  },
+  {
+    "key": "ScheduleGallery.untitled",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:104"
+  },
+  {
+    "key": "ScheduleGallery.use",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:180"
+  },
+  {
+    "key": "ScheduleGallery.useCurrentBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/ScheduleGalleryPage.tsx:155"
+  },
+  {
+    "key": "ScheduleGallery.useSklandBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySklandBox.tsx:68"
+  },
+  {
+    "key": "ScheduleGallery.viewerOnly",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GalleryBoxComparison.tsx:25"
+  },
+  {
+    "key": "ScheduleGallery.websiteLoginFirst",
+    "prefix": false,
+    "source": "apps/arknights/src/components/schedule-poster/GallerySklandBox.tsx:58"
   },
   {
     "key": "setup_dialog.243FullE2Sample",
