@@ -503,7 +503,7 @@ test("CI builds once and deploy transfers the verified solver-free standalone ar
   assert.match(deployWorkflow, /archive_sha256="\$\(sha256sum "\$local_archive"[\s\S]+DEPLOY_ARCHIVE_SHA256=%s/);
   assert.match(
     deployWorkflow,
-    /Sync standalone release tree[\s\S]+release_tree_cache="\.cache\/riic-web\/\$\{DEPLOYMENT_ENV\}-standalone-tree"[\s\S]+--recursive[\s\S]+--times[\s\S]+--perms[\s\S]+--checksum[\s\S]+--compress[\s\S]+--delete-delay[\s\S]+--partial[\s\S]+--inplace[\s\S]+"\$DEPLOY_ARTIFACT_ROOT\/"[\s\S]+"\$ssh_target:\$release_tree_cache\/"/,
+    /Sync standalone release tree[\s\S]+release_tree_cache="\.cache\/riic-web\/\$\{DEPLOYMENT_ENV\}-standalone-tree"[\s\S]+--recursive[\s\S]+--times[\s\S]+--perms[\s\S]+--checksum[\s\S]+--compress[\s\S]+--fuzzy[\s\S]+--delete-delay[\s\S]+--partial[\s\S]+"\$DEPLOY_ARTIFACT_ROOT\/"[\s\S]+"\$ssh_target:\$release_tree_cache\/"/,
   );
   assert.match(deployWorkflow, /find "\$DEPLOY_ARTIFACT_ROOT"[\s\S]+! -type f ! -type d[\s\S]+release tree contains unsupported filesystem entries/);
   assert.match(deployWorkflow, /remote_cache_path=\\"\\\$HOME\/\$release_tree_cache\\"[\s\S]+test ! -L \\"\\\$remote_cache_path\\"[\s\S]+stat -c '%U:%a'/);
@@ -516,6 +516,7 @@ test("CI builds once and deploy transfers the verified solver-free standalone ar
   assert.doesNotMatch(deployWorkflow, /git (?:archive|bundle)|repository\.git|DEPLOY_PREVIOUS_SHA|remote_bundle/);
   const transfer = deployWorkflow.slice(deployWorkflow.indexOf("      - name: Sync standalone release tree"));
   assert.doesNotMatch(transfer, /bin\/infra-cli/);
+  assert.doesNotMatch(transfer, /--inplace/);
 });
 
 test("verified release reuse preserves provenance and normal deployment gates", async () => {
@@ -536,7 +537,9 @@ test("deployment resumes an interrupted cache without accepting symlinks or non-
   const workflow = (await readRepoFile(".github/workflows/deploy.yml")).replaceAll("\r\n", "\n");
   const section = workflow.split("      - name: Sync standalone release tree")[1].split("\n      - name:")[0];
   const body = section.split("        run: |\n")[1].replace(/^ {10}/gm, "");
-  const setup = body.slice(body.indexOf("timeout --kill-after=5s 30s ssh"), body.indexOf("timeout --kill-after=10s 5400s rsync"));
+  // Exercise only remote cache setup: later timing assignments would hide its
+  // exit status in the conditional rejection checks below (where errexit is off).
+  const setup = body.slice(body.indexOf("timeout --kill-after=5s 30s ssh"), body.indexOf("\ntransfer_started="));
   assert.ok(setup);
   const script = [
     "set -euo pipefail",
@@ -601,6 +604,7 @@ test("production pins the server solver only after preflight and development ret
       ...process.env, DEPLOYMENT_ENV: "production", DEPLOY_APP_ROOT: "/opt/arknights-infra",
       DEPLOY_EXPECTED_REPOSITORY: "Closure-RIIC/RIIC-Web",
       DEPLOY_APPROVED_SOLVER_SHA256: "", DEPLOY_HOST: "example.invalid", DEPLOY_SSH_USER: "fixture",
+      DEPLOY_SSH_CONTROL_SOCKET: "/tmp/fixture/control",
       SERVER_DIGEST: serverDigest, SSH_EXIT: "0", PREFLIGHT_EXIT: "0",
       GITHUB_STEP_SUMMARY: "/dev/null", ...overrides,
     },

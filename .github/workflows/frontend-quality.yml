@@ -182,7 +182,7 @@ jobs:
 
       - name: Endfield release archive safety
         if: needs.changes.outputs.check_endfield == 'true'
-        run: python3 deploy/endfield-deploy.test.py && python3 deploy/endfield-transfer.test.py
+        run: python3 deploy/endfield-deploy.test.py && python3 deploy/endfield-transfer.test.py && python3 deploy/arknights-transfer.test.py
 
       - name: Release provenance tests
         run: node --test scripts/release-provenance.test.mjs scripts/app-release-plan.test.mjs scripts/release-automation.test.mjs scripts/release-pr.test.mjs scripts/ci-performance.test.mjs scripts/ci-timings.test.mjs scripts/build-cache.test.mjs
