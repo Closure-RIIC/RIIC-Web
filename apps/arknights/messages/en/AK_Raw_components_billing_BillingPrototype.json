@@ -1,6 +1,6 @@
 {
   "loadingCreditAccount": "Loading credit account…",
-  "paidPlansApplyOnlyToAssistantConversationsSolvingSchedules": "Paid plans apply only to assistant conversations. Solving schedules in the base calculator remains free.",
+  "paidPlansApplyOnlyToAssistantConversationsSolvingSchedules": "Your sponsorship helps run and maintain the website. As a thank-you, you receive site credits for assistant conversations. The base calculator remains free.",
   "backToAssistant": "Back to assistant <part1></part1>",
   "creditBalance": "Credit balance",
   "availableCredits": "Available credits",
@@ -10,9 +10,9 @@
   "noExpiry": "No expiry",
   "monthlyPassCredits": "Monthly pass credits",
   "noActiveMonthlyPass": "No active monthly pass",
-  "creditPackages": "Credit packages",
+  "creditPackages": "Sponsorship options",
   "creating": "Creating…",
-  "buyOnAfdian": "Buy on Afdian",
+  "buyOnAfdian": "Sponsor on Afdian",
   "paymentLinkNotConfigured": "Payment link not configured",
   "redeeming": "Redeeming…",
   "redeemAndAddCredits": "Redeem and add credits",
@@ -21,7 +21,7 @@
   "confirmClearingAllUnpaidOrders": "Confirm clearing all unpaid orders",
   "clearAllUnpaidOrders": "Clear all unpaid orders",
   "latest6UnpaidOrdersAreHiddenAfter3Days": "Latest 6 · Unpaid orders are hidden after 3 days",
-  "noOrdersToShowCreditPackagePurchasesWillAppear": "No orders to show. Credit package purchases will appear here.",
+  "noOrdersToShowCreditPackagePurchasesWillAppear": "No orders to show. Sponsorships started from this page will appear here.",
   "credits": "Credits: <part1></part1><part2></part2><part3></part3>",
   "yourLatestOrderIsAwaitingPayment": "Your latest order is awaiting payment",
   "saving": "Saving…",
@@ -37,6 +37,6 @@
   "unknownStatus": "Unknown status",
   "creditLedger": "Credit ledger",
   "latest8CreditsReceivedAndSpent": "Latest 8 · Credits received and spent",
-  "creditChangesWillAppearAfterYouTopUpOr": "Credit changes will appear after you top up or use the assistant.",
+  "creditChangesWillAppearAfterYouTopUpOr": "Credit changes will appear after you receive sponsorship credits or use the assistant.",
   "creditChange": "Credit change"
 }
