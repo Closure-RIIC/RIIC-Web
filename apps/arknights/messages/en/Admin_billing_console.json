@@ -53,5 +53,6 @@
   "adjusted": "Adjusted",
   "adjustmentLedgerId": "Adjustment ledger ID",
   "evidenceReason": "Evidence / reason",
-  "resolve2": "Resolve"
+  "resolve2": "Resolve",
+  "afdianTradeOptional": "Afdian transaction (optional; verifies payment and resolves review)"
 }

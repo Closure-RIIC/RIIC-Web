@@ -204,6 +204,13 @@
       "when": 1793264484874,
       "tag": "0028_endfield_release_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793917712897,
+      "tag": "0029_afdian_payment_recovery",
+      "breakpoints": true
     }
   ]
 }

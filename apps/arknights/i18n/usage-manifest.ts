@@ -551,6 +551,11 @@ export const references = [
     "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:88"
   },
   {
+    "key": "Admin_billing_console.afdianTradeOptional",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:87"
+  },
+  {
     "key": "Admin_billing_console.amountsRetainTheirOriginalPrecisionNullMeansUnknown",
     "prefix": false,
     "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
@@ -3523,27 +3528,27 @@ export const references = [
   {
     "key": "AK_components_billing_BillingPrototype.agent_chat",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:360"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:370"
   },
   {
     "key": "AK_components_billing_BillingPrototype.agent_settlement",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:386"
   },
   {
     "key": "AK_components_billing_BillingPrototype.analyze_daily_production",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:360"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:370"
   },
   {
     "key": "AK_components_billing_BillingPrototype.analyze_stock_and_training",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:360"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:370"
   },
   {
     "key": "AK_components_billing_BillingPrototype.bonusCredits",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:267"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:277"
   },
   {
     "key": "AK_components_billing_BillingPrototype.cancelled",
@@ -3553,17 +3558,17 @@ export const references = [
   {
     "key": "AK_components_billing_BillingPrototype.cdk_issue",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:386"
   },
   {
     "key": "AK_components_billing_BillingPrototype.cdk_redeem",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:386"
   },
   {
     "key": "AK_components_billing_BillingPrototype.checkoutReminder",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:250"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:260"
   },
   {
     "key": "AK_components_billing_BillingPrototype.clearFailed",
@@ -3573,67 +3578,67 @@ export const references = [
   {
     "key": "AK_components_billing_BillingPrototype.completed",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:366"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
   },
   {
     "key": "AK_components_billing_BillingPrototype.completed_unsettled",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:366"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
   },
   {
     "key": "AK_components_billing_BillingPrototype.creditCode",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:324"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:334"
   },
   {
     "key": "AK_components_billing_BillingPrototype.diagnose_account",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:360"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:370"
   },
   {
     "key": "AK_components_billing_BillingPrototype.diagnose_account_health",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:360"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:370"
   },
   {
     "key": "AK_components_billing_BillingPrototype.eachCodeCanBeRedeemedOnceWithinIts",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:322"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:332"
   },
   {
     "key": "AK_components_billing_BillingPrototype.expires",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:297"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:307"
   },
   {
     "key": "AK_components_billing_BillingPrototype.failed",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:366"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
   },
   {
     "key": "AK_components_billing_BillingPrototype.monthly_grant",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:386"
   },
   {
     "key": "AK_components_billing_BillingPrototype.monthlySponsor",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:267"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:277"
   },
   {
     "key": "AK_components_billing_BillingPrototype.monthlySponsorBadge",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:267"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:277"
   },
   {
     "key": "AK_components_billing_BillingPrototype.monthlySponsorDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:267"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:277"
   },
   {
     "key": "AK_components_billing_BillingPrototype.orderCreated",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:278"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:288"
   },
   {
     "key": "AK_components_billing_BillingPrototype.orderFailed",
@@ -3643,7 +3648,7 @@ export const references = [
   {
     "key": "AK_components_billing_BillingPrototype.ordersCleared",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:278"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:288"
   },
   {
     "key": "AK_components_billing_BillingPrototype.paid",
@@ -3653,22 +3658,22 @@ export const references = [
   {
     "key": "AK_components_billing_BillingPrototype.paymentEmailReminder",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:251"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:261"
   },
   {
     "key": "AK_components_billing_BillingPrototype.paymentNoticeApology",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:247"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:257"
   },
   {
     "key": "AK_components_billing_BillingPrototype.paymentNoticeDismiss",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:255"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:265"
   },
   {
     "key": "AK_components_billing_BillingPrototype.paymentNoticeTitle",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:246"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:256"
   },
   {
     "key": "AK_components_billing_BillingPrototype.paymentPlans",
@@ -3678,37 +3683,37 @@ export const references = [
   {
     "key": "AK_components_billing_BillingPrototype.paymentSupportHint",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:252"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:262"
   },
   {
     "key": "AK_components_billing_BillingPrototype.pending",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:366"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
   },
   {
     "key": "AK_components_billing_BillingPrototype.permanentSponsorDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:267"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:277"
   },
   {
     "key": "AK_components_billing_BillingPrototype.pointsReservedForActiveRequests",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:285"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:295"
   },
   {
     "key": "AK_components_billing_BillingPrototype.query_skills",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:360"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:370"
   },
   {
     "key": "AK_components_billing_BillingPrototype.redeemACode",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:322"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:332"
   },
   {
     "key": "AK_components_billing_BillingPrototype.redeemedPermanentCredits",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:278"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:288"
   },
   {
     "key": "AK_components_billing_BillingPrototype.redeemFailed",
@@ -3723,17 +3728,22 @@ export const references = [
   {
     "key": "AK_components_billing_BillingPrototype.reserved",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:366"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
+  },
+  {
+    "key": "AK_components_billing_BillingPrototype.resumePayment",
+    "prefix": false,
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:356"
   },
   {
     "key": "AK_components_billing_BillingPrototype.signIn",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:261"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:271"
   },
   {
     "key": "AK_components_billing_BillingPrototype.simulated",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:278"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:288"
   },
   {
     "key": "AK_components_billing_BillingPrototype.simulateFailed",
@@ -3743,52 +3753,52 @@ export const references = [
   {
     "key": "AK_components_billing_BillingPrototype.siteSponsor",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:267"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:277"
   },
   {
     "key": "AK_components_billing_BillingPrototype.smallSponsor",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:267"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:277"
   },
   {
     "key": "AK_components_billing_BillingPrototype.solve_schedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:360"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:370"
   },
   {
     "key": "AK_components_billing_BillingPrototype.testSponsor",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:267"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:277"
   },
   {
     "key": "AK_components_billing_BillingPrototype.testSponsorBadge",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:267"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:277"
   },
   {
     "key": "AK_components_billing_BillingPrototype.testSponsorDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:267"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:277"
   },
   {
     "key": "AK_components_billing_BillingPrototype.token_settlement",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:386"
   },
   {
     "key": "AK_components_billing_BillingPrototype.tool_charge",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:386"
   },
   {
     "key": "AK_components_billing_BillingPrototype.tool_refund",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:386"
   },
   {
     "key": "AK_components_billing_BillingPrototype.topup",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:386"
   },
   {
     "key": "AK_components_billing_BillingPrototype.unavailable",
@@ -6808,202 +6818,202 @@ export const references = [
   {
     "key": "AK_Raw_components_billing_BillingPrototype.availableCredits",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:283"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:293"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.backToAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:275"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:285"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.buyOnAfdian",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:316"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:326"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.clearAllUnpaidOrders",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:337"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:347"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.clearing",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:337"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:347"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.confirmClearingAllUnpaidOrders",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:337"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:347"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.creating",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:316"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:326"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.creditBalance",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:281"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:291"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.creditChange",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:386"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.creditChangesWillAppearAfterYouTopUpOr",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:374"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:384"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.creditLedger",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:373"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:383"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.creditPackages",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:307"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:317"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.credits",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:345"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:355"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.credits2",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:364"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:374"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.forAssistantConversationsOnlyBaseSchedulingIsFree",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:286"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:296"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.latest6UnpaidOrdersAreHiddenAfter3Days",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:339"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:349"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.latest8CreditsReceivedAndSpent",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:373"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:383"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.latest8SelectToViewDetails",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:355"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:365"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.loadingCreditAccount",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:263"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:273"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.monthlyPassCredits",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:295"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:305"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.noActiveMonthlyPass",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:297"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:307"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.noChargesYetTheyWillAppearAfterYouUse",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:356"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:366"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.noExpiry",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:292"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:302"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.noOrdersToShowCreditPackagePurchasesWillAppear",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:341"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:351"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.paidPlansApplyOnlyToAssistantConversationsSolvingSchedules",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:274"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:284"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.paymentLinkNotConfigured",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:316"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:326"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.permanentCredits",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:290"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:300"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.points",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:284"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:294"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.recentCharges",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:355"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:365"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.recentOrders",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:332"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:342"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.redeemAndAddCredits",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:325"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:335"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.redeeming",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:325"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:335"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.saving",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:350"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:360"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.settlementStatus",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:366"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.simulateAfdianPaymentCallback",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:350"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:360"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.someChargesArePendingSettlement",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:360"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:370"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.tokenCharges",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:365"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:375"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.toolCharges",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:364"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:374"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.unknownStatus",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:366"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:376"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.yourLatestOrderIsAwaitingPayment",
     "prefix": false,
-    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:350"
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:360"
   },
   {
     "key": "AK_Raw_components_DroneTargetPicker.cancel",

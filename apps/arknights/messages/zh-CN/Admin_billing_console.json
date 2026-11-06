@@ -53,5 +53,6 @@
   "adjusted": "已调账",
   "adjustmentLedgerId": "调账流水 ID",
   "evidenceReason": "处理依据",
-  "resolve2": "确认处理"
+  "resolve2": "确认处理",
+  "afdianTradeOptional": "爱发电交易号（可选；填写后核验付款并关闭对账）"
 }

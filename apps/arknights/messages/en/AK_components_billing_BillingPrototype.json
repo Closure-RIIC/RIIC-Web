@@ -51,7 +51,8 @@
   "orderFailed": "Could not create the order.",
   "simulateFailed": "Could not simulate payment.",
   "redeemFailed": "Could not redeem the code.",
-  "orderCreated": "Sponsorship order created. Pay using the Afdian page opened from this site. If your credits do not arrive, contact support through your Afdian account.",
+  "orderCreated": "Sponsorship order created. Pay using the Afdian page opened from this site, or use Resume payment in the order list on this page to continue. To switch products, return to this site and create a new order. If your credits do not arrive, contact support through your Afdian account.",
+  "resumePayment": "Resume payment",
   "simulated": "Simulated payment received. Your credit balance has been updated.",
   "ordersCleared": "{count, plural, one {Cleared # unpaid order.} other {Cleared # unpaid orders.}}",
   "expires": "Expires {date}"
