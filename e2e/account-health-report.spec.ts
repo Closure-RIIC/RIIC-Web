@@ -28,8 +28,20 @@ test("screenshot recognition, correction and three-day average stay on account h
   await expect(page.getByRole("button", { name: "确认并保存" })).toBeDisabled();
 
   await page.getByRole("button", { name: "选择截图" }).click();
-  await page.locator('[data-file-upload-dialog] input[type="file"]').setInputFiles(fixture("compressed-three-day.jpg"));
-  await expect(page.getByLabel("贵金属价值 第 1 天")).toHaveValue("");
+  await page.locator('[data-file-upload-dialog] input[type="file"]').setInputFiles(fixture("wide-three-day-jpeg.jpg"));
+  const jpegExpected = {
+    "作战记录经验": [34000, 34000, 35000],
+    "贵金属价值": [52500, 53500, 52000],
+    "龙门币贸易": [64700, 64500, 64200],
+    "龙门币订单数量": [38, 28, 36],
+    "合成玉": [0, 0, 0],
+  };
+  for (const [label, values] of Object.entries(jpegExpected)) {
+    for (const [index, value] of values.entries()) {
+      await expect(page.getByLabel(`${label} 第 ${index + 1} 天`)).toHaveValue(String(value));
+    }
+  }
+  await expect(page.getByRole("button", { name: "确认并保存" })).toBeEnabled();
 
   await page.getByRole("button", { name: "选择截图" }).click();
   await page.locator('[data-file-upload-dialog] input[type="file"]').setInputFiles(fixture("pc-three-day-orders.png"));
