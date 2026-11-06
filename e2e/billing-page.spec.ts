@@ -131,7 +131,7 @@ test("order creation keeps a recovery link when window.open returns null", async
 
   await page.goto("/billing");
   await acknowledgePaymentNotice(page);
-  await page.getByRole("button", { name: "爱发电购买", exact: true }).click();
+  await page.getByRole("button", { name: "前往爱发电赞助", exact: true }).click();
   await expect(page.getByRole("status").first()).toContainText("请在当前页面的订单中使用“恢复支付”链接继续付款");
   const recoveryLink = page.locator("[data-billing-payment-recovery]");
   await expect(recoveryLink).toHaveAttribute("href", "https://pay.example/created");
