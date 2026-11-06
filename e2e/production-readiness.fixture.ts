@@ -1136,7 +1136,7 @@ export async function mockAnonymousWebsiteSession(page: Page) {
 
 export async function sidebarNavigation(page: Page, name: string) {
   if (name === "账号管理" && await page.locator("[data-sidebar-sign-in]").count()) return page.locator("[data-sidebar-sign-in]");
-  if (["账号管理", "付费计划", "更新日志"].includes(name)) {
+  if (["账号管理", "赞助网站", "更新日志"].includes(name)) {
     const trigger = page.locator("[data-sidebar-account-trigger]");
     if (await trigger.getAttribute("aria-expanded") !== "true") {
       await trigger.click();

@@ -59,7 +59,7 @@ const listings = {
   wallets: { from: 'app.billing_wallet t JOIN public."user" u ON u.id=t.user_id', select: "t.user_id,u.name,u.email,t.paid_points,t.monthly_points,t.monthly_expires_at,t.held_paid_points,t.held_monthly_points,t.updated_at", q: "t.user_id || ' ' || u.name || ' ' || u.email", status: "''", time: "t.updated_at" },
   ledger: { from: "app.billing_ledger t", select: "t.*", q: "t.id || ' ' || t.user_id || ' ' || coalesce(t.reference_id,'')", status: "t.kind", time: "t.created_at" },
   orders: { from: "app.billing_order t", select: "t.id,t.user_id,t.product_id,t.provider,t.status,t.amount_fen,t.points,t.custom_order_id,t.provider_order_id,t.created_at,t.paid_at", q: "t.id || ' ' || t.user_id || ' ' || t.custom_order_id || ' ' || coalesce(t.provider_order_id,'')", status: "t.status", time: "t.created_at" },
-  reviews: { from: "app.billing_review t", select: "t.*", q: "t.id || ' ' || coalesce(t.run_id,'')", status: "t.status", time: "t.created_at" },
+  reviews: { from: "app.billing_review t", select: "t.*", q: "t.id || ' ' || coalesce(t.run_id,'') || ' ' || coalesce(t.evidence->>'trade','') || ' ' || coalesce(t.evidence->>'customOrderId','')", status: "t.status", time: "t.created_at" },
   audit: { from: "app.billing_admin_audit t", select: "t.*", q: "t.id || ' ' || t.target || ' ' || coalesce(t.actor_id,'')", status: "t.action", time: "t.created_at" },
   filters: { from: "app.agent_filter_event t", select: "t.*", q: "t.request_id || ' ' || coalesce(t.user_id,'')", status: "t.stage", time: "t.created_at" },
   attempts: { from: "app.agent_gateway_usage t", select: "t.*", q: "t.id || ' ' || coalesce(t.call_id,'') || ' ' || t.session_id", status: "t.provider", time: "t.created_at" },
@@ -99,13 +99,21 @@ export async function adjustBilling(actor: string, input: unknown) {
   const points = Number(body.points);
   if (!["credit", "debit", "refund"].includes(action) || !validPoints(points) || points < MIN_POINT_AMOUNT || points > 100_000) throw new BillingAdminError("积分必须在 0.0001–100000 之间，最多保留 4 位小数。");
   const referenceId = action === "refund" ? field(body.referenceId, "原扣费流水 ID") : null;
-  const fingerprint = createHash("sha256").update(JSON.stringify({ userId, reason, action, points, referenceId })).digest("hex");
+  const providerOrderId = body.providerOrderId ? field(body.providerOrderId, "爱发电交易号", 128) : null;
+  if (providerOrderId && action !== "credit") throw new BillingAdminError("爱发电付款关联仅用于补入永久积分。");
+  const fingerprint = createHash("sha256").update(JSON.stringify({ userId, reason, action, points, referenceId, ...(providerOrderId ? { providerOrderId } : {}) })).digest("hex");
   return billingTransaction(async client => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [`admin-billing:${key}`]);
     const prior = await client.query("SELECT details FROM app.billing_admin_audit WHERE idempotency_key=$1", [key]);
     if (prior.rowCount) {
       if (prior.rows[0].details.fingerprint !== fingerprint) throw new BillingAdminError("相同操作 ID 不能用于不同操作。");
       return { ...prior.rows[0].details, duplicate: true };
+    }
+    let paymentId: string | null = null;
+    if (providerOrderId) {
+      const payment = (await client.query("SELECT id,status,provider_status FROM app.billing_payment WHERE provider='afdian' AND provider_order_id=$1 FOR UPDATE", [providerOrderId])).rows[0];
+      if (!payment || payment.provider_status !== 2 || payment.status !== "review") throw new BillingAdminError("只能补入已核验且待对账的付款，已处理付款不能重复补入。");
+      paymentId = payment.id;
     }
     if (!(await client.query('SELECT id FROM public."user" WHERE id=$1', [userId])).rowCount) throw new BillingAdminError("用户不存在。");
     await client.query("INSERT INTO app.billing_wallet (user_id) VALUES ($1) ON CONFLICT DO NOTHING", [userId]);
@@ -133,9 +141,13 @@ export async function adjustBilling(actor: string, input: unknown) {
     if (sumPoints(wallet.paid_points, paid) < wallet.held_paid_points) throw new BillingAdminError("可用永久积分不足；预留积分不能补扣。");
     await client.query("UPDATE app.billing_wallet SET paid_points=paid_points+$2,monthly_points=monthly_points+$3,monthly_expires_at=$4,updated_at=now() WHERE user_id=$1", [userId, paid, monthly, monthlyExpiresAt]);
     const id = randomUUID();
-    const details = { fingerprint, ledgerId: id, requestedPoints: points, paidPoints: Math.abs(paid), monthlyPoints: monthly, monthlyExpiresAt, expiredPoints, reason };
+    const details = { fingerprint, ledgerId: id, requestedPoints: points, paidPoints: Math.abs(paid), monthlyPoints: monthly, monthlyExpiresAt, expiredPoints, reason, ...(providerOrderId ? { providerOrderId } : {}) };
     await client.query(`INSERT INTO app.billing_ledger (id,user_id,kind,points_delta,paid_points_after,monthly_points_after,reference_type,reference_id,idempotency_key,metadata)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, [id,userId,`admin_${action}`,sumPoints(paid,monthly),sumPoints(wallet.paid_points,paid),sumPoints(wallet.monthly_points,monthly),referenceId ? "billing_ledger" : "admin",referenceId ?? actor,`admin:${key}`,JSON.stringify(details)]);
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`, [id,userId,`admin_${action}`,sumPoints(paid,monthly),sumPoints(wallet.paid_points,paid),sumPoints(wallet.monthly_points,monthly),providerOrderId ? "afdian_order" : referenceId ? "billing_ledger" : "admin",providerOrderId ?? referenceId ?? actor,`admin:${key}`,JSON.stringify(details)]);
+    if (paymentId) {
+      await client.query("UPDATE app.billing_payment SET status='fulfilled',updated_at=now() WHERE id=$1", [paymentId]);
+      await client.query("UPDATE app.billing_review SET status='resolved',resolution=$2,actor_id=$3,resolved_at=now() WHERE id=$1 AND status='open'", ["payment:" + paymentId, JSON.stringify({ resolution: "adjusted", reason, ledgerId: id }), actor]);
+    }
     await audit(client, actor, action, userId, reason, key, details);
     return details;
   });
@@ -195,11 +207,20 @@ export async function resolveBillingReview(actor: string, input: unknown) {
   const resolution = field(body.resolution, "处理方式");
   if (!["platform_absorbed", "verified", "adjusted"].includes(resolution)) throw new BillingAdminError("处理方式无效。");
   return billingTransaction(async client => {
+    // Payment processing locks payment before review; keep the same order here.
+    const review = (await client.query("SELECT kind,evidence FROM app.billing_review WHERE id=$1", [id])).rows[0];
+    if (review?.kind === "afdian_payment") await client.query("SELECT id FROM app.billing_payment WHERE id=$1 FOR UPDATE", [review.evidence?.paymentId]);
     const row = (await client.query("SELECT * FROM app.billing_review WHERE id=$1 FOR UPDATE", [id])).rows[0];
     if (!row) throw new BillingAdminError("对账记录不存在。");
     if (row.status !== "open") return { duplicate: true };
     const ledgerId = resolution === "adjusted" ? field(body.ledgerId, "调账流水") : null;
-    if (ledgerId && !(await client.query("SELECT l.id FROM app.billing_ledger l JOIN app.agent_run r ON r.user_id=l.user_id WHERE l.id=$1 AND r.id=$2 AND l.kind LIKE 'admin_%'", [ledgerId,row.run_id])).rowCount) throw new BillingAdminError("调账流水与用户不匹配。");
+    if (row.kind === "afdian_payment") {
+      const paymentId = row.evidence?.paymentId;
+      const payment = (await client.query("SELECT * FROM app.billing_payment WHERE id=$1 FOR UPDATE", [paymentId])).rows[0];
+      if (!payment) throw new BillingAdminError("付款记录不存在。");
+      if (ledgerId && !(await client.query("SELECT id FROM app.billing_ledger WHERE id=$1 AND kind='admin_credit' AND points_delta>0 AND (metadata->>'providerOrderId'=$2 OR (reference_type='afdian_order' AND reference_id=$2))", [ledgerId,payment.provider_order_id])).rowCount) throw new BillingAdminError("调账流水必须明确关联此付款交易号。");
+      await client.query("UPDATE app.billing_payment SET status='closed',updated_at=now() WHERE id=$1 AND status<>'fulfilled'", [paymentId]);
+    } else if (ledgerId && !(await client.query("SELECT l.id FROM app.billing_ledger l JOIN app.agent_run r ON r.user_id=l.user_id WHERE l.id=$1 AND r.id=$2 AND l.kind LIKE 'admin_%'", [ledgerId,row.run_id])).rowCount) throw new BillingAdminError("调账流水与用户不匹配。");
     await client.query("UPDATE app.billing_review SET status='resolved',resolution=$2,actor_id=$3,resolved_at=now() WHERE id=$1", [id,JSON.stringify({ resolution, reason, ledgerId }),actor]);
     await audit(client, actor, "review_resolve", id, reason, `review:${id}`, { resolution, ledgerId });
     return { resolved: true };
