@@ -59,6 +59,7 @@ test("admin issues and revokes a batch while redemption updates wallet and prese
       await recipientPage.getByRole("button", { name: "知道了", exact: true }).click();
     });
     await recipientPage.goto(`/billing#redeem=${codes[0]}`);
+    await recipientPage.getByRole("dialog", { name: "赞助付款须知", exact: true }).getByRole("button", { name: "我已了解", exact: true }).click();
     await expect(recipientPage.getByRole("textbox", { name: "积分兑换码" })).toHaveValue(codes[0], { timeout: 30_000 });
     expect(recipientPage.url()).not.toContain(codes[0]);
     expect((await pool.query('select count(*)::int as count from app.billing_ledger where user_id=$1', [recipient.id])).rows[0].count).toBe(0);

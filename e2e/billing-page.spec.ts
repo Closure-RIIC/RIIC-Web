@@ -1,5 +1,17 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { mockAnonymousWebsiteSession, mockApis, sidebarNavigation } from "./production-readiness.fixture";
+
+async function acknowledgePaymentNotice(page: Page) {
+  const dialog = page.getByRole("dialog", { name: "赞助付款须知", exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("我们正在排查偶发的付款后积分未到账问题");
+  await expect(dialog).toContainText("深表歉意");
+  await expect(dialog).toContainText("通过本站按钮跳转爱发电");
+  await expect(dialog).toContainText("本网站登录的邮箱");
+  await expect(dialog).toContainText("通过爱发电后台联系客服");
+  await dialog.getByRole("button", { name: "我已了解", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+}
 
 test("pending orders expire and can be removed while paid history remains", async ({ page }) => {
   await mockAnonymousWebsiteSession(page);
@@ -23,6 +35,9 @@ test("pending orders expire and can be removed while paid history remains", asyn
     return route.fulfill({ json: { data: { order: { status: "pending" } } } });
   });
   await page.goto("/billing");
+  await acknowledgePaymentNotice(page);
+  await page.getByRole("button", { name: "赞助付款须知", exact: true }).click();
+  await acknowledgePaymentNotice(page);
   const section = page.locator("[data-billing-orders]");
   const heading = section.getByRole("heading", { name: "最近订单", exact: true });
   const clearButton = heading.locator("..").getByRole("button", { name: "一键清空未支付订单", exact: true });
@@ -39,6 +54,7 @@ test("pending orders expire and can be removed while paid history remains", asyn
   await expect(section.locator("li")).toHaveCount(1);
   await expect(section).toContainText("已付款 · 已到账");
   await page.reload();
+  await acknowledgePaymentNotice(page);
   await expect(section.locator("li")).toHaveCount(1);
   await expect(section.getByRole("button", { name: "一键清空未支付订单", exact: true })).toBeDisabled();
 });
@@ -91,9 +107,10 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     if (viewport.width < 768) await page.locator("[data-app-topbar]").getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     await (await sidebarNavigation(page, "付费计划")).click();
     await expect(page).toHaveURL(/\/billing$/);
-    await expect(page.getByRole("heading", { name: "付费计划", exact: true })).toBeVisible();
+    await acknowledgePaymentNotice(page);
+    await expect(page.getByRole("heading", { name: "赞助网站运营", exact: true })).toBeVisible();
     await expect(page.locator("[data-billing-prototype]")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "10 元积分包" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "支持网站运营" })).toBeVisible();
     if (viewport.width >= 768) {
       await sidebarNavigation(page, "付费计划");
       await expect(navigation).toHaveAttribute("aria-current", "page");
@@ -103,6 +120,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     await expect(page.getByRole("heading", { name: "积分账本", exact: true })).toBeInViewport();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.reload();
+    await acknowledgePaymentNotice(page);
     await expect(page.locator("[data-billing-prototype]")).toBeVisible();
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     await page.goBack();
@@ -110,6 +128,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     if (viewport.width < 768) await page.locator("[data-app-topbar]").getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     await (await sidebarNavigation(page, "付费计划")).click();
     await expect(page).toHaveURL(/\/billing$/);
+    await acknowledgePaymentNotice(page);
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 }
@@ -121,7 +140,8 @@ test("payment plans provide an account login entry when signed out", async ({ pa
     status: 401, json: { error: { message: "请先登录网站账号。" } },
   }));
   await page.goto("/billing");
-  await expect(page.getByRole("heading", { name: "付费计划", exact: true })).toBeVisible();
+  await acknowledgePaymentNotice(page);
+  await expect(page.getByRole("heading", { name: "赞助网站运营", exact: true })).toBeVisible();
   await expect(page.getByText("请先登录网站账号。", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "登录网站账号", exact: true }).last().click();
   await expect(page.getByRole("dialog", { name: "登录网站账号", exact: true })).toBeVisible();
@@ -150,6 +170,7 @@ for (const width of [1440, 375]) {
     });
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/billing");
+    await acknowledgePaymentNotice(page);
     const root = page.locator("[data-billing-prototype]");
     await expect(root).toBeVisible();
     const orders = page.locator("[data-billing-orders]");
@@ -170,7 +191,7 @@ for (const width of [1440, 375]) {
     await usage.locator("summary").press("Enter");
     await expect(usage.getByText("结算状态", { exact: true })).not.toBeVisible();
     const ledger = page.locator("[data-billing-ledger]");
-    await expect(ledger).toContainText("充值到账");
+    await expect(ledger).toContainText("赞助积分到账");
     await expect(ledger).toContainText("+165");
     await expect(ledger).toContainText("对话用量结算");
     await expect(ledger).toContainText("−2");
@@ -185,7 +206,7 @@ for (const width of [1440, 375]) {
     await expect(clearOrders).toBeDisabled();
     await expect(clearOrders).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     await expect(clearOrders).toHaveCSS("border-width", "0px");
-    const pillButtons = root.locator('[data-slot="button"]:not([data-setup-action])').filter({ hasNotText: /^一键清空未支付订单$/ });
+    const pillButtons = root.locator('[data-slot="button"]:not([data-setup-action])').filter({ hasNotText: /^(一键清空未支付订单|赞助付款须知)$/ });
     const buttonsArePills = await pillButtons.evaluateAll((buttons) => buttons.length > 0 && buttons.every((button) => parseFloat(getComputedStyle(button).borderTopLeftRadius) >= button.getBoundingClientRect().height / 2));
     expect(buttonsArePills).toBe(true);
     const code = page.getByRole("textbox", { name: "积分兑换码" });
