@@ -45,6 +45,7 @@ import type { SchedulePosterDocument } from "@/schedule-poster-document";
 import { defaultPosterOperator, posterOperators } from "@/schedule-poster-operators";
 import { POSTER_STORAGE_KEY } from "@/schedule-poster-storage";
 import type { PosterTarget } from "@/components/schedule-poster/SchedulePoster";
+import { assignPosterDormOperator, posterDormOperators, posterDormPosition } from "@/schedule-poster-dorm";
 import { droneStoragePlanIndex } from "@riic/arknights-domain/drone-plan-mapping";
 import type { ManualPlanResult } from "@/manual-plan-result";
 import { buildManualScheduleContext, type AgentPageContext } from "@/agent-page-context";
@@ -155,12 +156,12 @@ export interface ManualSchedulePageProps {
 
 type PickerTarget =
   | { kind: "slot"; roomId: string; slotIndex: number }
-  | { kind: "poster-hanger"; shift: number }
+  | { kind: "poster-hanger"; shift: number; posterSlot: number }
   | { kind: "fiammetta" };
 
 type PendingMove = {
   operator: string;
-  target: Extract<PickerTarget, { kind: "slot" }>;
+  target: Extract<PickerTarget, { kind: "slot" | "poster-hanger" }>;
   conflict: ManualOperatorConflict;
 };
 
@@ -562,7 +563,7 @@ export function ManualSchedulePage({
   const selectedAssignment = picker?.kind === "slot" ? draft.shifts[activeShift]?.rooms[picker.roomId] : undefined;
   const selectedOperator = picker?.kind === "slot"
     ? selectedAssignment?.operators[picker.slotIndex] ?? null
-    : picker?.kind === "poster-hanger" ? posterSettings?.presentation.dormHangerOperators[picker.shift] ?? null : null;
+    : picker?.kind === "poster-hanger" ? posterDormOperators(layout, draft, picker.shift, posterSettings?.presentation.dormHangerOperators[picker.shift])[picker.posterSlot] ?? null : null;
   const assignedOperatorNames = useMemo(() => new Set(
     Object.values(draft.shifts[activeShift]?.rooms ?? {}).flatMap((room) => room.operators.filter(Boolean)),
   ), [activeShift, draft.shifts]);
@@ -786,15 +787,18 @@ export function ManualSchedulePage({
     if (!picker) return;
     if (picker.kind === "poster-hanger") {
       const shift = picker.shift;
-      const selected = operator ? ownedOperators.find(entry => entry.name === operator) : undefined;
+      const result = assignPosterDormOperator({ layout, draft, shiftIndex: shift, posterSlot: picker.posterSlot, operator, legacyHanger: posterSettings?.presentation.dormHangerOperators[shift] });
+      if (result.conflict && operator) {
+        setPendingMove({ operator, target: picker, conflict: result.conflict });
+        setPicker(null);
+        return;
+      }
+      setDraft(result.draft);
       setPosterSettings(current => {
         if (!current) return current;
         const dormHangerOperators = Array.from({ length: current.draft.shifts.length }, (_, index) => current.presentation.dormHangerOperators[index] ?? null);
-        dormHangerOperators[shift] = operator;
-        const operators = selected
-          ? [...current.operators.filter(entry => entry.name !== selected.name), selected]
-          : current.operators;
-        return { ...current, operators, presentation: { ...current.presentation, dormHangerOperators } };
+        dormHangerOperators[shift] = null;
+        return { ...current, presentation: { ...current.presentation, dormHangerOperators } };
       });
       setPicker(null);
       return;
@@ -828,12 +832,20 @@ export function ManualSchedulePage({
 
   function confirmMove() {
     if (!pendingMove) return;
+    if (pendingMove.target.kind === "poster-hanger") {
+      const target = pendingMove.target;
+      setDraft(current => assignPosterDormOperator({ layout, draft: current, shiftIndex: target.shift, posterSlot: target.posterSlot, operator: pendingMove.operator, legacyHanger: posterSettings?.presentation.dormHangerOperators[target.shift], moveExisting: true }).draft);
+      setPosterSettings(current => current ? { ...current, presentation: { ...current.presentation, dormHangerOperators: current.presentation.dormHangerOperators.map((name, index) => index === target.shift ? null : name) } } : current);
+      setPendingMove(null);
+      return;
+    }
+    const target = pendingMove.target;
     setDraft((current) => assignManualOperator({
       draft: current,
       layout,
       shiftIndex: activeShift,
-      roomId: pendingMove.target.roomId,
-      slotIndex: pendingMove.target.slotIndex,
+      roomId: target.roomId,
+      slotIndex: target.slotIndex,
       operator: pendingMove.operator,
       moveExisting: true,
     }).draft);
@@ -919,7 +931,8 @@ export function ManualSchedulePage({
   function selectPosterSlot(target: PosterTarget) {
     setPickerQuery(""); setPickerRoomFilter(null); setPickerSkillTag(null); setPickerRarity(null); setPickerPage(1);
     if (target.presentationOnly === "dorm-hanger") {
-      setPicker({ kind: "poster-hanger", shift: target.shift });
+      setActiveShift(target.shift);
+      setPicker({ kind: "poster-hanger", shift: target.shift, posterSlot: target.slot ?? 0 });
       return;
     }
     setActiveShift(target.shift);
@@ -1010,7 +1023,12 @@ export function ManualSchedulePage({
     ? (intl("components_pages_ManualSchedulePage.progressionAdjustedPlan"))
     : (intl("components_pages_ManualSchedulePage.originalPlan"));
   const previousRoomTitle = pendingMove ? rows.find((row) => row.roomId === pendingMove.conflict.roomId)?.title ?? pendingMove.conflict.roomId : "";
-  const nextRoomTitle = pendingMove ? rows.find((row) => row.roomId === pendingMove.target.roomId)?.title ?? pendingMove.target.roomId : "";
+  const pendingSlotTarget = pendingMove?.target.kind === "slot" ? pendingMove.target : null;
+  const pendingPosterPosition = pendingMove?.target.kind === "poster-hanger" ? posterDormPosition(layout, pendingMove.target.posterSlot) : null;
+  const nextRoomId = pendingSlotTarget?.roomId ?? pendingPosterPosition?.roomId;
+  const nextRoomTitle = pendingMove ? nextRoomId
+    ? rows.find((row) => row.roomId === nextRoomId)?.title ?? nextRoomId
+    : rows.find(row => row.group === "dormitory")?.title ?? "" : "";
   const renderBoard = (simulation: MoodBoardState | null) => (
     <div data-manual-editor-board data-board-mode={simulation ? "simulation" : "edit"}>
       <ScheduleBoard
