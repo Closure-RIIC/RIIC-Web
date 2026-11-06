@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { register, registerHooks } from "node:module";
 import test from "node:test";
 import process from "node:process";
+import { setTimeout as sleep } from "node:timers/promises";
 import { URL, URLSearchParams } from "node:url";
 register("../../../../../scripts/ts-path-loader.mjs", import.meta.url);
 registerHooks({ resolve(specifier, context, next) { return specifier === "server-only" ? { shortCircuit: true, url: "data:text/javascript,export{}" } : next(specifier, context); } });
@@ -53,6 +54,7 @@ test("payments survive missing references, concurrency, closed reviews and histo
   const mismatch=await order("mismatch");
   assert.equal((await processAfdianPayment({...paid(mismatch),total_amount:"10"})).accepted,false);
   await processAfdianPayment({...paid(mismatch),custom_order_id:undefined,total_amount:"10"});
+  await sleep(5); // Cross a millisecond boundary so created_at stays below the listing window's default "to".
   assert.equal((await listBilling("reviews",new URLSearchParams({q:mismatch.custom}))).total,1,"replay without a reference preserves searchable evidence");
   const recover=await order("recover");
   await processAfdianPayment({...paid(recover),custom_order_id:undefined});
@@ -62,6 +64,7 @@ test("payments survive missing references, concurrency, closed reviews and histo
   assert.equal((await getWallet(user)).paidPoints,150);
   const manual = {out_trade_no:prefix+"manual",status:2,total_amount:"5.00"};
   await processAfdianPayment(manual);
+  await sleep(5); // Cross a millisecond boundary so created_at stays below the listing window's default "to".
   const search = await listBilling("reviews",new URLSearchParams({q:manual.out_trade_no}));
   assert.equal(search.total,1,"review search accepts the actual provider transaction");
   const adjustment = {userId:user,action:"credit",providerOrderId:manual.out_trade_no,points:50,reason:"Buyer and payment verified",idempotencyKey:prefix+"manual-adjust"};

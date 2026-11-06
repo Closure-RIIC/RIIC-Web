@@ -94,8 +94,8 @@ test("pending orders expose recovery links and refresh the full billing list", a
   });
 
   await page.goto("/billing");
-  await acknowledgePaymentNotice(page);
   await expect(page.locator("[data-billing-prototype]")).toBeVisible({ timeout: 15_000 });
+  await acknowledgePaymentNotice(page);
   const section = page.locator("[data-billing-orders]");
   const recoveryLinks = section.locator("[data-billing-payment-recovery]");
   await expect(recoveryLinks).toHaveCount(2);
