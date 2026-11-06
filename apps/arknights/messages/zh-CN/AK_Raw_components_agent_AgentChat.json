@@ -84,5 +84,11 @@
   "tool_query_skills": "基建技能查询",
   "tool_kb_route": "知识库导诊",
   "tool_kb_read": "知识库阅读",
-  "tool_load_agent_skill": "任务指引加载"
+  "tool_load_agent_skill": "任务指引加载",
+  "executionWaiting": "此前排班仍在计算；等待已结束，请勿重复提交。",
+  "executionReady": "此前等待结束的排班已完成。",
+  "executionFailed": "此前排班计算或结果处理失败。",
+  "executionUnknown": "当前无法确认计算状态，可稍后查询。",
+  "executionRefresh": "查询本次排班结果",
+  "tool_query_schedule_execution": "查询排班结果"
 }

@@ -698,3 +698,25 @@ export const billingCdk = appSchema.table("billing_cdk", {
   index("billing_cdk_issuer_created_idx").on(table.issuerUserId, table.createdAt),
   index("billing_cdk_batch_idx").on(table.batchId),
 ]);
+
+export const agentToolExecution = appSchema.table("agent_tool_execution", {
+  id: text("id").primaryKey(),
+  runId: text("run_id").notNull().references(() => agentRun.id, { onDelete: "cascade" }),
+  toolCallId: text("tool_call_id").notNull(),
+  name: text("name").notNull(),
+  state: text("state").notNull(),
+  computationState: text("computation_state").notNull().default("unknown"),
+  processingState: text("processing_state").notNull().default("unknown"),
+  errorCode: text("error_code"),
+  waitErrorCode: text("wait_error_code"),
+  result: jsonb("result"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [
+  check("agent_tool_execution_state_check", sql`${table.state} IN ('running','succeeded','failed','timed_out','cancelled','unknown')`),
+  check("agent_tool_execution_computation_check", sql`${table.computationState} IN ('unknown','running','succeeded','failed')`),
+  check("agent_tool_execution_processing_check", sql`${table.processingState} IN ('unknown','succeeded','failed')`),
+  uniqueIndex("agent_tool_execution_call_idx").on(table.runId, table.toolCallId),
+  index("agent_tool_execution_run_idx").on(table.runId, table.createdAt),
+]);

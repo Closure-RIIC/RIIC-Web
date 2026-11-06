@@ -5,12 +5,13 @@ import { mkdtemp, rm } from "node:fs/promises";
 import path from "node:path";
 import { URL, pathToFileURL, fileURLToPath } from "node:url";
 import React from "react";
+import TestRenderer, { act } from "react-test-renderer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { IntlProvider } from "use-intl";
 import { loadMessages } from "../../i18n/messages.ts";
 
 // Compile the real card and result summaries; browser E2E covers chip disclosure and motion.
-test("agent cards group sources, expose only knowledge subjects, and render failures once", async () => {
+test("agent cards group sources, expose only knowledge subjects, and render failures once", async t => {
   const messages = await loadMessages("zh-CN", ["AK_Raw_components_agent_AgentChat", "AK_components_agent_AgentChat"]);
   const root = fileURLToPath(new URL("../../../", import.meta.url));
   const temporary = await mkdtemp(path.join(root, ".agent-card-test-"));
@@ -69,7 +70,7 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
           ${["PlanArtifactView", "MarkdownMessage", "WorkbenchPageHeading", "WorkbenchCard", "FluidOrb", "PersonaAvatar", "AgentCreditBalance", "AgentConversationScrollArea", "ChatBubble", "ChatPanel", "LoadingState", "PromptBar", "StreamingText", "ThinkingState", "Button", "Dialog", "DialogBody", "DialogContent", "DialogDescription", "DialogFooter", "DialogHeader", "DialogTitle"].map((name) => `export const ${name}=({children})=>children ?? null;`).join("\n")}
         ` }));
       } }] });
-    const { AgentToolCard, formatEnvironmentSummary } = await import(pathToFileURL(outfile).href);
+    const { AgentToolCard, formatEnvironmentSummary, DeferredScheduleResult } = await import(pathToFileURL(outfile).href);
     assert.equal(formatEnvironmentSummary({ fireworks: 0, sami: 1, abyssal: 2, knights: 0 }, { fireworks: "默认值（未自动推导）", sami: "森空岛自动读取", abyssal: "森空岛自动读取", knights: "手动指定" }), "默认：人间烟火 0；森空岛自动读取：萨米 1、深海猎人 2；用户指定：骑士 0");
     const render = (part) => renderToStaticMarkup(React.createElement(IntlProvider, { locale: "zh-CN", messages, timeZone: "Asia/Shanghai" }, React.createElement(AgentToolCard, { part })));
     const solve = render({ type: "tool-solve_schedule", state: "output-available", output: { plan: { layoutLabel: "243", summary: {} }, workbenchSession: {}, planUrl: "/plan/old" } });
@@ -101,5 +102,36 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
       const knowledge = render({ type: "tool-kb_read", state, output: { error: "E:/private/secret" }, errorText: "E:/private/secret" });
       assert.equal(knowledge.split("本次查询暂未完成").length - 1, 1); assert.doesNotMatch(knowledge, /private/);
     }
+    await t.test("a late result updates its own card and stops polling on unmount", async subtest => {
+      const calls = [];
+      const previousAct = globalThis.IS_REACT_ACT_ENVIRONMENT;
+      globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+      subtest.after(() => {
+        if (previousAct === undefined) delete globalThis.IS_REACT_ACT_ENVIRONMENT;
+        else globalThis.IS_REACT_ACT_ENVIRONMENT = previousAct;
+      });
+      subtest.mock.method(globalThis, "fetch", async (url, options) => {
+        calls.push({url, signal: options.signal});
+        return globalThis.Response.json({data: calls.length === 1
+          ? {computation_state:"running",processing_state:"unknown"}
+          : {computation_state:"succeeded",processing_state:"succeeded",plan:{plans:[]}}});
+      });
+      subtest.mock.timers.enable({apis:["setTimeout"]});
+      let renderer;
+      try {
+        await act(async () => {
+          renderer = TestRenderer.create(React.createElement(IntlProvider,{locale:"zh-CN",messages},React.createElement(DeferredScheduleResult,{id:"late-id"})));
+        });
+        assert.match(JSON.stringify(renderer.toJSON()), /此前排班仍在计算/);
+        await act(async () => { subtest.mock.timers.tick(3000); });
+        assert.match(JSON.stringify(renderer.toJSON()), /此前等待结束的排班已完成/);
+        assert.equal(calls.length,2);
+        assert.ok(calls.every(call => call.url === "/api/agent/executions/late-id"));
+        await act(async () => { renderer.unmount(); });
+        assert.ok(calls.every(call => call.signal.aborted));
+        subtest.mock.timers.tick(300_000);
+        assert.equal(calls.length,2);
+      } finally { subtest.mock.timers.reset(); }
+    });
   } finally { await rm(temporary, { recursive: true, force: true }); }
 });

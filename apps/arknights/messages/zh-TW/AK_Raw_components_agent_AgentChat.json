@@ -84,5 +84,11 @@
   "tool_query_skills": "基建技能查詢",
   "tool_kb_route": "知識庫導引",
   "tool_kb_read": "知識庫閱讀",
-  "tool_load_agent_skill": "工作指引載入"
+  "tool_load_agent_skill": "工作指引載入",
+  "executionWaiting": "先前排班仍在計算；等待已結束，請勿重複提交。",
+  "executionReady": "先前等待結束的排班已完成。",
+  "executionFailed": "先前排班計算或結果處理失敗。",
+  "executionUnknown": "目前無法確認計算狀態，可稍後查詢。",
+  "executionRefresh": "查詢本次排班結果",
+  "tool_query_schedule_execution": "查詢排班結果"
 }

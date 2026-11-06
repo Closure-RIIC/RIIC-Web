@@ -79,6 +79,7 @@ const TOOL_LABELS: Record<string, keyof typeof RawMessages> = {
   preview_solve_defaults: "tool_preview_solve_defaults",
   diagnose_account: "tool_diagnose_account",
   solve_schedule: "tool_solve_schedule",
+  query_schedule_execution: "tool_query_schedule_execution",
   query_skills: "tool_query_skills",
   kb_route: "tool_kb_route",
   kb_read: "tool_kb_read",
@@ -259,6 +260,36 @@ export function ToolResultSummary({ name, output, openLabel }: { name: string; o
   if (name === "resolve_operator" && record.operator) return <div className="grid gap-2 text-xs"><p className="text-muted-foreground">{String(asRecord(record.operator)?.name)}</p><MasteryWarnings warnings={record.warnings} /></div>;
   if (["kb_read", "kb_route", "query_skills", "load_agent_skill"].includes(name)) return null;
   return null;
+}
+
+export function DeferredScheduleResult({ id }: { id: string }) {
+  const locale = useRawLocale();
+  const [execution, setExecution] = useState<{ computation_state: string; processing_state: string; plan?: AgentPlanProjection | null } | null>(null);
+  const [refresh, setRefresh] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = Date.now() + 5 * 60_000;
+    async function query() {
+      try {
+        const response = await fetch(`/api/agent/executions/${encodeURIComponent(id)}`, { signal: controller.signal, cache: "no-store" });
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (controller.signal.aborted) return;
+        const current = payload.data;
+        setExecution(current);
+        if (current?.computation_state === "running" && Date.now() < deadline) timer = setTimeout(query, 3000);
+      } catch { /* Manual refresh remains available after transient errors. */ }
+    }
+    void query();
+    return () => { controller.abort(); clearTimeout(timer); };
+  }, [id, refresh]);
+  const ready = execution?.processing_state === "succeeded" && execution.plan;
+  const failed = execution?.computation_state === "failed" || execution?.processing_state === "failed";
+  return <div className="mt-2 grid gap-2 rounded-lg border p-3 text-xs" aria-live="polite">
+    <p>{rawText.text(locale, ready ? "executionReady" : failed ? "executionFailed" : execution?.computation_state === "running" ? "executionWaiting" : "executionUnknown")}</p>
+    {ready ? <PlanArtifactView plan={ready} dense /> : <Button type="button" size="sm" variant="ghost" onClick={() => setRefresh(value => value + 1)}>{rawText.text(locale, "executionRefresh")}</Button>}
+  </div>;
 }
 
 export function AgentToolCard({ part, animate = false, active = true }: { part: AgentToolPartView; animate?: boolean; active?: boolean }) {
@@ -727,7 +758,10 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
                       <ToolResultSummary name="solve_schedule" output={part.output} openLabel={intl("App.agentArtifactOpen")} />
                     </ChatBubble>;
                   }
-                  return <div key={key} className={dialogueStyles.activity}><AgentToolCard part={part} active={active} animate={animate} /></div>;
+                  return <div key={key} className={dialogueStyles.activity}><AgentToolCard part={part} active={active} animate={animate} />
+                    {part.type === "tool-solve_schedule" && typeof asRecord(output?.execution)?.id === "string" && (output?.errorCode === "tool_wait_timeout" || output?.errorCode === "tool_wait_cancelled")
+                      ? <DeferredScheduleResult id={String(asRecord(output?.execution)?.id)} /> : null}
+                  </div>;
                 }
                 return null;
                 });

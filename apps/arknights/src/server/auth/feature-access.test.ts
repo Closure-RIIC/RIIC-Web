@@ -48,7 +48,7 @@ test("database roles guard all Agent/billing APIs before reads, writes or model 
     issueGiftCdk: effect, redeemGiftCdk: effect, fulfillBillingOrder: effect, getOrder: effect,
     createAgentUsage: effect, finalizeAgentUsage: effect, hidePendingOrder: effect, hideAllPendingOrders: effect,
   } });
-  await t.mock.module(new URL("../agent/plan-artifact.ts", import.meta.url), { namedExports: { getAgentPlanArtifact: effect } });
+  await t.mock.module(new URL("../agent/plan-artifact.ts", import.meta.url), { namedExports: { getAgentPlanArtifact: effect, projectPlanResult: effect } });
   await t.mock.module(new URL("../agent/config.ts", import.meta.url), { namedExports: { agentLlmSettings: () => ({ configured: false }), agentModelChoices: () => [] } });
   await t.mock.module(new URL("../agent/llm.ts", import.meta.url), { namedExports: { getAgentModel: effect } });
   await t.mock.module(new URL("../agent/persona.ts", import.meta.url), { namedExports: { buildAgentSystemPrompt: effect } });
@@ -60,13 +60,14 @@ test("database roles guard all Agent/billing APIs before reads, writes or model 
   const orders = await import("../../app/api/billing/orders/[id]/route.ts");
   const simulate = await import("../../app/api/billing/orders/[id]/simulate-paid/route.ts");
   const plans = await import("../../app/api/agent/plan/[id]/route.ts");
+  const executions = await import("../../app/api/agent/executions/[id]/route.ts");
   const chat = await import("../../app/api/agent/chat/route.ts");
   const context = { params: Promise.resolve({ id: "test-id" }) };
   const get = () => new Request("https://riic.test/api/test");
   const post = () => new Request("https://riic.test/api/test", { method: "POST", body: "{}" });
   const handlers = [() => billing.GET(get()), () => billing.POST(post()), () => billing.DELETE(new Request("https://riic.test/api/test", { method: "DELETE" })), () => cdk.POST(post()),
     () => orders.GET(get(), context), () => orders.DELETE(new Request("https://riic.test/api/test", { method: "DELETE" }), context), () => simulate.POST(post(), context),
-    () => plans.GET(get(), context), () => chat.GET(get()), () => chat.POST(post())];
+    () => executions.GET(get(), context), () => plans.GET(get(), context), () => chat.GET(get()), () => chat.POST(post())];
   process.env.AGENT_ACCESS_MODE = "admin";
   process.env.BILLING_ACCESS_MODE = "admin";
   process.env.BILLING_PROTOTYPE_MODE = "1";

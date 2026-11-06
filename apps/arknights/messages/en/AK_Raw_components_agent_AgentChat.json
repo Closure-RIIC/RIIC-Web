@@ -84,5 +84,11 @@
   "tool_query_skills": "Base skill lookup",
   "tool_kb_route": "Knowledge search",
   "tool_kb_read": "Knowledge retrieval",
-  "tool_load_agent_skill": "Task instructions"
+  "tool_load_agent_skill": "Task instructions",
+  "executionWaiting": "The earlier schedule may still be computing. Waiting has ended; avoid submitting it again.",
+  "executionReady": "The schedule from the earlier wait is now ready.",
+  "executionFailed": "The earlier computation or result processing failed.",
+  "executionUnknown": "The computation status is unconfirmed. Check again later.",
+  "executionRefresh": "Check this schedule result",
+  "tool_query_schedule_execution": "Check schedule result"
 }
