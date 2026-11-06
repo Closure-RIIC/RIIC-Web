@@ -6,7 +6,7 @@ import { and, desc, eq, gt, isNull, ne, or, sql } from "drizzle-orm";
 import { PENDING_ORDER_VISIBLE_MS } from "@/billing-order-visibility";
 
 import { getDatabase } from "@riic/platform-server/db";
-import { agentUsage, billingCdk, billingLedger, billingOrder, billingWallet } from "@riic/platform-server/db/schema";
+import { agentUsage, billingCdk, billingLedger, billingOrder, billingPayment, billingWallet } from "@riic/platform-server/db/schema";
 import { afdianCheckoutUrl, billingProduct, billingTestProductEnabled, POINT_VALUE_RMB, type BillingProduct } from "./config";
 import { cdkAvailability, hashCdk, randomCdk, validCdk } from "./cdk";
 import { roundPoints, sumPoints } from "./points.ts";
@@ -203,9 +203,17 @@ export async function createBillingOrder(userId: string, productId: string, prov
 }
 
 /** 订单成功回调与本地模拟支付共用；重复回调只返回当前钱包，不重复发放。 */
-export async function fulfillBillingOrder(input: { orderId?: string; customOrderId?: string; providerOrderId?: string; userId?: string; amountFen?: number }) {
+export async function fulfillBillingOrder(input: { orderId?: string; customOrderId?: string; providerOrderId?: string; userId?: string; amountFen?: number; paymentId?: string }) {
   const db = getDatabase();
   return db.transaction(async (tx) => {
+    if (input.paymentId) {
+      const [payment] = await tx.select().from(billingPayment).where(eq(billingPayment.id, input.paymentId)).for("update").limit(1);
+      if (!payment || ["closed", "fulfilled"].includes(payment.status) || payment.providerOrderId !== input.providerOrderId
+        || payment.providerStatus !== 2 || payment.amountFen !== input.amountFen
+        || payment.customOrderId !== input.customOrderId) {
+        throw new BillingError("order_not_payable", "付款已关闭或付款依据不一致。");
+      }
+    }
     const orderCondition = input.orderId
       ? eq(billingOrder.id, input.orderId)
       : input.customOrderId
@@ -216,11 +224,24 @@ export async function fulfillBillingOrder(input: { orderId?: string; customOrder
       .where(input.userId ? and(orderCondition, eq(billingOrder.userId, input.userId)) : orderCondition)
       .for("update")
       .limit(1);
-    if (!order) throw new Error("订单不存在。");
+    if (!order) throw new BillingError("order_not_payable", "订单不存在。");
+    if (input.providerOrderId) {
+      if (order.provider !== "afdian") throw new BillingError("order_not_payable", "付款渠道与订单不一致。");
+      const [prior] = await tx.select().from(billingOrder).where(and(eq(billingOrder.provider, "afdian"), eq(billingOrder.providerOrderId, input.providerOrderId))).limit(1);
+      if ((prior && prior.id !== order.id) || (order.status === "paid" && order.providerOrderId !== input.providerOrderId)) {
+        throw new BillingError("order_not_payable", "付款交易已绑定其他订单，或订单已由另一笔交易支付。");
+      }
+    }
+    const finishPayment = async () => {
+      if (input.paymentId) {
+        await tx.update(billingPayment).set({ status: "fulfilled", orderId: order.id, updatedAt: new Date() }).where(eq(billingPayment.id, input.paymentId));
+        await tx.execute(sql`UPDATE app.billing_review SET status='resolved',resolution='automatically_fulfilled',resolved_at=now() WHERE id=${"payment:" + input.paymentId} AND status='open'`);
+      }
+    };
     await ensureWallet(tx, order.userId);
     let wallet = await lockWallet(tx, order.userId);
     wallet = await expireWalletIfNeeded(tx, order.userId, wallet);
-    if (order.status === "paid") return { order, wallet: viewWallet(wallet), idempotent: true };
+    if (order.status === "paid") { await finishPayment(); return { order, wallet: viewWallet(wallet), idempotent: true }; }
     if (order.status !== "pending") throw new BillingError("order_not_payable", "订单当前状态不可发放积分。");
 
     const product = billingProduct(order.productId);
@@ -232,8 +253,8 @@ export async function fulfillBillingOrder(input: { orderId?: string; customOrder
       throw new BillingError("order_not_payable", "支付金额与订单商品不一致，暂不入账。");
     }
     const next = product.kind === "monthly"
-      ? { ...wallet, monthlyPoints: sumPoints(wallet.monthlyPoints, product.points), monthlyExpiresAt: new Date(Date.now() + (product.durationDays ?? 30) * 86_400_000) }
-      : { ...wallet, paidPoints: sumPoints(wallet.paidPoints, product.points) };
+      ? { ...wallet, monthlyPoints: sumPoints(wallet.monthlyPoints, order.points), monthlyExpiresAt: new Date(Date.now() + (product.durationDays ?? 30) * 86_400_000) }
+      : { ...wallet, paidPoints: sumPoints(wallet.paidPoints, order.points) };
     await tx.update(billingWallet).set({
       paidPoints: next.paidPoints,
       monthlyPoints: next.monthlyPoints,
@@ -242,12 +263,13 @@ export async function fulfillBillingOrder(input: { orderId?: string; customOrder
     }).where(eq(billingWallet.userId, order.userId));
     await tx.insert(billingLedger).values({
       id: randomUUID(), userId: order.userId, kind: product.kind === "monthly" ? "monthly_grant" : "topup",
-      pointsDelta: product.points, paidPointsAfter: next.paidPoints, monthlyPointsAfter: next.monthlyPoints,
+      pointsDelta: order.points, paidPointsAfter: next.paidPoints, monthlyPointsAfter: next.monthlyPoints,
       referenceType: "billing_order", referenceId: order.id, idempotencyKey: `order:${order.id}`,
       metadata: { productId: product.id, providerOrderId: input.providerOrderId ?? null },
     }).onConflictDoNothing({ target: billingLedger.idempotencyKey });
     const now = new Date();
     const [updated] = await tx.update(billingOrder).set({ status: "paid", providerOrderId: input.providerOrderId ?? order.providerOrderId, paidAt: now, updatedAt: now }).where(eq(billingOrder.id, order.id)).returning();
+    await finishPayment();
     return { order: updated, wallet: viewWallet(next), idempotent: false };
   });
 }

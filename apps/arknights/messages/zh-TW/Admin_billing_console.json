@@ -53,5 +53,6 @@
   "adjusted": "已調賬",
   "adjustmentLedgerId": "調賬流水 ID",
   "evidenceReason": "處理依據",
-  "resolve2": "確認處理"
+  "resolve2": "確認處理",
+  "afdianTradeOptional": "愛發電交易號（選填；填寫後核驗付款並關閉對帳）"
 }
