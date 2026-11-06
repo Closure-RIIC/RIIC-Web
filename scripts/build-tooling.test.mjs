@@ -537,7 +537,9 @@ test("deployment resumes an interrupted cache without accepting symlinks or non-
   const workflow = (await readRepoFile(".github/workflows/deploy.yml")).replaceAll("\r\n", "\n");
   const section = workflow.split("      - name: Sync standalone release tree")[1].split("\n      - name:")[0];
   const body = section.split("        run: |\n")[1].replace(/^ {10}/gm, "");
-  const setup = body.slice(body.indexOf("timeout --kill-after=5s 30s ssh"), body.indexOf("timeout --kill-after=10s 5400s rsync"));
+  // Exercise only remote cache setup: later timing assignments would hide its
+  // exit status in the conditional rejection checks below (where errexit is off).
+  const setup = body.slice(body.indexOf("timeout --kill-after=5s 30s ssh"), body.indexOf("\ntransfer_started="));
   assert.ok(setup);
   const script = [
     "set -euo pipefail",
