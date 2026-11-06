@@ -1,6 +1,6 @@
 {
   "loadingCreditAccount": "正在載入積分帳戶……",
-  "paidPlansApplyOnlyToAssistantConversationsSolvingSchedules": "付費計劃僅用於助理對話功能，基建計算器的求解功能保持免費。",
+  "paidPlansApplyOnlyToAssistantConversationsSolvingSchedules": "你的贊助將用於網站營運與維護。作為感謝，你將獲得可用於助理對話的站內積分；基建計算器求解始終免費。",
   "backToAssistant": "返回助理<part1></part1>",
   "creditBalance": "積分餘額",
   "availableCredits": "可用積分",
@@ -10,9 +10,9 @@
   "noExpiry": "長期有效",
   "monthlyPassCredits": "月卡積分",
   "noActiveMonthlyPass": "暫無有效月卡",
-  "creditPackages": "積分套餐",
+  "creditPackages": "贊助方案",
   "creating": "建立中…",
-  "buyOnAfdian": "愛發電購買",
+  "buyOnAfdian": "前往愛發電贊助",
   "paymentLinkNotConfigured": "待配置支付連結",
   "redeeming": "兌換中…",
   "redeemAndAddCredits": "核銷併入賬",
@@ -21,7 +21,7 @@
   "confirmClearingAllUnpaidOrders": "確認清空所有未支付訂單",
   "clearAllUnpaidOrders": "一鍵清空未支付訂單",
   "latest6UnpaidOrdersAreHiddenAfter3Days": "最近 6 筆 · 待支付訂單 3 天后自動隱藏",
-  "noOrdersToShowCreditPackagePurchasesWillAppear": "暫無可顯示的訂單，購買積分套餐後會顯示在這裡。",
+  "noOrdersToShowCreditPackagePurchasesWillAppear": "暫無可顯示的訂單，從本頁發起贊助後會顯示在這裡。",
   "credits": "<part1></part1> 積分<part2></part2><part3></part3>",
   "yourLatestOrderIsAwaitingPayment": "最近一筆訂單待支付",
   "saving": "處理中…",
@@ -37,6 +37,6 @@
   "unknownStatus": "未知狀態",
   "creditLedger": "積分賬本",
   "latest8CreditsReceivedAndSpent": "最近 8 筆 · 積分收支",
-  "creditChangesWillAppearAfterYouTopUpOr": "充值或使用助理後，積分變動會顯示在這裡。",
+  "creditChangesWillAppearAfterYouTopUpOr": "贊助積分入帳或使用助理後，積分變動會顯示在這裡。",
   "creditChange": "積分變動"
 }

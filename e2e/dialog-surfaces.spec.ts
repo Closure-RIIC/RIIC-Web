@@ -12,6 +12,18 @@ for (const [path, accent] of [["/", "#FFD800"], ["/mastery", "#B8F03A"], ["/skil
     await page.setViewportSize({ width: 1440, height: 900 });
     await gotoStable(page, path!);
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+    if (path === "/billing") {
+      const paymentNotice = page.getByRole("dialog", { name: "赞助付款须知", exact: true });
+      await expect(paymentNotice).toBeVisible();
+      for (const dark of [false, true]) {
+        await page.evaluate(enabled => document.documentElement.classList.toggle("dark", enabled), dark);
+        await expect(paymentNotice.getByText("爱发电", { exact: true }).first()).toHaveCSS("color", dark ? "rgb(196, 181, 253)" : "rgb(124, 58, 237)");
+        await expect(paymentNotice.getByText("本网站", { exact: true })).toHaveCSS("color", dark ? "rgb(110, 231, 183)" : "rgb(4, 120, 87)");
+        await expect(paymentNotice.getByText("本站", { exact: true }).first()).toHaveCSS("color", dark ? "rgb(110, 231, 183)" : "rgb(4, 120, 87)");
+      }
+      await paymentNotice.getByRole("button", { name: "我已了解", exact: true }).click();
+      await expect(paymentNotice).toHaveCount(0);
+    }
     const trigger = page.locator("[data-sidebar-account-trigger]");
     await (await sidebarNavigation(page, "账号管理")).click();
     const dialog = page.locator('[data-website-account-dialog]:not([data-website-account-dialog-loading])');

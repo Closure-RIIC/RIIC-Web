@@ -1,4 +1,8 @@
 .page { --dialogue-accent: #ffd800; --billing-highlight: #7c3aed; }
+.paymentNotice { --billing-provider-text: #7c3aed; --billing-website-text: #047857; }
+:global(.dark) .paymentNotice { --billing-provider-text: #c4b5fd; --billing-website-text: #6ee7b7; }
+.paymentProvider { color: var(--billing-provider-text); font-weight: 600; }
+.paymentWebsite { color: var(--billing-website-text); font-weight: 600; }
 .wallet { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); align-items: center; gap: 32px; }
 .walletDetails { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin: 0; padding-left: 32px; border-left: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent); }
 .walletDetails > div { min-width: 0; }
