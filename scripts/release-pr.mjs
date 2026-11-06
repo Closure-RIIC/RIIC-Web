@@ -19,6 +19,8 @@ verified deployment, merges the exact automatic release PR into main, and waits
 for production. GitHub still enforces checks, reviews and environment permissions.
 Repeat the same command after interruption. Failed CI is never retried silently.
 --include-develop explicitly includes other changes already waiting on develop.
+--approve-production also rejects superseded production reviews after the new
+release passes quality. Running deployments are never cancelled.
 --timeout-minutes <1..240> bounds each invocation (default 90).
 `;
 
@@ -158,6 +160,49 @@ export class ReleaseCommand {
       return result.sha;
     }
   }
+  async retireSupersededReviews(run, options) {
+    if (!options.approveProduction || run.head_branch !== "main") return;
+    await verifyQualityRun({ api: this.api, repository: RELEASE_REPOSITORY, branch: "main",
+      sha: run.head_sha, runId: run.id, allowPendingDeployment: true });
+    await this.current("main", run.head_sha);
+    for (const source of [workflow, "deploy-verified.yml"]) {
+      const candidates = await this.list(`${prefix}/actions/workflows/${source}/runs?branch=main&status=waiting`, "workflow_runs");
+      for (const candidate of candidates) {
+        const trusted = old => old.repository?.full_name === RELEASE_REPOSITORY &&
+          old.head_repository?.full_name === RELEASE_REPOSITORY && old.path === `.github/workflows/${source}` &&
+          ["push", "workflow_dispatch"].includes(old.event) && old.head_branch === "main" &&
+          old.status === "waiting" && shaPattern.test(old.head_sha ?? "") && old.head_sha !== run.head_sha;
+        if (!Number.isSafeInteger(candidate.id) || candidate.id <= 0 || candidate.id >= run.id || !trusted(candidate)) continue;
+        const old = await this.api(`${prefix}/actions/runs/${candidate.id}`);
+        if (old.id !== candidate.id || !trusted(old)) continue;
+        const comparison = await this.api(`${prefix}/compare/${old.head_sha}...${run.head_sha}`);
+        if (comparison.status !== "ahead" || comparison.merge_base_commit?.sha !== old.head_sha) continue;
+        // Review only pending gates. Unlike cancelling a workflow, GitHub cannot
+        // apply this request to a deployment that has already started running.
+        const endpoint = `${prefix}/actions/runs/${old.id}/pending_deployments`;
+        const environments = await this.api(endpoint);
+        const pending = environments.filter(item => item.environment?.name === "production" &&
+          Number.isSafeInteger(item.environment.id) && item.environment.id > 0 &&
+          item.current_user_can_approve === true && Array.isArray(item.reviewers) && item.reviewers.length > 0);
+        if (!pending.length) continue;
+        await this.current("main", run.head_sha);
+        try {
+          await this.api(endpoint, { method: "POST", body: {
+            environment_ids: [...new Set(pending.map(item => item.environment.id))], state: "rejected",
+            comment: `Superseded by verified production release ${run.head_sha} (run ${run.id}).`,
+          } });
+        } catch (error) {
+          // A reviewer may have approved concurrently, or the write may have
+          // succeeded before the connection failed. Read state; never retry it.
+          const remaining = await this.api(endpoint);
+          if (remaining.some(item => pending.some(previous => previous.environment.id === item.environment?.id))) throw error;
+          this.log(`Production review for run ${old.id} is no longer pending; leaving its workflow alone`);
+          continue;
+        }
+        this.log(`Rejected superseded production review: run ${old.id} (${old.head_sha.slice(0, 12)})`);
+      }
+    }
+  }
   async approve(run, options) {
     const environments = await this.api(`${prefix}/actions/runs/${run.id}/pending_deployments`);
     assert.ok(["main", "develop"].includes(run.head_branch));
@@ -187,6 +232,7 @@ export class ReleaseCommand {
   async waitRelease(branch, sha, options) {
     const started = this.now();
     let dispatched = false;
+    let nextQueueCheck = started;
     while (true) {
       await this.current(branch, sha);
       const runs = await this.list(`${prefix}/actions/workflows/${workflow}/runs?branch=${branch}&head_sha=${sha}`, "workflow_runs");
@@ -217,6 +263,13 @@ export class ReleaseCommand {
         const applications = await this.verifyApps(branch, sha);
         await this.current(branch, sha);
         return { sha, runId: run.id, url: run.html_url, applications };
+      }
+      if (branch === "main" && options.approveProduction && this.now() >= nextQueueCheck) {
+        nextQueueCheck = this.now() + 60_000;
+        const jobs = await this.list(`${prefix}/actions/runs/${run.id}/attempts/${run.run_attempt}/jobs`, "jobs");
+        if (jobs.some(job => job.name === "quality" && job.conclusion === "success")) {
+          await this.retireSupersededReviews(run, options);
+        }
       }
       await this.approve(run, options);
       await this.pause(`${branch}: ${run.status} ${run.html_url}`);

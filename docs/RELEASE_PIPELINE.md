@@ -38,6 +38,16 @@ The baseline run `38933629378` took 322, 241, 228 and 706 seconds across its fou
 
 ## Transfer and safety limits
 
-Deployment already uses checksum-based rsync deltas and compressed transfer. The baseline development deployment sent about 5.9 MB while the standalone tree was about 95 MB. This change retains that transfer mechanism and its final archive SHA-256 check. Network throughput and the mandatory production observation window still contribute to release time.
+Both applications use checksum-based rsync deltas with compressed transfer and `--fuzzy`: when an asset's content hash changes its filename, the receiver can use a similar old file in the same directory as the delta basis. `--delete-delay` retains those bases until transfer completes. Transfers use temporary files rather than `--inplace`, and the disposable cache rejects symlinks and hard links. The final deterministic archive must still match the verified build's byte count and SHA-256 before activation. An empty cache falls back to a complete transfer.
+
+Arknights now shares one authenticated SSH connection across helper verification, solver preflight, transfer, archive verification and deployment. Only establishing that connection retries (at most three attempts). A lost connection fails closed; deployment is never replayed automatically. An `always()` cleanup closes the connection and removes its private socket directory. Endfield retains its existing shared transport.
+
+Measured baseline: production run [42213835034](https://github.com/Closure-RIIC/RIIC-Web/actions/runs/42213835034) spent 564 seconds transferring and reconstructing its archive, sending 6,189,045 bytes for a 112,522,997-byte tree. A local Linux replay using the verified production artifacts from `a4ad592c5301b15a10ef950b71f2cfe7cceef625` and `911de825c3673b360db98217e90f396d2c4211da` sent 6,190,495 bytes with the former options and 3,690,303 bytes with fuzzy matching (40.4% less). Literal data fell from 15,267,209 to 4,892,972 bytes; received signature data rose from 57,502 to 183,509 bytes. This measures payload reduction, not live network duration. Deployment summaries separate rsync time, archive assembly/verification time, and sent/received bytes so the next release can confirm real-world savings.
+
+## Superseded production reviews
+
+That same production run passed quality at 12:01:21 UTC but did not start Arknights deployment until 12:16:40, while an earlier run awaited approval. `release:pr --approve-production` now checks older waiting production runs after the new commit has passed quality. It verifies repository, workflow, branch, ancestor relationship, pending reviewer gates and the current user's approval permission before rejecting an obsolete review. It uses GitHub's pending-deployment review endpoint, never workflow cancellation. A concurrent approval or uncertain write is reconciled by reading pending state without retrying the write.
+
+The per-application deployment concurrency lock still uses `cancel-in-progress: false`; active transfer, activation and health observation finish normally. This cleanup applies only while the release CLI is monitoring; it does not add a global cancellation workflow or weaken required approvals. Runs for another branch, unrelated history, the same commit, scheduled checks, or a user without review permission are left alone.
 
 No production database connections are terminated, migration timeouts increased, or deployment approval rules weakened by these optimizations.

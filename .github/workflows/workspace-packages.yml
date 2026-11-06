@@ -80,6 +80,7 @@ jobs:
         run: |
           python3 deploy/endfield-deploy.test.py
           python3 deploy/endfield-transfer.test.py
+          python3 deploy/arknights-transfer.test.py
           node --test scripts/app-release-plan.test.mjs scripts/release-provenance.test.mjs scripts/release-automation.test.mjs scripts/release-pr.test.mjs scripts/build-tooling.test.mjs scripts/ci-performance.test.mjs scripts/ci-timings.test.mjs scripts/build-cache.test.mjs
 
   runtime:
