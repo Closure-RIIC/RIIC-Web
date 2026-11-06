@@ -1,5 +1,6 @@
 import "./i18n/test-setup.ts";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -78,6 +79,21 @@ test("manual room capacity follows control, trading and manufacturing room level
   assert.equal(manualRoomCapacity({ kind: "trade_post", level: 1, id: "trade_1" } as never), 1);
   assert.equal(manualRoomCapacity({ kind: "factory", level: 2, id: "manu_1" } as never), 2);
   assert.equal(manualRoomCapacity({ kind: "factory", level: 5, id: "manu_1" } as never), 3);
+});
+
+test("switching from 243 to the 153 preset preserves five control-center operators", () => {
+  const loadPreset = (preset: string): BaseBlueprint => JSON.parse(readFileSync(new URL(`../../../packages/arknights-domain/src/layouts/${preset}.json`, import.meta.url), "utf8"));
+  const previousLayout = loadPreset("243");
+  const nextLayout = loadPreset("153");
+  const operators = ["control-1", "control-2", "control-3", "control-4", "control-5"];
+  let draft = createManualScheduleDraft();
+  for (const [slotIndex, operator] of operators.entries()) {
+    draft = assignManualOperator({ draft, layout: previousLayout, shiftIndex: 0, roomId: "control", slotIndex, operator }).draft;
+  }
+  const reconciled = reconcileManualScheduleDraft(draft, nextLayout);
+  assert.equal(manualRoomCapacity(nextLayout.rooms.find(room => room.kind === "control_center")!), 5);
+  assert.deepEqual(reconciled.shifts[0]?.rooms.control?.operators, operators);
+  assert.equal(previousLayout.rooms.find(room => room.kind === "control_center")?.level, 5);
 });
 
 test("manual shift boundaries use minute precision, stay contiguous and cover one day", () => {
