@@ -76,6 +76,7 @@ function fixture() {
     if (path.includes("/commits/") && path.includes("/statuses?")) return [];
     if (path.includes("/actions/variables/")) return { value: "1" };
     if (path.includes("/actions/workflows/frontend-quality.yml/runs?")) return { workflow_runs: [runs[path.includes("branch=develop") ? "develop" : "main"]] };
+    if (path.includes("/actions/workflows/deploy-verified.yml/runs?")) return { workflow_runs: [] };
     if (path.includes("/jobs?")) return { total_count: jobs.length, jobs };
     if (path === `${p}/actions/runs/101`) return runs.develop;
     if (path === `${p}/actions/runs/102`) return runs.main;
@@ -91,6 +92,108 @@ function fixture() {
     verifyApps: async (branch, value) => { verified.push({ branch, sha: value }); return { arknights: value, endfield: value }; } });
   return f;
 }
+
+function supersededReviewFixture() {
+  const f = fixture();
+  f.runs.main.status = "waiting";
+  f.branches.main.commit.sha = sha.mainMerge;
+  f.old = { ...f.runs.main, id: 90, head_sha: sha.main };
+  f.oldPending = globalThis.structuredClone(f.pending);
+  f.comparison = { status: "ahead", merge_base_commit: { sha: sha.main } };
+  f.intercept = (path, request) => {
+    if (path.includes("/runs?branch=main&status=waiting")) {
+      return { workflow_runs: path.includes(f.old.path.split("/").at(-1)) ? [f.old] : [] };
+    }
+    if (path === `${p}/actions/runs/90`) return f.refresh?.() ?? f.old;
+    if (path.startsWith(`${p}/compare/`)) return f.comparison;
+    if (path === `${p}/actions/runs/90/pending_deployments`) {
+      if (request.method === "POST") {
+        f.writes.push({ path, ...request });
+        if (f.writeError) { if (f.reviewRace) f.oldPending = []; throw f.writeError; }
+        f.oldPending = [];
+        return [];
+      }
+      return f.oldPending;
+    }
+  };
+  return f;
+}
+
+test("a verified current release rejects only an ancestor's pending production review", async () => {
+  for (const source of ["frontend-quality.yml", "deploy-verified.yml"]) {
+    const f = supersededReviewFixture();
+    f.old.path = `.github/workflows/${source}`;
+    await f.command.retireSupersededReviews(f.runs.main, options);
+    assert.equal(f.writes.length, 1);
+    assert.equal(f.writes[0].body.state, "rejected");
+    assert.deepEqual(f.writes[0].body.environment_ids, [99]);
+    assert.match(f.writes[0].body.comment, new RegExp(sha.mainMerge));
+    await f.command.retireSupersededReviews(f.runs.main, options);
+    assert.equal(f.writes.length, 1, "an absent review is never repeated");
+  }
+});
+
+test("queue cleanup leaves running, foreign, same-commit, non-ancestor and unauthorized deployments alone", async () => {
+  for (const alter of [
+    f => { f.old.status = "in_progress"; },
+    f => { f.old.status = "completed"; },
+    f => { f.old.head_branch = "develop"; },
+    f => { f.old.repository = { full_name: "other/repo" }; },
+    f => { f.old.head_repository = { full_name: "other/repo" }; },
+    f => { f.old.event = "schedule"; },
+    f => { f.old.head_sha = sha.mainMerge; },
+    f => { f.old.head_sha = "invalid"; },
+    f => { f.old.id = 103; },
+    f => { f.comparison.status = "diverged"; },
+    f => { f.comparison.merge_base_commit.sha = sha.head; },
+    f => { f.oldPending[0].current_user_can_approve = false; },
+    f => { f.oldPending[0].environment.name = "development"; },
+    f => { f.oldPending[0].reviewers = []; },
+    f => { f.refresh = () => ({ ...f.old, status: "in_progress" }); },
+  ]) {
+    const f = supersededReviewFixture();
+    alter(f);
+    await f.command.retireSupersededReviews(f.runs.main, options);
+    assert.deepEqual(f.writes, [], String(alter));
+  }
+  const f = supersededReviewFixture();
+  await f.command.retireSupersededReviews(f.runs.main, { ...options, approveProduction: false });
+  await f.command.retireSupersededReviews(f.runs.develop, options);
+  assert.deepEqual(f.writes, []);
+});
+
+test("release monitoring retires an obsolete review before approving the current production release", async () => {
+  const f = supersededReviewFixture();
+  f.command.deadline = 1_000_000;
+  const result = await f.command.waitRelease("main", sha.mainMerge, options);
+  assert.equal(result.sha, sha.mainMerge);
+  assert.deepEqual(f.writes.map(write => write.body.state), ["rejected", "approved"]);
+  assert.ok(f.writes[0].path.includes("/runs/90/"));
+  assert.ok(f.writes[1].path.includes("/runs/102/"));
+});
+
+test("queue cleanup requires current quality proof and never retries an uncertain review write", async () => {
+  for (const alter of [
+    f => { f.jobs.find(job => job.name === "quality").conclusion = "failure"; },
+    f => { f.jobs.find(job => job.name === "Database integration").conclusion = "cancelled"; },
+    f => { f.branches.main.commit.sha = sha.head; },
+  ]) {
+    const f = supersededReviewFixture();
+    alter(f);
+    await assert.rejects(f.command.retireSupersededReviews(f.runs.main, options));
+    assert.deepEqual(f.writes, []);
+  }
+  for (const reviewRace of [true, false]) {
+    const f = supersededReviewFixture();
+    f.writeError = new Error("uncertain write");
+    f.reviewRace = reviewRace;
+    const result = f.command.retireSupersededReviews(f.runs.main, options);
+    if (reviewRace) await result;
+    else await assert.rejects(result, /uncertain write/);
+    assert.equal(f.writes.length, 1);
+    assert.ok(f.writes.every(write => write.path.endsWith("/pending_deployments")));
+  }
+});
 
 test("preview is read only; execution requires a reviewed exact head and a valid repository PR", async () => {
   assert.equal(parseOptions(["https://github.com/Closure-RIIC/RIIC-Web/pull/17"]).number, 17);

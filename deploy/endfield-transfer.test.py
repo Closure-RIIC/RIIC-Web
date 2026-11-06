@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -127,6 +128,21 @@ sys.exit(1 if os.environ.get("TRANSFER_STALE") else 0)
     def installed(self):
         record = self.remote / "installed"
         return record.read_text().splitlines() if record.exists() else []
+
+    def test_renamed_content_hash_assets_reuse_the_previous_file(self):
+        self.pack()
+        first = self.transfer()
+        self.assertEqual(first.returncode, 0, first.stderr)
+        old = self.source / "runtime/stable.bin"
+        (self.source / "runtime/stable-newhash.bin").write_bytes(old.read_bytes() + b"small change")
+        old.unlink()
+        digest = self.pack()
+        result = self.transfer()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        literal = int(re.search(r"Literal data: ([\d,]+)", result.stdout)[1].replace(",", ""))
+        self.assertLess(literal, 100_000)
+        self.assertFalse((self.cache / "runtime/stable.bin").exists())
+        self.assertEqual(self.installed()[-1], digest)
 
     def test_connection_retry_reuses_transport_and_closes_it(self):
         digest = self.pack()
