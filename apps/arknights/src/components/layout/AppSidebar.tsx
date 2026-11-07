@@ -9,6 +9,7 @@ import { messageRecord } from "@/i18n/translate";
 
 import {
   Calculator,
+  Store,
   BookOpen,
   ClipboardCheck,
   Cloud,
@@ -143,6 +144,7 @@ export function AppSidebar({ page, onPageChange, showMower = false, onSessionCha
           <SidebarMenu>
             <AppNavigationItem page={page} target="calculator" label={labels.calculator} icon={Calculator} onPageChange={onPageChange} />
             <AppNavigationItem page={page} target="manual" label={labels.manual} icon={SquarePen} onPageChange={onPageChange} />
+            <AppNavigationItem page={page} target="schedule-gallery" label={uiText.text(locale, "scheduleGallery")} icon={Store} onPageChange={onPageChange} />
             {showMower ? <AppNavigationItem page={page} target="mower" label={uiText.text(locale, "mowerSchedule")} icon={Bot} onPageChange={onPageChange} /> : null}
             <AppNavigationItem page={page} target="training" label={labels.training} icon={GraduationCap} onPageChange={onPageChange} />
           </SidebarMenu>

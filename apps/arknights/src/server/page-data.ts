@@ -58,3 +58,9 @@ export const getPlanArtifactPage = createServerFn({ method: "GET" })
     if (!artifact) throw notFound();
     return { planJson: JSON.stringify(artifact.plan), meta: artifact.meta, createdAt: artifact.createdAt.toISOString() };
   });
+
+export const getGalleryAdminAccess = createServerFn({ method: "GET" }).handler(async () => {
+  const { requireWebsiteAdmin } = await import("@riic/platform-server/auth/authorization");
+  try { const access = await requireWebsiteAdmin(getRequest()); return { isAdmin: true, name: access.session.user.name }; }
+  catch { throw notFound(); }
+});

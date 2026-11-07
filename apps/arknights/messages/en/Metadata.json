@@ -24,5 +24,7 @@
   "agent": "Closure Assistant",
   "billing": "Support the website",
   "plush": "Plush companions",
-  "plan": "Schedule results"
+  "plan": "Schedule results",
+  "scheduleGallery": "Schedule gallery",
+  "admin_schedule_gallery": "Schedule review"
 }

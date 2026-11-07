@@ -1,11 +1,11 @@
 import { withMessages } from "@/i18n/features-client";
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { getReviewerAccess } from "@/server/page-data";
+import { getReviewerAccess, getGalleryAdminAccess } from "@/server/page-data";
 import AdminLayout from "@/app/admin/layout";
 const TranslatedRouteComponent = withMessages(AdminShell, "apps/arknights/src/routes/admin.tsx");
 
 export const Route = createFileRoute("/admin")({
-  beforeLoad: () => getReviewerAccess(),
+  beforeLoad: ({ location }) => location.pathname === "/admin/schedule-gallery" ? getGalleryAdminAccess() : getReviewerAccess(),
   component: TranslatedRouteComponent,
 });
 function AdminShell() {

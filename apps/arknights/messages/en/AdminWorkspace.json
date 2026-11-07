@@ -126,5 +126,7 @@
   "accessDenied": "This role cannot access this page.",
   "backOverview": "Back to overview",
   "previewReset": "Reset sample data",
-  "previewReadOnly": "Test execution, imports, and publishing are unavailable in this preview."
+  "previewReadOnly": "Test execution, imports, and publishing are unavailable in this preview.",
+  "scheduleGallery": "Schedule review",
+  "scheduleGalleryHint": "Review submissions, leave feedback, publish schedules and remove them from the gallery."
 }

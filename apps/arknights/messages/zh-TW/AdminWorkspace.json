@@ -126,5 +126,7 @@
   "accessDenied": "此角色無法訪問這個頁面。",
   "backOverview": "返回概覽",
   "previewReset": "重置演示資料",
-  "previewReadOnly": "復現執行、匯入和釋出等操作在演示中不可用。"
+  "previewReadOnly": "復現執行、匯入和釋出等操作在演示中不可用。",
+  "scheduleGallery": "作業審核",
+  "scheduleGalleryHint": "審核作者投稿、填寫審核備註，並管理作業廣場的發佈與下架。"
 }

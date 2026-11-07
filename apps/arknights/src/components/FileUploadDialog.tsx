@@ -18,6 +18,11 @@ type FileUploadDialogProps = {
   disabled?: boolean;
   layer?: "base" | "nested";
   children?: ReactNode;
+  beforeUpload?: ReactNode;
+  showUploadArea?: boolean;
+  contentClassName?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   returnFocus?: () => HTMLElement | null;
   successFocus?: () => HTMLElement | false;
   onFiles: (files: File[], signal: AbortSignal) => void | Promise<void>;
@@ -25,10 +30,13 @@ type FileUploadDialogProps = {
 
 export function FileUploadDialog({
   title, description, extensions, trigger, multiple = false, maxFiles,
-  disabled = false, layer = "base", children, returnFocus, successFocus, onFiles,
+  disabled = false, layer = "base", children, beforeUpload, showUploadArea = true, contentClassName,
+  open: controlledOpen, onOpenChange, returnFocus, successFocus, onFiles,
 }: FileUploadDialogProps) {
   const t = useTranslations("FileUpload");
-  const [open, setOpen] = useState(false);
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = controlledOpen ?? localOpen;
+  function setOpen(next: boolean) { setLocalOpen(next); onOpenChange?.(next); }
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +47,12 @@ export function FileUploadDialog({
   const formats = extensions.join(" / ");
 
   useEffect(() => () => { operation.current?.abort(); }, []);
+
+  useEffect(() => {
+    if (!open || !showUploadArea) {
+      operation.current?.abort(); operation.current = null; setBusy(false);
+    }
+  }, [open, showUploadArea]);
 
   useEffect(() => {
     if (!open) return;
@@ -112,7 +126,7 @@ export function FileUploadDialog({
       <DialogContent
         data-file-upload-dialog
         layer={layer}
-        className="max-h-[calc(100dvh-2rem)] overflow-y-auto"
+        className={cn("max-h-[calc(100dvh-2rem)] overflow-y-auto", contentClassName)}
         finalFocus={() => succeeded.current && successFocus ? successFocus() : returnFocus?.() ?? true}
       >
         <DialogHeader>
@@ -120,7 +134,8 @@ export function FileUploadDialog({
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
         <DialogBody>
-          <div
+          {beforeUpload}
+          {showUploadArea && <div
             data-file-dropzone
             data-dragging={dragging || undefined}
             aria-busy={busy}
@@ -167,9 +182,9 @@ export function FileUploadDialog({
                 void selectFiles(files);
               }}
             />
-          </div>
+          </div>}
           {children}
-          {error && <Alert variant="destructive"><AlertDescription className="break-words [overflow-wrap:anywhere]">{error}</AlertDescription></Alert>}
+          {showUploadArea && error && <Alert variant="destructive"><AlertDescription className="break-words [overflow-wrap:anywhere]">{error}</AlertDescription></Alert>}
         </DialogBody>
         <DialogFooter><Button type="button" variant="ghost" onClick={() => changeOpen(false)}>{t("cancel")}</Button></DialogFooter>
       </DialogContent>
