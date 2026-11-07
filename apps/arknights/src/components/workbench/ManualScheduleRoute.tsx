@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { ManualScheduleDraft } from "@/manual-schedule";
 import type { SchedulePosterDocument } from "@/schedule-poster-document";
-import { POSTER_HANDOFF_KEY } from "@/schedule-poster-storage";
+import { POSTER_HANDOFF_KEY, POSTER_WORKING_COPY_KEY } from "@/schedule-poster-storage";
 import { DEFAULT_MANUAL_SHIFT_START_TIME } from "@/manual-schedule-config";
 import { useWorkbench } from "@/workbench-context";
 
@@ -56,15 +56,28 @@ export function ManualScheduleRoute() {
         const code = new URLSearchParams(window.location.search).get("code");
         const handoffKey = `${POSTER_HANDOFF_KEY}.manual`;
         const handoff = code ? null : window.sessionStorage.getItem(handoffKey);
-        if (!code && !handoff) { setReady(true); return; }
+        const cached = window.sessionStorage.getItem(POSTER_WORKING_COPY_KEY);
+        if (!code && !handoff && !cached) { setReady(true); return; }
         const { readPosterFile } = await import("@/schedule-poster-document");
+        let workingCopy: SchedulePosterDocument | null = null;
+        if (cached) {
+          try {
+            const saved = JSON.parse(cached);
+            if (!code || saved.code === code) workingCopy = readPosterFile(JSON.stringify(saved.document));
+          } catch { /* A broken local copy must not prevent importing a valid code or file. */ }
+        }
         if (code) {
           if (!/^[a-f0-9]{12}$/.test(code)) throw new Error("@manual:invalidCode");
-          const response = await fetch(`/api/schedule-posters?code=${code}`);
-          const payload = await response.json(); if (!response.ok) throw new Error(payload.error);
-          await importPoster(readPosterFile(JSON.stringify(payload.document)));
-        } else {
-          if (handoff) { await importPoster(readPosterFile(handoff)); window.sessionStorage.removeItem(handoffKey); }
+          if (workingCopy) await importPoster(workingCopy);
+          else {
+            const response = await fetch(`/api/schedule-posters?code=${code}`);
+            const payload = await response.json(); if (!response.ok) throw new Error(payload.error);
+            await importPoster(readPosterFile(JSON.stringify(payload.document)));
+          }
+        } else if (handoff) {
+          await importPoster(readPosterFile(handoff)); window.sessionStorage.removeItem(handoffKey);
+        } else if (workingCopy) {
+          await importPoster(workingCopy);
         }
       } catch (e) { setError(e instanceof Error ? e.message : "@manual:loadFailed"); }
       finally { setReady(true); }
@@ -74,7 +87,7 @@ export function ManualScheduleRoute() {
   if (!ready) return <ManualScheduleLoading />;
   return <>
     {error ? <p role="alert" className="mb-3 text-sm text-destructive">{error === "@manual:invalidCode" ? rawText.text(rawLocale, "invalidCode") : error === "@manual:loadFailed" ? rawText.text(rawLocale, "loadFailed") : error}</p> : null}
-    {poster ? <div className="mb-3 flex flex-wrap items-center gap-3 border-y py-2 text-xs text-muted-foreground"><span>{rawText.rich(rawLocale, "scheduleCopyUsesTheScheduleSTrainingLevelsWhich", { part1: richValue((poster.meta.title)) })}</span><Button size="sm" variant="ghost" onClick={() => { window.location.href = "/manual"; }}>{rawText.text(rawLocale, "backToPersonalDraft")}</Button></div> : null}
+    {poster ? <div className="mb-3 flex flex-wrap items-center gap-3 border-y py-2 text-xs text-muted-foreground"><span>{rawText.rich(rawLocale, "scheduleCopyUsesTheScheduleSTrainingLevelsWhich", { part1: richValue((poster.meta.title)) })}</span><Button size="sm" variant="ghost" onClick={() => { window.sessionStorage.removeItem(POSTER_WORKING_COPY_KEY); window.location.href = "/manual"; }}>{rawText.text(rawLocale, "backToPersonalDraft")}</Button></div> : null}
     <ManualSchedulePage key={revision} {...manual} {...(poster ? { persistDraft: false, sourceName: rawText.text(rawLocale, "copiedTraining"), initialDraft: initial, restorationReady: true, onInitialDraftConsumed: () => setInitial(null) } : {})} initialPosterDocument={poster} onImportPoster={document => { void importPoster(document).catch(error => setError(error instanceof Error ? error.message : rawText.text(rawLocale, "loadFailed"))); }} />
   </>;
 }
