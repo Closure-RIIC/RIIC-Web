@@ -465,7 +465,9 @@ export function buildAgentTools(ctx: AgentToolContext) {
         }
         const rotation = (input.rotation && ROTATION_PROFILES.includes(input.rotation) ? input.rotation : DEFAULT_ROTATION);
         const record = (event: SolveEvent) => ctx.onSolveEvent?.(options.toolCallId, event) ?? Promise.resolve();
-        const signal = options.abortSignal ?? ctx.request.signal;
+        const signal = options.abortSignal
+          ? AbortSignal.any([ctx.request.signal, options.abortSignal])
+          : ctx.request.signal;
         if (signal.aborted) throw new AgentToolError("tool_wait_cancelled", "已停止等待。");
         await record({ computation: "running" });
         // Keep a handler attached after the caller stops waiting. A late result is

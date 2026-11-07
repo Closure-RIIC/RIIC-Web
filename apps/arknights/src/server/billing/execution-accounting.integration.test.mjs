@@ -46,6 +46,37 @@ test("execution evidence, model fees and settlement are independent", async t =>
       }
       assert.ok(points[0]>0);assert.ok(points.every(value=>value===points[0]));
     });
+    await t.test("failed tool releases its hold so a wallet with one point can retry", async () => {
+      const id = await begin();
+      const original = (await pool.query("SELECT paid_points FROM app.billing_wallet WHERE user_id=$1", [userId])).rows[0].paid_points;
+      await pool.query("UPDATE app.billing_wallet SET paid_points=1 WHERE user_id=$1", [userId]);
+      const failed = await accounting.beginToolCharge(id, "timeout", "solve_schedule");
+      await Promise.all([accounting.finishToolCharge(failed, false), accounting.finishToolCharge(failed, false)]);
+      const retry = await accounting.beginToolCharge(id, "retry", "solve_schedule");
+      await accounting.finishToolCharge(failed, true);
+      await accounting.finishToolCharge(retry, true);
+      await accounting.settleAgentRun(id, "completed");
+      assert.equal(Number((await detail(id)).charged_points), 1);
+      const wallet = (await pool.query("SELECT paid_points,held_paid_points FROM app.billing_wallet WHERE user_id=$1", [userId])).rows[0];
+      assert.equal(Number(wallet.paid_points), 0);
+      assert.equal(Number(wallet.held_paid_points), 0);
+      await pool.query("UPDATE app.billing_wallet SET paid_points=$2 WHERE user_id=$1", [userId, original]);
+    });
+    await t.test("releasing an expired monthly hold records expiry only once", async () => {
+      const id = await begin();
+      await pool.query("UPDATE app.billing_wallet SET monthly_points=1,monthly_expires_at=now()+interval '1 hour' WHERE user_id=$1", [userId]);
+      const charge = await accounting.beginToolCharge(id, "expire", "solve_schedule");
+      await pool.query("UPDATE app.agent_run SET monthly_expires_at=now()-interval '1 second' WHERE id=$1", [id]);
+      await pool.query("UPDATE app.billing_wallet SET monthly_expires_at=now()-interval '1 second' WHERE user_id=$1", [userId]);
+      await accounting.finishToolCharge(charge, false);
+      await accounting.finishToolCharge(charge, false);
+      await accounting.settleAgentRun(id, "cancelled");
+      const { rows } = await pool.query("SELECT kind,points_delta FROM app.billing_ledger WHERE reference_id=$1", [id]);
+      assert.deepEqual(rows.map(row => [row.kind, Number(row.points_delta)]), [["monthly_expiry", -1]]);
+      const wallet = (await pool.query("SELECT monthly_points,held_monthly_points FROM app.billing_wallet WHERE user_id=$1", [userId])).rows[0];
+      assert.equal(Number(wallet.monthly_points), 0);
+      assert.equal(Number(wallet.held_monthly_points), 0);
+    });
     await t.test("settlement closes abandoned fee reservations and rejects late fees", async () => {
       const id=await begin();const charge=await accounting.beginToolCharge(id,"abandoned","solve_schedule");
       await accounting.settleAgentRun(id,"cancelled");

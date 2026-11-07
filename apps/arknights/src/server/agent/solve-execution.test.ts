@@ -19,10 +19,10 @@ test("real solve tool separates solver failure, conversion failure and cancelled
   await t.mock.module(new URL("./calculator-tools.ts",import.meta.url),{namedExports:{buildCalculatorTools:()=>({})}});
   await t.mock.module(new URL("./health-tools.ts",import.meta.url),{namedExports:{buildHealthTools:()=>({})}});
   const { buildAgentTools } = await import("./tools.ts");
-  const call = async (signal?: AbortSignal) => {
+  const call = async (signal?: AbortSignal, toolSignal = signal) => {
     const events: unknown[]=[];
     const tools=buildAgentTools({request:new Request("https://riic.test",{signal}),userId:"test",onSolveEvent:async(_,event)=>{events.push(event);}});
-    const output=await tools.solve_schedule.execute!({boxSource:"sample"},{toolCallId:"test-call",messages:[],context:{},abortSignal:signal});
+    const output=await tools.solve_schedule.execute!({boxSource:"sample"},{toolCallId:"test-call",messages:[],context:{},abortSignal:toolSignal});
     return {events,output};
   };
   const failed=await call();
@@ -39,7 +39,9 @@ test("real solve tool separates solver failure, conversion failure and cancelled
   let finish!: (value: unknown) => void;
   let solverCalls=0;
   solve=()=>{solverCalls++;return new Promise(resolve=>{finish=resolve;controller.abort();});};
-  const cancelled=await call(controller.signal);
+  const toolSignal = AbortSignal.timeout(2000);
+  const cancelled=await call(controller.signal, toolSignal);
+  assert.equal(toolSignal.aborted, false, "disconnect ends the wait before the separate SDK deadline");
   assert.equal((cancelled.output as {errorCode:string}).errorCode,"tool_wait_cancelled");
   assert.deepEqual(cancelled.events,[{computation:"running"}]);
   finish({success:true});

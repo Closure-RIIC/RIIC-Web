@@ -84,7 +84,8 @@ export async function beginModelCall(runId: string, step: number, bytes: number,
     const { rows: calls } = await client.query<{ charged_rmb: string | null; status: string }>("SELECT charged_rmb,status FROM app.agent_model_call WHERE run_id=$1", [runId]);
     if (calls.some(call => call.status !== "measured" && call.status !== "waived")) throw new AgentAccountingError("usage_pending", "本次请求的用量尚未确认，已停止后续调用。");
     const budget = budgetPoints(run.policy, bytes, maxOutputTokens);
-    const target = sumPoints(tokenPoints(run.policy, calls.flatMap(call => call.charged_rmb ? [call.charged_rmb] : [])), run.tool_points, budget);
+    const { rows: [pending] } = await client.query("SELECT coalesce(sum(points),0) AS points FROM app.agent_tool_charge WHERE run_id=$1 AND status='reserved'", [runId]);
+    const target = sumPoints(tokenPoints(run.policy, calls.flatMap(call => call.charged_rmb ? [call.charged_rmb] : [])), run.tool_points, pending.points, budget);
     await ensureHold(client, run, wallet, target);
     const id = randomUUID();
     await client.query("INSERT INTO app.agent_model_call (id,run_id,step,budget_points,rate_version) VALUES ($1,$2,$3,$4,$5)", [id, runId, step, budget, run.rate_version]);
@@ -125,11 +126,24 @@ export async function finishToolCharge(id: string, success: boolean) {
   await billingTransaction(async client => {
     const { rows: [owner] } = await client.query("SELECT run_id FROM app.agent_tool_charge WHERE id=$1", [id]);
     if (!owner) return;
-    const { run } = await lockRun(client, owner.run_id);
+    const { run, wallet } = await lockRun(client, owner.run_id);
     // A late completion cannot add a fee after the reservation has been released.
     if (run.settlement !== "reserved") return;
     const { rows: [row] } = await client.query("UPDATE app.agent_tool_charge SET status=$2 WHERE id=$1 AND status='reserved' RETURNING run_id,points", [id, success ? "completed" : "failed"]);
-    if (row && success) await client.query("UPDATE app.agent_run SET tool_points=tool_points+$2,heartbeat_at=now() WHERE id=$1", [row.run_id, row.points]);
+    if (!row) return;
+    if (success) {
+      await client.query("UPDATE app.agent_run SET tool_points=tool_points+$2,heartbeat_at=now() WHERE id=$1", [row.run_id, row.points]);
+      return;
+    }
+    // Each tool adds its full fee to the run hold. Release paid points first
+    // so the remaining model and tool fees retain priority on monthly points.
+    const paid = Math.min(run.held_paid, Number(row.points));
+    const monthly = sumPoints(row.points, -paid);
+    const expired = run.monthly_expires_at && run.monthly_expires_at <= new Date() ? monthly : 0;
+    await client.query("UPDATE app.agent_run SET held_paid=held_paid-$2,held_monthly=held_monthly-$3,monthly_expires_at=CASE WHEN held_monthly=$3 THEN NULL ELSE monthly_expires_at END,heartbeat_at=now() WHERE id=$1", [run.id, paid, monthly]);
+    await client.query("UPDATE app.billing_wallet SET held_paid_points=held_paid_points-$2,held_monthly_points=held_monthly_points-$3,monthly_points=monthly_points-$4,updated_at=now() WHERE user_id=$1", [run.user_id, paid, monthly, expired]);
+    if (expired) await client.query(`INSERT INTO app.billing_ledger (id,user_id,kind,points_delta,paid_points_after,monthly_points_after,reference_type,reference_id,idempotency_key)
+      VALUES ($1,$2,'monthly_expiry',$3,$4,$5,'agent_run',$6,$7)`, [randomUUID(), run.user_id, -expired, wallet.paid_points, sumPoints(wallet.monthly_points, -expired), run.id, `agent_tool:expiry:${id}`]);
   });
 }
 export async function markRunDelivered(id: string) {
