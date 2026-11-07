@@ -1,9 +1,21 @@
-import { expect, test } from "@playwright/test";
-import { mockAnonymousWebsiteSession, mockApis, sidebarNavigation } from "./production-readiness.fixture";
+import { expect, test, type Page } from "@playwright/test";
+import { mockAnonymousWebsiteSession, mockSignedInWebsiteSession, mockApis, sidebarNavigation } from "./production-readiness.fixture";
+
+async function acknowledgePaymentNotice(page: Page) {
+  const dialog = page.getByRole("dialog", { name: "赞助付款须知", exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("我们正在排查偶发的付款后积分未到账问题");
+  await expect(dialog).toContainText("深表歉意");
+  await expect(dialog).toContainText("通过本站按钮跳转爱发电");
+  await expect(dialog).toContainText("本网站登录的邮箱");
+  await expect(dialog).toContainText("通过爱发电后台联系客服");
+  await dialog.getByRole("button", { name: "我已了解", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+}
 
 test("pending orders expire and can be removed while paid history remains", async ({ page }) => {
-  await mockAnonymousWebsiteSession(page);
   await mockApis(page);
+  await mockSignedInWebsiteSession(page);
   const now = Date.now();
   const order = (id: string, status: string, age: number) => ({ id, status, productId: "points_10", amountFen: 1000, points: 110, paymentUrl: null, paidAt: null, createdAt: new Date(now - age).toISOString() });
   let orders = [order("recent", "pending", 0), order("another", "pending", 0), order("expired", "pending", 4 * 86400000), order("paid", "paid", 5 * 86400000)];
@@ -23,6 +35,11 @@ test("pending orders expire and can be removed while paid history remains", asyn
     return route.fulfill({ json: { data: { order: { status: "pending" } } } });
   });
   await page.goto("/billing");
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 45_000 });
+  await expect(page.locator("[data-billing-prototype]")).toBeVisible({ timeout: 15_000 });
+  await acknowledgePaymentNotice(page);
+  await page.getByRole("button", { name: "赞助付款须知", exact: true }).click();
+  await acknowledgePaymentNotice(page);
   const section = page.locator("[data-billing-orders]");
   const heading = section.getByRole("heading", { name: "最近订单", exact: true });
   const clearButton = heading.locator("..").getByRole("button", { name: "一键清空未支付订单", exact: true });
@@ -39,8 +56,86 @@ test("pending orders expire and can be removed while paid history remains", asyn
   await expect(section.locator("li")).toHaveCount(1);
   await expect(section).toContainText("已付款 · 已到账");
   await page.reload();
+  await acknowledgePaymentNotice(page);
   await expect(section.locator("li")).toHaveCount(1);
   await expect(section.getByRole("button", { name: "一键清空未支付订单", exact: true })).toBeDisabled();
+});
+
+test("pending orders expose recovery links and refresh the full billing list", async ({ page }) => {
+  await mockApis(page);
+  await mockSignedInWebsiteSession(page);
+  const createdAt = new Date().toISOString();
+  const order = (id: string, status: string, amountFen: number, paymentUrl: string | null) => ({
+    id, status, productId: id === "older" ? "points_10" : "points_20", amountFen, points: amountFen / 10,
+    paymentUrl, paidAt: status === "paid" ? createdAt : null, createdAt,
+  });
+  let billingReads = 0;
+  let detailReads = 0;
+  let paidOrderVisible = false;
+  await page.route("**/api/billing/orders/**", route => {
+    detailReads += 1;
+    return route.fulfill({ json: { data: { order: { status: "paid" } } } });
+  });
+  await page.route("**/api/billing", route => {
+    expect(route.request().method()).toBe("GET");
+    billingReads += 1;
+    return route.fulfill({ json: { data: {
+      wallet: { totalPoints: 0, paidPoints: 0, monthlyPoints: 0, monthlyExpiresAt: null },
+      products: [
+        { id: "points_10", name: "10 元积分包", amountFen: 1000, points: 100, description: "100 积分", kind: "topup", checkoutConfigured: true },
+        { id: "points_20", name: "20 元积分包", amountFen: 2000, points: 200, description: "200 积分", kind: "topup", checkoutConfigured: true },
+      ],
+      orders: [
+        order("newer", "pending", 2000, "https://pay.example/newer"),
+        order("older", paidOrderVisible ? "paid" : "pending", 1000, "https://pay.example/older"),
+      ],
+      ledger: [], usage: [],
+    } } });
+  });
+
+  await page.goto("/billing");
+  await expect(page.locator("[data-billing-prototype]")).toBeVisible({ timeout: 15_000 });
+  await acknowledgePaymentNotice(page);
+  const section = page.locator("[data-billing-orders]");
+  const recoveryLinks = section.locator("[data-billing-payment-recovery]");
+  await expect(recoveryLinks).toHaveCount(2);
+  await expect(section.locator('[data-billing-order-id="older"]').locator("[data-billing-payment-recovery]"))
+    .toHaveAttribute("href", "https://pay.example/older");
+  const readsBeforeRefresh = billingReads;
+  paidOrderVisible = true;
+  await page.clock.install();
+  await page.clock.fastForward(5_100);
+  await expect.poll(() => billingReads).toBeGreaterThan(readsBeforeRefresh);
+  await expect(section.locator('[data-billing-order-id="older"]')).toContainText("已付款 · 已到账");
+  await expect(recoveryLinks).toHaveCount(1);
+  expect(detailReads).toBe(0);
+});
+
+test("order creation keeps a recovery link when window.open returns null", async ({ page }) => {
+  await mockApis(page);
+  await mockSignedInWebsiteSession(page);
+  await page.addInitScript(() => { window.open = () => null; });
+  let orders: Array<Record<string, unknown>> = [];
+  const createdAt = new Date().toISOString();
+  await page.route("**/api/billing", route => {
+    if (route.request().method() === "POST") {
+      orders = [{ id: "created", productId: "points_10", status: "pending", amountFen: 1000, points: 100, paymentUrl: "https://pay.example/created", paidAt: null, createdAt }];
+      return route.fulfill({ json: { data: { paymentUrl: "https://pay.example/created", customOrderId: "custom-created" } } });
+    }
+    return route.fulfill({ json: { data: {
+      wallet: { totalPoints: 0, paidPoints: 0, monthlyPoints: 0, monthlyExpiresAt: null },
+      products: [{ id: "points_10", name: "10 元积分包", amountFen: 1000, points: 100, description: "100 积分", kind: "topup", checkoutConfigured: true }],
+      orders, ledger: [], usage: [],
+    } } });
+  });
+
+  await page.goto("/billing");
+  await acknowledgePaymentNotice(page);
+  await page.getByRole("button", { name: "前往爱发电赞助", exact: true }).click();
+  await expect(page.getByRole("status").first()).toContainText("在当前页面的订单中使用“恢复支付”链接继续付款");
+  const recoveryLink = page.locator("[data-billing-payment-recovery]");
+  await expect(recoveryLink).toHaveAttribute("href", "https://pay.example/created");
+  await expect(recoveryLink).toHaveAttribute("target", "_blank");
 });
 
 for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 }]) {
@@ -69,7 +164,7 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     await page.goto("/account-health");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     if (viewport.width < 768) await page.locator("[data-app-topbar]").getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
-    const navigation = page.getByRole("menuitem", { name: "付费计划", exact: true });
+    const navigation = page.getByRole("menuitem", { name: "赞助网站", exact: true });
     await (await sidebarNavigation(page, "账号管理")).click();
     await expect(page.locator("[data-sidebar-account-menu]")).toHaveCount(0);
     const loginDialog = page.getByRole("dialog", { name: "登录网站账号", exact: true });
@@ -89,13 +184,14 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     await expect(page).toHaveURL(/\/account-health$/);
     expect(billingRequests).toBe(0);
     if (viewport.width < 768) await page.locator("[data-app-topbar]").getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
-    await (await sidebarNavigation(page, "付费计划")).click();
+    await (await sidebarNavigation(page, "赞助网站")).click();
     await expect(page).toHaveURL(/\/billing$/);
-    await expect(page.getByRole("heading", { name: "付费计划", exact: true })).toBeVisible();
+    await acknowledgePaymentNotice(page);
+    await expect(page.getByRole("heading", { name: "赞助网站运营", exact: true })).toBeVisible();
     await expect(page.locator("[data-billing-prototype]")).toBeVisible();
-    await expect(page.getByRole("heading", { name: "10 元积分包" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "支持网站运营" })).toBeVisible();
     if (viewport.width >= 768) {
-      await sidebarNavigation(page, "付费计划");
+      await sidebarNavigation(page, "赞助网站");
       await expect(navigation).toHaveAttribute("aria-current", "page");
       await page.keyboard.press("Escape");
     }
@@ -103,13 +199,15 @@ for (const viewport of [{ width: 1440, height: 900 }, { width: 375, height: 812 
     await expect(page.getByRole("heading", { name: "积分账本", exact: true })).toBeInViewport();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
     await page.reload();
+    await acknowledgePaymentNotice(page);
     await expect(page.locator("[data-billing-prototype]")).toBeVisible();
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     await page.goBack();
     await expect(page.locator("[data-account-health-page]")).toBeVisible();
     if (viewport.width < 768) await page.locator("[data-app-topbar]").getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
-    await (await sidebarNavigation(page, "付费计划")).click();
+    await (await sidebarNavigation(page, "赞助网站")).click();
     await expect(page).toHaveURL(/\/billing$/);
+    await acknowledgePaymentNotice(page);
     await expect(page.getByRole("dialog")).toHaveCount(0);
   });
 }
@@ -121,7 +219,8 @@ test("payment plans provide an account login entry when signed out", async ({ pa
     status: 401, json: { error: { message: "请先登录网站账号。" } },
   }));
   await page.goto("/billing");
-  await expect(page.getByRole("heading", { name: "付费计划", exact: true })).toBeVisible();
+  await acknowledgePaymentNotice(page);
+  await expect(page.getByRole("heading", { name: "赞助网站运营", exact: true })).toBeVisible();
   await expect(page.getByText("请先登录网站账号。", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "登录网站账号", exact: true }).last().click();
   await expect(page.getByRole("dialog", { name: "登录网站账号", exact: true })).toBeVisible();
@@ -150,6 +249,7 @@ for (const width of [1440, 375]) {
     });
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/billing");
+    await acknowledgePaymentNotice(page);
     const root = page.locator("[data-billing-prototype]");
     await expect(root).toBeVisible();
     const orders = page.locator("[data-billing-orders]");
@@ -170,7 +270,7 @@ for (const width of [1440, 375]) {
     await usage.locator("summary").press("Enter");
     await expect(usage.getByText("结算状态", { exact: true })).not.toBeVisible();
     const ledger = page.locator("[data-billing-ledger]");
-    await expect(ledger).toContainText("充值到账");
+    await expect(ledger).toContainText("赞助积分到账");
     await expect(ledger).toContainText("+165");
     await expect(ledger).toContainText("对话用量结算");
     await expect(ledger).toContainText("−2");
@@ -185,7 +285,7 @@ for (const width of [1440, 375]) {
     await expect(clearOrders).toBeDisabled();
     await expect(clearOrders).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     await expect(clearOrders).toHaveCSS("border-width", "0px");
-    const pillButtons = root.locator('[data-slot="button"]:not([data-setup-action])').filter({ hasNotText: /^一键清空未支付订单$/ });
+    const pillButtons = root.locator('[data-slot="button"]:not([data-setup-action])').filter({ hasNotText: /^(一键清空未支付订单|赞助付款须知)$/ });
     const buttonsArePills = await pillButtons.evaluateAll((buttons) => buttons.length > 0 && buttons.every((button) => parseFloat(getComputedStyle(button).borderTopLeftRadius) >= button.getBoundingClientRect().height / 2));
     expect(buttonsArePills).toBe(true);
     const code = page.getByRole("textbox", { name: "积分兑换码" });

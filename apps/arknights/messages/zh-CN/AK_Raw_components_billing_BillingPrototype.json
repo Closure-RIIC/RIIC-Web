@@ -1,6 +1,6 @@
 {
   "loadingCreditAccount": "正在加载积分账户……",
-  "paidPlansApplyOnlyToAssistantConversationsSolvingSchedules": "付费计划仅用于助理对话功能，基建计算器的求解功能保持免费。",
+  "paidPlansApplyOnlyToAssistantConversationsSolvingSchedules": "你的赞助将用于网站运营与维护。作为感谢，你将获得可用于助理对话的站内积分；基建计算器求解始终免费。基建求解、养成计算等网站所有功能始终免费。",
   "backToAssistant": "返回助理<part1></part1>",
   "creditBalance": "积分余额",
   "availableCredits": "可用积分",
@@ -10,9 +10,9 @@
   "noExpiry": "长期有效",
   "monthlyPassCredits": "月卡积分",
   "noActiveMonthlyPass": "暂无有效月卡",
-  "creditPackages": "积分套餐",
+  "creditPackages": "赞助档位",
   "creating": "创建中…",
-  "buyOnAfdian": "爱发电购买",
+  "buyOnAfdian": "前往爱发电赞助",
   "paymentLinkNotConfigured": "待配置支付链接",
   "redeeming": "兑换中…",
   "redeemAndAddCredits": "核销并入账",
@@ -21,7 +21,7 @@
   "confirmClearingAllUnpaidOrders": "确认清空所有未支付订单",
   "clearAllUnpaidOrders": "一键清空未支付订单",
   "latest6UnpaidOrdersAreHiddenAfter3Days": "最近 6 笔 · 待支付订单 3 天后自动隐藏",
-  "noOrdersToShowCreditPackagePurchasesWillAppear": "暂无可显示的订单，购买积分套餐后会显示在这里。",
+  "noOrdersToShowCreditPackagePurchasesWillAppear": "暂无可显示的订单，从本页发起赞助后会显示在这里。",
   "credits": "<part1></part1> 积分<part2></part2><part3></part3>",
   "yourLatestOrderIsAwaitingPayment": "最近一笔订单待支付",
   "saving": "处理中…",
@@ -37,6 +37,6 @@
   "unknownStatus": "未知状态",
   "creditLedger": "积分账本",
   "latest8CreditsReceivedAndSpent": "最近 8 笔 · 积分收支",
-  "creditChangesWillAppearAfterYouTopUpOr": "充值或使用助理后，积分变动会显示在这里。",
+  "creditChangesWillAppearAfterYouTopUpOr": "赞助积分到账或使用助理后，积分变动会显示在这里。",
   "creditChange": "积分变动"
 }

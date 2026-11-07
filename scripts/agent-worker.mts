@@ -4,11 +4,16 @@ async function main() {
   const { maintainAgentGateway, recordGatewayMaintenanceFailure } = await import("../apps/arknights/src/server/agent/gateway-maintenance.ts");
   const { getDatabasePool } = await import("@riic/platform-server/db");
   const { recoverAgentRuns } = await import("../apps/arknights/src/server/billing/agent-accounting.ts");
+  const { reconcileAfdianPayments } = await import("../apps/arknights/src/server/billing/reconciliation.ts");
   let stopped = false;
   process.once("SIGTERM", () => { stopped = true; }); process.once("SIGINT", () => { stopped = true; });
   while (!stopped) {
     try { const result = await maintainAgentGateway(); if (result.imported || result.recovered) console.log(JSON.stringify({event:"agent_maintenance",...result})); }
     catch { console.error(JSON.stringify({event:"agent_maintenance_failed"})); await recordGatewayMaintenanceFailure().catch(()=>{}); await recoverAgentRuns().catch(()=>{}); }
+    if (!stopped) {
+      try { const result = await reconcileAfdianPayments(); if (result.checked) console.log(JSON.stringify({ event: "afdian_reconciliation", ...result })); }
+      catch { console.error(JSON.stringify({ event: "afdian_reconciliation_failed" })); }
+    }
     for (let i=0;i<30&&!stopped;i++) await new Promise(resolve=>setTimeout(resolve,1000));
   }
   await getDatabasePool().end();

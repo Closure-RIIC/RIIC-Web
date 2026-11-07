@@ -20,8 +20,9 @@ test("payment callback uses only verified provider data and rejects forged payme
     failureResponse: () => Response.json({}, { status: 403 }),
   } });
   await t.mock.module(new URL("./afdian.ts", import.meta.url), { namedExports: { findAfdianOrderByOutTradeNo: async () => { queries++; return verified; } } });
-  await t.mock.module(new URL("./service.ts", import.meta.url), { namedExports: {
-    fulfillBillingOrder: async (input: unknown) => { writes.push(input); return { idempotent: false }; },
+  await t.mock.module(new URL("./payments.ts", import.meta.url), { namedExports: {
+    afdianPaymentFacts: (order: AfdianOrder) => ({ customOrderId: order.custom_order_id ?? null }),
+    processAfdianPayment: async (order: AfdianOrder) => { writes.push(order); return { accepted: order.status === 2, recorded: true }; },
   } });
   process.env.AFDIAN_WEBHOOK_SECRET = "";
   const { POST } = await import("../../app/api/billing/webhooks/afdian/route.ts");
@@ -53,11 +54,14 @@ test("payment callback uses only verified provider data and rejects forged payme
   assert.equal((await (await POST(request())).json()).data.accepted, false);
   delete verified.status;
   assert.equal((await (await POST(request())).json()).data.accepted, false);
-  assert.equal(writes.length, 0);
+  assert.equal(writes.length, 2, "verified unsuccessful notifications are recorded but not fulfilled");
   verified.status = 2;
   assert.equal((await (await POST(request())).json()).data.accepted, true);
-  assert.deepEqual(writes, [{ customOrderId: "riic-real", providerOrderId: "real-trade", amountFen: 100 }]);
+  assert.deepEqual(writes.at(-1), verified, "only authenticated API data reaches payment persistence");
+  verified = { out_trade_no: "real-trade", status: 2, total_amount: "5.00", remark: "DIAG-test" };
+  assert.equal((await (await POST(request())).json()).data.recorded, true);
+  assert.deepEqual(writes.at(-1), verified, "paid orders without a reference must also be persisted");
   process.env.AFDIAN_WEBHOOK_SECRET = "test-only-secret";
   assert.equal((await POST(request())).status, 403);
-  assert.equal(writes.length, 1);
+  assert.equal(writes.length, 4);
 });

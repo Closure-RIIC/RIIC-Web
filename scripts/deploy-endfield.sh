@@ -83,7 +83,7 @@ transfer_log="$RUNNER_TEMP/endfield-transfer-stats.log"
 # The disposable cache is separate from releases/current. No hard links or
 # inplace writes: interruption cannot change any running or rollback release.
 printf -v rsync_shell '%q ' ssh "${options[@]}"
-timeout --kill-after=10s 3600s rsync --recursive --times --perms --checksum --compress \
+timeout --kill-after=10s 3600s rsync --recursive --times --perms --checksum --compress --fuzzy \
   --delete-delay --partial --no-owner --no-group --stats \
   -e "$rsync_shell" -- "$release_tree/" "$target:$cache/" | tee "$transfer_log"
 timeout --kill-after=10s 900s ssh "${options[@]}" "$target" \
