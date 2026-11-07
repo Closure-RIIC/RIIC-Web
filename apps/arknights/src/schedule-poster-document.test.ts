@@ -34,18 +34,98 @@ test("editable work file preserves shift products, efficiency, training roles an
   const persisted = loadManualScheduleDraft({ getItem: () => JSON.stringify(edited), setItem: () => {} });
   assert.deepEqual(persisted?.shifts[1]!.rooms.trade_1?.product, draft.shifts[1]!.rooms.trade_1?.product);
 });
-test("downloaded schedule files retain exact training for assigned operators only", () => {
+test("downloaded schedule files retain the complete Box and exact training, including unassigned and unowned operators", () => {
   const draft = createManualScheduleDraft([24]);
   draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", "巫恋", null] };
   const training = [
     { id: "char_002_amiya", name: "阿米娅", elite: 2, level: 73, own: true, potential: 4, rarity: 5 },
     { id: "char_254_vodfox", name: "巫恋", elite: 1, level: 42, own: true, potential: 2, rarity: 5 },
-    { id: "char_348_ceylon", name: "锡兰", elite: 2, level: 60, own: true, potential: 1, rarity: 5 },
+    { id: "char_348_ceylon", name: "锡兰", elite: 1, level: 26, own: false, potential: 1, rarity: 5 },
   ];
   const downloaded = readPosterFile(JSON.stringify(posterDataOnly(createPosterDocument(layout, draft, training))));
-  assert.deepEqual(downloaded.operators, training.slice(0, 2));
-  assert.deepEqual(posterOperators(downloaded), training.slice(0, 2));
+  assert.deepEqual(downloaded.operators, training);
+  assert.deepEqual(posterOperators(downloaded), training);
+  downloaded.operators[0]!.level = 1;
+  assert.equal(training[0]!.level, 73);
   assert.equal(training.length, 3);
+});
+
+test("a complete catalog Box survives creation, inheritance, clearing assignments and file round trips", () => {
+  const box = OPERATOR_CATALOG.map(operator => ({ ...defaultPosterOperator(operator.name)!, own: operator.rarity > 2 }));
+  assert.ok(box.length > 200);
+  const draft = createManualScheduleDraft([24]);
+  draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", null, null] };
+  const original = structuredClone(box);
+  const created = createPosterDocument(layout, draft, box);
+  assert.deepEqual(created.operators, box);
+  const inherited = readPosterFile(JSON.stringify(posterDataOnly(created)));
+  inherited.operators = posterOperators(inherited);
+  inherited.draft = createManualScheduleDraft([24]);
+  const exported = readPosterFile(JSON.stringify(posterDataOnly(inherited)));
+  assert.deepEqual(exported.operators, original);
+  assert.deepEqual(box, original);
+});
+
+test("complete Boxes retain unowned MAA progression placeholders while owned progression stays validated", () => {
+  const owned = defaultPosterOperator("阿米娅")!;
+  const placeholder = { ...defaultPosterOperator("锡兰")!, own: false, elite: -1, level: 0, potential: 0 };
+  const doc = createPosterDocument(layout, createManualScheduleDraft([24]), [owned, placeholder]);
+  const restored = readPosterFile(JSON.stringify(posterDataOnly(doc)));
+  assert.deepEqual(posterOperators(restored), [owned, placeholder]);
+  const invalid = structuredClone(doc);
+  invalid.operators[1]!.own = true;
+  assert.throws(() => readPosterFile(JSON.stringify(invalid)), /operators/);
+});
+
+test("switching a copied schedule to a new Box keeps its assignments and uses new training before author references", () => {
+  const draft = createManualScheduleDraft([24]);
+  draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", "巫恋", null] };
+  const author = [
+    { ...defaultPosterOperator("阿米娅")!, elite: 1, level: 42, potential: 2 },
+    { ...defaultPosterOperator("巫恋")!, elite: 1, level: 36 },
+    defaultPosterOperator("银灰")!,
+  ];
+  const personal = [{ ...author[0]!, elite: 2, level: 73, potential: 4 }, defaultPosterOperator("锡兰")!];
+  const document = createPosterDocument(layout, draft, personal);
+  const currentBox = posterOperators(document, author);
+  assert.deepEqual(currentBox, [...personal, { ...author[1]!, own: false }]);
+  assert.deepEqual(document.draft, draft);
+  assert.deepEqual(document.operators, personal);
+  assert.equal(currentBox.some(operator => operator.name === "银灰"), false);
+  const restored = readPosterFile(JSON.stringify(posterDataOnly({ ...document, operators: currentBox })));
+  assert.deepEqual(posterOperators(restored), currentBox);
+  assert.deepEqual(posterDraftForManual(restored).shifts[0]!.rooms.trade_1?.operators, ["阿米娅", "巫恋", null]);
+});
+
+test("switching Box and restoring keeps a Fiammetta target that is not assigned to a room", () => {
+  const draft = createManualScheduleDraft([24]);
+  draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", null, null] };
+  draft.fiammettaEnabled = true;
+  draft.shifts[0]!.fiammettaTarget = "银灰";
+  const author = [defaultPosterOperator("阿米娅")!, defaultPosterOperator("银灰")!, defaultPosterOperator("菲亚梅塔")!];
+  const personal = [{ ...author[0]!, elite: 1, level: 42 }];
+  const document = createPosterDocument(layout, draft, personal);
+  const operators = posterOperators(document, author);
+  const restored = readPosterFile(JSON.stringify(posterDataOnly({ ...document, operators })));
+  const manual = reconcileManualScheduleDraft(posterDraftForManual(restored), layout, personal);
+  assert.deepEqual(manual.shifts[0]!.rooms.trade_1?.operators, ["阿米娅", null, null]);
+  assert.equal(manual.fiammettaEnabled, true);
+  assert.equal(manual.shifts[0]!.fiammettaTarget, "银灰");
+  assert.deepEqual(operators, [...personal, ...author.slice(1).map(operator => ({ ...operator, own: false }))]);
+});
+
+test("legacy schedules supplement missing references without changing existing Box records", () => {
+  const draft = createManualScheduleDraft([24]);
+  draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", "巫恋", null] };
+  draft.shifts[0]!.fiammettaTarget = "银灰";
+  draft.fiammettaEnabled = true;
+  const entry = { ...defaultPosterOperator("阿米娅")!, elite: 1, level: 42, own: false };
+  const doc = createPosterDocument(layout, draft, [entry]);
+  doc.presentation.dormHangerOperators[0] = "锡兰";
+  const operators = posterOperators(doc);
+  assert.deepEqual(operators[0], entry);
+  assert.deepEqual(new Set(operators.map(operator => operator.name)), new Set(["阿米娅", "巫恋", "银灰", "菲亚梅塔", "锡兰"]));
+  assert.deepEqual(doc.operators, [entry]);
 });
 test("external operators default to the highest training permitted by their rarity", () => {
   const maximums = [[0, 30], [0, 30], [1, 55], [2, 70], [2, 80], [2, 90]];

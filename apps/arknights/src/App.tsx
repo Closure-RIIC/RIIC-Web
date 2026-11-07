@@ -570,7 +570,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }, [publishAgentPageContext]);
   const effectiveFiammettaEnabled = effectiveFiammettaSetting(operbox, rotationProfile, fiammettaEnabled);
   const effectiveManualFiammettaEnabled = Boolean(
-    manualFiammettaEnabled && (manualPosterBox ?? operbox)?.some((operator) => operator.own && operator.name === "菲亚梅塔")
+    manualFiammettaEnabled && (manualPosterBox !== null || operbox?.some((operator) => operator.own && operator.name === "菲亚梅塔"))
   );
   const setupConfigurationKey = useMemo(() => JSON.stringify({
     layout,
@@ -1144,6 +1144,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       const { readOperboxFile } = await import("@riic/arknights-domain/operbox");
       const entries = await readOperboxFile(file);
       signal?.throwIfAborted();
+      if (setupMode === "manual" && manualPosterBox) {
+        setManualPosterBox(entries);
+        setInputError(null);
+        return;
+      }
       setOperbox(entries);
       setFileName(file.name);
       setBoxSource("maa");
@@ -1203,6 +1208,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     try {
       const { readOperboxText } = await import("@riic/arknights-domain/operbox");
       const entries = await readOperboxText(maaPaste);
+      if (setupMode === "manual" && manualPosterBox) {
+        setManualPosterBox(entries);
+        return true;
+      }
       setOperbox(entries);
       setFileName(intl("App.pastedArknightsOperboxExportJson"));
       setBoxSource("maa");
@@ -1217,6 +1226,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   function handleManualBox(entries: OperBoxEntry[]) {
     setInputError(null);
+    if (setupMode === "manual" && manualPosterBox) {
+      setManualPosterBox(normalizeOperboxEntries(entries));
+      return;
+    }
     setOperbox(normalizeOperboxEntries(entries));
     setFileName(intl("App.manuallySelectedBox"));
     setBoxSource("maa");
@@ -2105,7 +2118,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   };
 
   function useSklandSnapshotFromSetup() {
-    if (sklandScheduleSnapshot) applySklandSnapshot(sklandScheduleSnapshot);
+    if (!sklandScheduleSnapshot) return;
+    if (setupMode === "manual" && manualPosterBox) {
+      setManualPosterBox(normalizeOperboxEntries(sklandScheduleSnapshot.operbox));
+    } else applySklandSnapshot(sklandScheduleSnapshot);
   }
 
   function handleSklandAuthenticated(session: SklandSessionData) {
@@ -2735,7 +2751,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         onMaaFile={handleFile}
         onMaaPaste={handleMaaPaste}
         workingCopy={setupMode === "manual" && Boolean(manualPosterBox)}
-        onManualBox={setupMode === "manual" && manualPosterBox ? setManualPosterBox : handleManualBox}
+        onManualBox={handleManualBox}
         onRequireWebsiteAccount={requireWebsiteAccountFromSetup}
         presets={PRESETS}
         preset={preset}
