@@ -634,9 +634,33 @@ export const billingOrder = appSchema.table("billing_order", {
 }, (table) => [
   uniqueIndex("billing_order_custom_order_uidx").on(table.customOrderId),
   uniqueIndex("billing_order_idempotency_uidx").on(table.userId, table.idempotencyKey),
+  uniqueIndex("billing_order_provider_trade_uidx").on(table.provider, table.providerOrderId),
   index("billing_order_user_created_idx").on(table.userId, table.createdAt),
   index("billing_order_status_created_idx").on(table.status, table.createdAt),
 ]);
+
+// Verified provider payments survive missing local references and callback retries.
+export const billingPayment = appSchema.table("billing_payment", {
+  id: text("id").primaryKey(),
+  provider: text("provider").notNull(),
+  providerOrderId: text("provider_order_id").notNull(),
+  customOrderId: text("custom_order_id"),
+  amountFen: integer("amount_fen"),
+  providerStatus: integer("provider_status"),
+  status: text("status").notNull().default("pending"),
+  orderId: text("order_id").references(() => billingOrder.id, { onDelete: "set null" }),
+  evidence: jsonb("evidence").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [uniqueIndex("billing_payment_provider_trade_uidx").on(table.provider, table.providerOrderId),
+  index("billing_payment_status_created_idx").on(table.status, table.createdAt)]);
+
+export const billingReconciliation = appSchema.table("billing_reconciliation", {
+  provider: text("provider").primaryKey(),
+  nextPage: integer("next_page").notNull().default(1),
+  nextRunAt: timestamp("next_run_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const billingLedger = appSchema.table("billing_ledger", {
   id: text("id").primaryKey(),

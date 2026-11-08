@@ -19,8 +19,8 @@ test("release metadata covers every displayed operator exactly once", async () =
 test("skills sort by first release, including later event rewards and non-sequential character IDs", () => {
   const originalOrder = catalog.map(op => op.id);
   const sorted = [...catalog].sort(compareOperatorRelease);
-  assert.deepEqual(sorted.slice(0, 10).map(op => op.id), [
-    "chr_0036_jsspsi", "chr_0038_purrche", "chr_0034_typhoea", "chr_0035_liino",
+  assert.deepEqual(sorted.slice(0, 11).map(op => op.id), [
+    "chr_0037_minghe", "chr_0036_jsspsi", "chr_0038_purrche", "chr_0034_typhoea", "chr_0035_liino",
     "chr_0032_lizhiyan", "chr_0033_camille", "chr_0031_mifu", "chr_0030_zhuangfy",
     "chr_0028_wulfa", "chr_0027_tangtang",
   ]);

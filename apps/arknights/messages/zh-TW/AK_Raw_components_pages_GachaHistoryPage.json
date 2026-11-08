@@ -64,5 +64,15 @@
   "savedPulls": "已儲存尋訪",
   "sixStars": "六星幹員",
   "lowerStars": "五星 / 四星 / 三星",
-  "equivalent": "換算"
+  "equivalent": "換算",
+  "captureScreenshot": "擷取一屏",
+  "capturingScreenshot": "正在截圖",
+  "saveScreenshot": "儲存截圖",
+  "screenshotDescription": "目前可見頁面已產生圖片，可儲存或分享。",
+  "screenshotPreview": "目前螢幕的尋訪紀錄截圖",
+  "downloadScreenshot": "下載 PNG",
+  "shareScreenshot": "系統分享",
+  "screenshotFailed": "無法產生截圖，請關閉後重試。",
+  "screenshotShareFailed": "無法開啟系統分享，請長按圖片儲存或下載 PNG。",
+  "authorizationRequired": "雲端紀錄仍然保留，重新授權後可繼續重新整理。"
 }

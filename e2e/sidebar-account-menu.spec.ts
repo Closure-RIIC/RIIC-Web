@@ -44,15 +44,15 @@ for (const width of [1440, 375]) {
     await expect(name).toHaveCSS("text-overflow", "ellipsis");
     expect(await name.evaluate(node => node.scrollWidth > node.clientWidth)).toBe(true);
     await expect(footer.getByRole("link", { name: "帮助文档", exact: true })).toHaveAttribute("href", "/docs");
-    await expect(page.getByText("我的角色", { exact: true })).toBeVisible();
+    await expect(page.getByText("我的账号", { exact: true })).toBeVisible();
     const skland = page.locator('[data-primary-navigation-page="skland"]');
     await expect(skland).toHaveAccessibleName("森空岛同步");
     await expect(skland.locator("..").locator("xpath=following-sibling::li[1]")).toContainText("抽卡分析");
     await trigger.click();
     const menu = page.locator("[data-sidebar-account-menu]");
-    await expect(menu.getByRole("menuitem")).toHaveText(["付费计划", "更新日志", "退出登录"]);
+    await expect(menu.getByRole("menuitem")).toHaveText(["赞助网站", "更新日志", "退出登录"]);
     await expect(menu.getByRole("menuitem", { name: "更新日志" })).toHaveAttribute("href", "/changelog");
-    const billingItem = menu.getByRole("menuitem", { name: "付费计划", exact: true });
+    const billingItem = menu.getByRole("menuitem", { name: "赞助网站", exact: true });
     const changelogItem = menu.getByRole("menuitem", { name: "更新日志", exact: true });
     await expect(changelogItem).toHaveCSS("color", await skland.evaluate(node => getComputedStyle(node).color));
     await billingItem.hover();

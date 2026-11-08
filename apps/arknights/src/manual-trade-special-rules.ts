@@ -28,6 +28,8 @@ const NAMES = {
   closure: "可露希尔",
   shamare: "巫恋",
   tequila: "龙舌兰",
+  pepe: "佩佩",
+  uOfficial: "U-Official",
 } as const;
 
 const IDS = {
@@ -35,6 +37,8 @@ const IDS = {
   closure: "char_4228_closur",
   shamare: "char_254_vodfox",
   tequila: "char_486_takila",
+  pepe: "char_4058_pepe",
+  uOfficial: "char_4091_ulika",
   tailor: new Set([
     "char_252_bibeak",
     "char_214_kafka",
@@ -95,11 +99,15 @@ export function resolveManualSpecialTradeOutput(input: {
     return { orderMultiplier: 1, goldUnitOutputPerDay: 0 };
   }
   const level = input.level as 1 | 2 | 3;
-  const docus = input.members.find((member) => isMember(member, IDS.docus, NAMES.docus));
-  if (docus) {
-    const eliteTier = (docus.elite ?? 0) >= 2 ? "E2" : "E0/E1";
-    const output = DOCUS_OUTPUT[eliteTier === "E2" ? "e2" : "low"][level];
-    return anchoredOutput(level, `但书 ${eliteTier} 特殊订单`, output);
+
+  // 订单机制优先级（与 WASM的eval评估功能 一致，高 → 低）：
+  // 佩佩 > 可露希尔 > U-Official > 但书 / 龙舌兰。
+  // 佩佩与 U-Official 的产出规则尚未实现，按普通订单计算。
+  if (input.members.some((member) => isMember(member, IDS.pepe, NAMES.pepe))) {
+    return { orderMultiplier: 1, goldUnitOutputPerDay: 0 };
+  }
+  if (input.members.some((member) => isMember(member, IDS.uOfficial, NAMES.uOfficial))) {
+    return { orderMultiplier: 1, goldUnitOutputPerDay: 0 };
   }
 
   const closure = input.members.find((member) => isMember(member, IDS.closure, NAMES.closure));
@@ -107,9 +115,26 @@ export function resolveManualSpecialTradeOutput(input: {
     return anchoredOutput(level, "可露希尔 E2 特别订单", 12_000, 2_000);
   }
 
+  // 但书 E2 + 龙舌兰 E2 + 任意第三人（3 级站）：两者分别处理赤金数 ≥4 与 <4 的订单，可共存。
+  const docus = input.members.find((member) => isMember(member, IDS.docus, NAMES.docus));
+  const tequila = input.members.find((member) => isMember(member, IDS.tequila, NAMES.tequila));
+  if (
+    level === 3
+    && input.members.length >= 3
+    && docus && (docus.elite ?? 0) >= 2
+    && tequila && (tequila.elite ?? 0) >= 2
+  ) {
+    return anchoredOutput(level, "但书 E2 + 龙舌兰 E2 特殊订单", 14_771.57, 1_675.127);
+  }
+
+  if (docus) {
+    const eliteTier = (docus.elite ?? 0) >= 2 ? "E2" : "E0/E1";
+    const output = DOCUS_OUTPUT[eliteTier === "E2" ? "e2" : "low"][level];
+    return anchoredOutput(level, `但书 ${eliteTier} 特殊订单`, output);
+  }
+
   if (level !== 3) return { orderMultiplier: 1, goldUnitOutputPerDay: 0 };
   const shamare = input.members.find((member) => isMember(member, IDS.shamare, NAMES.shamare));
-  const tequila = input.members.find((member) => isMember(member, IDS.tequila, NAMES.tequila));
   if (!shamare || (shamare.elite ?? 0) < 2 || !tequila) {
     return { orderMultiplier: 1, goldUnitOutputPerDay: 0 };
   }

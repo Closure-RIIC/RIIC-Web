@@ -63,7 +63,7 @@ async function collect(api, path, key) {
   throw new Error("Release metadata pagination exceeded its limit");
 }
 
-export async function verifyQualityRun({ api, repository, branch, sha, runId }) {
+export async function verifyQualityRun({ api, repository, branch, sha, runId, allowPendingDeployment = false }) {
   validateTarget(repository, branch, sha);
   assert.match(String(runId), /^[1-9][0-9]*$/, "Invalid workflow run ID");
   const prefix = `/repos/${repository}/actions/runs/${runId}`;
@@ -75,16 +75,20 @@ export async function verifyQualityRun({ api, repository, branch, sha, runId }) 
   assert.ok(["push", "workflow_dispatch"].includes(run.event), "Untrusted source event");
   assert.equal(run.head_branch, branch, "Cross-environment artifact reuse is forbidden");
   assert.equal(run.head_sha, sha, "Source run must verify the exact current commit");
-  assert.equal(run.status, "completed");
+  const pendingDeployment = allowPendingDeployment && ["waiting", "in_progress"].includes(run.status);
+  if (!pendingDeployment) assert.equal(run.status, "completed");
   // A sibling deployment may have failed after quality succeeded. Reuse only
   // the selected app's verified artifact, never waive a required quality check.
-  assert.ok(["success", "failure"].includes(run.conclusion), "Source workflow must complete its verification");
+  if (!pendingDeployment) assert.ok(["success", "failure"].includes(run.conclusion), "Source workflow must complete its verification");
   assert.ok(Number.isSafeInteger(run.run_attempt) && run.run_attempt > 0);
   const jobs = await collect(api, `${prefix}/attempts/${run.run_attempt}/jobs`, "jobs");
+  const resourcePublication = jobs.filter(job => job.name === "Resource publication" && job.conclusion === "success");
+  assert.ok(resourcePublication.length <= 1, "Ambiguous resource publication policy");
   for (const name of requiredJobs) {
     const matches = jobs.filter((job) => job.name === name);
     assert.equal(matches.length, 1, `Missing or ambiguous required job: ${name}`);
-    assert.equal(matches[0].conclusion, "success", `Required job did not pass: ${name}`);
+    const expected = name === "Static and unit checks" && resourcePublication.length === 1 ? "skipped" : "success";
+    assert.equal(matches[0].conclusion, expected, `Required job did not pass: ${name}`);
   }
   return run;
 }

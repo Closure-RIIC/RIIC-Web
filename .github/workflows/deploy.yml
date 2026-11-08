@@ -229,6 +229,14 @@ jobs:
           printf '%s\n' "$DEPLOY_SSH_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/id_ed25519" "$HOME/.ssh/known_hosts"
 
+      - name: Open shared deployment SSH connection
+        if: steps.current.outputs.required == 'true' && inputs.application == 'arknights'
+        shell: bash
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: bash scripts/deploy-ssh.sh open
+
       - name: Verify installed deployment helper contract
         if: steps.current.outputs.required == 'true' && inputs.application == 'arknights'
         shell: bash
@@ -243,6 +251,7 @@ jobs:
             -o ConnectionAttempts=2
             -o ServerAliveInterval=15
             -o ServerAliveCountMax=3
+            -S "$DEPLOY_SSH_CONTROL_SOCKET" -o ControlMaster=no -o ProxyCommand=false
           )
 
           verify_helper() {
@@ -295,6 +304,7 @@ jobs:
           if [[ "$DEPLOYMENT_ENV" == "production" ]]; then
             test "$DEPLOY_APP_ROOT" = "/opt/arknights-infra"
             solver_sha256="$(timeout --kill-after=5s 30s ssh -o BatchMode=yes -o ConnectTimeout=15 \
+              -S "$DEPLOY_SSH_CONTROL_SOCKET" -o ControlMaster=no -o ProxyCommand=false \
               "${DEPLOY_SSH_USER}@${DEPLOY_HOST}" \
               "set -eu
                test -f '$DEPLOY_APP_ROOT/shared/bin/infra-cli.sha256'
@@ -304,6 +314,7 @@ jobs:
             # The root-owned helper validates ownership, the sidecar, the current
             # release/configuration, and the Worker's fingerprint before trusting it.
             timeout --kill-after=10s 60s ssh -o BatchMode=yes -o ConnectTimeout=15 \
+              -S "$DEPLOY_SSH_CONTROL_SOCKET" -o ControlMaster=no -o ProxyCommand=false \
               "${DEPLOY_SSH_USER}@${DEPLOY_HOST}" \
               "sudo -n /usr/local/sbin/arknights-infra-deploy --preflight \
                production '$DEPLOY_APP_ROOT' '$DEPLOY_EXPECTED_REPOSITORY' '$solver_sha256'"
@@ -329,6 +340,7 @@ jobs:
             -o ConnectionAttempts=2
             -o ServerAliveInterval=15
             -o ServerAliveCountMax=3
+            -S "$DEPLOY_SSH_CONTROL_SOCKET" -o ControlMaster=no -o ProxyCommand=false
           )
 
           test -f "$DEPLOY_LOCAL_ARCHIVE"
@@ -370,23 +382,30 @@ jobs:
              # Restore privacy only after validating the owned, non-symlink cache.
              chmod 700 -- \"\$remote_cache_path\"
              test \"\$(stat -c '%U:%a' -- \"\$remote_cache_path\")\" = \"\$(id -un):700\"
-             test -z \"\$(find \"\$remote_cache_path\" -mindepth 1 ! -type f ! -type d -print -quit)\""
+             test -z \"\$(find \"\$remote_cache_path\" -mindepth 1 ! -type f ! -type d -print -quit)\"
+             test -z \"\$(find \"\$remote_cache_path\" -type f -links +1 -print -quit)\""
 
+          transfer_started="$SECONDS"
+          transfer_log="$RUNNER_TEMP/arknights-transfer-stats.log"
+          # Keep renamed content-hashed assets until delta matching has finished.
+          # Atomic cache writes preserve fuzzy bases and never touch a live release.
           timeout --kill-after=10s 5400s rsync \
             --recursive \
             --times \
             --perms \
             --checksum \
             --compress \
+            --fuzzy \
             --delete-delay \
             --partial \
-            --inplace \
             --no-owner \
             --no-group \
             --info=progress2 \
             --stats \
             -e "ssh ${ssh_options[*]}" \
-            -- "$DEPLOY_ARTIFACT_ROOT/" "$ssh_target:$release_tree_cache/"
+            -- "$DEPLOY_ARTIFACT_ROOT/" "$ssh_target:$release_tree_cache/" | tee "$transfer_log"
+          transfer_seconds="$((SECONDS - transfer_started))"
+          assembly_started="$SECONDS"
 
           timeout --kill-after=10s 900s ssh "${ssh_options[@]}" "$ssh_target" \
             "set -eu
@@ -437,8 +456,12 @@ jobs:
             test "$remote_sha256" = "$DEPLOY_ARCHIVE_SHA256"
           }
           verify_remote_archive
-          printf 'archive transfer=rsync file-tree delta total_bytes=%s sha256=%s\n' \
-            "$DEPLOY_ARCHIVE_BYTES" "$DEPLOY_ARCHIVE_SHA256" >> "$GITHUB_STEP_SUMMARY"
+          {
+            printf '### Arknights incremental transfer\n\n'
+            printf 'Archive bytes: %s; rsync: %ss; assembly and verification: %ss; SHA-256: `%s`.\n\n' \
+              "$DEPLOY_ARCHIVE_BYTES" "$transfer_seconds" "$((SECONDS - assembly_started))" "$DEPLOY_ARCHIVE_SHA256"
+            sed -n '/^Literal data:/p; /^Matched data:/p; /^Total bytes sent:/p; /^Total bytes received:/p' "$transfer_log"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Recheck branch before switching the live release
         if: steps.current.outputs.required == 'true'
@@ -459,7 +482,8 @@ jobs:
           if [[ -n "$DEPLOY_PUBLIC_HEALTH_URL" ]]; then
             public_health_argument="@stdin"
           fi
-          printf '%s\n' "$DEPLOY_PUBLIC_HEALTH_URL" | ssh -o BatchMode=yes "${DEPLOY_SSH_USER}@${DEPLOY_HOST}" \
+          printf '%s\n' "$DEPLOY_PUBLIC_HEALTH_URL" | ssh -o BatchMode=yes \
+            -S "$DEPLOY_SSH_CONTROL_SOCKET" -o ControlMaster=no -o ProxyCommand=false "${DEPLOY_SSH_USER}@${DEPLOY_HOST}" \
             "sudo -n /usr/local/sbin/arknights-infra-deploy \
             '$DEPLOYMENT_ENV' \
             '$DEPLOY_SHA' \
@@ -504,6 +528,13 @@ jobs:
               *) echo "Refusing to remove unexpected artifact path: $DEPLOY_ARTIFACT_PARENT" >&2; exit 1 ;;
             esac
           fi
+
+      - name: Close shared deployment SSH connection
+        if: always() && inputs.application == 'arknights' && env.DEPLOY_SSH_CONTROL_SOCKET != ''
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+        run: bash scripts/deploy-ssh.sh close
 
       - name: Remove SSH credentials from the runner
         if: always()

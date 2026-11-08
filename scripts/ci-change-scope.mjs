@@ -28,15 +28,54 @@ const OPERATOR_DATA_FILES = new Set([
   "packages/arknights-domain/src/generated/arkntools/term-catalog.json",
   "packages/arknights-domain/src/generated/arkntools/source.json",
   "apps/arknights/src/generated/mastery-data.json",
+  "apps/arknights/src/generated/training-planner-data.json",
   "packages/arknights-domain/src/generated/gacha-up.json",
   "fixtures/operbox_full_e2.json",
+  "apps/arknights/src/generated/i18n/sources.json",
+  "apps/arknights/src/generated/i18n/operator-aliases.json",
+  "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json",
+  "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json",
+  "apps/arknights/src/generated/i18n/en/ArknightsGameData.json",
+  "packages/endfield-data/catalog.json",
+  "packages/endfield-data/metadata.json",
+  "packages/endfield-data/sources.json",
+  "packages/endfield-data/operator-releases.ts",
+  "packages/endfield-data/messages/zh-CN/EndfieldGameData.json",
+  "packages/endfield-data/messages/zh-TW/EndfieldGameData.json",
+  "packages/endfield-data/messages/en/EndfieldGameData.json",
+  "packages/endfield-solver/data/ship-data.json",
+]);
+
+// Reviewed resource updater/publication infrastructure may accompany a data update.
+// This is an exact list: unrelated application code, dependencies and CI files stay on the full path.
+const RESOURCE_PUBLICATION_SUPPORT = new Set([
+  "scripts/endfield-upstream.mjs",
+  "scripts/sync-endfield-display-data.mjs",
+  "scripts/sync-endfield-solver-operators.mjs",
+  "packages/endfield-data/README.md",
+  "packages/endfield-solver/README.md",
+  "packages/endfield-data/operator-releases.test.mjs",
+  "packages/endfield-solver/operator-update.test.mjs",
+  "packages/endfield-solver/solver.test.mjs",
+  "scripts/ci-change-scope.mjs",
+  "scripts/ci-change-scope.test.mjs",
+  "scripts/app-release-plan.mjs",
+  "scripts/app-release-plan.test.mjs",
+  "scripts/release-provenance.mjs",
+  "scripts/release-provenance.test.mjs",
+  "scripts/build-tooling.test.mjs",
+  "scripts/ci-performance.test.mjs",
+  ".github/workflows/frontend-quality.yml",
+  ".github/workflows/workspace-packages.yml",
+  ".github/workflows/sync-arkntools-assets.yml",
 ]);
 
 function isOperatorData(filePath) {
   return OPERATOR_DATA_FILES.has(filePath)
     || /^apps\/arknights\/public\/images\/operator-portraits\/[A-Za-z0-9_&]+\.webp$/.test(filePath)
     || /^apps\/arknights\/public\/images\/building-skills\/[A-Za-z0-9_&]+\.png$/.test(filePath)
-    || /^apps\/arknights\/public\/images\/products\/[A-Za-z0-9_&]+\.webp$/.test(filePath);
+    || /^apps\/arknights\/public\/images\/products\/[A-Za-z0-9_&]+\.webp$/.test(filePath)
+    || /^apps\/endfield\/public\/images\/game\/(?:operators|weapons|skills)\/[A-Za-z0-9_-]+\.png$/.test(filePath);
 }
 
 function normalizePath(filePath) {
@@ -111,10 +150,10 @@ export function classifyChanges(rawPaths, { forceFull = false } = {}) {
     };
   }
 
-  if (paths.some(isOperatorData) && paths.every((filePath) => isOperatorData(filePath) || isDocumentationOrMetadata(filePath))) {
+  if (paths.some(filePath => isOperatorData(filePath) || RESOURCE_PUBLICATION_SUPPORT.has(filePath)) && paths.every((filePath) => isOperatorData(filePath) || isDocumentationOrMetadata(filePath) || RESOURCE_PUBLICATION_SUPPORT.has(filePath))) {
     return {
       scope: "operator-data",
-      reason: "managed-operator-data-only",
+      reason: paths.some(isOperatorData) ? "managed-operator-data-only" : "resource-publication-support-only",
       changedFiles: paths,
       documentationOnly: false,
       runCore: true,

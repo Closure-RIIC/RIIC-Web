@@ -27,7 +27,7 @@ test("CI avoids duplicate installation audits without weakening its security gat
   assert.doesNotMatch(scheduled, /--no-audit/);
   assert.match(workflow, /name: Security audit\s+run: npm run audit:security/);
   assert.equal(packageJson.scripts["audit:security"], "npm audit --audit-level=high");
-  assert.match(workflow, /verify_result "\$RUN_CORE" "\$STATIC_RESULT" static/);
+  assert.match(workflow, /verify_result "\$RUN_CHECKS" "\$STATIC_RESULT" static/);
 });
 
 test("batched deployment inspections make one SSH call and fail closed on invalid responses", async (t) => {
@@ -357,7 +357,7 @@ test("CI gates releases on Chromium and a WebKit Skland smoke test, then schedul
   assert.match(playwrightConfig, /name: "chromium-plush",\s+testMatch: softwareGpuSpecs,[\s\S]+workers: 1/);
   assert.match(workflow, /browser_boundaries:[\s\S]+npm run test:e2e:webkit:skland-qr[\s\S]+npm run test:e2e:production-profile/);
   assert.match(workflow, /webkit_e2e:[\s\S]+github\.event_name == 'schedule'[\s\S]+npm run test:e2e:webkit/);
-  assert.match(workflow, /quality:[\s\S]+needs: \[changes, repository_hygiene, static_checks, lint_checks, type_checks, database_checks, release_artifact, browser_e2e, browser_boundaries\]/);
+  assert.match(workflow, /quality:[\s\S]+needs: \[changes, repository_hygiene, static_checks, lint_checks, type_checks, database_checks, release_artifact, browser_e2e, browser_boundaries, resource_publication\]/);
   assert.doesNotMatch(workflow, /quality:[\s\S]+needs: \[[^\]]*webkit_e2e/);
   assert.match(workflow, /deploy:[\s\S]+needs: \[changes, quality, release_artifact\]/);
   assert.doesNotMatch(workflow, /^\s*pull_request\s*:/m);
@@ -392,7 +392,7 @@ test("CI change scope keeps one required quality gate and fails closed", async (
   assert.match(workflow, /database_integration:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_database == 'true'/);
   assert.match(workflow, /release_artifact:[\s\S]+needs: changes[\s\S]+needs\.changes\.outputs\.run_core == 'true'/);
   assert.match(workflow, /browser_e2e:[\s\S]+needs: \[changes, release_artifact\][\s\S]+needs\.changes\.outputs\.run_browser == 'true'/);
-  assert.match(workflow, /quality:[\s\S]+test "\$CHANGES_RESULT" = "success"[\s\S]+test "\$HYGIENE_RESULT" = "success"[\s\S]+"\$DEPLOY_REQUIRED" == "true"[\s\S]+"\$required" == "true"[\s\S]+verify_result "\$RUN_CORE" "\$STATIC_RESULT"[\s\S]+verify_result "\$RUN_BROWSER" "\$BROWSER_E2E_RESULT"/);
+  assert.match(workflow, /quality:[\s\S]+test "\$CHANGES_RESULT" = "success"[\s\S]+test "\$HYGIENE_RESULT" = "success"[\s\S]+"\$DEPLOY_REQUIRED" == "true"[\s\S]+"\$required" == "true"[\s\S]+verify_result "\$RUN_CHECKS" "\$STATIC_RESULT"[\s\S]+verify_result "\$RUN_BROWSER" "\$BROWSER_E2E_RESULT"/);
   assert.match(workflow, /deploy:[\s\S]+needs\.changes\.outputs\.deploy_required == 'true'/);
 
   assert.match(classifier, /fullScope\(paths, "empty-change-set"\)/);
@@ -503,7 +503,7 @@ test("CI builds once and deploy transfers the verified solver-free standalone ar
   assert.match(deployWorkflow, /archive_sha256="\$\(sha256sum "\$local_archive"[\s\S]+DEPLOY_ARCHIVE_SHA256=%s/);
   assert.match(
     deployWorkflow,
-    /Sync standalone release tree[\s\S]+release_tree_cache="\.cache\/riic-web\/\$\{DEPLOYMENT_ENV\}-standalone-tree"[\s\S]+--recursive[\s\S]+--times[\s\S]+--perms[\s\S]+--checksum[\s\S]+--compress[\s\S]+--delete-delay[\s\S]+--partial[\s\S]+--inplace[\s\S]+"\$DEPLOY_ARTIFACT_ROOT\/"[\s\S]+"\$ssh_target:\$release_tree_cache\/"/,
+    /Sync standalone release tree[\s\S]+release_tree_cache="\.cache\/riic-web\/\$\{DEPLOYMENT_ENV\}-standalone-tree"[\s\S]+--recursive[\s\S]+--times[\s\S]+--perms[\s\S]+--checksum[\s\S]+--compress[\s\S]+--fuzzy[\s\S]+--delete-delay[\s\S]+--partial[\s\S]+"\$DEPLOY_ARTIFACT_ROOT\/"[\s\S]+"\$ssh_target:\$release_tree_cache\/"/,
   );
   assert.match(deployWorkflow, /find "\$DEPLOY_ARTIFACT_ROOT"[\s\S]+! -type f ! -type d[\s\S]+release tree contains unsupported filesystem entries/);
   assert.match(deployWorkflow, /remote_cache_path=\\"\\\$HOME\/\$release_tree_cache\\"[\s\S]+test ! -L \\"\\\$remote_cache_path\\"[\s\S]+stat -c '%U:%a'/);
@@ -516,6 +516,7 @@ test("CI builds once and deploy transfers the verified solver-free standalone ar
   assert.doesNotMatch(deployWorkflow, /git (?:archive|bundle)|repository\.git|DEPLOY_PREVIOUS_SHA|remote_bundle/);
   const transfer = deployWorkflow.slice(deployWorkflow.indexOf("      - name: Sync standalone release tree"));
   assert.doesNotMatch(transfer, /bin\/infra-cli/);
+  assert.doesNotMatch(transfer, /--inplace/);
 });
 
 test("verified release reuse preserves provenance and normal deployment gates", async () => {
@@ -536,7 +537,9 @@ test("deployment resumes an interrupted cache without accepting symlinks or non-
   const workflow = (await readRepoFile(".github/workflows/deploy.yml")).replaceAll("\r\n", "\n");
   const section = workflow.split("      - name: Sync standalone release tree")[1].split("\n      - name:")[0];
   const body = section.split("        run: |\n")[1].replace(/^ {10}/gm, "");
-  const setup = body.slice(body.indexOf("timeout --kill-after=5s 30s ssh"), body.indexOf("timeout --kill-after=10s 5400s rsync"));
+  // Exercise only remote cache setup: later timing assignments would hide its
+  // exit status in the conditional rejection checks below (where errexit is off).
+  const setup = body.slice(body.indexOf("timeout --kill-after=5s 30s ssh"), body.indexOf("\ntransfer_started="));
   assert.ok(setup);
   const script = [
     "set -euo pipefail",
@@ -601,6 +604,7 @@ test("production pins the server solver only after preflight and development ret
       ...process.env, DEPLOYMENT_ENV: "production", DEPLOY_APP_ROOT: "/opt/arknights-infra",
       DEPLOY_EXPECTED_REPOSITORY: "Closure-RIIC/RIIC-Web",
       DEPLOY_APPROVED_SOLVER_SHA256: "", DEPLOY_HOST: "example.invalid", DEPLOY_SSH_USER: "fixture",
+      DEPLOY_SSH_CONTROL_SOCKET: "/tmp/fixture/control",
       SERVER_DIGEST: serverDigest, SSH_EXIT: "0", PREFLIGHT_EXIT: "0",
       GITHUB_STEP_SUMMARY: "/dev/null", ...overrides,
     },
@@ -706,10 +710,17 @@ test("resource PR file validation fails closed on a partial GitHub API response"
   }
 });
 
-test("mastery, gacha UP data and the full fixture follow every managed-resource publication and parity gate", async () => {
+test("mastery, training costs, gacha UP data and the full fixture follow every managed-resource publication and parity gate", async () => {
   const workflow = await readRepoFile(".github/workflows/sync-arkntools-assets.yml");
   assert.match(workflow, /npm run assets:mastery -- \.tmp\/arknights-game-data\/zh_CN\/gamedata\/excel\/character_table\.json --game-source-sha=/);
   assert.match(workflow, /game_sha=\$\(git -C \.tmp\/arknights-game-data rev-parse HEAD\)/);
+  for (const table of ["character_table.json", "uniequip_table.json", "building_data.json", "item_table.json"]) {
+    assert.match(workflow, new RegExp(`/${table.replaceAll(".", "\\.")}`));
+  }
+  assert.match(workflow, /npm run assets:training-planner -- "\$\{planner_arguments\[@\]\}"/);
+  assert.match(workflow, /planner_arguments=\(--source-sha "\$\{\{ steps\.upstream\.outputs\.game_sha \}\}"\)/);
+  assert.match(workflow, /--before-training-planner "\$RUNNER_TEMP\/training-planner-before\.json"/);
+  assert.match(workflow, /apps\/arknights\/src\/generated\/training-planner-data\.json/);
   assert.match(workflow, /\/assets\/img\/avatar/);
   assert.match(workflow, /\/item\/AP_BASE\.png/);
   assert.equal((workflow.match(/test "\$pull_request_base_sha" = "\$remote_base_sha"/g) ?? []).length, 2);
@@ -731,17 +742,19 @@ test("mastery, gacha UP data and the full fixture follow every managed-resource 
     assert.ok(staged.includes(file));
     assert.ok(restored.includes(file));
   }
-  for (const guard of guards) assert.match(guard, /\|apps\/arknights\/src\/generated\/mastery-data\.json\|packages\/arknights-domain\/src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
+  for (const guard of guards) assert.match(guard, /\|apps\/arknights\/src\/generated\/mastery-data\.json\|apps\/arknights\/src\/generated\/training-planner-data\.json\|packages\/arknights-domain\/src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
   const regularFileChecks = workflow.match(/git ls-files -s --[^\n]+/g) ?? [];
   assert.equal(regularFileChecks.length, 3);
   for (const check of regularFileChecks) {
     for (const file of translations) assert.ok(check.includes(file));
     assert.ok(check.includes("apps/arknights/src/generated/mastery-data.json"));
+    assert.ok(check.includes("apps/arknights/src/generated/training-planner-data.json"));
     assert.ok(check.includes("packages/arknights-domain/src/generated/gacha-up.json"));
     assert.ok(check.includes("fixtures/operbox_full_e2.json"));
   }
   assert.match(workflow, /git restore --source[^\n]+[\s\S]*?packages\/arknights-domain\/src\/generated\/arkntools \\\n\s+apps\/arknights\/src\/generated\/mastery-data\.json/);
-  const generateStep = workflow.slice(workflow.indexOf("      - name: Generate and validate assets"), workflow.indexOf("      - name: Run pre-PR quality gates"));
+  const generateStep = workflow.slice(workflow.indexOf("      - name: Generate and validate assets"), workflow.indexOf("      - name: Detect generated changes"));
+  assert.doesNotMatch(generateStep, /npm run check|npm run build|npm test/);
   assert.ok(generateStep.indexOf("npm run assets:gacha-up") > generateStep.indexOf("npm run assets:sync:arkntools"));
   assert.ok(generateStep.indexOf("node scripts/sync-arknights-i18n-data.mjs") > generateStep.indexOf("npm run assets:gacha-up"));
   assert.match(workflow, /id: changes\n\s+run: node scripts\/arkntools-sync-changes\.mjs/);

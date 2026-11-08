@@ -2,6 +2,11 @@
 // or rerun dates. Keep this separate from the generated artwork catalog.
 export const operatorReleases = [
   {
+    releasedOn: "2026-11-05",
+    source: "https://endfield.hypergryph.com/news/6094",
+    operatorIds: ["chr_0037_minghe"],
+  },
+  {
     releasedOn: "2026-10-15",
     source: "https://endfield.hypergryph.com/news/6094",
     operatorIds: ["chr_0036_jsspsi"],

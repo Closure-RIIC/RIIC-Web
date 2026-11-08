@@ -14,11 +14,12 @@ import { formatPoints } from "@/billing-points";
 import { WorkbenchPageHeading } from "@/components/workbench/WorkbenchPageHeading";
 import { WorkbenchCard } from "@/components/workbench/WorkbenchCard";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { useLocale } from "use-intl";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { requestAccountSignIn } from "@riic/shell/account-sign-in";
 import { SetupActionButton } from "@/components/setup/SetupActionButton";
 import { Input } from "@/components/ui/input";
@@ -71,6 +72,13 @@ const usageStatusLabels: Record<string, keyof typeof UiMessages> = {
   pending: "pending", failed: "failed",
 };
 
+const productCopy: Record<string, { name: keyof typeof UiMessages; description: keyof typeof UiMessages; badge?: keyof typeof UiMessages }> = {
+  points_1_test: { name: "testSponsor", description: "testSponsorDescription", badge: "testSponsorBadge" },
+  points_5: { name: "smallSponsor", description: "permanentSponsorDescription" },
+  points_10: { name: "siteSponsor", description: "permanentSponsorDescription", badge: "bonusCredits" },
+  monthly_19_9: { name: "monthlySponsor", description: "monthlySponsorDescription", badge: "monthlySponsorBadge" },
+};
+
 async function readBilling(): Promise<BillingData> {
   const response = await fetch("/api/billing", { credentials: "same-origin", cache: "no-store" });
   const payload = await response.json() as { data?: BillingData; error?: { message?: string } };
@@ -88,6 +96,8 @@ export function BillingPrototype() {
   const locale = useLocale();
   const containerClass = `${styles.page} grid min-w-0 w-full content-start gap-4 pt-2 pb-8 md:gap-6 md:pt-5`;
   const heading = <WorkbenchPageHeading page="billing" accentColor="var(--billing-highlight)">{uiText.text(locale, "paymentPlans")}</WorkbenchPageHeading>;
+  const [paymentNoticeOpen, setPaymentNoticeOpen] = useState(true);
+  const paymentNoticeDismiss = useRef<HTMLButtonElement>(null);
   const [data, setData] = useState<BillingData | null>(null);
   const [orderClock, setOrderClock] = useState(() => Date.now());
   const [confirmClearOrders, setConfirmClearOrders] = useState(false);
@@ -100,15 +110,28 @@ export function BillingPrototype() {
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ key: keyof typeof UiMessages; values?: Record<string, string | number> } | null>(null);
   const [cdkCode, setCdkCode] = useState("");
+  const reloadInFlight = useRef<Promise<void> | null>(null);
   const redeemBusy = useRef(false);
   const codeInput = useRef<HTMLInputElement>(null);
+  const hasPendingOrders = visibleOrders.some(order => order.status === "pending");
 
-  const reload = useCallback(async () => {
+  const reload = useCallback(async (afterMutation = false) => {
+    if (reloadInFlight.current && !afterMutation) return reloadInFlight.current;
+    if (reloadInFlight.current) await reloadInFlight.current;
+    if (reloadInFlight.current) return reloadInFlight.current;
+    const request = (async () => {
+      try {
+        setError(null);
+        setData(await readBilling());
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "@billing:unavailable");
+      }
+    })();
+    reloadInFlight.current = request;
     try {
-      setError(null);
-      setData(await readBilling());
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "@billing:unavailable");
+      await request;
+    } finally {
+      if (reloadInFlight.current === request) reloadInFlight.current = null;
     }
   }, []);
 
@@ -129,8 +152,8 @@ export function BillingPrototype() {
     return () => window.removeEventListener("hashchange", readLink);
   }, []);
 
-  // The API is ordered newest first; show the latest order so an older duplicate
-  // pending order cannot hide a newer paid callback.
+  // The API is ordered newest first. The latest pending order drives the test
+  // payment action; each pending order has its own recovery link below.
   const activeOrder = visibleOrders[0] ?? null;
 
   const clearPendingOrders = async () => {
@@ -143,25 +166,22 @@ export function BillingPrototype() {
       if (!response.ok) throw new Error(payload.error?.message ?? "@billing:clearFailed");
       setNotice({ key: "ordersCleared", values: { count: payload.data?.deleted ?? 0 } });
       notifyBillingUpdated();
-      await reload();
+      await reload(true);
     } catch (cause) { setError(cause instanceof Error ? cause.message : "@billing:clearFailed"); }
     finally { setBusy(null); }
   };
 
   useEffect(() => {
-    if (!activeOrder || activeOrder.status !== "pending") return;
+    if (!hasPendingOrders) return;
     let cancelled = false;
-    const timer = window.setInterval(async () => {
-      try {
-        const response = await fetch(`/api/billing/orders/${encodeURIComponent(activeOrder.id)}`, { credentials: "same-origin", cache: "no-store" });
-        const payload = await response.json() as { data?: { order?: { status?: string } } };
-        if (!cancelled && payload.data?.order?.status === "paid") await reload();
-      } catch {
-        // 轮询失败不打断当前购买页，下一轮继续。
-      }
-    }, 5_000);
-    return () => { cancelled = true; window.clearInterval(timer); };
-  }, [activeOrder, reload]);
+    let timer: number | undefined;
+    const refresh = async () => {
+      await reload();
+      if (!cancelled) timer = window.setTimeout(refresh, 5_000);
+    };
+    timer = window.setTimeout(refresh, 5_000);
+    return () => { cancelled = true; if (timer !== undefined) window.clearTimeout(timer); };
+  }, [hasPendingOrders, reload]);
 
   const createOrder = async (productId: string) => {
     setBusy(productId);
@@ -177,7 +197,7 @@ export function BillingPrototype() {
       if (!response.ok || !payload.data) throw new Error(payload.error?.message ?? "@billing:orderFailed");
       if (payload.data.paymentUrl) window.open(payload.data.paymentUrl, "_blank", "noopener,noreferrer");
       setNotice({ key: "orderCreated" });
-      await reload();
+      await reload(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "@billing:orderFailed");
     } finally {
@@ -192,7 +212,7 @@ export function BillingPrototype() {
       const payload = await response.json() as { error?: { message?: string } };
       if (!response.ok) throw new Error(payload.error?.message ?? "@billing:simulateFailed");
       setNotice({ key: "simulated" });
-      await reload();
+      await reload(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "@billing:simulateFailed");
     } finally {
@@ -226,13 +246,40 @@ export function BillingPrototype() {
     }
   };
 
+  const paymentNoticeHighlights = {
+    afdian: (chunks: ReactNode) => <span className={styles.paymentProvider}>{chunks}</span>,
+    site: (chunks: ReactNode) => <span className={styles.paymentWebsite}>{chunks}</span>,
+  };
+  const paymentNotice = <Dialog open={paymentNoticeOpen} onOpenChange={setPaymentNoticeOpen}>
+    <DialogContent initialFocus={paymentNoticeDismiss} className={`${styles.paymentNotice} max-h-[calc(100dvh-2rem)] overflow-y-auto`} data-billing-payment-notice>
+      <DialogHeader>
+        <DialogTitle>{uiText.text(locale, "paymentNoticeTitle")}</DialogTitle>
+        <DialogDescription>{uiText.text(locale, "paymentNoticeApology")}</DialogDescription>
+      </DialogHeader>
+      <DialogBody className="text-sm leading-6">
+        <p className="font-medium">{uiText.rich(locale, "checkoutReminder", paymentNoticeHighlights)}</p>
+        <p>{uiText.rich(locale, "paymentEmailReminder", paymentNoticeHighlights)}</p>
+        <p className="text-muted-foreground">{uiText.rich(locale, "paymentSupportHint", paymentNoticeHighlights)}</p>
+      </DialogBody>
+      <DialogFooter>
+        <Button ref={paymentNoticeDismiss} size="dialog" onClick={() => setPaymentNoticeOpen(false)}>{uiText.text(locale, "paymentNoticeDismiss")}</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>;
+
   if (error && !data) {
-    return <section className={containerClass}>{heading}<div role="alert" className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm"><p>{errorMessage(error, locale)}</p><Button variant="outline" className={`${styles.pill} mt-3`} onClick={event => requestAccountSignIn(event.currentTarget)}>{uiText.text(locale, "signIn")}</Button></div></section>;
+    return <section className={containerClass}>{paymentNotice}{heading}<div role="alert" className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm"><p>{errorMessage(error, locale)}</p><Button variant="outline" className={`${styles.pill} mt-3`} onClick={event => requestAccountSignIn(event.currentTarget)}>{uiText.text(locale, "signIn")}</Button></div></section>;
   }
-  if (!data) return <section className={containerClass}>{heading}<p role="status" className="py-8 text-center text-sm text-muted-foreground">{rawText.text(rawLocale, "loadingCreditAccount")}</p></section>;
+  if (!data) return <section className={containerClass}>{paymentNotice}{heading}<p role="status" className="py-8 text-center text-sm text-muted-foreground">{rawText.text(rawLocale, "loadingCreditAccount")}</p></section>;
+
+  const products = data.products.map(product => {
+    const copy = productCopy[product.id];
+    return copy ? { ...product, name: uiText.text(locale, copy.name), description: uiText.text(locale, copy.description, { points: product.points }), badge: copy.badge ? uiText.text(locale, copy.badge) : product.badge } : product;
+  });
 
   return (
     <section className={containerClass} data-billing-prototype>
+      {paymentNotice}
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>{heading}<p className="mt-2 text-sm text-muted-foreground">{rawText.text(rawLocale, "paidPlansApplyOnlyToAssistantConversationsSolvingSchedules")}</p></div>
         <SetupActionButton nativeButton={false} variant="outline" className="!min-w-0 max-w-full max-md:!h-auto max-md:min-h-11 max-md:whitespace-normal max-md:!px-3 max-md:py-2" render={<Link to="/agent" />}>{rawText.rich(rawLocale, "backToAssistant", { part1: richValue((<ArrowUpRight className="size-3.5" />)) })}</SetupActionButton>
@@ -262,8 +309,13 @@ export function BillingPrototype() {
         </dl>
       </BillingCard>
 
+      <div className="rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm leading-6">
+        <p>{uiText.rich(locale, "checkoutReminder", { afdian: chunks => chunks, site: chunks => chunks })}</p>
+        <Button type="button" variant="link" className="h-auto whitespace-normal p-0 text-xs" onClick={() => setPaymentNoticeOpen(true)}>{uiText.text(locale, "paymentNoticeTitle")}</Button>
+      </div>
+
       <div className={styles.products} aria-label={rawText.text(rawLocale, "creditPackages")}>
-        {data.products.map((product) => (
+        {products.map((product) => (
           <BillingCard key={product.id} className={`${styles.product} ${product.id === "points_1_test" ? styles.testPack : product.kind === "monthly" ? styles.monthly : ""}`} glass>
             <div>
               <div className="flex items-start justify-between gap-3"><h2 className="text-sm font-semibold">{product.name}</h2>{product.badge ? <span className={`${styles.productBadge} shrink-0 rounded-full px-2.5 py-1 text-[10px] font-medium`}>{product.badge}</span> : null}</div>
@@ -299,9 +351,9 @@ export function BillingPrototype() {
         {visibleOrders.length === 0 ? <p className={styles.empty}>{rawText.text(rawLocale, "noOrdersToShowCreditPackagePurchasesWillAppear")}</p> : <ul className={styles.records}>
           {visibleOrders.slice(0, 6).map((order) => {
             const status = orderStatus(order.status, locale);
-            return <li key={order.id} className={styles.row}>
-              <div><h3 className={styles.recordTitle}>{data.products.find((product) => product.id === order.productId)?.name ?? order.productId}</h3><p className={styles.meta}>{rawText.rich(rawLocale, "credits", { part1: richValue((order.points.toLocaleString(locale))), part2: richValue((<span aria-hidden="true"> · </span>)), part3: richValue((<time dateTime={order.createdAt}>{formatMinute(order.createdAt, locale)}</time>)) })}</p></div>
-              <div className="text-right"><p className={`${styles.amount} font-number`}>{money(order.amountFen, locale)}</p><span className={`${styles.status} ${status.className}`}>{status.label}</span></div>
+            return <li key={order.id} className={styles.row} data-billing-order-id={order.id}>
+              <div><h3 className={styles.recordTitle}>{products.find((product) => product.id === order.productId)?.name ?? order.productId}</h3><p className={styles.meta}>{rawText.rich(rawLocale, "credits", { part1: richValue((order.points.toLocaleString(locale))), part2: richValue((<span aria-hidden="true"> · </span>)), part3: richValue((<time dateTime={order.createdAt}>{formatMinute(order.createdAt, locale)}</time>)) })}</p></div>
+              <div className="text-right"><p className={`${styles.amount} font-number`}>{money(order.amountFen, locale)}</p><span className={`${styles.status} ${status.className}`}>{status.label}</span>{order.status === "pending" && order.paymentUrl ? <Button nativeButton={false} variant="outline" className={`${styles.pill} mt-2`} render={<a data-billing-payment-recovery href={order.paymentUrl} target="_blank" rel="noopener noreferrer" />}>{uiText.text(locale, "resumePayment")}</Button> : null}</div>
             </li>;
           })}
         </ul>}

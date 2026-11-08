@@ -148,6 +148,13 @@ export interface RoomEfficiency {
   equivalent_efficiency?: number;
   /** 贸易站特殊机制按赤金价值折算的等效效率。 */
   gold_equivalent_efficiency?: number;
+  /**
+   * 赤金产出系数（赤金单位日产出 / 10000）。
+   * 与效率无关，只由命中的订单规则决定：如可露希尔 = 0.2（2000 赤金/日），
+   * 巫恋+龙舌兰+裁缝β = 0.233（2328.77 赤金/日）。
+   * 纸面模式改技能效率后，用它按新总效率重算 `gold_equivalent_efficiency`，避免从取整值反推。
+   */
+  gold_output_multiplier?: number;
   global_efficiency?: number;
   /** 贸易等效效率（含订单机制倍率效果，用于展示"等效 × 倍率"标注）。 */
   trade_equivalent_efficiency?: number;

@@ -4,7 +4,7 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { classifyChanges } from "./ci-change-scope.mjs";
-import { APPLICATIONS, ENDFIELD_SHARED_LEAVES, classifyAppChanges, createReleasePlan, gitRepository, workspaceConsumers } from "./app-release-plan.mjs";
+import { APPLICATIONS, ENDFIELD_SHARED_LEAVES, classifyAppChanges, createReleasePlan, gitRepository, reuseVerifiedResourceChecks, workspaceConsumers } from "./app-release-plan.mjs";
 
 const a = "a".repeat(40), b = "b".repeat(40), c = "c".repeat(40);
 const manifests = {
@@ -88,6 +88,67 @@ function planOptions(overrides = {}) {
     diff: (base, head) => base === head ? [] : ["apps/arknights/src/App.tsx"], ...overrides };
 }
 
+function pendingResourceFixture() {
+  const resource = "packages/endfield-data/catalog.json";
+  const runtime = "apps/arknights/src/App.tsx";
+  const options = planOptions({ branch: "main", baselines: { arknights: a, endfield: a },
+    diff: (base, head) => base === head ? [] : base === b ? [resource] : head === b ? [runtime] : [runtime, resource] });
+  const repository = "Closure-RIIC/RIIC-Web";
+  const run = { id: 123, head_sha: b, head_branch: "main", repository: { full_name: repository },
+    head_repository: { full_name: repository }, path: ".github/workflows/frontend-quality.yml", event: "push",
+    status: "waiting", conclusion: null, run_attempt: 1 };
+  const jobs = ["Change scope", "Repository hygiene", "Static and unit checks", "Database integration", "Build release once", "quality"]
+    .map(name => ({ name, conclusion: "success" }));
+  const api = async path => {
+    if (path.includes("/workflows/")) return { workflow_runs: [run] };
+    if (path.includes("/jobs?")) return { jobs, total_count: jobs.length };
+    if (path.endsWith("/runs/123")) return run;
+    throw new Error(`Unexpected metadata path: ${path}`);
+  };
+  return { options, api, run, jobs };
+}
+
+test("resource publication reuses completed checks for pending code and still deploys every changed app", async () => {
+  const f = pendingResourceFixture();
+  const plan = await createReleasePlan(f.options);
+  assert.equal(plan.scope, "full");
+  const result = await reuseVerifiedResourceChecks({ ...f, plan });
+  assert.equal(result.scope, "operator-data");
+  assert.equal(result.runBrowser, false);
+  assert.equal(result.runDatabase, false);
+  assert.deepEqual(result.deployApps, ["arknights", "endfield"]);
+  assert.equal(result.applications.arknights.baseSha, a);
+  assert.deepEqual(result.reusedQuality, { sha: b, runId: 123 });
+});
+
+test("failed, foreign or incomplete prior checks cannot exempt pending runtime changes", async () => {
+  for (const mutate of [
+    f => { f.jobs.at(-1).conclusion = "failure"; },
+    f => { f.jobs.pop(); },
+    f => { f.run.head_branch = "develop"; },
+    f => { f.run.head_repository.full_name = "other/fork"; },
+    f => { f.run.status = "completed"; f.run.conclusion = "cancelled"; },
+    f => { f.options.forceFull = true; },
+    f => { f.options.baselines.arknights = ""; },
+    f => { const diff = f.options.diff; f.options.diff = (base, head) => {
+      if (base === a && head === b) throw new Error("Not an ancestor");
+      return diff(base, head);
+    }; },
+  ]) {
+    const f = pendingResourceFixture();
+    mutate(f);
+    const plan = await createReleasePlan(f.options);
+    assert.equal((await reuseVerifiedResourceChecks({ ...f, plan })).scope, "full");
+  }
+});
+
+test("new runtime changes after the checked commit retain full validation", async () => {
+  const f = pendingResourceFixture();
+  f.options.diff = () => ["packages/endfield-data/catalog.json", "apps/endfield/src/App.tsx"];
+  const plan = await createReleasePlan(f.options);
+  assert.equal((await reuseVerifiedResourceChecks({ ...f, plan })).scope, "full");
+});
+
 test("Arknights-only pushes never redeploy unchanged Endfield even with an older Endfield baseline", async () => {
   const result = await createReleasePlan(planOptions({ baselines: { arknights: b, endfield: a } }));
   assert.deepEqual(result.deployApps, ["arknights"]);
@@ -149,7 +210,7 @@ test("only develop narrows checks to affected applications", async () => {
 test("develop retains full checks for shared, backend, tooling and uncertain changes", async () => {
   for (const file of ["packages/shell/GameSwitcher.tsx", "packages/platform-server/src/auth/endfield-access.ts",
     "apps/arknights/src/routes/api.endfield.skland.$action.ts", "package-lock.json", "package.json",
-    ".github/workflows/frontend-quality.yml", "scripts/app-release-plan.mjs", "unclassified-runtime.mjs"]) {
+    ".github/workflows/deploy.yml", "scripts/release-pr.mjs", "unclassified-runtime.mjs"]) {
     const result = await createReleasePlan(planOptions({ branch: "develop", diff: () => [file] }));
     assert.deepEqual(result.checkApps, APPLICATIONS, file);
     assert.equal(result.runBrowser, classifyChanges([file]).runBrowser, file);
@@ -160,6 +221,18 @@ test("develop retains full checks for shared, backend, tooling and uncertain cha
     assert.deepEqual(result.checkApps, APPLICATIONS);
     assert.equal(result.runBrowser, true);
     assert.equal(result.runDatabase, true);
+  }
+});
+
+test("standalone resource publication maintenance retains builds and skips test gates", async () => {
+  for (const file of [".github/workflows/frontend-quality.yml", "scripts/app-release-plan.mjs"]) {
+    const result = await createReleasePlan(planOptions({ branch: "develop", diff: () => [file] }));
+    assert.equal(result.scope, "operator-data");
+    assert.equal(result.runCore, true);
+    assert.equal(result.runBrowser, false);
+    assert.equal(result.runDatabase, false);
+    assert.deepEqual(result.deployApps, APPLICATIONS);
+    assert.deepEqual(result.buildApps, APPLICATIONS);
   }
 });
 
@@ -183,6 +256,7 @@ test("operator data hints cannot hide an unshipped runtime change", async () => 
   }));
   assert.deepEqual(data.deployApps, ["arknights"]);
   assert.equal(data.runBrowser, false);
+  assert.equal(data.runDatabase, false);
   const result = await createReleasePlan(planOptions({ operatorDataBase: b, baselines: { arknights: a, endfield: b },
     diff: (base) => base === a ? ["packages/arknights-domain/src/generated/gacha-up.json", "apps/arknights/src/App.tsx"] : ["packages/arknights-domain/src/generated/gacha-up.json"],
   }));

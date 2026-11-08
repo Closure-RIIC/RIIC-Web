@@ -2,6 +2,12 @@
 
 All notable changes to RIIC-Web are documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- The 153 layout preset now defaults to a level-five control center, matching the other presets. Selecting it in setup, manual scheduling, or a new schedule poster uses five control-center slots. Saved layouts and imported facility levels remain unchanged.
+
 ## [0.7.1] - 2026-09-07
 
 ### Added

@@ -80,6 +80,7 @@ for (const layout of [layout153, layout243, layout252, layout333, layout342] as 
     const workbench = page.locator("[data-poster-workbench]");
     const poster = workbench.locator("[data-schedule-poster]");
     await expect(poster).toHaveAttribute("data-shift-count", "3", { timeout: 60_000 });
+    await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
     await expect(poster.locator('.poster-output[data-production-ready="true"]')).toBeAttached({ timeout: 30_000 });
     await page.evaluate(() => document.fonts.ready);
     await expectReadableEfficiencies(poster);
@@ -98,6 +99,9 @@ for (const layout of [layout153, layout243, layout252, layout333, layout342] as 
       await workbench.getByLabel("班次数", { exact: true }).click();
       await page.getByRole("option", { name: `${count} 班`, exact: true }).click();
       await expect(poster).toHaveAttribute("data-shift-count", String(count));
+      await expect(page.locator("[data-manual-result-outdated]")).toBeVisible();
+      await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
+      await expect(page.locator("[data-manual-result-outdated]")).toHaveCount(0);
       await expectReadableEfficiencies(poster);
     }
     await page.setViewportSize({ width: 390, height: 844 });

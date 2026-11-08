@@ -45,6 +45,7 @@ test("special trade anchors only apply to gold orders and respect rule precedenc
   assert.equal(originium.orderMultiplier, 1);
   assert.equal(originium.rule, undefined);
 
+  // 订单机制优先级：佩佩 > 可露希尔 > U-Official > 但书 / 龙舌兰。
   const precedence = resolveManualSpecialTradeOutput({
     level: 3,
     order: "gold",
@@ -55,5 +56,5 @@ test("special trade anchors only apply to gold orders and respect rule precedenc
       { name: "龙舌兰", elite: 2 },
     ],
   });
-  assert.equal(precedence.rule?.label, "但书 E2 特殊订单");
+  assert.equal(precedence.rule?.label, "可露希尔 E2 特别订单");
 });

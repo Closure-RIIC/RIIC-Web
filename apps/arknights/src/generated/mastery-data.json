@@ -2,7 +2,7 @@
   "source": {
     "rules": {
       "repository": "https://github.com/arkntools/arknights-toolbox-data",
-      "commit": "3fc3d11079a66f30c19f919ed78c53d0fcd527db"
+      "commit": "979536fda0c5cdc63d4ce62e61d3a4d58df55701"
     },
     "branches": {
       "repository": "https://github.com/Kengxxiao/ArknightsGameData",

@@ -65,16 +65,19 @@ test("browser tests run Chromium but do not create an application release", () =
   });
 });
 
-test("release workflow changes skip business E2E but exercise deployment", () => {
+test("resource publication infrastructure skips tests while other release workflows retain checks", () => {
   assertScope([".github/workflows/frontend-quality.yml"], {
-    scope: "tooling-or-tests",
-    reason: "release-workflow-change",
+    scope: "operator-data",
+    reason: "resource-publication-support-only",
     documentationOnly: false,
     runCore: true,
     runBrowser: false,
     deployRequired: true,
   });
   assert.equal(classifyChanges([".github/workflows/deploy-verified.yml"]).deployRequired, true);
+  assert.equal(classifyChanges([".github/workflows/deploy-verified.yml"]).scope, "tooling-or-tests");
+  assert.equal(classifyChanges(["scripts/app-release-plan.mjs", "scripts/app-release-plan.test.mjs", "docs/PR_RELEASE_GUIDE.md"]).scope, "operator-data");
+  assert.equal(classifyChanges(["scripts/app-release-plan.mjs", "apps/endfield/src/App.tsx"]).scope, "full");
 });
 
 test("runtime and unclassified changes always use the full gate", () => {
@@ -107,7 +110,7 @@ test("mixed documentation and runtime changes cannot use a fast path", () => {
   });
 });
 
-test("managed operator updates keep core checks, build and deploy without browser E2E", () => {
+test("managed operator updates select resource publication with build and deploy", () => {
   for (const paths of [
     ["packages/arknights-domain/src/generated/arkntools/operator-catalog.json", "apps/arknights/public/images/operator-portraits/393_toledo.webp", "fixtures/operbox_full_e2.json"],
     ["apps/arknights/src/generated/mastery-data.json", "apps/arknights/public/images/building-skills/bskill_recycle_spd&cost1.png", "docs/data.md"],
@@ -120,6 +123,16 @@ test("managed operator updates keep core checks, build and deploy without browse
       scope: "operator-data", reason: "managed-operator-data-only", documentationOnly: false,
       runCore: true, runBrowser: false, deployRequired: true,
     });
+  }
+});
+
+test("Endfield resource updates include pinned source tooling but exclude application code", () => {
+  const resources = ["packages/endfield-data/catalog.json", "packages/endfield-data/operator-releases.ts",
+    "packages/endfield-solver/data/ship-data.json", "apps/endfield/public/images/game/operators/portrait_chr_0037_minghe.png",
+    "scripts/endfield-upstream.mjs", "scripts/sync-endfield-solver-operators.mjs", ".github/workflows/frontend-quality.yml"];
+  assert.equal(classifyChanges(resources).scope, "operator-data");
+  for (const file of ["apps/endfield/src/routes/roster.tsx", "packages/endfield-solver/model.mjs", "package.json", ".github/workflows/deploy.yml"]) {
+    assert.equal(classifyChanges([...resources, file]).scope, "full", file);
   }
 });
 

@@ -70,5 +70,8 @@
   "restPreviousShift": "让上一班下班休息",
   "facility": "设施",
   "room": "房间",
-  "thisOperator": "该干员"
+  "thisOperator": "该干员",
+  "resultOutdated": "当前结果已过期",
+  "unsupportedSpecialTrade": "第{shift}班 {room} 的 {operators} 特殊订单暂未支持，已按普通贸易站计算。",
+  "eliteShort": "精"
 }

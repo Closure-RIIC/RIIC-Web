@@ -34,7 +34,7 @@ function apiConfig() {
   return {
     token,
     userId,
-    endpoint: process.env.AFDIAN_API_BASE_URL?.trim() || "https://afdian.net/api/open/query-order",
+    endpoint: process.env.AFDIAN_API_BASE_URL?.trim() || "https://afdian.com/api/open/query-order",
   };
 }
 

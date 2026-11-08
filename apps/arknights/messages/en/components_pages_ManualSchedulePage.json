@@ -70,5 +70,8 @@
   "restPreviousShift": "Rest previous-shift operators",
   "room": "room",
   "facility": "facility",
-  "thisOperator": "this operator"
+  "thisOperator": "this operator",
+  "resultOutdated": "Result is out of date",
+  "unsupportedSpecialTrade": "Shift {shift}, {room}: the special order of {operators} is not supported yet; calculated as a regular trading post.",
+  "eliteShort": "E"
 }
