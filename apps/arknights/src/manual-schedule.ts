@@ -99,6 +99,7 @@ const MAA_GROUP_BY_ROOM_KIND: Partial<Record<RoomKind, keyof MaaRooms>> = {
   office: "hire",
   meeting_room: "meeting",
   workshop: "processing",
+  recycle: "recycle",
 };
 
 function supportsMaaAutofill(room: EditableRoom): boolean {
