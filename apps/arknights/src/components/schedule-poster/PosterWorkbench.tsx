@@ -18,7 +18,7 @@ import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } 
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { downloadJson } from "@/download";
 import { manualScheduleToMaa, resizeManualScheduleDraft, type ManualScheduleDraft } from "@/manual-schedule";
-import { prepareMaaForExport } from "@riic/arknights-domain/maa-safety";
+import { downloadManualMaa } from "@/maa-import-export";
 import { OPERATOR_CATALOG } from "@/operatorPortraits";
 import { manualEditableRooms } from "@/recycling-room";
 import { posterDataOnly, POSTER_MAX_BYTES, readPosterFile, type SchedulePosterDocument } from "@/schedule-poster-document";
@@ -145,7 +145,7 @@ export default function PosterWorkbench({ document: doc, onChange, onImport, onS
       const exportDraft = Math.abs(cycleHours - 24) > 0.001 && doc.draft.scheduleMode === "period"
         ? { ...doc.draft, scheduleMode: "sequential" as const }
         : doc.draft;
-      const maa = prepareMaaForExport(manualScheduleToMaa(exportDraft, doc.layout, exportDraft.fiammettaEnabled));
+      const maa = downloadManualMaa(exportDraft, manualScheduleToMaa(exportDraft, doc.layout, exportDraft.fiammettaEnabled));
       downloadJson(`${doc.meta.title || rawText.text(rawLocale, "filename")}.maa.json`, maa);
       setNotice(rawText.text(rawLocale, "maaExported", { multi: Math.abs(cycleHours - 24) > 0.001 ? "yes" : "no" }));
     } catch (e) { setError(e instanceof Error ? e.message : rawText.text(rawLocale, "maaExportFailed")); }

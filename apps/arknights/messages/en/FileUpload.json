@@ -13,5 +13,5 @@
   "rosterTitle": "Import operator data",
   "rosterDescription": "Choose an MAA operator JSON or a compatible Yituliu Excel file.",
   "layoutDescription": "Choose an exported base layout JSON file. A successful import updates your current layout.",
-  "scheduleDescription": "Choose an MAA schedule JSON file, up to 5 MiB. Review the import before replacing your draft."
+  "scheduleDescription": "Choose an MAA schedule (.json, .jsonc or .txt, comments supported), up to 5 MiB. Review the import before replacing your draft."
 }

@@ -101,7 +101,10 @@ export interface MaaPlan {
   period?: MaaPeriod[];
   duration?: number;
   groups?: MaaOperatorGroup[];
-  rooms: MaaRooms;
+  rooms: MaaRooms & {
+    recycle?: MaaRoom[];
+    training?: { operatorsA?: string[]; operatorsB?: string[]; skip?: boolean }[];
+  };
   Fiammetta?: { enable: boolean; target?: string | string[]; order?: MaaExecutionOrder };
   drones?: {
     enable?: boolean;

@@ -16,6 +16,7 @@ test.beforeEach(async ({ page }) => {
   await mockApis(page);
   await page.addInitScript(({ layout, operbox, savedAt, expiresAt }) => {
     window.localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", "1");
+    if (window.localStorage.getItem("arknights-infra-calc-session-v5")) return;
     window.localStorage.setItem("arknights-infra-calc-session-v5", JSON.stringify({
       version: 5,
       savedAt,
@@ -884,6 +885,35 @@ for (const scenario of [
   });
 }
 
+test("annotated MAA import keeps a fifth factory, alternate candidates and inactive plans after reload", async ({ page }) => {
+  const source = {
+    title: "跨午夜", description: "测试说明",
+    plans: [{
+      name: "早班", description_post: "交接", period: [["22:00", "23:59"], ["00:00", "06:00"]],
+      duration: 360, drones: { room: "trading", index: 1, order: "post", rule: "all" },
+      groups: [{ name: "制造组", operators: ["古米", "银灰"] }],
+      rooms: {
+        manufacture: [{ operators: ["芬", "克洛丝"], sort: false }, { skip: true }, {},
+          { candidates: ["多萝西"] }, { operators: ["制造组"], use_operator_groups: true }],
+        training: [{ operatorsA: ["杜宾", "备用协助"], operatorsB: ["银灰"] }],
+        recycle: [{ operators: ["芬", "克洛丝"] }], power: [],
+      },
+    }, { name: "晚班", rooms: {} }],
+  };
+  await page.goto("/manual");
+  await page.getByRole("button", { name: "导入排班文件" }).click();
+  await page.locator("[data-file-upload-dialog] input[type=file]").setInputFiles({
+    name: "字段示例.txt", mimeType: "text/plain", buffer: Buffer.from("// 字段说明\n" + JSON.stringify(source)),
+  });
+  await page.getByRole("button", { name: "导入并替换草稿" }).click();
+  await expect(page.locator('[data-manual-editor-board] [data-room-title="制造站 5"]')).toBeVisible();
+  await page.reload();
+  await expect(page.locator('[data-manual-editor-board] [data-room-title="制造站 5"]')).toBeVisible();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "导出到 MAA" }).click();
+  expect(JSON.parse(await readFile((await (await download).path())!, "utf8"))).toEqual(source);
+});
+
 test("manual scheduling previews and imports an external MAA schedule file", async ({ page }) => {
   await page.goto("/manual");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
@@ -930,8 +960,8 @@ test("manual scheduling previews and imports an external MAA schedule file", asy
 
   await expect(page.getByRole("tab", { name: /班次 1.*08:15至19:59.*11小时45分钟/ })).toBeVisible();
   await expect(page.locator('[data-manual-editor-board] [data-room-title="控制中枢"] [data-operator-identity="外部测试干员"]')).toBeVisible();
-  await expect(page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"]')).toContainText("开采协力");
-  await expect(page.locator('[data-manual-editor-board] [data-room-title="制造站 1"]')).toContainText("作战记录");
+  await expect(page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"]').getByRole("combobox")).toHaveAttribute("title", "开采协力");
+  await expect(page.locator('[data-manual-editor-board] [data-room-title="制造站 1"]').getByRole("combobox")).toHaveAttribute("title", "作战记录");
   await page.getByRole("tab", { name: /班次 2.*20:00至08:14.*12小时15分钟/ }).click();
   await expect(page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"] [data-operator-identity="锡兰"]')).toBeVisible();
 

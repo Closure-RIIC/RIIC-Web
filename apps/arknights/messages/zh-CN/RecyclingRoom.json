@@ -1,7 +1,7 @@
 {
   "unknown": "未知",
   "title": "回收站",
-  "manualOnly": "仅手动配置 · 不计产量、不导出",
+  "manualOnly": "手动配置 · 支持 MAA 导出，不计产量",
   "unconfigured": "待配置 · 2 个干员位",
   "noUpstreamData": "森空岛暂未提供数据",
   "unknownSlots": "2 个干员位，入驻情况未知"

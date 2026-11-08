@@ -29,7 +29,19 @@ export function sanitizeMaaJson<T extends MaaJson>(maa: T): T {
     const sanitizedPlan = sanitized.plans[planIndex];
     if (!sanitizedPlan) return;
 
-    delete (sanitizedPlan.rooms as MaaRooms & { training?: unknown }).training;
+    // Training uses role-specific candidate lists; only these public fields travel to MAA.
+    if (sourcePlan.rooms.training) sanitizedPlan.rooms.training = sourcePlan.rooms.training.map(room => ({
+      ...(validCandidates(room.operatorsA) ? { operatorsA: [...room.operatorsA] } : {}),
+      ...(validCandidates(room.operatorsB) ? { operatorsB: [...room.operatorsB] } : {}),
+      ...(typeof room.skip === "boolean" ? { skip: room.skip } : {}),
+    }));
+    // Older solver payloads stored an unrelated private training object under this key.
+    if (sourcePlan.rooms.training?.length && sourcePlan.rooms.training.every(room => "operators" in room) && !sanitizedPlan.rooms.training?.some(room => Object.keys(room).length)) {
+      delete sanitizedPlan.rooms.training;
+    }
+    sourcePlan.rooms.recycle?.forEach((room, index) => {
+      if (validCandidates(room.candidates)) sanitizedPlan.rooms.recycle![index]!.candidates = [...room.candidates];
+    });
 
     for (const roomKind of MAA_ROOM_KINDS) {
       const sourceRooms = sourcePlan.rooms[roomKind];
@@ -61,18 +73,24 @@ export function prepareMaaForExport<T extends MaaJson>(
   maa: T,
   strictOperatorOrder = true,
   allowReplacementOperatorSort = false,
+  preserveExplicitDormRules = false,
 ): T {
   const exported = sanitizeMaaJson(maa);
 
   for (const plan of exported.plans) {
     plan.rooms.dormitory?.forEach((room) => {
+      if (preserveExplicitDormRules && (room.skip || room.candidates?.length)) {
+        if (room.candidates?.length) room.autofill = false;
+        return;
+      }
       room.skip = false;
       room.autofill = true;
       delete room.candidates;
     });
     if (plan.Fiammetta) plan.Fiammetta.order = "pre";
     if (plan.drones) plan.drones.order = "pre";
-    for (const rooms of Object.values(plan.rooms)) {
+    for (const [kind, rooms] of Object.entries(plan.rooms)) {
+      if (kind === "training") continue;
       if (!rooms) continue;
       for (const room of rooms) {
         room.sort = strictOperatorOrder || allowReplacementOperatorSort;

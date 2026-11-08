@@ -51,7 +51,7 @@ import { buildManualScheduleContext, type AgentPageContext } from "@/agent-page-
 import { loadManualEvaluationCache } from "@/manual-evaluation-cache";
 import { localizedOperatorName, localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
-import { prepareMaaForExport } from "@riic/arknights-domain/maa-safety";
+import { downloadManualMaa, rememberMaaImport } from "@/maa-import-export";
 import { maaToMowerPlan, mowerPlanToMaa } from "@/mower-plan";
 import {
   assignManualOperator,
@@ -67,6 +67,7 @@ import {
   manualRoomCapacity,
   normalizeMaaScheduleForManualImport,
   parseMaaScheduleText,
+  parseScheduleJson,
   persistManualScheduleDraft,
   reconcileManualScheduleDraft,
   resizeManualScheduleDraft,
@@ -184,8 +185,10 @@ function countDraftAssignments(draft: ManualScheduleDraft): number {
 }
 
 function countMaaAssignments(maa: MaaJson): number {
-  return maa.plans.reduce((total, plan) => total + Object.values(plan.rooms).reduce(
-    (roomTotal, rooms) => roomTotal + ((rooms ?? []) as MaaRoom[]).reduce(
+  return maa.plans.reduce((total, plan) => total + Object.entries(plan.rooms).reduce(
+    (roomTotal, [kind, rooms]) => kind === "training" ? roomTotal + (plan.rooms.training ?? []).reduce(
+      (n, room) => n + Number(Boolean(room.operatorsA?.length)) + Number(Boolean(room.operatorsB?.length)), 0,
+    ) : roomTotal + ((rooms ?? []) as MaaRoom[]).reduce(
       (groupTotal: number, room: MaaRoom) => groupTotal + (room.operators ?? []).filter((operator: string | MaaOperatorSlot | null) => (
         typeof operator === "string" ? operator.trim().length > 0 : Boolean(operator?.name?.trim())
       )).length,
@@ -424,7 +427,7 @@ export function ManualSchedulePage({
   const ownedOperators = useMemo(() => (
     (operbox ?? []).filter((entry) => entry.own).sort((left, right) => left.name.localeCompare(right.name, "zh-CN"))
   ), [operbox]);
-  const canPersistDraft = persistDraft && ownedOperators.length > 0;
+  const canPersistDraft = persistDraft && (ownedOperators.length > 0 || Boolean(draft.maaImport));
   const externalNames = ownedOperators.filter(operator => !sourceOperbox?.some(source => source.name === operator.name && source.own)).map(operator => operator.name);
   const ownedFingerprint = ownedOperators.map((operator) => operator.name).join("\0");
   const eliteByOperator = useMemo(() => new Map(
@@ -435,9 +438,10 @@ export function ManualSchedulePage({
   ), [ownedOperators]);
 
   useEffect(() => {
-    if (restored || !restorationReady || (ownedOperators.length === 0 && !initialPosterDocument)) return;
+    if (restored || !restorationReady) return;
     try {
       const saved = initialDraft ?? loadManualScheduleDraft(window.localStorage);
+      if (!ownedOperators.length && !initialPosterDocument && !saved?.maaImport) return;
       if (saved) {
         const reconciled = reconcileManualScheduleDraft(saved, layout, operbox);
         setDraft(reconciled);
@@ -893,8 +897,8 @@ export function ManualSchedulePage({
   }
 
   function exportMaa() {
-    downloadJson("arknights-infra-schedule-maa.json", prepareMaaForExport(
-      maa,
+    downloadJson("arknights-infra-schedule-maa.json", downloadManualMaa(
+      maaDraft, maa,
       strictMaaOperatorOrder,
       allowReplacementOperatorSort,
     ));
@@ -945,11 +949,12 @@ export function ManualSchedulePage({
     try {
       const text = await file.text();
       signal.throwIfAborted();
-      const importedMower = showMower ? mowerPlanToMaa(JSON.parse(text)) : null;
+      const importedMower = showMower ? mowerPlanToMaa(parseScheduleJson(text)) : null;
       const sourceMaa = importedMower ?? parseMaaScheduleText(text);
-      const importedMaa = normalizeMaaScheduleForManualImport(sourceMaa);
+      const sourceIndexes: number[] = [];
+      const importedMaa = normalizeMaaScheduleForManualImport(sourceMaa, sourceIndexes);
       const importedLayout = layoutFromMaaSchedule(importedMaa, layout);
-      const fiammettaImported = importedMaa.plans.some((plan) => plan.Fiammetta?.enable === true);
+      const fiammettaImported = importedMaa.plans.some((plan) => plan.Fiammetta && plan.Fiammetta.enable !== false);
       const converted = createManualScheduleDraftFromCalculator({
         layout: importedLayout,
         maa: importedMaa,
@@ -958,7 +963,8 @@ export function ManualSchedulePage({
         preferMaaTiming: true,
         preserveExternalOperators: true,
       });
-      const reconciled = reconcileManualScheduleDraft(converted, importedLayout, operbox);
+      const reconciled = reconcileManualScheduleDraft(converted, importedLayout, operbox, !importedMower);
+      if (!importedMower) reconciled.maaImport = rememberMaaImport(sourceMaa, manualScheduleToMaa(reconciled, importedLayout, fiammettaImported), sourceIndexes);
       setMaaImportPreview({
         format: importedMower ? "mower" : "maa",
         fileName: file.name,
@@ -966,7 +972,7 @@ export function ManualSchedulePage({
         layout: importedLayout,
         sourceShiftCount: sourceMaa.plans.length,
         importedShiftCount: reconciled.shifts.length,
-        sourceAssignmentCount: Math.max(countMaaAssignments(sourceMaa), countDraftAssignments(reconciled)),
+        sourceAssignmentCount: Math.max(countMaaAssignments(importedMaa), countDraftAssignments(reconciled)),
         importedAssignmentCount: countDraftAssignments(reconciled),
       });
     } catch (error) {
@@ -983,6 +989,7 @@ export function ManualSchedulePage({
     const imported = maaImportPreview.draft;
     onImportedLayoutChange(maaImportPreview.layout);
     setDraft(imported);
+    setRestored(true);
     onShiftDurationsChange(imported.shifts.map((shift) => shift.durationHours));
     onShiftStartTimeChange(imported.startTime);
     onScheduleModeChange(imported.scheduleMode);
@@ -990,14 +997,33 @@ export function ManualSchedulePage({
     setMaaImportPreview(null);
   }
 
-  if (!operbox?.some((operator) => operator.own) && !initialPosterDocument) {
+  const closeMobileTools = () => { if (mobileToolsRef.current) mobileToolsRef.current.open = false; };
+  const importFileButton = (mobile = false) => <FileUploadDialog
+      title={intl("components_pages_ManualSchedulePage.importScheduleFile")}
+      description={intl("FileUpload.scheduleDescription")}
+      extensions={[".json", ".jsonc", ".txt"]}
+      successFocus={() => false}
+      returnFocus={() => maaImportReturnFocus.current}
+      onFiles={([file], signal) => prepareMaaImport(file, signal)}
+      trigger={<Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" onClick={event => {
+        maaImportReturnFocus.current = mobile ? mobileToolsRef.current?.querySelector("summary") ?? null : event.currentTarget;
+        closeMobileTools();
+      }}><Upload />{intl("components_pages_ManualSchedulePage.importScheduleFile")}</Button>}
+    />;
+  const importConfirmation = maaImportPreview && <Suspense fallback={null}><MaaImportDialog maaImportPreview={maaImportPreview} confirmMaaImport={confirmMaaImport} onCancel={() => setMaaImportPreview(null)} finalFocus={maaImportReturnFocus} /></Suspense>;
+
+  if (!operbox?.some((operator) => operator.own) && !initialPosterDocument && !draft.maaImport) {
     return (
       <section className="flex min-h-[calc(100svh-9rem)] items-center justify-center py-8" aria-labelledby="manual-schedule-empty-title" data-manual-schedule-empty>
         <div className="w-full max-w-2xl border border-[#313131]/15 bg-[#F3F1EA] px-6 py-12 text-center shadow-[0_18px_45px_rgb(49_49_49/0.08)] sm:px-10">
           <span className="mx-auto grid size-12 place-items-center bg-[#313131] text-[#FFD800]" aria-hidden="true"><Sparkles /></span>
           <h1 id="manual-schedule-empty-title" className="mt-5 text-2xl font-semibold tracking-tight">{intl("components_pages_ManualSchedulePage.buildAManualSchedule")}</h1>
           <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-muted-foreground">{intl("components_pages_ManualSchedulePage.chooseAnOperatorBoxBaseLayoutShiftCountAnd")}</p>
-          <Button type="button" size="lg" className="mt-7 min-h-11" onClick={onOpenSetup}><Settings2 />{intl("components_pages_ManualSchedulePage.configureBoxLayout")}</Button>
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
+            {importFileButton()}
+            <Button type="button" size="lg" className="min-h-11" onClick={onOpenSetup}><Settings2 />{intl("components_pages_ManualSchedulePage.configureBoxLayout")}</Button>
+          </div>
+          {importConfirmation}
         </div>
       </section>
     );
@@ -1126,7 +1152,6 @@ export function ManualSchedulePage({
     </div>
   );
 
-  const closeMobileTools = () => { if (mobileToolsRef.current) mobileToolsRef.current.open = false; };
   const runNativeEvaluation = () => { closeMobileTools(); void calculateSchedule("native"); };
   const runPaperEvaluation = () => { closeMobileTools(); void calculateSchedule("manual"); };
   const scheduleTools = (mobile = false) => <>
@@ -1137,18 +1162,7 @@ export function ManualSchedulePage({
     <Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" onClick={() => { closeMobileTools(); setMoodSettingsOpen(true); }}><Settings2 />{intl("MoodSimulation.settings")}</Button>
     <Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" onClick={runNativeEvaluation} disabled={evaluationPending}><Sparkles />{intl("components_pages_ManualSchedulePage.calculateBasedOnSchedule")}</Button>
     <Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" onClick={runPaperEvaluation} disabled={evaluationPending}><Sparkles />{intl("components_pages_ManualSchedulePage.calculateBasedOnEfficiency")}</Button>
-    <FileUploadDialog
-      title={intl("components_pages_ManualSchedulePage.importScheduleFile")}
-      description={intl("FileUpload.scheduleDescription")}
-      extensions={[".json"]}
-      successFocus={() => false}
-      returnFocus={() => maaImportReturnFocus.current}
-      onFiles={([file], signal) => prepareMaaImport(file, signal)}
-      trigger={<Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" onClick={event => {
-        maaImportReturnFocus.current = mobile ? mobileToolsRef.current?.querySelector("summary") ?? null : event.currentTarget;
-        closeMobileTools();
-      }}><Upload />{intl("components_pages_ManualSchedulePage.importScheduleFile")}</Button>}
-    />
+    {importFileButton(mobile)}
   </>;
 
   return (
@@ -1443,7 +1457,7 @@ export function ManualSchedulePage({
         </DialogContent>
       </Dialog>
 
-      {maaImportPreview && <Suspense fallback={null}><MaaImportDialog maaImportPreview={maaImportPreview} confirmMaaImport={confirmMaaImport} onCancel={() => setMaaImportPreview(null)} finalFocus={maaImportReturnFocus} /></Suspense>}
+      {importConfirmation}
 
       <Dialog open={showMower && mowerExportOpen} onOpenChange={setMowerExportOpen}>
         <DialogContent className="max-w-[min(520px,calc(100vw-2rem))]">
