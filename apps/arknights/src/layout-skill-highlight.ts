@@ -7,7 +7,7 @@ type SkillRoom = { id: string; kind: EditableRoom["kind"]; level: number };
 const ROOM_SKILL_PREFIXES: Record<string, string> = {
   control_center: "control", trade_post: "trade", factory: "manu", power_plant: "power",
   dormitory: "dorm", office: "hire", meeting_room: "meet", workshop: "workshop", training_room: "train",
-  recycling: "recycle",
+  recycle: "recycle",
 };
 
 export function operatorsWithoutLayoutSkills(

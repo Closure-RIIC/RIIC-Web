@@ -78,7 +78,7 @@ export function SchedulePoster(props: Props) {
   const control = visible.find(room => room.kind === "control_center");
   const production = visible.filter(room => room.kind === "trade_post" || room.kind === "factory");
   const singles = visible.filter(room => ["power_plant", "office", "workshop"].includes(room.kind)).sort((a, b) => ["power_plant", "office", "workshop"].indexOf(a.kind) - ["power_plant", "office", "workshop"].indexOf(b.kind));
-  const pairs = visible.filter(room => ["meeting_room", "training_room", "recycling"].includes(room.kind));
+  const pairs = visible.filter(room => ["meeting_room", "training_room", "recycle"].includes(room.kind));
   const dorm = visible.find(room => room.kind === "dormitory");
   const total = result?.rotation.daily.production;
   const values = total ? dailyProductionValueBreakdown(total, result?.rotation.daily.drone_production) : null;

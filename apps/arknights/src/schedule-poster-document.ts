@@ -77,7 +77,7 @@ export function parsePosterDocument(value: unknown): SchedulePosterDocument {
       if (!room) { errors.push(`未知设施 ${id}`); continue; }
       if (assignment.operators.length > manualRoomCapacity(room)) errors.push(`${id} 人数超过容量。`);
       if (new Set(assignment.autofillSlots ?? []).size !== (assignment.autofillSlots ?? []).length) errors.push(`${id} 的 AUTO 槽位重复。`);
-      if (assignment.autofillSlots?.length && ["training_room", "recycling"].includes(room.kind)) errors.push(`${id} 不支持 MAA 自动填充。`);
+      if (assignment.autofillSlots?.length && ["training_room", "recycle"].includes(room.kind)) errors.push(`${id} 不支持 MAA 自动填充。`);
       for (const slotIndex of assignment.autofillSlots ?? []) {
         if (slotIndex >= manualRoomCapacity(room)) errors.push(`${id} 的 AUTO 槽位超过设施容量。`);
         if (assignment.operators[slotIndex]) errors.push(`${id} 的 AUTO 槽位不能同时安排固定干员。`);

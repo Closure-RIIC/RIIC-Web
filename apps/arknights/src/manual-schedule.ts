@@ -303,7 +303,7 @@ function finitePositive(value: unknown, fallback: number): number {
 }
 
 export function manualRoomCapacity(room: EditableRoom): number {
-  if (room.kind === "recycling") return 2;
+  if (room.kind === "recycle") return 2;
   if (room.kind === "control_center") return Math.max(1, Math.min(5, room.level));
   if (room.kind === "trade_post" || room.kind === "factory") return Math.max(1, Math.min(3, room.level));
   if (room.kind === "meeting_room" || room.kind === "training_room") return 2;

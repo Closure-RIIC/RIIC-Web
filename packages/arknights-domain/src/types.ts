@@ -17,7 +17,9 @@ export type RoomKind =
   | "office"
   | "meeting_room"
   | "workshop"
-  | "training_room";
+  | "training_room"
+  /** 回收站：wire 名 `recycle`，全布局至多一座，等级 1–3，不带产物。 */
+  | "recycle";
 
 export interface BlueprintRoom {
   id: string;
@@ -92,6 +94,8 @@ export interface MaaRooms {
   meeting?: MaaRoom[];
   hire?: MaaRoom[];
   processing?: MaaRoom[];
+  /** 回收站：MAA 协议里的键名就是 `recycle`。 */
+  recycle?: MaaRoom[];
 }
 
 export interface MaaPlan {

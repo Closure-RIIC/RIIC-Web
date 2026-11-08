@@ -1,4 +1,4 @@
-const GROUP_LABEL_KEYS = {"control":"group_control","trading":"group_trading","manufacture":"group_manufacture","power":"group_power","dormitory":"group_dormitory","meeting":"group_meeting","hire":"group_hire","processing":"group_processing","training":"group_training","recycling":"group_recycling","recycle":"group_recycle","functional":"group_functional"} as const;
+const GROUP_LABEL_KEYS = {"control":"group_control","trading":"group_trading","manufacture":"group_manufacture","power":"group_power","dormitory":"group_dormitory","meeting":"group_meeting","hire":"group_hire","processing":"group_processing","training":"group_training","recycle":"group_recycle","functional":"group_functional"} as const;
 import { lazyWithMessages } from "@/i18n/features-client";
 import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
 import type UiMessages from "../messages/zh-CN/AK_components.json";
@@ -77,7 +77,6 @@ import {
 import { DEFAULT_ROTATION_PROFILE } from "@riic/arknights-domain/rotation-settings";
 import { RoomRow } from "./schedule";
 import { recyclingRoom, withRecyclingRoom, type RecyclingRoom } from "./recycling-room";
-import { RecyclingRoomNotice } from "./components/RecyclingRoomNotice";
 import {
   COMPACT_OPERATOR_SIZE_CLASS,
   LevelDiamondVariant,
@@ -167,7 +166,7 @@ function CompactScheduleLoading({ rows }: { rows: RoomRow[] }) {
         <div className="flex min-w-0 flex-col gap-3" style={{ flexBasis: "45%" }}>
           <div className="compact-auxiliary-container min-w-0">
             <div className="compact-auxiliary-grid">
-              {["meeting", "training", "recycling", "hire", "processing"].flatMap((group) => (
+              {["meeting", "training", "recycle", "hire", "processing"].flatMap((group) => (
                 (grouped.get(group) ?? []).map((room) => skeleton(room, "h-28"))
               ))}
             </div>
@@ -396,7 +395,7 @@ function RoomLevelControl({
   />;
 }
 
-function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"] | "recycling"): string {
+function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"] | "recycle"): string {
   if (kind === "trade_post") return "trading";
   if (kind === "factory") return "manufacture";
   if (kind === "power_plant") return "power";
@@ -406,7 +405,7 @@ function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"] | "
   if (kind === "workshop") return "processing";
   if (kind === "training_room") return "training";
   if (kind === "office") return "hire";
-  if (kind === "recycling") return "recycling";
+  if (kind === "recycle") return "recycle";
   return "default";
 }
 
@@ -416,14 +415,13 @@ export function LayoutEditor({
   onTradeOrderChange,
   onRoomLevelChange,
   recyclingRoomLevel = 3,
-  onRecyclingRoomLevelChange,
 }: {
   layout: BaseBlueprint;
   onFactoryRecipeChange: (roomId: string, recipe: FactoryRecipe) => void;
   onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
   onRoomLevelChange: (roomId: string, level: number) => void;
+  /** 只有导入的旧布局缺少回收站时才补一座，等级取这里。 */
   recyclingRoomLevel?: number;
-  onRecyclingRoomLevelChange: (level: number) => void;
 }) {
   const intl = useTranslations();
   const locale = useLocale();
@@ -435,7 +433,17 @@ export function LayoutEditor({
     { key: "trade", label: intl("components.tradingPosts"), rooms: layout.rooms.filter((room) => room.kind === "trade_post") },
     { key: "factory", label: intl("components.factories"), rooms: layout.rooms.filter((room) => room.kind === "factory") },
     { key: "power", label: intl("components.powerPlants"), rooms: layout.rooms.filter((room) => room.kind === "power_plant") },
-    { key: "function", label: intl("components.controlFunctional"), rooms: [...layout.rooms.filter((room) => !["trade_post", "factory", "power_plant", "dormitory"].includes(room.kind)), recyclingRoom(recyclingRoomLevel)] },
+    {
+      key: "function",
+      label: intl("components.controlFunctional"),
+      // 预设布局已自带回收站；只有缺失时才补一座，避免同一房间出现两次。
+      rooms: layout.rooms.some((room) => room.kind === "recycle")
+        ? layout.rooms.filter((room) => !["trade_post", "factory", "power_plant", "dormitory"].includes(room.kind))
+        : [
+            ...layout.rooms.filter((room) => !["trade_post", "factory", "power_plant", "dormitory"].includes(room.kind)),
+            recyclingRoom(recyclingRoomLevel),
+          ],
+    },
     { key: "dormitory", label: intl("components.dormitories"), rooms: layout.rooms.filter((room) => room.kind === "dormitory") },
   ].filter((group) => group.rooms.length > 0);
 
@@ -467,10 +475,10 @@ export function LayoutEditor({
                 : isFactory
                   ? FACTORY_RECIPE_OPTIONS
                   : [];
-              const product = room.kind === "recycling" ? undefined : productLabel(room);
-              const levelMax = room.kind === "recycling" ? 3 : maxRoomLevel(room.kind);
+              const product = room.kind === "recycle" ? undefined : productLabel(room);
+              const levelMax = room.kind === "recycle" ? 3 : maxRoomLevel(room.kind);
               const visualGroup = roomVisualGroupForKind(room.kind);
-              const roomName = room.kind === "recycling" ? intl("RecyclingRoom.title") : roomKindLabel(room.kind);
+              const roomName = room.kind === "recycle" ? intl("RecyclingRoom.title") : roomKindLabel(room.kind);
               const originalName = group.key === "function" || group.rooms.length === 1 ? roomName : `${roomName} ${roomIndex + 1}`;
               const displayName = localizedRoomTitle(originalName, visualGroup, locale, gameCatalog);
 
@@ -496,7 +504,7 @@ export function LayoutEditor({
                       roomId={room.id}
                       level={room.level}
                       levelMax={levelMax}
-                      onChange={(level) => room.kind === "recycling" ? onRecyclingRoomLevelChange(level) : onRoomLevelChange(room.id, level)}
+                      onChange={(level) => onRoomLevelChange(room.id, level)}
                     />
                   </div>
 
@@ -662,7 +670,7 @@ export function PlanTelemetry(props: Parameters<typeof import("./components/Plan
 }
 
 const ROOM_SLOT_COUNT = 5;
-const AUXILIARY_ROOM_GROUPS = new Set(["dormitory", "hire", "meeting", "processing", "training", "recycling"]);
+const AUXILIARY_ROOM_GROUPS = new Set(["dormitory", "hire", "meeting", "processing", "training", "recycle"]);
 
 export function scheduleIssueTriggerId(row: RoomRow) {
   return `schedule-issue-${row.key}`;
@@ -671,7 +679,7 @@ export function scheduleIssueTriggerId(row: RoomRow) {
 
 function roomSlotCountFor(group: string) {
   if (group === "trading" || group === "manufacture") return 3;
-  if (group === "training" || group === "meeting" || group === "recycling") return 2;
+  if (group === "training" || group === "meeting" || group === "recycle") return 2;
   return ROOM_SLOT_COUNT;
 }
 
@@ -1544,7 +1552,7 @@ export function ScheduleBoard({
                 const functionalOperatorPosition = listFunctionalOperatorPosition(row.group);
                 const functionalOperatorPlacementClass = listFunctionalOperatorPlacementClass(row.group);
                 const slotCount = compactInlineRoom
-                  ? (row.group === "meeting" || row.group === "training" || row.group === "recycling" ? 2 : 1)
+                  ? (row.group === "meeting" || row.group === "training" || row.group === "recycle" ? 2 : 1)
                   : roomSlotCountFor(row.group);
                 const slots: Array<{
                   slot: RoomRow["operatorSlots"][number] | undefined;
@@ -1621,7 +1629,6 @@ export function ScheduleBoard({
                             </div>
                           ) : null}
                         </div>
-                        {row.group === "recycling" ? <RecyclingRoomNotice editable={Boolean(onSlotClick)} /> : null}
                         {!simulation && <RoomProductControls
                           row={row}
                           layoutRoom={layoutRoom}

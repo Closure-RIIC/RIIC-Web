@@ -124,7 +124,6 @@ type SetupDialogProps = {
   onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
   onRoomLevelChange: (roomId: string, level: number) => void;
   recyclingRoomLevel: number;
-  onRecyclingRoomLevelChange: (level: number) => void;
   powerBudget: PowerBudget;
   onFinish: () => void;
   onSkip: () => void;
@@ -196,7 +195,6 @@ export function SetupDialog({
   onTradeOrderChange,
   onRoomLevelChange,
   recyclingRoomLevel,
-  onRecyclingRoomLevelChange,
   powerBudget,
   onFinish,
   onSkip,
@@ -957,8 +955,7 @@ export function SetupDialog({
                       }}
                       onRoomLevelChange={onRoomLevelChange}
                       recyclingRoomLevel={recyclingRoomLevel}
-                      onRecyclingRoomLevelChange={onRecyclingRoomLevelChange}
-                    />
+                          />
                     {inputError ? <p className="mt-3 text-sm text-destructive" role="alert">{inputError}</p> : null}
                   </motion.div>
                 </ScrollArea>

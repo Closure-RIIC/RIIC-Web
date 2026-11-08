@@ -531,7 +531,7 @@ export function ManualSchedulePage({
       const visibleSlots = row.group === "control" ? 5 : row.group === "trading" || row.group === "manufacture" ? 3 : capacity;
       return {
         ...row,
-        ...(row.group === "recycling" ? {
+        ...(row.group === "recycle" ? {
           operators: (assignment?.operators ?? []).filter((name): name is string => Boolean(name)),
           operatorSlots: (assignment?.operators ?? []).flatMap((name) => name ? [{ name, label: name }] : []),
         } : {}),

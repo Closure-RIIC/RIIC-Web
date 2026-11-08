@@ -2864,7 +2864,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         onTradeOrderChange={handleTradeOrderChange}
         onRoomLevelChange={handleRoomLevelChange}
         recyclingRoomLevel={userSettings.recyclingRoomLevel}
-        onRecyclingRoomLevelChange={(level) => handleUserSettingsChange({ ...userSettings, recyclingRoomLevel: Math.max(1, Math.min(3, Math.trunc(level))) as 1 | 2 | 3 })}
         powerBudget={powerBudget}
         onFinish={closeSetup}
         onSkip={closeSetup}

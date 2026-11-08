@@ -7,7 +7,6 @@ import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion";
 import { ArrowLeftRight, Check, FileWarning, Package, Trash2 } from "lucide-react";
 import { Select } from "@base-ui/react/select";
 import { DroneIcon } from "@/components/DroneIcon";
-import { RecyclingRoomNotice } from "@/components/RecyclingRoomNotice";
 
 import { maxRoomLevel } from "@riic/arknights-domain/blueprint";
 import { AnimatedNumber, AnimatedText } from "@/components/AnimatedText";
@@ -70,7 +69,7 @@ export interface CompactScheduleViewProps {
 /** 布局宽度百分比，自己改数值 */
 const GRID_LEFT_PCT = 55;   // 左大列宽度%
 const GRID_RIGHT_PCT = 45;  // 右大列宽度%
-const COMPACT_AUXILIARY_GROUPS = new Set(["meeting", "training", "hire", "processing", "recycling"]);
+const COMPACT_AUXILIARY_GROUPS = new Set(["meeting", "training", "hire", "processing", "recycle"]);
 const COMPACT_ACTION_CLASS = "inline-flex h-7 shrink-0 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-white/20 bg-[#3C3C3C]/55 px-2 text-xs outline-none hover:bg-[#4B4B4B] max-sm:min-h-11 max-sm:min-w-11";
 
 function CompactProductSelect({
@@ -121,7 +120,7 @@ function CompactProductSelect({
 
 function roomSlotCountFor(group: string) {
   if (group === "trading" || group === "manufacture") return 3;
-  if (group === "meeting" || group === "training" || group === "recycling") return 2;
+  if (group === "meeting" || group === "training" || group === "recycle") return 2;
   if (group === "power" || group === "hire" || group === "processing") return 1;
   return 5;
 }
@@ -380,7 +379,6 @@ function CompactRoomCard({
   const details = (
     <div className="relative z-10 min-w-0">
       {header}
-      {row.group === "recycling" ? <RecyclingRoomNotice editable={Boolean(onSlotClick)} /> : null}
       {efficiencyContent ? <div className={isPower && efficiency ? "mt-1" : "mt-2"}>{efficiencyContent}</div> : null}
       {paperSkillInput}
     </div>
@@ -607,7 +605,7 @@ export function CompactScheduleView(props: CompactScheduleViewProps) {
   const ctrl = getGroup("control")[0];
   const meeting = getGroup("meeting")[0];
   const training = getGroup("training")[0];
-  const recycling = getGroup("recycling")[0];
+  const recycling = getGroup("recycle")[0];
   const office = getGroup("hire")[0];
   const processing = getGroup("processing")[0];
 
