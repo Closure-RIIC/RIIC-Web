@@ -85,7 +85,7 @@ import { addOperatorPresentations } from "@/schedule-presentation";
 import { planToRows, type RoomRow } from "@/schedule";
 import { manualEditableRooms, withRecyclingRoom } from "@/recycling-room";
 import type { BaseBlueprint, MaaJson, MaaOperatorSlot, MaaRoom, OperBoxEntry } from "@riic/arknights-domain/types";
-import { DEFAULT_MANUAL_SHIFT_START_TIME } from "@/manual-schedule-config";
+import { DEFAULT_MANUAL_SHIFT_START_TIME, MIN_MANUAL_SETUP_SHIFT_COUNT } from "@/manual-schedule-config";
 
 const ScrollArea = lazyWithMessages(() => import("@/components/ui/scroll-area").then((module) => ({ default: module.ScrollArea })), "apps/arknights/src/components/ui/scroll-area.tsx");
 const PosterWorkbench = lazyWithMessages(() => import("@/components/schedule-poster/PosterWorkbench"), "apps/arknights/src/components/schedule-poster/PosterWorkbench.tsx");
@@ -531,7 +531,7 @@ export function ManualSchedulePage({
       const visibleSlots = row.group === "control" ? 5 : row.group === "trading" || row.group === "manufacture" ? 3 : capacity;
       return {
         ...row,
-        ...(row.group === "recycling" ? {
+        ...(row.group === "recycle" ? {
           operators: (assignment?.operators ?? []).filter((name): name is string => Boolean(name)),
           operatorSlots: (assignment?.operators ?? []).flatMap((name) => name ? [{ name, label: name }] : []),
         } : {}),
@@ -948,6 +948,10 @@ export function ManualSchedulePage({
       const importedMower = showMower ? mowerPlanToMaa(JSON.parse(text)) : null;
       const sourceMaa = importedMower ?? parseMaaScheduleText(text);
       const importedMaa = normalizeMaaScheduleForManualImport(sourceMaa);
+      // 至少两班才符合当前的换班方式下限。
+      if (sourceMaa.plans.length < MIN_MANUAL_SETUP_SHIFT_COUNT) {
+        throw new Error(intl("components_pages_ManualSchedulePage.scheduleNeedsAtLeastTwoShifts"));
+      }
       const importedLayout = layoutFromMaaSchedule(importedMaa, layout);
       const fiammettaImported = importedMaa.plans.some((plan) => plan.Fiammetta?.enable === true);
       const converted = createManualScheduleDraftFromCalculator({

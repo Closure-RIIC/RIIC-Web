@@ -28,16 +28,25 @@ import { ManualShiftStartStepper, ManualShiftTimeline } from "@/components/setup
 import { SetupStepper } from "@/components/setup/SetupStepper";
 import { RotationSettings } from "@/components/RotationSettings";
 import { FiammettaSettings } from "@/components/FiammettaSettings";
+import { SupportCombinationsSettings } from "@/components/SupportCombinationsSettings";
+import { Input } from "@/components/ui/input";
 import { WizardSteps } from "@/components/interior/wizard-steps";
 import { useWebsiteSession } from "@/website-session";
 
 import {
+  DEFAULT_MANUAL_SHIFT_DURATIONS,
   resizeManualShiftDurations,
+  manualShiftDurationsOf,
   snapManualShiftDurationsToHours,
+  uniformManualShiftHours,
   type ManualScheduleMode,
   type ManualScheduleDraft,
 } from "@/manual-schedule";
-import { DEFAULT_MANUAL_SHIFT_START_TIME, MAX_MANUAL_SETUP_SHIFT_COUNT } from "@/manual-schedule-config";
+import {
+  DEFAULT_MANUAL_SHIFT_START_TIME,
+  MAX_MANUAL_SETUP_SHIFT_COUNT,
+  MIN_MANUAL_SETUP_SHIFT_COUNT,
+} from "@/manual-schedule-config";
 
 import type { FactoryRecipe, PowerBudget, TradeOrder } from "@riic/arknights-domain/blueprint";
 import { FileUploadDialog } from "@/components/FileUploadDialog";
@@ -45,7 +54,9 @@ import { messageRecord } from "@/i18n/translate";
 import { LayoutEditor, PresetSelector } from "./components";
 import { countOwned } from "@riic/arknights-domain/operbox";
 import type { SetupStep } from "./onboarding";
-import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, RotationProfile, RoomProduct, SklandScheduleSnapshot } from "@riic/arknights-domain/types";
+import { ALLOWED_CYCLE_HOURS, DEFAULT_ROTATION_PROFILE, isRotationProfile } from "@riic/arknights-domain/rotation-settings";
+import type { CustomRotation } from "@riic/arknights-domain/rotation-settings";
+import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, RoomProduct, SklandScheduleSnapshot } from "@riic/arknights-domain/types";
 
 import type { MaaIssue } from "@riic/arknights-domain/maa-review";
 
@@ -53,6 +64,8 @@ const CLIENT_SKLAND_ENABLED = process.env.APP_CLIENT_SKLAND_ENABLED === "1";
 const ManualOperboxPicker = lazyWithMessages(() => import("@/components/setup/ManualOperboxPicker").then((module) => ({ default: module.ManualOperboxPicker })), "apps/arknights/src/components/setup/ManualOperboxPicker.tsx");
 
 const SETUP_STEP_ORDER: SetupStep[] = ["box", "layout", "facilities"];
+/** 时间轴模式可选的周期档位，与求解器允许的 24/36/48 一致。 */
+const CYCLE_STEPS = [24, 36, 48] as const;
 const PANEL_TRANSITION = { type: "spring", stiffness: 420, damping: 38, mass: 0.55 } as const;
 type OperatorInputMode = "skland" | "maa" | "manual";
 
@@ -86,8 +99,13 @@ type SetupDialogProps = {
   configurationKey: string;
   manualDraft?: ManualScheduleDraft | null;
   onManualProductChange?: (shiftIndex: number, roomId: string, product: RoomProduct) => void;
-  rotationProfile: RotationProfile;
-  onRotationProfileChange: (value: RotationProfile) => void;
+  /** 换班方式 key：named profile 或 custom_zb_16_8 一类的编码。 */
+  rotationProfile: string;
+  onRotationProfileChange: (value: string) => void;
+  customRotation: CustomRotation;
+  onCustomRotationChange: (value: CustomRotation) => void;
+  supportCombinationsEnabled: boolean;
+  onSupportCombinationsEnabledChange: (enabled: boolean) => void;
   manualShiftDurations?: number[];
   onManualShiftDurationsChange?: (durations: number[]) => void;
   manualShiftStartTime?: string;
@@ -106,7 +124,6 @@ type SetupDialogProps = {
   onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
   onRoomLevelChange: (roomId: string, level: number) => void;
   recyclingRoomLevel: number;
-  onRecyclingRoomLevelChange: (level: number) => void;
   powerBudget: PowerBudget;
   onFinish: () => void;
   onSkip: () => void;
@@ -156,6 +173,10 @@ export function SetupDialog({
   onManualProductChange,
   rotationProfile,
   onRotationProfileChange,
+  customRotation,
+  onCustomRotationChange,
+  supportCombinationsEnabled,
+  onSupportCombinationsEnabledChange,
   manualShiftDurations = [12, 6, 6],
   onManualShiftDurationsChange,
   manualShiftStartTime = DEFAULT_MANUAL_SHIFT_START_TIME,
@@ -174,7 +195,6 @@ export function SetupDialog({
   onTradeOrderChange,
   onRoomLevelChange,
   recyclingRoomLevel,
-  onRecyclingRoomLevelChange,
   powerBudget,
   onFinish,
   onSkip,
@@ -261,6 +281,17 @@ export function SetupDialog({
   const facilitiesPanelRef = useRef<HTMLDivElement>(null);
   const hasBox = Boolean(operbox?.length);
   const ownedCount = countOwned(operbox);
+  const [rotationValid, setRotationValid] = useState(true);
+  /** 顺序轮换「每班时长」输入框的原始文本；失焦时提交。 */
+  const [shiftHoursDraft, setShiftHoursDraft] = useState<string | null>(null);
+  /** 时间轴的总时长由各班之和决定，避免与滑块数量/时长脱节。 */
+  const cycleHours = Math.max(
+    1,
+    Math.round(manualShiftDurations.reduce((sum, hours) => sum + hours, 0)) || 24,
+  );
+  /** 配置窗口允许的班次数范围：两种模式都是 2–4 班。 */
+  const manualShiftCountLimit = MAX_MANUAL_SETUP_SHIFT_COUNT;
+  const cycleIndex = Math.max(0, CYCLE_STEPS.indexOf(cycleHours as (typeof CYCLE_STEPS)[number]));
   const mustReviewFacilities = needsFacilityReview || !powerBudget.ok;
   const persistedDataLabel = fileName || sourceLabel(boxSource, en);
   const currentDataLabel = CLIENT_SKLAND_ENABLED && boxSource === "skland" && !sklandSnapshot
@@ -270,10 +301,58 @@ export function SetupDialog({
       : persistedDataLabel;
   const reducedMotion = useReducedMotion();
 
+  /** 顺序轮换的「每班时长」：只有该模式下才有意义，时间轴模式自己管每班长短。 */
+  const shiftHours = manualScheduleMode === "sequential" ? uniformManualShiftHours(manualShiftDurations) : null;
+  /** 顺序轮换的周期 = 班次数 × 每班时长，必须落在 24/36/48；其他模式不校验。 */
+  const sequentialCycleHours = shiftHours === null ? null : manualShiftDurations.length * shiftHours;
+  const sequentialCycleValid = sequentialCycleHours === null
+    || ALLOWED_CYCLE_HOURS.includes(sequentialCycleHours as (typeof ALLOWED_CYCLE_HOURS)[number]);
+  /** 计算器模式看自动排班的换班方式，手动模式看手动班次的周期，两者互不影响。 */
+  const scheduleConfigValid = mode === "manual" ? sequentialCycleValid : rotationValid;
+
   function updateManualShiftCount(count: number) {
     if (!onManualShiftDurationsChange) return;
-    const next = resizeManualShiftDurations(manualShiftDurations, Math.min(count, MAX_MANUAL_SETUP_SHIFT_COUNT));
+    const next = resizeManualShiftDurations(manualShiftDurations, Math.min(count, manualShiftCountLimit));
     onManualShiftDurationsChange(manualScheduleMode === "period" ? snapManualShiftDurationsToHours(next) : next);
+  }
+
+  /** 顺序轮换：改班次数时保持每班时长不变，各处时长跟着班次数走。 */
+  function updateSequentialShiftCount(count: number) {
+    if (!onManualShiftDurationsChange || shiftHours === null) return;
+    onManualShiftDurationsChange(manualShiftDurationsOf(Math.min(count, manualShiftCountLimit), shiftHours));
+  }
+
+  /** 时间轴模式切换总时长：按现有比例重新分配，保证总和等于新周期。 */
+  function updateCycleHours(next: number) {
+    if (!onManualShiftDurationsChange || next === cycleHours) return;
+    const current: number[] = manualShiftDurations.length
+      ? [...manualShiftDurations]
+      : [...DEFAULT_MANUAL_SHIFT_DURATIONS];
+    const total = current.reduce((sum: number, duration: number) => sum + duration, 0);
+    // 每班至少 1 小时，余下的按原比例放大/缩小。
+    const scaled: number[] = current.map((duration: number) => Math.max(1, Math.round(duration / total * next)));
+    let delta = next - scaled.reduce((sum: number, duration: number) => sum + duration, 0);
+    for (let index = 0; delta !== 0 && index < scaled.length * 4; index = (index + 1) % scaled.length) {
+      if (delta > 0) { scaled[index] = scaled[index]! + 1; delta -= 1; }
+      else if (scaled[index]! > 1) { scaled[index] = scaled[index]! - 1; delta += 1; }
+    }
+    onManualShiftDurationsChange(scaled);
+  }
+
+  function editShiftHours(raw: string) {
+    setShiftHoursDraft(raw);
+  }
+
+  /** 失焦提交：非正整数按 1 处理，然后把所有班次改成同一时长。 */
+  function commitShiftHours() {
+    const draft = shiftHoursDraft;
+    if (draft === null) return;
+    setShiftHoursDraft(null);
+    if (!onManualShiftDurationsChange) return;
+    const parsed = Number.parseInt(draft, 10);
+    const hours = Number.isFinite(parsed) && parsed >= 1 ? parsed : 1;
+    if (hours === shiftHours) return;
+    onManualShiftDurationsChange(manualShiftDurationsOf(manualShiftDurations.length, hours));
   }
 
   useEffect(() => {
@@ -724,32 +803,89 @@ export function SetupDialog({
                                     value={manualShiftDurations.length}
                                     decreaseLabel={intl("setup_dialog.removeOneShift")}
                                     increaseLabel={intl("setup_dialog.addOneShift")}
-                                    decreaseDisabled={!onManualShiftDurationsChange || manualShiftDurations.length <= 1}
-                                    increaseDisabled={!onManualShiftDurationsChange || manualShiftDurations.length >= MAX_MANUAL_SETUP_SHIFT_COUNT}
-                                    onDecrease={() => updateManualShiftCount(manualShiftDurations.length - 1)}
-                                    onIncrease={() => updateManualShiftCount(manualShiftDurations.length + 1)}
+                                    decreaseDisabled={!onManualShiftDurationsChange || manualShiftDurations.length <= MIN_MANUAL_SETUP_SHIFT_COUNT}
+                                    increaseDisabled={!onManualShiftDurationsChange || manualShiftDurations.length >= manualShiftCountLimit}
+                                    onDecrease={() => (manualScheduleMode === "sequential" ? updateSequentialShiftCount : updateManualShiftCount)(manualShiftDurations.length - 1)}
+                                    onIncrease={() => (manualScheduleMode === "sequential" ? updateSequentialShiftCount : updateManualShiftCount)(manualShiftDurations.length + 1)}
                                   />
+                                  {/* 每班时长只属于顺序轮换：时间轴模式自己调每班长短。 */}
+                                  {shiftHours !== null ? (
+                                    <label className="flex items-center gap-2">
+                                      <span className="whitespace-nowrap text-xs text-muted-foreground">
+                                        {intl("setup_dialog.shiftHours")}
+                                      </span>
+                                      <Input
+                                        type="number"
+                                        inputMode="numeric"
+                                        min={1}
+                                        step={1}
+                                        className="font-number h-10 w-20 bg-background"
+                                        value={shiftHoursDraft ?? String(shiftHours)}
+                                        aria-label={intl("setup_dialog.shiftHours")}
+                                        disabled={!onManualShiftDurationsChange}
+                                        onChange={(event) => editShiftHours(event.target.value)}
+                                        onBlur={commitShiftHours}
+                                      />
+                                    </label>
+                                  ) : null}
                                   {manualScheduleMode === "period" ? <ManualShiftStartStepper startTime={manualShiftStartTime} onStartTimeChange={onManualShiftStartTimeChange} /> : null}
+                                  {/* 时间轴模式：总时长三档，时间轴跟着伸缩。 */}
+                                  {manualScheduleMode === "period" ? (
+                                    <div className="flex items-center gap-2" role="group" aria-label={intl("setup_dialog.cycleHours")}>
+                                      <span className="text-xs text-muted-foreground">{intl("setup_dialog.cycleHours")}</span>
+                                      <SetupStepper
+                                        label={intl("setup_dialog.cycleHours")}
+                                        value={cycleHours}
+                                        decreaseLabel={intl("setup_dialog.shorterCycle")}
+                                        increaseLabel={intl("setup_dialog.longerCycle")}
+                                        decreaseDisabled={!onManualShiftDurationsChange || cycleIndex <= 0}
+                                        increaseDisabled={!onManualShiftDurationsChange || cycleIndex >= CYCLE_STEPS.length - 1}
+                                        onDecrease={() => updateCycleHours(CYCLE_STEPS[Math.max(0, cycleIndex - 1)]!)}
+                                        onIncrease={() => updateCycleHours(CYCLE_STEPS[Math.min(CYCLE_STEPS.length - 1, cycleIndex + 1)]!)}
+                                        hideLabel
+                                      />
+                                    </div>
+                                  ) : null}
                                 </div>
                               </div>
                               {manualScheduleMode === "period" ? <ManualShiftTimeline
                                 durations={manualShiftDurations}
                                 startTime={manualShiftStartTime}
+                                cycleHours={cycleHours}
                                 onDurationsChange={onManualShiftDurationsChange}
                               /> : null}
+                              {/* 与自动排班一致：设置区就地提示，完成页再给一次总结。 */}
+                              {!sequentialCycleValid ? (
+                                <p className="text-xs text-destructive" role="alert" data-manual-cycle-invalid>
+                                  {intl("setup_dialog.rotationCycleInvalid", { allowed: ALLOWED_CYCLE_HOURS.join(" / ") })}
+                                </p>
+                              ) : null}
                             </Tabs>
                           </div>
                         </section>
-                      ) : <RotationSettings value={rotationProfile} onChange={onRotationProfileChange} />}
+                      ) : <RotationSettings
+                        value={rotationProfile}
+                        onChange={onRotationProfileChange}
+                        custom={customRotation}
+                        onCustomChange={onCustomRotationChange}
+                        onValidityChange={setRotationValid}
+                      />}
                     </div>
 
                     <div className="border-t border-border/70 pt-5">
                       <FiammettaSettings
                         enabled={fiammettaEnabled}
                         operbox={operbox}
-                        rotation={rotationProfile}
+                        rotation={isRotationProfile(rotationProfile) ? rotationProfile : DEFAULT_ROTATION_PROFILE}
                         onEnabledChange={onFiammettaEnabledChange}
                         mode={mode}
+                      />
+                    </div>
+
+                    <div className="border-t border-border/70 pt-5">
+                      <SupportCombinationsSettings
+                        enabled={supportCombinationsEnabled}
+                        onEnabledChange={onSupportCombinationsEnabledChange}
                       />
                     </div>
 
@@ -819,8 +955,7 @@ export function SetupDialog({
                       }}
                       onRoomLevelChange={onRoomLevelChange}
                       recyclingRoomLevel={recyclingRoomLevel}
-                      onRecyclingRoomLevelChange={onRecyclingRoomLevelChange}
-                    />
+                          />
                     {inputError ? <p className="mt-3 text-sm text-destructive" role="alert">{inputError}</p> : null}
                   </motion.div>
                 </ScrollArea>
@@ -854,20 +989,33 @@ export function SetupDialog({
           ) : (
             <>
               <span
-                className={`mr-auto min-w-0 truncate text-left text-xs tabular-nums sm:text-sm ${powerBudget.ok ? "text-emerald-700" : "text-red-600"}`}
+                className={`mr-auto grid min-w-0 gap-0.5 text-left text-xs tabular-nums sm:text-sm ${!scheduleConfigValid || !powerBudget.ok ? "text-red-600" : "text-emerald-700"}`}
                 role="status"
               >
-                <span className={`sm:hidden ${powerBudget.ok ? "text-emerald-700" : "text-red-600"}`}>
-                  {powerBudget.ok ? (intl("setup_dialog.powerOk")) : (intl("setup_dialog.short", { value1: powerBudget.consumed - powerBudget.generated }))}
-                </span>
-                <span className={`max-sm:hidden ${powerBudget.ok ? "text-emerald-700" : "text-red-600"}`}>
-                  {powerBudget.ok
-                    ? (intl("setup_dialog.powerOk2", { consumed: powerBudget.consumed, generated: powerBudget.generated }))
-                    : (intl("setup_dialog.powerShortfall", { value1: powerBudget.consumed - powerBudget.generated, consumed: powerBudget.consumed, generated: powerBudget.generated }))}
-                </span>
+                {/* 时长与电力各自独立提示，两者都不满足时同时显示。 */}
+                {/* 两种模式共用同一句提示：周期只允许 24 / 36 / 48 小时。 */}
+                {(mode === "manual" ? !sequentialCycleValid : !rotationValid) ? (
+                  <span>{intl("setup_dialog.rotationCycleInvalid", { allowed: ALLOWED_CYCLE_HOURS.join(" / ") })}</span>
+                ) : null}
+                {!powerBudget.ok ? (
+                  <span className="truncate">
+                    <span className="sm:hidden">{intl("setup_dialog.short", { value1: powerBudget.consumed - powerBudget.generated })}</span>
+                    <span className="max-sm:hidden">
+                      {intl("setup_dialog.powerShortfall", { value1: powerBudget.consumed - powerBudget.generated, consumed: powerBudget.consumed, generated: powerBudget.generated })}
+                    </span>
+                  </span>
+                ) : null}
+                {scheduleConfigValid && powerBudget.ok ? (
+                  <span className="truncate">
+                    <span className="sm:hidden">{intl("setup_dialog.powerOk")}</span>
+                    <span className="max-sm:hidden">
+                      {intl("setup_dialog.powerOk2", { consumed: powerBudget.consumed, generated: powerBudget.generated })}
+                    </span>
+                  </span>
+                ) : null}
               </span>
               <Button className="max-sm:min-w-16 sm:min-w-[88px]" size="dialog" type="button" variant="ghost" onClick={goToBasics}>{intl("setup_dialog.back")}</Button>
-              <Button className="shrink-0" size="dialog" type="button" disabled={!powerBudget.ok} onClick={onFinish}><Check />{intl("setup_dialog.done")}</Button>
+              <Button className="shrink-0" size="dialog" type="button" disabled={!powerBudget.ok || !scheduleConfigValid} onClick={onFinish}><Check />{intl("setup_dialog.done")}</Button>
             </>
           )}
         </footer>

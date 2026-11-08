@@ -1,7 +1,10 @@
 {
   "abc_12_6_6": "Three shifts per day",
   "main_backup_12_12": "Primary / backup rotation",
+  "main_backup_24_24": "Primary / backup rotation",
   "abc_12_12_12": "Two changes per day",
   "fiammetta_8_8_4_4": "Fiammetta rotation",
-  "abyssal_7_5_7_5": "Abyssal Hunters rotation"
+  "abyssal_7_5_7_5": "Abyssal Hunters rotation",
+  "generic_main_backup": "Custom",
+  "generic_abc": "Custom"
 }

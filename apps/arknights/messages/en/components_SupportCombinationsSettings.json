@@ -1,0 +1,6 @@
+{
+  "title": "Support operators",
+  "description": "When enabled, controlled combinations may add 1–2 support operators; when disabled, only the primary operators compete.",
+  "enabled": "Enabled",
+  "disabled": "Disabled"
+}
