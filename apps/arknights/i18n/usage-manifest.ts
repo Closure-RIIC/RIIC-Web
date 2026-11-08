@@ -19693,7 +19693,7 @@ export const references = [
   {
     "key": "RotationPresentation.manualDuration",
     "prefix": false,
-    "source": "apps/arknights/src/manual-schedule.ts:297"
+    "source": "apps/arknights/src/manual-schedule.ts:298"
   },
   {
     "key": "RotationPresentation.resting",
