@@ -48,6 +48,20 @@ function posterDuration(hours: number) {
   return `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
 }
 
+function instructionLayout(value: string) {
+  const lines = value.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+  // Match the fixed artwork's 842 × 72 text area. Counting every UTF-16 unit
+  // as a full em leaves room for Latin text and surrogate-pair characters.
+  for (const paragraphs of [lines, [lines.join(" ")]]) {
+    for (const [fontSize, lineHeight] of [[16, 22], [14, 18], [13, 16], [12, 14]] as const) {
+      const capacity = Math.max(1, Math.floor(842 / fontSize) - 1);
+      const rows = paragraphs.reduce((sum, line) => sum + Math.ceil(line.length / capacity), 0);
+      if (rows <= Math.floor((72 - 4) / lineHeight)) return { text: paragraphs.join("\n"), fontSize, lineHeight };
+    }
+  }
+  return { text: lines.join(" "), fontSize: 12, lineHeight: 14 };
+}
+
 export function SchedulePoster(props: Props) {
   const rawLocale = useRawLocale();
   const gameCatalog = useGameCatalog();
@@ -61,6 +75,7 @@ export function SchedulePoster(props: Props) {
     return () => observer.disconnect();
   }, []);
   const { document: doc, result, background, share, onSelect } = props;
+  const instructions = instructionLayout(doc.meta.instructions.trim() || rawText.text(rawLocale, "instructionsPlaceholder"));
   const shifts = doc.draft.shifts;
   const hasStartTime = Boolean(doc.draft.startTime);
   const startTime = doc.draft.startTime || DEFAULT_MANUAL_SHIFT_START_TIME;
@@ -98,13 +113,14 @@ export function SchedulePoster(props: Props) {
     ] },
     { label: rawText.text(rawLocale, "experience"), value: values?.experience.total, icon: PRODUCT_ICON_URLS.experience, details: [rawText.text(rawLocale, "droneContribution", { count: number(values?.experience.drones) })] },
     { label: rawText.text(rawLocale, "orundum"), value: values?.orundum.total, icon: PRODUCT_ICON_URLS.orundum, details: [hasOriginiumDrones ? rawText.text(rawLocale, "noOriginiumDrones") : rawText.text(rawLocale, "originiumBottleneck")] },
+    { label: rawText.text(rawLocale, "shards"), value: total?.originium_shards, formattedValue: total ? detailNumber(total.originium_shards) : "—", icon: PRODUCT_ICON_URLS.shards, details: [hasOriginiumDrones ? rawText.text(rawLocale, "noOriginiumDrones") : rawText.text(rawLocale, "shardProduction")] },
   ].filter(stat => typeof stat.value === "number" && stat.value !== 0);
 
   function facility(room: EditableRoom, variant: "control" | "production" | "single" | "pair" | "dorm") {
     const group = ROOM_GROUP[room.kind];
     const visual = roomVisualFor(group);
     const products = shifts.map((_, index) => posterProduct(doc, room, index, rawLocale));
-    return <section key={room.id} className={`poster-facility poster-${variant}`} data-poster-room={room.id} style={{ "--facility-color": visual.accent } as CSSProperties}>
+    return <section key={room.id} className={`poster-facility poster-${variant}`} data-poster-room={room.id} data-poster-room-kind={room.kind} style={{ "--facility-color": visual.accent } as CSSProperties}>
       <button className="poster-facility-title" onClick={() => onSelect({ roomId: room.id, shift: 0 })}>
         <span>{posterRoomTitle(room, doc.layout, rawLocale)}</span>
         <span className="poster-facility-ornament" />
@@ -172,7 +188,7 @@ export function SchedulePoster(props: Props) {
                 <div className="poster-members">{memberSlots}</div>
                 <div className="poster-efficiency-panel">
                   <span className="poster-efficiency-pair" title={efficiencyDetail}>
-                    <span className="poster-paper-efficiency"><i>{rawText.text(rawLocale, "skill")}</i> {skillEfficiency}</span>
+                    <span className="poster-paper-efficiency"><i>{rawText.text(rawLocale, "skill")}</i> <span>{skillEfficiency}</span></span>
                     {room.kind === "trade_post" ? <span className="poster-equivalent-efficiency">
                       <i>{rawText.text(rawLocale, "equivalent")}</i>
                       <span className="poster-equivalent-values"><span>{rawText.rich(rawLocale, "trading", { part1: richValue((equivalentEfficiency)) })}</span><span>{rawText.rich(rawLocale, "pureGold", { part1: richValue((goldEquivalentEfficiency)) })}</span></span>
@@ -198,11 +214,11 @@ export function SchedulePoster(props: Props) {
           <div className="poster-title-row"><h1>{posterDisplayTitle(doc, rawLocale) || rawText.text(rawLocale, "untitled")}</h1><div className="poster-brand"><img src="/icon.png" alt={rawText.text(rawLocale, "siteLogo")} /><span>{rawText.text(rawLocale, "closureInfrastructureTerminal")}</span></div></div>
           <p><span className="poster-cycle">{rawText.rich(rawLocale, "rotationCycle", { part1: richValue((posterDuration(cycleHours))) })}</span><span className="poster-author">{rawText.rich(rawLocale, "author", { part1: richValue((doc.meta.author || rawText.text(rawLocale, "notProvided"))) })}</span></p>
         </div>
-        <div className="poster-output" data-production-ready={Boolean(values)}>
-          <div className="poster-output-values">{productionStats.map(stat => <div key={stat.label}><img src={stat.icon} alt="" /><span>{stat.label}<strong>{number(stat.value)}</strong><small>{stat.details.map(detail => <span key={detail}>{detail}</span>)}</small></span></div>)}</div>
+        <div className="poster-output" data-production-ready={Boolean(values)} data-product-count={productionStats.length}>
+          <div className="poster-output-values" style={{ "--poster-output-count": Math.max(1, productionStats.length) } as CSSProperties}>{productionStats.map(stat => <div key={stat.label}><img src={stat.icon} alt="" /><span>{stat.label}<strong>{stat.formattedValue ?? number(stat.value)}</strong><small>{stat.details.map(detail => <span key={detail}>{detail}</span>)}</small></span></div>)}</div>
         </div>
         <div className="poster-share">{share ? <><QRCodeSVG value={share.url} size={104} level="M" marginSize={2} /><span>{share.code}</span></> : <div className="poster-qr-placeholder">{rawText.rich(rawLocale, "generateAScheduleCodeToDisplayItsQrCode", { part1: richValue((<br />)) })}</div>}</div>
-        {doc.presentation.showInstructions ? <div className="poster-instructions" data-dense={doc.meta.instructions.length > 220}><b>{rawText.text(rawLocale, "notes")}</b><div>{doc.meta.instructions || rawText.text(rawLocale, "instructionsPlaceholder")}</div></div> : null}
+        {doc.presentation.showInstructions ? <div className="poster-instructions"><b>{rawText.text(rawLocale, "notes")}</b><div style={{ fontSize: instructions.fontSize, lineHeight: `${instructions.lineHeight}px` }}>{instructions.text}</div></div> : null}
         <div className="poster-support-notes" style={{ gridTemplateColumns: `repeat(${shifts.length},minmax(0,1fr))` }}>
           {shifts.map((shift, index) => {
             const drone = doc.layout.rooms.find(room => room.id === shift.droneTargetRoomId);
