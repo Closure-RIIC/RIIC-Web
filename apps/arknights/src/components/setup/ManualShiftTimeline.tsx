@@ -34,9 +34,11 @@ export function ManualShiftStartStepper({ startTime, onStartTimeChange }: {
   />;
 }
 
-export function ManualShiftTimeline({ durations, startTime, onDurationsChange }: {
+export function ManualShiftTimeline({ durations, startTime, cycleHours = 24, onDurationsChange }: {
   durations: number[];
   startTime: string;
+  /** 一个完整周期的总小时数：24 / 36 / 48。 */
+  cycleHours?: number;
   onDurationsChange?: (durations: number[]) => void;
 }) {
   const t = useTranslations("setup_dialog");
@@ -58,7 +60,7 @@ export function ManualShiftTimeline({ durations, startTime, onDurationsChange }:
   const move = (index: number, hour: number) => onDurationsChange?.(moveManualShiftBoundaryByHour(durations, index, hour));
   const hourAtPointer = (clientX: number) => {
     const rect = track.current!.getBoundingClientRect();
-    return (clientX - rect.left) / rect.width * 24;
+    return (clientX - rect.left) / rect.width * cycleHours;
   };
   const release = () => { dragging.current = null; setHeld(false); };
 
@@ -88,9 +90,9 @@ export function ManualShiftTimeline({ durations, startTime, onDurationsChange }:
       >
         <div className="pointer-events-none absolute inset-x-0 top-2 h-7 overflow-hidden rounded-[7px] border border-black/10 dark:border-white/10">
           {ranges.map((range, index) => <motion.div key={index} className={cn("absolute inset-y-0", COLORS[index % COLORS.length])}
-            initial={false} animate={{ left: `${boundaries[index]! / 24 * 100}%`, width: `${range.durationMinutes / 1440 * 100}%` }} transition={transition} />)}
-          <div className="absolute inset-0 grid grid-cols-24" data-shift-hour-cells>
-            {Array.from({ length: 24 }, (_, index) => <span key={index} className="border-r border-black/15 last:border-0 dark:border-white/20" />)}
+            initial={false} animate={{ left: `${boundaries[index]! / cycleHours * 100}%`, width: `${range.durationMinutes / (cycleHours * 60) * 100}%` }} transition={transition} />)}
+          <div className="absolute inset-0 flex" data-shift-hour-cells>
+            {Array.from({ length: cycleHours }, (_, index) => <span key={index} className="min-w-0 flex-1 border-r border-black/15 last:border-0 dark:border-white/20" />)}
           </div>
         </div>
         {boundaries.slice(1, -1).map((hour, index) => <motion.div
@@ -106,7 +108,7 @@ export function ManualShiftTimeline({ durations, startTime, onDurationsChange }:
           aria-disabled={!onDurationsChange || undefined}
           data-shift-boundary={index}
           className="absolute top-0 z-10 flex h-11 w-[min(32px,4.166667%)] -translate-x-1/2 cursor-ew-resize items-center justify-center outline-none"
-          initial={false} animate={{ left: `${hour / 24 * 100}%` }} transition={transition}
+          initial={false} animate={{ left: `${hour / cycleHours * 100}%` }} transition={transition}
           onFocus={() => setActive(index)}
           onBlur={() => { if (!held) setActive(null); }}
           onKeyDown={event => {
@@ -127,7 +129,7 @@ export function ManualShiftTimeline({ durations, startTime, onDurationsChange }:
           {active === index ? <span className="pointer-events-none absolute bottom-full mb-1 whitespace-nowrap rounded-md bg-foreground px-2 py-1 font-number text-xs text-background tabular-nums">{timeAt(start + hour * 60)}</span> : null}
         </motion.div>)}
         <div className="pointer-events-none absolute inset-x-0 top-full mt-1 flex justify-between font-number text-[10px] text-muted-foreground tabular-nums sm:text-xs" aria-hidden="true">
-          {[0, 6, 12, 18, 24].map(hour => <span key={hour}>{timeAt(start + hour * 60)}</span>)}
+          {Array.from({ length: 5 }, (_, index) => Math.round(cycleHours * index / 4)).map(hour => <span key={hour}>{timeAt(start + hour * 60)}</span>)}
         </div>
       </div>
     </div>

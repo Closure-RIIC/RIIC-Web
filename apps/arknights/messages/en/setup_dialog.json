@@ -78,5 +78,9 @@
   "rich1": "<element1><value2></value2></element1> operators · <element1><value3></value3></element1> available",
   "rich2": "Data is stored in this browser for <element1>30</element1> days.",
   "additional1": "This clears layouts, operator data, recent schedules, and prompt preferences from this browser.{choice2, select, yes { Your Skland session remains signed in.} other {}}",
-  "rotationCycleInvalid": "Total hours must be one of {allowed}"
+  "rotationCycleInvalid": "Total hours must be one of {allowed}",
+  "shiftHours": "Hours per shift",
+  "cycleHours": "Total hours",
+  "shorterCycle": "Shorter cycle",
+  "longerCycle": "Longer cycle"
 }

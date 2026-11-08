@@ -1336,16 +1336,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     if (planRetryCountdown > 0) return false;
     planClickAtRef.current = performance.now();
     trackTelemetry({ type: "interaction", name: "plan_click", page: "calculator" });
-    /**
-     * 本地校验失败时既要记下错误，也要让活动面板走一次 error 生命周期——
-     * 面板只在 loading 由 true 变 false 时展示错误，直接 return 不会弹窗。
-     */
-    const rejectBeforeSubmit = (error: DisplayError) => {
-      setApiError(error);
-      setLoading(true);
-      queueMicrotask(() => setLoading(false));
-      return false;
-    };
     const layoutError = layoutValidationError(planLayout, locale);
     if (layoutError) {
       return rejectBeforeSubmit(displayError("AIC-LAYOUT-1201", layoutError));
@@ -1604,6 +1594,17 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     openManualScheduleDraft(pendingManualDraftReplacement);
   }
 
+  /**
+   * 本地校验失败时既要记下错误，也要让活动面板走一次 error 生命周期——
+   * 面板只在 loading 由 true 变 false 时展示错误，直接 return 不会弹窗。
+   */
+  function rejectBeforeSubmit(error: DisplayError) {
+    setApiError(error);
+    setLoading(true);
+    queueMicrotask(() => setLoading(false));
+    return false;
+  }
+
   async function handleEditManualSchedule() {
     if (!scheduleResult) {
       navigateToPage("manual");
@@ -1616,10 +1617,21 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       manualScheduleDraftContentEqual,
       reconcileManualScheduleDraft,
     } = await import("./manual-schedule");
+    // 时长优先取求解器返回的每班时长；缺失时按换班方式的预设时长兜底。
     const resultDurations = scheduleResult.rotation.shifts
       .map((shift) => shift.duration_hours)
       .filter((duration) => Number.isFinite(duration) && duration > 0);
-    const durations = resultDurations?.length ? resultDurations : rotationDurations(activeRotationProfile);
+    const durations = resultDurations.length ? resultDurations : rotationDurations(activeRotationProfile);
+    // 手动排班只接受 24/36/48 小时周期，与生成排班时的校验口径一致。
+    const cycleHours = durations.reduce((sum: number, hours: number) => sum + hours, 0);
+    if (!ALLOWED_CYCLE_HOURS.includes(Math.round(cycleHours) as (typeof ALLOWED_CYCLE_HOURS)[number])) {
+      rejectBeforeSubmit(displayError(
+        "AIC-REQ-1001",
+        intl("App.rotationCycleInvalidSummary", { allowed: ALLOWED_CYCLE_HOURS.join(" / ") }),
+      ));
+      return;
+    }
+    // 每班等长 → 顺序轮换；不等长 → 自定义时间区间（起始时间固定 08:00）。
     const equalDurations = durations.every((duration) => Math.abs(duration - durations[0]!) < 0.000_001);
     const draft = reconcileManualScheduleDraft(createManualScheduleDraftFromCalculator({
       layout,

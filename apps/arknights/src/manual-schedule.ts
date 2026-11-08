@@ -227,6 +227,24 @@ export function snapManualShiftDurationsToHours(durations: readonly number[]): n
   });
 }
 
+/**
+ * 顺序轮换只用一个「每班时长」输入框：所有班次时长相同才返回该值，否则 null。
+ *
+ * 时间轴（自定义时间区间）允许各班长短不一，此时输入框回退为不可用。
+ */
+export function uniformManualShiftHours(durations: readonly number[]): number | null {
+  const minutes = normalizedDurationMinutes(durations);
+  const first = minutes[0]!;
+  return minutes.every((duration) => duration === first) ? first / 60 : null;
+}
+
+/** 所有班次都用同一个时长。 */
+export function manualShiftDurationsOf(shifts: number, hours: number): number[] {
+  const count = Math.max(MIN_MANUAL_SHIFT_COUNT, Math.min(MAX_MANUAL_SHIFT_COUNT, Math.trunc(shifts)));
+  const each = Math.max(1, Math.round(hours));
+  return Array.from({ length: count }, () => each);
+}
+
 export function moveManualShiftBoundaryByHour(durations: readonly number[], index: number, hour: number): number[] {
   if (!Number.isFinite(hour) || !Number.isInteger(index) || index < 0 || index >= durations.length - 1) return [...durations];
   const next = snapManualShiftDurationsToHours(durations);
@@ -570,11 +588,9 @@ export function createManualScheduleDraftFromCalculator(input: {
       ? "period"
       : "sequential");
   const startTime = input.timingOverride?.startTime ?? input.maa?.plans[0]?.period?.[0]?.[0];
-  const draft = createManualScheduleDraft(
-    input.preferMaaTiming ? durations : normalizedDailyDurationMinutes(durations).map((minutes) => minutes / 60),
-    startTime,
-    scheduleMode,
-  );
+  // 逐班时长原样保留：调用方给的 fallback / MAA 时长已经是真实排班，
+  // 不再压回 24 小时一天，否则 24/12/12 这类多日周期会被改写成 12/6/6。
+  const draft = createManualScheduleDraft(durations, startTime, scheduleMode);
   draft.fiammettaEnabled = input.fiammettaEnabled;
   if (input.source) draft.source = { ...input.source };
   const owned = input.ownedOperatorNames ? new Set(input.ownedOperatorNames) : undefined;

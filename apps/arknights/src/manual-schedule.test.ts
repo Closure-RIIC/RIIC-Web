@@ -116,7 +116,7 @@ test("hourly timeline boundaries snap, cannot cross and retain a complete day", 
   assert.deepEqual(source, [12, 6, 6]);
   assert.deepEqual(moveManualShiftBoundaryByHour([24], 0, 5), [24]);
   assert.deepEqual(moveManualShiftBoundaryByHour(source, 0, NaN), source);
-  for (let count = 1; count <= 12; count++) {
+  for (let count = 2; count <= 12; count++) {
     const hours = snapManualShiftDurationsToHours(resizeManualShiftDurations(source, count));
     assert.equal(hours.length, count);
     assert.equal(hours.reduce((sum, hour) => sum + hour, 0), 24);
@@ -132,7 +132,7 @@ test("hourly timeline boundaries snap, cannot cross and retain a complete day", 
   ]);
 });
 
-test("legacy manual drafts gain a start time and a 24-hour cycle", () => {
+test("legacy manual drafts below the two-shift minimum fall back to null", () => {
   const storage = {
     getItem: () => JSON.stringify({
       version: 2,
@@ -142,10 +142,8 @@ test("legacy manual drafts gain a start time and a 24-hour cycle", () => {
     }),
     setItem: () => undefined,
   };
-  const draft = loadManualScheduleDraft(storage);
-  assert.equal(draft?.version, 3);
-  assert.equal(draft?.startTime, "08:00");
-  assert.equal(draft?.shifts[0]?.durationHours, 24);
+  // 两班起步后，只有一班的旧草稿不再符合当前下限。
+  assert.equal(loadManualScheduleDraft(storage), null);
 });
 
 test("manual assignment reports a same-shift conflict and moves only after confirmation", () => {
