@@ -49,20 +49,44 @@ export function ManualShiftTimeline({ durations, startTime, cycleHours = 24, onD
   const dragging = useRef<number | null>(null);
   const [active, setActive] = useState<number | null>(null);
   const [held, setHeld] = useState(false);
-  const ranges = manualShiftTimeRanges(startTime, durations);
+  /**
+   * 拖动中的临时时长。拖动期间只更新它，松手才通知上层——
+   * 否则每次 pointermove 都会让整个 App 重渲染，拖动明显卡顿。
+   */
+  const [dragDurations, setDragDurations] = useState<number[] | null>(null);
+  const effectiveDurations = dragDurations ?? durations;
+  const ranges = manualShiftTimeRanges(startTime, effectiveDurations);
   const start = Number(startTime.slice(0, 2)) * 60 + Number(startTime.slice(3, 5));
   const boundaries = ranges.reduce<number[]>((all, range) => [...all, all[all.length - 1]! + range.durationMinutes / 60], [0]);
-  const snapped = snapManualShiftDurationsToHours(durations);
+  const snapped = snapManualShiftDurationsToHours(effectiveDurations);
   const bounds = (index: number) => {
     const before = snapped.slice(0, index).reduce((sum, duration) => sum + duration, 0);
     return { min: before + 1, max: before + snapped[index]! + snapped[index + 1]! - 1 };
   };
-  const move = (index: number, hour: number) => onDurationsChange?.(moveManualShiftBoundaryByHour(durations, index, hour));
+  /** 拖动中只更新本地草稿；提交时才调用上层回调。 */
+  const preview = (index: number, hour: number) => {
+    // 函数式更新：同一帧内多次 pointermove 都基于最新草稿计算。
+    setDragDurations((current) => moveManualShiftBoundaryByHour(current ?? durations, index, hour));
+  };
+  const commit = () => {
+    const pending = dragDurations;
+    setDragDurations(null);
+    if (pending) onDurationsChange?.(pending);
+  };
+  /** 键盘与点击轨道是离散操作，直接提交。 */
+  const move = (index: number, hour: number) => {
+    setDragDurations(null);
+    onDurationsChange?.(moveManualShiftBoundaryByHour(durations, index, hour));
+  };
   const hourAtPointer = (clientX: number) => {
     const rect = track.current!.getBoundingClientRect();
     return (clientX - rect.left) / rect.width * cycleHours;
   };
-  const release = () => { dragging.current = null; setHeld(false); };
+  const release = () => {
+    if (dragging.current !== null) commit();
+    dragging.current = null;
+    setHeld(false);
+  };
 
   return <div className="min-w-0 space-y-4" data-manual-shift-timeline>
     <div className="pt-7 pb-5">
@@ -83,7 +107,7 @@ export function ManualShiftTimeline({ durations, startTime, cycleHours = 24, onD
           track.current?.querySelector<HTMLElement>(`[data-shift-boundary="${index}"]`)?.focus({ preventScroll: true });
           if (!target) move(index, hour);
         }}
-        onPointerMove={event => { if (dragging.current !== null) move(dragging.current, hourAtPointer(event.clientX)); }}
+        onPointerMove={event => { if (dragging.current !== null) preview(dragging.current, hourAtPointer(event.clientX)); }}
         onPointerUp={release}
         onPointerCancel={release}
         onLostPointerCapture={release}

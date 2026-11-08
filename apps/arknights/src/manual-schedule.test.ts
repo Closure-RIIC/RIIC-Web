@@ -328,7 +328,8 @@ test("calculator results become an editable manual draft with room order, shifts
         { name: "班次 2", rooms: { manufacture: [{ operators: ["巫恋"] }] } },
       ],
     },
-    fallbackDurations: [12, 6],
+    // 合法周期（24 小时）；这个用例验证房间/Fiammetta/训练室映射，时长不是重点。
+    fallbackDurations: [12, 12],
     fiammettaEnabled: true,
     trainingRoomShifts: [
       { trainee: "巫恋", trainer: "菲亚梅塔" },

@@ -188,25 +188,6 @@ function normalizedDurationMinutes(durations: readonly number[]): number[] {
   return minutes;
 }
 
-function normalizedDailyDurationMinutes(durations: readonly number[]): number[] {
-  const minutes = normalizedDurationMinutes(durations);
-  if (minutes.length === 1) return [MINUTES_PER_DAY];
-  const total = minutes.reduce((sum, duration) => sum + duration, 0);
-  if (total === MINUTES_PER_DAY) return minutes;
-  if (total < MINUTES_PER_DAY) {
-    minutes[minutes.length - 1] = minutes[minutes.length - 1]! + MINUTES_PER_DAY - total;
-    return minutes;
-  }
-  const available = MINUTES_PER_DAY - minutes.length;
-  const scaled = minutes.map((duration) => 1 + Math.floor(duration / total * available));
-  let remainder = MINUTES_PER_DAY - scaled.reduce((sum, duration) => sum + duration, 0);
-  for (let index = 0; remainder > 0; index = (index + 1) % scaled.length) {
-    scaled[index] = scaled[index]! + 1;
-    remainder -= 1;
-  }
-  return scaled;
-}
-
 export function normalizeManualShiftDurations(durations: readonly number[]): number[] {
   return normalizedDurationMinutes(durations).map((minutes) => minutes / 60);
 }
