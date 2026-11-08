@@ -14,7 +14,7 @@
     "test:release-pr": "node --test scripts/release-pr.test.mjs",
     "test:pr-batch": "node --test --experimental-strip-types apps/arknights/src/wish-validation.test.ts packages/platform-server/src/auth/session-lifetime.test.ts",
     "posttest": "npm run test:pr-batch && npm run test:schedule-poster && npm run test:training-planner && npm run test:route-preload && npm run test:skland-qr",
-    "test:schedule-poster": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test apps/arknights/src/schedule-poster-document.test.ts apps/arknights/src/server/schedule-poster-api.test.ts",
+    "test:schedule-poster": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test apps/arknights/src/schedule-poster-document.test.ts apps/arknights/src/schedule-poster-dorm.test.ts apps/arknights/src/server/schedule-poster-api.test.ts",
     "test:wishes-integration": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test apps/arknights/src/server/wishes.integration.test.mjs",
     "test:agent-resources": "node --experimental-strip-types --experimental-test-module-mocks --test apps/arknights/src/server/agent/message-history.test.ts apps/arknights/src/server/agent/answer-boundary.test.ts apps/arknights/src/server/agent/resource-policy.test.ts apps/arknights/src/server/agent/resource-import.test.ts apps/arknights/src/server/agent/resources-api.test.ts",
     "test:agent-resources-integration": "node --experimental-transform-types --test apps/arknights/src/server/agent/resources.integration.test.mjs",
