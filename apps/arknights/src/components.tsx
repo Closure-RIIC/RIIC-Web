@@ -187,12 +187,15 @@ type ScheduleViewMode = "list" | "compact";
 let sharedScheduleViewMode: ScheduleViewMode | null = null;
 const sharedScheduleViewModeListeners = new Set<() => void>();
 function useSharedScheduleViewMode(): [ScheduleViewMode | null, (mode: ScheduleViewMode) => void] {
-  const mode=useSyncExternalStore(
+  const [localMode, setLocalMode] = useState<ScheduleViewMode | null>(null);
+  const sharedMode=useSyncExternalStore(
     (listener) => {sharedScheduleViewModeListeners.add(listener);return () => {sharedScheduleViewModeListeners.delete(listener);};},
     () => sharedScheduleViewMode,
     () => null,
   );
+  const mode=sharedMode ?? localMode;
   const setMode=useCallback((next: ScheduleViewMode) => {
+    setLocalMode(next);
     if (sharedScheduleViewMode===next) return;
     sharedScheduleViewMode=next;
     for (const listener of sharedScheduleViewModeListeners) listener();
