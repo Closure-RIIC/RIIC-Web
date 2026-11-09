@@ -36,7 +36,7 @@ const schema = z.object({
       base_workforce: z.array(text(80)).max(200).optional(),
       initial_global: z.object({ monster_cuisine: z.number().min(0).max(100).optional() }).optional(),
     }),
-    rooms: z.array(z.object({ id: text(60), kind: z.enum(["control_center", "trade_post", "factory", "power_plant", "dormitory", "office", "meeting_room", "workshop", "training_room"]), level: z.number().int().min(1).max(5), product: product.optional(), dorm_beds: z.number().int().min(1).max(5).optional() })).min(1).max(25),
+    rooms: z.array(z.object({ id: text(60), kind: z.enum(["control_center", "trade_post", "factory", "power_plant", "dormitory", "office", "meeting_room", "workshop", "training_room", "recycle"]), level: z.number().int().min(1).max(5), product: product.optional(), dorm_beds: z.number().int().min(1).max(5).optional() })).min(1).max(25),
   }),
   draft: z.object({
     version: z.literal(3), scheduleMode: z.enum(["sequential", "period"]),
@@ -88,7 +88,7 @@ export function parsePosterDocument(value: unknown): SchedulePosterDocument {
       if (!room) { errors.push(`未知设施 ${id}`); continue; }
       if (assignment.operators.length > manualRoomCapacity(room)) errors.push(`${id} 人数超过容量。`);
       if (new Set(assignment.autofillSlots ?? []).size !== (assignment.autofillSlots ?? []).length) errors.push(`${id} 的 AUTO 槽位重复。`);
-      if (assignment.autofillSlots?.length && ["training_room", "recycling"].includes(room.kind)) errors.push(`${id} 不支持 MAA 自动填充。`);
+      if (assignment.autofillSlots?.length && ["training_room", "recycle"].includes(room.kind)) errors.push(`${id} 不支持 MAA 自动填充。`);
       for (const slotIndex of assignment.autofillSlots ?? []) {
         if (slotIndex >= manualRoomCapacity(room)) errors.push(`${id} 的 AUTO 槽位超过设施容量。`);
         if (assignment.operators[slotIndex]) errors.push(`${id} 的 AUTO 槽位不能同时安排固定干员。`);

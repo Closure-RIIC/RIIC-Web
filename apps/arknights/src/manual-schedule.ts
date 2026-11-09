@@ -24,7 +24,7 @@ import {
 } from "./manual-schedule-config.ts";
 import { factoryRecipeFromMaaProduct, normalizeProductForLevel } from "@riic/arknights-domain/factory-recipes";
 import { droneTargetShiftIndex } from "@riic/arknights-domain/drone-plan-mapping";
-import { RECYCLING_ROOM, RECYCLING_ROOM_ID, manualEditableRooms, type EditableRoom } from "./recycling-room.ts";
+import { RECYCLING_ROOM_ID, manualEditableRooms, type EditableRoom } from "./recycling-room.ts";
 
 export {
   DEFAULT_MANUAL_SHIFT_DURATIONS,
@@ -107,6 +107,7 @@ const MAA_GROUP_BY_ROOM_KIND: Partial<Record<RoomKind, keyof MaaRooms>> = {
   office: "hire",
   meeting_room: "meeting",
   workshop: "processing",
+  recycle: "recycle",
 };
 
 function supportsMaaAutofill(room: EditableRoom): boolean {
@@ -139,6 +140,7 @@ const IMPORTED_LAYOUT_GROUPS: ReadonlyArray<{
   { group: "meeting", kind: "meeting_room", idPrefix: "meeting", level: 3 },
   { group: "hire", kind: "office", idPrefix: "office", level: 3 },
   { group: "processing", kind: "workshop", idPrefix: "workshop", level: 3 },
+  { group: "recycle", kind: "recycle", idPrefix: RECYCLING_ROOM_ID, level: 3 },
 ];
 
 function importedRoomProduct(
@@ -196,25 +198,6 @@ function normalizedDurationMinutes(durations: readonly number[]): number[] {
   return minutes;
 }
 
-function normalizedDailyDurationMinutes(durations: readonly number[]): number[] {
-  const minutes = normalizedDurationMinutes(durations);
-  if (minutes.length === 1) return [MINUTES_PER_DAY];
-  const total = minutes.reduce((sum, duration) => sum + duration, 0);
-  if (total === MINUTES_PER_DAY) return minutes;
-  if (total < MINUTES_PER_DAY) {
-    minutes[minutes.length - 1] = minutes[minutes.length - 1]! + MINUTES_PER_DAY - total;
-    return minutes;
-  }
-  const available = MINUTES_PER_DAY - minutes.length;
-  const scaled = minutes.map((duration) => 1 + Math.floor(duration / total * available));
-  let remainder = MINUTES_PER_DAY - scaled.reduce((sum, duration) => sum + duration, 0);
-  for (let index = 0; remainder > 0; index = (index + 1) % scaled.length) {
-    scaled[index] = scaled[index]! + 1;
-    remainder -= 1;
-  }
-  return scaled;
-}
-
 export function normalizeManualShiftDurations(durations: readonly number[]): number[] {
   return normalizedDurationMinutes(durations).map((minutes) => minutes / 60);
 }
@@ -233,6 +216,24 @@ export function snapManualShiftDurationsToHours(durations: readonly number[]): n
     previous = boundary;
     return hours;
   });
+}
+
+/**
+ * 顺序轮换只用一个「每班时长」输入框：所有班次时长相同才返回该值，否则 null。
+ *
+ * 时间轴（自定义时间区间）允许各班长短不一，此时输入框回退为不可用。
+ */
+export function uniformManualShiftHours(durations: readonly number[]): number | null {
+  const minutes = normalizedDurationMinutes(durations);
+  const first = minutes[0]!;
+  return minutes.every((duration) => duration === first) ? first / 60 : null;
+}
+
+/** 所有班次都用同一个时长。 */
+export function manualShiftDurationsOf(shifts: number, hours: number): number[] {
+  const count = Math.max(MIN_MANUAL_SHIFT_COUNT, Math.min(MAX_MANUAL_SHIFT_COUNT, Math.trunc(shifts)));
+  const each = Math.max(1, Math.round(hours));
+  return Array.from({ length: count }, () => each);
 }
 
 export function moveManualShiftBoundaryByHour(durations: readonly number[], index: number, hour: number): number[] {
@@ -312,7 +313,7 @@ function finitePositive(value: unknown, fallback: number): number {
 }
 
 export function manualRoomCapacity(room: EditableRoom): number {
-  if (room.kind === "recycling") return 2;
+  if (room.kind === "recycle") return 2;
   if (room.kind === "control_center") return Math.max(1, Math.min(5, room.level));
   if (room.kind === "trade_post" || room.kind === "factory") return Math.max(1, Math.min(3, room.level));
   if (room.kind === "meeting_room" || room.kind === "training_room") return 2;
@@ -539,7 +540,8 @@ export function layoutFromMaaSchedule(maa: MaaJson, current: BaseBlueprint): Bas
       const room: BlueprintRoom = previous
         ? structuredClone(previous)
         : {
-            id: definition.kind === "control_center" ? "control" : `${definition.idPrefix}_${index + 1}`,
+            id: definition.kind === "control_center" ? "control"
+              : definition.kind === "recycle" ? RECYCLING_ROOM_ID : `${definition.idPrefix}_${index + 1}`,
             kind: definition.kind,
             level: definition.level,
             ...(definition.kind === "dormitory" ? { dorm_beds: 5 } : {}),
@@ -605,11 +607,9 @@ export function createManualScheduleDraftFromCalculator(input: {
       ? "period"
       : "sequential");
   const startTime = input.timingOverride?.startTime ?? input.maa?.plans[0]?.period?.[0]?.[0];
-  const draft = createManualScheduleDraft(
-    input.preferMaaTiming ? durations : normalizedDailyDurationMinutes(durations).map((minutes) => minutes / 60),
-    startTime,
-    scheduleMode,
-  );
+  // 逐班时长原样保留：调用方给的 fallback / MAA 时长已经是真实排班，
+  // 不再压回 24 小时一天，否则 24/12/12 这类多日周期会被改写成 12/6/6。
+  const draft = createManualScheduleDraft(durations, startTime, scheduleMode);
   draft.fiammettaEnabled = input.fiammettaEnabled;
   if (input.source) draft.source = { ...input.source };
   const owned = input.ownedOperatorNames ? new Set(input.ownedOperatorNames) : undefined;
@@ -628,7 +628,7 @@ export function createManualScheduleDraftFromCalculator(input: {
       if (training && room) shift.rooms[room.id] = { operators: [training.operatorsB?.[0] ?? null, training.operatorsA?.[0] ?? null] };
     }
     for (const room of manualEditableRooms(input.layout)) {
-      const group = room.kind === "recycling" ? "recycle" : MAA_GROUP_BY_ROOM_KIND[room.kind];
+      const group = MAA_GROUP_BY_ROOM_KIND[room.kind];
       if (!group) continue;
       const roomIndex = groupIndexes[group] ?? 0;
       groupIndexes[group] = roomIndex + 1;
@@ -666,7 +666,7 @@ export function createManualScheduleDraftFromCalculator(input: {
         ...(group === "recycle" || sourceRoom.use_operator_groups || sourceRoom.candidates || sourceRoom.skip || roomOperators.some(op => typeof op === "object" && op !== null)
           ? { maaSource: { primary: operators.slice(), operators: structuredClone(roomOperators), useGroups: sourceRoom.use_operator_groups,
               candidates: sourceRoom.candidates?.slice(), skip: sourceRoom.skip } } : {}),
-        ...((supportsMaaAutofill(room) || room.kind === "recycling")
+        ...(supportsMaaAutofill(room)
           ? { autofill: sourceRoom.autofill ?? (room.kind === "dormitory") }
           : {}),
         ...(importedProduct ? { product: normalizedManualProduct(room, importedProduct, input.layout) } : {}),
@@ -709,7 +709,9 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
     const value = JSON.parse(storage.getItem(MANUAL_SCHEDULE_STORAGE_KEY) ?? "null") as unknown;
     if (!value || typeof value !== "object" || !("shifts" in value) || !Array.isArray(value.shifts)) return null;
     const rawShifts = value.shifts.slice(0, MAX_MANUAL_SHIFT_COUNT);
-    if (rawShifts.length < MIN_MANUAL_SHIFT_COUNT) return null;
+    // The setup minimum applies to new configurations; saved one-shift drafts
+    // must remain readable so upgrading cannot discard their assignments.
+    if (!rawShifts.length) return null;
     const parsedShifts = rawShifts.map((raw): ManualShift => {
       const candidate = raw && typeof raw === "object" ? raw as Partial<ManualShift> : {};
       const rooms = candidate.rooms && typeof candidate.rooms === "object" && !Array.isArray(candidate.rooms)
@@ -864,7 +866,7 @@ export function reconcileManualScheduleDraft(
           const autofillSlots = supportsMaaAutofill(room)
             ? normalizedAutofillSlots(assignment?.autofillSlots, operators.length, operators)
             : [];
-          const autofill = (room.kind === "recycling" || supportsMaaAutofill(room))
+          const autofill = supportsMaaAutofill(room)
             ? room.kind === "dormitory"
               ? assignment?.autofill ?? true
               : assignment?.autofill
@@ -1175,7 +1177,7 @@ function maaRoom(room: EditableRoom, assignment: ManualRoomAssignment | undefine
   const operators = (assignment?.operators ?? []).slice(0, manualRoomCapacity(room)).filter(
     (operator): operator is string => typeof operator === "string" && operator.length > 0,
   );
-  const product = room.kind === "recycling" ? undefined : maaProduct(manualRoomForShift(room, assignment));
+  const product = room.kind === "recycle" ? undefined : maaProduct(manualRoomForShift(room, assignment));
   const source = assignment?.maaSource;
   const keepSelection = source?.operators && source.primary.every((name, i) => name === assignment?.operators[i]);
   return {
@@ -1218,9 +1220,10 @@ export function manualScheduleToMaa(
         ? layout.rooms.filter((room) => MAA_GROUP_BY_ROOM_KIND[room.kind] === droneGroup).findIndex((room) => room.id === droneRoom?.id) + 1
         : 0;
       const rooms: MaaPlan["rooms"] = {};
-      const recycling = shift.rooms[RECYCLING_ROOM_ID];
-      if (recycling?.operators.some(Boolean) || recycling?.maaSource || recycling?.autofill) {
-        rooms.recycle = [maaRoom(RECYCLING_ROOM, recycling)];
+      const recyclingRoom = manualEditableRooms(layout).find(room => room.kind === "recycle")!;
+      const recycling = shift.rooms[recyclingRoom.id];
+      if (recycling?.operators.some(Boolean) || recycling?.maaSource || recycling?.autofill || recycling?.autofillSlots?.length) {
+        rooms.recycle = [maaRoom(recyclingRoom, recycling)];
       } else if (shift.emptyRecycle) rooms.recycle = [];
       const trainingRoom = layout.rooms.find(room => room.kind === "training_room");
       const positions = trainingRoom && shift.rooms[trainingRoom.id]?.operators;
@@ -1232,6 +1235,7 @@ export function manualScheduleToMaa(
           operatorsA: candidates(positions?.[1], original?.operatorsA), ...(original?.skip !== undefined ? { skip: original.skip } : {}) }];
       } else if (shift.maaTraining) rooms.training = [];
       for (const room of layout.rooms) {
+        if (room.kind === "recycle") continue;
         const group = MAA_GROUP_BY_ROOM_KIND[room.kind];
         if (!group) continue;
         const groupRooms = rooms[group] ?? [];

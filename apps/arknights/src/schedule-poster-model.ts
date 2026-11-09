@@ -13,13 +13,13 @@ import type { BaseBlueprint } from "@riic/arknights-domain/types";
 
 export { defaultPosterOperator, posterOperators } from "./schedule-poster-operators";
 
-export const ROOM_GROUP: Record<EditableRoom["kind"], string> = { control_center: "control", factory: "manufacture", trade_post: "trading", power_plant: "power", dormitory: "dormitory", office: "hire", meeting_room: "meeting", workshop: "processing", training_room: "training", recycling: "recycling" };
+export const ROOM_GROUP: Record<EditableRoom["kind"], string> = { control_center: "control", factory: "manufacture", trade_post: "trading", power_plant: "power", dormitory: "dormitory", office: "hire", meeting_room: "meeting", workshop: "processing", training_room: "training", recycle: "recycle" };
 export function posterRoomTitle(room: EditableRoom, layout: BaseBlueprint, locale?: AppLocale): string {
   if (locale) {
     const title = posterText.text(locale, room.kind);
     return ["trade_post", "factory", "power_plant"].includes(room.kind) ? `${title} ${layout.rooms.filter(r => r.kind === room.kind).findIndex(r => r.id === room.id) + 1}` : title;
   }
-  if (room.kind === "recycling") return "回收站";
+  if (room.kind === "recycle") return "回收站";
   if (room.kind === "dormitory") return "宿舍 · 挂件";
   if (room.kind === "office") return "人力";
   const title = roomKindLabel(room.kind);
@@ -27,7 +27,7 @@ export function posterRoomTitle(room: EditableRoom, layout: BaseBlueprint, local
     ? `${title} ${layout.rooms.filter(r => r.kind === room.kind).findIndex(r => r.id === room.id) + 1}` : title;
 }
 export function posterProduct(doc: SchedulePosterDocument, room: EditableRoom, index: number, locale?: AppLocale) {
-  if (room.kind === "recycling") return null;
+  if (room.kind === "recycle") return null;
   const effective = manualRoomForShift(room, doc.draft.shifts[index]?.rooms[room.id]);
   if (effective.product && "trade" in effective.product) return effective.product.trade.order === "gold"
     ? { value: "gold", label: locale ? posterText.text(locale, "lmd") : "龙门币", icon: PRODUCT_ICON_URLS.lmdOrders }

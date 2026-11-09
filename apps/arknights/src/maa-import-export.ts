@@ -2,13 +2,16 @@ import type { MaaJson, MaaPlan } from "@riic/arknights-domain/types";
 import { prepareMaaForExport, sanitizeMaaJson } from "@riic/arknights-domain/maa-safety";
 import { parseMaaScheduleText, type ManualScheduleDraft } from "./manual-schedule.ts";
 
-type ImportRecord = { original: MaaJson; baseline: MaaJson; sourceIndexes: number[] };
+type ImportRecord = { original: MaaJson; baseline: MaaJson; sourceIndexes: (number | null)[] };
 const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
 
 // Keep the original protocol intent beside the projection: the editor has one selected
 // operator per position, while MAA can store several candidates or omit an entire room.
 export function rememberMaaImport(original: MaaJson, baseline: MaaJson, sourceIndexes: number[]): string {
-  return JSON.stringify({ original: sanitizeMaaJson(original), baseline, sourceIndexes } satisfies ImportRecord);
+  // The editor can add an empty shift to meet its minimum count. It has no source
+  // plan and must not turn into a new MAA plan unless the user actually edits it.
+  const indexes = baseline.plans.map((_, i) => sourceIndexes[i] ?? null);
+  return JSON.stringify({ original: sanitizeMaaJson(original), baseline, sourceIndexes: indexes } satisfies ImportRecord);
 }
 
 export function readMaaImport(text: string): ImportRecord {
@@ -18,7 +21,7 @@ export function readMaaImport(text: string): ImportRecord {
     const baseline = parseMaaScheduleText(JSON.stringify(record.baseline));
     const indexes: unknown = record.sourceIndexes;
     if (Array.isArray(indexes) && indexes.length === baseline.plans.length
-      && indexes.every(i => Number.isInteger(i) && i >= 0 && i < original.plans.length)) {
+      && indexes.every(i => i === null || (Number.isInteger(i) && i >= 0 && i < original.plans.length))) {
       return { original, baseline, sourceIndexes: indexes };
     }
   } catch { /* Report corrupt history consistently for uploaded work files. */ }
@@ -72,26 +75,34 @@ function editedPlan(original: MaaPlan, before: MaaPlan, after: MaaPlan): MaaPlan
 export function downloadManualMaa(draft: ManualScheduleDraft, current: MaaJson, strictOrder = true, replacementSort = false): MaaJson {
   if (!draft.maaImport) return prepareMaaForExport(current, strictOrder, replacementSort, true);
   const { original, baseline, sourceIndexes } = readMaaImport(draft.maaImport);
-  const edited = current.plans.map((plan, i) => {
-    const source = original.plans[sourceIndexes[i]!];
+  const projected = current.plans.flatMap((plan, i) =>
+    sourceIndexes[i] === null && same(baseline.plans[i], plan) ? [] : [{ plan, index: i }]);
+  const edited = projected.map(({ plan, index: i }) => {
+    const sourceIndex = sourceIndexes[i];
+    const source = typeof sourceIndex === "number" ? original.plans[sourceIndex] : undefined;
     return source && baseline.plans[i] ? editedPlan(source, baseline.plans[i]!, plan) : structuredClone(plan);
   });
+  const editedByIndex = new Map(projected.map(({ index }, offset) => [index, edited[offset]!]));
   // Keep the original order, inactive plans, overlapping windows and midnight boundaries
   // whenever all segments of a source plan can still be represented by that one plan.
   const bySource = new Map<number, MaaPlan>();
   const keepTiming = current.plans.length === baseline.plans.length && current.plans.every((plan, i) => {
     const before = baseline.plans[i]!;
-    const index = sourceIndexes[i]!;
+    const index = sourceIndexes[i];
+    if (index === null) return same(before, plan);
+    if (index === undefined) return false;
+    const editedPlan = editedByIndex.get(i)!;
     const prior = bySource.get(index);
-    if (!same(before.period, plan.period) || before.duration !== plan.duration || (prior && !same(prior, edited[i]))) return false;
-    bySource.set(index, edited[i]!);
+    if (!same(before.period, plan.period) || before.duration !== plan.duration || (prior && !same(prior, editedPlan))) return false;
+    bySource.set(index, editedPlan);
     return true;
   });
   const plans = keepTiming
     ? original.plans.map((plan, i) => bySource.get(i) ?? plan)
-    : edited.map((plan, i) => {
-      const updated = { ...plan, duration: current.plans[i]!.duration };
-      if (current.plans[i]!.period) updated.period = current.plans[i]!.period;
+    : edited.map((plan, offset) => {
+      const currentPlan = projected[offset]!.plan;
+      const updated = { ...plan, duration: currentPlan.duration };
+      if (currentPlan.period) updated.period = currentPlan.period;
       else delete updated.period;
       return updated;
     });

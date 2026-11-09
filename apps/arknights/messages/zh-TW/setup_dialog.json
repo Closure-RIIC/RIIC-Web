@@ -77,5 +77,10 @@
   "closeSettings": "關閉設定",
   "rich1": "<element1><value2></value2></element1> 名幹員 · <element1><value3></value3></element1> 名可用",
   "rich2": "資料在此瀏覽器儲存 <element1>30</element1> 天。",
-  "additional1": "{choice2, select, yes {將刪除此瀏覽器中的佈局、幹員資料、最近排班和提示偏好。森空島登入狀態不會退出。} other {將刪除此瀏覽器中的佈局、幹員資料、最近排班和提示偏好。}}"
+  "additional1": "{choice2, select, yes {將刪除此瀏覽器中的佈局、幹員資料、最近排班和提示偏好。森空島登入狀態不會退出。} other {將刪除此瀏覽器中的佈局、幹員資料、最近排班和提示偏好。}}",
+  "rotationCycleInvalid": "總計時長只支援 {allowed} 小時",
+  "shiftHours": "每班時長（小時）",
+  "cycleHours": "總時長",
+  "shorterCycle": "縮短總時長",
+  "longerCycle": "延長總時長"
 }

@@ -118,7 +118,19 @@ import {
   RESULT_CLEAR_WARNING_DISMISSED_KEY,
 } from "@riic/arknights-domain/persistence";
 import type { RoomRow } from "./schedule";
-import { DEFAULT_ROTATION_PROFILE, isRotationProfile, rotationDurations } from "@riic/arknights-domain/rotation-settings";
+import {
+  ALLOWED_CYCLE_HOURS,
+  DEFAULT_CUSTOM_ROTATION,
+  customRotationFromKey,
+  decodeRotationKey,
+  encodeRotationKey,
+  toRotationTiming,
+  validateCustomRotation,
+  DEFAULT_ROTATION_PROFILE,
+  isRotationProfile,
+  rotationDurations,
+} from "@riic/arknights-domain/rotation-settings";
+import type { CustomRotation } from "@riic/arknights-domain/rotation-settings";
 import { MOTION_DURATION } from "./motion";
 import { emptySklandBindingSummary } from "@riic/arknights-domain/skland-binding-state";
 import { createSklandRestoreGuard } from "./skland-restore-guard";
@@ -350,7 +362,13 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }, []);
   const [layoutSource, setLayoutSource] = useState<"local" | "skland">("local");
   const [localLayoutBackup, setLocalLayoutBackup] = useState<BaseBlueprint | null>(null);
-  const [rotationProfile, setRotationProfile] = useState<RotationProfile>(DEFAULT_ROTATION_PROFILE);
+  /**
+   * 换班方式的唯一状态：named profile（`abc_12_6_6`）或自定义编码
+   * （`custom_zb_16_8`）。渲染时解析，发请求前解码。
+   */
+  const [rotationKey, setRotationKey] = useState<string>(DEFAULT_ROTATION_PROFILE);
+  /** 受控组合主动补挂件；对应求解器 support_combinations_enable。 */
+  const [supportCombinationsEnabled, setSupportCombinationsEnabled] = useState(false);
   const [fiammettaEnabled, setFiammettaEnabled] = useState(false);
   const [manualFiammettaEnabled, setManualFiammettaEnabled] = useState(false);
   const [manualShiftDurations, setManualShiftDurations] = useState<number[]>([...DEFAULT_MANUAL_SHIFT_DURATIONS]);
@@ -569,15 +587,35 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const publishManualAgentPageContext = useCallback((context: AgentPageContext | null) => {
     publishAgentPageContext("manual", context);
   }, [publishAgentPageContext]);
-  const effectiveFiammettaEnabled = effectiveFiammettaSetting(operbox, rotationProfile, fiammettaEnabled);
+  /** 菲亚、遥测、反馈只认 named profile；自定义时退回默认 profile。 */
+  const activeRotationProfile: RotationProfile = isRotationProfile(rotationKey) ? rotationKey : DEFAULT_ROTATION_PROFILE;
+  /** 从 key 解析出的自定义时长；named profile 时为默认值（不参与请求）。 */
+  const customRotation: CustomRotation = customRotationFromKey(rotationKey) ?? DEFAULT_CUSTOM_ROTATION;
+  /** 云同步只保存 named profile。 */
+  const applyCloudRotationProfile = useCallback<Dispatch<SetStateAction<RotationProfile>>>((value) => {
+    setRotationKey((current) => {
+      const profile = isRotationProfile(current) ? current : DEFAULT_ROTATION_PROFILE;
+      return typeof value === "function" ? value(profile) : value;
+    });
+  }, []);
+  const effectiveFiammettaEnabled = effectiveFiammettaSetting(operbox, activeRotationProfile, fiammettaEnabled);
+  /** 发给求解器的 rotation：named profile 或 v7 拓扑对象；周期不合法时为 null。 */
+  const resolvedRotation = (() => {
+    const timing = decodeRotationKey(rotationKey);
+    if (!timing) return null;
+    if (typeof timing === "string") return timing;
+    const custom = customRotationFromKey(rotationKey);
+    return custom && validateCustomRotation(custom) ? null : timing;
+  })();
   const effectiveManualFiammettaEnabled = Boolean(
     manualFiammettaEnabled && (manualPosterBox ?? operbox)?.some((operator) => operator.own && operator.name === "菲亚梅塔")
   );
   const setupConfigurationKey = useMemo(() => JSON.stringify({
     layout,
-    rotationProfile,
+    rotationKey,
+    customRotation,
     fiammettaEnabled,
-  }), [fiammettaEnabled, layout, rotationProfile]);
+  }), [customRotation, fiammettaEnabled, layout, rotationKey]);
   const [closestComparison, setClosestComparison] = useState<ShiftComparison | null>(null);
   useEffect(() => {
     const maa = scheduleResult?.maa;
@@ -645,7 +683,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     uid: activeSklandAccount?.selectedUid ?? "",
     layout,
     operbox: operbox ?? [],
-    rotation: rotationProfile,
+    rotation: activeRotationProfile,
     fiammettaEnabled,
     resultId: result?.diagnosticId ?? null,
     taskQueueEnabled,
@@ -689,8 +727,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     setLayoutSource,
     localLayoutBackup,
     setLocalLayoutBackup,
-    rotationProfile,
-    setRotationProfile,
+    rotationProfile: activeRotationProfile,
+    setRotationProfile: applyCloudRotationProfile,
     fiammettaEnabled,
     setFiammettaEnabled,
     result,
@@ -810,7 +848,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         setLayoutDirty(restored.layoutDirty);
         setLayoutSource(restoredLayoutSource);
         setLocalLayoutBackup(CLIENT_SKLAND_ENABLED ? restored.localLayoutBackup : null);
-        setRotationProfile(restored.rotationProfile);
+        // 选中值与自定义时长一起恢复，避免刷新后回到默认换班方式。
+      setRotationKey(restored.rotationSelection ?? restored.rotationProfile);
         setFiammettaEnabled(Boolean(restored.fiammettaEnabled));
         setResult(restored.result);
         automaticMaaRef.current = restored.result ? { diagnosticId: restored.result.diagnosticId, maa: structuredClone(restored.result.maa) } : null;
@@ -852,7 +891,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       hadPersistedSession.current = true;
       setLayoutSource("local");
       setLocalLayoutBackup(null);
-      setRotationProfile(isRotationProfile(session.rotationProfile) ? session.rotationProfile : DEFAULT_ROTATION_PROFILE);
+      setRotationKey(isRotationProfile(session.rotationProfile) ? session.rotationProfile : DEFAULT_ROTATION_PROFILE);
       setFiammettaEnabled(Boolean(session.fiammettaEnabled));
       const artifactResult = (session.result ?? null) as PublicPlanData | null;
       setResult(artifactResult);
@@ -922,7 +961,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         layoutDirty,
         layoutSource,
         localLayoutBackup,
-        rotationProfile,
+        rotationProfile: activeRotationProfile,
+        rotationSelection: rotationKey,
+        customRotation,
         fiammettaEnabled,
         result,
         activeShift,
@@ -931,7 +972,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     } catch {
       reportPersistenceFailure();
     }
-  }, [hasRestoredSession, preset, layout, operbox, fileName, boxSource, layoutDirty, layoutSource, localLayoutBackup, rotationProfile, fiammettaEnabled, result, activeShift]);
+  }, [hasRestoredSession, preset, layout, operbox, fileName, boxSource, layoutDirty, layoutSource, localLayoutBackup, rotationKey, activeRotationProfile, customRotation, fiammettaEnabled, result, activeShift]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1300,8 +1341,26 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     trackTelemetry({ type: "interaction", name: "plan_click", page: "calculator" });
     const layoutError = layoutValidationError(planLayout, locale);
     if (layoutError) {
-      setApiError(displayError("AIC-LAYOUT-1201", layoutError));
-      return false;
+      return rejectBeforeSubmit(displayError("AIC-LAYOUT-1201", layoutError));
+    }
+    // 自定义时长不合法时，即使绕过了配置窗口的禁用按钮也不发起请求。
+    if (resolvedRotation === null) {
+      return rejectBeforeSubmit(displayError(
+        "AIC-REQ-1001",
+        intl("App.rotationCycleInvalidSummary", { allowed: ALLOWED_CYCLE_HOURS.join(" / ") }),
+      ));
+    }
+    // 亏电布局同样在本地拦下，口径与配置窗口一致。
+    const power = computePowerBudget(planLayout);
+    if (!power.ok) {
+      return rejectBeforeSubmit(displayError(
+        "AIC-LAYOUT-1201",
+        intl("App.powerShortfallSummary", {
+          value1: power.consumed - power.generated,
+          consumed: power.consumed,
+          generated: power.generated,
+        }),
+      ));
     }
     if (!cliReady && !retryUnavailable) {
       setApiError(displayError("AIC-PLAN-3001", intl("App.theSchedulingServiceIsTemporarilyUnavailableTryAgainLater"), true));
@@ -1321,8 +1380,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         operbox: normalizeOperboxEntries(planInput.operbox),
         sourceName: planInput.sourceName,
         boxSource: planInput.boxSource,
-        rotation: rotationProfile,
-        fiammetta_enable: effectiveFiammettaSetting(planInput.operbox, rotationProfile, fiammettaEnabled),
+        rotation: resolvedRotation ?? activeRotationProfile,
+        fiammetta_enable: effectiveFiammettaSetting(planInput.operbox, activeRotationProfile, fiammettaEnabled),
+        supportCombinationsEnable: supportCombinationsEnabled,
       };
       if (!taskQueueEnabled || payload.boxSource === "sample") {
         planTask.complete(await computePlan(payload));
@@ -1364,8 +1424,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         sourceName: intl("App.progressionAdjustmentBoxJson"),
         // 示例数据的替代 BOX 不能沿用 sample；森空岛来源则保留其数据归属标签。
         boxSource: upgradeSimulationBoxSource(boxSource),
-        rotation: rotationProfile,
-        fiammetta_enable: effectiveFiammettaSetting(trialOperbox, rotationProfile, fiammettaEnabled),
+        rotation: resolvedRotation ?? activeRotationProfile,
+        fiammetta_enable: effectiveFiammettaSetting(trialOperbox, activeRotationProfile, fiammettaEnabled),
+        supportCombinationsEnable: supportCombinationsEnabled,
       };
       const response = taskQueueEnabled
         ? await progressionAdjustmentTask.run(await submitPlanTask(payload))
@@ -1536,6 +1597,17 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     openManualScheduleDraft(pendingManualDraftReplacement);
   }
 
+  /**
+   * 本地校验失败时既要记下错误，也要让活动面板走一次 error 生命周期——
+   * 面板只在 loading 由 true 变 false 时展示错误，直接 return 不会弹窗。
+   */
+  function rejectBeforeSubmit(error: DisplayError) {
+    setApiError(error);
+    setLoading(true);
+    queueMicrotask(() => setLoading(false));
+    return false;
+  }
+
   async function handleEditManualSchedule() {
     if (!scheduleResult) {
       navigateToPage("manual");
@@ -1548,10 +1620,21 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       manualScheduleDraftContentEqual,
       reconcileManualScheduleDraft,
     } = await import("./manual-schedule");
+    // 时长优先取求解器返回的每班时长；缺失时按换班方式的预设时长兜底。
     const resultDurations = scheduleResult.rotation.shifts
       .map((shift) => shift.duration_hours)
       .filter((duration) => Number.isFinite(duration) && duration > 0);
-    const durations = resultDurations?.length ? resultDurations : rotationDurations(rotationProfile);
+    const durations = resultDurations.length ? resultDurations : rotationDurations(activeRotationProfile);
+    // 手动排班只接受 24/36/48 小时周期，与生成排班时的校验口径一致。
+    const cycleHours = durations.reduce((sum: number, hours: number) => sum + hours, 0);
+    if (!ALLOWED_CYCLE_HOURS.includes(Math.round(cycleHours) as (typeof ALLOWED_CYCLE_HOURS)[number])) {
+      rejectBeforeSubmit(displayError(
+        "AIC-REQ-1001",
+        intl("App.rotationCycleInvalidSummary", { allowed: ALLOWED_CYCLE_HOURS.join(" / ") }),
+      ));
+      return;
+    }
+    // 每班等长 → 顺序轮换；不等长 → 自定义时间区间（起始时间固定 08:00）。
     const equalDurations = durations.every((duration) => Math.abs(duration - durations[0]!) < 0.000_001);
     const draft = reconcileManualScheduleDraft(createManualScheduleDraftFromCalculator({
       layout,
@@ -1623,12 +1706,12 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       return;
     }
 
-    const environment = intl("App.environmentDetails", { duration: Math.round(result.durationMs), shift: activeShift + 1, rotation: rotationProfile, layout: preset.label });
+    const environment = intl("App.environmentDetails", { duration: Math.round(result.durationMs), shift: activeShift + 1, rotation: activeRotationProfile, layout: preset.label });
     const note = `${issueDraftNote.trim()}\n\n[${intl("App.environment")}] ${environment}`;
     const reproduction = {
       layout: structuredClone(layout),
       operbox: normalizeOperboxEntries(operbox),
-      rotation: rotationProfile,
+      rotation: activeRotationProfile,
       fiammettaEnabled: effectiveFiammettaEnabled,
       sourceType: boxSource,
     };
@@ -1689,13 +1772,25 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     clearIssueState();
   }
 
-  function handleRotationProfileChange(value: RotationProfile) {
-    setRotationProfile(value);
+  function handleFiammettaEnabledChange(enabled: boolean) {
+    setFiammettaEnabled(enabled);
     clearPlanResult();
   }
 
-  function handleFiammettaEnabledChange(enabled: boolean) {
-    setFiammettaEnabled(enabled);
+  /** 换班方式（含自定义时长）变化后，旧结果已失效，等待重新求解。 */
+  function handleRotationKeyChange(next: string) {
+    if (next === rotationKey) return;
+    showResultClearNotice(intl("components_RotationSettings.rotation"));
+    setRotationKey(next);
+    clearPlanResult();
+  }
+
+  /** 自定义时长变化：编码回 rotationKey，同样清空旧结果。 */
+  function handleCustomRotationChange(next: CustomRotation) {
+    const key = encodeRotationKey(toRotationTiming(next));
+    if (key === rotationKey) return;
+    showResultClearNotice(intl("components_RotationSettings.rotation"));
+    setRotationKey(key);
     clearPlanResult();
   }
 
@@ -2150,7 +2245,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
           layoutDirty: clearsLayout ? false : layoutDirty,
           layoutSource: "local",
           localLayoutBackup: null,
-          rotationProfile,
+          rotationProfile: activeRotationProfile,
           result: retainedResult,
           activeShift: retainedResult ? activeShift : 0,
         });
@@ -2210,7 +2305,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       setLayoutDirty(false);
       setLayoutSource("local");
       setLocalLayoutBackup(null);
-      setRotationProfile(DEFAULT_ROTATION_PROFILE);
+      setRotationKey(DEFAULT_ROTATION_PROFILE);
       setResult(null);
       setActiveShift(0);
       setResultClearWarningDismissed(false);
@@ -2497,7 +2592,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
           setLayoutDirty(JSON.stringify(restoredLayout) !== JSON.stringify(buildBlueprint(restoredPreset)));
           setLayoutSource("local");
           setLocalLayoutBackup(null);
-          setRotationProfile(context.rotationProfile);
+          setRotationKey(context.rotationProfile);
           setFiammettaEnabled(context.fiammettaEnabled);
           setResult(saved.result);
           setActiveShift(0);
@@ -2746,8 +2841,12 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         configurationKey={setupMode === "manual" ? `${setupConfigurationKey}:${manualScheduleMode}:${manualShiftStartTime}:${manualShiftDurations.join(",")}:${manualFiammettaEnabled}` : setupConfigurationKey}
         manualDraft={setupMode === "manual" ? manualDraftSnapshot : null}
         onManualProductChange={setupMode === "manual" ? handleManualSetupProductChange : undefined}
-        rotationProfile={setupMode === "manual" ? DEFAULT_ROTATION_PROFILE : rotationProfile}
-        onRotationProfileChange={handleRotationProfileChange}
+        rotationProfile={setupMode === "manual" ? DEFAULT_ROTATION_PROFILE : rotationKey}
+        onRotationProfileChange={handleRotationKeyChange}
+        customRotation={customRotation}
+        onCustomRotationChange={handleCustomRotationChange}
+        supportCombinationsEnabled={supportCombinationsEnabled}
+        onSupportCombinationsEnabledChange={setSupportCombinationsEnabled}
         manualShiftDurations={manualShiftDurations}
         onManualShiftDurationsChange={setManualShiftDurations}
         manualShiftStartTime={manualShiftStartTime}
@@ -2768,7 +2867,6 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         onTradeOrderChange={handleTradeOrderChange}
         onRoomLevelChange={handleRoomLevelChange}
         recyclingRoomLevel={userSettings.recyclingRoomLevel}
-        onRecyclingRoomLevelChange={(level) => handleUserSettingsChange({ ...userSettings, recyclingRoomLevel: Math.max(1, Math.min(3, Math.trunc(level))) as 1 | 2 | 3 })}
         powerBudget={powerBudget}
         onFinish={closeSetup}
         onSkip={closeSetup}

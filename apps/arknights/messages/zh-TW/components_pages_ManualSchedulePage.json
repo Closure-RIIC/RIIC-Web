@@ -73,5 +73,6 @@
   "thisOperator": "該幹員",
   "resultOutdated": "目前結果已過期",
   "unsupportedSpecialTrade": "第{shift}班 {room} 的 {operators} 特殊訂單暫未支援，已按普通貿易站計算。",
-  "eliteShort": "精"
+  "eliteShort": "精",
+  "scheduleNeedsAtLeastTwoShifts": "至少需要 2 個班次，目前排班只有 1 個班次。"
 }

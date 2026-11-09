@@ -34,9 +34,11 @@ export function ManualShiftStartStepper({ startTime, onStartTimeChange }: {
   />;
 }
 
-export function ManualShiftTimeline({ durations, startTime, onDurationsChange }: {
+export function ManualShiftTimeline({ durations, startTime, cycleHours = 24, onDurationsChange }: {
   durations: number[];
   startTime: string;
+  /** 一个完整周期的总小时数：24 / 36 / 48。 */
+  cycleHours?: number;
   onDurationsChange?: (durations: number[]) => void;
 }) {
   const t = useTranslations("setup_dialog");
@@ -47,20 +49,44 @@ export function ManualShiftTimeline({ durations, startTime, onDurationsChange }:
   const dragging = useRef<number | null>(null);
   const [active, setActive] = useState<number | null>(null);
   const [held, setHeld] = useState(false);
-  const ranges = manualShiftTimeRanges(startTime, durations);
+  /**
+   * 拖动中的临时时长。拖动期间只更新它，松手才通知上层——
+   * 否则每次 pointermove 都会让整个 App 重渲染，拖动明显卡顿。
+   */
+  const [dragDurations, setDragDurations] = useState<number[] | null>(null);
+  const effectiveDurations = dragDurations ?? durations;
+  const ranges = manualShiftTimeRanges(startTime, effectiveDurations);
   const start = Number(startTime.slice(0, 2)) * 60 + Number(startTime.slice(3, 5));
   const boundaries = ranges.reduce<number[]>((all, range) => [...all, all[all.length - 1]! + range.durationMinutes / 60], [0]);
-  const snapped = snapManualShiftDurationsToHours(durations);
+  const snapped = snapManualShiftDurationsToHours(effectiveDurations);
   const bounds = (index: number) => {
     const before = snapped.slice(0, index).reduce((sum, duration) => sum + duration, 0);
     return { min: before + 1, max: before + snapped[index]! + snapped[index + 1]! - 1 };
   };
-  const move = (index: number, hour: number) => onDurationsChange?.(moveManualShiftBoundaryByHour(durations, index, hour));
+  /** 拖动中只更新本地草稿；提交时才调用上层回调。 */
+  const preview = (index: number, hour: number) => {
+    // 函数式更新：同一帧内多次 pointermove 都基于最新草稿计算。
+    setDragDurations((current) => moveManualShiftBoundaryByHour(current ?? durations, index, hour));
+  };
+  const commit = () => {
+    const pending = dragDurations;
+    setDragDurations(null);
+    if (pending) onDurationsChange?.(pending);
+  };
+  /** 键盘与点击轨道是离散操作，直接提交。 */
+  const move = (index: number, hour: number) => {
+    setDragDurations(null);
+    onDurationsChange?.(moveManualShiftBoundaryByHour(durations, index, hour));
+  };
   const hourAtPointer = (clientX: number) => {
     const rect = track.current!.getBoundingClientRect();
-    return (clientX - rect.left) / rect.width * 24;
+    return (clientX - rect.left) / rect.width * cycleHours;
   };
-  const release = () => { dragging.current = null; setHeld(false); };
+  const release = () => {
+    if (dragging.current !== null) commit();
+    dragging.current = null;
+    setHeld(false);
+  };
 
   return <div className="min-w-0 space-y-4" data-manual-shift-timeline>
     <div className="pt-7 pb-5">
@@ -81,16 +107,16 @@ export function ManualShiftTimeline({ durations, startTime, onDurationsChange }:
           track.current?.querySelector<HTMLElement>(`[data-shift-boundary="${index}"]`)?.focus({ preventScroll: true });
           if (!target) move(index, hour);
         }}
-        onPointerMove={event => { if (dragging.current !== null) move(dragging.current, hourAtPointer(event.clientX)); }}
+        onPointerMove={event => { if (dragging.current !== null) preview(dragging.current, hourAtPointer(event.clientX)); }}
         onPointerUp={release}
         onPointerCancel={release}
         onLostPointerCapture={release}
       >
         <div className="pointer-events-none absolute inset-x-0 top-2 h-7 overflow-hidden rounded-[7px] border border-black/10 dark:border-white/10">
           {ranges.map((range, index) => <motion.div key={index} className={cn("absolute inset-y-0", COLORS[index % COLORS.length])}
-            initial={false} animate={{ left: `${boundaries[index]! / 24 * 100}%`, width: `${range.durationMinutes / 1440 * 100}%` }} transition={transition} />)}
-          <div className="absolute inset-0 grid grid-cols-24" data-shift-hour-cells>
-            {Array.from({ length: 24 }, (_, index) => <span key={index} className="border-r border-black/15 last:border-0 dark:border-white/20" />)}
+            initial={false} animate={{ left: `${boundaries[index]! / cycleHours * 100}%`, width: `${range.durationMinutes / (cycleHours * 60) * 100}%` }} transition={transition} />)}
+          <div className="absolute inset-0 flex" data-shift-hour-cells>
+            {Array.from({ length: cycleHours }, (_, index) => <span key={index} className="min-w-0 flex-1 border-r border-black/15 last:border-0 dark:border-white/20" />)}
           </div>
         </div>
         {boundaries.slice(1, -1).map((hour, index) => <motion.div
@@ -106,7 +132,7 @@ export function ManualShiftTimeline({ durations, startTime, onDurationsChange }:
           aria-disabled={!onDurationsChange || undefined}
           data-shift-boundary={index}
           className="absolute top-0 z-10 flex h-11 w-[min(32px,4.166667%)] -translate-x-1/2 cursor-ew-resize items-center justify-center outline-none"
-          initial={false} animate={{ left: `${hour / 24 * 100}%` }} transition={transition}
+          initial={false} animate={{ left: `${hour / cycleHours * 100}%` }} transition={transition}
           onFocus={() => setActive(index)}
           onBlur={() => { if (!held) setActive(null); }}
           onKeyDown={event => {
@@ -127,7 +153,7 @@ export function ManualShiftTimeline({ durations, startTime, onDurationsChange }:
           {active === index ? <span className="pointer-events-none absolute bottom-full mb-1 whitespace-nowrap rounded-md bg-foreground px-2 py-1 font-number text-xs text-background tabular-nums">{timeAt(start + hour * 60)}</span> : null}
         </motion.div>)}
         <div className="pointer-events-none absolute inset-x-0 top-full mt-1 flex justify-between font-number text-[10px] text-muted-foreground tabular-nums sm:text-xs" aria-hidden="true">
-          {[0, 6, 12, 18, 24].map(hour => <span key={hour}>{timeAt(start + hour * 60)}</span>)}
+          {Array.from({ length: 5 }, (_, index) => Math.round(cycleHours * index / 4)).map(hour => <span key={hour}>{timeAt(start + hour * 60)}</span>)}
         </div>
       </div>
     </div>
