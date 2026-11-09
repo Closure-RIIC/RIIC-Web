@@ -2,7 +2,7 @@ import type { BuildingSkillPresentation } from "./operatorPortraits";
 import { maaRoomAutofill } from "./schedule-autofill.ts";
 import type { BaseBlueprint, BlueprintRoom, MaaOperatorSlot, MaaPlan, MaaRoom, MaaRooms, RoomEfficiency, RoomKind, RoomProduct, RotationShift, TrainingRoomShift } from "@riic/arknights-domain/types";
 
-export type RoomGroup = keyof MaaRooms | "training" | "recycling";
+export type RoomGroup = keyof MaaRooms | "training";
 
 export interface RoomRow {
   key: string;
@@ -58,7 +58,7 @@ const GROUP_LABELS: Record<RoomGroup, string> = {
   hire: "办公室",
   processing: "加工站",
   training: "训练室",
-  recycling: "回收站",
+  recycle: "回收站",
 };
 
 const GROUP_ORDER: RoomGroup[] = [
@@ -71,6 +71,7 @@ const GROUP_ORDER: RoomGroup[] = [
   "processing",
   "meeting",
   "training",
+  "recycle",
 ];
 
 const ROOM_PREFIX: Partial<Record<RoomGroup, string>> = {
@@ -83,6 +84,7 @@ const ROOM_PREFIX: Partial<Record<RoomGroup, string>> = {
   hire: "office",
   processing: "workshop",
   training: "training_room",
+  recycle: "recycling_station",
 };
 
 const BLUEPRINT_GROUP: Partial<Record<RoomKind, RoomGroup>> = {
@@ -95,6 +97,7 @@ const BLUEPRINT_GROUP: Partial<Record<RoomKind, RoomGroup>> = {
   meeting_room: "meeting",
   workshop: "processing",
   training_room: "training",
+  recycle: "recycle",
 };
 
 const PRODUCT_LABELS: Record<string, string> = {
@@ -231,13 +234,17 @@ function ruleFor(group: RoomGroup, operators: string[]): string {
 
 function titleFor(group: RoomGroup, index: number): string {
   const label = GROUP_LABELS[group];
-  if (["control", "meeting", "processing", "hire", "training"].includes(group)) return label;
+  // 全布局唯一的设施不显示序号。
+  if (["control", "meeting", "processing", "hire", "training", "recycle"].includes(group)) return label;
   return `${label} ${index + 1}`;
 }
 
+/** 全布局唯一的设施直接用固定 id，其余按序号命名。 */
+const FIXED_ROOM_IDS = new Set(["control", "meeting", "workshop", "office", "training_room", "recycling_station"]);
+
 function roomIdFor(group: RoomGroup, index: number): string {
   const prefix = ROOM_PREFIX[group] ?? group;
-  if (["control", "meeting", "workshop", "office", "training_room"].includes(prefix)) return prefix;
+  if (FIXED_ROOM_IDS.has(prefix)) return prefix;
   return `${prefix}_${index + 1}`;
 }
 
@@ -374,7 +381,6 @@ export function planToRows(
   const layoutRoomMap = roomMapFor(layout);
   const roomsByGroup = plan.rooms && typeof plan.rooms === "object" ? plan.rooms : {};
   for (const group of GROUP_ORDER) {
-    if (group === "recycling") continue;
     if (group === "training") {
       const layoutRoom = layout?.rooms.find((room) => room.kind === "training_room");
       if (!layoutRoom) continue;

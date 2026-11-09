@@ -11,6 +11,7 @@ const ROOM_MAX_LEVEL: Record<RoomKind, number> = {
   meeting_room: 3,
   workshop: 3,
   training_room: 3,
+  recycle: 3,
 };
 const ROOM_KINDS = new Set<RoomKind>(Object.keys(ROOM_MAX_LEVEL) as RoomKind[]);
 

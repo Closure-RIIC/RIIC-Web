@@ -26,5 +26,7 @@
   "guidance20": "重新登录或刷新账号状态后再生成排班。",
   "guidance21": "请求未能完成",
   "guidance22": "请稍后重试，并保留诊断编号。",
-  "guidance23": "请按错误提示修正输入后重试。"
+  "guidance23": "请按错误提示修正输入后重试。",
+  "guidanceInsufficientPower": "补足发电站，或降低设施等级与产品配置后再生成。",
+  "guidanceRotationCycle": "把总时长调整到 24、36 或 48 小时后重试。"
 }

@@ -26,5 +26,7 @@
   "guidance20": "Sign in again or refresh account status before generating a schedule.",
   "guidance21": "Request could not be completed",
   "guidance22": "Try again later and keep the diagnostic number.",
-  "guidance23": "Correct the input according to the error and try again."
+  "guidance23": "Correct the input according to the error and try again.",
+  "guidanceInsufficientPower": "Add power plants, or lower facility levels and products, then retry.",
+  "guidanceRotationCycle": "Adjust the total shift hours to 24, 36, or 48, then retry."
 }

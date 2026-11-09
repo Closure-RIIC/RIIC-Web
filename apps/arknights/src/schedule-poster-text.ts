@@ -9,7 +9,7 @@ import type { BaseBlueprint } from "@riic/arknights-domain/types";
 const labels: Record<EditableRoom["kind"], string> = {
   control_center: "中枢", trade_post: "贸易站", factory: "制造站", power_plant: "发电站",
   dormitory: "宿舍", office: "办公室", meeting_room: "会客室", workshop: "加工站",
-  training_room: "训练室", recycling: "回收站",
+  training_room: "训练室", recycle: "回收站",
 };
 export function scheduleTextRoomLabel(room: EditableRoom, layout: BaseBlueprint): string {
   const numbered = ["trade_post", "factory", "power_plant", "dormitory"].includes(room.kind);
@@ -17,9 +17,9 @@ export function scheduleTextRoomLabel(room: EditableRoom, layout: BaseBlueprint)
 }
 const compact = (value: string) => value.replace(/\s/g, "");
 const automaticEfficiencyTokens = new Set(["自动", "效率自动", "auto-efficiency"]);
-const supportsMaaAutofill = (room: EditableRoom) => !["training_room", "recycling"].includes(room.kind);
+const supportsMaaAutofill = (room: EditableRoom) => !["training_room", "recycle"].includes(room.kind);
 const productLabel = (room: EditableRoom, assignment: ManualScheduleDraft["shifts"][number]["rooms"][string]) => {
-  const product = assignment?.product ?? (room.kind === "recycling" ? undefined : room.product);
+  const product = assignment?.product ?? (room.kind === "recycle" ? undefined : room.product);
   if (product && "trade" in product) return product.trade.order === "gold" ? "龙门币" : "合成玉";
   if (product && "factory" in product) return { gold: "赤金", battle_record: "作战记录", originium: "源石碎片", all: "待定配方" }[product.factory.recipe];
   return "";

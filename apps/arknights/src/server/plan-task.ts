@@ -31,8 +31,11 @@ export type PlanTaskPayload = {
   operbox: OperBoxEntry[];
   sourceName: string | null;
   sourceType: "sample" | "maa" | "skland";
+  /** 换班方式的字符串形式：named profile 或 custom_zb_16_8 一类的编码。 */
   rotation: string;
   fiammettaEnable: boolean;
+  /** 受控组合主动补挂件；旧任务没有该字段时按关闭处理。 */
+  supportCombinationsEnable?: boolean;
   layoutTemplate: string;
   roomCount: number;
   operatorCount: number;
@@ -149,6 +152,7 @@ function parsePlanTaskPayload(value: string): PlanTaskPayload {
     || !["sample", "maa", "skland"].includes(parsed.sourceType ?? "")
     || typeof parsed.rotation !== "string"
     || typeof parsed.fiammettaEnable !== "boolean"
+    || (parsed.supportCombinationsEnable !== undefined && typeof parsed.supportCombinationsEnable !== "boolean")
     || typeof parsed.layoutTemplate !== "string"
     || typeof parsed.roomCount !== "number"
     || typeof parsed.operatorCount !== "number"
