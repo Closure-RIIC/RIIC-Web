@@ -17,6 +17,12 @@ const importedSchedule = {
       trading: [{ product: "Originium Shard", operators: ["锡兰"] }],
       manufacture: [{ product: "Battle Record", operators: [] }],
     },
+  }, {
+    name: "夜班",
+    rooms: {
+      trading: [{ product: "Originium Shard", operators: [] }],
+      manufacture: [{ product: "Battle Record", operators: ["锡兰"] }],
+    },
   }],
 };
 const uploadSelector = "[data-file-upload-dialog]";
@@ -360,6 +366,13 @@ test("manual upload enforces the 5 MiB boundary and preserves the draft and layo
   await expect(upload).toContainText("5 MiB");
   await chooseFile(page, upload, jsonFile("schedule.json", { plans: [] }));
   await expect(upload.getByRole("alert")).toBeVisible();
+  expect(await workspaceData(page)).toEqual(before);
+
+  await chooseFile(page, upload, jsonFile("single-shift.json", {
+    ...importedSchedule, plans: importedSchedule.plans.slice(0, 1),
+  }));
+  await expect(upload.getByRole("alert")).toContainText("至少需要 2 个班次");
+  await expect(page.getByRole("dialog", { name: "导入这个 MAA 排班？" })).toHaveCount(0);
   expect(await workspaceData(page)).toEqual(before);
 
   const buffer = Buffer.alloc(5 * 1024 * 1024, " ");
