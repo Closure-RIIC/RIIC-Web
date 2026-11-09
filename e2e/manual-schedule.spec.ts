@@ -965,8 +965,8 @@ test("manual scheduling previews and imports an external MAA schedule file", asy
 
   await expect(page.getByRole("tab", { name: /班次 1.*08:15至19:59.*11小时45分钟/ })).toBeVisible();
   await expect(page.locator('[data-manual-editor-board] [data-room-title="控制中枢"] [data-operator-identity="外部测试干员"]')).toBeVisible();
-  await expect(page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"]').getByRole("combobox")).toHaveAttribute("title", "开采协力");
-  await expect(page.locator('[data-manual-editor-board] [data-room-title="制造站 1"]').getByRole("combobox")).toHaveAttribute("title", "作战记录");
+  await expect(page.locator('[data-manual-editor-board]').getByRole("group", { name: "贸易站 1 订单", exact: true }).getByRole("button", { name: "开采协力", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator('[data-manual-editor-board]').getByRole("group", { name: "制造站 1 配方", exact: true }).getByRole("button", { name: "作战记录", exact: true })).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("tab", { name: /班次 2.*20:00至08:14.*12小时15分钟/ }).click();
   await expect(page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"] [data-operator-identity="锡兰"]')).toBeVisible();
 
