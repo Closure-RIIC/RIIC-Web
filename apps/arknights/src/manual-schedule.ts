@@ -662,7 +662,9 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
     const value = JSON.parse(storage.getItem(MANUAL_SCHEDULE_STORAGE_KEY) ?? "null") as unknown;
     if (!value || typeof value !== "object" || !("shifts" in value) || !Array.isArray(value.shifts)) return null;
     const rawShifts = value.shifts.slice(0, MAX_MANUAL_SHIFT_COUNT);
-    if (rawShifts.length < MIN_MANUAL_SHIFT_COUNT) return null;
+    // The setup minimum applies to new configurations; saved one-shift drafts
+    // must remain readable so upgrading cannot discard their assignments.
+    if (!rawShifts.length) return null;
     const parsedShifts = rawShifts.map((raw): ManualShift => {
       const candidate = raw && typeof raw === "object" ? raw as Partial<ManualShift> : {};
       const rooms = candidate.rooms && typeof candidate.rooms === "object" && !Array.isArray(candidate.rooms)

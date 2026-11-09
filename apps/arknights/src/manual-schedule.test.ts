@@ -132,18 +132,28 @@ test("hourly timeline boundaries snap, cannot cross and retain a complete day", 
   ]);
 });
 
-test("legacy manual drafts below the two-shift minimum fall back to null", () => {
-  const storage = {
-    getItem: () => JSON.stringify({
-      version: 2,
+test("saved one-shift drafts retain their assignments below the new setup minimum", () => {
+  for (const version of [2, 3]) {
+    const saved = JSON.stringify({
+      version,
       activeShift: 0,
       fiammettaEnabled: false,
-      shifts: [{ durationHours: 9, rooms: {}, fiammettaTarget: null }],
-    }),
-    setItem: () => undefined,
-  };
-  // 两班起步后，只有一班的旧草稿不再符合当前下限。
-  assert.equal(loadManualScheduleDraft(storage), null);
+      shifts: [{
+        durationHours: 9,
+        rooms: { trade_1: { operators: ["阿米娅", null, null] } },
+        fiammettaTarget: null,
+      }],
+    });
+    const restored = loadManualScheduleDraft({
+      getItem: () => saved,
+      setItem: () => assert.fail("loading must not replace a saved draft"),
+    });
+    assert.equal(restored?.version, 3);
+    assert.equal(restored?.shifts.length, 1);
+    assert.equal(restored?.shifts[0]?.durationHours, 24);
+    assert.deepEqual(restored?.shifts[0]?.rooms.trade_1?.operators, ["阿米娅", null, null]);
+  }
+  assert.equal(loadManualScheduleDraft({ getItem: () => JSON.stringify({ shifts: [] }), setItem: () => undefined }), null);
 });
 
 test("manual assignment reports a same-shift conflict and moves only after confirmation", () => {

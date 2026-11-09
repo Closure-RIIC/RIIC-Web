@@ -52,11 +52,11 @@ test("calculator shows the two-slot recycling station with training visuals", as
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   const board = page.locator('[data-compact-schedule-view]');
-  const recycling = board.locator('[data-room-group="recycling"]');
+  const recycling = board.locator('[data-room-group="recycle"]');
   const training = board.locator('[data-room-group="training"]');
   await expect(recycling).toBeVisible();
   await expect(recycling.locator('.infra-operator-slot')).toHaveCount(2);
-  await expect(recycling).toContainText("待配置");
+  await expect(recycling.locator('[data-operator-identity="empty"]')).toHaveCount(2);
   const visual = (element: Element) => ({
     accent: getComputedStyle(element).getPropertyValue('--room-accent'),
     background: getComputedStyle(element.querySelector('.infra-room-emblem')!).backgroundImage,
@@ -73,7 +73,7 @@ test("manual recycling assignments preserve the second slot across reload and mo
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/manual");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
-  const compact = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycling"]');
+  const compact = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycle"]');
   await expect(compact).toBeVisible();
   await compact.getByRole('button', { name: '空置', exact: true }).nth(1).click();
   const picker = page.getByRole('dialog');
@@ -85,7 +85,7 @@ test("manual recycling assignments preserve the second slot across reload and mo
   await expect(compact.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
   expect(await compact.locator('[data-operator-identity]').evaluateAll(nodes => nodes.map(node => node.getAttribute('data-operator-identity')))).toEqual(['empty', '阿米娅']);
   await page.setViewportSize({ width: 390, height: 844 });
-  const mobile = page.locator('[data-manual-editor-board] [data-schedule-view="list"] [data-room-group="recycling"]');
+  const mobile = page.locator('[data-manual-editor-board] [data-schedule-view="list"] [data-room-group="recycle"]');
   await expect(mobile).toBeVisible();
   await expect(mobile.locator('.infra-operator-slot')).toHaveCount(2);
   await expect(mobile.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
@@ -443,7 +443,7 @@ test("sidebar resumes an existing manual draft without invoking the solver and k
   await expect(page).toHaveURL(/\/manual$/);
   await expect(page.getByRole("tab", { name: /第 1 班.*24h/ })).toBeVisible();
   await expect(page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"] [data-operator-identity="阿米娅"]')).toBeVisible();
-  const recycling = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycling"]');
+  const recycling = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycle"]');
   await recycling.getByRole("button", { name: "空置", exact: true }).nth(1).click();
   const picker = page.getByRole("dialog");
   await picker.getByLabel("搜索可选干员或基建技能").fill("锡兰");
@@ -701,15 +701,20 @@ test("manual scheduling configures independent shifts and responsive drone contr
   const decreaseShift = shiftCount.getByRole("button", { name: "减少一个班次" });
   const increaseShift = shiftCount.getByRole("button", { name: "增加一个班次" });
   await expect(shiftCount.locator("output")).toHaveText("3");
+  await expect(increaseShift).toBeEnabled();
+  await increaseShift.click();
+  await expect(shiftCount.locator("output")).toHaveText("4");
   await expect(increaseShift).toBeDisabled();
   await decreaseShift.click();
   await decreaseShift.click();
-  await expect(shiftCount.locator("output")).toHaveText("1");
+  await expect(shiftCount.locator("output")).toHaveText("2");
   await expect(decreaseShift).toBeDisabled();
   await increaseShift.click();
   await increaseShift.click();
-  await expect(shiftCount.locator("output")).toHaveText("3");
+  await expect(shiftCount.locator("output")).toHaveText("4");
   await expect(increaseShift).toBeDisabled();
+  await decreaseShift.click();
+  await expect(shiftCount.locator("output")).toHaveText("3");
   await expect(shiftCount.locator("[data-setup-stepper]")).toHaveCount(1);
   await expect(setup.getByRole("group", { name: "首班开始", exact: true }).locator("[data-setup-stepper]")).toHaveCount(1);
   await expect(setup.locator('input[type="time"]')).toHaveCount(0);
@@ -724,7 +729,7 @@ test("manual scheduling configures independent shifts and responsive drone contr
   await setup.getByRole("button", { name: "减少一个班次" }).click();
   await expect(setup.getByRole("slider")).toHaveCount(1);
   await expect(setup.locator("[data-shift-timeline-legend]")).toContainText("08:59");
-  await setup.getByRole("checkbox", { name: /未启用/ }).click();
+  await setup.locator('[aria-labelledby="fiammetta-settings-title"]').getByRole("checkbox", { name: /未启用/ }).click();
   await setup.getByRole("button", { name: "继续", exact: true }).click();
   await setup.getByRole("button", { name: "完成", exact: true }).click();
 

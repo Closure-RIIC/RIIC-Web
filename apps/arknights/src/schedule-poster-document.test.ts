@@ -18,12 +18,15 @@ test("editable work file preserves shift products, efficiency, training roles an
   };
   draft.shifts[1]!.rooms.trade_1 = { operators: ["能天使"], product: { trade: { order: "originium" } }, manualSkillEfficiencyPct: 100 };
   draft.shifts[0]!.rooms.training_room = { operators: ["银灰", "杜宾"] };
+  draft.shifts[0]!.rooms.recycling_station = { operators: [null, "稀音"] };
   draft.shifts[0]!.rooms.dorm_4 = { operators: ["德克萨斯"], autofill: false };
   const document = createPosterDocument(layout, draft);
   const decoded = readPosterFile(JSON.stringify(posterDataOnly(document)));
   assert.deepEqual(decoded.draft, draft);
   const manual = posterDraftForManual(decoded);
   assert.deepEqual(manual.shifts[0]!.rooms.training_room?.operators, ["银灰", "杜宾"]);
+  assert.deepEqual(decoded.layout.rooms.find(room => room.kind === "recycle"), layout.rooms.find(room => room.kind === "recycle"));
+  assert.deepEqual(manual.shifts[0]!.rooms.recycling_station?.operators, [null, "稀音"]);
   assert.equal(manual.shifts[0]!.rooms.dorm_4?.operators[0], "德克萨斯");
   assert.equal(manual.shifts[0]!.rooms.trade_1?.manualSkillEfficiencyPct, 125);
   assert.deepEqual(manual.shifts[0]!.rooms.trade_1?.autofillSlots, [1]);
