@@ -12,8 +12,10 @@ const uiText = createUiLocalizer<typeof UiMessages>("AK_components_pages_ManualS
 import type { AppLocale } from "@riic/contracts/locale";
 import { useTranslations, useLocale } from "use-intl";
 
-import { ArrowLeft, Download, Ellipsis, Search, Settings2, Sparkles, Trash2, Upload, X } from "lucide-react";
+import { ArrowLeft, Undo2, Download, Ellipsis, Search, Settings2, Sparkles, Trash2, Upload, X } from "lucide-react";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useManualDraftHistory } from "@/hooks/use-manual-draft-history";
+import { manualEvaluationInputKey } from "@/manual-editing";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 import type { FactoryRecipe, TradeOrder } from "@riic/arknights-domain/blueprint";
@@ -287,6 +289,7 @@ export function ManualSchedulePage({
 }: ManualSchedulePageProps) {
   const rawLocale = useRawLocale();
   const intl = useTranslations();
+  const editingText = useTranslations("ManualEditingFeedback");
   const skillFilters = useTranslations("SkillFilters");
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
@@ -294,14 +297,14 @@ export function ManualSchedulePage({
   // Language changes update copy without reloading or overwriting in-progress work.
   const languageEffectRef = useRef({ intl, en });
   useEffect(() => { languageEffectRef.current = { intl, en }; }, [intl, en]);
-  const [draft, setDraft] = useState<ManualScheduleDraft>(() => createManualScheduleDraft(shiftDurations, shiftStartTime, scheduleMode));
+  const { draft, setDraft, syncDraft, undo, resetHistory, canUndo } = useManualDraftHistory(() => createManualScheduleDraft(shiftDurations, shiftStartTime, scheduleMode));
   useEffect(() => { onDraftChange?.(draft); }, [draft, onDraftChange]);
   useEffect(() => {
     const request = manualProductChangeRequest;
     if (!request) return;
     setDraft((current) => setManualRoomProduct(current, layout, request.shiftIndex, request.roomId, request.product));
     onManualProductChangeRequestConsumed?.(request.token);
-  }, [layout, manualProductChangeRequest, onManualProductChangeRequestConsumed]);
+  }, [layout, manualProductChangeRequest, onManualProductChangeRequestConsumed, setDraft]);
   const [posterSettings, setPosterSettings] = useState<SchedulePosterDocument | null>(initialPosterDocument ?? null);
   const posterInitialization = useRef<Promise<void> | null>(null);
   const [posterLoadError, setPosterLoadError] = useState("");
@@ -309,6 +312,9 @@ export function ManualSchedulePage({
   const [posterVisited, setPosterVisited] = useState(Boolean(initialPosterDocument));
   const [evaluatedKey, setEvaluatedKey] = useState("");
   const [calculationError, setCalculationError] = useState("");
+  const [calculationRunning, setCalculationRunning] = useState(false);
+  const calculationInFlight = useRef(false);
+  const calculationBusy = evaluationPending || calculationRunning;
   const assignedNamesKey = JSON.stringify([...new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators)).filter(Boolean))]);
   const operbox = useMemo(() => {
     const entries = new Map((sourceOperbox ?? []).map(operator => [operator.name, operator]));
@@ -321,9 +327,14 @@ export function ManualSchedulePage({
     }
     return [...entries.values()];
   }, [sourceOperbox, assignedNamesKey, draft.fiammettaEnabled]);
-  const evaluationKey = JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, posterSettings?.efficiencyMode ?? "native"]);
+  const evaluationKey = manualEvaluationInputKey(layout, draft, operbox, posterSettings?.efficiencyMode ?? suppliedResult?.calculationMode ?? "native");
+  const historyScopeKey = JSON.stringify([layout, sourceOperbox, shiftDurations, scheduleMode, fiammettaEnabled]);
+  useEffect(() => { resetHistory(); }, [historyScopeKey, resetHistory]);
+  const [baselineResult, setBaselineResult] = useState<ManualPlanResult | null>(null);
+  const baselineScopeKey = JSON.stringify([layout, sourceOperbox, draft.source]);
+  useEffect(() => { setBaselineResult(null); }, [baselineScopeKey]);
   /** 算过一次之后，输入又被改动：结果仍在手里，但已不对应当前排班。 */
-  const resultOutdated = Boolean(suppliedResult) && evaluatedKey !== "" && evaluatedKey !== evaluationKey;
+  const resultOutdated = Boolean(suppliedResult) && (suppliedResult?.inputKey ?? evaluatedKey) !== evaluationKey;
   // 过期时保留上一份结果，避免房间行在「有效率」和「等待排班」之间来回跳；由页面顶部提示告知需重算。
   const result = suppliedResult;
   /** 未支持的贸易特殊订单：WASM 已按普通贸易站结算，这里提示用户具体房间与干员。 */
@@ -440,7 +451,7 @@ export function ManualSchedulePage({
       const saved = initialDraft ?? loadManualScheduleDraft(window.localStorage);
       if (saved) {
         const reconciled = reconcileManualScheduleDraft(saved, layout, operbox);
-        setDraft(reconciled);
+        syncDraft(reconciled);
         onShiftDurationsChange(reconciled.shifts.map((shift) => shift.durationHours));
         onShiftStartTimeChange(reconciled.startTime || DEFAULT_MANUAL_SHIFT_START_TIME);
         onScheduleModeChange(reconciled.scheduleMode);
@@ -453,28 +464,28 @@ export function ManualSchedulePage({
     }
     if (initialDraft) onInitialDraftConsumed();
     setRestored(true);
-  }, [initialDraft, initialPosterDocument, layout, onFiammettaEnabledChange, onInitialDraftConsumed, onRestoreEvaluation, onScheduleModeChange, onShiftDurationsChange, onShiftStartTimeChange, operbox, ownedOperators, persistDraft, restored, restorationReady]);
+  }, [initialDraft, initialPosterDocument, layout, onFiammettaEnabledChange, onInitialDraftConsumed, onRestoreEvaluation, onScheduleModeChange, onShiftDurationsChange, onShiftStartTimeChange, operbox, ownedOperators, persistDraft, restored, restorationReady, syncDraft]);
 
   useEffect(() => {
     if (!restored) return;
-    setDraft((current) => current.fiammettaEnabled === fiammettaEnabled
+    syncDraft((current) => current.fiammettaEnabled === fiammettaEnabled
       ? current
       : { ...current, fiammettaEnabled });
-  }, [fiammettaEnabled, restored]);
+  }, [fiammettaEnabled, restored, syncDraft]);
 
   useEffect(() => {
     if (!restored) return;
-    setDraft((current) => current.scheduleMode === scheduleMode ? current : { ...current, scheduleMode });
-  }, [restored, scheduleMode]);
+    syncDraft((current) => current.scheduleMode === scheduleMode ? current : { ...current, scheduleMode });
+  }, [restored, scheduleMode, syncDraft]);
 
   useEffect(() => {
     if (!restored) return;
-    setDraft((current) => reconcileManualScheduleDraft(
+    syncDraft((current) => reconcileManualScheduleDraft(
       resizeManualScheduleDraft(current, shiftDurations, current.startTime === "" && shiftStartTime === DEFAULT_MANUAL_SHIFT_START_TIME ? "" : shiftStartTime),
       layout,
       operbox,
     ));
-  }, [layout, operbox, ownedFingerprint, restored, shiftDurations, shiftStartTime]);
+  }, [layout, operbox, ownedFingerprint, restored, shiftDurations, shiftStartTime, syncDraft]);
 
   useEffect(() => {
     if (!restored || !canPersistDraft) return;
@@ -517,6 +528,10 @@ export function ManualSchedulePage({
     trainee: trainingAssignment?.operators[0] ?? null,
     trainer: trainingAssignment?.operators[1] ?? null,
   } : undefined, [trainingAssignment?.operators, trainingRoom]);
+  useEffect(() => {
+    if (restored && result && !resultOutdated) setBaselineResult(previous => previous ?? result);
+  }, [restored, result, resultOutdated]);
+
   const activeEvaluationShift = result?.rotation.shifts[activeShift];
   const dormRooms = useMemo(() => layout.rooms.filter((room) => room.kind === "dormitory"), [layout.rooms]);
   const dormBatchCapacity = useMemo(
@@ -637,7 +652,7 @@ export function ManualSchedulePage({
   function setActiveShift(index: number) {
     setSortRoomId(null);
     setSortSelection(null);
-    setDraft((current) => ({ ...current, activeShift: index }));
+    syncDraft((current) => ({ ...current, activeShift: index }));
   }
 
   function openSlotPicker(row: RoomRow, slotIndex: number) {
@@ -926,16 +941,22 @@ export function ManualSchedulePage({
     setPicker({ kind: "slot", roomId: target.roomId, slotIndex: target.slot ?? 0 });
   }
   async function calculateSchedule(mode: "native" | "manual") {
-    if (evaluationPending) return;
+    if (evaluationPending || calculationInFlight.current) return;
+    calculationInFlight.current = true;
+    setCalculationRunning(true);
     setCalculationError("");
-    // posterSettings 为空时（海报尚未初始化）先把它建出来：否则 efficiencyMode 写不进去，
-    // evaluationKey 末尾会一直停在 "native"，纸面模式算完的结果会被当作过期数据丢掉。
-    if (!posterSettings) await ensurePosterReady();
-    setPosterSettings(current => current ? { ...current, efficiencyMode: mode } : current);
+    const submitted = { draft: structuredClone(draft), operbox: structuredClone(operbox) };
     try {
-      await (mode === "native" ? onEvaluate : onPaperEvaluate)({ draft, operbox });
-      setEvaluatedKey(JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, mode]));
-    } catch (error) { setCalculationError(error instanceof Error ? error.message : "@manual:calculationFailed"); }
+      if (!posterSettings) await ensurePosterReady();
+      setPosterSettings(current => current ? { ...current, efficiencyMode: mode } : current);
+      await (mode === "native" ? onEvaluate : onPaperEvaluate)(submitted);
+      setEvaluatedKey(manualEvaluationInputKey(layout, submitted.draft, submitted.operbox, mode));
+    } catch (error) {
+      setCalculationError(error instanceof Error ? error.message : "@manual:calculationFailed");
+    } finally {
+      calculationInFlight.current = false;
+      setCalculationRunning(false);
+    }
   }
 
   async function prepareMaaImport(file: File, signal: AbortSignal) {
@@ -1134,13 +1155,16 @@ export function ManualSchedulePage({
   const runNativeEvaluation = () => { closeMobileTools(); void calculateSchedule("native"); };
   const runPaperEvaluation = () => { closeMobileTools(); void calculateSchedule("manual"); };
   const scheduleTools = (mobile = false) => <>
+    <Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" disabled={!canUndo} data-manual-undo onClick={() => {
+      closeMobileTools(); undo(); setPendingMove(null); setSortSelection(null); setMoodRevision(value => value + 1);
+    }}><Undo2 />{editingText("undo")}</Button>
     {draft.source ? <Button type="button" variant="ghost" size="sm" onClick={() => { closeMobileTools(); onOpenCalculator(); }}>
       <ArrowLeft />{intl("components_pages_ManualSchedulePage.backToCalculation")}
     </Button> : null}
     <Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" onClick={() => { closeMobileTools(); onOpenSetup(); }}><Settings2 />{intl("components_pages_ManualSchedulePage.configureBoxLayout")}</Button>
     <Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" onClick={() => { closeMobileTools(); setMoodSettingsOpen(true); }}><Settings2 />{intl("MoodSimulation.settings")}</Button>
-    <Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" onClick={runNativeEvaluation} disabled={evaluationPending}><Sparkles />{intl("components_pages_ManualSchedulePage.calculateBasedOnSchedule")}</Button>
-    <Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" onClick={runPaperEvaluation} disabled={evaluationPending}><Sparkles />{intl("components_pages_ManualSchedulePage.calculateBasedOnEfficiency")}</Button>
+    <Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" onClick={runNativeEvaluation} disabled={calculationBusy}><Sparkles />{intl("components_pages_ManualSchedulePage.calculateBasedOnSchedule")}</Button>
+    <Button type="button" variant={mobile ? "ghost" : "outline"} size="sm" onClick={runPaperEvaluation} disabled={calculationBusy}><Sparkles />{intl("components_pages_ManualSchedulePage.calculateBasedOnEfficiency")}</Button>
     <FileUploadDialog
       title={intl("components_pages_ManualSchedulePage.importScheduleFile")}
       description={intl("FileUpload.scheduleDescription")}
@@ -1196,6 +1220,10 @@ export function ManualSchedulePage({
       <ManualProductionSummary
         result={result}
         activeShift={activeShift}
+        baseline={baselineResult}
+        outdated={resultOutdated}
+        pending={calculationBusy}
+        onRecalculate={() => { void calculateSchedule(posterSettings?.efficiencyMode ?? result?.calculationMode ?? "native"); }}
         controlsSlot={(
           <PlanSupportSummary
             drones={activeDronePlan?.drones}
@@ -1218,7 +1246,7 @@ export function ManualSchedulePage({
           posterContent={posterVisited ? posterSettings && posterDocument
             ? <Suspense fallback={<Skeleton className="h-64 w-full" />}><PosterWorkbench document={posterDocument}
               onChange={updatePoster} onImport={importPoster} onSelect={selectPosterSlot}
-              result={result} pending={evaluationPending} onCalculate={calculateSchedule} /></Suspense>
+              result={result} pending={calculationBusy} onCalculate={calculateSchedule} /></Suspense>
             : posterLoadError ? <div role="alert" className="space-y-2"><p>{posterLoadError}</p><Button onClick={() => { void ensurePosterReady(); }}>{uiText.text(en, "retry")}</Button></div>
               : <Skeleton className="h-64 w-full" /> : null}
           settingsOpen={moodSettingsOpen} onSettingsOpenChange={setMoodSettingsOpen}

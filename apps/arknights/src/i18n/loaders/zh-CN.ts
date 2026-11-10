@@ -84,6 +84,7 @@ export const loaders: Record<string, () => Promise<unknown>> = {
   "ImportGuide": () => import("../../../messages/zh-CN/ImportGuide.json", { with: { type: "json" } }).then(module => module.default),
   "InfoPageLayout": () => import("../../../messages/zh-CN/InfoPageLayout.json", { with: { type: "json" } }).then(module => module.default),
   "InventoryLabels": () => import("../../../messages/zh-CN/InventoryLabels.json", { with: { type: "json" } }).then(module => module.default),
+  "ManualEditingFeedback": () => import("../../../messages/zh-CN/ManualEditingFeedback.json", { with: { type: "json" } }).then(module => module.default),
   "Metadata": () => import("../../../messages/zh-CN/Metadata.json", { with: { type: "json" } }).then(module => module.default),
   "MoodSimulation": () => import("../../../messages/zh-CN/MoodSimulation.json", { with: { type: "json" } }).then(module => module.default),
   "Onboarding": () => import("../../../messages/zh-CN/Onboarding.json", { with: { type: "json" } }).then(module => module.default),

@@ -1,3 +1,4 @@
+import { manualEvaluationInputKey, type ManualCalculationMode } from "./manual-editing.ts";
 import { estimateDailyProduction } from "./daily-production.ts";
 import { droneProductionForSelectedMaaTargets, equivalentGoldForRotation } from "@riic/arknights-domain/drone-production-core";
 import { manualScheduleToMaa, type ManualScheduleDraft } from "./manual-schedule.ts";
@@ -7,6 +8,8 @@ import type { BaseBlueprint, MaaJson, OperBoxEntry, RotationJson } from "@riic/a
 
 export type ManualPlanResult = {
   kind: "manual";
+  inputKey?: string;
+  calculationMode?: ManualCalculationMode;
   revision: 1;
   layout: BaseBlueprint;
   maa: MaaJson;
@@ -46,6 +49,8 @@ export async function assembleNativeManualPlanResult(input: {
   applyManualProduction({ layout, maa, rotation });
   return {
     kind: "manual",
+    inputKey: manualEvaluationInputKey(input.layout, input.draft, input.operbox, "native"),
+    calculationMode: "native",
     revision: 1,
     layout,
     maa,
@@ -75,6 +80,8 @@ export async function assemblePaperManualPlanResult(input: {
   applyManualProduction({ layout, maa, rotation });
   return {
     kind: "manual",
+    inputKey: manualEvaluationInputKey(input.layout, input.draft, input.operbox, "manual"),
+    calculationMode: "manual",
     revision: 1,
     layout,
     maa,
