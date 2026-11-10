@@ -23,6 +23,8 @@ process.env.BETTER_AUTH_SECRET = "reviewer-integration-secret-not-for-production
 process.env.BETTER_AUTH_ADMIN_USER_IDS = bootstrapId;
 process.env.BETA_PUBLIC_ORIGIN = origin;
 process.env.BETA_RATE_LIMIT_ENABLED = "0";
+// Model a trusted test proxy with a suite-specific client; authentication limits stay enabled.
+process.env.BETA_TRUST_PROXY_HEADERS = "1";
 process.env.BETA_BUSINESS_DB_ENABLED = "1";
 process.env.BETA_BUSINESS_DB_READ_ENABLED = "1";
 const { getDatabasePool } = await import("@riic/platform-server/db");
@@ -40,7 +42,7 @@ test("reviewer roles enforce real-session API boundaries and take effect without
   const password = "Reviewer-Integration-2026!";
   function request(cookie, body, path = "/api/admin/users", method = body === undefined ? "GET" : "PATCH") {
     return new Request(`${origin}${path}`, {
-      method, headers: { origin, "content-type": "application/json", ...(cookie ? { cookie } : {}) },
+      method, headers: { origin, "content-type": "application/json", "x-real-ip": "198.51.100.30", ...(cookie ? { cookie } : {}) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   }

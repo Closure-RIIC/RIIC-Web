@@ -22,6 +22,8 @@ process.env.BETTER_AUTH_SECRET = "release-integration-secret-not-for-production-
 process.env.BETTER_AUTH_ADMIN_USER_IDS = "";
 process.env.BETA_PUBLIC_ORIGIN = "http://127.0.0.1:5194";
 process.env.PLATFORM_PUBLIC_ORIGINS = "http://127.0.0.1:5194";
+// Keep this real-auth suite in its own client bucket when integration files run concurrently.
+process.env.BETA_TRUST_PROXY_HEADERS = "1";
 const { handlePlatformRequest } = await import("@riic/platform-server/http-api");
 const { getDatabasePool } = await import("@riic/platform-server/db");
 const { getAuth } = await import("@riic/platform-server/auth");
@@ -35,10 +37,9 @@ test("release lifecycle protects drafts, application/environment boundaries, per
   const userId = `release-user-${suffix}`;
   const password = "Release-Integration-2026!";
   const origin = process.env.BETTER_AUTH_URL;
-  let ip = 1;
   function request(method = "GET", body, cookie, path = "/api/admin/releases", source = origin) {
     return new Request(`${origin}${path}`, {
-      method, headers: { origin: source, "content-type": "application/json", "x-forwarded-for": `192.0.2.${ip++}`, ...(cookie ? { cookie } : {}) },
+      method, headers: { origin: source, "content-type": "application/json", "x-real-ip": "203.0.113.30", ...(cookie ? { cookie } : {}) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   }

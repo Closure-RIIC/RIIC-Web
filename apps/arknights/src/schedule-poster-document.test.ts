@@ -21,6 +21,7 @@ test("editable work file preserves shift products, efficiency, training roles an
   draft.shifts[0]!.rooms.dorm_4 = { operators: ["德克萨斯"], autofill: false };
   const document = createPosterDocument(layout, draft);
   const decoded = readPosterFile(JSON.stringify(posterDataOnly(document)));
+  assert.deepEqual(decoded.layout.rooms.find(room => room.kind === "recycle"), layout.rooms.find(room => room.kind === "recycle"));
   assert.deepEqual(decoded.draft, draft);
   const manual = posterDraftForManual(decoded);
   assert.deepEqual(manual.shifts[0]!.rooms.training_room?.operators, ["银灰", "杜宾"]);
@@ -89,6 +90,7 @@ test("dorm hanger is poster-only and leaves the five-slot schedule unchanged", (
 });
 test("import rejects duplicate assignments, low-level orundum, excess capacity and unsupported versions", () => {
   const good = createPosterDocument(layout, createManualScheduleDraft([12, 12]));
+  assert.doesNotThrow(() => readPosterFile(JSON.stringify(good)));
   for (const mutate of [
     (doc: typeof good) => { doc.draft.shifts[0]!.rooms.trade_1 = { operators: ["芬", "芬"] }; },
     (doc: typeof good) => { doc.draft.shifts[0]!.rooms.trade_2 = { operators: [], product: { trade: { order: "originium" } } }; },
