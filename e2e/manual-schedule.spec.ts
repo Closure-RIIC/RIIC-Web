@@ -266,7 +266,7 @@ for (const entry of ["handoff", "code"] as const) {
     await workbench.getByLabel("作业名称", { exact: true }).fill("修改后的作业");
     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).meta.title)).toBe("修改后的作业");
     await workbench.getByRole("button", { name: "批量填写排班" }).click();
-    await page.getByLabel("批量排班文本").fill("贸易站1：阿米娅、芬");
+    await page.getByLabel("批量排班文本").fill("贸易站1：阿米娅、芬 | -");
     await page.getByRole("button", { name: "检查并应用" }).click();
     await expect.poll(readPosterOperators).toEqual([
       authorTraining[0],
@@ -603,15 +603,17 @@ test("manual scheduling configures independent shifts and responsive drone contr
   const decreaseShift = shiftCount.getByRole("button", { name: "减少一个班次" });
   const increaseShift = shiftCount.getByRole("button", { name: "增加一个班次" });
   await expect(shiftCount.locator("output")).toHaveText("3");
+  await expect(increaseShift).toBeEnabled();
+  await increaseShift.click();
+  await expect(shiftCount.locator("output")).toHaveText("4");
   await expect(increaseShift).toBeDisabled();
   await decreaseShift.click();
   await decreaseShift.click();
-  await expect(shiftCount.locator("output")).toHaveText("1");
+  await expect(shiftCount.locator("output")).toHaveText("2");
   await expect(decreaseShift).toBeDisabled();
   await increaseShift.click();
-  await increaseShift.click();
   await expect(shiftCount.locator("output")).toHaveText("3");
-  await expect(increaseShift).toBeDisabled();
+  await expect(increaseShift).toBeEnabled();
   await expect(shiftCount.locator("[data-setup-stepper]")).toHaveCount(1);
   await expect(setup.getByRole("group", { name: "首班开始", exact: true }).locator("[data-setup-stepper]")).toHaveCount(1);
   await expect(setup.locator('input[type="time"]')).toHaveCount(0);

@@ -693,16 +693,21 @@ test("layout level steppers respect bounds and keep recycling power at zero", as
     await expect(functionGroup.getByText(name, { exact: true })).toBeVisible();
   }
   const recyclingLevel = dialog.locator('output[aria-label="recycling_station 等级"]');
+  const savedRecyclingLevel = () => page.evaluate(() => {
+    const session = JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5") ?? "{}");
+    return session.layout?.rooms?.find((room: { id: string }) => room.id === "recycling_station")?.level;
+  });
   await expect(recyclingLevel).toHaveText("3");
   await expect(dialog.getByRole("button", { name: "recycling_station 等级加一" })).toBeDisabled();
   const initialPowerStatus = await dialog.locator('[data-setup-footer] [role="status"]').innerText();
   for (let count = 0; count < 2; count++) await dialog.getByRole("button", { name: "recycling_station 等级减一" }).click();
   await expect(recyclingLevel).toHaveText("1");
+  await expect.poll(savedRecyclingLevel).toBe(1);
   await expect(dialog.getByRole("button", { name: "recycling_station 等级减一" })).toBeDisabled();
   expect(await dialog.locator('[data-setup-footer] [role="status"]').innerText()).toBe(initialPowerStatus);
   for (let count = 0; count < 2; count++) await dialog.getByRole("button", { name: "recycling_station 等级加一" }).click();
   await expect(recyclingLevel).toHaveText("3");
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic-web-user-settings") ?? "{}").recyclingRoomLevel)).toBe(3);
+  await expect.poll(savedRecyclingLevel).toBe(3);
   expect(await dialog.locator('[data-setup-footer] [role="status"]').innerText()).toBe(initialPowerStatus);
   const controlLevel = dialog.locator('output[aria-label="control 等级"]');
   await expect(controlLevel).toHaveText("5");
@@ -740,7 +745,8 @@ test("layout facilities expose power-safe 342 defaults and responsive controls",
   await expect(dialog.locator('output[aria-label="dorm_1 等级"]')).toHaveText("2");
   const normalPowerStatus = dialog.getByText("电力正常 · 540/540", { exact: true });
   await expect(normalPowerStatus).toBeVisible();
-  await expect(normalPowerStatus).toHaveClass(/text-emerald-700/);
+  await expect(dialog.locator('[data-setup-footer] [role="status"]')).toHaveClass(/text-emerald-700/);
+  await expect(normalPowerStatus).toHaveCSS("color", "oklch(0.508 0.118 165.612)");
 
   const lowerFactoryRecipe = dialog.getByRole("group", { name: "制造站 3 配方" });
   await lowerFactoryRecipe.getByRole("button", { name: "源石碎片" }).click();

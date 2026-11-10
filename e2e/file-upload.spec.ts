@@ -17,7 +17,7 @@ const importedSchedule = {
       trading: [{ product: "Originium Shard", operators: ["锡兰"] }],
       manufacture: [{ product: "Battle Record", operators: [] }],
     },
-  }],
+  }, { name: "夜班", rooms: {} }],
 };
 const uploadSelector = "[data-file-upload-dialog]";
 
