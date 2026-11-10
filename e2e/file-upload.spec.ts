@@ -98,7 +98,10 @@ test.beforeEach(async ({ page }) => {
     }));
     window.localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify({
       version: 2, activeShift: 0, fiammettaEnabled: false,
-      shifts: [{ durationHours: 24, fiammettaTarget: null, rooms: { trade_1: { operators: ["阿米娅", null, null] } } }],
+      shifts: [
+        { durationHours: 12, fiammettaTarget: null, rooms: { trade_1: { operators: ["阿米娅", null, null] } } },
+        { durationHours: 12, fiammettaTarget: null, rooms: {} },
+      ],
     }));
   }, {
     layout: layout243, operbox: operators, result: planData,

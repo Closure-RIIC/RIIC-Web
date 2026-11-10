@@ -51,11 +51,11 @@ test("calculator shows the two-slot recycling station with training visuals", as
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   const board = page.locator('[data-compact-schedule-view]');
-  const recycling = board.locator('[data-room-group="recycling"]');
+  const recycling = board.locator('[data-room-group="recycle"]');
   const training = board.locator('[data-room-group="training"]');
   await expect(recycling).toBeVisible();
   await expect(recycling.locator('.infra-operator-slot')).toHaveCount(2);
-  await expect(recycling).toContainText("待配置");
+  await expect(recycling.locator('[data-operator-identity="empty"]')).toHaveCount(2);
   const visual = (element: Element) => ({
     accent: getComputedStyle(element).getPropertyValue('--room-accent'),
     background: getComputedStyle(element.querySelector('.infra-room-emblem')!).backgroundImage,
@@ -72,7 +72,7 @@ test("manual recycling assignments preserve the second slot across reload and mo
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/manual");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
-  const compact = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycling"]');
+  const compact = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycle"]');
   await expect(compact).toBeVisible();
   await compact.getByRole('button', { name: '空置', exact: true }).nth(1).click();
   const picker = page.getByRole('dialog');
@@ -84,7 +84,7 @@ test("manual recycling assignments preserve the second slot across reload and mo
   await expect(compact.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
   expect(await compact.locator('[data-operator-identity]').evaluateAll(nodes => nodes.map(node => node.getAttribute('data-operator-identity')))).toEqual(['empty', '阿米娅']);
   await page.setViewportSize({ width: 390, height: 844 });
-  const mobile = page.locator('[data-manual-editor-board] [data-schedule-view="list"] [data-room-group="recycling"]');
+  const mobile = page.locator('[data-manual-editor-board] [data-schedule-view="list"] [data-room-group="recycle"]');
   await expect(mobile).toBeVisible();
   await expect(mobile.locator('.infra-operator-slot')).toHaveCount(2);
   await expect(mobile.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
@@ -113,7 +113,10 @@ test("manual schedule poster loads, calculates and restores its metadata", async
       version: 2,
       activeShift: 0,
       fiammettaEnabled: false,
-      shifts: [{ durationHours: 24, rooms: { trade_1: { operators: ["阿米娅", null, null] } } }],
+      shifts: [
+        { durationHours: 24, rooms: { trade_1: { operators: ["阿米娅", null, null] } } },
+        { durationHours: 24, rooms: {} },
+      ],
     }));
   });
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -245,7 +248,7 @@ test("manual schedule poster loads, calculates and restores its metadata", async
 for (const entry of ["handoff", "code"] as const) {
   test(`imported poster ${entry} preserves edits and allows switching back to the editor`, async ({ page }) => {
     test.setTimeout(90_000);
-    const draft = createManualScheduleDraft([24], "08:00", "period");
+    const draft = createManualScheduleDraft([12, 12], "08:00", "period");
     draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", null, null] };
     const authorTraining = [{ ...operators[0]!, elite: 1, level: 42 }];
     const document = createPosterDocument(layout243, draft, authorTraining);
@@ -280,7 +283,7 @@ for (const entry of ["handoff", "code"] as const) {
 
 test("manual editor restores external operators before opening the lazy poster", async ({ page }) => {
   test.setTimeout(60_000);
-  const draft = createManualScheduleDraft([24], "08:00", "period");
+  const draft = createManualScheduleDraft([12, 12], "08:00", "period");
   draft.externalOperatorNames = ["巫恋"];
   draft.shifts[0]!.rooms.trade_1 = { operators: ["巫恋", null, null] };
   await page.addInitScript(value => localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify(value)), draft);
@@ -300,7 +303,7 @@ test("manual editor restores external operators before opening the lazy poster",
 
 test("poster uses current owned training instead of stale cached training", async ({ page }) => {
   test.setTimeout(60_000);
-  const draft = createManualScheduleDraft([24], "08:00", "period");
+  const draft = createManualScheduleDraft([12, 12], "08:00", "period");
   draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", null, null] };
   const document = createPosterDocument(layout243, draft, [{ ...operators[0]!, elite: 0, level: 1 }]);
   await page.addInitScript(({ draft, document }) => {
@@ -331,10 +334,10 @@ test("sidebar resumes an existing manual draft without invoking the solver and k
       activeShift: 0,
       fiammettaEnabled: false,
       shifts: [{
-        durationHours: 9,
+        durationHours: 24,
         fiammettaTarget: null,
         rooms: { trade_1: { operators: ["阿米娅", null, null] } },
-      }],
+      }, { durationHours: 24, fiammettaTarget: null, rooms: {} }],
     }));
   });
   await expect(page.locator('[data-calculator-export-actions="desktop"]')).toHaveCount(0);
@@ -342,7 +345,7 @@ test("sidebar resumes an existing manual draft without invoking the solver and k
   await expect(page).toHaveURL(/\/manual$/);
   await expect(page.getByRole("tab", { name: /第 1 班.*24h/ })).toBeVisible();
   await expect(page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"] [data-operator-identity="阿米娅"]')).toBeVisible();
-  const recycling = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycling"]');
+  const recycling = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycle"]');
   await recycling.getByRole("button", { name: "空置", exact: true }).nth(1).click();
   const picker = page.getByRole("dialog");
   await picker.getByLabel("搜索可选干员或基建技能").fill("锡兰");
@@ -450,7 +453,7 @@ test("calculator protects a different manual draft before replacing it from a re
         durationHours: 9,
         fiammettaTarget: null,
         rooms: { trade_1: { operators: ["阿米娅", null, null] } },
-      }],
+      }, { durationHours: 15, fiammettaTarget: null, rooms: {} }],
     }));
   });
 
