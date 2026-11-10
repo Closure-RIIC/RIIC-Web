@@ -149,7 +149,7 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await expect(poster).toContainText("24 h");
   await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
   await expect.poll(() => page.evaluate(() => localStorage.getItem("arknights-infra-manual-evaluation-v1"))).not.toBeNull();
-  const tradeEfficiency = poster.locator('[data-poster-room="trade_1"] .poster-efficiency-pair');
+  const tradeEfficiency = poster.locator('[data-poster-room="trade_1"] [data-poster-shift="0"] .poster-efficiency-pair');
   await expect(tradeEfficiency).toContainText("纸面");
   await expect(tradeEfficiency).toContainText("等效");
   await expect(tradeEfficiency).toContainText("贸易");
@@ -628,7 +628,7 @@ test("manual scheduling configures independent shifts and responsive drone contr
   await setup.getByRole("button", { name: "减少一个班次" }).click();
   await expect(setup.getByRole("slider")).toHaveCount(1);
   await expect(setup.locator("[data-shift-timeline-legend]")).toContainText("08:59");
-  await setup.getByRole("checkbox", { name: /未启用/ }).click();
+  await setup.getByRole("region", { name: "菲亚梅塔恢复心情" }).getByRole("checkbox", { name: /未启用/ }).click();
   await setup.getByRole("button", { name: "继续", exact: true }).click();
   await setup.getByRole("button", { name: "完成", exact: true }).click();
 
