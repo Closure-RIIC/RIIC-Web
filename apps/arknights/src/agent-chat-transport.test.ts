@@ -59,7 +59,7 @@ test("SDK retries and normal sends both use projected messages and retain reques
   }
 });
 test("413 envelopes display the public message and request reference instead of JSON", async t => {
-  const requestId = "b5a78b65-998b-48aa-af11-36588bdee27c";
+  const requestId = "11111111-2222-4333-8444-555555555555";
   t.mock.method(globalThis, "fetch", async () => Response.json({ success: false, error: { code: "AIC-REQ-1002", message: "提交的数据过大，请精简后重试。", requestId, retryable: false } }, { status: 413 }));
   await assert.rejects(agentChatFetch("/api/agent/chat"), error => {
     assert.equal((error as Error).message, `提交的数据过大，请精简后重试。 (${requestId})`);
