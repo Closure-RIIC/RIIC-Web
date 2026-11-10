@@ -1,5 +1,5 @@
 import { gameLabel } from "../i18n/game-labels";
-import { useId, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useId, useRef, useState, type CSSProperties, type PointerEvent, type ReactNode } from "react";
 import { GripVertical } from "lucide-react";
 import { movePriority } from "../scheduling-options";
 import { useWorkspace } from "../state";
@@ -8,14 +8,27 @@ import { ProductionIcon } from "./GameArtwork";
 const categories = ["线索", "干员经验", "武器经验", "培养"];
 type Drag = { category: string; target: string; x: number; y: number };
 
-export function PriorityCards({ priority, disabled, onChange }: { priority: string[]; disabled: boolean; onChange: (priority: string[]) => void }) {
+export type PriorityItem = { id: string; label: string; icon?: ReactNode };
+
+export function PriorityCards({ priority, disabled, onChange, items, hint, ariaLabel }: {
+  priority: string[];
+  disabled: boolean;
+  onChange: (priority: string[]) => void;
+  items?: PriorityItem[];
+  hint?: string;
+  ariaLabel?: string;
+}) {
   const { t } = useWorkspace();
   const hintId = useId();
   const group = useRef<HTMLOListElement>(null);
   const gesture = useRef<{ pointerId: number; startX: number; startY: number; bounds: { category: string; rect: DOMRect }[]; current: Drag } | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [announcement, setAnnouncement] = useState("");
-  const label = (category: string) => gameLabel(t, category);
+  const list: PriorityItem[] = items ?? categories.map(category => ({
+    id: category, label: gameLabel(t, category), icon: <ProductionIcon category={category} size={20} />,
+  }));
+  const itemOf = (id: string) => list.find(item => item.id === id);
+  const label = (id: string) => itemOf(id)?.label ?? id;
   function reorder(category: string, target: string) {
     if (disabled) return;
     const next = movePriority(priority, category, target);
@@ -51,12 +64,13 @@ export function PriorityCards({ priority, disabled, onChange }: { priority: stri
     if (commit) reorder(current.current.category, current.current.target);
   }
   return <>
-    <p id={hintId} className="ef-priority-hint">{t("PriorityCards.dragCardsToReorderEarlierGoalsTakePriorityYou")}</p>
-    <ol ref={group} className="ef-priority-cards" aria-label={t("PriorityCards.schedulingPriorities")}>
+    <p id={hintId} className="ef-priority-hint">{hint ?? t("PriorityCards.dragCardsToReorderEarlierGoalsTakePriorityYou")}</p>
+    <ol ref={group} className="ef-priority-cards" aria-label={ariaLabel ?? t("PriorityCards.schedulingPriorities")}>
       {priority.map((category, index) => {
-        const kind = categories.indexOf(category);
+        const item = itemOf(category);
+        const kind = list.findIndex(entry => entry.id === category);
         const dragging = drag?.category === category;
-        return <li key={category} data-priority-card={category} data-priority-kind={kind} data-dragging={dragging || undefined} data-drop-target={drag && drag.target === category && !dragging || undefined}
+        return <li key={category} data-priority-card={category} data-priority-kind={kind < 0 ? undefined : kind} data-dragging={dragging || undefined} data-drop-target={drag && drag.target === category && !dragging || undefined}
           style={dragging ? { "--ef-drag-x": `${drag.x}px`, "--ef-drag-y": `${drag.y}px` } as CSSProperties : undefined}>
           <button type="button" className="ef-priority-card" disabled={disabled} aria-label={t("PriorityCards.reorderPriority", { value1: label(category), value2: index + 1 })} aria-describedby={hintId}
             onPointerDown={event => start(event, category)} onPointerMove={move} onPointerUp={event => finish(event, true)} onPointerCancel={event => finish(event, false)} onLostPointerCapture={event => finish(event, false)}
@@ -69,7 +83,8 @@ export function PriorityCards({ priority, disabled, onChange }: { priority: stri
               event.preventDefault();
               if (priority[target]) reorder(category, priority[target]);
             }}>
-            <span className="ef-priority-rank" aria-hidden>{index + 1}</span><ProductionIcon category={category} size={20} />
+            <span className="ef-priority-rank" aria-hidden>{index + 1}</span>
+            {item?.icon ?? <ProductionIcon category={category} size={20} />}
             <strong>{label(category)}</strong><GripVertical size={14} aria-hidden />
           </button>
         </li>;

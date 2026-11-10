@@ -2,5 +2,8 @@
   "movedToPriority": "{value1} moved to priority {value2}.",
   "dragCardsToReorderEarlierGoalsTakePriorityYou": "Drag cards to reorder; earlier goals take priority. You can also focus a card and use the arrow keys.",
   "schedulingPriorities": "Scheduling priorities",
-  "reorderPriority": "Reorder {value1}, priority {value2}"
+  "reorderPriority": "Reorder {value1}, priority {value2}",
+  "cluePriorities": "Clue skill priorities",
+  "clueHint": "Drag cards to set clue-skill priority: earlier entries are kept for the reception room, later ones are easier for the control center to take. You can also focus a card and use the arrow keys.",
+  "whiteboard": "No clue skill"
 }
