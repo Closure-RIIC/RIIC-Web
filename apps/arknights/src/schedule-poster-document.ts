@@ -30,7 +30,7 @@ const schema = z.object({
       base_workforce: z.array(text(80)).max(200).optional(),
       initial_global: z.object({ monster_cuisine: z.number().min(0).max(100).optional() }).optional(),
     }),
-    rooms: z.array(z.object({ id: text(60), kind: z.enum(["control_center", "trade_post", "factory", "power_plant", "dormitory", "office", "meeting_room", "workshop", "training_room"]), level: z.number().int().min(1).max(5), product: product.optional(), dorm_beds: z.number().int().min(1).max(5).optional() })).min(1).max(25),
+    rooms: z.array(z.object({ id: text(60), kind: z.enum(["control_center", "trade_post", "factory", "power_plant", "dormitory", "office", "meeting_room", "workshop", "training_room", "recycle"]), level: z.number().int().min(1).max(5), product: product.optional(), dorm_beds: z.number().int().min(1).max(5).optional() })).min(1).max(25),
   }),
   draft: z.object({
     version: z.literal(3), scheduleMode: z.enum(["sequential", "period"]),

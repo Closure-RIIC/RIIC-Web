@@ -23,6 +23,7 @@ import type {
   SklandInventoryData,
 } from "@riic/arknights-domain/types";
 import type { RotationTiming } from "@riic/arknights-domain/types";
+import type { AutoRotationHours, AutoRotationResult } from "@riic/arknights-domain/auto-rotation";
 import type { SklandPolicyConsentRequest } from "@riic/platform/legal-policy";
 import type { GameReportRecord, GameReportSource } from "@riic/arknights-domain/game-report";
 
@@ -171,6 +172,24 @@ export async function computePlan(payload: {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(requestPayload),
+    signal: options.signal,
+  });
+}
+
+export async function computeAutoRotation(payload: {
+  layout: BaseBlueprint;
+  operbox: OperBoxEntry[];
+  boxSource: "skland" | "maa" | "sample";
+  hours: AutoRotationHours;
+  fiammetta_enable?: boolean;
+}, options: PlanRequestOptions = {}): Promise<AutoRotationResult> {
+  const invalid = payload.boxSource === "sample" ? null : await operboxPreflightError(payload.operbox, "AIC-BOX-1101");
+  if (invalid) throw invalid;
+  const { operbox, ...samplePayload } = payload;
+  return requestData("/api/auto-rotation", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload.boxSource === "sample" ? samplePayload : { ...samplePayload, operbox }),
     signal: options.signal,
   });
 }

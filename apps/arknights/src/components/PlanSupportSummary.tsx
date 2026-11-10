@@ -14,7 +14,7 @@ import { useGameCatalog } from "@/i18n/game-data-client";
 import type { MaaPlan } from "@riic/arknights-domain/types";
 
 export function PlanSupportSummary({ drones, target, portrait, automatic, onAutomaticChange, onChooseFacility, automaticDisabled = false }: {
-  drones?: MaaPlan["drones"];
+  drones?: Pick<NonNullable<MaaPlan["drones"]>, "enable" | "room" | "index">;
   target?: string | null;
   portrait?: string | null;
   automatic: boolean;

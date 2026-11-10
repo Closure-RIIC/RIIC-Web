@@ -51,5 +51,6 @@
   "cancelTheCurrentTask": "取消當前任務？",
   "cancelingExitsTheQueueAFutureScheduleRequestWill": "取消當前任務會退出排隊，後續生成排班需要重新排隊。",
   "keepWaiting": "繼續等待",
-  "cancelTask2": "確認取消"
+  "cancelTask2": "確認取消",
+  "cancelAutoRotation": "取消後將停止本次自動佇列輪換計算。"
 }

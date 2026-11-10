@@ -121,7 +121,7 @@ export function PlanResultSummary({
 }: {
   profile?: UserProfile;
   rotation?: RotationJson;
-  maa: MaaJson;
+  maa?: MaaJson;
   layout: BaseBlueprint;
   activeShift: number;
   comparison: ShiftComparison | null;
@@ -154,7 +154,7 @@ export function PlanResultSummary({
   }, [planRevision]);
   if (!profile && !rotation && !productionPresentation) return null;
 
-  const calculatorPresentation: ProductionSummaryPresentation = rotation
+  const calculatorPresentation: ProductionSummaryPresentation = rotation && maa
     ? createCalculatorProductionPresentation({ layout, maa, rotation })
     : { source: "pending", groups: [], detailsAvailable: false, solverProduction: null, droneProduction: undefined };
   const activePresentation = productionPresentation ?? calculatorPresentation;

@@ -12,13 +12,18 @@ export type RotationOption = {
 export const DEFAULT_ROTATION_PROFILE: RotationProfile = "abc_12_6_6";
 
 export const ROTATION_OPTIONS: RotationOption[] = [
-  { profile: "abc_12_6_6", label: "一天三换", durations: [12, 6, 6] },
+  { profile: "abc_12_6_6", label: "一天三换三班倒", durations: [12, 6, 6] },
   { profile: "main_backup_12_12", label: "主备轮换", durations: [12, 12] },
-  { profile: "abc_12_12_12", label: "一天两换", durations: [12, 12, 12] },
-  { profile: "main_backup_24_24", label: "主备 24/24", durations: [24, 24] },
+  { profile: "abc_12_12_12", label: "一天两换三班倒", durations: [12, 12, 12] },
+  { profile: "main_backup_24_24", label: "主备两班轮换", durations: [24, 24] },
   { profile: "fiammetta_8_8_4_4", label: "菲亚梅塔轮换", durations: [8, 8, 4, 4] },
   { profile: "abyssal_7_5_7_5", label: "深海猎人轮换", durations: [7, 5, 7, 5] },
 ];
+
+/** 计算页面的选项顺序；旧轮换仍用于读取历史排班和复现请求。 */
+export const SELECTABLE_ROTATION_OPTIONS = [
+  "abc_12_12_12", "abc_12_6_6", "main_backup_24_24",
+].map((profile) => ROTATION_OPTIONS.find((option) => option.profile === profile)!);
 
 /** 旧会话里可能还保存着这些 profile，仍然要能读出来并正常展示。 */
 export const LEGACY_ROTATION_PROFILES: RotationProfile[] = [
@@ -70,6 +75,10 @@ export function rotationOption(profile: RotationProfile): RotationOption {
 /** 固定时长；generic_* 返回空数组，表示“时长未知，看 shifts”。 */
 export function rotationDurations(profile: RotationProfile): number[] {
   return [...rotationOption(profile).durations];
+}
+
+export function rotationName(profile: RotationProfile, locale: AppLocale = "zh-CN"): string {
+  return rotationText.text(locale, profile);
 }
 
 export function rotationDescription(profile: RotationProfile, en: AppLocale = "zh-CN"): string {

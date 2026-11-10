@@ -1,5 +1,4 @@
 "use client";
-import { localize as rotationText } from "@riic/arknights-domain/i18n/helpers/RotationLabels";
 
 import { useTranslations, useLocale } from "use-intl";
 
@@ -21,6 +20,8 @@ import {
   ALLOWED_CYCLE_HOURS,
   DEFAULT_CUSTOM_ROTATION,
   ROTATION_OPTIONS,
+  SELECTABLE_ROTATION_OPTIONS,
+  rotationName,
   ROTATION_TOPOLOGY_SHIFTS,
   defaultCustomRotation,
   encodeRotationKey,
@@ -30,9 +31,10 @@ import {
   type CustomRotation,
 } from "@riic/arknights-domain/rotation-settings";
 import type { RotationTopology } from "@riic/arknights-domain/types";
+import { autoRotationFromKey, DEFAULT_AUTO_ROTATION_HOURS, encodeAutoRotationKey } from "@riic/arknights-domain/auto-rotation";
 
 type RotationSettingsProps = {
-  /** 换班方式 key：named profile 或 custom_zb_16_8 一类的编码。 */
+  /** 换班方式 key：named profile、custom_zb_16_8 或 auto_32_32。 */
   value: string;
   onChange: (value: string) => void;
   /**
@@ -43,12 +45,14 @@ type RotationSettingsProps = {
   onCustomChange?: (value: CustomRotation) => void;
   /** 自定义时长是否合法；父组件据此禁用提交按钮。 */
   onValidityChange?: (valid: boolean) => void;
+  allowAuto?: boolean;
 };
 
 const TOPOLOGIES: RotationTopology[] = ["main_backup", "abc"];
 
 /** 下拉框“自定义”选项的值；不是轮换方式本身。 */
 const CUSTOM_OPTION = "__custom__";
+const AUTO_OPTION = "__auto__";
 
 export function RotationSettings({
   value,
@@ -56,6 +60,7 @@ export function RotationSettings({
   custom: customProp,
   onCustomChange,
   onValidityChange,
+  allowAuto = false,
 }: RotationSettingsProps) {
   const allowCustom = customProp !== undefined && onCustomChange !== undefined;
   const custom = customProp ?? DEFAULT_CUSTOM_ROTATION;
@@ -68,17 +73,22 @@ export function RotationSettings({
    * 允许暂时为空或不合法，避免用户删光后立刻被改写；失焦时再钳制到 >= 1。
    */
   const [draftHours, setDraftHours] = useState<Record<number, string>>({});
+  const autoHours = autoRotationFromKey(value);
+  const autoLabel = intl("components_RotationSettings.auto");
   const customLabel = intl("components_RotationSettings.custom");
   const rotationComboboxOptions = [
-    ...ROTATION_OPTIONS.map((option) => ({
+    ...SELECTABLE_ROTATION_OPTIONS.map((option) => ({
       value: option.profile as string,
-      label: `${rotationText.text(en, option.profile)} · ${option.durations.join("/")}`,
+      label: `${rotationName(option.profile, en)} ${option.durations.join("/")}`,
     })),
+    ...(allowAuto ? [{ value: AUTO_OPTION, label: autoLabel }] : []),
     ...(allowCustom ? [{ value: CUSTOM_OPTION, label: customLabel }] : []),
   ];
   // 自定义编码（custom_xxx）在下拉框里对应“自定义”选项。
-  const comboboxValue = isCustomRotationKey(value) ? CUSTOM_OPTION : value;
-  const selectedComboboxOption = rotationComboboxOptions.find((option) => option.value === comboboxValue) ?? null;
+  const comboboxValue = autoHours ? AUTO_OPTION : isCustomRotationKey(value) ? CUSTOM_OPTION : value;
+  const legacyOption = ROTATION_OPTIONS.find((option) => option.profile === comboboxValue);
+  const selectedComboboxOption = rotationComboboxOptions.find((option) => option.value === comboboxValue)
+    ?? (legacyOption ? { value: legacyOption.profile, label: `${rotationName(legacyOption.profile, en)} ${legacyOption.durations.join("/")}` } : null);
   const normalizedQuery = query?.trim().toLocaleLowerCase((locale)) ?? "";
   const filteredOptions = normalizedQuery
     ? rotationComboboxOptions.filter((option) => option.label
@@ -142,7 +152,9 @@ export function RotationSettings({
         onValueChange={(option) => {
           if (option) {
             setQuery(null);
-            onChange(option.value === CUSTOM_OPTION ? encodeRotationKey(toRotationTiming(custom)) : option.value);
+            onChange(option.value === AUTO_OPTION
+              ? encodeAutoRotationKey(DEFAULT_AUTO_ROTATION_HOURS)
+              : option.value === CUSTOM_OPTION ? encodeRotationKey(toRotationTiming(custom)) : option.value);
           }
         }}
       >
@@ -164,6 +176,12 @@ export function RotationSettings({
           </ComboboxList>
         </ComboboxContent>
       </Combobox>
+
+      {allowAuto && autoHours ? (
+        <div className="grid gap-3 rounded-lg border border-border/70 p-3" data-rotation-auto>
+          <p className="text-xs text-muted-foreground">{intl("components_RotationSettings.autoDescription")}</p>
+        </div>
+      ) : null}
 
       {showCustom ? (
         <div className="grid gap-3 rounded-lg border border-border/70 p-3" data-rotation-custom>

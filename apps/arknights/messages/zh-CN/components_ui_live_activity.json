@@ -14,6 +14,7 @@
   "estimatedWait2": " 位，预计 ",
   "theAdjustedScheduleIsReadyForComparison": "调整后的排班已生成，可以切换对比。",
   "theThreeShiftResultIsReadyToViewOr": "三班结果已更新，可以查看或导出。",
+  "autoQueueResultReady": "自动队列轮换结果已更新，可以查看或导出",
   "maaRecognitionWarning": "排班中包含「{operators}」。以上干员可能无法被 MAA 识别，请知悉。",
   "solverIterationWarning": "求解器正在迭代更新，遇到 Bug 或问题可以点击对应房间右上角的反馈按钮。",
   "thisPageUpdatesAutomaticallyDoNotSubmitAgain": "页面会自动更新，无需重复提交。",

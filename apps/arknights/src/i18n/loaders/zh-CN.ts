@@ -122,6 +122,7 @@ export const loaders: Record<string, () => Promise<unknown>> = {
   "app_privacy_page": () => import("../../../messages/zh-CN/app_privacy_page.json", { with: { type: "json" } }).then(module => module.default),
   "app_terms_page": () => import("../../../messages/zh-CN/app_terms_page.json", { with: { type: "json" } }).then(module => module.default),
   "components": () => import("../../../messages/zh-CN/components.json", { with: { type: "json" } }).then(module => module.default),
+  "components_AutoRotationView": () => import("../../../messages/zh-CN/components_AutoRotationView.json", { with: { type: "json" } }).then(module => module.default),
   "components_CompactScheduleView": () => import("../../../messages/zh-CN/components_CompactScheduleView.json", { with: { type: "json" } }).then(module => module.default),
   "components_FiammettaSettings": () => import("../../../messages/zh-CN/components_FiammettaSettings.json", { with: { type: "json" } }).then(module => module.default),
   "components_FiammettaTargetChip": () => import("../../../messages/zh-CN/components_FiammettaTargetChip.json", { with: { type: "json" } }).then(module => module.default),

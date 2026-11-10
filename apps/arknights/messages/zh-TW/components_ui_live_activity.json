@@ -14,6 +14,7 @@
   "estimatedWait2": " 位，預計 ",
   "theAdjustedScheduleIsReadyForComparison": "調整後的排班已生成，可以切換對比。",
   "theThreeShiftResultIsReadyToViewOr": "三班結果已更新，可以檢視或匯出。",
+  "autoQueueResultReady": "自動佇列輪換結果已更新，可以檢視或匯出",
   "maaRecognitionWarning": "排班中包含「{operators}」。以上幹員可能無法被 MAA 識別，請知悉。",
   "solverIterationWarning": "求解器正在迭代更新，遇到 Bug 或問題可以點選對應房間右上角的反饋按鈕。",
   "thisPageUpdatesAutomaticallyDoNotSubmitAgain": "頁面會自動更新，無需重複提交。",

@@ -55,6 +55,7 @@ import type { TrainingSyncSnapshot } from "@/components/workbench/SklandTraining
 
 import {
   computePlan,
+  computeAutoRotation,
   deleteAllSklandAccountData,
   deleteSklandAccount,
   getHealth,
@@ -66,6 +67,8 @@ import {
   selectSklandRole,
   toDisplayError,
 } from "./api";
+import { autoRotationFromKey, DEFAULT_AUTO_ROTATION_HOURS, type AutoRotationResult } from "@riic/arknights-domain/auto-rotation";
+import type { AutoRotationDroneOverrides } from "./auto-rotation-production";
 import {
   buildBlueprint,
   computePowerBudget,
@@ -362,8 +365,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [layoutSource, setLayoutSource] = useState<"local" | "skland">("local");
   const [localLayoutBackup, setLocalLayoutBackup] = useState<BaseBlueprint | null>(null);
   /**
-   * 换班方式的唯一状态：named profile（`abc_12_6_6`）或自定义编码
-   * （`custom_zb_16_8`）。渲染时解析，发请求前解码。
+   * 换班方式的唯一状态：named profile、自定义定时编码（`custom_zb_16_8`）
+   * 或自动轮换编码（`auto_24_12`）。请求按对应模式分别构造。
    */
   const [rotationKey, setRotationKey] = useState<string>(DEFAULT_ROTATION_PROFILE);
   /** 受控组合主动补挂件；对应求解器 support_combinations_enable。 */
@@ -423,6 +426,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [sampleLoading, setSampleLoading] = useState(false);
   const sampleTrialInFlightRef = useRef(false);
   const [result, setResult] = useState<PublicPlanData | null>(null);
+  const [autoResultSnapshot, setAutoResultSnapshot] = useState<{ inputKey: string; result: AutoRotationResult; droneOverrides: AutoRotationDroneOverrides } | null>(null);
+  const [autoLoading, setAutoLoading] = useState(false);
+  const autoRequestRef = useRef<AbortController | null>(null);
+  const autoRequestInputKeyRef = useRef<string | null>(null);
   const [agentArtifactNotice, setAgentArtifactNotice] = useState<AgentArtifactHandoff | null>(null);
   const [agentArtifactLoading, setAgentArtifactLoading] = useState(false);
   const [agentArtifactApplied, setAgentArtifactApplied] = useState<{ preset: string } | null>(null);
@@ -494,6 +501,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   const planTask = usePlanTask({
     onDone: (rawResult) => {
+      if (autoRotationFromKey(rotationKey)) return;
       agentRuntime.flush();
       agentHistoryStore.startNew();
       const finalizedResult = withDefaultDormAutofill(rawResult);
@@ -514,6 +522,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       });
     },
     onFailed: (message) => {
+      if (autoRotationFromKey(rotationKey)) return;
       setLoading(false);
       setApiError(displayError("AIC-PLAN-3004", message));
     },
@@ -534,7 +543,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }, [planTask.taskId]);
 
   // 调整练度试算不覆盖原求解结果；两份完整班表在此处切换展示。
-  const scheduleResult = scheduleVariant === "trial" && upgradeComparison?.baseline === result
+  const autoHours = autoRotationFromKey(rotationKey) ? DEFAULT_AUTO_ROTATION_HOURS : null;
+  const autoMode = autoHours !== null;
+  const calculatorLoading = autoMode ? autoLoading : loading;
+  const scheduleResult = autoMode ? null : scheduleVariant === "trial" && upgradeComparison?.baseline === result
     ? upgradeComparison.trial
     : result;
   useEffect(() => {
@@ -598,6 +610,19 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     });
   }, []);
   const effectiveFiammettaEnabled = effectiveFiammettaSetting(operbox, activeRotationProfile, fiammettaEnabled);
+  const autoInputKey = useMemo(() => JSON.stringify({
+    layout, operbox, boxSource, rotationKey, fiammettaEnabled,
+    userId: websiteSession?.user.id ?? null, sklandActiveAccountId,
+  }), [layout, operbox, boxSource, rotationKey, fiammettaEnabled, websiteSession?.user.id, sklandActiveAccountId]);
+  const autoResult = autoResultSnapshot?.inputKey === autoInputKey ? autoResultSnapshot.result : null;
+  useEffect(() => {
+    if (autoRequestRef.current && autoRequestInputKeyRef.current !== autoInputKey) {
+      autoRequestRef.current.abort();
+      autoRequestRef.current = null;
+      setAutoLoading(false);
+    }
+  }, [autoInputKey]);
+  useEffect(() => () => { autoRequestRef.current?.abort(); }, []);
   /** 发给求解器的 rotation：named profile 或 v7 拓扑对象；周期不合法时为 null。 */
   const resolvedRotation = (() => {
     const timing = decodeRotationKey(rotationKey);
@@ -676,7 +701,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const sklandTrainingSyncOptions: SklandTrainingSyncOptions = {
     enabled: Boolean(CLIENT_SKLAND_ENABLED && websiteSession?.user.id && boxSource === "skland" && activeSklandAccount && hasRestoredSession),
     active: page === "training",
-    blocked: sklandBusy || sklandSessionLoading || loading || Boolean(planTask.taskId) || progressionAdjustmentActivity.loading || setupOpen,
+    blocked: sklandBusy || sklandSessionLoading || calculatorLoading || Boolean(planTask.taskId) || progressionAdjustmentActivity.loading || setupOpen,
     identity: `${websiteSession?.user.id}:${activeSklandAccount?.accountId}:${activeSklandAccount?.selectedUid}`,
     accountId: activeSklandAccount?.accountId ?? "",
     uid: activeSklandAccount?.selectedUid ?? "",
@@ -808,13 +833,18 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && loading) {
-        void planTask.cancel();
+      if (event.key === "Escape" && calculatorLoading) {
+        if (autoRequestRef.current) {
+          autoRequestRef.current.abort();
+          autoRequestRef.current = null;
+          setAutoLoading(false);
+          setApiError(null);
+        } else void planTask.cancel();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [loading, planTask]);
+  }, [calculatorLoading, planTask]);
 
   useEffect(() => {
     if (typeof window === "undefined" || restoredLocalSession.current) return;
@@ -1332,7 +1362,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     },
   ): Promise<boolean> {
     setProgressionAdjustmentActivity({ active: false, loading: false, completed: false, error: null });
-    if (!planInput.operbox) return false;
+    if (!planInput.operbox || autoRequestRef.current) return false;
     if (planRetryCountdown > 0) return false;
     planClickAtRef.current = performance.now();
     trackTelemetry({ type: "interaction", name: "plan_click", page: "calculator" });
@@ -1341,7 +1371,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       return rejectBeforeSubmit(displayError("AIC-LAYOUT-1201", layoutError));
     }
     // 自定义时长不合法时，即使绕过了配置窗口的禁用按钮也不发起请求。
-    if (resolvedRotation === null) {
+    if (resolvedRotation === null && !autoHours) {
       return rejectBeforeSubmit(displayError(
         "AIC-REQ-1001",
         intl("App.rotationCycleInvalidSummary", { allowed: ALLOWED_CYCLE_HOURS.join(" / ") }),
@@ -1363,6 +1393,49 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       setApiError(displayError("AIC-PLAN-3001", intl("App.theSchedulingServiceIsTemporarilyUnavailableTryAgainLater"), true));
       return false;
     }
+    if (autoHours) {
+      const controller = new AbortController();
+      autoRequestRef.current = controller;
+      const requestInputKey = JSON.stringify({
+        layout: planLayout, operbox: planInput.operbox, boxSource: planInput.boxSource,
+        rotationKey, fiammettaEnabled, userId: websiteSession?.user.id ?? null, sklandActiveAccountId,
+      });
+      autoRequestInputKeyRef.current = requestInputKey;
+      setAutoLoading(true);
+      setAutoResultSnapshot(null);
+      setResult(null);
+      setResultClearNotice(null);
+      setInputError(null);
+      setApiError(null);
+      clearIssueState();
+      try {
+        const computed = await computeAutoRotation({
+          layout: planLayout,
+          operbox: normalizeOperboxEntries(planInput.operbox),
+          boxSource: planInput.boxSource,
+          hours: autoHours,
+          fiammetta_enable: effectiveFiammettaSetting(planInput.operbox, activeRotationProfile, fiammettaEnabled),
+        }, { signal: controller.signal });
+        if (controller.signal.aborted || autoRequestRef.current !== controller) return false;
+        setAutoResultSnapshot({ inputKey: requestInputKey, result: computed, droneOverrides: {} });
+        setCliReady(true);
+        if (planInput.boxSource !== "sample") completeOnboarding();
+        trackTelemetry({ type: "interaction", name: "plan_response", page: "calculator" });
+        return true;
+      } catch (error) {
+        if (controller.signal.aborted || autoRequestRef.current !== controller) return false;
+        const normalized = toDisplayError(error, intl("App.theScheduleRequestFailedTryAgainLater"));
+        setApiError(normalized);
+        if (normalized.retryAfterSeconds) startPlanRetryCooldown(normalized.retryAfterSeconds);
+        return false;
+      } finally {
+        if (autoRequestRef.current === controller) {
+          autoRequestRef.current = null;
+          setAutoLoading(false);
+        }
+      }
+    }
+    setAutoResultSnapshot(null);
     void import("@/product-assets").then(({ preloadProductIcons }) => preloadProductIcons());
     setLoading(true);
     setResultClearNotice(null);
@@ -1399,6 +1472,13 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   function handleCancelRun() {
+    if (autoRequestRef.current) {
+      autoRequestRef.current.abort();
+      autoRequestRef.current = null;
+      setAutoLoading(false);
+      setApiError(null);
+      return;
+    }
     void planTask.cancel().then((cancelled) => {
       if (cancelled) setApiError(null);
     });
@@ -1763,6 +1843,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   function clearPlanResult() {
+    autoRequestRef.current?.abort();
+    autoRequestRef.current = null;
+    setAutoLoading(false);
+    setAutoResultSnapshot(null);
     setResult(null);
     setUpgradeSimulationOpen(false);
     setActiveShift(0);
@@ -1824,7 +1908,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   function showResultClearNotice(label: string | undefined) {
-    if (resultClearWarningDismissed || !result) return;
+    if (resultClearWarningDismissed || (!result && !autoResult)) return;
     setResultClearNotice(label ? (intl("App.changedTo", { label: label })) : (intl("App.settingsChanged")));
   }
 
@@ -1834,8 +1918,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   function requestScheduleProductChange(change: ProductChange) {
-    if (loading || pendingProductChange) return;
-    if (!result) {
+    if (calculatorLoading || pendingProductChange) return;
+    if (!result && !autoResult) {
       requestProductChange(change);
       return;
     }
@@ -1844,7 +1928,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   async function confirmScheduleProductChange() {
-    if (!pendingProductChange || loading) return;
+    if (!pendingProductChange || calculatorLoading) return;
     const nextLayout = applyPartialLocalLayoutEdit(
       (current) => layoutWithProductChange(current, pendingProductChange)
     );
@@ -1912,6 +1996,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   function handleManualSetupProductChange(shiftIndex: number, roomId: string, product: RoomProduct) {
     manualProductChangeToken.current += 1;
     setManualProductChangeRequest({ shiftIndex, roomId, product, token: manualProductChangeToken.current });
+  }
+
+  function handleAutoQueueDroneOverridesChange(droneOverrides: AutoRotationDroneOverrides) {
+    setAutoResultSnapshot(current => current?.inputKey === autoInputKey ? { ...current, droneOverrides } : current);
   }
 
   function handleScheduleDroneTargetChange(row: RoomRow) {
@@ -2356,26 +2444,27 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const activity = usePlanActivity({
     loading: progressionAdjustmentActivity.active
       ? progressionAdjustmentActivity.loading && !progressionAdjustmentTask.pollStopped
-      : loading,
+      : calculatorLoading,
     error: progressionAdjustmentActivity.active
       ? progressionAdjustmentPollError ?? progressionAdjustmentActivity.error
       : statusError,
-    completed: progressionAdjustmentActivity.active ? progressionAdjustmentActivity.completed : planTask.status === "done",
-    completedMaa: progressionAdjustmentActivity.active ? progressionAdjustmentActivity.maa : planTask.result?.maa,
+    completed: progressionAdjustmentActivity.active ? progressionAdjustmentActivity.completed : autoMode ? Boolean(autoResult) : planTask.status === "done",
+    completedMaa: progressionAdjustmentActivity.active ? progressionAdjustmentActivity.maa : autoMode ? undefined : planTask.result?.maa,
+    completedDescription: autoMode && !progressionAdjustmentActivity.active ? intl("components_ui_live_activity.autoQueueResultReady") : undefined,
     kind: progressionAdjustmentActivity.active ? "progression-adjustment" : "schedule",
     queued: progressionAdjustmentActivity.active
       ? progressionAdjustmentActivity.loading && (
           progressionAdjustmentTask.status === "buffered"
           || progressionAdjustmentTask.status === "pending"
         )
-      : loading && (
+      : !autoMode && loading && (
         planTask.status === "buffered"
         || planTask.status === "pending"
         || planTask.pollStopped
       ),
     queuePosition: progressionAdjustmentActivity.active ? progressionAdjustmentTask.queuePosition : planTask.queuePosition,
     etaSeconds: progressionAdjustmentActivity.active ? progressionAdjustmentTask.etaSeconds : planTask.etaSeconds,
-    buffered: progressionAdjustmentActivity.active ? progressionAdjustmentTask.status === "buffered" : planTask.status === "buffered",
+    buffered: progressionAdjustmentActivity.active ? progressionAdjustmentTask.status === "buffered" : !autoMode && planTask.status === "buffered",
   });
   useEffect(() => {
     if (page !== "calculator" || !result?.maa) return;
@@ -2407,7 +2496,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     healthOperators,
     calculator: {
       layout,
-      result,
+      result: autoMode ? null : result,
+      autoMode,
+      autoResult,
+      autoDroneOverrides: autoResultSnapshot?.droneOverrides,
+      onAutoDroneOverridesChange: handleAutoQueueDroneOverridesChange,
       scheduleResult,
       activeShift,
       rows,
@@ -2417,14 +2510,14 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       resultClearNotice,
       feedbackResult,
       operbox,
-      loading,
+      loading: calculatorLoading,
       canRun,
       runCooldownSeconds: planRetryCountdown,
-      runOutcome: apiError ? "error" as const : planTask.status === "done" ? "success" as const : "idle" as const,
+      runOutcome: apiError ? "error" as const : (autoMode ? Boolean(autoResult) : planTask.status === "done") ? "success" as const : "idle" as const,
       hasBox,
       feedbackDisabledForSampleBox,
       plannerReady: cliReady,
-      taskQueue: loading && planTask.taskId ? {
+      taskQueue: !autoMode && loading && planTask.taskId ? {
         queuePosition: planTask.queuePosition,
         etaSeconds: planTask.etaSeconds,
         pollStopped: planTask.pollStopped,
@@ -2659,9 +2752,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       <OnboardingChecklist open={onboardingOpen && !onboardingFinished} onOpenChange={setOnboardingOpen}
         statuses={onboardingStatuses}
         visitedPages={onboardingVisits} onNavigate={navigateToPage}
-        generating={loading || sampleLoading} generateDisabled={!canRun || loading || sampleLoading || planRetryCountdown > 0} plannerReady={cliReady}
+        generating={calculatorLoading || sampleLoading} generateDisabled={!canRun || calculatorLoading || sampleLoading || planRetryCountdown > 0} plannerReady={cliReady}
         showSample={!result && shouldShowAnonymousSampleTrial({ authenticated: Boolean(websiteSession), hasPersonalBox, onboardingActive: onboardingPreference === "active" })}
-        sampleDisabled={sampleLoading || loading || !cliReady || planRetryCountdown > 0}
+        sampleDisabled={sampleLoading || calculatorLoading || !cliReady || planRetryCountdown > 0}
         onSample={() => { navigateToPage("calculator"); void handleRunSampleTrial(); }}
         onSignIn={() => requestWebsiteAccount("setup")} onImport={handleProtectedSetup}
         onGenerate={() => { navigateToPage("calculator"); handleProtectedRun(); }} onDismiss={dismissOnboarding} />
@@ -2792,7 +2885,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
       {CLIENT_ACCOUNT_CLOUD_SYNC_ENABLED ? accountCloudWorkspace.syncElement : null}
       {hasRestoredSession ? <Suspense fallback={null}>
-        <ReleaseAnnouncement enabled={page !== "changelog" && !websiteSessionPending && !websiteAuthDialogOpen && !onboardingOpen && !setupOpen && !issueOpen && !pendingProductChange && !pendingManualDraftReplacement && !loading} />
+        <ReleaseAnnouncement enabled={page !== "changelog" && !websiteSessionPending && !websiteAuthDialogOpen && !onboardingOpen && !setupOpen && !issueOpen && !pendingProductChange && !pendingManualDraftReplacement && !calculatorLoading} />
       </Suspense> : null}
 
       {websiteAuthDialogMounted ? <Suspense fallback={(
@@ -2884,7 +2977,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         roomLabel={rows.find((row) => row.roomId === pendingProductChange?.roomId)?.title ?? pendingProductChange?.roomId ?? (intl("App.currentFacility"))}
         changeKind={pendingProductChange?.type === "trade" ? intl("Common.tradeStrategy") : intl("Common.factoryRecipe")}
         nextValueLabel={pendingProductChange ? productChangeLabel(pendingProductChange) ?? (intl("App.newSetting")) : (intl("App.newSetting"))}
-        busy={loading && Boolean(pendingProductChange)}
+        busy={calculatorLoading && Boolean(pendingProductChange)}
         onConfirm={() => void confirmScheduleProductChange()}
         onCancel={() => setPendingProductChange(null)}
       /></Suspense> : null}

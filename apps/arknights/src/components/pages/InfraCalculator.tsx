@@ -24,6 +24,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlanResultSummarySkeleton } from "@/components/PlanResultSummarySkeleton";
 import { ScheduleRunButton } from "@/components/ScheduleRunButton";
+import type { AutoRotationResult } from "@riic/arknights-domain/auto-rotation";
+import type { AutoRotationDroneOverrides } from "@/auto-rotation-production";
 
 import type { FactoryRecipe, TradeOrder } from "@riic/arknights-domain/blueprint";
 import { cn } from "@/lib/utils";
@@ -43,6 +45,8 @@ import type {
 const PlanResultSummary = lazyWithMessages(() => import("@/components/PlanResultSummary").then((module) => ({ default: module.PlanResultSummary })), "apps/arknights/src/components/PlanResultSummary.tsx");
 const PlanSupportSummary = lazyWithMessages(() => import("@/components/PlanSupportSummary").then((module) => ({ default: module.PlanSupportSummary })), "apps/arknights/src/components/PlanSupportSummary.tsx");
 const UpgradeSimulationDialog = lazyWithMessages(() => import("@/components/UpgradeSimulationDialog").then((module) => ({ default: module.UpgradeSimulationDialog })), "apps/arknights/src/components/UpgradeSimulationDialog.tsx");
+const AutoRotationView = lazyWithMessages(() => import("@/components/AutoRotationView").then((module) => ({ default: module.AutoRotationView })), "apps/arknights/src/components/AutoRotationView.tsx");
+const AutoRotationEmptyView = lazyWithMessages(() => import("@/components/AutoRotationView").then((module) => ({ default: module.AutoRotationEmptyView })), "apps/arknights/src/components/AutoRotationView.tsx");
 const DroneTargetPicker = lazyWithMessages(() => import("@/components/DroneTargetPicker").then(module => ({ default: module.DroneTargetPicker })), "apps/arknights/src/components/DroneTargetPicker.tsx");
 const ScheduleImageExportAction = lazyWithMessages(() => import("@/components/ScheduleImageExportAction").then(module => ({ default: module.ScheduleImageExportAction })), "apps/arknights/src/components/ScheduleImageExportAction.tsx");
 const PlanActionsDialog = lazyWithMessages(() => import("@/components/PlanActionsDialog").then(module => ({ default: module.PlanActionsDialog })), "apps/arknights/src/components/PlanActionsDialog.tsx");
@@ -76,6 +80,10 @@ export interface InfraCalculatorProps {
   layout: BaseBlueprint;
   result: PublicPlanData | null;
   scheduleResult: PublicPlanData | null;
+  autoMode?: boolean;
+  autoResult?: AutoRotationResult | null;
+  autoDroneOverrides?: AutoRotationDroneOverrides;
+  onAutoDroneOverridesChange: (overrides: AutoRotationDroneOverrides) => void;
   activeShift: number;
   rows: RoomRow[];
   activePlan: MaaPlan | undefined;
@@ -148,7 +156,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
   const [dronePickerOpen, setDronePickerOpen] = useState(false);
   const {
     layout,
-    result, scheduleResult, activeShift, rows,
+    result, scheduleResult, activeShift, rows, autoMode = false, autoResult,
     activePlan, activeDronePlan, closestComparison,
     resultClearNotice,
     feedbackResult,
@@ -438,7 +446,19 @@ export function InfraCalculator(props: InfraCalculatorProps) {
               </div>
             )}
           >
-            {!scheduleResult && loading ? <DeferredResultLoading /> : null}
+            {!autoMode && !scheduleResult && loading ? <DeferredResultLoading /> : null}
+            {autoMode && !autoResult ? <Suspense fallback={<DeferredResultLoading />}><AutoRotationEmptyView
+              layout={layout} searchQuery={operatorQuery} loading={loading}
+              onFactoryRecipeChange={onFactoryRecipeChange} onTradeOrderChange={onTradeOrderChange}
+              viewModeControl={scheduleViewControl} hideImages={!showImages}
+            /></Suspense> : null}
+            {autoResult ? <Suspense fallback={<DeferredResultLoading />}><AutoRotationView
+              key={autoResult.diagnosticId} result={autoResult} layout={layout}
+              eliteByOperator={eliteByOperator} levelByOperator={levelByOperator} searchQuery={operatorQuery}
+              droneOverrides={props.autoDroneOverrides ?? {}} onDroneOverridesChange={props.onAutoDroneOverridesChange}
+              onFactoryRecipeChange={onFactoryRecipeChange} onTradeOrderChange={onTradeOrderChange}
+              viewModeControl={scheduleViewControl} hideImages={!showImages}
+            /></Suspense> : null}
             {scheduleResult ? (
               <>
                 <Suspense fallback={<DeferredResultLoading />}>
@@ -471,7 +491,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
                 {intl("components_pages_InfraCalculator.exportImageFailed")}
               </p>
             ) : null}
-            {rows.length > 0 ? <ScheduleBoard
+            {!autoMode && rows.length > 0 ? <ScheduleBoard
               rows={rows}
               layout={layout}
               planRevision={scheduleResult?.diagnosticId}
@@ -514,11 +534,11 @@ export function InfraCalculator(props: InfraCalculatorProps) {
               noRoomSkillOperators={noRoomSkillOperators}
               droneTargetRoomId={droneTargetRoomId}
               onDroneTargetChange={manualDroneSelection ? onDroneTargetChange : undefined}
-            /> : (
+            /> : !autoMode ? (
               <div className="flex min-h-[420px] items-center justify-center border-y border-dashed border-border/70 py-6 text-center text-sm text-muted-foreground">
                 {intl("components_pages_InfraCalculator.noLayoutRoomsToDisplay")}
               </div>
-            )}
+            ) : null}
           </Panel>
           {feedbackResult ? (
             <div className="mt-3 border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700" role="status">
@@ -565,7 +585,7 @@ export function InfraCalculator(props: InfraCalculatorProps) {
             <DialogHeader className="gap-1.5 px-1 sm:px-2">
               <DialogTitle className="text-lg font-semibold">{intl("components_pages_InfraCalculator.cancelTheCurrentTask")}</DialogTitle>
               <DialogDescription className="text-sm leading-6">
-                {intl("components_pages_InfraCalculator.cancelingExitsTheQueueAFutureScheduleRequestWill")}
+                {autoMode ? intl("components_pages_InfraCalculator.cancelAutoRotation") : intl("components_pages_InfraCalculator.cancelingExitsTheQueueAFutureScheduleRequestWill")}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="gap-2">

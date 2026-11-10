@@ -61,6 +61,8 @@ import {
 } from "./serve-client";
 import { registerProcessCleanup } from "./process-cleanup";
 import { normalizeSolverOperbox } from "./plan-solver-input";
+import { runAutoRotationCli, withAutoRotationLane } from "./auto-rotation.ts";
+import type { AutoRotationHours, AutoRotationResult } from "@riic/arknights-domain/auto-rotation";
 import { legacyPlanReproductionContext } from "./business-backfill";
 import { verifySolverFallbackConfig, runWithSolverFallback, withinSolverDeadline, withSolverLane, type SolverFallbackConfig } from "./solver-fallback.ts";
 import { assertCompleteSolverOutput } from "./solver-output-contract.ts";
@@ -1701,6 +1703,40 @@ export async function waitForPlanArtifactFinalizers(timeoutMs: number): Promise<
   if (timeout) clearTimeout(timeout);
   if (resolveIdle) artifactFinalizerState.idleWaiters.delete(resolveIdle);
   return result;
+}
+
+export async function runAutoRotation(input: {
+  layout: BaseBlueprint;
+  operbox: OperBoxEntry[];
+  hours: AutoRotationHours;
+  fiammettaEnable?: boolean;
+  signal?: AbortSignal;
+}): Promise<AutoRotationResult> {
+  const operbox = normalizeSolverOperbox(input.operbox);
+  if (operbox.length === 0) {
+    throw new PublicApiError("AIC-BOX-1101", {
+      fieldErrors: [{
+        path: "operbox",
+        code: "invalid_operbox",
+        message: "干员池中没有已拥有的干员，无法计算自动轮换。",
+      }],
+    });
+  }
+  const cliPath = resolveCliPath();
+  return withAutoRotationLane(0, input.signal, timeoutMs, (signal) => runAutoRotationCli(
+    {
+      layout: input.layout,
+      operbox,
+      hours: input.hours,
+      fiammettaEnable: input.fiammettaEnable,
+    },
+    {
+      cliPath,
+      runtimeDataDir: resolveRuntimeDataDir(cliPath),
+      timeoutMs,
+      signal,
+    },
+  ));
 }
 
 export async function runPlan(

@@ -66,7 +66,10 @@ const {
   claimNextPlanTask,
   cleanupExpiredPlanTasks,
   createPlanTask,
+  createSynchronousAutoRotationReservation,
+  finishSynchronousAutoRotationReservation,
   planQueuePosition,
+  recoverStaleRunningTasks,
 } = await import("./plan-task.ts");
 const {
   deleteExpiredBusinessRecords,
@@ -757,6 +760,99 @@ test("plan tasks persist only encrypted Box payloads and scrub them at terminal 
       key_version: null,
       schema_version: null,
     });
+  } finally {
+    await pool.query('DELETE FROM "user" WHERE id=$1', [userId]).catch(() => undefined);
+    await pool.end();
+  }
+});
+
+test("synchronous auto reservations share admission and survive worker restart until expiry", async () => {
+  const pool = new Pool({ connectionString: databaseUrl, max: 2 });
+  const userId = randomUUID();
+  const requestIpHmac = "9".repeat(64);
+  try {
+    await insertIntegrationUsers(pool, [userId]);
+    const active = await createSynchronousAutoRotationReservation({
+      userId,
+      accountClass: "established",
+      requestIpHmac,
+    });
+    const activeRow = await pool.query(
+      `SELECT status,attempts,execution_source,encrypted_payload,expires_at
+       FROM app.plan_task WHERE id=$1`,
+      [active.id],
+    );
+    assert.equal(activeRow.rows[0].status, "running");
+    assert.equal(activeRow.rows[0].attempts, 3);
+    assert.equal(activeRow.rows[0].execution_source, "auto-rotation");
+    assert.ok(activeRow.rows[0].encrypted_payload);
+    assert.ok(activeRow.rows[0].expires_at > new Date());
+
+    await assert.rejects(
+      createPlanTask({
+        userId,
+        accountClass: "established",
+        requestIpHmac,
+        payload: integrationTaskPayload(),
+      }),
+      (error) => error?.code === "AIC-PLAN-3005",
+    );
+    assert.deepEqual(await recoverStaleRunningTasks(new Date()), { recovered: 0, failed: 0 });
+    assert.equal(
+      (await pool.query("SELECT status FROM app.plan_task WHERE id=$1", [active.id])).rows[0].status,
+      "running",
+    );
+
+    await finishSynchronousAutoRotationReservation(active.id, "success");
+    const finished = await pool.query(
+      `SELECT status,result,encrypted_payload,payload_iv,wrapped_data_key,wrapped_key_iv,key_version,schema_version,expires_at
+       FROM app.plan_task WHERE id=$1`,
+      [active.id],
+    );
+    assert.equal(finished.rows[0].status, "cancelled");
+    assert.equal(finished.rows[0].result, null);
+    for (const key of ["encrypted_payload", "payload_iv", "wrapped_data_key", "wrapped_key_iv", "key_version", "schema_version"]) {
+      assert.equal(finished.rows[0][key], null);
+    }
+    assert.ok(finished.rows[0].expires_at.getTime() > Date.now() + 23 * 60 * 60_000);
+
+    const orphan = await createSynchronousAutoRotationReservation({
+      userId,
+      accountClass: "established",
+      requestIpHmac,
+    });
+    await pool.query("UPDATE app.plan_task SET expires_at=now()-interval '1 second' WHERE id=$1", [orphan.id]);
+    assert.deepEqual(await recoverStaleRunningTasks(new Date()), { recovered: 0, failed: 1 });
+    const recovered = await pool.query(
+      "SELECT status,encrypted_payload,payload_iv,wrapped_data_key,wrapped_key_iv,key_version,schema_version FROM app.plan_task WHERE id=$1",
+      [orphan.id],
+    );
+    assert.equal(recovered.rows[0].status, "failed");
+    for (const key of ["encrypted_payload", "payload_iv", "wrapped_data_key", "wrapped_key_iv", "key_version", "schema_version"]) {
+      assert.equal(recovered.rows[0][key], null);
+    }
+    assert.ok(
+      (await pool.query("SELECT expires_at FROM app.plan_task WHERE id=$1", [orphan.id])).rows[0].expires_at.getTime()
+        > Date.now() + 23 * 60 * 60_000,
+    );
+
+    const cleanupOrphan = await createSynchronousAutoRotationReservation({
+      userId,
+      accountClass: "established",
+      requestIpHmac,
+    });
+    await pool.query("UPDATE app.plan_task SET expires_at=now()-interval '1 second' WHERE id=$1", [cleanupOrphan.id]);
+    await cleanupExpiredPlanTasks(new Date());
+    const cleaned = await pool.query(
+      "SELECT status,expires_at FROM app.plan_task WHERE id=$1",
+      [cleanupOrphan.id],
+    );
+    assert.equal(cleaned.rows[0].status, "failed");
+    assert.ok(cleaned.rows[0].expires_at.getTime() > Date.now() + 23 * 60 * 60_000);
+    assert.equal((await pool.query(
+      "SELECT count(*)::int AS count FROM app.plan_task WHERE user_id=$1 AND created_at >= now()-interval '10 minutes'",
+      [userId],
+    )).rows[0].count, 3);
   } finally {
     await pool.query('DELETE FROM "user" WHERE id=$1', [userId]).catch(() => undefined);
     await pool.end();

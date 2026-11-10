@@ -49,14 +49,38 @@ export function verifySolverFallbackConfig(): SolverFallbackConfig | null {
 
 /** Serialize the whole primary/fallback pair, not just each individual process. */
 const laneTails=new Map<number,Promise<void>>();
-export async function withSolverLane<T>(lane:number,run:()=>Promise<T>):Promise<T> {
+function enqueueSolverLane<T>(lane:number,run:()=>Promise<T>):Promise<T> {
   const previous=laneTails.get(lane) ?? Promise.resolve();
-  let unlock!:()=>void;
-  const tail=new Promise<void>(resolve=>{unlock=resolve;});
+  const execution=previous.then(run);
+  const tail=execution.then(()=>undefined,()=>undefined);
   laneTails.set(lane,tail);
-  await previous;
-  try {return await run();}
-  finally {unlock();if(laneTails.get(lane)===tail)laneTails.delete(lane);}
+  void tail.then(()=>{if(laneTails.get(lane)===tail)laneTails.delete(lane);});
+  return execution;
+}
+
+export async function withSolverLane<T>(lane:number,run:()=>Promise<T>):Promise<T> {
+  return enqueueSolverLane(lane,run);
+}
+
+export async function withAbortableSolverLane<T>(
+  lane:number,
+  signal:AbortSignal | undefined,
+  run:()=>Promise<T>,
+  abortError:()=>unknown=()=>new DOMException("The operation was aborted.","AbortError"),
+):Promise<T> {
+  if(signal?.aborted) throw abortError();
+  let started=false;
+  const execution=enqueueSolverLane(lane,async()=>{
+    if(signal?.aborted) throw abortError();
+    started=true;
+    return run();
+  });
+  if(!signal)return execution;
+  return new Promise<T>((resolve,reject)=>{
+    const abort=()=>{if(!started)reject(abortError());};
+    signal.addEventListener("abort",abort,{once:true});
+    void execution.then(resolve,reject).finally(()=>signal.removeEventListener("abort",abort));
+  });
 }
 
 export async function withinSolverDeadline<T>(run:()=>Promise<T>,milliseconds:number,stop:()=>void):Promise<T> {
