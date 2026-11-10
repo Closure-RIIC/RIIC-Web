@@ -17,6 +17,12 @@ const assignment = z.object({
   autofillSlots: z.array(z.number().int().min(0).max(4)).max(5).optional(),
   manualSkillEfficiencyPct: z.number().finite().min(0).max(10000).optional(),
 });
+const operatorIdentity = { id: text(80), name: text(80), rarity: z.number().int().min(1).max(6) };
+const operatorEntry = z.discriminatedUnion("own", [
+  z.object({ ...operatorIdentity, own: z.literal(true), elite: z.number().int().min(0).max(2), level: z.number().int().min(1).max(90), potential: z.number().int().min(1).max(6) }),
+  // MAA uses values such as -1/0/0 for unowned operators with no progression.
+  z.object({ ...operatorIdentity, own: z.literal(false), elite: z.number().finite(), level: z.number().finite(), potential: z.number().finite() }),
+]);
 const schema = z.object({
   format: z.literal("riic-schedule-poster"), version: z.literal(1),
   meta: z.object({ title: text(40), author: text(40), instructions: text(240), notes: text(120) }),
@@ -30,7 +36,7 @@ const schema = z.object({
       base_workforce: z.array(text(80)).max(200).optional(),
       initial_global: z.object({ monster_cuisine: z.number().min(0).max(100).optional() }).optional(),
     }),
-    rooms: z.array(z.object({ id: text(60), kind: z.enum(["control_center", "trade_post", "factory", "power_plant", "dormitory", "office", "meeting_room", "workshop", "training_room"]), level: z.number().int().min(1).max(5), product: product.optional(), dorm_beds: z.number().int().min(1).max(5).optional() })).min(1).max(25),
+    rooms: z.array(z.object({ id: text(60), kind: z.enum(["control_center", "trade_post", "factory", "power_plant", "dormitory", "office", "meeting_room", "workshop", "training_room", "recycle"]), level: z.number().int().min(1).max(5), product: product.optional(), dorm_beds: z.number().int().min(1).max(5).optional() })).min(1).max(25),
   }),
   draft: z.object({
     version: z.literal(3), scheduleMode: z.enum(["sequential", "period"]),
@@ -41,7 +47,7 @@ const schema = z.object({
       fiammettaTarget: text(80).nullable(), droneTargetRoomId: text(60).nullable(),
     })).min(1).max(4),
   }),
-  operators: z.array(z.object({ id: text(80), name: text(80), elite: z.number().int().min(0).max(2), level: z.number().int().min(1).max(90), own: z.boolean(), potential: z.number().int().min(1).max(6), rarity: z.number().int().min(1).max(6) })).max(200),
+  operators: z.array(operatorEntry).max(1000),
   presentation: z.object({
     hiddenFacilities: z.array(text(60)).max(25),
     backgroundColor: z.string().regex(/^#[\da-fA-F]{6}$/),
@@ -103,25 +109,24 @@ export function readPosterFile(content: string): SchedulePosterDocument {
 }
 
 export function createPosterDocument(layout: BaseBlueprint, draft = createManualScheduleDraft([8, 8, 8]), operators: readonly OperBoxEntry[] = []): SchedulePosterDocument {
-  const used = new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators).concat(shift.fiammettaTarget)));
-  if (draft.fiammettaEnabled) used.add("菲亚梅塔");
   return {
     format: "riic-schedule-poster", version: 1,
     meta: { title: `${layout.template} ${draft.shifts.length}班轮换`, author: "", instructions: "", notes: "" },
-    layout: structuredClone(layout), draft: structuredClone(draft), operators: structuredClone(operators.filter(operator => used.has(operator.name))),
+    layout: structuredClone(layout), draft: structuredClone(draft), operators: structuredClone([...operators]),
     efficiencyMode: "native", presentation: { hiddenFacilities: [], backgroundColor: "#eff0ec", showInstructions: true, dormHangerOperators: Array.from({ length: draft.shifts.length }, () => null) },
   };
 }
 
 export function posterDataOnly(doc: SchedulePosterDocument): SchedulePosterDocument {
-  const used = new Set(doc.draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators).concat(shift.fiammettaTarget)).concat(doc.presentation.dormHangerOperators));
-  if (doc.draft.fiammettaEnabled) used.add("菲亚梅塔");
-  return parsePosterDocument({ ...doc, operators: doc.operators.filter(operator => used.has(operator.name)) });
+  return parsePosterDocument(doc);
 }
 
 /** Retain the site's complete dorm assignments; the poster chooses which occupants to show. */
 export function posterDraftForManual(doc: SchedulePosterDocument): ManualScheduleDraft {
   const draft = structuredClone(doc.draft);
-  draft.externalOperatorNames = [...new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators.filter((name): name is string => Boolean(name)))))];
+  draft.externalOperatorNames = [...new Set(draft.shifts.flatMap(shift => [
+    ...Object.values(shift.rooms).flatMap(room => room.operators),
+    shift.fiammettaTarget,
+  ]).filter((name): name is string => Boolean(name)))];
   return reconcileManualScheduleDraft(draft, doc.layout);
 }

@@ -43,7 +43,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { downloadJson } from "@/download";
 import type { SchedulePosterDocument } from "@/schedule-poster-document";
 import { defaultPosterOperator, posterOperators } from "@/schedule-poster-operators";
-import { POSTER_STORAGE_KEY } from "@/schedule-poster-storage";
+import { POSTER_STORAGE_KEY, POSTER_WORKING_COPY_KEY } from "@/schedule-poster-storage";
 import type { PosterTarget } from "@/components/schedule-poster/SchedulePoster";
 import { droneStoragePlanIndex } from "@riic/arknights-domain/drone-plan-mapping";
 import type { ManualPlanResult } from "@/manual-plan-result";
@@ -309,18 +309,24 @@ export function ManualSchedulePage({
   const [posterVisited, setPosterVisited] = useState(Boolean(initialPosterDocument));
   const [evaluatedKey, setEvaluatedKey] = useState("");
   const [calculationError, setCalculationError] = useState("");
-  const assignedNamesKey = JSON.stringify([...new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators)).filter(Boolean))]);
+  const assignedNamesKey = JSON.stringify([...new Set(draft.shifts.flatMap(shift => [
+    ...Object.values(shift.rooms).flatMap(room => room.operators),
+    shift.fiammettaTarget,
+  ]).filter(Boolean))]);
   const operbox = useMemo(() => {
     const entries = new Map((sourceOperbox ?? []).map(operator => [operator.name, operator]));
     const names = new Set<string>(JSON.parse(assignedNamesKey));
     if (draft.fiammettaEnabled) names.add("菲亚梅塔");
     for (const name of names) {
       if (!name || entries.get(name)?.own) continue;
-      const operator = defaultPosterOperator(name);
+      const reference = entries.get(name)
+        ?? (initialPosterDocument ? posterSettings?.operators.find(operator => operator.name === name) : undefined);
+      const operator = reference && reference.elite >= 0 && reference.level >= 1 && reference.potential >= 1
+        ? reference : defaultPosterOperator(name);
       if (operator) entries.set(name, { ...operator, own: true });
     }
     return [...entries.values()];
-  }, [sourceOperbox, assignedNamesKey, draft.fiammettaEnabled]);
+  }, [sourceOperbox, assignedNamesKey, draft.fiammettaEnabled, initialPosterDocument, posterSettings]);
   const evaluationKey = JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, posterSettings?.efficiencyMode ?? "native"]);
   /** 算过一次之后，输入又被改动：结果仍在手里，但已不对应当前排班。 */
   const resultOutdated = Boolean(suppliedResult) && evaluatedKey !== "" && evaluatedKey !== evaluationKey;
@@ -333,14 +339,10 @@ export function ManualSchedulePage({
   );
   const posterDocument = useMemo(() => {
     if (!posterSettings) return null;
-    const names = new Set(draft.shifts.flatMap(shift => Object.values(shift.rooms).flatMap(room => room.operators).concat(shift.fiammettaTarget)).filter((name): name is string => Boolean(name)));
-    if (draft.fiammettaEnabled) names.add("菲亚梅塔");
-    const hangerNames = new Set(posterSettings.presentation.dormHangerOperators.filter((name): name is string => Boolean(name)));
-    for (const name of hangerNames) names.add(name);
-    const operators = [...names].flatMap(name => {
-      const operator = operbox.find(entry => entry.name === name && entry.own) ?? defaultPosterOperator(name);
-      return operator ? [{ ...operator, own: true }] : [];
-    });
+    const operators = posterOperators(
+      { ...posterSettings, draft, operators: sourceOperbox ?? [] },
+      initialPosterDocument ? posterSettings.operators : [],
+    );
     return {
       ...posterSettings,
       layout,
@@ -348,7 +350,7 @@ export function ManualSchedulePage({
       operators,
       meta: /^\d{3} [一二两三四1234]班轮换$/.test(posterSettings.meta.title) ? { ...posterSettings.meta, title: `${layout.template} ${draft.shifts.length}班轮换` } : posterSettings.meta,
     };
-  }, [layout, draft, operbox, posterSettings]);
+  }, [layout, draft, sourceOperbox, posterSettings, initialPosterDocument]);
 
   const ensurePosterReady = useCallback(async () => {
     setPosterVisited(true);
@@ -490,7 +492,14 @@ export function ManualSchedulePage({
     if (!restored || !posterDocument) return;
     try { window.localStorage.setItem(POSTER_STORAGE_KEY, JSON.stringify(posterDocument)); }
     catch { /* The user can still download the editable document. */ }
-  }, [restored, posterDocument]);
+    if (initialPosterDocument) {
+      try {
+        window.sessionStorage.setItem(POSTER_WORKING_COPY_KEY, JSON.stringify({
+          code: new URLSearchParams(window.location.search).get("code"), document: posterDocument,
+        }));
+      } catch { /* The in-memory working copy remains editable. */ }
+    }
+  }, [restored, posterDocument, initialPosterDocument]);
   const activeShift = Math.min(draft.activeShift, Math.max(0, draft.shifts.length - 1));
   const shiftRanges = manualShiftTimeRanges(draft.startTime, draft.shifts.map((shift) => shift.durationHours));
   const maaDraft = useMemo(() => ({

@@ -4,6 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { createManualScheduleDraft, type ManualScheduleDraft } from "../apps/arknights/src/manual-schedule";
 import { createPosterDocument } from "../apps/arknights/src/schedule-poster-document";
 import layout243 from "@riic/arknights-domain/layouts/243.json" with { type: "json" };
+import fullBox from "../fixtures/operbox_full_e2.json" with { type: "json" };
 import { mockAnonymousWebsiteSession, mockSignedInWebsiteSession, mockApis, now, planData } from "./production-readiness.fixture";
 
 const operators = [
@@ -51,11 +52,11 @@ test("calculator shows the two-slot recycling station with training visuals", as
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   const board = page.locator('[data-compact-schedule-view]');
-  const recycling = board.locator('[data-room-group="recycling"]');
+  const recycling = board.locator('[data-room-group="recycle"]');
   const training = board.locator('[data-room-group="training"]');
   await expect(recycling).toBeVisible();
   await expect(recycling.locator('.infra-operator-slot')).toHaveCount(2);
-  await expect(recycling).toContainText("待配置");
+  await expect(recycling.locator('[data-operator-identity="empty"]')).toHaveCount(2);
   const visual = (element: Element) => ({
     accent: getComputedStyle(element).getPropertyValue('--room-accent'),
     background: getComputedStyle(element.querySelector('.infra-room-emblem')!).backgroundImage,
@@ -72,7 +73,7 @@ test("manual recycling assignments preserve the second slot across reload and mo
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/manual");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
-  const compact = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycling"]');
+  const compact = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycle"]');
   await expect(compact).toBeVisible();
   await compact.getByRole('button', { name: '空置', exact: true }).nth(1).click();
   const picker = page.getByRole('dialog');
@@ -84,7 +85,7 @@ test("manual recycling assignments preserve the second slot across reload and mo
   await expect(compact.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
   expect(await compact.locator('[data-operator-identity]').evaluateAll(nodes => nodes.map(node => node.getAttribute('data-operator-identity')))).toEqual(['empty', '阿米娅']);
   await page.setViewportSize({ width: 390, height: 844 });
-  const mobile = page.locator('[data-manual-editor-board] [data-schedule-view="list"] [data-room-group="recycling"]');
+  const mobile = page.locator('[data-manual-editor-board] [data-schedule-view="list"] [data-room-group="recycle"]');
   await expect(mobile).toBeVisible();
   await expect(mobile.locator('.infra-operator-slot')).toHaveCount(2);
   await expect(mobile.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
@@ -278,6 +279,106 @@ for (const entry of ["handoff", "code"] as const) {
   });
 }
 
+for (const entry of ["file", "code"] as const) {
+  test(`inherited poster ${entry} keeps the complete author Box and can switch to personal training without losing assignments`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await mockSignedInWebsiteSession(page);
+    const draft = createManualScheduleDraft([24], "08:00", "period");
+    draft.shifts[0]!.rooms.trade_1 = { operators: ["巫恋", "龙舌兰", "锡兰"] };
+    draft.fiammettaEnabled = true;
+    draft.shifts[0]!.fiammettaTarget = "银灰";
+    const authorBox = fullBox.map(operator => operator.name === "阿米娅"
+      ? { ...operator, elite: 1, level: 42, potential: 2 }
+      : operator.name === "巫恋" ? { ...operator, elite: 1, level: 42 }
+      : operator.name === "锡兰" ? { ...operator, elite: 1, level: 26 }
+      : operator.name === "12F" ? { ...operator, own: false, elite: -1, level: 0, potential: 0 } : { ...operator });
+    const document = createPosterDocument(layout243, draft, authorBox);
+    document.meta.title = "完整干员池作业";
+    const workbench = page.locator("[data-poster-workbench]");
+    const readDocument = () => page.evaluate(() => JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!));
+    if (entry === "code") {
+      await page.route("**/api/schedule-posters?code=abcdef123456", route => route.fulfill({ json: { document } }));
+      await page.goto("/manual?tab=poster&code=abcdef123456");
+    } else {
+      await page.goto("/manual?tab=poster");
+      await workbench.locator('input[type="file"][accept=".json"]').setInputFiles({
+        name: "author.riic.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(document)),
+      });
+    }
+    await expect(workbench.getByLabel("作业名称", { exact: true })).toHaveValue(document.meta.title, { timeout: 30_000 });
+    await expect.poll(async () => (await readDocument()).operators).toEqual(authorBox);
+    await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
+    const efficiency = workbench.locator('[data-poster-room="trade_1"] .poster-efficiency-pair');
+    await expect(efficiency).toHaveAttribute("title", /总效率 = 基础/);
+    await expect(efficiency).not.toHaveAttribute("title", /巫恋 E2/);
+
+    const myBox = fullBox.filter(operator => !["锡兰", "银灰", "菲亚梅塔"].includes(operator.name)).map(operator => operator.name === "阿米娅"
+      ? { ...operator, elite: 2, level: 73, potential: 4 }
+      : operator.name === "12F" ? { ...operator, own: false, elite: -1, level: 0, potential: 0 } : { ...operator });
+    const expectedBox = [...myBox, ...["锡兰", "银灰", "菲亚梅塔"].map(name => ({ ...authorBox.find(operator => operator.name === name)!, own: false }))];
+    await page.getByRole("button", { name: /配置\s*Box\s*与布局/, exact: true }).filter({ visible: true }).click();
+    const setup = page.locator("[data-setup-dialog]");
+    await setup.getByRole("button", { name: "第 1 步，共 3 步：干员数据", exact: true }).click();
+    await setup.getByRole("button", { name: "更换", exact: true }).click();
+    await setup.getByRole("tab", { name: "MAA", exact: true }).click();
+    if (entry === "file") {
+      await setup.getByRole("button", { name: "上传练度 JSON / XLSX", exact: true }).click();
+      const upload = page.getByRole("dialog", { name: "导入干员数据", exact: true });
+      await upload.locator('input[type="file"]').setInputFiles({
+        name: "personal-box.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(myBox)),
+      });
+      await expect(upload).toHaveCount(0);
+    } else {
+      await setup.getByRole("button", { name: "粘贴 JSON", exact: true }).click();
+      await setup.locator("#setup-maa-json").fill(JSON.stringify(myBox));
+      await setup.getByRole("button", { name: "导入 JSON", exact: true }).click();
+    }
+    await expect.poll(async () => (await readDocument()).operators).toEqual(expectedBox);
+    await setup.locator("[data-setup-footer]").getByRole("button", { name: /检查设施|继续/, exact: true }).click();
+    await setup.locator("[data-setup-footer]").getByRole("button", { name: "完成", exact: true }).click();
+    await expect(setup).toHaveCount(0);
+    await expect.poll(async () => (await readDocument()).draft.shifts[0].rooms.trade_1.operators).toEqual(["巫恋", "龙舌兰", "锡兰"]);
+    expect((await readDocument()).draft.fiammettaEnabled).toBe(true);
+    expect((await readDocument()).draft.shifts[0].fiammettaTarget).toBe("银灰");
+    await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
+    await expect(efficiency).toHaveAttribute("title", /巫恋 E2.*龙舌兰 E2/);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox)).toEqual(operators);
+
+    await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
+    const otherTrade = page.locator('[data-manual-editor-board] [data-room-title="贸易站 2"]');
+    await otherTrade.getByRole("button", { name: "空置", exact: true }).first().click();
+    const picker = page.getByRole("dialog");
+    await picker.getByRole("tablist", { name: "工作房间" }).getByRole("tab", { name: "全部", exact: true }).click();
+    await picker.getByLabel("搜索可选干员或基建技能").fill("阿米娅");
+    await picker.locator('[data-operator-identity="阿米娅"]').click();
+    await expect(otherTrade.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
+    await expect.poll(async () => (await readDocument()).draft.shifts[0].rooms.trade_2.operators).toEqual(["阿米娅", null, null]);
+    await page.getByRole("tab", { name: "作业图", exact: true }).click();
+
+    await page.reload();
+    await expect(workbench.getByLabel("作业名称", { exact: true })).toHaveValue(document.meta.title, { timeout: 30_000 });
+    await expect.poll(async () => (await readDocument()).operators).toEqual(expectedBox);
+    await expect.poll(async () => (await readDocument()).draft.shifts[0].rooms.trade_1.operators).toEqual(["巫恋", "龙舌兰", "锡兰"]);
+    expect((await readDocument()).draft.shifts[0].rooms.trade_2.operators).toEqual(["阿米娅", null, null]);
+    expect((await readDocument()).draft.fiammettaEnabled).toBe(true);
+    expect((await readDocument()).draft.shifts[0].fiammettaTarget).toBe("银灰");
+    const pending = page.waitForEvent("download");
+    await workbench.getByRole("button", { name: "下载作业文件", exact: true }).click();
+    const downloaded = JSON.parse(await readFile((await (await pending).path())!, "utf8"));
+    expect(downloaded.operators).toEqual(expectedBox);
+    expect(downloaded.draft.shifts[0].rooms.trade_1.operators).toEqual(["巫恋", "龙舌兰", "锡兰"]);
+    expect(downloaded.draft.shifts[0].rooms.trade_2.operators).toEqual(["阿米娅", null, null]);
+    expect(downloaded.draft.shifts[0].fiammettaTarget).toBe("银灰");
+    const shared = page.waitForRequest(request => new URL(request.url()).pathname === "/api/schedule-posters" && request.method() === "POST");
+    await page.route("**/api/schedule-posters", route => route.fulfill({ json: { code: "fedcba654321" }, status: 201 }));
+    await workbench.getByRole("button", { name: "生成作业码", exact: true }).click();
+    expect((await shared).postDataJSON().operators).toEqual(expectedBox);
+    await page.getByRole("button", { name: "返回个人草稿", exact: true }).click();
+    await expect(workbench).toHaveCount(0);
+    expect(await page.evaluate(() => sessionStorage.getItem("riic.schedule-poster.working-copy.v1"))).toBeNull();
+  });
+}
+
 test("manual editor restores external operators before opening the lazy poster", async ({ page }) => {
   test.setTimeout(60_000);
   const draft = createManualScheduleDraft([24], "08:00", "period");
@@ -342,7 +443,7 @@ test("sidebar resumes an existing manual draft without invoking the solver and k
   await expect(page).toHaveURL(/\/manual$/);
   await expect(page.getByRole("tab", { name: /第 1 班.*24h/ })).toBeVisible();
   await expect(page.locator('[data-manual-editor-board] [data-room-title="贸易站 1"] [data-operator-identity="阿米娅"]')).toBeVisible();
-  const recycling = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycling"]');
+  const recycling = page.locator('[data-manual-editor-board] [data-compact-schedule-view] [data-room-group="recycle"]');
   await recycling.getByRole("button", { name: "空置", exact: true }).nth(1).click();
   const picker = page.getByRole("dialog");
   await picker.getByLabel("搜索可选干员或基建技能").fill("锡兰");
@@ -600,15 +701,20 @@ test("manual scheduling configures independent shifts and responsive drone contr
   const decreaseShift = shiftCount.getByRole("button", { name: "减少一个班次" });
   const increaseShift = shiftCount.getByRole("button", { name: "增加一个班次" });
   await expect(shiftCount.locator("output")).toHaveText("3");
+  await expect(increaseShift).toBeEnabled();
+  await increaseShift.click();
+  await expect(shiftCount.locator("output")).toHaveText("4");
   await expect(increaseShift).toBeDisabled();
   await decreaseShift.click();
   await decreaseShift.click();
-  await expect(shiftCount.locator("output")).toHaveText("1");
+  await expect(shiftCount.locator("output")).toHaveText("2");
   await expect(decreaseShift).toBeDisabled();
   await increaseShift.click();
   await increaseShift.click();
-  await expect(shiftCount.locator("output")).toHaveText("3");
+  await expect(shiftCount.locator("output")).toHaveText("4");
   await expect(increaseShift).toBeDisabled();
+  await decreaseShift.click();
+  await expect(shiftCount.locator("output")).toHaveText("3");
   await expect(shiftCount.locator("[data-setup-stepper]")).toHaveCount(1);
   await expect(setup.getByRole("group", { name: "首班开始", exact: true }).locator("[data-setup-stepper]")).toHaveCount(1);
   await expect(setup.locator('input[type="time"]')).toHaveCount(0);
@@ -623,7 +729,7 @@ test("manual scheduling configures independent shifts and responsive drone contr
   await setup.getByRole("button", { name: "减少一个班次" }).click();
   await expect(setup.getByRole("slider")).toHaveCount(1);
   await expect(setup.locator("[data-shift-timeline-legend]")).toContainText("08:59");
-  await setup.getByRole("checkbox", { name: /未启用/ }).click();
+  await setup.locator('[aria-labelledby="fiammetta-settings-title"]').getByRole("checkbox", { name: /未启用/ }).click();
   await setup.getByRole("button", { name: "继续", exact: true }).click();
   await setup.getByRole("button", { name: "完成", exact: true }).click();
 
