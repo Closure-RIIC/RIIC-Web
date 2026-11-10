@@ -214,17 +214,17 @@ test("a roster without center recovery skills leaves the center unmanned", () =>
 test("clue-probability priority follows tier, clue 3 and clue 7 tiers", () => {
   const names = ["阿列什", "艾维文娜", "噗切娜", "黎风", "弭弗", "余烬", "赛希", "弧光", "别礼"];
   const expected = {
-    4: [1, 1, 1, 3, 3, 1, 1, 1, 7],
-    3: [2, 2, 1, 4, 3, 2, 2, 2, 6],
-    2: [2, 2, 2, 4, 4, 2, 2, 2, 6],
-    1: [5, 5, 2, 5, 4, 5, 5, 5, 5],
+    4: [1, 3, 3, 11, 11, 5, 7, 9, 14],
+    3: [2, 4, 3, 12, 11, 6, 8, 10, 15],
+    2: [2, 4, 4, 12, 12, 6, 8, 10, 15],
+    1: [13, 13, 4, 13, 12, 13, 13, 13, 13],
   };
   for (const [elite, ranks] of Object.entries(expected)) {
     const { ops } = prepare({
       operators: names.map(name => ({ name, elite: Number(elite) })),
       options: { ...DEFAULT_OPTIONS },
     });
-    assert.deepEqual(ops.map(clueRankOf), ranks, `elite ${elite}`);
+    assert.deepEqual(ops.map(op => clueRankOf(op)), ranks, `elite ${elite}`);
   }
 });
 
@@ -233,8 +233,29 @@ test("clue-probability skills survive Skland exact node filtering", () => {
     operators: [{ name: "赛希", elite: 4, latestSpaceshipSkillNodes: [nodeId] }],
     options: { ...DEFAULT_OPTIONS },
   }).ops[0];
-  assert.equal(clueRankOf(withNode("spaceship_skill_chr_0011_seraph_2_2")), 1); // β
-  assert.equal(clueRankOf(withNode("spaceship_skill_chr_0011_seraph_2_1")), 2); // α
+  assert.equal(clueRankOf(withNode("spaceship_skill_chr_0011_seraph_2_2")), 7); // β（线索5 槽位第 4）
+  assert.equal(clueRankOf(withNode("spaceship_skill_chr_0011_seraph_2_1")), 8); // α
+});
+
+test("clue priority defaults, rejects invalid orders, and reorders clue ranks", () => {
+  assert.deepEqual(validateOptions({ ...DEFAULT_OPTIONS }).cluePriority,
+    ["1", "2", "4", "5", "6", "3", "白板", "7"]);
+  assert.deepEqual(validateOptions({ ...DEFAULT_OPTIONS, cluePriority: undefined }).cluePriority,
+    ["1", "2", "4", "5", "6", "3", "白板", "7"]);
+  assert.throws(() => validateOptions({ ...DEFAULT_OPTIONS, cluePriority: ["1", "1", "2", "4", "5", "3", "白板", "7"] }), /cluePriority/);
+  assert.throws(() => validateOptions({ ...DEFAULT_OPTIONS, cluePriority: ["8", "2", "4", "5", "6", "3", "白板", "7"] }), /cluePriority/);
+  assert.throws(() => validateOptions({ ...DEFAULT_OPTIONS, cluePriority: ["1", "2", "3"] }), /cluePriority/);
+
+  const order = ["3", "1", "2", "4", "5", "6", "白板", "7"];
+  const { ops } = prepare({ operators: [{ name: "赛希", elite: 4 }], options: { ...DEFAULT_OPTIONS, cluePriority: order } });
+  assert.equal(clueRankOf(ops[0], order), 9, "β5 moved to the fifth slot");
+  assert.equal(clueRankOf(ops[0]), 7, "default order puts 赛希's β5 in the fourth slot");
+
+  const parsed = parseWorkspace(JSON.stringify({
+    version: 1, operators: [{ name: "赛希", elite: 4 }],
+    options: { ...DEFAULT_OPTIONS, cluePriority: order },
+  }));
+  assert.deepEqual(parsed.options.cluePriority, order);
 });
 
 test("guest-room fillers prefer clue-probability operators over plain whiteboards", () => {
@@ -248,7 +269,7 @@ test("guest-room fillers prefer clue-probability operators over plain whiteboard
   const fillers = [...guest.a, ...guest.b].filter(isFiller);
   assert.ok(fillers.length > 0, "the default plan still uses guest-room fillers");
   for (const name of fillers) {
-    assert.ok(clueRankOf(byName.get(name)) < 5, `${name} should carry a clue-probability skill better than a whiteboard`);
+    assert.ok(clueRankOf(byName.get(name)) < 13, `${name} should carry a clue-probability skill better than a whiteboard`);
   }
   assert.ok(Math.abs(result.scores["线索"] - 95.04) < 1e-9);
 });
@@ -263,10 +284,10 @@ test("clue 7 ranks below a plain whiteboard and is only used when no whiteboard 
   };
   const e4 = rankAt(4);
   const e2 = rankAt(2);
-  assert.equal(e4.bila, 7, "别礼 E4 unlocks β7, and β always sits after α");
-  assert.equal(e2.bila, 6, "without β7 the α7 tier applies");
-  assert.equal(e4.plain, 5, "a plain operator sits on the whiteboard tier");
-  assert.ok(e4.plain < e2.bila && e2.bila < e4.bila, "whiteboard < α7 < β7");
+  assert.equal(e4.bila, 14, "别礼 E4 unlocks β7；7 在默认顺序里垫底（白板之后）");
+  assert.equal(e2.bila, 15, "without β7 the α7 tier applies");
+  assert.equal(e4.plain, 13, "a plain operator sits on the whiteboard tier");
+  assert.ok(e4.plain < e4.bila && e4.bila < e2.bila, "whiteboard < β7 < α7");
 
   // 反向：只剩别礼、没有白板时，他仍然要被用上（覆盖下限会优先把他派去填舱，
   // 所以只断言"出现在方案里"，不限定必须是会客室补位）
@@ -505,4 +526,204 @@ test("a skill-less roster still pairs two different-level workshops (empty relev
     !result.status.approximations.some(text => text.includes("参数不一致")),
     result.status.approximations.join(";"),
   );
+});
+
+const CLUE_CASE_ROSTER = [
+  { name: "庄方宜", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0030_zhuangfy_1_2", "spaceship_skill_chr_0030_zhuangfy_2_2"] },
+  { name: "诀", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0032_lizhiyan_1_2", "spaceship_skill_chr_0032_lizhiyan_2_2"] },
+  { name: "洛茜", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0028_wulfa_1_2", "spaceship_skill_chr_0028_wulfa_2_2"] },
+  { name: "余烬", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0009_azrila_1_2", "spaceship_skill_chr_0009_azrila_2_2"] },
+  { name: "洁尔佩塔", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0013_aglina_1_2", "spaceship_skill_chr_0013_aglina_2_2"] },
+  { name: "艾尔黛拉", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0025_ardelia_1_2", "spaceship_skill_chr_0025_ardelia_2_2"] },
+  { name: "莱万汀", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0016_laevat_1_2", "spaceship_skill_chr_0016_laevat_2_2"] },
+  { name: "提弗洛斯", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0034_typhoea_1_2", "spaceship_skill_chr_0034_typhoea_2_2"] },
+  { name: "祀", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0036_jsspsi_1_2", "spaceship_skill_chr_0036_jsspsi_2_2"] },
+  { name: "梨诺", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0035_liino_1_2", "spaceship_skill_chr_0035_liino_2_2"] },
+  { name: "骏卫", elite: 0, latestSpaceshipSkillNodes: [] },
+  { name: "卡缪", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0033_camille_1_2", "spaceship_skill_chr_0033_camille_2_2"] },
+  { name: "阿列什", elite: 1, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0024_deepfin_1_1"] },
+  { name: "噗切娜", elite: 0, latestSpaceshipSkillNodes: [] },
+  { name: "狼卫", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0006_wolfgd_1_2", "spaceship_skill_chr_0006_wolfgd_2_2"] },
+  { name: "陈千语", elite: 2, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0005_chen_1_1", "spaceship_skill_chr_0005_chen_2_1"] },
+  { name: "大潘", elite: 3, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0018_dapan_1_2", "spaceship_skill_chr_0018_dapan_2_1"] },
+  { name: "佩丽卡", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0004_pelica_1_2", "spaceship_skill_chr_0004_pelica_2_2"] },
+  { name: "弧光", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0007_ikut_1_2", "spaceship_skill_chr_0007_ikut_2_1"] },
+  { name: "赛希", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0011_seraph_1_2", "spaceship_skill_chr_0011_seraph_2_2"] },
+  { name: "艾维文娜", elite: 0, latestSpaceshipSkillNodes: [] },
+  { name: "卡契尔", elite: 1, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0020_meurs_1_1"] },
+  { name: "萤石", elite: 0, latestSpaceshipSkillNodes: [] },
+  { name: "埃特拉", elite: 2, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0021_whiten_1_1", "spaceship_skill_chr_0021_whiten_2_1"] },
+  { name: "安塔尔", elite: 3, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0023_antal_1_2", "spaceship_skill_chr_0023_antal_2_1"] },
+  { name: "昼雪", elite: 3, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0014_aurora_1_2", "spaceship_skill_chr_0014_aurora_2_1"] },
+  { name: "别礼", elite: 2, latestSpaceshipSkillNodes: [] },
+];
+
+// ── 局部最优性护栏（决策 80）────────────────────────────────────────────
+// 现有断言只验证"方案自洽"，不验证"没有更好的方案"。这里用 2 人互换 + 3 人循环置换
+// 做一次局部最优性检查：任何置换都不能让优先级字典序变好。
+function assignmentsOf(result, options) {
+  const tpl = manualTemplate(options);
+  return tpl.map(room => {
+    if (room.key === "中枢") return { ...room, hour: result.center.hour, a: [...result.center.a], b: [...result.center.b] };
+    const found = result.rooms.find(x => x.key === room.key);
+    return found ? { ...room, hour: found.hour, a: [...found.a], b: [...found.b] } : { ...room, hour: 12, a: [], b: [] };
+  });
+}
+
+function positionsOf(assignments) {
+  const out = [];
+  assignments.forEach((room, ri) => {
+    room.a.forEach((_, i) => out.push([ri, "a", i]));
+    room.b.forEach((_, i) => out.push([ri, "b", i]));
+  });
+  return out;
+}
+
+const cloneAssignments = list => list.map(room => ({ ...room, a: [...room.a], b: [...room.b] }));
+
+function swappedAssignments(list, p, q) {
+  const next = cloneAssignments(list);
+  const A = next[p[0]][p[1]], B = next[q[0]][q[1]];
+  const tmp = A[p[2]]; A[p[2]] = B[q[2]]; B[q[2]] = tmp;
+  return next;
+}
+
+function cycledAssignments(list, p, q, r) {
+  const next = cloneAssignments(list);
+  const A = next[p[0]][p[1]], B = next[q[0]][q[1]], C = next[r[0]][r[1]];
+  const tmp = A[p[2]];
+  A[p[2]] = C[r[2]]; C[r[2]] = B[q[2]]; B[q[2]] = tmp;
+  return next;
+}
+
+/** 按优先级字典序比较（scores 的键顺序即 priority） */
+function lexicographicallyBetter(next, base) {
+  for (const cat of Object.keys(base)) {
+    const delta = (next[cat] ?? 0) - (base[cat] ?? 0);
+    if (Math.abs(delta) > 1e-6) return delta > 0;
+  }
+  return false;
+}
+
+const CLUE_CASE_OPTIONS = {
+  ...DEFAULT_OPTIONS,
+  mfg: "1干员1武器",
+  levels: { center: 5, mfg1: 3, mfg2: 3, grow: 3, guest: 3 },
+  grow: { 晶植: 3, 菌类: 3, 矿物: 3 },
+  time: 30000,
+  budget: 2000000,
+};
+
+test("the clue-priority case keeps its improved weapon-experience result", () => {
+  const result = solve({ operators: CLUE_CASE_ROSTER, options: CLUE_CASE_OPTIONS });
+  assert.equal(result.verification.ok, true, result.verification.errors.join(";"));
+  assert.deepEqual(result.status.approximations, []);
+  assert.ok(result.scores["武器经验"] >= 87.0, `武器经验 ${result.scores["武器经验"]}`);
+  assert.ok(Math.abs(result.scores["线索"] - 94.16) < 0.01, String(result.scores["线索"]));
+  assert.ok(Math.abs(result.scores["干员经验"] - 97.68) < 0.01, String(result.scores["干员经验"]));
+  assert.ok(Math.abs(result.scores["培养"] - 547) < 0.01, String(result.scores["培养"]));
+});
+
+test("the searched plan admits no improving 2-swap or 3-cycle on the clue case", () => {
+  const input = { operators: CLUE_CASE_ROSTER, options: CLUE_CASE_OPTIONS };
+  const result = solve(input);
+  const assignments = assignmentsOf(result, CLUE_CASE_OPTIONS);
+  const base = evaluateManual(input, assignments).scores;
+  const positions = positionsOf(assignments);
+  const improvements = [];
+  for (let i = 0; i < positions.length; i += 1) {
+    for (let j = i + 1; j < positions.length; j += 1) {
+      const swapped = evaluateManual(input, swappedAssignments(assignments, positions[i], positions[j])).scores;
+      if (lexicographicallyBetter(swapped, base)) improvements.push(`swap ${positions[i]}<->${positions[j]}`);
+      for (let k = j + 1; k < positions.length; k += 1) {
+        const cycles = [
+          cycledAssignments(assignments, positions[i], positions[j], positions[k]),
+          cycledAssignments(assignments, positions[i], positions[k], positions[j]),
+        ];
+        for (const next of cycles) {
+          if (lexicographicallyBetter(evaluateManual(input, next).scores, base)) {
+            improvements.push(`cycle ${positions[i]},${positions[j]},${positions[k]}`);
+          }
+        }
+      }
+    }
+  }
+  assert.deepEqual(improvements.slice(0, 5), [], `找到可改进的置换：${improvements.slice(0, 5).join("; ")}`);
+});
+
+test("a brute-force assignment oracle agrees with the solver on a tiny layout", () => {
+  const operators = ["余烬", "赛希", "艾维文娜", "弧光"].map(name => ({ name, elite: 4 }));
+  const options = {
+    ...DEFAULT_OPTIONS,
+    mfg: "1干员1武器",
+    levels: { center: 1, mfg1: 1, mfg2: 1, grow: 0, guest: 0 },
+    grow: { 晶植: 0, 菌类: 0, 矿物: 0 },
+  };
+  const input = { operators, options };
+  const solved = solve({ operators, options });
+  assert.equal(solved.verification.ok, true, solved.verification.errors.join(";"));
+
+  // 固定求解器给出的换班时间，穷举“谁去哪个位置”（每人最多一个位置），
+  // 检查求解器的分配是否已经是这些时间下的最优。
+  const base = assignmentsOf(solved, options);
+  const slots = [];
+  base.forEach((room, ri) => {
+    for (let i = 0; i < room.slots; i += 1) slots.push([ri, "a", i]);
+    for (let i = 0; i < room.slots; i += 1) slots.push([ri, "b", i]);
+  });
+  const names = operators.map(op => op.name);
+  const filled = base.map(room => ({
+    ...room, a: new Array(room.slots).fill(undefined), b: new Array(room.slots).fill(undefined),
+  }));
+  let best = null;
+  const walk = (index) => {
+    if (index === slots.length) {
+      const assignments = filled.map(room => ({
+        ...room, a: room.a.filter(Boolean), b: room.b.filter(Boolean),
+      }));
+      const scores = evaluateManual(input, assignments).scores;
+      if (best === null || lexicographicallyBetter(scores, best)) best = { ...scores };
+      return;
+    }
+    walk(index + 1);                              // 这个位置空着
+    const [ri, shift, i] = slots[index];
+    for (const name of names) {
+      if (filled.some(room => room.a.includes(name) || room.b.includes(name))) continue;
+      filled[ri][shift][i] = name;
+      walk(index + 1);
+      filled[ri][shift][i] = undefined;
+    }
+  };
+  walk(0);
+  assert.ok(best, "穷举没有得到任何方案");
+  assert.ok(!lexicographicallyBetter(best, solved.scores),
+    `穷举找到更优分配：${JSON.stringify(best)} vs 求解器 ${JSON.stringify(solved.scores)}`);
+});
+
+test("relaxed-center upper bound certifies global optimality on fixture instances", () => {
+  // 证书口径（optimizer.mjs solveLayout 的 testOptions.relaxedCenter）：
+  // 把中枢层整个松弛掉——不消耗干员、u 恒取上限 48%，任何真实时间轴都逐点不高于它。
+  // 因此“松弛最优 = 实际最优”即证明实际方案全局最优。
+  const fixtures = [
+    { size: 12, mfg: "1干员1武器", levels: { center: 5, mfg1: 2, mfg2: 2, grow: 0, guest: 0 } },
+    { size: 11, mfg: "2干员", levels: { center: 5, mfg1: 2, mfg2: 2, grow: 0, guest: 0 } },
+    { size: 12, mfg: "2干员", levels: { center: 5, mfg1: 2, mfg2: 2, grow: 0, guest: 0 } },
+  ];
+  for (const fixture of fixtures) {
+    const operators = catalog.slice(0, fixture.size).map(op => ({ name: op.name, elite: 4 }));
+    const options = { ...DEFAULT_OPTIONS, mfg: fixture.mfg, levels: fixture.levels, grow: { 晶植: 0, 菌类: 0, 矿物: 0 } };
+    const { ops, cfg } = prepare({ operators, options });
+    resetCaches();
+    const real = solveLayout({ ops, cfg });
+    resetCaches();
+    const bound = solveLayout({ ops, cfg, testOptions: { relaxedCenter: true } });
+    for (let i = 0; i < cfg.priority.length; i += 1) {
+      const actual = real.plan.score[i];
+      const upper = bound.plan.score[i];
+      assert.ok(actual <= upper + 1e-6,
+        `${fixture.size} 人 / ${fixture.mfg}：${cfg.priority[i]} = ${actual} 超过松弛上界 ${upper}`);
+      assert.ok(Math.abs(actual - upper) <= 1e-6,
+        `${fixture.size} 人 / ${fixture.mfg}：${cfg.priority[i]} 未被证书证明最优（实际 ${actual}，上界 ${upper}）`);
+    }
+  }
 });
