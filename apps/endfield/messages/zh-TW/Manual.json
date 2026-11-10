@@ -24,5 +24,9 @@
   "loadingSimulation": "正在載入模擬…",
   "facilitiesProduction": "設施與生產",
   "closeFacilitiesProduction": "關閉設施與生產",
-  "done": "完成"
+  "done": "完成",
+  "batchSelect": "批次選擇",
+  "applyBatch": "確認選擇",
+  "batchFull": "已達人數上限",
+  "batchSelected": "已選擇"
 }

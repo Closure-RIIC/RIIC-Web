@@ -525,3 +525,7 @@
   .ef-dialog-footer { padding:14px 16px; }
 }
 .os-theme-yeye { --os-size:8px; --os-handle-bg:color-mix(in oklab,var(--foreground) 25%,transparent); --os-handle-bg-hover:color-mix(in oklab,var(--foreground) 40%,transparent); --os-handle-border-radius:8px; }
+
+[data-batch-room] .ef-action-track { justify-content:center; margin-inline:0; }
+[data-batch-room] .ef-action-line { display:none; }
+[data-batch-room] .ef-action-inner { padding-inline:3px; }

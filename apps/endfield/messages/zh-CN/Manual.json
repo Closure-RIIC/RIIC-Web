@@ -24,5 +24,9 @@
   "loadingSimulation": "正在加载模拟…",
   "facilitiesProduction": "设施与生产",
   "closeFacilitiesProduction": "关闭设施与生产",
-  "done": "完成"
+  "done": "完成",
+  "batchSelect": "批量选择",
+  "applyBatch": "确认选择",
+  "batchFull": "已达人数上限",
+  "batchSelected": "已选择"
 }
