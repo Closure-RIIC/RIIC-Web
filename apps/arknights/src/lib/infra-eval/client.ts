@@ -1,6 +1,7 @@
 "use client";
 
 import { INFRA_EVAL_MANIFEST_URL } from "./manifest";
+import { toNativeEvalLayout } from "./layout.ts";
 
 export type NativeEvalAssignedOperator = {
   name: string;
@@ -148,7 +149,7 @@ export async function evaluateNativeSchedule(request: NativeEvalRequestV1): Prom
     throw error;
   }));
 
-  const parsed: unknown = JSON.parse(bindings.evaluate_v1(JSON.stringify(request)));
+  const parsed: unknown = JSON.parse(bindings.evaluate_v1(JSON.stringify({ ...request, layout: toNativeEvalLayout(request.layout) })));
   if (!validResponse(parsed)) throw new Error("WASM evaluator returned an invalid response");
   const manifest = await (manifestPromise ??= loadManifest());
   if (parsed.engine.api !== manifest.api || parsed.engine.ruleset !== manifest.ruleset) {
