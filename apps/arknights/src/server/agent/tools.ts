@@ -15,7 +15,7 @@ import { sklandDataOwnerTag } from "@riic/platform-server/skland/session";
 import { getMaaOperboxSnapshot, listSavedPlans } from "@riic/platform-server/workspace";
 import { createRequestId } from "@riic/platform-server/api-contract";
 import type { BaseBlueprint, OperBoxEntry, RotationProfile } from "@riic/arknights-domain/types";
-import { projectPlanResult } from "./plan-artifact.ts";
+import { projectPlanResult, saveAgentPlanArtifact } from "./plan-artifact.ts";
 import { readKnowledgeDoc, searchKnowledgeBase } from "./knowledge.ts";
 import { readAgentSkill } from "./knowledge-policy.ts";
 import { agentKnowledgeDir } from "./config.ts";
@@ -27,7 +27,10 @@ import { chargeAgentTool, refundFailedAgentTool } from "@/server/billing/service
 import { SOLVE_TOOL_POINTS } from "@/server/billing/config";
 import { resourceSkill, type AgentResourcePolicy } from "./resource-policy.ts";
 
+import { buildScheduleContextTools, scheduleGoldBalance, type AgentScheduleContext } from "./schedule-context.ts";
+
 export interface AgentToolContext {
+  scheduleContext?: AgentScheduleContext;
   request: Request;
   userId: string;
   gatewayBilling?: boolean;
@@ -300,6 +303,7 @@ export function buildAgentTools(ctx: AgentToolContext) {
   let operatorPool: Promise<AgentOperatorPool> | undefined;
   const loadPool = () => operatorPool ??= loadAgentOperatorPool(ctx);
   return {
+    ...buildScheduleContextTools(ctx.scheduleContext),
     ...buildCalculatorTools(
       loadPool,
       (name, input, run) => guarded(ctx.userId, name, input, run),
@@ -502,8 +506,14 @@ export function buildAgentTools(ctx: AgentToolContext) {
             result: publicResult,
             activeShift: 0,
           };
+          const artifactId = await saveAgentPlanArtifact(ctx.userId, projected, {
+            layoutPreset: preset.label, boxSource, factoryRecipes: recipes, tradeOrders, operatorCount: operbox.length,
+          }, workbenchSession, ctx.scheduleContext?.conversationId);
+          ctx.scheduleContext?.remember(artifactId);
           return {
             solved: true,
+            artifactId,
+            goldBalance: scheduleGoldBalance(publicResult),
             defaultsApplied: {
               layoutPreset: preset.label,
               layoutSource: LAYOUT_SOURCE_LABELS[defaults.layoutSource],

@@ -70,3 +70,13 @@ Magpie 合同测试 `scripts/test-magpie-contract.mjs` 使用固定 binary/Bun/p
 回滚应用前先停止新 Agent 请求并等待现有运行完成；确认预留释放后关闭 `AGENT_GATEWAY_ENABLED`。保留已写账本和增量数据库结构，不做破坏性 down migration。代码回滚使用既有发布 helper；无新 worker 的旧 release 会停止 Agent worker。重新启用时运行恢复任务并检查待对账。
 
 待用户手动验收：管理员桌面/手机访问两个后台；查询、分页、调账确认与错误提示；费率和过滤草稿发布/回滚；普通用户与 reviewer 权限；中英文显示；Agent 自动模型提示与取消/重试；普通 `/billing` 没有管理兑换码按钮。
+
+## 排班结果引用与追问
+
+`solve_schedule` 成功时将完整结果保存到既有 `agent_plan_artifact` 表，返回 `artifactId`；新记录用 JSON v3 绑定账号、对话，保留 7 天，无新增迁移。浏览器本地保留结果卡片和工作台交接数据，但发送历史前只保留文本、用户附件及最近 8 个成功结果引用，避免把完整干员池/求解快照重复上传。
+
+自动网关和直连模型均按当前登录账号、对话及有效期恢复引用；`read_schedule` 读取对应排班与服务端计算的赤金日均净收支。失效引用不回退到其他对话或旧排班。历史卡片没有服务端引用时需重新生成，不能信任客户端快照补写服务端事实。
+
+赤金净收支按求解器价值域计算：`(production.pure_gold + production.equivalent_gold + drone_production.pure_gold - production.lmd - drone_production.lmd) / 500`。单位为枚/24 小时，未计日常赠送，不代表仓库库存；特殊贸易的等效赤金是补偿项，不是实物制造产量。缺少任一必需指标则明确不可计算。
+
+验证：`npm run test:agent-transport` 包括 SDK 模拟模型的“剩多少赤金”追问；`npm run test:agent-plan-context:integration` 要求本地 PostgreSQL，自动创建隔离测试库，验证持久化、刷新恢复、跨账号/对话及过期隔离。两者均无真实模型调用或费用。

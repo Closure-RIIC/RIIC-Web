@@ -14,8 +14,11 @@ import { withAgentAnswerBoundary } from "./answer-boundary.ts";
 import type { AgentResourcePolicy } from "./resource-policy.ts";
 import { agentPageContextPrompt, type AgentPageContext } from "../../agent-page-context.ts";
 
+import { restoreAgentScheduleContext } from "./schedule-context-service.ts";
+import { scheduleContextPrompt } from "./schedule-context.ts";
+
 export async function gatewayChat(request: Request, userId: string, requestId: string, body: {
-  messages: UIMessage[]; id?: unknown; conversationId?: unknown; attemptId?: unknown; pageContext?: AgentPageContext | null;
+  messages: UIMessage[]; planArtifactIds?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; pageContext?: AgentPageContext | null;
 }, personaContent?: string | null, resources?: { id: string; policy: AgentResourcePolicy }) {
   gatewaySettings();
   const conversationId = body.conversationId ?? body.id;
@@ -34,13 +37,14 @@ export async function gatewayChat(request: Request, userId: string, requestId: s
   };
   await check(personaContent ?? "", "persona");
   const messages = await prepareAgentHistory(body.messages, check);
-  const system = `${await buildAgentSystemPrompt(personaContent, resources?.policy)}${agentPageContextPrompt(body.pageContext ?? null)}`;
+  const scheduleContext = restoreAgentScheduleContext(userId, conversationId, body.planArtifactIds);
+  const system = `${await buildAgentSystemPrompt(personaContent, resources?.policy)}${agentPageContextPrompt(body.pageContext ?? null)}${await scheduleContextPrompt(scheduleContext)}`;
   await check(system, "system");
   const runId = await beginAgentRun({ userId, conversationId, idempotencyKey: attemptId,
     requestHash: createHash("sha256").update(JSON.stringify({ messages, system, resources: resources?.id })).digest("hex"), rates: policies.rates, filterVersion: policies.filter.id });
   const run = createGatewayRun({ runId, sessionId: agentSessionId(userId, conversationId), requestId, userId, filterVersion: policies.filter.id, filter });
   try {
-    const tools: ToolSet = buildAgentTools({ request, userId, gatewayBilling: true, resources: resources?.policy });
+    const tools: ToolSet = buildAgentTools({ request, userId, gatewayBilling: true, scheduleContext, resources: resources?.policy });
     for (const [name, tool] of Object.entries(tools)) {
       const execute = tool.execute;
       if (!execute) continue;

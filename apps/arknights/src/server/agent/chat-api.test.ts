@@ -78,6 +78,8 @@ test("chat API separates automatic gateway routing from direct model selection",
     [new URL("./persona-catalog.ts", import.meta.url), {
       listBuiltinAgentPersonas: async () => [], resolveAgentPersonaContent: async () => undefined,
     }],
+    [new URL("./schedule-context-service.ts", import.meta.url), { restoreAgentScheduleContext: () => ({}) }],
+    [new URL("./schedule-context.ts", import.meta.url), { scheduleContextPrompt: async () => "" }],
     [new URL("./tools.ts", import.meta.url), { buildAgentTools: () => ({}) }],
     [new URL("../billing/pricing.ts", import.meta.url), { calculateAgentTokenCost: unexpected }],
     [new URL("../billing/points.ts", import.meta.url), { splitPoints: unexpected }],

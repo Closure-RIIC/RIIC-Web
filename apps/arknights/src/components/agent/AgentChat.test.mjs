@@ -28,6 +28,7 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
           export const useChat=()=>({});
           export const Chat=class{};
           export const DefaultChatTransport=class{};
+          export const createAgentChatTransport=()=>({});
           export const convertFileListToFileUIParts=async()=>[];
           export const useAgentRuntime=()=>({});
           export const useAgentHistory=()=>({});

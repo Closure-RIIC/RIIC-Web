@@ -83,6 +83,7 @@
   "tool_preview_solve_defaults": "排班設定預覽",
   "tool_diagnose_account": "帳號資料診斷",
   "tool_solve_schedule": "排班求解",
+  "tool_read_schedule": "讀取排班",
   "tool_query_skills": "基建技能查詢",
   "tool_kb_route": "知識庫導引",
   "tool_kb_read": "知識庫閱讀",

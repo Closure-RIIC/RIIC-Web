@@ -83,6 +83,7 @@
   "tool_preview_solve_defaults": "Schedule settings preview",
   "tool_diagnose_account": "Account diagnostics",
   "tool_solve_schedule": "Schedule calculation",
+  "tool_read_schedule": "Read schedule",
   "tool_query_skills": "Base skill lookup",
   "tool_kb_route": "Knowledge search",
   "tool_kb_read": "Knowledge retrieval",

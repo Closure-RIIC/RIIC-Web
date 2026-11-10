@@ -1,3 +1,5 @@
+import { restoreAgentScheduleContext } from "@/server/agent/schedule-context-service";
+import { scheduleContextPrompt } from "@/server/agent/schedule-context";
 import { convertToModelMessages, createUIMessageStreamResponse, stepCountIs, streamText, type UIMessage } from "ai";
 import { appendFile } from "node:fs/promises";
 
@@ -130,7 +132,7 @@ export async function POST(request: Request) {
     const { session } = await requireAgentAccess(request);
     const automatic = agentGatewayEnabled();
     if (automatic) enforceRateLimit("agent-chat", session.user.id, 20, 60_000);
-    const body = (await readJsonBody(request, 16 * 1024 * 1024)) as { model?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; messages?: UIMessage[]; pageContext?: unknown; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
+    const body = (await readJsonBody(request, 16 * 1024 * 1024)) as { model?: unknown; planArtifactIds?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; messages?: UIMessage[]; pageContext?: unknown; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
     if (!Array.isArray(body.messages) || body.messages.length === 0) {
       const response = failureResponse(new Error("缺少对话消息。"), requestId, "/api/agent/chat", startedAt);
       return new Response(response.body, { status: 400, headers: response.headers });
@@ -170,7 +172,8 @@ export async function POST(request: Request) {
       return new Response(response.body, { status: 503, headers: response.headers });
     }
     const messages = await prepareAgentHistory(body.messages, async () => {});
-    const tools = buildAgentTools({ request, userId: session.user.id, resources: resources?.policy });
+    const scheduleContext = restoreAgentScheduleContext(session.user.id, body.conversationId ?? body.id, body.planArtifactIds);
+    const tools = buildAgentTools({ request, scheduleContext, userId: session.user.id, resources: resources?.policy });
     // 临时监控：记录本次请求的完整输入（含历史消息与附件元数据）
     await monitorLog({
       event: "agent_request",
@@ -184,7 +187,7 @@ export async function POST(request: Request) {
     const result = streamText({
       ...streamPolicy.options,
       model: withAgentAnswerBoundary(getAgentModel(settings)),
-      system: `${await buildAgentSystemPrompt(personaContent, resources?.policy)}${agentPageContextPrompt(pageContext)}`,
+      system: `${await buildAgentSystemPrompt(personaContent, resources?.policy)}${agentPageContextPrompt(pageContext)}${await scheduleContextPrompt(scheduleContext)}`,
       messages: await convertToModelMessages(messages, { tools }),
       tools,
       stopWhen: stepCountIs(12),

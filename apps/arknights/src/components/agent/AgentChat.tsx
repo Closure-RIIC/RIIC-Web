@@ -19,7 +19,7 @@ import { WorkbenchCard } from "@/components/workbench/WorkbenchCard";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Chat, useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, convertFileListToFileUIParts, type FileUIPart, type UIMessage } from "ai";
+import { convertFileListToFileUIParts, type FileUIPart, type UIMessage } from "ai";
 import { ArrowDown, ArrowUpRight, Bot, ChevronDown, FileText, Paperclip, Plus, RotateCcw, Settings2, Trash2, Upload, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useLocale, useTranslations } from "use-intl";
@@ -47,6 +47,7 @@ import { parsePersonaAvatar } from "@/agent-persona-avatar";
 import { builtinAgentPersona, type AgentPersona, type BuiltinAgentPersona, type UploadedAgentPersona } from "@/agent-personas";
 import { MAX_PERSONA_LENGTH, removeLocalPersona, saveLocalPersona, setAgentPersonaSelection, updateLocalPersonaAvatar, useAgentPersona } from "./agent-persona-store";
 import { buildAgentDisplayTurns, hasActiveAgentContent, readAgentReplyPersona, snapshotAgentReplyPersona } from "@/agent-response-layout";
+import { createAgentChatTransport } from "@/agent-chat-transport";
 import { agentChatErrorMessage } from "@/agent-chat-errors";
 import { useAgentRuntime } from "./AgentRuntimeProvider";
 import { useAgentHistory } from "@/hooks/use-agent-history";
@@ -79,6 +80,7 @@ const TOOL_LABELS: Record<string, keyof typeof RawMessages> = {
   preview_solve_defaults: "tool_preview_solve_defaults",
   diagnose_account: "tool_diagnose_account",
   solve_schedule: "tool_solve_schedule",
+  read_schedule: "tool_read_schedule",
   query_skills: "tool_query_skills",
   kb_route: "tool_kb_route",
   kb_read: "tool_kb_read",
@@ -343,7 +345,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   const [restoredMessageIds] = useState(() => new Set(initialMessages.map((message) => message.id)));
   const runtime = useAgentRuntime();
   const [runtimeConversation] = useState(() => runtime.getConversation(userId ?? "anonymous", conversationId, initialMessages, historyStore.save,
-    () => new Chat({ id: conversationId, messages: initialMessages, transport: new DefaultChatTransport({ api: "/api/agent/chat" }) })));
+    () => new Chat({ id: conversationId, messages: initialMessages, transport: createAgentChatTransport() })));
   const { messages, sendMessage, status, error, stop, clearError, regenerate } = useChat({
     chat: runtimeConversation.chat,
     throttle: 50,
