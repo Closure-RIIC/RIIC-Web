@@ -52,5 +52,6 @@
   "days": "days",
   "day": "Day",
   "effectiveOutput": "Effective output",
-  "noPlanFoundWithinTheBudgetCheckYourRoster": "No plan found within the budget. Check your roster, facility levels or increase the budget."
+  "noPlanFoundWithinTheBudgetCheckYourRoster": "No plan found within the budget. Check your roster, facility levels or increase the budget.",
+  "trustSlot": "Trust slot"
 }
