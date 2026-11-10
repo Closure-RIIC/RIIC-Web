@@ -1,5 +1,7 @@
 "use client";
 
+import { fetchPosterPayload, withPosterTimeout } from "@/poster-resource";
+
 import { localizedOperationError } from "@/operation-error-presentation";
 
 import { useLocale as useRawLocale } from "use-intl";
@@ -96,46 +98,68 @@ export default function PosterWorkbench({ document: doc, onChange, onImport, onS
   }
   async function generateShare() {
     setSharing(true);
+    setError(""); setNotice("");
     try {
       const origin = new URL(shareOrigin);
       if (!["http:", "https:"].includes(origin.protocol)) throw new Error(rawText.text(rawLocale, "invalidUrl"));
-      const response = await fetch("/api/schedule-posters", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(posterDataOnly(doc)) });
-      const payload = await response.json(); if (!response.ok) throw new Error(payload.error);
+      const payload = await fetchPosterPayload("/api/schedule-posters", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(posterDataOnly(doc)) });
+      if (!payload || typeof payload !== "object" || !("code" in payload) || typeof payload.code !== "string" || !/^[a-f0-9]{12}$/.test(payload.code)) throw new Error("Invalid share response");
       const url = new URL("/manual", origin.origin); url.searchParams.set("tab", "poster"); url.searchParams.set("code", payload.code);
       setShare({ key: snapshotKey, code: payload.code, url: url.href }); setError("");
-    } catch (e) { setError(e instanceof Error ? e.message : rawText.text(rawLocale, "generateFailed")); }
+    } catch { setError(rawText.text(rawLocale, "shareUnavailable")); }
     finally { setSharing(false); }
   }
   async function openCode() {
+    setError(""); setNotice("");
+    if (!/^[a-f0-9]{12}$/.test(codeInput.trim())) { setError(rawText.text(rawLocale, "invalidCode")); return; }
     try {
       const code = codeInput.trim(); if (!/^[a-f0-9]{12}$/.test(code)) throw new Error(rawText.text(rawLocale, "invalidCode"));
-      const response = await fetch(`/api/schedule-posters?code=${code}`); const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error);
+      const payload = await fetchPosterPayload(`/api/schedule-posters?code=${code}`);
+      if (!payload || typeof payload !== "object" || !("document" in payload)) throw new Error("Invalid share response");
       const next = readPosterFile(JSON.stringify(payload.document)); onImport(next);
       setShare({ key: JSON.stringify(posterSnapshot(next)), code, url: `${window.location.origin}/manual?tab=poster&code=${code}` });
       setNotice(rawText.text(rawLocale, "loaded")); setError("");
-    } catch (e) { setError(e instanceof Error ? e.message : rawText.text(rawLocale, "loadFailed")); }
+    } catch { setError(rawText.text(rawLocale, "loadUnavailable")); }
   }
   async function exportImage() {
     setExporting(true);
+    setError("");
+    setNotice("");
     try {
       const board = preview.current?.querySelector<HTMLElement>("[data-schedule-poster]"); if (!board) return;
-      const { default: html2canvas } = await import("html2canvas-pro");
-      const { downloadCanvasImage } = await import("@/schedule-image");
-      await Promise.all([400, 500, 600, 700].map(weight => document.fonts.load(`${weight} 16px "Poster Source Han Sans"`, board.textContent ?? "")));
-      await document.fonts.ready;
-      await Promise.all(Array.from(board.querySelectorAll("img"), image => {
-        // Export also needs portraits outside the scroll viewport.
+      const [{ default: html2canvas }, { downloadCanvasImage }] = await withPosterTimeout(Promise.all([import("html2canvas-pro"), import("@/schedule-image")]), 15_000);
+      // A missing font subset must not prevent exporting an otherwise usable
+      // poster. Use the system CJK fallback in the clone when any face fails.
+      const fontsReady = await withPosterTimeout(Promise.all([400, 500, 600, 700].map(weight => document.fonts.load(`${weight} 16px "Poster Source Han Sans"`, board.textContent ?? ""))), 8_000).then(() => true, () => false);
+      const images = Array.from(board.querySelectorAll("img"));
+      const imageResults = await Promise.all(images.map(image => {
         image.loading = "eager";
-        return image.decode().catch(() => {});
+        return withPosterTimeout(image.decode(), 8_000).then(() => true, () => false);
       }));
-      const canvas = await html2canvas(board, { scale: 1, width: 1920, height: 1080, windowWidth: 1920, windowHeight: 1080, logging: false, useCORS: true, onclone(clone) {
+      const missingImages = new Set(imageResults.flatMap((ok, index) => ok ? [] : [index]));
+      let backgroundReady = true;
+      if (background) {
+        const image = new Image(); image.src = background;
+        backgroundReady = await withPosterTimeout(image.decode(), 8_000).then(() => true, () => false);
+      }
+      const canvas = await withPosterTimeout(html2canvas(board, { scale: 1, width: 1920, height: 1080, windowWidth: 1920, windowHeight: 1080, logging: false, useCORS: true, onclone(clone) {
         const poster = clone.querySelector<HTMLElement>("[data-schedule-poster]");
         // Move out of scaled/animated workbench ancestors before rasterizing.
-        if (poster) { clone.body.appendChild(poster); poster.style.transform = "none"; poster.style.position = "fixed"; poster.style.left = "0"; poster.style.top = "0"; }
-      } });
-      await downloadCanvasImage(canvas, `${posterDisplayTitle(doc, rawLocale) || rawText.text(rawLocale, "filename")}.png`); setNotice(rawText.text(rawLocale, "imageExported"));
-    } catch (e) { setError(e instanceof Error ? e.message : rawText.text(rawLocale, "exportFailed")); }
+        if (poster) {
+          clone.body.appendChild(poster); poster.style.transform = "none"; poster.style.position = "fixed"; poster.style.left = "0"; poster.style.top = "0";
+          if (!fontsReady) poster.style.fontFamily = '"Microsoft YaHei", "PingFang SC", sans-serif';
+          poster.querySelectorAll("img").forEach((image, index) => {
+            if (missingImages.has(index)) { image.removeAttribute("srcset"); image.removeAttribute("src"); }
+          });
+          if (!backgroundReady) {
+            const layer = poster.querySelector<HTMLElement>(".poster-background");
+            if (layer) layer.style.backgroundImage = "none";
+          }
+        }
+      } }), 30_000);
+      await downloadCanvasImage(canvas, `${posterDisplayTitle(doc, rawLocale) || rawText.text(rawLocale, "filename")}.png`);
+      setNotice(rawText.text(rawLocale, !fontsReady || missingImages.size || !backgroundReady ? "imageExportedWithFallback" : "imageExported"));
+    } catch { setError(rawText.text(rawLocale, "exportUnavailable")); }
     finally { setExporting(false); }
   }
   function download() { try { downloadJson(`${doc.meta.title || rawText.text(rawLocale, "filename")}.riic.json`, posterDataOnly(doc)); } catch (e) { setError(String(e)); } }
