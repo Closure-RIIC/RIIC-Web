@@ -74,5 +74,8 @@
   "resultOutdated": "目前結果已過期",
   "unsupportedSpecialTrade": "第{shift}班 {room} 的 {operators} 特殊訂單暫未支援，已按普通貿易站計算。",
   "eliteShort": "精",
-  "scheduleNeedsAtLeastTwoShifts": "至少需要 2 個班次，目前排班只有 1 個班次。"
+  "scheduleNeedsAtLeastTwoShifts": "至少需要 2 個班次，目前排班只有 1 個班次。",
+  "roomBatchEditTitle": "批次選擇本房間幹員",
+  "roomBatchDescription": "按勾選順序填入本房間，最多 {capacity} 人。已在其他房間的幹員會調入本房間。",
+  "applyRoomBatch": "確認選擇"
 }

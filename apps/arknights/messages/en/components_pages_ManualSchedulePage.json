@@ -74,5 +74,8 @@
   "resultOutdated": "Result is out of date",
   "unsupportedSpecialTrade": "Shift {shift}, {room}: the special order of {operators} is not supported yet; calculated as a regular trading post.",
   "eliteShort": "E",
-  "scheduleNeedsAtLeastTwoShifts": "At least 2 shifts are required; this schedule has only 1."
+  "scheduleNeedsAtLeastTwoShifts": "At least 2 shifts are required; this schedule has only 1.",
+  "roomBatchEditTitle": "Select this room’s crew",
+  "roomBatchDescription": "Fill this room in selection order, up to {capacity} operators. Operators assigned elsewhere will move to this room.",
+  "applyRoomBatch": "Apply crew"
 }

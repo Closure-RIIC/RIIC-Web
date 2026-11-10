@@ -21,7 +21,7 @@ import { OperatorSkillTooltip } from "./OperatorSkillTooltip";
 const skillCatalog = [...operatorCatalog].sort(compareOperatorRelease);
 const byName = new Map(operatorCatalog.map(op => [op.name, op]));
 
-type OperatorPicker = { value: string; unavailable: ReadonlySet<string>; unavailableLabel?: string; onSelect: (name: string) => void };
+type OperatorPicker = { room?: string; value: string; values?: readonly string[]; assignmentLabels?: ReadonlyMap<string, string>; selectedLabel?: string; limit?: number; limitLabel?: string; unavailable: ReadonlySet<string>; unavailableLabel?: string; onSelect: (name: string) => void };
 
 /** 列表/搜索用的技能文本：中英文名称与描述都在 catalog 里。 */
 function searchable(op: DisplayOperator, locale: AppLocale): string {
@@ -79,7 +79,7 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
   const [query, setQuery] = useState("");
   const [onlyOwned, setOnlyOwned] = useState(false);
   const [rarity, setRarity] = useState("all");
-  const [room, setRoom] = useState("all");
+  const [room, setRoom] = useState(picker?.room ?? "all");
   const [profession, setProfession] = useState("all");
   const [tag, setTag] = useState("all");
   const selected = new Map((skillsOnly ? [] : workspace.operators).map(op => [op.name, op.elite]));
@@ -203,10 +203,10 @@ export function RosterPage({ skillsOnly = false, embedded = false, picker }: { s
       </div> : null}
       <div className={picker ? "ef-manual-picker-grid" : `ef-roster-grid ${skillsOnly ? "ef-roster-grid--skills" : "ef-roster-grid--compact"}`}>{rows.map(op => {
         if (picker) {
-          const current = picker.value === op.name;
-          const unavailable = picker.unavailable.has(op.name);
+          const current = picker.values?.includes(op.name) ?? picker.value === op.name;
+          const unavailable = picker.unavailable.has(op.name) || (!current && picker.limit !== undefined && (picker.values?.length ?? 0) >= picker.limit);
           return <ManualOperatorChoice key={op.id} operator={op} owned={workspace.operators.find(item => item.name === op.name)!}
-            selected={current} unavailable={unavailable} unavailableLabel={picker.unavailableLabel} onSelect={() => picker.onSelect(op.name)} />;
+            selected={current} selectedLabel={picker.selectedLabel} unavailable={unavailable} unavailableLabel={picker.unavailable.has(op.name) ? picker.assignmentLabels?.get(op.name) ?? picker.unavailableLabel : picker.limitLabel} onSelect={() => picker.onSelect(op.name)} />;
         }
         const ownedOperator = skillsOnly ? undefined : workspace.operators.find(item => item.name === op.name);
         const matchingSkills = op.skills.filter(skill => (room === "all" || skill.room === room) && (tag === "all" || skillTagOf(skill) === tag));

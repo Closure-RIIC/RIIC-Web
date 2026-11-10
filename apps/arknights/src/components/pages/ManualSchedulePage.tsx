@@ -12,7 +12,7 @@ const uiText = createUiLocalizer<typeof UiMessages>("AK_components_pages_ManualS
 import type { AppLocale } from "@riic/contracts/locale";
 import { useTranslations, useLocale } from "use-intl";
 
-import { ArrowLeft, Download, Ellipsis, Search, Settings2, Sparkles, Trash2, Upload, X } from "lucide-react";
+import { ArrowLeft, Download, Ellipsis, Search, Settings2, Sparkles, Trash2, Upload, Users, X } from "lucide-react";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -387,6 +387,7 @@ export function ManualSchedulePage({
   const [moodSettingsOpen, setMoodSettingsOpen] = useState(false);
   const [restored, setRestored] = useState(false);
   const [picker, setPicker] = useState<PickerTarget | null>(null);
+  const [roomBatchId, setRoomBatchId] = useState<string | null>(null);
   const [dormBatchOpen, setDormBatchOpen] = useState(false);
   const isMobile = useIsMobile();
   const dormPickerPageSize = isMobile ? 12 : MANUAL_PICKER_PAGE_SIZE;
@@ -519,9 +520,10 @@ export function ManualSchedulePage({
   } : undefined, [trainingAssignment?.operators, trainingRoom]);
   const activeEvaluationShift = result?.rotation.shifts[activeShift];
   const dormRooms = useMemo(() => layout.rooms.filter((room) => room.kind === "dormitory"), [layout.rooms]);
+  const batchRooms = useMemo(() => roomBatchId ? manualEditableRooms(layout, recyclingRoomLevel).filter(room => room.id === roomBatchId) : dormRooms, [roomBatchId, layout, recyclingRoomLevel, dormRooms]);
   const dormBatchCapacity = useMemo(
-    () => dormRooms.reduce((total, room) => total + manualRoomCapacity(room), 0),
-    [dormRooms],
+    () => batchRooms.reduce((total, room) => total + manualRoomCapacity(room), 0),
+    [batchRooms],
   );
   const rows = useMemo(
     () => addOperatorPresentations(withRecyclingRoom(planToRows(activePlan, activeEvaluationShift, layout, activeTrainingRoomShift), recyclingRoomLevel).map((row) => {
@@ -641,6 +643,7 @@ export function ManualSchedulePage({
   }
 
   function openSlotPicker(row: RoomRow, slotIndex: number) {
+    setRoomBatchId(null);
     if (row.unavailableSlotIndices?.includes(slotIndex)) return;
     setPickerScrolling(false);
     setPickerQuery("");
@@ -651,7 +654,13 @@ export function ManualSchedulePage({
     setPicker({ kind: "slot", roomId: row.roomId, slotIndex });
   }
 
+  function openRoomBatchPicker(row: RoomRow) {
+    setRoomBatchId(row.roomId);
+    setDormBatchSelection((draft.shifts[activeShift]?.rooms[row.roomId]?.operators ?? []).filter((name): name is string => Boolean(name)));
+  }
+
   function openDormBatchPicker() {
+    setRoomBatchId(null);
     const current = draft.shifts[activeShift];
     const selected = dormRooms.flatMap((room) => current?.rooms[room.id]?.operators ?? []).filter(
       (operator): operator is string => Boolean(operator),
@@ -688,7 +697,7 @@ export function ManualSchedulePage({
         room.operators = room.operators.map((operator) => selected.has(operator ?? "") ? null : operator);
       }
       let offset = 0;
-      for (const room of dormRooms) {
+      for (const room of batchRooms) {
         const capacity = manualRoomCapacity(room);
         shift.rooms[room.id] = {
           ...shift.rooms[room.id],
@@ -700,6 +709,7 @@ export function ManualSchedulePage({
       return next;
     });
     setDormBatchOpen(false);
+    if (roomBatchId) { setPicker(null); setRoomBatchId(null); }
   }
 
   function toggleSortMode(row: RoomRow) {
@@ -1251,11 +1261,12 @@ export function ManualSchedulePage({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(picker)} onOpenChange={(open) => { if (!open) setPicker(null); }}>
-        <DialogContent className="grid max-h-[min(820px,calc(100svh-1rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden sm:w-[calc(100vw-2rem)] sm:max-w-[min(960px,calc(100vw-2rem))]">
+      <Dialog open={Boolean(picker)} onOpenChange={(open) => { if (!open) { setPicker(null); setRoomBatchId(null); } }}>
+        <DialogContent className="grid max-h-[min(820px,calc(100svh-1rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:w-[calc(100vw-2rem)] sm:max-w-[min(960px,calc(100vw-2rem))]">
           <DialogHeader>
             <DialogTitle>{picker?.kind === "poster-hanger" ? rawText.text(rawLocale, "chooseADormitoryDecorationOperator") : picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.fiammettaMoraleTarget")) : (intl("components_pages_ManualSchedulePage.assign", { value2: en === "en" ? (((selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.room")))) : (((selectedRoom?.title ?? intl("components_pages_ManualSchedulePage.facility")))) }))}</DialogTitle>
             <DialogDescription>{picker?.kind === "poster-hanger" ? rawText.text(rawLocale, "usedOnlyInTheSchedulePosterThisOperatorIs") : picker?.kind === "fiammetta" ? (intl("components_pages_ManualSchedulePage.thisTargetIsStoredOnlyForTheActiveShift")) : (intl("components_pages_ManualSchedulePage.onlyOwnedOperatorsInTheCurrentBoxAreShown"))}</DialogDescription>
+            {picker?.kind === "slot" && selectedRoom ? <Button type="button" variant="outline" size="sm" className="mt-2 w-fit self-start justify-self-start gap-2 rounded-lg border-[#FFD800]/45 bg-[#FFD800]/10 px-3 font-medium text-foreground shadow-none hover:border-[#FFD800]/70 hover:bg-[#FFD800]/20 [&_svg]:size-4" data-room-batch-open aria-pressed={!!roomBatchId} onClick={() => roomBatchId ? setRoomBatchId(null) : openRoomBatchPicker(selectedRoom)}><Users aria-hidden="true" />{intl("components_pages_ManualSchedulePage.roomBatchEditTitle")}{roomBatchId ? ` · ${dormBatchSelection.length}/${dormBatchCapacity}` : ""}</Button> : null}
           </DialogHeader>
           <SkeletonSuspense className="min-h-0 [&>[data-skeleton-swap-content]]:grid [&>[data-skeleton-swap-content]]:min-h-0" fallback={<div className="grid min-h-64 content-start gap-3 px-5 pb-5 sm:px-7"><Skeleton className="h-11" /><Skeleton className="h-24" /><div className="grid grid-cols-4 gap-3">{Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-20" />)}</div></div>}>
           <ScrollArea className="min-h-0" viewportClassName="overflow-x-hidden" viewportProps={{ ref: pickerScrollContainerRef, onScroll: handlePickerScroll }}>
@@ -1281,7 +1292,7 @@ export function ManualSchedulePage({
                       <SkillRoomTagBar selected={pickerRoomFilter} onChange={changePickerRoomFilter} />
                     </SkillFilterRow>
                   </div>
-                  <Button type="button" variant="destructive" size="sm" className="px-2 text-xs max-sm:min-h-8" onClick={() => chooseOperator(null)}><Trash2 />{intl("components_pages_ManualSchedulePage.clearSlot")}</Button>
+                  <Button type="button" variant="destructive" size="sm" className="px-2 text-xs max-sm:min-h-8" onClick={() => roomBatchId ? setDormBatchSelection([]) : chooseOperator(null)}><Trash2 />{intl("components_pages_ManualSchedulePage.clearSlot")}</Button>
                 </div>
                 <SkillFilterRow label={skillFilters("tag")}>
                   {availableSkillTags.length > 0
@@ -1321,18 +1332,19 @@ export function ManualSchedulePage({
 
             <TooltipProvider delay={0} timeout={0}>
               <div ref={pickerResultsRef} className="relative mt-1 grid scroll-mt-2 grid-cols-[repeat(4,var(--manual-picker-portrait-size))] justify-between gap-x-2 gap-y-1 [--manual-picker-portrait-size:56px] min-[430px]:[--manual-picker-portrait-size:64px] sm:grid-cols-[repeat(8,var(--manual-picker-portrait-size))] min-[900px]:[--manual-picker-portrait-size:80px]">
-                {visibleOperators.map((operator) => (
+                {(roomBatchId ? filteredOperators : visibleOperators).map((operator) => (
                   <ManualOperatorChoice
                     key={operator.id}
                     operator={operator}
-                    selected={selectedOperator === operator.name || (picker?.kind === "fiammetta" && fiammettaTarget === operator.name)}
+                    selected={roomBatchId ? dormBatchSelection.includes(operator.name) : selectedOperator === operator.name || (picker?.kind === "fiammetta" && fiammettaTarget === operator.name)}
+                    selectionNumber={roomBatchId ? dormBatchSelection.indexOf(operator.name) + 1 || undefined : undefined}
                     assignmentLabel={activeAssignmentRoomByOperator.get(operator.name)}
                     en={en}
                     tooltipDisabled={pickerScrolling}
-                    onChoose={() => chooseOperator(operator.name)}
+                    onChoose={() => roomBatchId ? toggleDormBatchOperator(operator.name) : chooseOperator(operator.name)}
                   />
                 ))}
-                {Array.from({ length: emptyOperatorChoiceCount }, (_, index) => (
+                {Array.from({ length: roomBatchId ? 0 : emptyOperatorChoiceCount }, (_, index) => (
                   <div
                     key={`empty-${index}`}
                     className="invisible min-h-[calc(var(--manual-picker-portrait-size)+2.5rem)]"
@@ -1340,25 +1352,26 @@ export function ManualSchedulePage({
                     data-manual-operator-placeholder
                   />
                 ))}
-                {visibleOperators.length === 0 ? <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-sm text-muted-foreground">{intl("components_pages_ManualSchedulePage.noMatchingOperators")}</p> : null}
+                {(roomBatchId ? filteredOperators : visibleOperators).length === 0 ? <p className="pointer-events-none absolute inset-0 flex items-center justify-center text-center text-sm text-muted-foreground">{intl("components_pages_ManualSchedulePage.noMatchingOperators")}</p> : null}
               </div>
             </TooltipProvider>
 
-            <div className="mt-4 border-t border-border/60 pt-3">
+            <div hidden={!!roomBatchId} className="mt-4 border-t border-border/60 pt-3">
               <Pagination page={pickerPage} pageCount={pickerPageCount} onPageChange={changePickerPage} alwaysVisible />
             </div>
           </DialogBody>
           </ScrollArea>
           </SkeletonSuspense>
+          {roomBatchId ? <DialogFooter><Button type="button" variant="outline" onClick={() => { setPicker(null); setRoomBatchId(null); }}>{intl("components_pages_ManualSchedulePage.cancel")}</Button><Button type="button" onClick={applyDormBatch}>{intl("components_pages_ManualSchedulePage.applyRoomBatch")}</Button></DialogFooter> : null}
         </DialogContent>
       </Dialog>
 
       <Dialog open={dormBatchOpen} onOpenChange={setDormBatchOpen}>
         <DialogContent className="grid max-h-[min(900px,calc(100svh-1rem))] w-[calc(100vw-1rem)] max-w-[calc(100vw-1rem)] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden sm:w-[calc(100vw-2rem)] sm:max-w-[min(960px,calc(100vw-2rem))]">
           <DialogHeader>
-            <DialogTitle>{intl("components_pages_ManualSchedulePage.dormBatchEditTitle")}</DialogTitle>
+            <DialogTitle>{intl(roomBatchId ? "components_pages_ManualSchedulePage.roomBatchEditTitle" : "components_pages_ManualSchedulePage.dormBatchEditTitle")}</DialogTitle>
             <DialogDescription>
-              {intl("components_pages_ManualSchedulePage.dormBatchDescription", { capacity: dormBatchCapacity })}
+              {intl(roomBatchId ? "components_pages_ManualSchedulePage.roomBatchDescription" : "components_pages_ManualSchedulePage.dormBatchDescription", { capacity: dormBatchCapacity })}
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="min-h-0" viewportClassName="overflow-x-hidden">
@@ -1380,6 +1393,7 @@ export function ManualSchedulePage({
                   <Button
                     type="button"
                     size="sm"
+                    hidden={!!roomBatchId}
                     variant={dormRestOnly ? "secondary" : "outline"}
                     disabled={activeShift === 0}
                     aria-pressed={dormRestOnly}
@@ -1392,7 +1406,7 @@ export function ManualSchedulePage({
                   >
                     {intl("components_pages_ManualSchedulePage.restRequired")}
                   </Button>
-                  <Button type="button" size="sm" variant="outline" disabled={!dormRestOnly || dormFilteredOperators.length === 0} onClick={selectAllDormRestOperators}>
+                  <Button type="button" size="sm" variant="outline" hidden={!!roomBatchId} disabled={!dormRestOnly || dormFilteredOperators.length === 0} onClick={selectAllDormRestOperators}>
                     {intl("components_pages_ManualSchedulePage.selectAll")}
                   </Button>
                 </div>
@@ -1423,7 +1437,7 @@ export function ManualSchedulePage({
                       operator={operator}
                       selected={dormBatchSelection.includes(operator.name)}
                       selectionNumber={dormBatchSelection.indexOf(operator.name) + 1 || undefined}
-                      assignmentLabel={dormBatchSelection.includes(operator.name) ? intl("components_pages_ManualSchedulePage.selected") : undefined}
+                      assignmentLabel={activeAssignmentRoomByOperator.get(operator.name) ?? (dormBatchSelection.includes(operator.name) ? intl("components_pages_ManualSchedulePage.selected") : undefined)}
                       en={en}
                       tooltipDisabled={pickerScrolling}
                       onChoose={() => toggleDormBatchOperator(operator.name)}
@@ -1442,7 +1456,7 @@ export function ManualSchedulePage({
           </ScrollArea>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDormBatchOpen(false)}>{intl("components_pages_ManualSchedulePage.cancel")}</Button>
-            <Button type="button" onClick={applyDormBatch}>{intl("components_pages_ManualSchedulePage.applyDormBatch")}</Button>
+            <Button type="button" onClick={applyDormBatch}>{intl(roomBatchId ? "components_pages_ManualSchedulePage.applyRoomBatch" : "components_pages_ManualSchedulePage.applyDormBatch")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

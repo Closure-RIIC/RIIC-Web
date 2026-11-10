@@ -33,6 +33,8 @@ export function ManualPage() {
   const navigate = route.useNavigate();
   const simulation = view === "simulation";
   const [slot, setSlot] = useState<Slot | null>(null);
+  const [batch, setBatch] = useState<{ key: string; shift: "a" | "b" } | null>(null);
+  const [batchNames, setBatchNames] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [facilitiesOpen, setFacilitiesOpen] = useState(false);
   const { rosterOpen } = useRosterDialog();
@@ -61,10 +63,12 @@ export function ManualPage() {
     });
     update({ ...workspace, manual });
   }
-  const activeRoom = assignments.find(a => a.key === slot?.key);
+  const activeRoom = assignments.find(a => a.key === (batch?.key ?? slot?.key));
+  const pickerRoom = ({ 中枢: "总控中枢", 会客室: "会客室(线索)", 培养舱: "培养舱", 制造舱1: "制造舱", 制造舱2: "制造舱" } as Record<string, string>)[activeRoom?.key ?? ""];
   const current = slot ? activeRoom?.[slot.shift][slot.index] ?? "" : "";
   const unavailable = new Set(assignments.flatMap(a => (["a", "b"] as const).flatMap(shift => a[shift].filter((name, index) =>
-    name && !(a.key === slot?.key && shift === slot.shift && index === slot.index)))));
+    name && !(batch ? a.key === batch.key && shift === batch.shift : a.key === slot?.key && shift === slot.shift && index === slot.index)))));
+  const assignmentLabels = new Map(assignments.flatMap(a => (["a", "b"] as const).flatMap(shift => a[shift].filter(Boolean).map(name => [name, `${gameLabel(t, a.key)} · ${shift.toUpperCase()} ${t("Manual.shift")}`] as const))));
   const facilityLabel = (key: string) => gameLabel(t, key);
   const operatorLabel = (name: string) => operatorName(name, locale);
   function selectOperator(name: string) {
@@ -106,12 +110,12 @@ export function ManualPage() {
               onValueChange={value => change(index, { ...a, hour: Number(value) })} options={Array.from({ length: 23 }, (_, i) => ({ value: i + 1, label: hour(i + 1) }))} /></div>}>
             {kind !== "center" ? <p className="ef-facility-output" data-manual-output={a.key}>{t("Manual.dailyOutput")} <strong><AnimatedNumber value={roomResult?.value.toFixed(2) ?? "—"} animation="smooth" stagger={0.04} /></strong> {t("Manual.hDay")}</p> : null}
             <div className="ef-facility-shifts">{(["a", "b"] as const).map(shift => <div className="ef-facility-shift" key={shift}>
-              <div className="ef-facility-shift-label"><div><b>{shift.toUpperCase()} {t("Manual.shift")}</b><FacilityBonus kind={kind} value={bonuses[shift === "a" ? 0 : 1]} placeholder="—" animated /></div><span className="ef-shift-time">{shift === "a" ? `00:00 – ${hour(a.hour)}` : `${hour(a.hour)} – 24:00`}</span></div>
+              <div className="ef-facility-shift-label"><div><b>{shift.toUpperCase()} {t("Manual.shift")}</b><FacilityBonus kind={kind} value={bonuses[shift === "a" ? 0 : 1]} placeholder="—" animated /></div><Dialog.Trigger className={actionClassName({ size: "sm" })} disabled={busy || !ready || !owned.size} data-batch-room={`${a.key}:${shift}`} onClick={() => { setSlot(null); setBatch({ key: a.key, shift }); setBatchNames(a[shift].filter(Boolean)); }}>{t("Manual.batchSelect")}</Dialog.Trigger><span className="ef-shift-time">{shift === "a" ? `00:00 – ${hour(a.hour)}` : `${hour(a.hour)} – 24:00`}</span></div>
               <div className="ef-facility-crew">{Array.from({ length: a.slots }, (_, i) => {
                 const name = a[shift][i] ?? "";
                 const slot = <SlotTrigger className="ef-result-operator ef-manual-operator" disabled={busy || !ready}
                   data-manual-slot={`${a.key}:${shift}:${i}`} aria-label={`${label} · ${shift.toUpperCase()} · ${t("Manual.slot")} ${i + 1} · ${name ? operatorLabel(name) : t("Manual.selectOperator")}`}
-                  onClick={() => { if (owned.size) setSlot({ key: a.key, shift, index: i }); }}>
+                  onClick={() => { if (owned.size) { setBatch(null); setSlot({ key: a.key, shift, index: i }); } }}>
                   {name ? <OperatorPortrait name={name} size={kind === "center" ? 88 : 68} showTitle={false} /> : <span className="ef-manual-empty" aria-hidden><Plus size={24} /></span>}
                   <span>{name ? operatorLabel(name) : t("Manual.selectOperator")}</span>
                 </SlotTrigger>;
@@ -126,13 +130,20 @@ export function ManualPage() {
         })}</FacilityBoard> : null}
       </fieldset>
       <Dialog.Portal><Dialog.Backdrop className="ef-dialog-backdrop" />
-        <DialogFrame className="ef-roster-dialog" bodyClassName="ef-roster-dialog-body" title={t("Manual.selectOperator")} closeLabel={t("Manual.closeOperatorSelection")}
-          description={slot ? `${facilityLabel(slot.key)} · ${slot.shift.toUpperCase()} ${t("Manual.shift")} · ${t("Manual.slot")} ${slot.index + 1}。${t("Manual.selectionsAreSavedAutomaticallyOperatorsAssignedElsewhereAreUnavailable")}` : undefined}
+        <DialogFrame className="ef-roster-dialog" bodyClassName="ef-roster-dialog-body" title={t(batch ? "Manual.batchSelect" : "Manual.selectOperator")} closeLabel={t("Manual.closeOperatorSelection")}
+          description={batch && activeRoom ? `${facilityLabel(batch.key)} · ${batch.shift.toUpperCase()} · ${batchNames.length}/${activeRoom.slots}` : slot ? `${facilityLabel(slot.key)} · ${slot.shift.toUpperCase()} ${t("Manual.shift")} · ${t("Manual.slot")} ${slot.index + 1}。${t("Manual.selectionsAreSavedAutomaticallyOperatorsAssignedElsewhereAreUnavailable")}` : undefined}
           footer={<>
-            <Action size="sm" disabled={!current || busy || !ready} onClick={() => selectOperator("")}>{t("Manual.clearSlot")}</Action>
+            <Action size="sm" hidden={!!batch} disabled={!current || busy || !ready} onClick={() => selectOperator("")}>{t("Manual.clearSlot")}</Action>
+            {batch && activeRoom ? <Action size="sm" variant="yellow" disabled={busy || !ready || batchNames.length > activeRoom.slots || batchNames.some(name => !owned.has(name) || unavailable.has(name))} onClick={() => {
+              change(assignments.indexOf(activeRoom), { ...activeRoom, [batch.shift]: Array.from({ length: activeRoom.slots }, (_, index) => batchNames[index] ?? "") });
+              setPickerOpen(false);
+            }}>{t("Manual.applyBatch")}</Action> : null}
             <Dialog.Close className={actionClassName({ size: "sm", variant: "yellow" })}><ActionContent>{t("Manual.cancel")}</ActionContent></Dialog.Close>
           </>}>
-          {pickerOpen ? <RosterPage embedded picker={{ value: current, unavailable, onSelect: selectOperator }} /> : null}
+          {!batch && slot && activeRoom ? <Action size="sm" variant="yellow" onClick={() => { setBatch({ key: slot.key, shift: slot.shift }); setBatchNames(activeRoom[slot.shift].filter(Boolean)); }}>{t("Manual.batchSelect")}</Action> : null}
+          {pickerOpen ? <RosterPage embedded picker={batch ? { room: pickerRoom, value: "", values: batchNames, assignmentLabels, selectedLabel: t("Manual.batchSelected"), unavailable, limit: activeRoom?.slots, limitLabel: t("Manual.batchFull"), onSelect: name => {
+            setBatchNames(previous => !name ? [] : previous.includes(name) ? previous.filter(value => value !== name) : previous.length < (activeRoom?.slots ?? 0) && !unavailable.has(name) ? [...previous, name] : previous);
+          } } : { room: pickerRoom, value: current, assignmentLabels, unavailable, onSelect: selectOperator }} /> : null}
         </DialogFrame>
       </Dialog.Portal>
     </Dialog.Root>

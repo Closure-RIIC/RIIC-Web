@@ -24,5 +24,9 @@
   "loadingSimulation": "Loading simulation…",
   "facilitiesProduction": "Facilities & production",
   "closeFacilitiesProduction": "Close facilities & production",
-  "done": "Done"
+  "done": "Done",
+  "batchSelect": "Select crew",
+  "applyBatch": "Apply crew",
+  "batchFull": "Crew is full",
+  "batchSelected": "Selected"
 }
