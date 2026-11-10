@@ -48,6 +48,7 @@ interface ShiftRoom {
   blueprint: BlueprintRoom;
   maa?: MaaRoom;
   efficiency?: RoomEfficiency;
+  productionPerDay?: number;
 }
 
 interface MutableAmount {
@@ -167,8 +168,39 @@ export function estimateDailyProduction({
   maa: MaaJson;
   rotation: RotationJson;
 }): DailyProductionEstimate {
-  const tradeRooms = layoutRooms(layout, "trade_post");
-  const factoryRooms = layoutRooms(layout, "factory");
+  return estimateProductionSnapshots(rotation.shifts.map((shift, position) => {
+    const plan = planForShift(maa, shift, position);
+    return {
+      durationHours: shift.duration_hours,
+      tradeRooms: layoutRooms(layout, "trade_post").map((_, index) => roomAt(layoutRooms(layout, "trade_post"), plan?.rooms.trading, shift, index)),
+      factoryRooms: layoutRooms(layout, "factory").map((_, index) => roomAt(layoutRooms(layout, "factory"), plan?.rooms.manufacture, shift, index)),
+    };
+  }));
+}
+
+/** Aggregate evaluated windows and normalize the complete period to 24h without creating MAA plans. */
+export function estimateDailyProductionForRoomSnapshots(input: {
+  layout: BaseBlueprint;
+  snapshots: Array<{
+    durationHours: number;
+    rooms: ReadonlyMap<string, { efficiency?: RoomEfficiency; productionPerDay?: number }>;
+  }>;
+}): DailyProductionEstimate {
+  return estimateProductionSnapshots(input.snapshots.map(snapshot => {
+    const room = (blueprint: BlueprintRoom): ShiftRoom => ({ blueprint, ...snapshot.rooms.get(blueprint.id) });
+    return {
+      durationHours: snapshot.durationHours,
+      tradeRooms: layoutRooms(input.layout, "trade_post").map(room),
+      factoryRooms: layoutRooms(input.layout, "factory").map(room),
+    };
+  }));
+}
+
+function estimateProductionSnapshots(snapshots: Array<{
+  durationHours: number;
+  tradeRooms: ShiftRoom[];
+  factoryRooms: ShiftRoom[];
+}>): DailyProductionEstimate {
   const lmdOrders: MutableAmount = { natural: 0, drones: 0 };
   const gold: MutableAmount = { natural: 0, drones: 0 };
   const experience: MutableAmount = { natural: 0, drones: 0 };
@@ -176,13 +208,11 @@ export function estimateDailyProduction({
   const orundumTrade: MutableAmount = { natural: 0, drones: 0 };
   let droneTrade = 0;
 
-  rotation.shifts.forEach((shift, position) => {
-    const durationWeight = shift.duration_hours / 24;
-    const plan = planForShift(maa, shift, position);
+  snapshots.forEach(snapshot => {
+    const durationWeight = snapshot.durationHours / 24;
     if (!Number.isFinite(durationWeight) || durationWeight <= 0) return;
 
-    tradeRooms.forEach((_, roomIndex) => {
-      const room = roomAt(tradeRooms, plan?.rooms.trading, shift, roomIndex);
+    snapshot.tradeRooms.forEach(room => {
       const order = tradeOrder(room);
       if (order === "ambiguous") {
         unavailable(lmdOrders, "ambiguous-recipe");
@@ -190,7 +220,7 @@ export function estimateDailyProduction({
         return;
       }
       const multiplier = finalEfficiency(room.efficiency);
-      if (multiplier === null) {
+      if (multiplier === null && !finite(room.productionPerDay)) {
         unavailable(order === "gold" ? lmdOrders : orundumTrade, "missing-room-data");
         return;
       }
@@ -201,13 +231,12 @@ export function estimateDailyProduction({
         unavailable(order === "gold" ? lmdOrders : orundumTrade, "missing-room-data");
         return;
       }
-      const output = baseDaily * multiplier * durationWeight;
+      const output = (room.productionPerDay ?? baseDaily * (multiplier ?? 0)) * durationWeight;
       if (order === "gold") lmdOrders.natural += output;
       else orundumTrade.natural += output;
     });
 
-    factoryRooms.forEach((_, roomIndex) => {
-      const room = roomAt(factoryRooms, plan?.rooms.manufacture, shift, roomIndex);
+    snapshot.factoryRooms.forEach(room => {
       const recipe = factoryRecipe(room);
       if (recipe === "ambiguous") {
         unavailable(gold, "ambiguous-recipe");
@@ -217,7 +246,7 @@ export function estimateDailyProduction({
       }
       const multiplier = finalEfficiency(room.efficiency);
       const target = recipe === "gold" ? gold : recipe === "battle_record" ? experience : shards;
-      if (multiplier === null) {
+      if (multiplier === null && !finite(room.productionPerDay)) {
         unavailable(target, "missing-room-data");
         return;
       }
@@ -226,7 +255,7 @@ export function estimateDailyProduction({
         : recipe === "battle_record"
           ? EXPERIENCE_BASE_DAILY
           : SHARD_BASE_DAILY;
-      const output = baseDaily * multiplier * durationWeight;
+      const output = (room.productionPerDay ?? baseDaily * (multiplier ?? 0)) * durationWeight;
       target.natural += output;
     });
 
@@ -235,8 +264,8 @@ export function estimateDailyProduction({
 
   // 轮换周期归一化：abc_12_12_12 等 36 小时周期（3×12h）折算回 24 小时等效每日产量。
   // 现有公式按 duration_hours / 24 加权，36h 周期会算成 1.5 天，这里整体乘 24/总时长。
-  const totalDurationHours = rotation.shifts.reduce(
-    (sum, shift) => sum + (Number.isFinite(shift.duration_hours) ? shift.duration_hours : 0),
+  const totalDurationHours = snapshots.reduce(
+    (sum, snapshot) => sum + (Number.isFinite(snapshot.durationHours) ? snapshot.durationHours : 0),
     0,
   );
   const normalizeScale = totalDurationHours > 0 ? 24 / totalDurationHours : 1;

@@ -460,3 +460,15 @@ test("clear removes all session generations and product preferences", () => {
   clearLocalProductData(storage, ["onboarding"]);
   assert.equal(storage.values.size, 0);
 });
+
+test("automatic rotation hours survive a local session reload", () => {
+  const storage = new MemoryStorage();
+  persistSession(storage, {
+    presetLabel: "243", layout, operbox, sourceName: "示例", boxSource: "sample",
+    layoutDirty: false, layoutSource: "local", localLayoutBackup: null,
+    rotationProfile: DEFAULT_ROTATION_PROFILE, rotationSelection: "auto_24_12.5",
+    result: null, activeShift: 0,
+  });
+  assert.equal(loadPersistedSession(storage)?.rotationSelection, "auto_24_12.5");
+  assert.equal(loadPersistedSession(storage)?.result, null);
+});

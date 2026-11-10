@@ -1,4 +1,4 @@
-import { operatorPresentationFor } from "./operatorPortraits";
+import { operatorPresentationFor } from "./operatorPortraits.ts";
 import type { RoomRow } from "./schedule";
 
 export function addOperatorPresentations(rows: RoomRow[]): RoomRow[] {

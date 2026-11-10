@@ -14,6 +14,7 @@
   "estimatedWait2": ". Estimated wait: ",
   "theAdjustedScheduleIsReadyForComparison": "The adjusted schedule is ready for comparison.",
   "theThreeShiftResultIsReadyToViewOr": "The three-shift result is ready to view or export.",
+  "autoQueueResultReady": "The automatic queue rotation result is ready to view or export.",
   "maaRecognitionWarning": "The schedule includes {operators}. Chinese operator names may not be recognized by MAA; please take note.",
   "solverIterationWarning": "The solver is being updated. For bugs or issues, use the feedback button in the top-right corner of the relevant room.",
   "thisPageUpdatesAutomaticallyDoNotSubmitAgain": "This page updates automatically. Do not submit again.",

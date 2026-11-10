@@ -6,6 +6,10 @@ export function solverTimeoutMs(value = process.env.BETA_CLI_TIMEOUT_MS): number
     : 180_000;
 }
 
-export function planCacheLeaseDurationMs(): number {
+export function solverExecutionDeadlineMs(): number {
   return Math.max(30_000, solverTimeoutMs() + 15_000);
+}
+
+export function planCacheLeaseDurationMs(): number {
+  return solverExecutionDeadlineMs();
 }

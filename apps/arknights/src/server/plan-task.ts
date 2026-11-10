@@ -18,6 +18,7 @@ import {
 import { workspaceMasterKeys } from "@riic/platform-server/business-config";
 import { getDatabase, getDatabasePool } from "@riic/platform-server/db";
 import { planTask, planWorkerHeartbeat } from "@riic/platform-server/db/schema";
+import { solverExecutionDeadlineMs } from "@riic/platform-server/solver-timeout";
 import {
   decryptPlanTaskPayload,
   encryptPlanTaskPayload,
@@ -242,12 +243,16 @@ function startWindowRetryAfter(oldest: Date | null, now: Date): number {
   return Math.max(1, Math.ceil((oldest.getTime() + PLAN_START_WINDOW_MS - now.getTime()) / 1_000));
 }
 
-export async function createPlanTask(input: {
+type PlanTaskAdmissionInput = {
   userId: string;
   accountClass: PlanAccountAdmissionClass;
   requestIpHmac: string;
-  payload: PlanTaskPayload;
-}): Promise<PlanTaskRow> {
+} & (
+  | { executionKind: "queued"; payload: PlanTaskPayload }
+  | { executionKind: "synchronous-auto-rotation" }
+);
+
+async function createPlanTaskAdmission(input: PlanTaskAdmissionInput): Promise<PlanTaskRow> {
   const now = new Date();
   const taskId = randomUUID();
   const { activeVersion, keys } = workspaceMasterKeys();
@@ -256,11 +261,17 @@ export async function createPlanTask(input: {
   const envelope = encryptPlanTaskPayload({
     userId: input.userId,
     taskId,
-    plaintext: JSON.stringify(input.payload),
+    plaintext: input.executionKind === "queued"
+      ? JSON.stringify(input.payload)
+      : JSON.stringify({ kind: "synchronous-auto-rotation-reservation-v1" }),
     activeVersion,
     masterKey: activeKey,
   });
-  const expiresAt = new Date(now.getTime() + PLAN_TASK_TTL_MS);
+  const expiresAt = new Date(now.getTime() + (
+    input.executionKind === "synchronous-auto-rotation"
+      ? solverExecutionDeadlineMs()
+      : PLAN_TASK_TTL_MS
+  ));
   const startsSince = new Date(now.getTime() - PLAN_START_WINDOW_MS);
 
   const transactionStartedAt = performance.now();
@@ -275,6 +286,10 @@ export async function createPlanTask(input: {
       status: "failed",
       error: "任务已过期，请重新提交。",
       finishedAt: now,
+      expiresAt: sql`case
+        when ${planTask.executionSource} = 'auto-rotation' then ${new Date(now.getTime() + PLAN_TASK_TTL_MS)}
+        else ${planTask.expiresAt}
+      end`,
       ...clearedPayloadColumns(),
     }).where(and(
       eq(planTask.userId, input.userId),
@@ -325,6 +340,9 @@ export async function createPlanTask(input: {
       activeNewAccounts: activeCounts?.newAccounts ?? 0,
       accountClass: input.accountClass,
     });
+    if (input.executionKind === "synchronous-auto-rotation" && status !== "pending") {
+      throw new PublicApiError("AIC-PLAN-3008", { retryAfter: 5 });
+    }
     if (status === "buffered") {
       const [bufferedCount] = await tx.select({ value: count() }).from(planTask).where(and(
         eq(planTask.status, "buffered"),
@@ -340,14 +358,18 @@ export async function createPlanTask(input: {
       userId: input.userId,
       accountClass: input.accountClass,
       requestIpHmac: input.requestIpHmac,
-      status,
+      status: input.executionKind === "synchronous-auto-rotation" ? "running" : status,
       ...envelope,
-      attempts: 0,
+      attempts: input.executionKind === "synchronous-auto-rotation" ? PLAN_TASK_MAX_ATTEMPTS : 0,
       createdAt: now,
+      startedAt: input.executionKind === "synchronous-auto-rotation" ? now : null,
+      executionSource: input.executionKind === "synchronous-auto-rotation" ? "auto-rotation" : null,
       expiresAt,
     }).returning();
     if (!inserted) throw new Error("Plan task insert did not return a row.");
-    if (status === "pending") await tx.execute(sql`select pg_notify(${PLAN_TASK_NOTIFY_CHANNEL}, ${taskId})`);
+    if (input.executionKind === "queued" && status === "pending") {
+      await tx.execute(sql`select pg_notify(${PLAN_TASK_NOTIFY_CHANNEL}, ${taskId})`);
+    }
     return mapPlanTaskRow(inserted);
   }).finally(() => {
     const transactionMs = performance.now() - transactionStartedAt;
@@ -362,10 +384,53 @@ export async function createPlanTask(input: {
   });
 }
 
+export async function createPlanTask(input: {
+  userId: string;
+  accountClass: PlanAccountAdmissionClass;
+  requestIpHmac: string;
+  payload: PlanTaskPayload;
+}): Promise<PlanTaskRow> {
+  return createPlanTaskAdmission({ ...input, executionKind: "queued" });
+}
+
+export async function createSynchronousAutoRotationReservation(input: {
+  userId: string;
+  accountClass: PlanAccountAdmissionClass;
+  requestIpHmac: string;
+}): Promise<{ id: string }> {
+  const reservation = await createPlanTaskAdmission({
+    ...input,
+    executionKind: "synchronous-auto-rotation",
+  });
+  return { id: reservation.id };
+}
+
+export async function finishSynchronousAutoRotationReservation(
+  id: string,
+  outcome: "success" | "failed" | "cancelled",
+): Promise<void> {
+  await getDatabase().update(planTask).set({
+    // A successful synchronous reservation is not a queued PublicPlan task, so
+    // it uses the neutral cancelled terminal state instead of done + null result.
+    status: outcome === "failed" ? "failed" : "cancelled",
+    error: null,
+    finishedAt: new Date(),
+    expiresAt: new Date(Date.now() + PLAN_TASK_TTL_MS),
+    ...clearedPayloadColumns(),
+  }).where(and(
+    eq(planTask.id, id),
+    eq(planTask.status, "running"),
+    eq(planTask.executionSource, "auto-rotation"),
+    gte(planTask.attempts, PLAN_TASK_MAX_ATTEMPTS),
+  ));
+  await promoteBufferedPlanTaskBestEffort();
+}
+
 export async function getPlanTask(id: string): Promise<PlanTaskRow | null> {
   const [row] = await getDatabase().select(publicPlanTaskColumns).from(planTask).where(and(
     eq(planTask.id, id),
     gt(planTask.expiresAt, new Date()),
+    sql`${planTask.executionSource} is distinct from 'auto-rotation'`,
   )).limit(1);
   return row ? mapPlanTaskRow(row) : null;
 }
@@ -578,6 +643,10 @@ export async function cleanupExpiredPlanTasks(now = new Date()): Promise<number>
       status: "failed",
       error: "任务已过期，请重新提交。",
       finishedAt: now,
+      expiresAt: sql`case
+        when ${planTask.executionSource} = 'auto-rotation' then ${new Date(now.getTime() + PLAN_TASK_TTL_MS)}
+        else ${planTask.expiresAt}
+      end`,
       ...clearedPayloadColumns(),
     }).where(and(expiredAtOrBefore(now), eq(planTask.status, "running")));
     const deleted = await tx.delete(planTask)
@@ -593,10 +662,20 @@ export async function recoverStaleRunningTasks(now = new Date()): Promise<{ reco
       status: "failed",
       error: "任务执行中断，请重新提交。",
       finishedAt: now,
+      expiresAt: sql`case
+        when ${planTask.executionSource} = 'auto-rotation' then ${new Date(now.getTime() + PLAN_TASK_TTL_MS)}
+        else ${planTask.expiresAt}
+      end`,
       ...clearedPayloadColumns(),
     }).where(and(
       eq(planTask.status, "running"),
-      or(expiredAtOrBefore(now), gte(planTask.attempts, PLAN_TASK_MAX_ATTEMPTS)),
+      or(
+        expiredAtOrBefore(now),
+        and(
+          gte(planTask.attempts, PLAN_TASK_MAX_ATTEMPTS),
+          sql`${planTask.executionSource} is distinct from 'auto-rotation'`,
+        ),
+      ),
     )).returning({ id: planTask.id });
     const recovered = await tx.update(planTask).set({
       status: "pending",

@@ -1,0 +1,23 @@
+{
+  "title": "自动队列轮换 · {main}/{backup} 小时",
+  "description": "各设施分别使用主力与替补队列，按游戏内置规则自动换班。",
+  "complete": "主力与替补配置完整。",
+  "incomplete": "部分设施配置不完整，请检查缺位与求解提示。",
+  "main": "主力队列",
+  "backup": "替补队列",
+  "evaluationHours": "评估工作时长：{hours} 小时",
+  "support": "支援速度加成：{value}%",
+  "recycle": "回收效率：{value}",
+  "firstRedFace": "最先心情耗尽：{name}",
+  "missing": "配置未完成，缺位 {count}",
+  "warnings": "求解提示",
+  "fiammetta": "菲亚梅塔回心目标",
+  "fiammettaUnavailable": "当前无法使用菲亚梅塔。",
+  "queues": "轮换队列",
+  "details": "队列评估详情",
+  "fallbackExplanation": "部分设施未找到满足技能与排班约束的干员，已从剩余干员中随机补位。补位干员不保证具备对应设施技能；是否缺员请查看配置完整性提示。",
+  "summaryTitle": "{template} 自动队列方案",
+  "summarySubtitle": "整套方案 · 综合日产估算 · 点击查看详情",
+  "staticEstimate": "整套方案按主力与替补的评估时长加权，折算为 24h 日产；切换队列仅查看人员与设施信息。",
+  "dailyDrones": "整方案无人机恢复：{count} 架/24h。"
+}

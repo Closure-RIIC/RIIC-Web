@@ -30,7 +30,7 @@ test("running and unavailable cancellation responses preserve polling", () => {
 test("buffered and pending tasks stay visibly queued during continuous polling", async () => {
   const source = await readFile(new URL("./App.tsx", import.meta.url), "utf8");
   assert.match(source, /queued: progressionAdjustmentActivity\.active[\s\S]*progressionAdjustmentTask\.status === "buffered"[\s\S]*progressionAdjustmentTask\.status === "pending"/);
-  assert.match(source, /: loading && \([\s\S]*planTask\.status === "buffered"[\s\S]*planTask\.status === "pending"[\s\S]*planTask\.pollStopped/);
+  assert.match(source, /: !autoMode && loading && \([\s\S]*planTask\.status === "buffered"[\s\S]*planTask\.status === "pending"[\s\S]*planTask\.pollStopped/);
 });
 
 test("plan task polling backs off only for failures and polls active states responsively", async () => {

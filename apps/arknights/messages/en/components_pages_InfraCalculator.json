@@ -51,5 +51,6 @@
   "cancelTheCurrentTask": "Cancel the current task?",
   "cancelingExitsTheQueueAFutureScheduleRequestWill": "Canceling exits the queue. A future schedule request will need to queue again.",
   "keepWaiting": "Keep waiting",
-  "cancelTask2": "Cancel task"
+  "cancelTask2": "Cancel task",
+  "cancelAutoRotation": "Cancel to stop this automatic queue rotation calculation."
 }

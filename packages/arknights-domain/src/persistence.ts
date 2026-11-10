@@ -22,6 +22,7 @@ import {
   type CustomRotation,
 } from "./rotation-settings.ts";
 import { normalizeRotationResult } from "./rotation-result.ts";
+import { autoRotationFromKey } from "./auto-rotation.ts";
 
 export const SESSION_KEY_V4 = "arknights-infra-calc-session-v4";
 export const SESSION_KEY_V5 = "arknights-infra-calc-session-v5";
@@ -45,7 +46,7 @@ export interface PersistedSessionV5 {
   layoutSource: "local" | "skland";
   localLayoutBackup: BaseBlueprint | null;
   rotationProfile: RotationProfile;
-  /** 换班方式的字符串 key：named profile 或 custom_zb_16_8 一类的编码。 */
+  /** 换班方式的字符串 key：named profile、自定义定时或 auto_24_12。 */
   rotationSelection?: string;
   /** 自定义二/三班时长，仅当 rotationSelection 为 "custom" 时生效。 */
   customRotation?: CustomRotation;
@@ -242,7 +243,7 @@ function normalizeSession(value: unknown, now: number): PersistedSessionV5 | nul
 /** 旧会话没有 rotationSelection 时，跟随已保存的 named profile。 */
 function normalizeRotationSelection(value: unknown, fallback: RotationProfile): string {
   if (typeof value !== "string") return fallback;
-  return decodeRotationKey(value) ? value : fallback;
+  return decodeRotationKey(value) || autoRotationFromKey(value) ? value : fallback;
 }
 
 /** 自定义时长只接受形状与班次数合法的记录；否则退回默认值。 */
