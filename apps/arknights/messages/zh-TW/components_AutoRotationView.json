@@ -19,5 +19,7 @@
   "summaryTitle": "{template} 自動佇列方案",
   "summarySubtitle": "整套方案 · 綜合日產估算 · 點擊查看詳情",
   "staticEstimate": "整套方案依主力與替補的評估時長加權，換算為 24h 日產；切換佇列僅查看人員與設施資訊。",
-  "dailyDrones": "整套方案無人機恢復：{count} 架/24h。"
+  "dailyDrones": "整套方案無人機恢復：{count} 架/24h。",
+  "empty": "尚未產生自動佇列輪換結果。設定 Box 與佈局後，點選「產生排班」。",
+  "generating": "正在產生自動佇列輪換結果…"
 }

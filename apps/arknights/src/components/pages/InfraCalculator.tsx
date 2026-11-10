@@ -46,6 +46,7 @@ const PlanResultSummary = lazyWithMessages(() => import("@/components/PlanResult
 const PlanSupportSummary = lazyWithMessages(() => import("@/components/PlanSupportSummary").then((module) => ({ default: module.PlanSupportSummary })), "apps/arknights/src/components/PlanSupportSummary.tsx");
 const UpgradeSimulationDialog = lazyWithMessages(() => import("@/components/UpgradeSimulationDialog").then((module) => ({ default: module.UpgradeSimulationDialog })), "apps/arknights/src/components/UpgradeSimulationDialog.tsx");
 const AutoRotationView = lazyWithMessages(() => import("@/components/AutoRotationView").then((module) => ({ default: module.AutoRotationView })), "apps/arknights/src/components/AutoRotationView.tsx");
+const AutoRotationEmptyView = lazyWithMessages(() => import("@/components/AutoRotationView").then((module) => ({ default: module.AutoRotationEmptyView })), "apps/arknights/src/components/AutoRotationView.tsx");
 const DroneTargetPicker = lazyWithMessages(() => import("@/components/DroneTargetPicker").then(module => ({ default: module.DroneTargetPicker })), "apps/arknights/src/components/DroneTargetPicker.tsx");
 const ScheduleImageExportAction = lazyWithMessages(() => import("@/components/ScheduleImageExportAction").then(module => ({ default: module.ScheduleImageExportAction })), "apps/arknights/src/components/ScheduleImageExportAction.tsx");
 const PlanActionsDialog = lazyWithMessages(() => import("@/components/PlanActionsDialog").then(module => ({ default: module.PlanActionsDialog })), "apps/arknights/src/components/PlanActionsDialog.tsx");
@@ -445,7 +446,12 @@ export function InfraCalculator(props: InfraCalculatorProps) {
               </div>
             )}
           >
-            {!scheduleResult && loading ? <DeferredResultLoading /> : null}
+            {!autoMode && !scheduleResult && loading ? <DeferredResultLoading /> : null}
+            {autoMode && !autoResult ? <Suspense fallback={<DeferredResultLoading />}><AutoRotationEmptyView
+              layout={layout} searchQuery={operatorQuery} loading={loading}
+              onFactoryRecipeChange={onFactoryRecipeChange} onTradeOrderChange={onTradeOrderChange}
+              viewModeControl={scheduleViewControl} hideImages={!showImages}
+            /></Suspense> : null}
             {autoResult ? <Suspense fallback={<DeferredResultLoading />}><AutoRotationView
               key={autoResult.diagnosticId} result={autoResult} layout={layout}
               eliteByOperator={eliteByOperator} levelByOperator={levelByOperator} searchQuery={operatorQuery}

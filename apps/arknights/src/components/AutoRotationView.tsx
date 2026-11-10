@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useLocale, useTranslations } from "use-intl";
-import type { AutoRotationResult } from "@riic/arknights-domain/auto-rotation";
+import { DEFAULT_AUTO_ROTATION_HOURS, type AutoRotationResult } from "@riic/arknights-domain/auto-rotation";
 import type { BaseBlueprint } from "@riic/arknights-domain/types";
 import type { FactoryRecipe, TradeOrder } from "@riic/arknights-domain/blueprint";
 import { autoRotationToRows, type AutoRotationQueue } from "@/auto-rotation-presentation";
@@ -13,11 +13,54 @@ import { PlanSupportSummary } from "@/components/PlanSupportSummary";
 import { DroneTargetPicker } from "@/components/DroneTargetPicker";
 import { ScheduleImageExportAction } from "@/components/ScheduleImageExportAction";
 import { ScheduleBoard } from "@/components";
+import { planToRows } from "@/schedule";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { localizedOperatorName, localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 
 const FALLBACK_WARNING = "可用干员太少，部分设施无法使用有技能的干员，已使用 Fallback 随机补位。";
+
+function AutoRotationQueueTabs({ queue, onChange, disabled = false }: {
+  queue: AutoRotationQueue;
+  onChange: (queue: AutoRotationQueue) => void;
+  disabled?: boolean;
+}) {
+  const intl = useTranslations("components_AutoRotationView");
+  return <Tabs value={queue} onValueChange={value => onChange(value as AutoRotationQueue)}>
+    <TabsList aria-label={intl("queues")}>
+      <TabsTrigger value="main" disabled={disabled}>{intl("main")}</TabsTrigger>
+      <TabsTrigger value="backup" disabled={disabled}>{intl("backup")}</TabsTrigger>
+    </TabsList>
+  </Tabs>;
+}
+
+export function AutoRotationEmptyView({ layout, searchQuery, loading, onFactoryRecipeChange, onTradeOrderChange, viewModeControl, hideImages }: {
+  layout: BaseBlueprint;
+  searchQuery: string;
+  loading: boolean;
+  onFactoryRecipeChange: (roomId: string, recipe: FactoryRecipe) => void;
+  onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
+  viewModeControl: "tabs" | "select";
+  hideImages: boolean;
+}) {
+  const intl = useTranslations("components_AutoRotationView");
+  const [queue, setQueue] = useState<AutoRotationQueue>("main");
+  const rows = useMemo(() => planToRows(undefined, undefined, layout), [layout]);
+  const products = useMemo(() => new Map(layout.rooms.flatMap(room => room.product ? [[room.id, room.product] as const] : [])), [layout]);
+  return <section className="grid gap-5" data-auto-rotation-empty aria-busy={loading}>
+    <header className="grid gap-1">
+      <h2 className="text-lg font-semibold">{intl("title", { main: DEFAULT_AUTO_ROTATION_HOURS[0], backup: DEFAULT_AUTO_ROTATION_HOURS[1] })}</h2>
+      <p className="text-sm text-muted-foreground">{intl("description")}</p>
+      <p className="text-sm text-muted-foreground" role="status">{intl(loading ? "generating" : "empty")}</p>
+    </header>
+    <ScheduleBoard
+      rows={rows} layout={layout} activeShift={queue === "main" ? 0 : 1} searchQuery={searchQuery}
+      shiftTabsSlot={<AutoRotationQueueTabs queue={queue} onChange={setQueue} />}
+      roomProducts={products} onFactoryRecipeChange={onFactoryRecipeChange} onTradeOrderChange={onTradeOrderChange}
+      viewModeControl={viewModeControl} hideImages={hideImages}
+    />
+  </section>;
+}
 
 export function AutoRotationView({ result, layout, eliteByOperator, levelByOperator, searchQuery,
   onFactoryRecipeChange, onTradeOrderChange, viewModeControl, hideImages,
@@ -117,12 +160,7 @@ export function AutoRotationView({ result, layout, eliteByOperator, levelByOpera
       rows={rows} layout={layout} planRevision={result.diagnosticId}
       eliteByOperator={eliteByOperator} levelByOperator={levelByOperator}
       activeShift={queue === "main" ? 0 : 1} searchQuery={searchQuery}
-      shiftTabsSlot={<Tabs value={queue} onValueChange={value => setQueue(value as AutoRotationQueue)}>
-        <TabsList aria-label={intl("queues")}>
-          <TabsTrigger value="main" disabled={imageExporting}>{intl("main")}</TabsTrigger>
-          <TabsTrigger value="backup" disabled={imageExporting}>{intl("backup")}</TabsTrigger>
-        </TabsList>
-      </Tabs>}
+      shiftTabsSlot={<AutoRotationQueueTabs queue={queue} onChange={setQueue} disabled={imageExporting} />}
       roomProducts={products} onFactoryRecipeChange={onFactoryRecipeChange} onTradeOrderChange={onTradeOrderChange}
       droneTargetRoomId={droneTargetRoomId} onDroneTargetChange={automatic ? undefined : row => selectDroneRoom(row.roomId)}
       viewModeControl={viewModeControl} hideImages={hideImages}

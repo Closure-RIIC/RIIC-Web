@@ -19,5 +19,7 @@
   "summaryTitle": "{template} automatic queue plan",
   "summarySubtitle": "Whole plan · Estimated daily output · View details",
   "staticEstimate": "Whole-plan output weighted by the main/backup evaluation windows and normalized to 24h. Switching queues changes the displayed staff and facility details.",
-  "dailyDrones": "Whole-plan drone recovery: {count} per 24h."
+  "dailyDrones": "Whole-plan drone recovery: {count} per 24h.",
+  "empty": "No automatic queue result yet. Configure your Box and layout, then generate a schedule.",
+  "generating": "Generating the automatic queue result…"
 }

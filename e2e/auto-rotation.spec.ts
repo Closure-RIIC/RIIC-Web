@@ -59,6 +59,13 @@ test("rotation menu is ordered and automatic rotation submits fixed hours and re
   await page.getByRole("option", { name: "自动队列轮换", exact: true }).click();
   await expect(dialog.locator("[data-rotation-auto] input")).toHaveCount(0);
   await finishSetup(page);
+  const empty = page.locator("[data-auto-rotation-empty]");
+  await expect(empty).toBeVisible();
+  await expect(empty.locator('[data-plan-board]')).toBeVisible();
+  await empty.getByRole("tab", { name: "替补队列", exact: true }).click();
+  await expect(empty.locator('[data-room-title="制造站 1"] [data-operator-identity="empty"]')).toHaveCount(3);
+  await expect(empty.getByRole("button", { name: "导出图片", exact: true })).toHaveCount(0);
+  await page.screenshot({ path: test.info().outputPath("auto-rotation-empty.png") });
   await page.getByRole("button", { name: "生成排班", exact: true }).click();
   const result = page.locator("[data-auto-rotation-result]");
   await expect(result).toBeVisible();
@@ -97,6 +104,7 @@ test("rotation menu is ordered and automatic rotation submits fixed hours and re
   await expect(page.getByRole("combobox", { name: "换班方式" })).toHaveValue("自动队列轮换");
   await expect(page.locator("[data-rotation-auto] input")).toHaveCount(0);
   await expect(page.locator("[data-auto-rotation-result]")).toHaveCount(0);
+  await expect(page.locator("[data-auto-rotation-empty] [data-plan-board]")).toBeVisible();
 });
 
 for (const cancel of ["button", "escape"] as const) test(`cancelling automatic rotation with ${cancel} prevents a late response from restoring a result`, async ({ page }) => {
@@ -119,6 +127,29 @@ for (const cancel of ["button", "escape"] as const) test(`cancelling automatic r
   releaseResponse?.();
   await expect(page.getByRole("button", { name: "生成排班", exact: true })).toBeEnabled();
   await expect(page.locator("[data-auto-rotation-result]")).toHaveCount(0);
+  await expect(page.locator("[data-auto-rotation-empty] [data-plan-board]")).toBeVisible();
+});
+
+test("automatic rotation keeps the default facility structure while computing and after failure", async ({ page }) => {
+  let releaseResponse: (() => void) | undefined;
+  await page.route("**/api/auto-rotation", async route => {
+    await new Promise<void>(resolve => { releaseResponse = resolve; });
+    await route.fulfill({ status: 500, json: { success: false, error: { code: "AIC-PLAN-3001", summary: "测试求解失败" } } });
+  });
+  await openRotation(page);
+  await page.getByRole("option", { name: "自动队列轮换", exact: true }).click();
+  await finishSetup(page);
+  const empty = page.locator("[data-auto-rotation-empty]");
+  await expect(empty.locator('[data-plan-board]')).toBeVisible();
+  await page.getByRole("button", { name: "生成排班", exact: true }).click();
+  await expect(empty).toHaveAttribute("aria-busy", "true");
+  await expect(empty.locator('[data-room-title="制造站 1"]')).toBeVisible();
+  await expect.poll(() => Boolean(releaseResponse)).toBe(true);
+  releaseResponse?.();
+  await expect(empty).toHaveAttribute("aria-busy", "false");
+  await expect(empty.locator('[data-plan-board]')).toBeVisible();
+  await expect(page.locator("[data-auto-rotation-result]")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "生成排班", exact: true })).toBeEnabled();
 });
 
 test("switching rotation modes clears automatic results", async ({ page }) => {
@@ -173,6 +204,7 @@ test("mobile automatic queues use the shared list and keep queue controls access
   await page.getByRole("option", { name: "自动队列轮换", exact: true }).click();
   await finishSetup(page);
   await page.getByRole("button", { name: "知道了", exact: true }).click();
+  await expect(page.locator('[data-auto-rotation-empty] [data-schedule-view="list"]')).toBeVisible();
   await page.getByRole("button", { name: "生成排班", exact: true }).click();
   const result = page.locator("[data-auto-rotation-result]");
   await expect(result.locator('[data-schedule-view="list"]')).toBeVisible();

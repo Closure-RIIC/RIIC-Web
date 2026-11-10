@@ -19,5 +19,7 @@
   "summaryTitle": "{template} 自动队列方案",
   "summarySubtitle": "整套方案 · 综合日产估算 · 点击查看详情",
   "staticEstimate": "整套方案按主力与替补的评估时长加权，折算为 24h 日产；切换队列仅查看人员与设施信息。",
-  "dailyDrones": "整方案无人机恢复：{count} 架/24h。"
+  "dailyDrones": "整方案无人机恢复：{count} 架/24h。",
+  "empty": "尚未生成自动队列轮换结果。配置 Box 与布局后，点击“生成排班”。",
+  "generating": "正在生成自动队列轮换结果…"
 }

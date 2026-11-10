@@ -11053,107 +11053,117 @@ export const references = [
   {
     "key": "components_AutoRotationView.backup",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:123"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:32"
   },
   {
     "key": "components_AutoRotationView.complete",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:95"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:138"
   },
   {
     "key": "components_AutoRotationView.dailyDrones",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:114"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:157"
   },
   {
     "key": "components_AutoRotationView.description",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:94"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:53"
   },
   {
     "key": "components_AutoRotationView.details",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:142"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:180"
+  },
+  {
+    "key": "components_AutoRotationView.empty",
+    "prefix": false,
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:54"
   },
   {
     "key": "components_AutoRotationView.evaluationHours",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:147"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:185"
   },
   {
     "key": "components_AutoRotationView.fallbackExplanation",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:98"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:141"
   },
   {
     "key": "components_AutoRotationView.fiammetta",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:156"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:194"
   },
   {
     "key": "components_AutoRotationView.fiammettaUnavailable",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:156"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:194"
   },
   {
     "key": "components_AutoRotationView.firstRedFace",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:150"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:188"
+  },
+  {
+    "key": "components_AutoRotationView.generating",
+    "prefix": false,
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:54"
   },
   {
     "key": "components_AutoRotationView.incomplete",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:95"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:138"
   },
   {
     "key": "components_AutoRotationView.main",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:122"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:31"
   },
   {
     "key": "components_AutoRotationView.missing",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:133"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:171"
   },
   {
     "key": "components_AutoRotationView.queues",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:121"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:30"
   },
   {
     "key": "components_AutoRotationView.recycle",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:149"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:187"
   },
   {
     "key": "components_AutoRotationView.staticEstimate",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:114"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:157"
   },
   {
     "key": "components_AutoRotationView.summarySubtitle",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:106"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:149"
   },
   {
     "key": "components_AutoRotationView.summaryTitle",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:105"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:148"
   },
   {
     "key": "components_AutoRotationView.support",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:148"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:186"
   },
   {
     "key": "components_AutoRotationView.title",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:93"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:52"
   },
   {
     "key": "components_AutoRotationView.warnings",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:97"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:140"
   },
   {
     "key": "components_cloud_CloudDataPanel.accountCloudWorkspace",
@@ -12013,7 +12023,7 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.adjustPlan",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:319"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:320"
   },
   {
     "key": "components_pages_InfraCalculator.adjustThisPlan",
@@ -12023,12 +12033,12 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.cancelAutoRotation",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:582"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:588"
   },
   {
     "key": "components_pages_InfraCalculator.cancelingExitsTheQueueAFutureScheduleRequestWill",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:582"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:588"
   },
   {
     "key": "components_pages_InfraCalculator.cancelTask",
@@ -12038,32 +12048,32 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.cancelTask2",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:593"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:599"
   },
   {
     "key": "components_pages_InfraCalculator.cancelTheCurrentTask",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:580"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:586"
   },
   {
     "key": "components_pages_InfraCalculator.checkProgress",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:428"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:429"
   },
   {
     "key": "components_pages_InfraCalculator.clearScheduleSearch",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:347"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:348"
   },
   {
     "key": "components_pages_InfraCalculator.configureBoxAndBase",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:407"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:408"
   },
   {
     "key": "components_pages_InfraCalculator.configureBoxBase",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:396"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:397"
   },
   {
     "key": "components_pages_InfraCalculator.copyThePlanYouAreViewingAndContinueIn",
@@ -12073,12 +12083,12 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.donTShowAgain",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:556"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:562"
   },
   {
     "key": "components_pages_InfraCalculator.editTheCurrentPlan",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:305"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:306"
   },
   {
     "key": "components_pages_InfraCalculator.editTheCurrentPlanManually",
@@ -12093,7 +12103,7 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.exportImageFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/AutoRotationView.tsx:132"
+    "source": "apps/arknights/src/components/AutoRotationView.tsx:170"
   },
   {
     "key": "components_pages_InfraCalculator.exportingImage",
@@ -12103,17 +12113,17 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.exportMaa",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:322"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:323"
   },
   {
     "key": "components_pages_InfraCalculator.exportToMaa",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:308"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:309"
   },
   {
     "key": "components_pages_InfraCalculator.feedbackSubmittedId",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:539"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:545"
   },
   {
     "key": "components_pages_InfraCalculator.generate",
@@ -12128,7 +12138,7 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.gotIt",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:555"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:561"
   },
   {
     "key": "components_pages_InfraCalculator.imageExportAllMaintenance",
@@ -12148,7 +12158,7 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.keepWaiting",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:587"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:593"
   },
   {
     "key": "components_pages_InfraCalculator.keyboardShortcuts",
@@ -12163,27 +12173,27 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.modifyProgressionRecalculate",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:301"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:302"
   },
   {
     "key": "components_pages_InfraCalculator.moreTools",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:391"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:392"
   },
   {
     "key": "components_pages_InfraCalculator.noLayoutRoomsToDisplay",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:533"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:539"
   },
   {
     "key": "components_pages_InfraCalculator.originalPlan",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:284"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:285"
   },
   {
     "key": "components_pages_InfraCalculator.originalPlan2",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:506"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:512"
   },
   {
     "key": "components_pages_InfraCalculator.plannerUnavailable",
@@ -12198,17 +12208,17 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.previousResultCleared",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:551"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:557"
   },
   {
     "key": "components_pages_InfraCalculator.progressionAdjusted",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:507"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:513"
   },
   {
     "key": "components_pages_InfraCalculator.progressionAdjustedPlan",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:283"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:284"
   },
   {
     "key": "components_pages_InfraCalculator.retryGeneration",
@@ -12228,7 +12238,7 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.runThePlannerAgain",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:552"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:558"
   },
   {
     "key": "components_pages_InfraCalculator.scheduleGenerated",
@@ -12238,12 +12248,12 @@ export const references = [
   {
     "key": "components_pages_InfraCalculator.scheduleVariant",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:505"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:511"
   },
   {
     "key": "components_pages_InfraCalculator.searchOperatorsOrRoomsInThisSchedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:338"
+    "source": "apps/arknights/src/components/pages/InfraCalculator.tsx:339"
   },
   {
     "key": "components_pages_InfraCalculator.signInFirst",
