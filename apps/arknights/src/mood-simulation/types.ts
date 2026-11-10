@@ -24,6 +24,8 @@ export interface MoodSimulationInput {
   draft: ManualScheduleDraft;
   settings: MoodSettings;
   fiammettaEnabled: boolean;
+  /** cycle:shift:operator, zero based; locked dorm operators are not replaced by idle admission. */
+  dormLocks?: string[];
 }
 export interface MoodContribution {
   side: "consume" | "recover";
@@ -36,6 +38,8 @@ export interface MoodContribution {
 }
 export interface MoodRate { consume: number; recover: number; net: number; items: MoodContribution[] }
 export interface MoodPoint { time: number; moods: Record<string, number> }
+export interface MoodSeriesPoint { time: number; mood: number }
+export interface MoodSeries { names: string[]; points: MoodSeriesPoint[] }
 export interface MoodSegment {
   start: number;
   end: number;
@@ -61,6 +65,8 @@ export interface MoodSimulationResult {
   names: string[];
   total: number;
   points: MoodPoint[];
+  /** Identical mood trajectories share one breakpoint series; `points` stays for compatibility. */
+  series: MoodSeries[];
   segments: MoodSegment[];
   events: MoodEvent[];
   idleCandidates: IdleCandidate[];

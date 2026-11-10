@@ -4,9 +4,14 @@ export function pointAt(result: MoodSimulationResult,time: number) {
   let lo=0,hi=result.points.length;
   while (lo<hi) {const mid=(lo+hi)>>>1;if (result.points[mid]!.time<=t) lo=mid+1;else hi=mid;}
   const a=result.points[Math.max(0,lo-1)]!,b=result.points[lo];
-  if (!b || b.time===a.time) return a.moods;
+  // points omit operators whose mood has stayed at 24; playback still returns all names.
+  const full = (moods: Record<string, number>) => Object.fromEntries(result.names.map(n => [n,moods[n] ?? 24]));
+  if (!b || b.time===a.time) return full(a.moods);
   const ratio=(t-a.time)/(b.time-a.time);
-  return Object.fromEntries(result.names.map(n => [n,a.moods[n]!+(b.moods[n]!-a.moods[n]!)*ratio]));
+  return Object.fromEntries(result.names.map(n => {
+    const from=a.moods[n] ?? 24,to=b.moods[n] ?? 24;
+    return [n,from+(to-from)*ratio];
+  }));
 }
 export function segmentAt(result: MoodSimulationResult,time: number) {
   return result.segments.find(s => s.start<=time && s.end>time) ?? result.segments[result.segments.length-1]!;
