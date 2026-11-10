@@ -45,14 +45,18 @@ export async function gatewayChat(request: Request, userId: string, requestId: s
       const execute = tool.execute;
       if (!execute) continue;
       tool.execute = async (input, options) => {
+        request.signal.throwIfAborted();
+        options.abortSignal?.throwIfAborted();
         await check(JSON.stringify(input), "tool_input");
         const chargeId = name === "solve_schedule" ? await beginToolCharge(runId, options.toolCallId, name) : undefined;
         try {
           const output = await execute(input, options);
+          request.signal.throwIfAborted();
+          options.abortSignal?.throwIfAborted();
           // RIIC tools return promises, never async iterators.
           await check(JSON.stringify(output), "tool_output");
           const failed = !!output && typeof output === "object" && "error" in output;
-          if (chargeId) await finishToolCharge(chargeId, !failed);
+          if (chargeId) await finishToolCharge(chargeId, !failed, options.abortSignal ? AbortSignal.any([request.signal, options.abortSignal]) : request.signal);
           return output;
         } catch (error) {
           if (chargeId) await finishToolCharge(chargeId, false);

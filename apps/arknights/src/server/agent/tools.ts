@@ -7,14 +7,13 @@ import { z } from "zod";
 import { PRESETS, buildBlueprint, factoryRecipeFor, tradeOrderFor, updateFactoryRecipe, updateRoomLevel, updateTradeOrder } from "@riic/arknights-domain/blueprint";
 import type { FactoryRecipe } from "@riic/arknights-domain/factory-recipes";
 import type { TradeOrder } from "@riic/arknights-domain/blueprint";
-import { runPlan, getSampleOperbox } from "@riic/platform-server/infra";
-import { toPublicPlanData } from "@riic/platform-server/public-plan";
+import { getSampleOperbox } from "@riic/platform-server/infra";
 import { loadInventorySnapshot, loadStatusSnapshot } from "@riic/platform-server/skland/adapter";
 import { activeSklandAccount, readSklandAccountStore } from "@riic/platform-server/skland/http";
 import { sklandDataOwnerTag } from "@riic/platform-server/skland/session";
 import { getMaaOperboxSnapshot, listSavedPlans } from "@riic/platform-server/workspace";
-import { createRequestId } from "@riic/platform-server/api-contract";
 import type { BaseBlueprint, OperBoxEntry, RotationProfile } from "@riic/arknights-domain/types";
+import { runAgentQueuedPlan } from "./queued-solve-service.ts";
 import { projectPlanResult } from "./plan-artifact.ts";
 import { readKnowledgeDoc, searchKnowledgeBase } from "./knowledge.ts";
 import { readAgentSkill } from "./knowledge-policy.ts";
@@ -35,7 +34,7 @@ export interface AgentToolContext {
 }
 
 const ROTATION_PROFILES: RotationProfile[] = ["abc_12_6_6", "abc_12_12_12", "main_backup_12_12", "fiammetta_8_8_4_4", "abyssal_7_5_7_5"];
-const SOLVE_TIMEOUT_MS = 180_000;
+
 
 function logToolCall(userId: string, name: string, input: unknown, startedAt: number, failed: boolean) {
   console.log(JSON.stringify({
@@ -126,15 +125,6 @@ function operboxStats(operbox: OperBoxEntry[]) {
     byRarity: Object.fromEntries([...byRarity.entries()].sort((a, b) => b[0] - a[0]).map(([rarity, count]) => [`star${rarity}`, count])),
     elite2SixStarNames: elite2SixStar,
   };
-}
-
-function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => {
-      setTimeout(() => reject(new Error(message)), ms);
-    }),
-  ]);
 }
 
 type SolveScenario = "balanced" | "orundum" | "money";
@@ -411,7 +401,9 @@ export function buildAgentTools(ctx: AgentToolContext) {
         ),
         fiammettaEnable: z.boolean().optional().describe("是否启用菲亚梅塔换班加成，默认 false"),
       }),
-      execute: async (input) => guarded(ctx.userId, "solve_schedule", input, async () => {
+      execute: async (input, options) => guarded(ctx.userId, "solve_schedule", input, async () => {
+        const signal = options.abortSignal ? AbortSignal.any([ctx.request.signal, options.abortSignal]) : ctx.request.signal;
+        signal.throwIfAborted();
         const defaults = await resolveSolveDefaults(ctx);
         const presetLabel = input.layoutPreset ?? defaults.layoutPreset;
         const preset = PRESETS.find((candidate) => candidate.label === presetLabel);
@@ -443,12 +435,10 @@ export function buildAgentTools(ctx: AgentToolContext) {
         const boxSource = input.boxSource ?? defaults.boxSource;
         let operbox: OperBoxEntry[];
         let sourceName: string;
-        let dataOwnerTag: string | null = null;
         if (boxSource === "skland") {
           const snapshot = await loadSklandSnapshot(ctx);
           operbox = snapshot.operbox;
           sourceName = snapshot.sourceName;
-          dataOwnerTag = snapshot.dataOwnerTag;
         } else if (boxSource === "maa") {
           const maa = await getMaaOperboxSnapshot(ctx.userId);
           if (!maa || maa.length === 0) {
@@ -473,23 +463,11 @@ export function buildAgentTools(ctx: AgentToolContext) {
         });
         try {
           const rotation = (input.rotation && ROTATION_PROFILES.includes(input.rotation) ? input.rotation : DEFAULT_ROTATION);
-          const runResult = await withTimeout(
-            runPlan({
-              layout,
-              operbox,
-              sourceName,
-              rotation,
-              fiammettaEnable: input.fiammettaEnable ?? false,
-              dataOwnerTag,
-            }),
-            SOLVE_TIMEOUT_MS,
-            `求解超时（${SOLVE_TIMEOUT_MS / 1000} 秒），请稍后重试或改用示例 Box。`
-          );
-          const publicResult = toPublicPlanData(
-            runResult,
-            { layoutLabel: preset.label, sourceName, layout },
-            createRequestId()
-          );
+          const publicResult = await runAgentQueuedPlan(ctx.request, ctx.userId, {
+            layout, operbox, sourceName, rotation, boxSource,
+            fiammetta_enable: input.fiammettaEnable ?? false,
+          }, signal);
+          signal.throwIfAborted();
           const projected = projectPlanResult(publicResult);
           const workbenchSession = {
             presetLabel: preset.label,

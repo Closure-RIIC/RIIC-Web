@@ -33,6 +33,7 @@ import {
   claimNextPlanTask,
   cleanupExpiredPlanTasks,
   completePlanTask,
+  getPlanTask,
   listenForPlanTaskAvailability,
   markPlanTaskExecutionStarted,
   markPlanTaskSolverFinished,
@@ -56,6 +57,7 @@ function errorCodeOf(error: unknown) {
 }
 
 type PlanTaskExecutionDependencies = {
+  getTask?: typeof getPlanTask;
   getCacheSolverIdentity: typeof getPlanCacheSolverIdentity;
   resolveCache: typeof resolvePlanCache;
   markExecutionStarted: typeof markPlanTaskExecutionStarted;
@@ -78,6 +80,7 @@ type PlanTaskExecutionDependencies = {
 };
 
 const productionTaskExecutionDependencies: PlanTaskExecutionDependencies = {
+  getTask: getPlanTask,
   getCacheSolverIdentity: getPlanCacheSolverIdentity,
   resolveCache: resolvePlanCache,
   markExecutionStarted: markPlanTaskExecutionStarted,
@@ -140,6 +143,23 @@ export async function executePlanTask(
   dependencies: PlanTaskExecutionDependencies = productionTaskExecutionDependencies,
 ): Promise<number | null> {
   const { id, payload } = task;
+  const cancellation = new AbortController();
+  let checking: Promise<void> | null = null;
+  const checkCancellation = async () => {
+    if (!dependencies.getTask || cancellation.signal.aborted) return;
+    if (checking) return checking;
+    checking = (async () => {
+      try {
+        const current = await dependencies.getTask!(id);
+        if (!current || current.status !== "running") cancellation.abort(new DOMException("Plan task cancelled", "AbortError"));
+      } catch (error) {
+        // Stop computing if the worker cannot establish that its lease is still live.
+        cancellation.abort(error);
+      }
+    })();
+    try { await checking; } finally { checking = null; }
+  };
+  const cancelTimer = dependencies.getTask ? setInterval(() => { void checkCancellation(); }, 500) : undefined;
   const workerStartedAt = performance.now();
   let diagnosticId = id;
   let taskSource: "cache" | "solver" | "failed" = "failed";
@@ -147,6 +167,8 @@ export async function executePlanTask(
   let artifactResult: Awaited<ReturnType<typeof runPlan>> | null = null;
   let lease: Extract<PlanCacheResolution, { kind: "lease" }> | null = null;
   try {
+    await checkCancellation();
+    cancellation.signal.throwIfAborted();
     const cacheSolver = await dependencies.getCacheSolverIdentity();
     if (cacheSolver) {
       const cache = await dependencies.resolveCache({
@@ -158,6 +180,9 @@ export async function executePlanTask(
         fiammettaEnable: payload.fiammettaEnable,
         solver: cacheSolver,
       });
+      if (cache.kind === "lease") lease = cache;
+      await checkCancellation();
+      cancellation.signal.throwIfAborted();
       if (cache.kind === "hit") {
         taskSource = "cache";
         diagnosticId = cache.result.diagnosticId;
@@ -196,9 +221,10 @@ export async function executePlanTask(
         await dependencies.completeTask(id, { status: "done", result: cache.result });
         return null;
       }
-      if (cache.kind === "lease") lease = cache;
     }
 
+    await checkCancellation();
+    cancellation.signal.throwIfAborted();
     taskSource = "solver";
     await dependencies.markExecutionStarted(id, "solver");
     artifactResult = await dependencies.runPlan({
@@ -212,7 +238,9 @@ export async function executePlanTask(
       fiammettaEnable: payload.fiammettaEnable,
       supportCombinationsEnable: payload.supportCombinationsEnable,
       dataOwnerTag: payload.dataOwnerTag,
-    }, { serveLane, deferArtifacts: true });
+    }, { serveLane, deferArtifacts: true, signal: cancellation.signal });
+    await checkCancellation();
+    cancellation.signal.throwIfAborted();
     await dependencies.markSolverFinished(id, {
       startedAt: artifactResult.solverStartedAt,
       finishedAt: artifactResult.solverFinishedAt,
@@ -277,6 +305,7 @@ export async function executePlanTask(
     return solverDurationMs === null ? null : Math.max(1, solverDurationMs);
   } catch (error) {
     if (lease) await dependencies.releaseCacheLease(lease).catch(() => undefined);
+    if (cancellation.signal.aborted) return null;
     const errorCode = errorCodeOf(error);
     const diagnosticReason = diagnosticText(artifactResult?.error)
       ?? diagnosticText(error instanceof Error ? error.message : String(error));
@@ -344,6 +373,7 @@ export async function executePlanTask(
     }));
     return solverDurationMs === null ? null : Math.max(1, solverDurationMs);
   } finally {
+    clearInterval(cancelTimer);
     const workerDurationMs = Math.round(performance.now() - workerStartedAt);
     if (artifactResult) dependencies.enqueueArtifact(artifactResult);
     enqueuePlanExecutionUpdate(() => dependencies.updateRunExecution({

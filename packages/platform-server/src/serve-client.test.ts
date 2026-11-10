@@ -182,3 +182,31 @@ test("times out a silent request and does not leak its logs after restart", asyn
   assert.equal(result.response.ok, true);
   assert.equal(client.info().restartCount >= 2, true);
 });
+
+test("aborting an active solve terminates only that request and queued requests still finish", async context => {
+  const { client } = await createTestClient(context);
+  const controller = new AbortController();
+  const active = client.send("hang", {}, { signal: controller.signal });
+  const rejected = assert.rejects(active, { name: "AbortError" });
+  while (!client.info().busy) await new Promise(resolve => setTimeout(resolve, 5));
+  const queued = client.send("ping", {});
+  controller.abort();
+  await rejected;
+  assert.equal((await queued).response.ok, true);
+  assert.equal((await client.ping()).response.ok, true);
+});
+
+test("aborting a queued solve leaves the active request intact", async context => {
+  const { client } = await createTestClient(context);
+  const firstController = new AbortController();
+  const active = client.send("hang", {}, { signal: firstController.signal });
+  const rejected = assert.rejects(active, { name: "AbortError" });
+  while (!client.info().busy) await new Promise(resolve => setTimeout(resolve, 5));
+  const pid = client.info().pid;
+  const queuedController = new AbortController();
+  const queued = client.send("ping", {}, { signal: queuedController.signal });
+  const queuedRejected = assert.rejects(queued, { name: "AbortError" });
+  queuedController.abort(); await queuedRejected;
+  assert.equal(client.info().pid, pid); assert.equal(client.info().busy, true);
+  firstController.abort(); await rejected;
+});

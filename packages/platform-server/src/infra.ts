@@ -1705,7 +1705,7 @@ export async function waitForPlanArtifactFinalizers(timeoutMs: number): Promise<
 
 export async function runPlan(
   body: unknown,
-  options: { serveLane?: number; deferArtifacts?: boolean } = {},
+  options: { serveLane?: number; deferArtifacts?: boolean; signal?: AbortSignal } = {},
 ): Promise<PlanApiResponse> {
   let runDir = "";
   let ephemeralRunDir = "";
@@ -1840,7 +1840,8 @@ export async function runPlan(
             if(!ready.ready) throw new Error(`Solver protocol or identity rejected: ${ready.reason}`);
             observation=createSolverObservation(capability,new Date().toISOString());
             solver=observation;
-            wire=await client.send("plan.compute",params,{timeoutMs:budgetMs});
+            options.signal?.throwIfAborted();
+            wire=await client.send("plan.compute",params,{timeoutMs:budgetMs,signal:options.signal});
             if(wire.response.error || (isObject(wire.response.result) && wire.response.result.error)) {
               throw new Error(formatPlanFailure({layout:body.layout,response:wire.response,stderr:wire.stderr}));
             }
@@ -1912,7 +1913,7 @@ export async function runPlan(
           sourceName: body.sourceName,
           rotation: body.rotation,
           fiammettaEnable: body.fiammettaEnable,
-        }));
+        }), { signal: options.signal });
       } finally {
         solverFinishedAt = new Date().toISOString();
       }
