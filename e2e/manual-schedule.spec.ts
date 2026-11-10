@@ -942,3 +942,80 @@ test("manual scheduling previews and imports an external MAA schedule file", asy
   await expect(setup.locator('[data-facility-group="trade"] [data-slot="setup-room-row"]').first().getByRole("button", { name: "开采协力" })).toHaveAttribute("aria-pressed", "true");
   await expect(setup.locator('[data-facility-group="factory"] [data-slot="setup-room-row"]').first().getByRole("button", { name: "作战记录" })).toHaveAttribute("aria-pressed", "true");
 });
+for (const width of [1440, 390]) {
+  test(`manual edit feedback and undo preserve calculation provenance at ${width}px`, async ({ page }) => {
+    test.setTimeout(180_000);
+    const draft = createManualScheduleDraft([12, 12]);
+    for (const shift of draft.shifts) shift.rooms.manu_1 = { operators: ["阿米娅", null, null], product: { factory: { recipe: "gold" } } };
+    draft.shifts[0]!.rooms.control = { operators: ["锡兰", null, null, null, null] };
+    await page.addInitScript(initial => {
+      const key = "arknights-infra-manual-schedule-v1";
+      if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify(initial));
+      localStorage.setItem("riic.plush.performance.v1", "static");
+    }, draft);
+    // The local v1 engine predates recycle rooms. Keep this UI regression on
+    // supported facilities while exercising real WASM calculations, without downloads.
+    const glue = await readFile("apps/arknights/public/wasm/infra_eval_wasm.js", "utf8");
+    await page.route("**/wasm/infra_eval_wasm.js", route => route.fulfill({ contentType: "text/javascript", body: glue.replace(
+      "export function evaluate_v1(request_json) {",
+      `export function evaluate_v1(request_json) {
+        const fixture = JSON.parse(request_json);
+        const ignored = new Set(fixture.layout.rooms.filter(room => room.kind === "recycle").map(room => room.id));
+        fixture.layout.rooms = fixture.layout.rooms.filter(room => !ignored.has(room.id));
+        fixture.shifts = fixture.shifts.map(shift => ({ ...shift, rooms: shift.rooms.filter(room => !ignored.has(room.room_id)) }));
+        request_json = JSON.stringify(fixture);`,
+    ) }));
+    await page.setViewportSize({ width, height: 1000 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto("/manual");
+    const status = page.locator("[data-manual-calculation-status]");
+    const openTools = async () => { if (width < 768) await page.locator("[data-manual-more-tools] summary").click(); };
+    await expect(status).toHaveAttribute("data-manual-calculation-status", "empty", { timeout: 30_000 });
+    await openTools();
+    await expect(page.getByRole("button", { name: "撤销上一步", exact: true })).toBeDisabled();
+    await page.getByRole("button", { name: "根据排班计算", exact: true }).click();
+    await expect(status).toHaveAttribute("data-manual-calculation-status", "current", { timeout: 60_000 });
+    const summary = page.locator("[data-manual-production-summary]");
+    await expect(summary).toContainText("较本次首次计算");
+    await page.getByRole("button", { name: "一键清空控制中枢", exact: true }).click();
+    await expect(status).toHaveAttribute("data-manual-calculation-status", "outdated");
+    await expect(summary).toContainText("上次结果");
+    await expect(summary.locator("[data-delta]")).toHaveCount(0);
+    await openTools();
+    await page.getByRole("button", { name: "撤销上一步", exact: true }).click();
+    await expect(status).toHaveAttribute("data-manual-calculation-status", "current");
+    await expect(page.locator('[data-manual-editor-board] [data-room-title="控制中枢"] [data-operator-identity="锡兰"]')).toBeVisible();
+    const factory = page.locator('[data-manual-editor-board] [data-room-title="制造站 1"]');
+    const chooseRecipe = async (name: string) => {
+      if (width < 768) await factory.getByRole("group", { name: "制造站 1 配方" }).getByRole("button", { name, exact: true }).click();
+      else {
+        await factory.getByRole("combobox", { name: "制造站 1，配方" }).click();
+        await page.getByRole("option", { name, exact: true }).click();
+      }
+    };
+    await chooseRecipe("作战记录");
+    await expect(status).toHaveAttribute("data-manual-calculation-status", "outdated");
+    await status.getByRole("button", { name: "重新计算", exact: true }).click();
+    await expect(status).toHaveAttribute("data-manual-calculation-status", "current", { timeout: 60_000 });
+    await expect.poll(async () => Number(await summary.locator('[data-manual-product-feedback="experience"]').getAttribute("data-delta"))).toBeGreaterThan(0);
+    await expect.poll(async () => Number(await summary.locator('[data-manual-product-feedback="gold"]').getAttribute("data-delta"))).toBeLessThan(0);
+    await openTools();
+    await page.getByRole("button", { name: "撤销上一步", exact: true }).click();
+    await expect(status).toHaveAttribute("data-manual-calculation-status", "outdated");
+    await chooseRecipe("作战记录");
+    await expect(status).toHaveAttribute("data-manual-calculation-status", "current");
+    await status.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `outputs/manual-feedback-${width}.png`, fullPage: false });
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-evaluation-v1")!).evaluation.inputKey)).toBeTruthy();
+    await page.reload();
+    await expect(status).toHaveAttribute("data-manual-calculation-status", "current", { timeout: 30_000 });
+    await chooseRecipe("贵金属");
+    await expect(status).toHaveAttribute("data-manual-calculation-status", "outdated");
+    await status.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `outputs/manual-feedback-stale-${width}.png`, fullPage: false });
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).shifts[0].rooms.manu_1.product.factory.recipe)).toBe("gold");
+    await page.reload();
+    await expect(status).toHaveAttribute("data-manual-calculation-status", "outdated", { timeout: 30_000 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+}

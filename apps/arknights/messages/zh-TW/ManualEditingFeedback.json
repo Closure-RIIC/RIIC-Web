@@ -1,0 +1,12 @@
+{
+  "undo": "復原上一步",
+  "notCalculated": "尚未計算",
+  "outdated": "待重新計算 · 下方為上次結果",
+  "calculating": "正在計算…",
+  "current": "產出已更新",
+  "comparison": "較本次首次計算 · 日均變化",
+  "previous": "上次結果",
+  "unchanged": "無變化",
+  "unavailable": "無法比較",
+  "recalculate": "重新計算"
+}

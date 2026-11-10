@@ -116,6 +116,8 @@ export function PlanResultSummary({
   controlsSlot,
   productionPresentation,
   presentationTitle,
+  summaryNotice,
+  productAnnotations,
   presentationSubtitle,
   mode = "calculator",
 }: {
@@ -136,6 +138,8 @@ export function PlanResultSummary({
   /** A manual page may supply an estimate-only presentation without entering solver data paths. */
   productionPresentation?: ProductionSummaryPresentation;
   presentationTitle?: ReactNode;
+  summaryNotice?: ReactNode;
+  productAnnotations?: Readonly<Record<string, ReactNode>>;
   presentationSubtitle?: ReactNode;
   mode?: "calculator" | "manual";
 }) {
@@ -198,6 +202,7 @@ export function PlanResultSummary({
         {animateOnMount ? (
           <motion.span key={`accent-${planRevision}`} className="pointer-events-none absolute inset-x-0 top-0 z-20 h-0.5 origin-left bg-[#FFD501]" aria-hidden="true" initial={{ scaleX: 0, opacity: 0 }} animate={{ scaleX: 1, opacity: [0, 1, 1, 0] }} transition={{ duration: shouldReduceMotion ? 0 : 0.62, delay: shouldReduceMotion ? 0 : 0.08, times: [0, 0.15, 0.82, 1], ease: MOTION_EASE_OUT }} />
         ) : null}
+        {summaryNotice}
         <div data-animation-revision={animationRevision} className="grid min-h-[84px] grid-cols-[minmax(10rem,1.05fr)_minmax(0,5fr)] items-stretch max-[820px]:grid-cols-1">
           <motion.button type="button" className={cn("group relative flex min-w-0 items-center justify-between gap-3 overflow-hidden bg-[#272A2B] px-5 py-3 text-left text-white focus-visible:outline-2 focus-visible:outline-offset-[-3px] focus-visible:outline-[#FFD800] max-[820px]:row-span-1 max-sm:min-h-16", comparison && "row-span-2", !canOpenDetails && "cursor-default")} data-plan-details-trigger="efficiency" data-plan-primary-details-trigger disabled={!canOpenDetails} whileHover={canOpenDetails && !shouldReduceMotion ? { x: 2 } : undefined} whileTap={canOpenDetails && !shouldReduceMotion ? { scale: 0.985 } : undefined} onClick={() => { if (canOpenDetails) openDetails("efficiency"); }}>
             <motion.span className="min-w-0" data-plan-metric initial={animateOnMount ? { opacity: 0, x: shouldReduceMotion ? 0 : -10 } : false} animate={{ opacity: 1, x: 0 }} transition={{ duration: shouldReduceMotion ? MOTION_DURATION.feedback : 0.36, delay: shouldReduceMotion ? 0 : 0.1, ease: MOTION_EASE_OUT }}>
@@ -234,6 +239,7 @@ export function PlanResultSummary({
                       note={productGroup.primary.amount.value === null && productGroup.primary.amount.unavailableReason ? <span className="mt-1 block truncate text-[10px] font-semibold text-amber-800">{unavailableReason(productGroup.primary.amount.unavailableReason, en)}</span> : null}
                     />
                   </span>
+                  {productAnnotations?.[productGroup.primary.id]}
                   {productGroup.supporting ? (
                     <span className="mt-2 flex min-w-0 items-center gap-1.5 bg-[#313131]/[0.045] px-1.5 py-1" data-daily-product={productGroup.supporting.id} data-product-role="supporting">
                       <img src={productGroup.supporting.icon} alt="" width={16} height={16} loading="eager" className="size-4 shrink-0 object-contain" aria-hidden="true" />
@@ -244,6 +250,7 @@ export function PlanResultSummary({
                       </strong>
                     </span>
                   ) : null}
+                  {productGroup.supporting ? productAnnotations?.[productGroup.supporting.id] : null}
                 </motion.span>
                 <img src={productGroup.primary.icon} alt="" width={32} height={32} loading="eager" className="pointer-events-none absolute right-1.5 top-1.5 size-8 object-contain opacity-75 transition-transform duration-200 group-hover:scale-105" aria-hidden="true" />
                 <motion.span className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-[#313131]/18" aria-hidden="true" initial={animateOnMount ? { scaleX: 0 } : false} animate={{ scaleX: 1 }} transition={{ duration: shouldReduceMotion ? 0 : 0.42, delay: shouldReduceMotion ? 0 : 0.2 + index * 0.065, ease: MOTION_EASE_OUT }} />

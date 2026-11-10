@@ -1,0 +1,12 @@
+{
+  "undo": "Undo last edit",
+  "notCalculated": "Not calculated yet",
+  "outdated": "Recalculation needed · Previous results below",
+  "calculating": "Calculating…",
+  "current": "Production updated",
+  "comparison": "Daily change from the first calculation this visit",
+  "previous": "Previous result",
+  "unchanged": "No change",
+  "unavailable": "Cannot compare",
+  "recalculate": "Recalculate"
+}
