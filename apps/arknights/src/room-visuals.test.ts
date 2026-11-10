@@ -15,4 +15,5 @@ test("white and unknown facilities use a visible neutral accent on light surface
   assert.equal(roomLightAccentFor("hire"), "#71717A");
   assert.equal(roomLightAccentFor("processing"), "#71717A");
   assert.equal(roomLightAccentFor("unknown"), "#71717A");
+  assert.deepEqual(roomVisualFor("recycle"), roomVisualFor("training"));
 });
