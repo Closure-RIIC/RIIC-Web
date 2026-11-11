@@ -26,6 +26,7 @@ import { buildHealthTools } from "./health-tools.ts";
 import { chargeAgentTool, refundFailedAgentTool } from "@/server/billing/service";
 import { SOLVE_TOOL_POINTS } from "@/server/billing/config";
 import { resourceSkill, type AgentResourcePolicy } from "./resource-policy.ts";
+import { buildUserProfileTools } from "./user-profile/index.ts";
 
 export interface AgentToolContext {
   request: Request;
@@ -306,6 +307,7 @@ export function buildAgentTools(ctx: AgentToolContext) {
       () => loadAgentTrainingResources(ctx),
     ),
     ...buildHealthTools(ctx, (name, input, run) => guarded(ctx.userId, name, input, run)),
+    ...buildUserProfileTools(ctx.userId, (name, input, run) => guarded(ctx.userId, name, input, run)),
     diagnose_account: tool({
       description:
         "账号诊断：查看当前用户的森空岛绑定状态、干员池概览（总数、精二数、稀有度分布、精二六星名单）、当前游戏内基建布局、最近保存的排班。可通过 operators 精确查询指定干员的 own/elite/level；示例池个人状态为未知。判断个人持有与练度时使用。",

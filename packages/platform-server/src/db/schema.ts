@@ -506,6 +506,17 @@ export const agentPlanArtifact = appSchema.table("agent_plan_artifact", {
   index("agent_plan_artifact_expires_at_idx").on(table.expiresAt),
 ]);
 
+/**
+ * Agent 用户画像（长期记忆）：每个网站账号一行。profile 是 user-profile/core.ts 的 UserProfile，
+ * 只存用户明说的约束、受控词表内的偏好标签和不含数值的事实；账号注销时随 user 级联删除。
+ */
+export const agentUserProfile = appSchema.table("agent_user_profile", {
+  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  profile: jsonb("profile").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 /** Agent 计费原型：余额按永久积分与月卡积分分桶，账本记录每次变动。 */
 export const billingWallet = appSchema.table("billing_wallet", {
   userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),

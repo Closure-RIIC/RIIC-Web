@@ -20,6 +20,7 @@ import { AgentHistoryError, prepareAgentHistory } from "@/server/agent/message-h
 import { withAgentAnswerBoundary } from "@/server/agent/answer-boundary";
 import { activeAgentResources } from "@/server/agent/resources";
 import { agentPageContextPrompt, normalizeAgentPageContext } from "@/agent-page-context";
+import { userProfilePrompt } from "@/server/agent/user-profile";
 
 
 // ── 临时监控（诊断"返回内容异常"用，问题定位后整段删除）──
@@ -184,7 +185,7 @@ export async function POST(request: Request) {
     const result = streamText({
       ...streamPolicy.options,
       model: withAgentAnswerBoundary(getAgentModel(settings)),
-      system: `${await buildAgentSystemPrompt(personaContent, resources?.policy)}${agentPageContextPrompt(pageContext)}`,
+      system: `${await buildAgentSystemPrompt(personaContent, resources?.policy)}${agentPageContextPrompt(pageContext)}${await userProfilePrompt(session.user.id)}`,
       messages: await convertToModelMessages(messages, { tools }),
       tools,
       stopWhen: stepCountIs(12),
