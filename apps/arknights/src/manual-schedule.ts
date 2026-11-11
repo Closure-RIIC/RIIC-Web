@@ -7,6 +7,7 @@ import type {
   BlueprintRoom,
   MaaJson,
   MaaOperatorSlot,
+  MaaPlan,
   MaaPeriod,
   MaaRoom,
   MaaRooms,
@@ -23,7 +24,7 @@ import {
 } from "./manual-schedule-config.ts";
 import { factoryRecipeFromMaaProduct, normalizeProductForLevel } from "@riic/arknights-domain/factory-recipes";
 import { droneTargetShiftIndex } from "@riic/arknights-domain/drone-plan-mapping";
-import { manualEditableRooms, type EditableRoom } from "./recycling-room.ts";
+import { RECYCLING_ROOM_ID, manualEditableRooms, type EditableRoom } from "./recycling-room.ts";
 
 export {
   DEFAULT_MANUAL_SHIFT_DURATIONS,
@@ -35,6 +36,8 @@ export {
 
 export interface ManualRoomAssignment {
   operators: Array<string | null>;
+  /** Preserve MAA choices that a single editable position cannot display. */
+  maaSource?: { primary: (string | null)[]; operators?: MaaRoom["operators"]; useGroups?: boolean; candidates?: string[]; skip?: boolean };
   autofill?: boolean;
   /** Slots explicitly marked as automatic in the editor; MAA exports autofill per room. */
   autofillSlots?: number[];
@@ -58,6 +61,9 @@ export function manualLayoutForShift(layout: BaseBlueprint, shift: ManualShift):
 }
 
 export interface ManualShift {
+  maaGroups?: MaaPlan["groups"];
+  maaTraining?: NonNullable<MaaPlan["rooms"]["training"]>;
+  emptyRecycle?: boolean;
   durationHours: number;
   rooms: Record<string, ManualRoomAssignment>;
   fiammettaTarget: string | null;
@@ -79,6 +85,8 @@ export interface ManualScheduleDraft {
   fiammettaEnabled: boolean;
   shifts: ManualShift[];
   source?: ManualScheduleSource;
+  /** Original MAA plans and their editable projection, used only when downloading. */
+  maaImport?: string;
 }
 
 export type ManualScheduleMode = "sequential" | "period";
@@ -132,6 +140,7 @@ const IMPORTED_LAYOUT_GROUPS: ReadonlyArray<{
   { group: "meeting", kind: "meeting_room", idPrefix: "meeting", level: 3 },
   { group: "hire", kind: "office", idPrefix: "office", level: 3 },
   { group: "processing", kind: "workshop", idPrefix: "workshop", level: 3 },
+  { group: "recycle", kind: "recycle", idPrefix: RECYCLING_ROOM_ID, level: 3 },
 ];
 
 function importedRoomProduct(
@@ -389,10 +398,16 @@ function maaPeriodDurationMinutes(period: MaaPeriod[] | undefined): number | nul
   return total > 0 && total <= MINUTES_PER_DAY ? total : null;
 }
 
+/** Keep quoted URLs and escaped quotes intact when reading an annotated example. */
+export function parseScheduleJson(text: string): unknown {
+  return JSON.parse(text.replace(/^\uFEFF/, "").replace(/"(?:\\.|[^"\\])*"|\/\/[^\r\n]*|\/\*[\s\S]*?\*\//g,
+    token => token.startsWith("/") ? " " : token));
+}
+
 export function parseMaaScheduleText(text: string): MaaJson {
   let parsed: unknown;
   try {
-    parsed = JSON.parse(text);
+    parsed = parseScheduleJson(text);
   } catch {
     throw new Error("排班 JSON 无法解析，请确认文件内容完整。");
   }
@@ -404,14 +419,27 @@ export function parseMaaScheduleText(text: string): MaaJson {
     throw new Error("排班文件缺少非空的 plans 数组。");
   }
   candidate.plans.forEach((plan, index) => {
+    // The protocol example abbreviates an empty named plan to just its name.
+    if (plan && typeof plan.name === "string" && plan.rooms === undefined) plan.rooms = {};
     if (!plan || typeof plan !== "object" || Array.isArray(plan) || !plan.rooms || typeof plan.rooms !== "object" || Array.isArray(plan.rooms)) {
       throw new Error(`第 ${index + 1} 个班次缺少有效的 rooms 对象。`);
     }
     for (const [roomKind, rooms] of Object.entries(plan.rooms)) {
+      if ((roomKind === "training" || roomKind === "recycle") && Array.isArray(rooms) && rooms.length > 1) {
+        throw new Error(`第 ${index + 1} 个班次的 ${roomKind} 超出了单间设施的数量。`);
+      }
       if (!Array.isArray(rooms)) throw new Error(`第 ${index + 1} 个班次的 ${roomKind} 必须是房间数组。`);
       rooms.forEach((room, roomIndex) => {
         if (!room || typeof room !== "object" || Array.isArray(room)) {
           throw new Error(`第 ${index + 1} 个班次的 ${roomKind}[${roomIndex}] 不是有效房间。`);
+        }
+        if (roomKind === "training") {
+          for (const field of ["operatorsA", "operatorsB"] as const) {
+            const list = (room as NonNullable<MaaPlan["rooms"]["training"]>[number])[field];
+            if (list !== undefined && (!Array.isArray(list) || list.some(name => typeof name !== "string"))) {
+              throw new Error(`第 ${index + 1} 个班次的 training.${field} 必须是干员名数组。`);
+            }
+          }
         }
         if ("operators" in room && !Array.isArray(room.operators)) {
           throw new Error(`第 ${index + 1} 个班次的 ${roomKind}[${roomIndex}].operators 必须是数组。`);
@@ -435,9 +463,13 @@ function periodForSegment(start: number, duration: number): MaaPeriod[] {
  * 对齐 MAA Windows 客户端：重叠时取首个匹配计划，空档回退文件中的首个计划。
  * 同一计划的跨午夜相邻区间会合并；真正不连续的重复区间会复制为不同班次。
  */
-export function normalizeMaaScheduleForManualImport(maa: MaaJson): MaaJson {
+export function normalizeMaaScheduleForManualImport(maa: MaaJson, sourceIndexes?: number[]): MaaJson {
   const timedPlans = maa.plans.filter((plan) => Array.isArray(plan.period) && plan.period.length > 0);
-  if (timedPlans.length === 0) return structuredClone(maa);
+  if (timedPlans.length === 0) {
+    if (maa.plans.length > MAX_MANUAL_SHIFT_COUNT) throw new Error(`手动排班最多支持 ${MAX_MANUAL_SHIFT_COUNT} 班。`);
+    sourceIndexes?.push(...maa.plans.map((_, i) => i));
+    return structuredClone(maa);
+  }
   const coverage = new Int16Array(MINUTES_PER_DAY).fill(-1);
   maa.plans.forEach((plan, planIndex) => {
     for (const range of plan.period ?? []) {
@@ -479,6 +511,7 @@ export function normalizeMaaScheduleForManualImport(maa: MaaJson): MaaJson {
     throw new Error(`排班文件展开后共有 ${segments.length} 个时间班次，超过页面支持的 ${MAX_MANUAL_SHIFT_COUNT} 班。`);
   }
 
+  sourceIndexes?.push(...segments.map(segment => segment.planIndex));
   return {
     ...structuredClone(maa),
     plans: segments.map((segment, index) => ({
@@ -499,14 +532,16 @@ export function layoutFromMaaSchedule(maa: MaaJson, current: BaseBlueprint): Bas
       rooms.push(...current.rooms.filter((room) => room.kind === definition.kind).map((room) => structuredClone(room)));
       continue;
     }
-    const count = Math.max(0, ...specifiedPlans.map((plan) => plan.rooms[definition.group]?.length ?? 0));
     const existing = current.rooms.filter((room) => room.kind === definition.kind);
+    // The arrays configure shifts, not demolition: [] means keep all existing rooms idle.
+    const count = Math.max(existing.length, ...specifiedPlans.map(plan => plan.rooms[definition.group]?.length ?? 0));
     for (let index = 0; index < count; index += 1) {
       const previous = existing[index];
       const room: BlueprintRoom = previous
         ? structuredClone(previous)
         : {
-            id: definition.kind === "control_center" ? "control" : `${definition.idPrefix}_${index + 1}`,
+            id: definition.kind === "control_center" ? "control"
+              : definition.kind === "recycle" ? RECYCLING_ROOM_ID : `${definition.idPrefix}_${index + 1}`,
             kind: definition.kind,
             level: definition.level,
             ...(definition.kind === "dormitory" ? { dorm_beds: 5 } : {}),
@@ -524,7 +559,9 @@ export function layoutFromMaaSchedule(maa: MaaJson, current: BaseBlueprint): Bas
         : room);
     }
   }
-  rooms.push(...current.rooms.filter((room) => room.kind === "training_room").map((room) => structuredClone(room)));
+  const training = current.rooms.find(room => room.kind === "training_room");
+  if (training) rooms.push(structuredClone(training));
+  else if (maa.plans.some(plan => plan.rooms.training?.length)) rooms.push({ id: "training_room", kind: "training_room", level: 3 });
   const trading = rooms.filter((room) => room.kind === "trade_post").length;
   const manufacture = rooms.filter((room) => room.kind === "factory").length;
   const power = rooms.filter((room) => room.kind === "power_plant").length;
@@ -581,25 +618,34 @@ export function createManualScheduleDraftFromCalculator(input: {
     const shift = draft.shifts[shiftIndex];
     if (!shift) return;
     const groups = new Map((plan.groups ?? []).map((group) => [group.name, group.operators]));
-    const groupIndexes: Partial<Record<keyof MaaRooms, number>> = {};
-    for (const room of input.layout.rooms) {
+    const groupIndexes: Partial<Record<keyof MaaPlan["rooms"], number>> = {};
+    if (plan.groups) shift.maaGroups = structuredClone(plan.groups);
+    if (plan.rooms.recycle?.length === 0) shift.emptyRecycle = true;
+    if (plan.rooms.training) {
+      shift.maaTraining = structuredClone(plan.rooms.training);
+      const training = plan.rooms.training[0];
+      const room = input.layout.rooms.find(room => room.kind === "training_room");
+      if (training && room) shift.rooms[room.id] = { operators: [training.operatorsB?.[0] ?? null, training.operatorsA?.[0] ?? null] };
+    }
+    for (const room of manualEditableRooms(input.layout)) {
       const group = MAA_GROUP_BY_ROOM_KIND[room.kind];
       if (!group) continue;
       const roomIndex = groupIndexes[group] ?? 0;
       groupIndexes[group] = roomIndex + 1;
       const sourceRoom = plan.rooms?.[group]?.[roomIndex];
       if (!sourceRoom) continue;
+      const roomOperators = sourceRoom.operators ?? [];
       const sourceOperators = sourceRoom.use_operator_groups
-        ? sourceRoom.operators
+        ? roomOperators
             .map((operator) => typeof operator === "string" ? operator : operator?.name)
             .flatMap((groupName) => groupName ? [groups.get(groupName)] : [])
             .find((operators) => operators && (!owned || operators.every((name) => owned.has(name))))
-          ?? sourceRoom.operators
+          ?? roomOperators
             .map((operator) => typeof operator === "string" ? operator : operator?.name)
             .flatMap((groupName) => groupName ? [groups.get(groupName)] : [])
             .find(Boolean)
           ?? []
-        : sourceRoom.operators;
+        : roomOperators;
       const importedProduct = typeof sourceRoom.product === "string"
         ? (room.kind === "factory"
           ? (() => {
@@ -614,11 +660,12 @@ export function createManualScheduleDraftFromCalculator(input: {
                 : undefined)
             : undefined)
         : undefined;
+      const operators = Array.from({ length: manualRoomCapacity(room) }, (_, i) => maaOperatorName(sourceOperators[i] ?? null));
       shift.rooms[room.id] = {
-        operators: Array.from(
-          { length: manualRoomCapacity(room) },
-          (_, slotIndex) => maaOperatorName(sourceOperators[slotIndex] ?? null),
-        ),
+        operators,
+        ...(group === "recycle" || sourceRoom.use_operator_groups || sourceRoom.candidates || sourceRoom.skip || roomOperators.some(op => typeof op === "object" && op !== null)
+          ? { maaSource: { primary: operators.slice(), operators: structuredClone(roomOperators), useGroups: sourceRoom.use_operator_groups,
+              candidates: sourceRoom.candidates?.slice(), skip: sourceRoom.skip } } : {}),
         ...(supportsMaaAutofill(room)
           ? { autofill: sourceRoom.autofill ?? (room.kind === "dormitory") }
           : {}),
@@ -626,7 +673,7 @@ export function createManualScheduleDraftFromCalculator(input: {
       };
     }
     const target = plan.Fiammetta?.target;
-    shift.fiammettaTarget = plan.Fiammetta?.enable
+    shift.fiammettaTarget = plan.Fiammetta && plan.Fiammetta.enable !== false
       ? (Array.isArray(target) ? target.find(Boolean) : target) ?? null
       : null;
     const drones = plan.drones;
@@ -662,7 +709,9 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
     const value = JSON.parse(storage.getItem(MANUAL_SCHEDULE_STORAGE_KEY) ?? "null") as unknown;
     if (!value || typeof value !== "object" || !("shifts" in value) || !Array.isArray(value.shifts)) return null;
     const rawShifts = value.shifts.slice(0, MAX_MANUAL_SHIFT_COUNT);
-    if (rawShifts.length < MIN_MANUAL_SHIFT_COUNT) return null;
+    // The setup minimum applies to new configurations; saved one-shift drafts
+    // must remain readable so upgrading cannot discard their assignments.
+    if (!rawShifts.length) return null;
     const parsedShifts = rawShifts.map((raw): ManualShift => {
       const candidate = raw && typeof raw === "object" ? raw as Partial<ManualShift> : {};
       const rooms = candidate.rooms && typeof candidate.rooms === "object" && !Array.isArray(candidate.rooms)
@@ -680,6 +729,7 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
             ? structuredClone(rawProduct)
             : undefined;
           return [[roomId, {
+            ...(Array.isArray(assignment.maaSource?.primary) ? { maaSource: assignment.maaSource } : {}),
             operators,
             ...(typeof (assignment as ManualRoomAssignment).autofill === "boolean"
               ? { autofill: (assignment as ManualRoomAssignment).autofill }
@@ -693,6 +743,9 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
         }))
         : {};
       return {
+        ...(Array.isArray(candidate.maaTraining) ? { maaTraining: candidate.maaTraining } : {}),
+        ...(Array.isArray(candidate.maaGroups) ? { maaGroups: candidate.maaGroups } : {}),
+        ...(candidate.emptyRecycle ? { emptyRecycle: true } : {}),
         durationHours: finitePositive(candidate.durationHours, 12),
         rooms,
         fiammettaTarget: typeof candidate.fiammettaTarget === "string" ? candidate.fiammettaTarget : null,
@@ -727,6 +780,7 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
       activeShift,
       fiammettaEnabled: "fiammettaEnabled" in value && value.fiammettaEnabled === true,
       shifts,
+      ...("maaImport" in value && typeof value.maaImport === "string" ? { maaImport: value.maaImport } : {}),
       ...(source ? { source } : {}),
     };
   } catch {
@@ -757,6 +811,7 @@ export function resizeManualScheduleDraft(
     activeShift: Math.min(draft.activeShift, shifts.length - 1),
     fiammettaEnabled: draft.fiammettaEnabled,
     shifts,
+    ...(draft.maaImport ? { maaImport: draft.maaImport } : {}),
     ...(draft.source ? { source: { ...draft.source } } : {}),
   };
 }
@@ -765,6 +820,7 @@ export function reconcileManualScheduleDraft(
   draft: ManualScheduleDraft,
   layout: BaseBlueprint,
   operbox?: OperBoxEntry[] | null,
+  preserveImportedPositions = Boolean(draft.maaImport),
 ): ManualScheduleDraft {
   const owned = operbox ? new Set([
     ...operbox.filter((entry) => entry.own).map((entry) => entry.name),
@@ -778,10 +834,14 @@ export function reconcileManualScheduleDraft(
     startTime: normalizeStartTime(draft.startTime),
     activeShift: Math.min(Math.max(0, draft.activeShift), Math.max(0, draft.shifts.length - 1)),
     fiammettaEnabled: draft.fiammettaEnabled === true,
+    ...(draft.maaImport ? { maaImport: draft.maaImport } : {}),
     ...(draft.source ? { source: { ...draft.source } } : {}),
     shifts: draft.shifts.map((shift, shiftIndex) => {
       const assigned = new Set<string>();
       return {
+        ...(shift.maaTraining ? { maaTraining: structuredClone(shift.maaTraining) } : {}),
+        ...(shift.maaGroups ? { maaGroups: structuredClone(shift.maaGroups) } : {}),
+        ...(shift.emptyRecycle ? { emptyRecycle: true } : {}),
         durationHours: normalizedDurations[shiftIndex]!,
         fiammettaTarget: shift.fiammettaTarget && (!owned || owned.has(shift.fiammettaTarget))
           ? shift.fiammettaTarget
@@ -795,7 +855,7 @@ export function reconcileManualScheduleDraft(
             { length: manualRoomCapacity(room) },
             (_, index) => {
               const name = assignment?.operators[index];
-              if (typeof name !== "string" || name.length === 0 || (owned && !owned.has(name)) || assigned.has(name)) return null;
+              if (typeof name !== "string" || name.length === 0 || (owned && !owned.has(name)) || (!preserveImportedPositions && assigned.has(name))) return null;
               assigned.add(name);
               return name;
             },
@@ -812,6 +872,7 @@ export function reconcileManualScheduleDraft(
               : assignment?.autofill
             : undefined;
           return [room.id, {
+            ...(assignment?.maaSource ? { maaSource: structuredClone(assignment.maaSource) } : {}),
             operators,
             ...(typeof autofill === "boolean" ? { autofill } : {}),
             ...(autofillSlots.length ? { autofillSlots } : {}),
@@ -1023,6 +1084,7 @@ export function clearManualRoom(
   const room = manualEditableRooms(layout).find((candidate) => candidate.id === roomId);
   if (!room || !draft.shifts[shiftIndex]) return draft;
   const next = structuredClone(draft);
+  if (room.kind === "training_room") delete next.shifts[shiftIndex]!.maaTraining;
   const previousProduct = next.shifts[shiftIndex]!.rooms[roomId]?.product;
   next.shifts[shiftIndex]!.rooms[roomId] = {
     operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
@@ -1043,7 +1105,10 @@ export function clearManualShift(
   const next = structuredClone(draft);
   const shift = next.shifts[shiftIndex]!;
   shift.droneTargetRoomId = null;
-  shift.rooms = Object.fromEntries(layout.rooms.map((room) => {
+  delete shift.maaTraining;
+  delete shift.maaGroups;
+  delete shift.emptyRecycle;
+  shift.rooms = Object.fromEntries(manualEditableRooms(layout).map((room) => {
     const previousProduct = shift.rooms[room.id]?.product;
     return [room.id, {
       operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
@@ -1108,15 +1173,19 @@ function maaProduct(room: BlueprintRoom, productOverride?: BlueprintRoom["produc
   return "Pure Gold";
 }
 
-function maaRoom(room: BlueprintRoom, assignment: ManualRoomAssignment | undefined): MaaRoom {
+function maaRoom(room: EditableRoom, assignment: ManualRoomAssignment | undefined): MaaRoom {
   const operators = (assignment?.operators ?? []).slice(0, manualRoomCapacity(room)).filter(
     (operator): operator is string => typeof operator === "string" && operator.length > 0,
   );
-  const product = maaProduct(manualRoomForShift(room, assignment));
+  const product = room.kind === "recycle" ? undefined : maaProduct(manualRoomForShift(room, assignment));
+  const source = assignment?.maaSource;
+  const keepSelection = source?.operators && source.primary.every((name, i) => name === assignment?.operators[i]);
   return {
-    operators,
+    operators: keepSelection ? structuredClone(source.operators!) : operators,
+    ...(keepSelection && source.useGroups ? { use_operator_groups: true } : {}),
+    ...(source?.candidates ? { candidates: source.candidates.slice() } : {}),
     sort: true,
-    skip: false,
+    skip: source?.skip ?? false,
     autofill: assignment?.autofill === true
       || Boolean(assignment?.autofillSlots?.length)
       || (room.kind === "dormitory" && assignment?.autofill !== false),
@@ -1150,8 +1219,23 @@ export function manualScheduleToMaa(
       const droneIndex = droneGroup === "trading" || droneGroup === "manufacture"
         ? layout.rooms.filter((room) => MAA_GROUP_BY_ROOM_KIND[room.kind] === droneGroup).findIndex((room) => room.id === droneRoom?.id) + 1
         : 0;
-      const rooms: MaaRooms = {};
+      const rooms: MaaPlan["rooms"] = {};
+      const recyclingRoom = manualEditableRooms(layout).find(room => room.kind === "recycle")!;
+      const recycling = shift.rooms[recyclingRoom.id];
+      if (recycling?.operators.some(Boolean) || recycling?.maaSource || recycling?.autofill || recycling?.autofillSlots?.length) {
+        rooms.recycle = [maaRoom(recyclingRoom, recycling)];
+      } else if (shift.emptyRecycle) rooms.recycle = [];
+      const trainingRoom = layout.rooms.find(room => room.kind === "training_room");
+      const positions = trainingRoom && shift.rooms[trainingRoom.id]?.operators;
+      if (positions?.some(Boolean) || shift.maaTraining?.length) {
+        const original = shift.maaTraining?.[0];
+        const candidates = (value: string | null | undefined, list?: string[]) =>
+          value ? [value, ...(list ?? []).slice(1).filter(name => name !== value)] : [];
+        rooms.training = [{ operatorsB: candidates(positions?.[0], original?.operatorsB),
+          operatorsA: candidates(positions?.[1], original?.operatorsA), ...(original?.skip !== undefined ? { skip: original.skip } : {}) }];
+      } else if (shift.maaTraining) rooms.training = [];
       for (const room of layout.rooms) {
+        if (room.kind === "recycle") continue;
         const group = MAA_GROUP_BY_ROOM_KIND[room.kind];
         if (!group) continue;
         const groupRooms = rooms[group] ?? [];
@@ -1160,6 +1244,7 @@ export function manualScheduleToMaa(
       }
       return {
         name: `班次 ${shiftIndex + 1}`,
+        ...(shift.maaGroups ? { groups: structuredClone(shift.maaGroups) } : {}),
         ...(useDailyPeriods ? { period } : {}),
         duration: range.durationMinutes,
         rooms,

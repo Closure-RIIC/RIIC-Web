@@ -2,6 +2,8 @@ import "./i18n/test-setup.ts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { downloadManualMaa, rememberMaaImport } from "./maa-import-export.ts";
+import { prepareMaaForExport } from "@riic/arknights-domain/maa-safety";
 
 import {
   assignManualOperator,
@@ -132,18 +134,28 @@ test("hourly timeline boundaries snap, cannot cross and retain a complete day", 
   ]);
 });
 
-test("legacy manual drafts below the two-shift minimum fall back to null", () => {
-  const storage = {
-    getItem: () => JSON.stringify({
-      version: 2,
+test("saved one-shift drafts retain their assignments below the new setup minimum", () => {
+  for (const version of [2, 3]) {
+    const saved = JSON.stringify({
+      version,
       activeShift: 0,
       fiammettaEnabled: false,
-      shifts: [{ durationHours: 9, rooms: {}, fiammettaTarget: null }],
-    }),
-    setItem: () => undefined,
-  };
-  // 两班起步后，只有一班的旧草稿不再符合当前下限。
-  assert.equal(loadManualScheduleDraft(storage), null);
+      shifts: [{
+        durationHours: 9,
+        rooms: { trade_1: { operators: ["阿米娅", null, null] } },
+        fiammettaTarget: null,
+      }],
+    });
+    const restored = loadManualScheduleDraft({
+      getItem: () => saved,
+      setItem: () => assert.fail("loading must not replace a saved draft"),
+    });
+    assert.equal(restored?.version, 3);
+    assert.equal(restored?.shifts.length, 1);
+    assert.equal(restored?.shifts[0]?.durationHours, 24);
+    assert.deepEqual(restored?.shifts[0]?.rooms.trade_1?.operators, ["阿米娅", null, null]);
+  }
+  assert.equal(loadManualScheduleDraft({ getItem: () => JSON.stringify({ shifts: [] }), setItem: () => undefined }), null);
 });
 
 test("manual assignment reports a same-shift conflict and moves only after confirmation", () => {
@@ -560,4 +572,152 @@ test("MAA layout import preserves current products when the file omits or does n
 test("MAA schedule import rejects JSON without valid plans and rooms", () => {
   assert.throws(() => parseMaaScheduleText("{}"), /plans/);
   assert.throws(() => parseMaaScheduleText(JSON.stringify({ plans: [{}] })), /rooms/);
+});
+
+test("all ten MAA facilities survive import, local reload and download across three shifts", () => {
+  const plans = [0, 1, 2].map(i => ({
+    name: String(i), duration: 480,
+    groups: [{ name: "回收组", operators: [`回收甲${i}`, `回收乙${i}`] }],
+    rooms: {
+      ...Object.fromEntries(["control", "trading", "manufacture", "power", "dormitory", "meeting", "hire", "processing"]
+        .map(kind => [kind, [{ operators: [kind + i] }]])),
+      dormitory: [{ operators: ["dormitory" + i], candidates: ["备用宿舍"], skip: true }],
+      training: [{ operatorsA: [`协助${i}`, "备用协助"], operatorsB: i ? [`受训${i}`, "备用受训"] : [], skip: false }],
+      recycle: [{ operators: ["回收组"], use_operator_groups: true, candidates: ["备用回收"] }],
+    },
+  }));
+  const maa = parseMaaScheduleText(JSON.stringify({ plans }));
+  const importedLayout = layoutFromMaaSchedule(maa, layout);
+  const draft = createManualScheduleDraftFromCalculator({
+    maa, layout: importedLayout, fiammettaEnabled: false, fallbackDurations: [],
+    preferMaaTiming: true, preserveExternalOperators: true,
+  });
+  const stored = loadManualScheduleDraft({ getItem: () => JSON.stringify(draft), setItem() {} });
+  assert.ok(stored);
+  const restored = reconcileManualScheduleDraft(stored, importedLayout, []);
+  const downloaded = prepareMaaForExport(manualScheduleToMaa(restored, importedLayout, false), true, false, true);
+  downloaded.plans.forEach((plan, i) => {
+    assert.deepEqual(restored.shifts[i]?.rooms.recycling_station?.operators, [`回收甲${i}`, `回收乙${i}`]);
+    assert.deepEqual(restored.shifts[i]?.rooms.training_room?.operators, [i ? `受训${i}` : null, `协助${i}`]);
+    assert.deepEqual(plan.rooms.training, plans[i]!.rooms.training);
+    assert.deepEqual(plan.rooms.recycle?.[0]?.operators, ["回收组"]);
+    assert.equal(plan.rooms.recycle?.[0]?.use_operator_groups, true);
+    assert.deepEqual(plan.rooms.recycle?.[0]?.candidates, ["备用回收"]);
+    assert.deepEqual(plan.groups, plans[i]!.groups);
+    assert.deepEqual(plan.rooms.dormitory?.[0]?.candidates, ["备用宿舍"]);
+    assert.equal(plan.rooms.dormitory?.[0]?.skip, true);
+    for (const kind of ["control", "trading", "manufacture", "power", "dormitory", "meeting", "hire", "processing"] as const) {
+      assert.deepEqual(plan.rooms[kind]?.[0]?.operators, [kind + i]);
+    }
+  });
+});
+
+test("annotated MAA documents preserve original intent on download and apply edits only to changed fields", () => {
+  const source = parseMaaScheduleText(`{
+    // A URL inside a string is not a comment.
+    "title":"https://example.test/base","description":"夜班",
+    "plans":[{"name":"早班","description":"交接","description_post":"结束","duration":360,
+      "period":[["22:00","23:59"],["00:00","06:00"]],
+      "Fiammetta":{"target":["银灰","巫恋"],"order":"post"},
+      "drones":{"room":"trading","index":1,"order":"post","rule":"all"},
+      "rooms":{"power":[],"trading":[{"product":"LMD","sort":false}],
+        "manufacture":[{"operators":["芬"],"product":"Dualchip","sort":false}],
+        "dormitory":[{}],"recycle":[{"operators":["芬","克洛丝"]}],
+        "training":[{"operatorsA":["杜宾","备用"],"operatorsB":["银灰"]}]}},
+      {"name":"晚班" /* example omits its rooms */}]
+  }`);
+  const indexes: number[] = [];
+  const normalized = normalizeMaaScheduleForManualImport(source, indexes);
+  const importedLayout = layoutFromMaaSchedule(normalized, layout);
+  const converted = createManualScheduleDraftFromCalculator({
+    maa: normalized, layout: importedLayout, fiammettaEnabled: true, fallbackDurations: [],
+    preferMaaTiming: true, preserveExternalOperators: true,
+  });
+  const draft = reconcileManualScheduleDraft(converted, importedLayout, [], true);
+  const baseline = manualScheduleToMaa(draft, importedLayout, true);
+  draft.maaImport = rememberMaaImport(source, baseline, indexes);
+  const restored = loadManualScheduleDraft({ getItem: () => JSON.stringify(draft), setItem() {} })!;
+  assert.deepEqual(restored.shifts[0]!.rooms.recycling_station!.operators, ["芬","克洛丝"]);
+  assert.deepEqual(downloadManualMaa(restored, manualScheduleToMaa(restored, importedLayout, true)), source);
+  const edited = assignManualOperator({ draft: restored, layout: importedLayout, shiftIndex: 0,
+    roomId: "trade_1", slotIndex: 0, operator: "但书" }).draft;
+  const expected = structuredClone(source);
+  expected.plans[0]!.rooms.trading![0]!.operators = ["但书"];
+  assert.deepEqual(downloadManualMaa(edited, manualScheduleToMaa(edited, importedLayout, true)), expected);
+});
+
+test("MAA recycle rooms use the blueprint identity once and keep its configured level", () => {
+  for (const id of ["recycling_station", "custom_recycle"]) {
+    const current: BaseBlueprint = {
+      ...structuredClone(layout),
+      rooms: [...structuredClone(layout.rooms), { id, kind: "recycle", level: 2 }],
+    };
+    const source = parseMaaScheduleText(JSON.stringify({ plans: [{ name: "test", duration: 720, rooms: {
+      recycle: [{ operators: ["红云", "稀音"], candidates: ["备用回收"], product: "ignored" }],
+    } }] }));
+    const imported = layoutFromMaaSchedule(source, current);
+    assert.deepEqual(imported.rooms.filter(room => room.kind === "recycle"), [{ id, kind: "recycle", level: 2 }]);
+    const draft = createManualScheduleDraftFromCalculator({
+      maa: source, layout: imported, fallbackDurations: [], fiammettaEnabled: false,
+      preferMaaTiming: true, preserveExternalOperators: true,
+    });
+    const restored = reconcileManualScheduleDraft(loadManualScheduleDraft({
+      getItem: () => JSON.stringify(draft), setItem() {},
+    })!, imported);
+    assert.deepEqual(restored.shifts[0]!.rooms[id]!.operators, ["红云", "稀音"]);
+    const rooms = prepareMaaForExport(manualScheduleToMaa(restored, imported, false)).plans[0]!.rooms.recycle!;
+    assert.equal(rooms.length, 1);
+    assert.deepEqual(rooms[0]!.operators, ["红云", "稀音"]);
+    assert.deepEqual(rooms[0]!.candidates, ["备用回收"]);
+    assert.equal("product" in rooms[0]!, false);
+    assert.deepEqual(current.rooms.at(-1), { id, kind: "recycle", level: 2 });
+  }
+});
+
+test("MAA special rooms preserve single training roles and omit untouched empty assignments", () => {
+  const current: BaseBlueprint = {
+    ...structuredClone(layout),
+    rooms: [...structuredClone(layout.rooms), { id: "recycling_station", kind: "recycle", level: 3 }],
+  };
+  let draft = reconcileManualScheduleDraft(createManualScheduleDraft([12, 12]), current);
+  const empty = manualScheduleToMaa(draft, current, false);
+  assert.equal(empty.plans[0]!.rooms.training, undefined);
+  assert.equal(empty.plans[0]!.rooms.recycle, undefined);
+  draft = assignManualOperator({ draft, layout: current, shiftIndex: 0, roomId: "training_room", slotIndex: 0, operator: "银灰" }).draft;
+  draft = assignManualOperator({ draft, layout: current, shiftIndex: 1, roomId: "training_room", slotIndex: 1, operator: "杜宾" }).draft;
+  const before = structuredClone(draft);
+  const maa = prepareMaaForExport(manualScheduleToMaa(draft, current, false));
+  assert.deepEqual(maa.plans[0]!.rooms.training, [{ operatorsB: ["银灰"], operatorsA: [] }]);
+  assert.deepEqual(maa.plans[1]!.rooms.training, [{ operatorsB: [], operatorsA: ["杜宾"] }]);
+  assert.deepEqual(draft, before);
+  const imported = createManualScheduleDraftFromCalculator({
+    layout: current, maa, fallbackDurations: [], fiammettaEnabled: false,
+    preferMaaTiming: true, preserveExternalOperators: true,
+  });
+  assert.deepEqual(imported.shifts[0]!.rooms.training_room!.operators, ["银灰", null]);
+  assert.deepEqual(imported.shifts[1]!.rooms.training_room!.operators, [null, "杜宾"]);
+});
+
+test("MAA downloads omit unedited padding shifts and export a padding shift once edited", () => {
+  const source = parseMaaScheduleText(JSON.stringify({ plans: [{ name: "only", duration: 720, rooms: {
+    training: [{ operatorsA: ["杜宾"], operatorsB: [] }],
+    recycle: [{ operators: ["红云"] }],
+  } }] }));
+  const indexes: number[] = [];
+  const normalized = normalizeMaaScheduleForManualImport(source, indexes);
+  const importedLayout = layoutFromMaaSchedule(normalized, layout);
+  const draft = createManualScheduleDraftFromCalculator({
+    layout: importedLayout, maa: normalized, fallbackDurations: [], fiammettaEnabled: false,
+    preferMaaTiming: true, preserveExternalOperators: true,
+  });
+  const baseline = manualScheduleToMaa(draft, importedLayout, false);
+  assert.equal(draft.shifts.length, 2);
+  draft.maaImport = rememberMaaImport(source, baseline, indexes);
+  assert.deepEqual(downloadManualMaa(draft, baseline), source);
+  const changed = assignManualOperator({ draft, layout: importedLayout, shiftIndex: 1,
+    roomId: "training_room", slotIndex: 0, operator: "银灰" }).draft;
+  const exported = downloadManualMaa(changed, manualScheduleToMaa(changed, importedLayout, false));
+  assert.equal(exported.plans.length, 2);
+  assert.deepEqual(exported.plans[0]!.rooms, source.plans[0]!.rooms);
+  assert.deepEqual(exported.plans[1]!.rooms.training, [{ operatorsB: ["银灰"], operatorsA: [] }]);
 });

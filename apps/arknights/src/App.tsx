@@ -1,6 +1,7 @@
 "use client";
 
 
+import { validateLayoutJson } from "@riic/arknights-domain/layout-validation";
 import { lazyWithMessages } from "@/i18n/features-client";
 import { useLocale as useRawLocale } from "use-intl";
 import { createLocalizer as createRawLocalizer } from "@riic/arknights-domain/i18n/localize";
@@ -831,7 +832,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       setResultClearWarningDismissed(warningDismissed);
       if (restored) {
         const restoredPreset = resolvePreset(PRESETS.find((item) => item.label === restored.presetLabel));
-        const restoredLayout = restoreEditableProducts(buildBlueprint(restoredPreset), restored.layout);
+        const restoredLayout = restored.layoutDirty && !validateLayoutJson(restored.layout).length
+          ? structuredClone(restored.layout)
+          : restoreEditableProducts(buildBlueprint(restoredPreset), restored.layout);
         const restoredOperbox = restored.operbox ? normalizeOperboxEntries(restored.operbox) : null;
         setPreset(restoredPreset);
         setLayout(restoredLayout);
@@ -2507,7 +2510,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       shiftDurations: manualShiftDurations,
       shiftStartTime: manualShiftStartTime,
       scheduleMode: manualScheduleMode,
-      fiammettaEnabled: effectiveManualFiammettaEnabled,
+      fiammettaEnabled: manualFiammettaEnabled,
       initialDraft: accountCanUseCurrentBox ? manualDraftHandoff : null,
       onDraftChange: setManualDraftSnapshot,
       manualProductChangeRequest,

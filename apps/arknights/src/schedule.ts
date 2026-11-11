@@ -192,17 +192,17 @@ function plainOperatorName(value: unknown): string {
 
 function roomOperators(room: MaaRoom): string[] {
   if (!Array.isArray(room.operators)) return [];
-  return room.operators.map(operatorName).filter(Boolean);
+  return (room.operators ?? []).map(operatorName).filter(Boolean);
 }
 
 function roomOperatorSlots(room: MaaRoom): RoomOperatorSlot[] {
   if (!Array.isArray(room.operators)) return [];
-  return room.operators.map(operatorSlot).filter((slot): slot is RoomOperatorSlot => Boolean(slot));
+  return (room.operators ?? []).map(operatorSlot).filter((slot): slot is RoomOperatorSlot => Boolean(slot));
 }
 
 function plainRoomOperators(room: MaaRoom): string[] {
   if (!Array.isArray(room.operators)) return [];
-  return room.operators.map(plainOperatorName).filter(Boolean);
+  return (room.operators ?? []).map(plainOperatorName).filter(Boolean);
 }
 
 function includesAny(operators: string[], names: string[]): boolean {
@@ -228,7 +228,7 @@ function ruleFor(group: RoomGroup, operators: string[]): string {
 
   if (group === "control") return "中枢全局注入";
   if (group === "power") return "发电效率";
-  if (group === "training") return "不参与 MAA 导出";
+  if (group === "training") return "训练位与协助位分别排班";
   return "辅助设施";
 }
 
@@ -384,7 +384,10 @@ export function planToRows(
     if (group === "training") {
       const layoutRoom = layout?.rooms.find((room) => room.kind === "training_room");
       if (!layoutRoom) continue;
-      const positionSlots = trainingPositionSlots(trainingShift);
+      const training = plan.rooms.training?.[0];
+      const positionSlots = trainingPositionSlots(trainingShift ?? (training ? {
+        trainee: training.operatorsB?.[0] ?? null, trainer: training.operatorsA?.[0] ?? null,
+      } : undefined));
       const operatorSlots = positionSlots.flatMap((positionSlot) => positionSlot.slot ? [positionSlot.slot] : []);
       rows.push({
         key: "training-training_room",

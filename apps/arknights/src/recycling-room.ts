@@ -30,6 +30,6 @@ export function withRecyclingRoom(rows: RoomRow[], recyclingLevel?: number): Roo
     key: RECYCLING_ROOM_ID, roomId: RECYCLING_ROOM_ID, group: "recycle",
     groupLabel: "回收站", title: "回收站", index: 0, level: recyclingRoom(recyclingLevel).level,
     operators: [], operatorSlots: [], autofill: false,
-    rule: "仅保存手动配置，不参与产量计算或 MAA 导出", suspicious: false,
+    rule: "支持 MAA 排班与产量计算", suspicious: false,
   }];
 }
