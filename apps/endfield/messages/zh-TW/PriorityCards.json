@@ -2,5 +2,8 @@
   "movedToPriority": "{value1}已移至第 {value2} 優先順序。",
   "dragCardsToReorderEarlierGoalsTakePriorityYou": "拖動卡片調整順序，靠前的目標優先滿足。也可聚焦卡片後使用方向鍵排序。",
   "schedulingPriorities": "排班目標優先順序",
-  "reorderPriority": "調整{value1}優先順序，當前第 {value2}"
+  "reorderPriority": "調整{value1}優先順序，當前第 {value2}",
+  "cluePriorities": "線索技能優先順序",
+  "clueHint": "拖動卡片調整線索技能優先順序：靠前的優先留給會客室，靠後的更容易被中樞佔用。也可聚焦卡片後使用方向鍵排序。",
+  "whiteboard": "無線索技能"
 }

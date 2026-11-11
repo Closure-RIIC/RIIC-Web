@@ -26,6 +26,7 @@ import { ManualProductionSummary } from "@/components/ManualProductionSummary";
 import { PlanSupportSummary } from "@/components/PlanSupportSummary";
 import { ManualScheduleRoomActions } from "@/components/ManualScheduleRoomActions";
 import type { MoodBoardState } from "@/components/manual-mood/MoodSimulationPanel";
+import { MoodLayerVisibilityContext, type MoodVisibilityStore } from "@/mood-view-store";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -1041,13 +1042,14 @@ export function ManualSchedulePage({
     : (intl("components_pages_ManualSchedulePage.originalPlan"));
   const previousRoomTitle = pendingMove ? rows.find((row) => row.roomId === pendingMove.conflict.roomId)?.title ?? pendingMove.conflict.roomId : "";
   const nextRoomTitle = pendingMove ? rows.find((row) => row.roomId === pendingMove.target.roomId)?.title ?? pendingMove.target.roomId : "";
-  const renderBoard = (simulation: MoodBoardState | null) => (
+  const renderBoard = (simulation: MoodBoardState | null, visibility?: MoodVisibilityStore) => (
     <div data-manual-editor-board data-board-mode={simulation ? "simulation" : "edit"}>
+      <MoodLayerVisibilityContext.Provider value={visibility ?? null}>
       <ScheduleBoard
         rows={simulation?.rows ?? rows}
         layout={layout}
-        planRevision={simulation ? `mood-${simulation.shift}` : `manual-${activeShift}`}
-        simulation={simulation ? {moods:simulation.moods,selected:simulation.selected,onSelect:simulation.onSelect} : undefined}
+        planRevision={simulation ? `mood-${simulation.cycle}-${simulation.shift}` : `manual-${activeShift}`}
+        simulation={simulation ? simulation.store : undefined}
         eliteByOperator={eliteByOperator}
         levelByOperator={levelByOperator}
         activeShift={simulation?.shift ?? activeShift}
@@ -1153,6 +1155,7 @@ export function ManualSchedulePage({
         roomProducts={simulation ? activeRoomProductsForBoard : activeRoomProducts}
         compactProductControls={!simulation}
       />
+      </MoodLayerVisibilityContext.Provider>
     </div>
   );
 
