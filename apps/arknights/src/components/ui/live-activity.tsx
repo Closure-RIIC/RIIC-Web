@@ -312,7 +312,7 @@ export function LiveActivity({ activity: planActivity, notice, trainingSync, onR
             <span className={cn("shrink-0", STATUS_MARK_COLORS)} data-slot="status-mark-compact">
               <StatusMark status={markStatus} size={16} active={!expanded} />
             </span>
-            <span className="truncate text-xs font-medium">{label}</span>
+            <span className="line-clamp-2 text-xs font-medium">{label}</span>
           </motion.div>
           <motion.div
             ref={expandedRef}
@@ -336,7 +336,7 @@ export function LiveActivity({ activity: planActivity, notice, trainingSync, onR
               "relative z-10 flex min-w-0 flex-1 flex-wrap items-center gap-3 py-3 pr-3 pl-1 max-sm:gap-y-1.5",
             )}>
               <div className="min-w-0 flex-1 max-sm:basis-full">
-              <strong className="block truncate font-medium">{label}</strong>
+              <strong className="block break-words font-medium [overflow-wrap:anywhere]">{label}</strong>
               <span className="mt-0.5 block">
                 {training ? (
                   <span className="text-sm text-muted-foreground">

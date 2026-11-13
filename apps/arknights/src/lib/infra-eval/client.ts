@@ -131,6 +131,20 @@ function validResponse(value: unknown): value is NativeEvalResponseV1 | NativeEv
     && typeof response.engine?.ruleset === "string";
 }
 
+// The shipped v1 WASM uses this older facility token. Keep it private to
+// transport; public layouts, drafts and MAA continue to use `recycle`.
+const WASM_RECYCLE_KIND = "recycling_station";
+
+function serializeNativeRequest(request: NativeEvalRequestV1): string {
+  const layout = request.layout;
+  if (!layout || typeof layout !== "object" || !("rooms" in layout) || !Array.isArray(layout.rooms)) {
+    return JSON.stringify(request);
+  }
+  return JSON.stringify({ ...request, layout: { ...layout, rooms: layout.rooms.map(room =>
+    room && typeof room === "object" && room.kind === "recycle" ? { ...room, kind: WASM_RECYCLE_KIND } : room,
+  ) } });
+}
+
 export async function evaluateNativeSchedule(request: NativeEvalRequestV1): Promise<NativeEvalResponseV1> {
   const bindings = await (bindingsPromise ??= (async () => {
     const manifest = await (manifestPromise ??= loadManifest().catch((error) => {
@@ -148,7 +162,7 @@ export async function evaluateNativeSchedule(request: NativeEvalRequestV1): Prom
     throw error;
   }));
 
-  const parsed: unknown = JSON.parse(bindings.evaluate_v1(JSON.stringify(request)));
+  const parsed: unknown = JSON.parse(bindings.evaluate_v1(serializeNativeRequest(request)));
   if (!validResponse(parsed)) throw new Error("WASM evaluator returned an invalid response");
   const manifest = await (manifestPromise ??= loadManifest());
   if (parsed.engine.api !== manifest.api || parsed.engine.ruleset !== manifest.ruleset) {
@@ -157,5 +171,7 @@ export async function evaluateNativeSchedule(request: NativeEvalRequestV1): Prom
   if (parsed.status === "error") {
     throw new Error(parsed.errors.map((error) => `[${error.code}] ${error.path}: ${error.message}`).join("\n"));
   }
-  return parsed;
+  return { ...parsed, shifts: parsed.shifts.map(shift => ({ ...shift, rooms: shift.rooms.map(room =>
+    room.facility === WASM_RECYCLE_KIND ? { ...room, facility: "recycle" } : room,
+  ) })) };
 }

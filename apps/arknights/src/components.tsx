@@ -1,4 +1,4 @@
-const GROUP_LABEL_KEYS = {"control":"group_control","trading":"group_trading","manufacture":"group_manufacture","power":"group_power","dormitory":"group_dormitory","meeting":"group_meeting","hire":"group_hire","processing":"group_processing","training":"group_training","recycling":"group_recycling","recycle":"group_recycle","functional":"group_functional"} as const;
+const GROUP_LABEL_KEYS = {"control":"group_control","trading":"group_trading","manufacture":"group_manufacture","power":"group_power","dormitory":"group_dormitory","meeting":"group_meeting","hire":"group_hire","processing":"group_processing","training":"group_training","recycle":"group_recycle","functional":"group_functional"} as const;
 import { lazyWithMessages } from "@/i18n/features-client";
 import { createLocalizer as createUiLocalizer } from "@riic/arknights-domain/i18n/localize";
 import type UiMessages from "../messages/zh-CN/AK_components.json";
@@ -16,7 +16,8 @@ import {
   Smile,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { CSSProperties, ReactElement, ReactNode, Suspense, startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, ComponentProps, ReactElement, ReactNode, Suspense, memo, startTransition, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { MoodLayerVisibilityContext, useMoodSelected, type MoodViewStore } from "@/mood-view-store";
 
 import { AnimatedNumber, AnimatedText } from "@/components/AnimatedText";
 import { CachedScheduleView } from "@/components/CachedScheduleView";
@@ -77,7 +78,6 @@ import {
 import { DEFAULT_ROTATION_PROFILE } from "@riic/arknights-domain/rotation-settings";
 import { RoomRow } from "./schedule";
 import { recyclingRoom, withRecyclingRoom, type RecyclingRoom } from "./recycling-room";
-import { RecyclingRoomNotice } from "./components/RecyclingRoomNotice";
 import {
   COMPACT_OPERATOR_SIZE_CLASS,
   LevelDiamondVariant,
@@ -167,7 +167,7 @@ function CompactScheduleLoading({ rows }: { rows: RoomRow[] }) {
         <div className="flex min-w-0 flex-col gap-3" style={{ flexBasis: "45%" }}>
           <div className="compact-auxiliary-container min-w-0">
             <div className="compact-auxiliary-grid">
-              {["meeting", "training", "recycling", "hire", "processing"].flatMap((group) => (
+              {["meeting", "training", "recycle", "hire", "processing"].flatMap((group) => (
                 (grouped.get(group) ?? []).map((room) => skeleton(room, "h-28"))
               ))}
             </div>
@@ -184,6 +184,24 @@ function CompactScheduleLoading({ rows }: { rows: RoomRow[] }) {
 }
 
 type ScheduleViewMode = "list" | "compact";
+let sharedScheduleViewMode: ScheduleViewMode | null = null;
+const sharedScheduleViewModeListeners = new Set<() => void>();
+function useSharedScheduleViewMode(): [ScheduleViewMode | null, (mode: ScheduleViewMode) => void] {
+  const [localMode, setLocalMode] = useState<ScheduleViewMode | null>(null);
+  const sharedMode=useSyncExternalStore(
+    (listener) => {sharedScheduleViewModeListeners.add(listener);return () => {sharedScheduleViewModeListeners.delete(listener);};},
+    () => sharedScheduleViewMode,
+    () => null,
+  );
+  const mode=sharedMode ?? localMode;
+  const setMode=useCallback((next: ScheduleViewMode) => {
+    setLocalMode(next);
+    if (sharedScheduleViewMode===next) return;
+    sharedScheduleViewMode=next;
+    for (const listener of sharedScheduleViewModeListeners) listener();
+  },[]);
+  return [mode,setMode];
+}
 type CompactScheduleComponent = typeof import("@/components/CompactScheduleView").CompactScheduleView;
 
 type Option<T extends string> = {
@@ -396,7 +414,7 @@ function RoomLevelControl({
   />;
 }
 
-function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"] | "recycling"): string {
+function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"] | "recycle"): string {
   if (kind === "trade_post") return "trading";
   if (kind === "factory") return "manufacture";
   if (kind === "power_plant") return "power";
@@ -406,7 +424,7 @@ function roomVisualGroupForKind(kind: BaseBlueprint["rooms"][number]["kind"] | "
   if (kind === "workshop") return "processing";
   if (kind === "training_room") return "training";
   if (kind === "office") return "hire";
-  if (kind === "recycling") return "recycling";
+  if (kind === "recycle") return "recycle";
   return "default";
 }
 
@@ -416,14 +434,13 @@ export function LayoutEditor({
   onTradeOrderChange,
   onRoomLevelChange,
   recyclingRoomLevel = 3,
-  onRecyclingRoomLevelChange,
 }: {
   layout: BaseBlueprint;
   onFactoryRecipeChange: (roomId: string, recipe: FactoryRecipe) => void;
   onTradeOrderChange: (roomId: string, order: TradeOrder) => void;
   onRoomLevelChange: (roomId: string, level: number) => void;
+  /** 只有导入的旧布局缺少回收站时才补一座，等级取这里。 */
   recyclingRoomLevel?: number;
-  onRecyclingRoomLevelChange: (level: number) => void;
 }) {
   const intl = useTranslations();
   const locale = useLocale();
@@ -435,7 +452,17 @@ export function LayoutEditor({
     { key: "trade", label: intl("components.tradingPosts"), rooms: layout.rooms.filter((room) => room.kind === "trade_post") },
     { key: "factory", label: intl("components.factories"), rooms: layout.rooms.filter((room) => room.kind === "factory") },
     { key: "power", label: intl("components.powerPlants"), rooms: layout.rooms.filter((room) => room.kind === "power_plant") },
-    { key: "function", label: intl("components.controlFunctional"), rooms: [...layout.rooms.filter((room) => !["trade_post", "factory", "power_plant", "dormitory"].includes(room.kind)), recyclingRoom(recyclingRoomLevel)] },
+    {
+      key: "function",
+      label: intl("components.controlFunctional"),
+      // 预设布局已自带回收站；只有缺失时才补一座，避免同一房间出现两次。
+      rooms: layout.rooms.some((room) => room.kind === "recycle")
+        ? layout.rooms.filter((room) => !["trade_post", "factory", "power_plant", "dormitory"].includes(room.kind))
+        : [
+            ...layout.rooms.filter((room) => !["trade_post", "factory", "power_plant", "dormitory"].includes(room.kind)),
+            recyclingRoom(recyclingRoomLevel),
+          ],
+    },
     { key: "dormitory", label: intl("components.dormitories"), rooms: layout.rooms.filter((room) => room.kind === "dormitory") },
   ].filter((group) => group.rooms.length > 0);
 
@@ -467,10 +494,10 @@ export function LayoutEditor({
                 : isFactory
                   ? FACTORY_RECIPE_OPTIONS
                   : [];
-              const product = room.kind === "recycling" ? undefined : productLabel(room);
-              const levelMax = room.kind === "recycling" ? 3 : maxRoomLevel(room.kind);
+              const product = room.kind === "recycle" ? undefined : productLabel(room);
+              const levelMax = room.kind === "recycle" ? 3 : maxRoomLevel(room.kind);
               const visualGroup = roomVisualGroupForKind(room.kind);
-              const roomName = room.kind === "recycling" ? intl("RecyclingRoom.title") : roomKindLabel(room.kind);
+              const roomName = room.kind === "recycle" ? intl("RecyclingRoom.title") : roomKindLabel(room.kind);
               const originalName = group.key === "function" || group.rooms.length === 1 ? roomName : `${roomName} ${roomIndex + 1}`;
               const displayName = localizedRoomTitle(originalName, visualGroup, locale, gameCatalog);
 
@@ -496,7 +523,7 @@ export function LayoutEditor({
                       roomId={room.id}
                       level={room.level}
                       levelMax={levelMax}
-                      onChange={(level) => room.kind === "recycling" ? onRecyclingRoomLevelChange(level) : onRoomLevelChange(room.id, level)}
+                      onChange={(level) => onRoomLevelChange(room.id, level)}
                     />
                   </div>
 
@@ -662,7 +689,7 @@ export function PlanTelemetry(props: Parameters<typeof import("./components/Plan
 }
 
 const ROOM_SLOT_COUNT = 5;
-const AUXILIARY_ROOM_GROUPS = new Set(["dormitory", "hire", "meeting", "processing", "training", "recycling"]);
+const AUXILIARY_ROOM_GROUPS = new Set(["dormitory", "hire", "meeting", "processing", "training", "recycle"]);
 
 export function scheduleIssueTriggerId(row: RoomRow) {
   return `schedule-issue-${row.key}`;
@@ -671,7 +698,7 @@ export function scheduleIssueTriggerId(row: RoomRow) {
 
 function roomSlotCountFor(group: string) {
   if (group === "trading" || group === "manufacture") return 3;
-  if (group === "training" || group === "meeting" || group === "recycling") return 2;
+  if (group === "training" || group === "meeting" || group === "recycle") return 2;
   return ROOM_SLOT_COUNT;
 }
 
@@ -1042,10 +1069,55 @@ function OperatorPortrait({ src, alt, size }: { src?: string; alt: string; size:
   </div>;
 }
 
+function MoodMoraleBadge({store,name,suppressNativeTitles}: {
+  store: MoodViewStore; name: string; suppressNativeTitles: boolean;
+}) {
+  const intl=useTranslations();
+  const visibility=useContext(MoodLayerVisibilityContext);
+  const spanRef=useRef<HTMLSpanElement|null>(null), textRef=useRef<HTMLSpanElement|null>(null);
+  const currentMorale=Math.round(store.getMood(name)*100)/100;
+  useEffect(() => {
+    let unsubscribe: (() => void) | undefined;
+    const update=() => {
+      const value=Math.round(store.getMood(name)*100)/100;
+      if (spanRef.current) {
+        spanRef.current.setAttribute("aria-label",intl("components.currentMorale24",{currentMorale:value}));
+        if (!suppressNativeTitles) spanRef.current.title=intl("components.currentMorale24",{currentMorale:value});
+      }
+      if (textRef.current) textRef.current.textContent=String(value);
+    };
+    const sync=() => {
+      if (visibility?.isVisible() ?? true) {
+        update();
+        if (!unsubscribe) unsubscribe=store.subscribeMood(name,update);
+      } else {
+        unsubscribe?.();
+        unsubscribe=undefined;
+      }
+    };
+    sync();
+    const unsubscribeVisibility=visibility?.subscribe(sync);
+    return () => {unsubscribe?.();unsubscribeVisibility?.();};
+  },[store,name,intl,suppressNativeTitles,visibility]);
+  return (
+    <span
+      ref={spanRef}
+      className="absolute bottom-0.5 left-0.5 flex items-center gap-0.5 whitespace-nowrap rounded-sm bg-black/72 px-1 py-0.5 text-xs font-normal leading-none text-white shadow-[0_1px_3px_rgba(0,0,0,0.5)] [&_svg]:size-2.5 max-sm:bottom-0.5 max-sm:left-0.5 max-sm:px-0.5 max-sm:[&_svg]:size-2.5"
+      aria-label={intl("components.currentMorale24", { currentMorale })}
+      title={suppressNativeTitles ? undefined : intl("components.currentMorale24", { currentMorale })}
+    >
+      <Smile className="text-[#FFD501]" />
+      <span className="max-sm:hidden">{intl("components.now")}</span>
+      <span ref={textRef} className="font-number">{currentMorale}</span>
+    </span>
+  );
+}
+
 export function OperatorSlot({
   slot,
   rarity,
   currentMorale,
+  moodStore,
   elite,
   eliteBadgeVariant = "standard",
   operatorLevel,
@@ -1076,6 +1148,7 @@ export function OperatorSlot({
   /** Optional star row for shareable schedule posters. */
   rarity?: number;
   currentMorale?: number;
+  moodStore?: MoodViewStore;
   /** 干员精英化等级（0/1/2），传入后会在头像左下角显示对应角标。 */
   elite?: number;
   /** High-resolution source artwork for composed schedule portraits. */
@@ -1212,7 +1285,9 @@ export function OperatorSlot({
                   />
                 ) : null}
                 {rarity ? <span className="pointer-events-none absolute bottom-0 right-0 z-20 leading-none text-[#FFD800]" style={{ fontSize: "calc(var(--operator-slot-size) * .16)", textShadow: "0 1px 2px #000" }} aria-label={intl("components.starRating", { rarity })} data-operator-rarity={rarity}>{"★".repeat(Math.min(6, rarity))}</span> : null}
-                {elite === undefined && typeof currentMorale === "number" ? (
+                {elite === undefined && moodStore && slot ? (
+                  <MoodMoraleBadge store={moodStore} name={slot.name} suppressNativeTitles={suppressNativeTitles}/>
+                ) : elite === undefined && typeof currentMorale === "number" ? (
                   <span
                     className="absolute bottom-0.5 left-0.5 flex items-center gap-0.5 whitespace-nowrap rounded-sm bg-black/72 px-1 py-0.5 text-xs font-normal leading-none text-white shadow-[0_1px_3px_rgba(0,0,0,0.5)] [&_svg]:size-2.5 max-sm:bottom-0.5 max-sm:left-0.5 max-sm:px-0.5 max-sm:[&_svg]:size-2.5"
                     aria-label={intl("components.currentMorale24", { currentMorale: currentMorale })}
@@ -1270,7 +1345,44 @@ export function OperatorSlot({
   return shell;
 }
 
-export function ScheduleBoard({
+export const MemoOperatorSlot = memo(OperatorSlot, (previous, next) => {
+  const before=previous as Record<string, unknown>, after=next as Record<string, unknown>;
+  for (const key of new Set([...Object.keys(before),...Object.keys(after)])) {
+    // Simulation re-creates onActivate on every cursor tick, but it always
+    // selects the same operator name; compare it in editable mode only.
+    if (key === "onActivate" && (before.selectionMode || after.selectionMode)) continue;
+    if (before[key] !== after[key]) return false;
+  }
+  return true;
+});
+
+export function BoardOperatorSlot({store, ...props}: ComponentProps<typeof OperatorSlot> & {store?: MoodViewStore}) {
+  const selected=useMoodSelected(store);
+  return <MemoOperatorSlot
+    {...props}
+    moodStore={store}
+    elite={store ? undefined : props.elite}
+    currentMorale={undefined}
+    selectionMode={Boolean(store)}
+    onActivate={store && props.slot ? () => store.select(props.slot!.name) : props.onActivate}
+    sortSelected={store ? props.slot?.name===selected : props.sortSelected}
+  />;
+}
+
+const ListRoomCard = memo(function ListRoomCard({render}: {
+  row: RoomRow;
+  simulation?: MoodViewStore;
+  normalizedQuery: string;
+  render: () => ReactNode;
+}) {
+  return <>{render()}</>;
+}, (previous, next) => {
+  if (!previous.simulation || !next.simulation) return false;
+  return previous.row === next.row && previous.simulation === next.simulation
+    && previous.normalizedQuery === next.normalizedQuery;
+});
+
+function ScheduleBoardImpl({
   simulation,
   rows: sourceRows,
   layout,
@@ -1311,7 +1423,7 @@ export function ScheduleBoard({
   roomProducts,
   compactProductControls = false,
 }: {
-  simulation?: { moods: Readonly<Record<string, number>>; selected: string; onSelect: (name: string) => void };
+  simulation?: MoodViewStore;
   rows: RoomRow[];
   layout: BaseBlueprint;
   planRevision?: string;
@@ -1362,7 +1474,7 @@ export function ScheduleBoard({
   const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
   const rows = useMemo(() => layout.template === "Mower" ? sourceRows : withRecyclingRoom(sourceRows), [layout.template, sourceRows]);
   const [hiddenGroups, setHiddenGroups] = useState<Record<string, boolean>>({});
-  const [viewMode, setViewMode] = useState<ScheduleViewMode | null>(null);
+  const [viewMode, setViewMode] = useSharedScheduleViewMode();
   const [supportsCompactLayout, setSupportsCompactLayout] = useState<boolean | null>(null);
   const [CompactScheduleView, setCompactScheduleView] = useState<CompactScheduleComponent | null>(null);
   const [compactScheduleLoadFailed, setCompactScheduleLoadFailed] = useState(false);
@@ -1408,7 +1520,7 @@ export function ScheduleBoard({
     const handler = (event: MediaQueryListEvent) => syncViewMode(event.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
-  }, [editableSchedule, onViewModeChange]);
+  }, [editableSchedule, onViewModeChange, setViewMode]);
 
   useEffect(() => {
     if (!supportsCompactLayout || !viewMode || prepareInactiveView) return;
@@ -1544,7 +1656,7 @@ export function ScheduleBoard({
                 const functionalOperatorPosition = listFunctionalOperatorPosition(row.group);
                 const functionalOperatorPlacementClass = listFunctionalOperatorPlacementClass(row.group);
                 const slotCount = compactInlineRoom
-                  ? (row.group === "meeting" || row.group === "training" || row.group === "recycling" ? 2 : 1)
+                  ? (row.group === "meeting" || row.group === "training" || row.group === "recycle" ? 2 : 1)
                   : roomSlotCountFor(row.group);
                 const slots: Array<{
                   slot: RoomRow["operatorSlots"][number] | undefined;
@@ -1561,7 +1673,7 @@ export function ScheduleBoard({
                   "--room-grid-fade-start": gridTone.fadeStart,
                 } as CSSProperties;
 
-                return (
+                return <ListRoomCard key={row.key} row={row} simulation={simulation} normalizedQuery={normalizedQuery} render={() => (
                   <div
                     key={row.key}
                     className={cn(
@@ -1621,7 +1733,6 @@ export function ScheduleBoard({
                             </div>
                           ) : null}
                         </div>
-                        {row.group === "recycling" ? <RecyclingRoomNotice editable={Boolean(onSlotClick)} /> : null}
                         {!simulation && <RoomProductControls
                           row={row}
                           layoutRoom={layoutRoom}
@@ -1679,12 +1790,11 @@ export function ScheduleBoard({
                         } as CSSProperties}
                       >
                         {slots.map(({ slot, positionLabel }, index) => (
-                          <OperatorSlot
+                          <BoardOperatorSlot
                             key={`${row.key}-${index}`}
+                            store={simulation}
                             slot={slot}
-                            elite={simulation ? undefined : slot ? eliteByOperator?.get(slot.name) : undefined}
-                            currentMorale={slot && simulation ? Math.round((simulation.moods[slot.name] ?? 24) * 100) / 100 : undefined}
-                            selectionMode={Boolean(simulation)}
+                            elite={slot ? eliteByOperator?.get(slot.name) : undefined}
                             nameColor="white"
                             operatorLevel={slot ? levelByOperator?.get(slot.name) : undefined}
                             autofill={row.group === "dormitory" && row.autofill}
@@ -1696,8 +1806,8 @@ export function ScheduleBoard({
                             searchQuery={normalizedQuery}
                             positionLabel={positionLabel}
                             unavailable={row.unavailableSlotIndices?.includes(index)}
-                            onActivate={simulation && slot ? () => simulation.onSelect(slot.name) : onSlotClick ? () => onSlotClick(row, index) : undefined}
-                            sortSelected={simulation ? slot?.name === simulation.selected : sortSelection?.roomId === row.roomId && sortSelection.slotIndex === index}
+                            onActivate={onSlotClick ? () => onSlotClick(row, index) : undefined}
+                            sortSelected={sortSelection?.roomId === row.roomId && sortSelection.slotIndex === index}
                             onSortActivate={sortRoomId === row.roomId && onSortSlotClick ? () => onSortSlotClick(row, index) : undefined}
                             highlightNoLayoutSkill={highlightNoLayoutSkill && Boolean(slot) && noRoomSkillOperators?.get(row.roomId)?.has(slot?.name ?? "")}
                           />
@@ -1756,7 +1866,7 @@ export function ScheduleBoard({
                       </TooltipContent>
                     </Tooltip> : null}
                   </div>
-                );
+                )}/>;
               })}
             </div>
           </section>
@@ -1954,6 +2064,22 @@ export function ScheduleBoard({
     </div>
   );
 }
+
+const scheduleBoardPropsEqual = (
+  previous: ComponentProps<typeof ScheduleBoardImpl>,
+  next: ComponentProps<typeof ScheduleBoardImpl>,
+) => {
+  const before=previous as Record<string, unknown>, after=next as Record<string, unknown>;
+  for (const key of new Set([...Object.keys(before),...Object.keys(after)])) {
+    // The simulation strip is recreated on every panel render; activeShift and
+    // planRevision already change whenever its visible position changes.
+    if (key === "shiftTabsSlot") continue;
+    if (before[key] !== after[key]) return false;
+  }
+  return true;
+};
+
+export const ScheduleBoard = memo(ScheduleBoardImpl, scheduleBoardPropsEqual);
 
 export function ShortcutGuideDialog({
   open,

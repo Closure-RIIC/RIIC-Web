@@ -26,6 +26,16 @@ npm run wasm:build
 
 开发服务器和生产构建都从这个 manifest 读取文件路径。不要在源码中硬编码带哈希的 WASM 文件名，也不要直接从源码 `import("/wasm/infra_eval_wasm.js")`；Vite 开发服务器会把 `public` 文件误判为源码模块。当前客户端通过请求胶水文件并用 Blob URL 加载，开发和生产使用同一套逻辑。
 
+## 回收站协议兼容
+
+公开布局、草稿、MAA 和客户端评估结果的设施名统一为 `recycle`。当前随站点发布的 v1 WASM 使用较旧的回收站设施标记，由 `apps/arknights/src/lib/infra-eval/client.ts` 的统一传输边界负责兼容：调用引擎前只转换布局房间的 `kind`，读取结果时将对应的 `facility` 转回 `recycle`。房间 ID、等级、人员、产物等字段及调用方输入保持原样；兼容不扩展为公开类型别名。
+
+所有原生评估请求都经过该入口，包括逐班切换产物时重建布局的请求。更新 WASM 后仍须运行实际资源回归；新引擎直接支持 `recycle` 时，应同步调整此边界。`client.test.ts` 通过当前 manifest 加载仓库发布的胶水和 WASM，覆盖自定义回收站 ID、1–3 级、赋人与空房的实际效率差异、两班计算、公开响应命名及输入不变，且保留未知设施的原生拒绝行为。该回归纳入 `npm test`，也可单独运行：
+
+```bash
+node --test --experimental-strip-types apps/arknights/src/lib/infra-eval/client.test.ts
+```
+
 ## 生产发布或替换 WASM
 
 正常流程是在发布构建前重新运行：

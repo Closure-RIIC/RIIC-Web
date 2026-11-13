@@ -1,17 +1,17 @@
 "use client";
 import { useTranslations, useLocale } from "use-intl";
 
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion";
 import { ArrowLeftRight, Check, FileWarning, Package, Trash2 } from "lucide-react";
 import { Select } from "@base-ui/react/select";
 import { DroneIcon } from "@/components/DroneIcon";
-import { RecyclingRoomNotice } from "@/components/RecyclingRoomNotice";
 
 import { maxRoomLevel } from "@riic/arknights-domain/blueprint";
 import { AnimatedNumber, AnimatedText } from "@/components/AnimatedText";
-import { LevelDiamonds, OperatorSlot, roomVisualFor } from "@/components";
+import { BoardOperatorSlot, LevelDiamonds, roomVisualFor } from "@/components";
+import type { MoodViewStore } from "@/mood-view-store";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { presentRoomEfficiency } from "@riic/arknights-domain/efficiency";
@@ -38,7 +38,7 @@ import { useGameCatalog } from "@/i18n/game-data-client";
 import { PRODUCT_ICON_URLS } from "@/product-assets";
 
 export interface CompactScheduleViewProps {
-  simulation?: { moods: Readonly<Record<string, number>>; selected: string; onSelect: (name: string) => void };
+  simulation?: MoodViewStore;
   noRoomSkillOperators?: ReadonlyMap<string, ReadonlySet<string>>;
   rows: RoomRow[];
   layout: BaseBlueprint;
@@ -70,7 +70,7 @@ export interface CompactScheduleViewProps {
 /** 布局宽度百分比，自己改数值 */
 const GRID_LEFT_PCT = 55;   // 左大列宽度%
 const GRID_RIGHT_PCT = 45;  // 右大列宽度%
-const COMPACT_AUXILIARY_GROUPS = new Set(["meeting", "training", "hire", "processing", "recycling"]);
+const COMPACT_AUXILIARY_GROUPS = new Set(["meeting", "training", "hire", "processing", "recycle"]);
 const COMPACT_ACTION_CLASS = "inline-flex h-7 shrink-0 items-center justify-center rounded-[min(var(--radius-md),12px)] border border-white/20 bg-[#3C3C3C]/55 px-2 text-xs outline-none hover:bg-[#4B4B4B] max-sm:min-h-11 max-sm:min-w-11";
 
 function CompactProductSelect({
@@ -121,12 +121,12 @@ function CompactProductSelect({
 
 function roomSlotCountFor(group: string) {
   if (group === "trading" || group === "manufacture") return 3;
-  if (group === "meeting" || group === "training" || group === "recycling") return 2;
+  if (group === "meeting" || group === "training" || group === "recycle") return 2;
   if (group === "power" || group === "hire" || group === "processing") return 1;
   return 5;
 }
 
-function CompactRoomCard({
+const CompactRoomCard = memo(function CompactRoomCard({
   simulation,
   noRoomSkillOperators,
   row,
@@ -339,13 +339,12 @@ function CompactRoomCard({
   const efficiencyContent = efficiencyBlock ?? emptyWorkstationState;
 
   const operators = slots.map(({ slot, positionLabel }, index) => (
-    <OperatorSlot
+    <BoardOperatorSlot
       key={`${row.key}-${index}`}
+      store={simulation}
       slot={slot}
       highlightNoLayoutSkill={Boolean(slot && noRoomSkillOperators?.get(row.roomId)?.has(slot.name))}
-      elite={simulation ? undefined : slot ? eliteByOperator?.get(slot.name) : undefined}
-      currentMorale={slot && simulation ? Math.round((simulation.moods[slot.name] ?? 24) * 100) / 100 : undefined}
-      selectionMode={Boolean(simulation)}
+      elite={slot ? eliteByOperator?.get(slot.name) : undefined}
       nameColor="white"
       operatorLevel={slot ? levelByOperator?.get(slot.name) : undefined}
       autofill={Boolean(
@@ -359,8 +358,8 @@ function CompactRoomCard({
       transitionDelay={Math.min(index, 2) * 0.02}
       positionLabel={positionLabel}
       unavailable={row.unavailableSlotIndices?.includes(index)}
-      onActivate={simulation && slot ? () => simulation.onSelect(slot.name) : onSlotClick ? () => onSlotClick(row, index) : undefined}
-      sortSelected={simulation ? slot?.name === simulation.selected : sortSelection?.roomId === row.roomId && sortSelection.slotIndex === index}
+      onActivate={onSlotClick ? () => onSlotClick(row, index) : undefined}
+      sortSelected={sortSelection?.roomId === row.roomId && sortSelection.slotIndex === index}
       onSortActivate={sortMode && onSortSlotClick ? () => onSortSlotClick(row, index) : undefined}
     />
   ));
@@ -380,7 +379,6 @@ function CompactRoomCard({
   const details = (
     <div className="relative z-10 min-w-0">
       {header}
-      {row.group === "recycling" ? <RecyclingRoomNotice editable={Boolean(onSlotClick)} /> : null}
       {efficiencyContent ? <div className={isPower && efficiency ? "mt-1" : "mt-2"}>{efficiencyContent}</div> : null}
       {paperSkillInput}
     </div>
@@ -430,7 +428,19 @@ function CompactRoomCard({
       </div>
     </div>
   );
-}
+}, (prev, next) => {
+  const before=prev as Record<string, unknown>, after=next as Record<string, unknown>;
+  for (const key of new Set([...Object.keys(before),...Object.keys(after)])) {
+    if (key === "efficiency" || key === "style" || key === "visual" || key === "slots") continue;
+    if (before[key] !== after[key]) return false;
+  }
+  if (prev.slots.length !== next.slots.length) return false;
+  for (let index=0;index<prev.slots.length;index+=1) {
+    if (prev.slots[index]!.slot !== next.slots[index]!.slot) return false;
+    if (prev.slots[index]!.positionLabel !== next.slots[index]!.positionLabel) return false;
+  }
+  return true;
+});
 
 function CompactDroneButton({ row, selected, onChange }: { row: RoomRow; selected: boolean; onChange: (row: RoomRow) => void }) {
   const intl = useTranslations();
@@ -607,7 +617,7 @@ export function CompactScheduleView(props: CompactScheduleViewProps) {
   const ctrl = getGroup("control")[0];
   const meeting = getGroup("meeting")[0];
   const training = getGroup("training")[0];
-  const recycling = getGroup("recycling")[0];
+  const recycling = getGroup("recycle")[0];
   const office = getGroup("hire")[0];
   const processing = getGroup("processing")[0];
 

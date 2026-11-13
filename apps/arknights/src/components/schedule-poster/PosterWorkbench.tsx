@@ -18,7 +18,7 @@ import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } 
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { downloadJson } from "@/download";
 import { manualScheduleToMaa, resizeManualScheduleDraft, type ManualScheduleDraft } from "@/manual-schedule";
-import { prepareMaaForExport } from "@riic/arknights-domain/maa-safety";
+import { downloadManualMaa } from "@/maa-import-export";
 import { OPERATOR_CATALOG } from "@/operatorPortraits";
 import { manualEditableRooms } from "@/recycling-room";
 import { posterDataOnly, POSTER_MAX_BYTES, readPosterFile, type SchedulePosterDocument } from "@/schedule-poster-document";
@@ -145,7 +145,7 @@ export default function PosterWorkbench({ document: doc, onChange, onImport, onS
       const exportDraft = Math.abs(cycleHours - 24) > 0.001 && doc.draft.scheduleMode === "period"
         ? { ...doc.draft, scheduleMode: "sequential" as const }
         : doc.draft;
-      const maa = prepareMaaForExport(manualScheduleToMaa(exportDraft, doc.layout, exportDraft.fiammettaEnabled));
+      const maa = downloadManualMaa(exportDraft, manualScheduleToMaa(exportDraft, doc.layout, exportDraft.fiammettaEnabled));
       downloadJson(`${doc.meta.title || rawText.text(rawLocale, "filename")}.maa.json`, maa);
       setNotice(rawText.text(rawLocale, "maaExported", { multi: Math.abs(cycleHours - 24) > 0.001 ? "yes" : "no" }));
     } catch (e) { setError(e instanceof Error ? e.message : rawText.text(rawLocale, "maaExportFailed")); }
@@ -193,7 +193,7 @@ export default function PosterWorkbench({ document: doc, onChange, onImport, onS
     </details>
     <div className="flex flex-wrap gap-x-8 gap-y-3">
       <details className="min-w-64 flex-1"><summary className="cursor-pointer text-sm">{rawText.text(rawLocale, "backgroundAndVisibleFacilities")}</summary><div className="mt-3 grid gap-3">
-        <div className="flex flex-wrap gap-4">{manualEditableRooms(doc.layout).filter(room => ["workshop", "training_room", "recycling"].includes(room.kind)).map(room => <label key={room.id} className="flex items-center gap-2 text-sm">{rawText.rich(rawLocale, "show", { part1: richValue((<Switch checked={!doc.presentation.hiddenFacilities.includes(room.id)} onCheckedChange={checked => onChange({ ...doc, presentation: { ...doc.presentation, hiddenFacilities: checked ? doc.presentation.hiddenFacilities.filter(id => id !== room.id) : [...doc.presentation.hiddenFacilities, room.id] } })} />)), part2: richValue((posterRoomTitle(room, doc.layout, rawLocale))) })}</label>)}</div>
+        <div className="flex flex-wrap gap-4">{manualEditableRooms(doc.layout).filter(room => ["workshop", "training_room", "recycle"].includes(room.kind)).map(room => <label key={room.id} className="flex items-center gap-2 text-sm">{rawText.rich(rawLocale, "show", { part1: richValue((<Switch checked={!doc.presentation.hiddenFacilities.includes(room.id)} onCheckedChange={checked => onChange({ ...doc, presentation: { ...doc.presentation, hiddenFacilities: checked ? doc.presentation.hiddenFacilities.filter(id => id !== room.id) : [...doc.presentation.hiddenFacilities, room.id] } })} />)), part2: richValue((posterRoomTitle(room, doc.layout, rawLocale))) })}</label>)}</div>
         <p className="text-xs text-muted-foreground">{rawText.text(rawLocale, "hidingAFacilityAffectsOnlyTheImageItsAssignments")}</p>
         <div className="flex flex-wrap items-center gap-3"><Field title={rawText.text(rawLocale, "backgroundColor")}><Input type="color" className="w-20" value={doc.presentation.backgroundColor} onChange={e => onChange({ ...doc, presentation: { ...doc.presentation, backgroundColor: e.target.value } })} /></Field><Field title={rawText.text(rawLocale, "replaceBackgroundImage")}><Input type="file" accept="image/png,image/jpeg,image/webp" onChange={e => { const file = e.target.files?.[0]; if (file) { if (file.size > 10 * 1024 * 1024) { setError(rawText.text(rawLocale, "backgroundTooLarge")); return; } setBackground(URL.createObjectURL(file)); } }} /></Field><Button variant="ghost" onClick={() => setBackground(null)}>{rawText.text(rawLocale, "clearBackground")}</Button></div>
         <p className="text-xs text-muted-foreground">{rawText.text(rawLocale, "theBackgroundImageIsUsedOnlyForThisExport")}</p>
