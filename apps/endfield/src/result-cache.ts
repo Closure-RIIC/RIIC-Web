@@ -8,7 +8,7 @@ export function workspaceKey(workspace: Workspace): string {
   return JSON.stringify([
     // 技能节点参与 key：改技能要触发保存/重算，缓存也要失效。
     workspace.operators.map(op => [op.name, op.elite, op.latestSpaceshipSkillNodes ?? null]),
-    options.mfg, options.assist, options.budget, options.time, options.priority,
+    options.mfg, options.assist, options.budget, options.time, options.priority, options.cluePriority,
     ["center", "mfg1", "mfg2", "grow", "guest"].map(key => options.levels[key as keyof typeof options.levels]),
     ["晶植", "菌类", "矿物"].map(key => options.grow[key] ?? 0),
     workspace.manual?.map(room => [room.key, room.slots, room.hour, room.a, room.b]) ?? null,

@@ -18,7 +18,8 @@ export function FiammettaSettings({ enabled, operbox, rotation, onEnabledChange,
 
   const ownsFiammetta = Boolean(operbox?.some((operator) => operator.own && operator.name === "菲亚梅塔"));
   const rotationForcesEnabled = rotation === "fiammetta_8_8_4_4";
-  const checked = enabled && ownsFiammetta;
+  // 菲亚轮换本身就会让请求带上 fiammetta_enable=true，界面必须一致。
+  const checked = ownsFiammetta && (rotationForcesEnabled || enabled);
 
   return (
     <section className="grid gap-3" aria-labelledby="fiammetta-settings-title">

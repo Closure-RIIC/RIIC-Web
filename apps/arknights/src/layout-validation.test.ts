@@ -64,7 +64,8 @@ test("every preset stays solver-compatible and adds exactly one recycling editor
     assert.equal(layout.rooms.find(room => room.kind === "control_center")?.level, 5, `${preset} control center default`);
     const rooms = manualEditableRooms(layout);
     assert.equal(new Set(rooms.map(room => room.id)).size, rooms.length, preset);
-    assert.deepEqual(rooms.filter(room => room.id === "recycling_station"), [{ id: "recycling_station", kind: "recycling", level: 3 }]);
+    // 预设布局现在自带回收站，manualEditableRooms 不应再追加第二座。
+    assert.deepEqual(rooms.filter(room => room.id === "recycling_station"), [{ id: "recycling_station", kind: "recycle", level: 3 }]);
   }
 });
 

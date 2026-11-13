@@ -141,6 +141,7 @@ export function roomKindLabel(kind: RoomKind): string {
     meeting_room: "会客室",
     workshop: "加工站",
     training_room: "训练室",
+    recycle: "回收站",
   };
   return labels[kind];
 }

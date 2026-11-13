@@ -8,6 +8,15 @@ import { defaultPosterOperator, posterOperators } from "./schedule-poster-operat
 import { OPERATOR_CATALOG } from "./operatorPortraits.ts";
 
 const layout = JSON.parse(readFileSync(new URL("../../../packages/arknights-domain/src/layouts/252.json", import.meta.url), "utf8")) as BaseBlueprint;
+test("work files preserve the preset recycling room and its configured operators", () => {
+  const recycling = layout.rooms.find(room => room.kind === "recycle");
+  assert.ok(recycling);
+  const draft = createManualScheduleDraft([12, 12]);
+  draft.shifts[0]!.rooms[recycling.id] = { operators: ["红云", "稀音"] };
+  const decoded = readPosterFile(JSON.stringify(posterDataOnly(createPosterDocument(layout, draft))));
+  assert.deepEqual(decoded.layout.rooms.find(room => room.kind === "recycle"), recycling);
+  assert.deepEqual(decoded.draft.shifts[0]!.rooms[recycling.id]!.operators, ["红云", "稀音"]);
+});
 test("editable work file preserves shift products, efficiency, training roles and dormant facilities", () => {
   const draft = createManualScheduleDraft([8, 8, 8]);
   draft.shifts[0]!.rooms.trade_1 = {
@@ -18,6 +27,12 @@ test("editable work file preserves shift products, efficiency, training roles an
   };
   draft.shifts[1]!.rooms.trade_1 = { operators: ["能天使"], product: { trade: { order: "originium" } }, manualSkillEfficiencyPct: 100 };
   draft.shifts[0]!.rooms.training_room = { operators: ["银灰", "杜宾"] };
+  draft.shifts[0]!.maaTraining = [{ operatorsA: ["杜宾", "芬"], operatorsB: ["银灰"] }];
+  draft.shifts[0]!.maaGroups = [{ name: "回收组", operators: ["克洛丝"] }];
+  draft.shifts[0]!.rooms.recycling_station = {
+    operators: ["克洛丝", null],
+    maaSource: { primary: ["克洛丝", null], operators: ["回收组"], useGroups: true, candidates: ["香草"] },
+  };
   draft.shifts[0]!.rooms.dorm_4 = { operators: ["德克萨斯"], autofill: false };
   const document = createPosterDocument(layout, draft);
   const decoded = readPosterFile(JSON.stringify(posterDataOnly(document)));

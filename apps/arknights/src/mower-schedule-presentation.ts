@@ -4,11 +4,12 @@ import type { RoomGroup, RoomRow } from "./schedule.ts";
 import type { BaseBlueprint, RoomKind, RoomProduct } from "@riic/arknights-domain/types";
 
 const fixedGroups: Record<string, RoomGroup> = {
-  central: "control", meeting: "meeting", factory: "processing", contact: "hire", train: "training", recycle: "recycling",
+  central: "control", meeting: "meeting", factory: "processing", contact: "hire", train: "training", recycle: "recycle",
 };
-const kinds: Record<Exclude<RoomGroup, "recycling">, RoomKind> = {
+const kinds: Record<RoomGroup, RoomKind> = {
   control: "control_center", trading: "trade_post", manufacture: "factory", power: "power_plant",
   dormitory: "dormitory", meeting: "meeting_room", hire: "office", processing: "workshop", training: "training_room",
+  recycle: "recycle",
 };
 
 /** A view of Mower facilities, retaining source keys and every slot without rewriting the document. */
@@ -33,8 +34,8 @@ export function mowerSchedulePresentation(plan: Record<string, MowerFacility | n
     let product: RoomProduct | undefined;
     if (group === "trading") product = { trade: { order: facility?.product === "orundum" ? "originium" : "gold" } };
     if (group === "manufacture") product = { factory: { recipe: facility?.product === "exp3" ? "battle_record" : facility?.product === "orirock" ? "originium" : "gold" } };
-    // Recycling is an editor-only facility, outside the solver blueprint contract.
-    if (group !== "recycling") layout.rooms.push({ id: key, kind: kinds[group], level: group === "dormitory" ? 5 : 3, product });
+    // 回收站现在参与求解，按 recycle 房间类型写入布局。
+    layout.rooms.push({ id: key, kind: kinds[group], level: group === "dormitory" ? 5 : 3, product });
     // 一图流与列表的产物来源：Mower 文档里已经按设施类型和产物算好，这里一并交出去，
     // 避免调用方再解析一遍中文名称。
     if (product) products.set(key, product);
