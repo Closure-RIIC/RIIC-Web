@@ -46,9 +46,10 @@ test("manual morale worker, timeline, shared targets and simulation-only setting
   await expect(panel).toBeVisible({timeout:60_000});
   await expect(panel.getByRole("button",{name:"开始播放",exact:true})).toBeEnabled({timeout:60_000});
   await expect(panel.getByRole("alert")).toHaveCount(0);
-  const board=page.locator("[data-manual-editor-board]");
+  // Playback keeps inactive shift boards mounted to avoid rebuilding them while seeking.
+  const board=page.locator("[data-manual-editor-board]:visible");
   await expect(board).toHaveCount(1);
-  await expect(page.locator("[data-schedule-toolbar]")).toHaveCount(1);
+  await expect(page.locator("[data-schedule-toolbar]:visible")).toHaveCount(1);
   await expect(board).toHaveAttribute("data-board-mode","edit");
   await expect(panel.getByRole("heading",{name:"排班与心情模拟"})).toHaveCount(0);
   await expect(panel.getByText("从全员满心情开始，查看这套排班在连续周期内的变化。",{exact:true})).toHaveCount(0);
@@ -69,13 +70,14 @@ test("manual morale worker, timeline, shared targets and simulation-only setting
   await expect(panel.getByLabel("模拟时间轴")).toHaveAttribute("max","72");
   await choose("播放速度","3600×");
   await panel.getByRole("button",{name:"开始播放",exact:true}).click();
+  await expect(board).toHaveCount(1);
   await expect(board).toHaveAttribute("data-board-mode","simulation");
   await expect(board.getByRole("button",{name:"清空当前班次所有设施"})).toHaveCount(0);
   await expect.poll(async () => Number(await panel.getByLabel("模拟时间轴").inputValue())).toBeGreaterThan(.1);
   await panel.getByRole("button",{name:"暂停",exact:true}).click();
   await panel.getByLabel("模拟时间轴").press("End");
   await expect(board).toContainText("第 3 周期 · 第 2 班");
-  await expect(page.locator("[data-schedule-toolbar]")).toHaveCount(1);
+  await expect(page.locator("[data-schedule-toolbar]:visible")).toHaveCount(1);
   await panel.getByRole("button",{name:"回到起点",exact:true}).click();
   await expect(panel.getByLabel("模拟时间轴")).toHaveValue("0");
   await panel.getByRole("button",{name:/锡兰/}).filter({has:page.locator('[data-operator-identity="锡兰"]')}).click();
@@ -84,7 +86,7 @@ test("manual morale worker, timeline, shared targets and simulation-only setting
   await expect(panel.locator("[data-mood-detail]")).toContainText("阿米娅");
   await panel.getByRole("tab",{name:"排班编辑",exact:true}).click();
   await expect(board).toHaveAttribute("data-board-mode","edit");
-  await expect(page.locator("[data-schedule-toolbar]")).toHaveCount(1);
+  await expect(page.locator("[data-schedule-toolbar]:visible")).toHaveCount(1);
   await board.getByRole("button",{name:/锡兰/}).filter({has:page.locator('[data-operator-identity="锡兰"]')}).click();
   await expect(page.getByRole("dialog").getByLabel("搜索可选干员或基建技能")).toBeVisible();
   await page.keyboard.press("Escape");
@@ -141,9 +143,9 @@ for (const width of [1440,390]) {
     const detail=panel.locator("[data-mood-detail]");
     const ledger=detail.locator("details").filter({hasText:"查看消耗与恢复明细"});
     await expect(ledger).toBeVisible();
-    const rate=detail.locator("[aria-busy]");
-    await expect(rate).toHaveAttribute("aria-busy","false");
-    const initialRate=await rate.locator(":scope > p").innerText();
+    const rate=detail.getByText(/^消耗 .+\/h · 回复 .+\/h · 净消耗 .+\/h$/);
+    await expect(rate).toBeVisible();
+    const initialRate=await rate.innerText();
     const disclosures=await detail.locator("details").all();
     const timeline=panel.getByLabel("模拟时间轴");
 
@@ -188,7 +190,7 @@ for (const width of [1440,390]) {
         },{detail:detailElement,ledger:originalLedger});
         await panel.getByRole("button",{name:"暂停",exact:true}).click();
         expect(Number(await timeline.getAttribute("value"))).toBeGreaterThan(startTime);
-        await expect(rate).toHaveAttribute("aria-busy","false");
+        await expect(rate).toBeVisible();
         await test.info().attach(`playback-${width}-${speed}-${expanded}`,{body:JSON.stringify(observed),contentType:"application/json"});
         expect(observed.samples).toBeGreaterThan(10);
         expect(observed.detached).toBe(false);
@@ -208,8 +210,8 @@ for (const width of [1440,390]) {
     await ledger.locator("summary").click();
     await timeline.press("End");
     await expect(detail).toContainText("阿米娅");
-    await expect(rate).toHaveAttribute("aria-busy","false");
-    await expect(rate.locator(":scope > p")).not.toHaveText(initialRate);
+    await expect(rate).toBeVisible();
+    await expect(rate).not.toHaveText(initialRate);
     await expect(ledger).toHaveJSProperty("open",true);
     await expect(ledger.locator("tbody tr")).not.toHaveCount(0);
     await panel.getByRole("group",{name:"选择干员查看心情"}).getByRole("button",{name:/锡兰/}).click();
