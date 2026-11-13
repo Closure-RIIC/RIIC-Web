@@ -13,7 +13,7 @@
     "release:pr": "node scripts/release-pr.mjs",
     "test:release-pr": "node --test scripts/release-pr.test.mjs",
     "test:pr-batch": "node --test --experimental-strip-types apps/arknights/src/wish-validation.test.ts packages/platform-server/src/auth/session-lifetime.test.ts",
-    "posttest": "npm run test:pr-batch && npm run test:schedule-poster && npm run test:training-planner && npm run test:route-preload && npm run test:skland-qr",
+    "posttest": "npm run test:pr-batch && npm run test:schedule-poster && npm run test:training-planner && npm run test:route-preload && npm run test:skland-qr && npm run test:agent-transport",
     "test:schedule-poster": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test apps/arknights/src/schedule-poster-document.test.ts apps/arknights/src/server/schedule-poster-api.test.ts",
     "test:wishes-integration": "node --experimental-strip-types --import ./scripts/register-hooks.mjs --test apps/arknights/src/server/wishes.integration.test.mjs",
     "test:agent-resources": "node --experimental-strip-types --experimental-test-module-mocks --test apps/arknights/src/server/agent/message-history.test.ts apps/arknights/src/server/agent/answer-boundary.test.ts apps/arknights/src/server/agent/resource-policy.test.ts apps/arknights/src/server/agent/resource-import.test.ts apps/arknights/src/server/agent/resources-api.test.ts",
@@ -29,7 +29,7 @@
     "dev:admin-preview": "node scripts/start-admin-preview.mjs",
     "test:admin-preview": "node --test --experimental-strip-types apps/arknights/src/admin-preview-policy.test.ts apps/arknights/src/admin-preview-data.test.ts",
     "test:feature-access": "node --test --experimental-strip-types --experimental-test-module-mocks apps/arknights/src/server/auth/feature-access.test.ts apps/arknights/src/server/billing/webhook.test.ts",
-    "test:agent-models": "node --test --experimental-strip-types --experimental-test-module-mocks apps/arknights/src/server/agent/config.test.ts apps/arknights/src/server/agent/stream-policy.test.ts apps/arknights/src/server/agent/chat-api.test.ts",
+    "test:agent-models": "node --test --experimental-strip-types --experimental-test-module-mocks apps/arknights/src/server/agent/config.test.ts apps/arknights/src/server/agent/stream-policy.test.ts apps/arknights/src/server/agent/chat-api.test.ts apps/arknights/src/agent-chat-transport.test.ts",
     "test:agent-personas": "node --test --experimental-strip-types apps/arknights/src/agent-personas.test.ts apps/arknights/src/server/agent/persona-catalog.test.ts",
     "test:agent-markdown": "node --test --experimental-strip-types apps/arknights/src/agent-operator-mentions.test.ts",
     "pretest:api-contract": "npm run test:billing-cdk && npm run test:feature-access && npm run test:agent-models && npm run test:agent-personas && npm run test:agent-markdown && npm run test:agent-gateway && npm run test:billing-orders",
@@ -114,7 +114,10 @@
     "i18n:ui": "x18n ui --no-cache",
     "i18n:generate": "node scripts/generate-i18n-loaders.mjs && node scripts/generate-i18n-features.mjs && node scripts/generate-i18n-usages.mjs",
     "test:i18n": "node --test --experimental-strip-types scripts/i18n/*.test.mjs packages/contracts/locale.test.ts packages/shell/message-resources.test.ts apps/arknights/src/i18n/config.test.ts",
-    "test:skland-qr": "node --experimental-transform-types --experimental-test-module-mocks --import ./scripts/register-hooks.mjs --test packages/platform-server/src/skland/scan-*.test.ts"
+    "test:skland-qr": "node --experimental-transform-types --experimental-test-module-mocks --import ./scripts/register-hooks.mjs --test packages/platform-server/src/skland/scan-*.test.ts",
+    "test:agent-transport": "node --test --experimental-strip-types apps/arknights/src/agent-chat-transport.test.ts && npm run test:agent-plan-context",
+    "test:agent-plan-context": "node --experimental-strip-types --test apps/arknights/src/server/agent/schedule-context.test.ts",
+    "test:agent-plan-context:integration": "node scripts/test-agent-billing.mjs --plan-context"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -21,7 +21,9 @@ try {
   const client = new Client({ connectionString }); await client.connect();
   try { await migrate(drizzle({ client }), { migrationsFolder: "drizzle" }); } finally { await client.end(); }
   const code = await new Promise((resolve, reject) => {
-    const args = process.argv.includes("--browser") ? ["node_modules/@playwright/test/cli.js","test","--config=playwright.agent-billing.config.ts"]
+    const args = process.argv.includes("--plan-context")
+      ? ["--experimental-transform-types", "--test", "apps/arknights/src/server/agent/schedule-context.integration.test.mjs"]
+      : process.argv.includes("--browser") ? ["node_modules/@playwright/test/cli.js","test","--config=playwright.agent-billing.config.ts"]
       : ["--experimental-transform-types", "--experimental-test-module-mocks", "--test", "apps/arknights/src/server/billing/agent-accounting.integration.test.mjs", "apps/arknights/src/server/billing/cdk.integration.test.mjs", "apps/arknights/src/server/billing/payments.integration.test.mjs", "apps/arknights/src/server/billing/reconciliation.integration.test.mjs"];
     const child = spawn(process.execPath, args, {
       stdio: "inherit", env: { ...process.env, DATABASE_URL: connectionString, AUTH_INTEGRATION_DATABASE_URL: connectionString },

@@ -50,6 +50,7 @@ export interface AgentPlanArtifactRecord {
   session: AgentPlanSession | null;
   meta: AgentPlanMeta;
   createdAt: Date;
+  conversationId: string | null;
 }
 
 /** 与前端 PersistedSessionV5 等价的注入载荷。 */
@@ -73,6 +74,12 @@ interface StoredArtifactV1 {
 interface StoredArtifactV2 extends StoredArtifactV1 {
   version: 2;
   session: AgentPlanSession;
+}
+
+interface StoredArtifactV3 extends StoredArtifactV1 {
+  version: 3;
+  session: AgentPlanSession;
+  conversationId: string;
 }
 
 const ARTIFACT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -114,7 +121,8 @@ export async function saveAgentPlanArtifact(
   userId: string,
   plan: AgentPlanProjection,
   meta: AgentPlanMeta,
-  session: AgentPlanSession
+  session: AgentPlanSession,
+  conversationId?: string,
 ): Promise<string> {
   const db = getDatabase();
   const id = randomUUID();
@@ -122,7 +130,7 @@ export async function saveAgentPlanArtifact(
   await db.insert(agentPlanArtifact).values({
     id,
     userId,
-    plan: { version: 2, projection: plan, session, meta } satisfies StoredArtifactV2,
+    plan: conversationId ? { version: 3, projection: plan, session, meta, conversationId } satisfies StoredArtifactV3 : { version: 2, projection: plan, session, meta } satisfies StoredArtifactV2,
     meta,
     createdAt: now,
     expiresAt: new Date(now.getTime() + ARTIFACT_TTL_MS),
@@ -149,10 +157,12 @@ export async function getAgentPlanArtifact(id: string, userId: string): Promise<
   const stored = row.plan as unknown;
   let projection: AgentPlanProjection;
   let session: AgentPlanSession | null = null;
+  let conversationId: string | null = null;
   if (stored && typeof stored === "object" && "projection" in stored) {
-    const typed = stored as StoredArtifactV2;
+    const typed = stored as StoredArtifactV2 | StoredArtifactV3;
     projection = typed.projection;
     session = typed.session ?? null;
+    if (typed.version === 3) conversationId = typed.conversationId;
   } else {
     projection = stored as AgentPlanProjection;
   }
@@ -162,5 +172,6 @@ export async function getAgentPlanArtifact(id: string, userId: string): Promise<
     session,
     meta: row.meta as AgentPlanMeta,
     createdAt: row.createdAt,
+    conversationId,
   };
 }
