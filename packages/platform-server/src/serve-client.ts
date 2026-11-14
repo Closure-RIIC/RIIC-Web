@@ -300,14 +300,28 @@ export class InfraCliServeClient {
     return this.starting;
   }
 
-  send(method: string, params: object, options: { timeoutMs?: number } = {}) {
+  send(method: string, params: object, options: { timeoutMs?: number; signal?: AbortSignal } = {}) {
+    if (options.signal?.aborted) return Promise.reject(options.signal.reason);
     const id = this.nextId++;
     const request = { id, method, params };
     const line = JSON.stringify(request);
     const key = JSON.stringify(id);
     const requestTimeoutMs = options.timeoutMs ?? this.options.timeoutMs;
 
-    return new Promise<ServeResult>((resolve, reject) => {
+    return new Promise<ServeResult>((resolveResult, rejectResult) => {
+      const cleanup = () => options.signal?.removeEventListener("abort", abort);
+      const resolve = (value: ServeResult) => { cleanup(); resolveResult(value); };
+      const reject = (reason: unknown) => { cleanup(); rejectResult(reason); };
+      const abort = () => {
+        const pending = this.pending.get(key);
+        if (!pending || !this.pending.delete(key)) return;
+        if (pending.timer) clearTimeout(pending.timer);
+        const child = this.child;
+        const active = this.activeKey === key;
+        if (active) this.activeKey = null;
+        reject(options.signal?.reason ?? new DOMException("Cancelled", "AbortError"));
+        if (active && child) this.replaceChild(child);
+      };
       const pending: PendingServeRequest = {
         key,
         request,
@@ -321,6 +335,8 @@ export class InfraCliServeClient {
         capture: new ServeRequestCapture(),
       };
       this.pending.set(key, pending);
+      options.signal?.addEventListener("abort", abort, { once: true });
+      if (options.signal?.aborted) { abort(); return; }
 
       this.ensureStarted()
         .then(() => this.dispatchNext())

@@ -520,15 +520,15 @@ export async function completePlanTask(
       finishedAt: new Date(),
       ...clearedPayloadColumns(),
     })
-    .where(eq(planTask.id, id));
+    .where(and(eq(planTask.id, id), eq(planTask.status, "running")));
   await getDatabase().execute(sql`select pg_notify(${PLAN_TASK_NOTIFY_CHANNEL}, ${id})`);
 }
 
-export async function cancelPlanTask(id: string): Promise<"cancelled" | "running" | "unavailable"> {
+export async function cancelPlanTask(id: string, options: { includeRunning?: boolean } = {}): Promise<"cancelled" | "running" | "unavailable"> {
   const updated = await getDatabase()
     .update(planTask)
     .set({ status: "cancelled", finishedAt: new Date(), ...clearedPayloadColumns() })
-    .where(and(eq(planTask.id, id), inArray(planTask.status, ["buffered", "pending"])))
+    .where(and(eq(planTask.id, id), inArray(planTask.status, options.includeRunning ? ["buffered", "pending", "running"] : ["buffered", "pending"])))
     .returning({ id: planTask.id });
   if (updated.length > 0) {
     await getDatabase().execute(sql`select pg_notify(${PLAN_TASK_NOTIFY_CHANNEL}, ${id})`);

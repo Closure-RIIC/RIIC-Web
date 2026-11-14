@@ -504,3 +504,34 @@ test("the dispatcher excludes cache hits and missing solver timings from the ser
 
   assert.equal(state.serviceTimeEwmaMs, 1_200);
 });
+
+test("cancelled queue tasks never invoke the solver or publish results", async () => {
+  const { calls, dependencies } = executionHarness({ getTask: async () => ({ status: "cancelled" }) });
+  dependencies.runPlan = async () => { throw Error("must not run cancelled task"); };
+  assert.equal(await executePlanTask(claimedTask(), 0, dependencies), null);
+  assert.ok(!calls.some(call => call.startsWith("task:")));
+});
+
+test("worker cancellation aborts an active solver and does not complete the cancelled task", async () => {
+  let cancelled = false;
+  const { calls, dependencies } = executionHarness({ getTask: async () => ({ status: cancelled ? "cancelled" : "running" }) });
+  dependencies.runPlan = async (_input, options) => {
+    cancelled = true;
+    await new Promise((resolve, reject) => options.signal.addEventListener("abort", () => reject(options.signal.reason), { once: true }));
+  };
+  assert.equal(await executePlanTask(claimedTask(), 0, dependencies), null);
+  assert.ok(!calls.includes("task:done")); assert.ok(!calls.includes("task:failed"));
+  assert.ok(!calls.includes("failure-artifact"));
+});
+
+test("cancellation during cache admission releases the acquired lease without publishing a result", async () => {
+  let cancelled = false;
+  const { calls, dependencies } = executionHarness({
+    getTask: async () => ({ status: cancelled ? "cancelled" : "running" }),
+    getCacheSolverIdentity: async () => ({}),
+    resolveCache: async () => { cancelled = true; return { kind: "lease", keyHmac: "test", leaseOwner: "owner" }; },
+  });
+  assert.equal(await executePlanTask(claimedTask(), 0, dependencies), null);
+  assert.ok(calls.includes("lease-release"));
+  assert.ok(!calls.includes("task:done")); assert.ok(!calls.includes("task:failed"));
+});

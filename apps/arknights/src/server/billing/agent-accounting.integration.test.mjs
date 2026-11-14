@@ -1,3 +1,5 @@
+/* global AbortSignal */
+import { Buffer } from "node:buffer";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { register, registerHooks } from "node:module";
@@ -24,6 +26,51 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
     for (const id of [userId,actor]) await pool.query('INSERT INTO public."user" (id,name,email,role) VALUES ($1,$1,$2,$3)',[id,`${id}@example.test`,id===actor?"admin":"user"]);
     await pool.query("INSERT INTO app.billing_wallet (user_id,paid_points) VALUES ($1,50)",[userId]);
     const policies = await accounting.activeAgentPolicies();
+    // Queue failures release only their own hold, once, while model reservations survive.
+    const cancelUser = `${userId}-queue`;
+    await pool.query('INSERT INTO public."user" (id,name,email,role) VALUES ($1,$1,$2,$3)', [cancelUser, `${cancelUser}@example.test`, 'user']);
+    try {
+      await pool.query("INSERT INTO app.billing_wallet (user_id,paid_points,monthly_points,monthly_expires_at) VALUES ($1,50,10,now()+interval '1 day')", [cancelUser]);
+      const queuedRun = await accounting.beginAgentRun({ userId: cancelUser, conversationId: randomUUID(), idempotencyKey: randomUUID(), requestHash: "queue-test", rates: policies.rates, filterVersion: policies.filter.id });
+      await accounting.beginModelCall(queuedRun, 0, 1000, 2048);
+      const baseline = (await getWallet(cancelUser)).reservedPoints;
+      const charge = await accounting.beginToolCharge(queuedRun, "queue-failure", "solve_schedule");
+      assert.equal((await getWallet(cancelUser)).reservedPoints, baseline + policies.rates.policy.toolPoints);
+      await Promise.all([accounting.finishToolCharge(charge, false), accounting.finishToolCharge(charge, false)]);
+      assert.equal((await getWallet(cancelUser)).reservedPoints, baseline);
+      await accounting.settleAgentRun(queuedRun, "failed");
+      assert.equal((await getWallet(cancelUser)).reservedPoints, 0);
+      const abortRun = await accounting.beginAgentRun({ userId: cancelUser, conversationId: randomUUID(), idempotencyKey: randomUUID(), requestHash: "abort-test", rates: policies.rates, filterVersion: policies.filter.id });
+      const abortCharge = await accounting.beginToolCharge(abortRun, "cancel-at-settlement", "solve_schedule");
+      await accounting.finishToolCharge(abortCharge, true, AbortSignal.abort());
+      assert.equal((await getWallet(cancelUser)).reservedPoints, 0);
+      assert.equal((await pool.query("SELECT status FROM app.agent_tool_charge WHERE id=$1", [abortCharge])).rows[0].status, "failed");
+      await accounting.settleAgentRun(abortRun, "cancelled");
+      const lateRun = await accounting.beginAgentRun({ userId: cancelUser, conversationId: randomUUID(), idempotencyKey: randomUUID(), requestHash: "late-test", rates: policies.rates, filterVersion: policies.filter.id });
+      const lateCharge = await accounting.beginToolCharge(lateRun, "late-success", "solve_schedule");
+      await accounting.settleAgentRun(lateRun, "cancelled");
+      const beforeLate = await getWallet(cancelUser);
+      await accounting.finishToolCharge(lateCharge, true);
+      assert.deepEqual(await getWallet(cancelUser), beforeLate);
+      assert.equal((await pool.query("SELECT status FROM app.agent_tool_charge WHERE id=$1", [lateCharge])).rows[0].status, "failed");
+      assert.equal(Number((await pool.query("SELECT tool_points FROM app.agent_run WHERE id=$1", [lateRun])).rows[0].tool_points), 0);
+
+      // A cancelled running task cannot be resurrected by a late worker completion.
+      process.env.WORKSPACE_ACTIVE_KEY_VERSION = "queue-test";
+      process.env.WORKSPACE_MASTER_KEYS = JSON.stringify({ "queue-test": "base64:" + Buffer.alloc(32, 7).toString("base64") });
+      const tasks = await import("../plan-task.ts");
+      for (const state of ["buffered", "pending", "running"]) {
+        const task = await tasks.createPlanTask({ userId: cancelUser, accountClass: "established", requestIpHmac: "queue-integration", payload: {
+          layout: { template: "243", rooms: [] }, operbox: [], sourceName: "queue-test", sourceType: "sample", rotation: "abc_12_12_12", fiammettaEnable: false,
+          layoutTemplate: "243", roomCount: 0, operatorCount: 0, dataOwnerTag: null, calculationContext: {}, operboxContentHmac: null, operboxHmacKeyVersion: null, cacheReferenceUserId: null,
+        } });
+        await pool.query("UPDATE app.plan_task SET status=$2 WHERE id=$1", [task.id, state]);
+        if (state === "running") assert.equal(await tasks.cancelPlanTask(task.id), "running");
+        assert.equal(await tasks.cancelPlanTask(task.id, { includeRunning: true }), "cancelled");
+        await tasks.completePlanTask(task.id, { status: "done", result: { diagnosticId: "late" } });
+        assert.equal((await tasks.getPlanTask(task.id)).status, "cancelled");
+      }
+    } finally { await pool.query('DELETE FROM public."user" WHERE id=$1', [cancelUser]); }
     // Keep the fixture deterministic across wall-clock peak/off-peak boundaries.
     delete policies.rates.policy.models[0].peak;
     const begin = (key=randomUUID()) => accounting.beginAgentRun({userId,conversationId:`test-${key}`,idempotencyKey:key,requestHash:"test-hash",rates:policies.rates,filterVersion:policies.filter.id});

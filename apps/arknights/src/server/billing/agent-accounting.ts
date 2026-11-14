@@ -121,10 +121,25 @@ export async function beginToolCharge(runId: string, toolCallId: string, name: s
     return id;
   });
 }
-export async function finishToolCharge(id: string, success: boolean) {
+export async function finishToolCharge(id: string, success: boolean, signal?: AbortSignal) {
   await billingTransaction(async client => {
-    const { rows: [row] } = await client.query("UPDATE app.agent_tool_charge SET status=$2 WHERE id=$1 AND status='reserved' RETURNING run_id,points", [id, success ? "completed" : "failed"]);
-    if (row && success) await client.query("UPDATE app.agent_run SET tool_points=tool_points+$2,delivered=true,heartbeat_at=now() WHERE id=$1", [row.run_id, row.points]);
+    const { rows: [owner] } = await client.query<{ run_id: string }>("SELECT run_id FROM app.agent_tool_charge WHERE id=$1", [id]);
+    if (!owner) return;
+    // Use the same wallet -> run lock order as settlement. Late callbacks cannot charge a closed run.
+    const { run } = await lockRun(client, owner.run_id);
+    const live = run.settlement === "reserved" && run.state === "running";
+    const completed = success && live && !signal?.aborted;
+    const { rows: [row] } = await client.query("UPDATE app.agent_tool_charge SET status=$2 WHERE id=$1 AND status='reserved' RETURNING run_id,points", [id, completed ? "completed" : "failed"]);
+    if (!row) return;
+    if (completed) {
+      await client.query("UPDATE app.agent_run SET tool_points=tool_points+$2,delivered=true,heartbeat_at=now() WHERE id=$1", [row.run_id, row.points]);
+    } else if (live) {
+      const release = Math.min(Number(row.points), sumPoints(run.held_paid, run.held_monthly));
+      const paid = Math.min(release, run.held_paid);
+      const monthly = sumPoints(release, -paid);
+      await client.query("UPDATE app.billing_wallet SET held_paid_points=held_paid_points-$2,held_monthly_points=held_monthly_points-$3,updated_at=now() WHERE user_id=$1", [run.user_id, paid, monthly]);
+      await client.query("UPDATE app.agent_run SET held_paid=held_paid-$2,held_monthly=held_monthly-$3,heartbeat_at=now() WHERE id=$1", [run.id, paid, monthly]);
+    }
   });
 }
 export async function markRunDelivered(id: string) {
