@@ -64,6 +64,10 @@ test("chat API separates automatic gateway routing from direct model selection",
       gatewaySettings: () => ({ model: "group/riic-agent" }),
     }],
     [new URL("./gateway-chat.ts", import.meta.url), {
+      agentChat: async (_request: Request, _userId: string, _requestId: string, _body: unknown, _persona: unknown, _resources: unknown, settings: { provider: string }) => {
+        calls.push(`direct:${settings.provider}`);
+        return Response.json({ mode: "direct" });
+      },
       gatewayChat: async (_request: Request, userId: string) => {
         assert.equal(userId, "test-admin");
         calls.push("gateway");

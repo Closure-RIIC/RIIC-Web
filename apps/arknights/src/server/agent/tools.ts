@@ -1,6 +1,5 @@
 import "@tanstack/react-start/server-only";
 
-import { randomUUID } from "node:crypto";
 import { tool } from "ai";
 import { z } from "zod";
 
@@ -23,14 +22,15 @@ import { queryAgentSkills, inspectAgentOperators } from "./operator-tools.ts";
 import { observeMasteryEnvironment, type MasteryEnvironmentObservation } from "./mastery-environment.ts";
 import { buildCalculatorTools, type AgentOperatorPool, type AgentTrainingResources } from "./calculator-tools.ts";
 import { buildHealthTools } from "./health-tools.ts";
-import { chargeAgentTool, refundFailedAgentTool } from "@/server/billing/service";
-import { SOLVE_TOOL_POINTS } from "@/server/billing/config";
 import { resourceSkill, type AgentResourcePolicy } from "./resource-policy.ts";
+
+import { readToolExecution } from "./tool-executor.ts";
+import { AgentToolError, waitForTool, type SolveEvent } from "./execution-types.ts";
 
 export interface AgentToolContext {
   request: Request;
   userId: string;
-  gatewayBilling?: boolean;
+  onSolveEvent?: (toolCallId: string, event: SolveEvent) => Promise<void>;
   resources?: AgentResourcePolicy;
 }
 
@@ -49,7 +49,7 @@ function logToolCall(userId: string, name: string, input: unknown, startedAt: nu
   }));
 }
 
-async function guarded<T>(userId: string, name: string, input: unknown, run: () => Promise<T>): Promise<T | { error: string }> {
+async function guarded<T>(userId: string, name: string, input: unknown, run: () => Promise<T>): Promise<T | { error: string; errorCode?: string }> {
   const startedAt = performance.now();
   try {
     const result = await run();
@@ -57,7 +57,7 @@ async function guarded<T>(userId: string, name: string, input: unknown, run: () 
     return result;
   } catch (error) {
     logToolCall(userId, name, input, startedAt, true);
-    return { error: error instanceof Error ? error.message : "工具执行失败。" };
+    return { error: error instanceof Error ? error.message : "工具执行失败。", errorCode: error instanceof AgentToolError ? error.code : "tool_failed" };
   }
 }
 
@@ -126,15 +126,6 @@ function operboxStats(operbox: OperBoxEntry[]) {
     byRarity: Object.fromEntries([...byRarity.entries()].sort((a, b) => b[0] - a[0]).map(([rarity, count]) => [`star${rarity}`, count])),
     elite2SixStarNames: elite2SixStar,
   };
-}
-
-function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => {
-      setTimeout(() => reject(new Error(message)), ms);
-    }),
-  ]);
 }
 
 type SolveScenario = "balanced" | "orundum" | "money";
@@ -388,6 +379,17 @@ export function buildAgentTools(ctx: AgentToolContext) {
       }),
     }),
 
+    query_schedule_execution: tool({
+      description: "查询本次排班工具执行状态及迟到结果。solve_schedule 等待超时或停止等待后，用返回的 execution.id 查询；不要自动重复提交求解。只返回当前用户自己的执行记录。",
+      inputSchema: z.object({ executionId: z.string().uuid() }).strict(),
+      execute: async input => {
+        const execution = await readToolExecution(input.executionId, ctx.userId);
+        if (!execution) return { error: "执行记录不存在。" };
+        return { id: execution.id, state: execution.state, computation_state: execution.computation_state,
+          processing_state: execution.processing_state, error_code: execution.error_code, plan: execution.plan };
+      },
+    }),
+
     solve_schedule: tool({
       toModelOutput: ({ output }) => {
         const projection = { ...(output as Record<string, unknown>) };
@@ -395,7 +397,7 @@ export function buildAgentTools(ctx: AgentToolContext) {
         return { type: "text", value: JSON.stringify(projection) };
       },
       description:
-        "排班求解：向站内求解器提交一次真正的排班计算，返回三班（或所选节奏）排班表、日产出与练卡建议。用户已给全配置、或已通过 preview_solve_defaults 报默认配置并经博士确认后调用；省略的参数服务端自动兜底（布局从游戏内基建/历史排班推断，干员按森空岛→MAA 上传→示例 Box 三级降级）。搓玉请求用 scene=orundum（仅 243/333/342 布局默认配齐碎片线＋贸易线；153/252 无搓玉默认配置，沿用布局默认配方，需搓玉时必须显式传 manufactureRecipes/tradeOrders），纯产钱用 scene=money（全龙门商法+全赤金），其余情况无需手写 manufactureRecipes/tradeOrders。计算耗时通常 2-3 秒。本工具只做计算，不做知识检索；机制解释类问题用 kb_route。",
+        "排班求解：向站内求解器提交一次真正的排班计算，返回三班（或所选节奏）排班表、日产出与练卡建议。用户已给全配置、或已通过 preview_solve_defaults 报默认配置并经博士确认后调用；省略的参数服务端自动兜底（布局从游戏内基建/历史排班推断，干员按森空岛→MAA 上传→示例 Box 三级降级）。搓玉请求用 scene=orundum（仅 243/333/342 布局默认配齐碎片线＋贸易线；153/252 无搓玉默认配置，沿用布局默认配方，需搓玉时必须显式传 manufactureRecipes/tradeOrders），纯产钱用 scene=money（全龙门商法+全赤金），其余情况无需手写 manufactureRecipes/tradeOrders。计算耗时通常 2-3 秒。等待超时或停止等待后，使用返回的 execution.id 调 query_schedule_execution 查询迟到结果，不要自动重复求解。本工具只做计算，不做知识检索；机制解释类问题用 kb_route。",
       inputSchema: z.object({
         layoutPreset: z.enum(["243", "153", "333", "252", "342"]).optional().describe("布局预设：贸易/制造/发电站数量。省略则自动推断（游戏内布局 → 最近排班 → 默认 243）"),
         boxSource: z.enum(["skland", "maa", "sample"]).optional().describe("干员数据来源：skland=用户森空岛同步，maa=最近上传的 MAA 文件，sample=243 全精二示例。省略则按森空岛 → MAA → 示例 Box 三级降级"),
@@ -411,7 +413,7 @@ export function buildAgentTools(ctx: AgentToolContext) {
         ),
         fiammettaEnable: z.boolean().optional().describe("是否启用菲亚梅塔换班加成，默认 false"),
       }),
-      execute: async (input) => guarded(ctx.userId, "solve_schedule", input, async () => {
+      execute: async (input, options) => guarded(ctx.userId, "solve_schedule", input, async () => {
         const defaults = await resolveSolveDefaults(ctx);
         const presetLabel = input.layoutPreset ?? defaults.layoutPreset;
         const preset = PRESETS.find((candidate) => candidate.label === presetLabel);
@@ -461,71 +463,72 @@ export function buildAgentTools(ctx: AgentToolContext) {
           operbox = sample.operbox as OperBoxEntry[];
           sourceName = sample.sourceName;
         }
-        // 求解器是首个计费工具：参数已经通过 schema 与布局/干员来源校验后再扣费，
-        // 避免用户因为格式错误消耗积分；后续 token 计量会在 agent stream 收尾时补写。
-        const runId = randomUUID();
-        const billing = ctx.gatewayBilling ? null : await chargeAgentTool({
-          userId: ctx.userId,
-          toolName: "solve_schedule",
-          points: SOLVE_TOOL_POINTS,
-          idempotencyKey: `solve_schedule:${runId}`,
-          runId,
-        });
-        try {
-          const rotation = (input.rotation && ROTATION_PROFILES.includes(input.rotation) ? input.rotation : DEFAULT_ROTATION);
-          const runResult = await withTimeout(
-            runPlan({
-              layout,
-              operbox,
-              sourceName,
-              rotation,
-              fiammettaEnable: input.fiammettaEnable ?? false,
-              dataOwnerTag,
-            }),
-            SOLVE_TIMEOUT_MS,
-            `求解超时（${SOLVE_TIMEOUT_MS / 1000} 秒），请稍后重试或改用示例 Box。`
-          );
-          const publicResult = toPublicPlanData(
-            runResult,
-            { layoutLabel: preset.label, sourceName, layout },
-            createRequestId()
-          );
-          const projected = projectPlanResult(publicResult);
-          const workbenchSession = {
-            presetLabel: preset.label,
-            layout,
-            operbox,
-            sourceName,
+        const rotation = (input.rotation && ROTATION_PROFILES.includes(input.rotation) ? input.rotation : DEFAULT_ROTATION);
+        const record = (event: SolveEvent) => ctx.onSolveEvent?.(options.toolCallId, event) ?? Promise.resolve();
+        const signal = options.abortSignal ?? ctx.request.signal;
+        if (signal.aborted) throw new AgentToolError("tool_wait_cancelled", "已停止等待。");
+        await record({ computation: "running" });
+        // Keep a handler attached after the caller stops waiting. A late result is
+        // saved without rewriting the already terminal tool wait or charging again.
+        const computation = (async () => {
+          let runResult: Awaited<ReturnType<typeof runPlan>>;
+          try {
+            runResult = await runPlan({ layout, operbox, sourceName, rotation,
+              fiammettaEnable: input.fiammettaEnable ?? false, dataOwnerTag });
+            if (!runResult.success) throw new Error("排班计算失败。");
+          } catch (error) {
+            await record({ computation: "failed", errorCode: "solver_failed" });
+            throw new AgentToolError("solver_failed", error instanceof Error ? error.message : "排班计算失败。");
+          }
+          await record({ computation: "succeeded" });
+          let publicResult: ReturnType<typeof toPublicPlanData>;
+          let projected: ReturnType<typeof projectPlanResult>;
+          try {
+            publicResult = toPublicPlanData(runResult, { layoutLabel: preset.label, sourceName, layout }, createRequestId());
+            projected = projectPlanResult(publicResult);
+          } catch (error) {
+            await record({ processing: "failed", errorCode: "result_conversion_failed" });
+            throw new AgentToolError("result_conversion_failed", error instanceof Error ? error.message : "排班结果转换失败。");
+          }
+          try { await record({ processing: "succeeded", result: publicResult }); }
+          catch (error) {
+            if (error instanceof AgentToolError) throw error;
+            throw new AgentToolError("result_persistence_failed", "排班结果保存失败。");
+          }
+          return { publicResult, projected };
+        })();
+        const { publicResult, projected } = await waitForTool(computation, SOLVE_TIMEOUT_MS, signal);
+        const workbenchSession = {
+          presetLabel: preset.label,
+          layout,
+          operbox,
+          sourceName,
+          boxSource,
+          rotationProfile: rotation,
+          fiammettaEnabled: input.fiammettaEnable ?? false,
+          result: publicResult,
+          activeShift: 0,
+        };
+        return {
+          solved: true,
+          defaultsApplied: {
+            layoutPreset: preset.label,
+            layoutSource: LAYOUT_SOURCE_LABELS[defaults.layoutSource],
             boxSource,
-            rotationProfile: rotation,
-            fiammettaEnabled: input.fiammettaEnable ?? false,
-            result: publicResult,
-            activeShift: 0,
-          };
-          return {
-            solved: true,
-            defaultsApplied: {
-              layoutPreset: preset.label,
-              layoutSource: LAYOUT_SOURCE_LABELS[defaults.layoutSource],
-              boxSource,
-              boxSourceNote: boxSourceNote(boxSource),
-              rotation,
-              rotationNote: rotation === DEFAULT_ROTATION ? "abc_12_12_12（三班 12/12/12 小时，一天两换）" : null,
-              scenario,
-              scenarioNote: applied.scenarioNote,
-            },
-            factoryRecipes: recipes,
-            tradeOrders,
-            boxSource,
-            operatorCount: operbox.length,
-            billing: billing ? { pointsCharged: billing.charged, usageId: billing.usageId, remainingPoints: billing.wallet.totalPoints } : { pendingSettlement: true },
-            workbenchSession,
-            plan: projected,
-          };
-        } catch (error) {
-          if (billing?.usageId) await refundFailedAgentTool(billing.usageId);
-          throw error;
-        }
+            boxSourceNote: boxSourceNote(boxSource),
+            rotation,
+            rotationNote: rotation === DEFAULT_ROTATION ? "abc_12_12_12（三班 12/12/12 小时，一天两换）" : null,
+            scenario,
+            scenarioNote: applied.scenarioNote,
+          },
+          factoryRecipes: recipes,
+          tradeOrders,
+          boxSource,
+          operatorCount: operbox.length,
+          billing: { pendingSettlement: true },
+          workbenchSession,
+          plan: projected,
+        };
       }),
     }),
 

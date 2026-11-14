@@ -123,8 +123,13 @@ export async function beginToolCharge(runId: string, toolCallId: string, name: s
 }
 export async function finishToolCharge(id: string, success: boolean) {
   await billingTransaction(async client => {
+    const { rows: [owner] } = await client.query("SELECT run_id FROM app.agent_tool_charge WHERE id=$1", [id]);
+    if (!owner) return;
+    const { run } = await lockRun(client, owner.run_id);
+    // A late completion cannot add a fee after the reservation has been released.
+    if (run.settlement !== "reserved") return;
     const { rows: [row] } = await client.query("UPDATE app.agent_tool_charge SET status=$2 WHERE id=$1 AND status='reserved' RETURNING run_id,points", [id, success ? "completed" : "failed"]);
-    if (row && success) await client.query("UPDATE app.agent_run SET tool_points=tool_points+$2,delivered=true,heartbeat_at=now() WHERE id=$1", [row.run_id, row.points]);
+    if (row && success) await client.query("UPDATE app.agent_run SET tool_points=tool_points+$2,heartbeat_at=now() WHERE id=$1", [row.run_id, row.points]);
   });
 }
 export async function markRunDelivered(id: string) {
@@ -138,8 +143,8 @@ export async function settleAgentRun(id: string, state: "completed" | "failed" |
     const incomplete = calls.some(call => !["measured", "waived"].includes(call.status));
     const unknownUsage = calls.some(call => call.input_tokens === null || call.output_tokens === null);
     const unknownCost = calls.some(call => call.upstream_rmb === null);
-    const billTokens = state === "completed" || state === "cancelled" || run.delivered;
-    const amounts = billTokens ? calls.filter(call => call.status === "measured").map(call => String(call.charged_rmb)) : [];
+    // Verified model work is payable independently of conversation or delivery outcomes.
+    const amounts = calls.filter(call => call.status === "measured").map(call => String(call.charged_rmb));
     const due = sumPoints(tokenPoints(run.policy, amounts), run.tool_points);
     const held = sumPoints(run.held_paid, run.held_monthly);
     const charged = Math.min(due, held);
@@ -149,10 +154,12 @@ export async function settleAgentRun(id: string, state: "completed" | "failed" |
     if (nextPaid < 0 || nextMonthly < 0 || wallet.held_paid_points < run.held_paid || wallet.held_monthly_points < run.held_monthly) throw new Error("Wallet reservation invariant failed");
     await client.query(`UPDATE app.billing_wallet SET paid_points=$2,monthly_points=$3,held_paid_points=held_paid_points-$4,
       held_monthly_points=held_monthly_points-$5,updated_at=now() WHERE user_id=$1`, [run.user_id, nextPaid, nextMonthly, run.held_paid, run.held_monthly]);
+    // Interrupted tools cannot leave permanent reservations or become late charges.
+    await client.query("UPDATE app.agent_tool_charge SET status='failed' WHERE run_id=$1 AND status='reserved'", [id]);
     const needsReview = incomplete || due > held;
     const metadata = { billingVersion: 5, rateVersion: run.rate_version, paidPoints: paid, monthlyPoints: monthly,
       monthlyExpiresAt: run.monthly_expires_at, tokenPoints: Math.max(0, sumPoints(charged, -run.tool_points)), toolPoints: run.tool_points,
-      duePoints: due, unsettledPoints: Math.max(0, sumPoints(due, -charged)), state };
+      duePoints: due, unsettledPoints: Math.max(0, sumPoints(due, -charged)), state, conversationState: state, deliveryState: run.delivered ? "emitted" : "not_emitted", settlementState: needsReview ? "needs_review" : "settled" };
     if (charged) await client.query(`INSERT INTO app.billing_ledger (id,user_id,kind,points_delta,paid_points_after,monthly_points_after,reference_type,reference_id,idempotency_key,metadata)
       VALUES ($1,$2,'agent_settlement',$3,$4,$5,'agent_run',$6,$7,$8)`, [randomUUID(), run.user_id, -charged, nextPaid, sumPoints(nextMonthly, expiredRelease), id, `agent_run:settle:${id}`, JSON.stringify(metadata)]);
     if (expiredRelease) await client.query(`INSERT INTO app.billing_ledger (id,user_id,kind,points_delta,paid_points_after,monthly_points_after,reference_type,reference_id,idempotency_key)
@@ -170,10 +177,23 @@ export async function settleAgentRun(id: string, state: "completed" | "failed" |
   });
 }
 export async function recoverAgentRuns() {
+  // Legacy direct calls had no durable run. Do not infer success or refund a
+  // debit without evidence; close stale usage as explicitly awaiting review.
+  await getDatabasePool().query(`WITH stale AS (
+    UPDATE app.agent_usage SET status='completed_unsettled',finalized_at=now(),
+      metadata=coalesce(metadata,'{}'::jsonb)||'{"conversationState":"unknown","settlementState":"needs_review","legacyUsage":true}'::jsonb
+    WHERE status='reserved' AND created_at < now()-interval '15 minutes' RETURNING id
+  ) INSERT INTO app.billing_review (id,kind,evidence)
+    SELECT 'usage:'||id,'legacy_usage',jsonb_build_object('usageId',id,'reason','Legacy usage interrupted; original debit retained pending review')
+    FROM stale ON CONFLICT DO NOTHING`);
   await getDatabasePool().query("UPDATE app.agent_run SET state='failed',settlement='needs_review',held_paid=0,held_monthly=0,finished_at=now() WHERE user_id IS NULL AND settlement='reserved' AND created_at < now()-interval '15 minutes'");
   // Runs have a ten-minute hard deadline. Recover only after an additional five-minute grace period.
   const { rows } = await getDatabasePool().query("SELECT id FROM app.agent_run WHERE settlement='reserved' AND created_at < now()-interval '15 minutes' ORDER BY created_at LIMIT 50");
-  for (const row of rows) await settleAgentRun(row.id, "failed");
+  for (const row of rows) {
+    // A vanished waiter is not proof that its underlying computation failed.
+    await getDatabasePool().query("UPDATE app.agent_tool_execution SET state='unknown',computation_state=CASE WHEN computation_state='running' THEN 'unknown' ELSE computation_state END,wait_error_code='process_interrupted',finished_at=now(),updated_at=now() WHERE run_id=$1 AND state='running'", [row.id]);
+    await settleAgentRun(row.id, "failed");
+  }
   return rows.length;
 }
 export type ActiveAgentPolicies = { rates: { id: string; policy: RatePolicy }; filter: { id: string; policy: FilterPolicy } };

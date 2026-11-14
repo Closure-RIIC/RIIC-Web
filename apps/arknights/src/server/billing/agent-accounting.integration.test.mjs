@@ -145,7 +145,8 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
       await blockedRuntime.finalize("failed");
       assert.equal(blockedChunks.filter(part=>part.type==="text-delta").length,0);
       const blockedDetail=await admin.billingRunDetail(blockedRun);
-      assert.equal(blockedDetail.run.charged_points,0);
+      assert.ok(blockedDetail.run.charged_points > 0);
+      assert.equal(blockedDetail.run.state,"failed");
       assert.equal(blockedDetail.calls[0].status,"measured");
       assert.equal((await getWallet(userId)).reservedPoints,0);
     } finally { await new Promise(resolve=>gateway.close(resolve)); if(path.dirname(policyDir)===path.resolve(tmpdir())&&path.basename(policyDir).startsWith("riic-gateway-test-"))await rm(policyDir,{recursive:true,force:true}); }

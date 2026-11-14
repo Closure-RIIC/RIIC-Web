@@ -83,14 +83,15 @@ export async function listBilling(section: string, params: URLSearchParams) {
 }
 export async function billingRunDetail(id: string) {
   const pool = getDatabasePool();
-  const [runs, calls, tools, ledger, reviews] = await Promise.all([
+  const [runs, calls, tools, ledger, reviews, executions] = await Promise.all([
     pool.query("SELECT * FROM app.agent_run WHERE id=$1", [id]),
     pool.query("SELECT * FROM app.agent_model_call WHERE run_id=$1 ORDER BY step", [id]),
     pool.query("SELECT * FROM app.agent_tool_charge WHERE run_id=$1 ORDER BY created_at", [id]),
     pool.query("SELECT * FROM app.billing_ledger WHERE reference_id=$1 ORDER BY created_at", [id]),
     pool.query("SELECT * FROM app.billing_review WHERE run_id=$1 ORDER BY created_at", [id]),
+    pool.query("SELECT id,tool_call_id,name,state,computation_state,processing_state,error_code,wait_error_code,created_at,finished_at FROM app.agent_tool_execution WHERE run_id=$1 ORDER BY created_at", [id]),
   ]);
-  return { run: runs.rows[0] ? numericBillingFields(runs.rows[0]) : null, calls: calls.rows.map(numericBillingFields), tools: tools.rows, ledger: ledger.rows.map(numericBillingFields), reviews: reviews.rows };
+  return { run: runs.rows[0] ? numericBillingFields(runs.rows[0]) : null, calls: calls.rows.map(numericBillingFields), tools: tools.rows, ledger: ledger.rows.map(numericBillingFields), reviews: reviews.rows, executions: executions.rows };
 }
 export async function adjustBilling(actor: string, input: unknown) {
   const body = input as Record<string, unknown>;
