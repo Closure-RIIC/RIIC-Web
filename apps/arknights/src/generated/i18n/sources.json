@@ -1,10 +1,10 @@
 {
   "source": {
     "repository": "https://github.com/arkntools/arknights-toolbox-data",
-    "commit": "979536fda0c5cdc63d4ce62e61d3a4d58df55701"
+    "commit": "a07b4255b43a7171e519b26a13ddb12668a2cf0a"
   },
   "localInputs": {
-    "packages/arknights-domain/src/generated/arkntools/source.json": "3d3252b0b4d9e3bbc1b02dbec48731f96a7e5d91272468338f3ae6f55747e19a",
+    "packages/arknights-domain/src/generated/arkntools/source.json": "4a8a09741e3e5caa91920baf477bbbf04d9ba3b2aced54993c7a516b481981ef",
     "packages/arknights-domain/src/generated/arkntools/operator-catalog.json": "dfe183061b8a27975836c7d8ec45b29e2ada771cd9fa0ec6d45dc9801e34a53f",
     "packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json": "ce544edc18b429503dd9bdcae6d1fe890ef94c49fff65516af3de3545f64a3f7",
     "apps/arknights/src/generated/item-name-catalog.json": "fa3fb34a8e17479bfbbf31f53488c75890f91f54d201450b0996e3555202e11a",

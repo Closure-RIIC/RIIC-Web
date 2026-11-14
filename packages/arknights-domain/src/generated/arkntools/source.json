@@ -3,11 +3,11 @@
   "portraitVersioning": "sha256",
   "source": {
     "repository": "https://github.com/arkntools/arknights-toolbox-data",
-    "commit": "979536fda0c5cdc63d4ce62e61d3a4d58df55701"
+    "commit": "a07b4255b43a7171e519b26a13ddb12668a2cf0a"
   },
   "portraitsSource": {
     "repository": "https://github.com/yuanyan3060/ArknightsGameResource",
-    "commit": "9473346fe047eecb625cabb5d10611a12657f479"
+    "commit": "62fe51e6cd7faa5c1698e05f8cf63ed61cf6a7ac"
   },
   "products": [
     {
