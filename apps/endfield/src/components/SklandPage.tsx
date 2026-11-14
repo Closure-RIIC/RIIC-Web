@@ -55,8 +55,8 @@ export function SklandPage() {
     catch (cause) { if (!request.signal.aborted) setError(sklandErrorKey(cause, "Skland.syncFailedPleaseRetry")); }
     finally { if (controller.current === request) { controller.current = null; setPending(false); setInitialized(true); } }
   }
-  async function loadSnapshot(id: string, role: EndfieldRole, signal: AbortSignal, showDetails = true) {
-    const value = await api<{ snapshot: EndfieldSnapshot }>("sync", signal, { accountId: id, roleId: role.roleId, serverId: role.serverId });
+  async function loadSnapshot(id: string, role: EndfieldRole, signal: AbortSignal, showDetails = true, force = false) {
+    const value = await api<{ snapshot: EndfieldSnapshot }>("sync", signal, { accountId: id, roleId: role.roleId, serverId: role.serverId, force });
     if (signal.aborted) return;
     const source = sklandRosterSource(owner.current, id, role);
     update(current => {
@@ -69,12 +69,12 @@ export function SklandPage() {
     setSnapshot(value.snapshot);
     try { sessionStorage.setItem(selectionKey, JSON.stringify({ accountId: id, role: roleKey(role), ownerKey: owner.current })); } catch { /* Selection is optional. */ }
   }
-  async function installRoles(id: string, next: EndfieldRole[], signal: AbortSignal, preferred?: string, showDetails = true) {
+  async function installRoles(id: string, next: EndfieldRole[], signal: AbortSignal, preferred?: string, showDetails = true, force = false) {
     if (signal.aborted) return;
     setRoles(next);
     const role = next.find(item => roleKey(item) === preferred) ?? next.find(item => item.isDefault) ?? next[0];
     setSelected(role ? roleKey(role) : "");
-    if (role) await loadSnapshot(id, role, signal, showDetails);
+    if (role) await loadSnapshot(id, role, signal, showDetails, force);
   }
   function selectAccount(id: string) {
     clearData(true); setRoles([]); setSelected(""); setAccountId(id);
@@ -83,7 +83,7 @@ export function SklandPage() {
       await installRoles(id, value.roles, signal);
     });
   }
-  async function restoreAccounts(signal: AbortSignal, preserve = false, showDetails = false) {
+  async function restoreAccounts(signal: AbortSignal, preserve = false, showDetails = false, force = false) {
     let value: Accounts;
     try { value = await api<Accounts>("accounts", signal); }
     catch (cause) {
@@ -103,7 +103,7 @@ export function SklandPage() {
     if (preserve && sameOwner && next.id === accountId && snapshot) return;
     clearData(); setRoles([]); setAccountId(next.id); setLoginOpen(false);
     const loaded = await api<{ roles: EndfieldRole[] }>("roles", signal, { accountId: next.id });
-    await installRoles(next.id, loaded.roles, signal, saved.accountId === next.id && saved.ownerKey === value.ownerKey ? saved.role : undefined, showDetails);
+    await installRoles(next.id, loaded.roles, signal, saved.accountId === next.id && saved.ownerKey === value.ownerKey ? saved.role : undefined, showDetails, force);
   }
   function authenticated(value: EndfieldLogin) {
     clearData(true); setLoginOpen(false); setAccountId(value.accountId);
@@ -164,7 +164,7 @@ export function SklandPage() {
         <div className={`ef-actions ${styles.actions}`}>
           <Action size="sm" variant="yellow" icon={<RefreshCw className={pending ? "ef-spin" : undefined} />}
             aria-label={t("Skland.refreshData")} title={t("Skland.refreshData")}
-            disabled={pending} onClick={() => { clearData(); void perform(signal => restoreAccounts(signal, false, true)); }}>{pending ? t("Skland.syncing") : t("Skland.syncData")}</Action>
+            disabled={pending} onClick={() => { clearData(); void perform(signal => restoreAccounts(signal, false, true, true)); }}>{pending ? t("Skland.syncing") : t("Skland.syncData")}</Action>
           <Action size="sm" variant="dark" icon={<UserPlus />} disabled={pending || accounts.filter(account => account.source === "endfield").length >= 5} onClick={() => setLoginOpen(true)}>{t("Skland.addAccount")}</Action>
           <Action size="sm" variant="red" icon={<LogOut />} disabled={pending || currentAccount?.source !== "endfield"}
             title={currentAccount?.source !== "endfield" ? t("Skland.disconnectThisSharedAccountFromArknightsSklandSync") : undefined}
@@ -193,7 +193,7 @@ export function SklandPage() {
     {initialized && !accounts.length ? <div className="ef-login"><header className="ef-login-copy"><h2>{t("Skland.connectToSkland")}</h2><p>{t("Skland.signInToLoadYourCharacterDataConnectedAccounts")}</p></header>{loginPanel}</div> : null}
     {accounts.length ? <>
       {!pending && !roles.length ? <Notice>{t("Skland.thisAccountHasNoAvailableEndfieldCharacterAddAn")}</Notice> : null}
-      {!pending && !snapshot && loadedRole ? <Action onClick={() => void perform(signal => loadSnapshot(accountId, loadedRole, signal))}>{t("Skland.retryData")}</Action> : null}
+      {!pending && !snapshot && loadedRole ? <Action onClick={() => void perform(signal => loadSnapshot(accountId, loadedRole, signal, true, true))}>{t("Skland.retryData")}</Action> : null}
     </> : null}
     {pending && initialized ? <p className="ef-muted" role="status">{t("Skland.readingSklandData")} <Action size="sm" variant="red" onClick={cancel}>{t("Skland.cancel")}</Action></p> : null}
     {snapshot ? <SklandDataView key={`${accountId}:${selected}`} snapshot={snapshot} /> : null}

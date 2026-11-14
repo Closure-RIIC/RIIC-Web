@@ -20,6 +20,7 @@ test("Endfield reads require current role AND server membership; QR owners are i
     pollSklandIdentity: async () => ({ status: "expired" }),
   } });
   const { readEndfieldSnapshot, startEndfieldScan, consumeEndfieldScan, endfieldSync, invalidateEndfieldSnapshots } = await import("./endfield-adapter.ts");
+  let charNum = 1;
   let reads = 0, inventoryReads = 0, returnedId = "role";
   let inventoryWait: Promise<void> = Promise.resolve();
   let failDetails = false;
@@ -31,7 +32,7 @@ test("Endfield reads require current role AND server membership; QR owners are i
     getEndfieldDetails: async (selected: { roleId: string; serverId: string }) => {
       reads++; assert.deepEqual(selected, { roleId: "role", serverId: "server" });
       if (failDetails) throw new Error("detail read failed");
-      return { detail: { base: { roleId: returnedId, name: "Test", charNum: 1 }, chars: [{ id: "char", charData: { name: "Operator" }, evolvePhase: 0, level: 1 }] } };
+      return { detail: { base: { roleId: returnedId, name: "Test", charNum }, chars: [{ id: "char", charData: { name: "Operator" }, evolvePhase: 0, level: 1 }] } };
     },
   } } };
   await assert.rejects(readEndfieldSnapshot(client, { roleId: "someone-else", serverId: "server" }), /不属于/);
@@ -55,15 +56,18 @@ test("Endfield reads require current role AND server membership; QR owners are i
     selectedUid: "", refreshedAt: 0, expiresAt: Date.now() + 60000, policyConsent: { termsVersion: TERMS_VERSION, privacyVersion: PRIVACY_VERSION, acceptedAt: 0 } };
   const selected = { roleId: "role", serverId: "server" };
   const identity = { userId: "website-user", accountId: "account", force: true };
+  charNum = 2; // Card currently exposes only one of two characters.
   await Promise.all(Array.from({ length: 20 }, () => endfieldSync(session, selected, identity)));
   assert.equal(sessionReads, 1, "credential setup/refresh must be inside the coalesced task");
-  await endfieldSync(session, selected, { ...identity, force: false });
+  charNum = 1; // Upstream now reports a complete card.
+  assert.equal((await endfieldSync(session, selected, { ...identity, force: false })).result.rosterComplete, false);
   assert.equal(sessionReads, 1);
+  assert.equal((await endfieldSync(session, selected, identity)).result.rosterComplete, true);
   await endfieldSync({ ...session, token: "new-token" }, selected, identity);
-  assert.equal(sessionReads, 2, "a refreshed credential must never receive an older cached session");
+  assert.equal(sessionReads, 3, "a refreshed credential must never receive an older cached session");
   invalidateEndfieldSnapshots(identity.userId);
   await endfieldSync(session, selected, identity);
-  assert.equal(sessionReads, 3);
+  assert.equal(sessionReads, 4);
   let finishInventory!: () => void;
   inventoryWait = new Promise(resolve => { finishInventory = resolve; });
   failDetails = true;
