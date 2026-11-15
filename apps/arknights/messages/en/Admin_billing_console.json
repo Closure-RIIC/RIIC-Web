@@ -34,7 +34,7 @@
   "next": "Next",
   "gatewaySyncStatus": "Gateway sync status",
   "waitingForGatewayWorker": "Waiting for gateway worker",
-  "deepseekFirstGlmOnFailureApplicationFilteringRemains": "DeepSeek first; GLM on failure. Application filtering remains active during gateway sync failures. An unavailable gateway is never bypassed.",
+  "deepseekFirstGlmOnFailureApplicationFilteringRemains": "DeepSeek first, then GLM; the official DeepSeek fallback comes last when enabled. Application filtering remains active during gateway sync failures. An unavailable gateway is never bypassed.",
   "recordDetails": "Record details",
   "amountsRetainTheirOriginalPrecisionNullMeansUnknown": "Amounts retain their original precision; null means unknown or not applicable.",
   "pointAdjustment": "Point adjustment",

@@ -4,7 +4,7 @@ import type { PoolClient } from "pg";
 import { getDatabasePool } from "@riic/platform-server/db";
 import { compileFilterPolicy, parseFilterPolicy } from "../agent/filter-policy.ts";
 import { activeAgentPolicies, billingTransaction } from "./agent-accounting.ts";
-import { parseRatePolicy } from "./rate-policy.ts";
+import { OFFICIAL_DEEPSEEK_MODEL, OFFICIAL_DEEPSEEK_PROVIDER, parseRatePolicy } from "./rate-policy.ts";
 import { parseResourcePolicy } from "../agent/resource-policy.ts";
 import { sumPoints, validPoints } from "./points.ts";
 import { MIN_POINT_AMOUNT } from "../../billing-points.ts";
@@ -184,6 +184,14 @@ export async function changeAgentPolicy(actor: string, input: unknown) {
       await client.query("INSERT INTO app.agent_policy_version (id,kind,version,payload,author_id) VALUES ($1,$2,$3,$4,$5)", [id,kind,version,JSON.stringify(payload),actor]);
     }
     if (action !== "draft") {
+      if (kind === "rates") {
+        let rates;
+        try { rates = parseRatePolicy(payload); } catch { throw new BillingAdminError("费率版本校验失败，未发布。"); }
+        if (process.env.AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED === "1" &&
+          !rates.models.some(rate => rate.provider === OFFICIAL_DEEPSEEK_PROVIDER && rate.model === OFFICIAL_DEEPSEEK_MODEL)) {
+          throw new BillingAdminError("已配置官网兜底，发布或回滚的费率必须包含官网模型；撤销兜底后才能恢复旧费率。");
+        }
+      }
       if (kind === "resources") {
         try { parseResourcePolicy(payload); } catch { throw new BillingAdminError("资源版本校验失败，未发布。"); }
       }
