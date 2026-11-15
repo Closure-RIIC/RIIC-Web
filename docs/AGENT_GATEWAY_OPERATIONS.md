@@ -2,7 +2,7 @@
 
 ## 范围与边界
 
-应用在 `AGENT_GATEWAY_ENABLED=1` 时仅请求 `group/riic-agent`，由 Magpie 按顺序选择 DeepSeek / GLM。没有应用侧静默直连降级。`AGENT_GATEWAY_ENABLED=0` 保留原模型选择和旧结算，供受控回滚使用。
+应用在 `AGENT_GATEWAY_ENABLED=1` 时仅请求 `group/riic-agent`，由 Magpie 按顺序选择转发 DeepSeek / GLM；配置官网兜底后，最后尝试官网 `riic-deepseek-official/deepseek-flash`。所有调用继续经过网关计量和过滤。`AGENT_GATEWAY_ENABLED=0` 保留原模型选择和旧结算，供受控回滚使用。
 
 `/admin/billing` 提供用量、成本、钱包、流水、爱发电订单、费率、对账、兑换码和操作审计；`/admin/agent` 提供网关同步状态、版本化过滤规则与命中记录。两个入口与 API 均要求管理员，reviewer 无权访问。普通 `/billing` 不增加管理入口。
 
@@ -25,6 +25,41 @@
 `deploy/patch-agent-release-helper.mjs` 只扩展 worker 文件允许项和服务重启/回滚处理，校验预期原文、检查 shell 语法并备份原 helper。没有改变既有鉴权、迁移、产物、健康检查或回滚门禁。
 
 ## 调用、过滤与计费
+
+### 官网 DeepSeek 兜底
+
+私有环境文件增加 `AGENT_LLM_DEEPSEEK_OFFICIAL_BASE_URL=https://api.deepseek.com`、
+`AGENT_LLM_DEEPSEEK_OFFICIAL_MODEL=deepseek-flash` 和独立的
+`AGENT_LLM_DEEPSEEK_OFFICIAL_API_KEY`。密钥仅从受限环境文件派生到网关配置，
+不能复用转发服务的凭据，也不能把官网返回的模型伪装成原转发模型。
+
+`deploy/agent-official-fallback.mjs` 的 `withOfficialDeepSeekFallback(config, source)`
+生成追加官网的配置，保留原两条模型及密钥，并设置 `firstToken=10`、
+`queueWait=1`、`patience=-1`。前两条线路在连接、响应头或首内容阶段持续无响应时
+切换，角色帧和 keepalive 不算内容。Magpie 每候选 15 秒会提前发送响应头，因此
+首内容等待必须小于 15 秒，才能继续使用响应头中的真实模型身份结算。
+最后一个候选仍受应用 60 秒首语义输出和整轮 10 分钟限制。
+已输出正文、推理或工具内容后不自动重放；`affinity=turn` 会在同一轮工具续调中
+沿用已成功的候选，下一用户轮次再恢复优先顺序。
+
+官网成本按人民币公开价：每百万 token，空闲时段未缓存输入 1 元、缓存输入
+0.02 元、输出 4 元；峰时分别 2、0.04、8 元。用户 Token 扣费继续乘 1.2，
+积分换算及工具费保持原规则。官网费率有独立精确 provider/model 行，包含
+2026、2027 年国务院假期安排；后续年度在新年之前核对官网价格并发布带新日历的
+费率版本。周末即使调休上班也按空闲价。费率时间仍使用该步调用记录创建时间，
+跨峰谷边界且前置上游等待时可能与供应商实际选价时刻存在差异；此计量不是供应商发票。
+
+现有数据库的 `rates:1` 不会因修改默认值自动升级。上线顺序为：
+
+1. 通过正常 release 流程发布支持第三模型的源码、web 和计费 worker；在对应 `/etc/riic-agent-<environment>.env` 设置非敏感的 `AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED=1` 并重启 web/worker，启用费率发布保护。开发 web 不需要加载官网密钥；历史两行费率继续可读。
+2. 克隆当前 active 费率，保留其余模型、倍率及权益；追加 `officialDeepSeekRate()` 返回的完整行，通过管理员草稿/发布流程生成新版本。
+3. 等待所有使用旧两行费率快照的运行结束，确认没有遗留预留；期间新运行使用新费率。
+4. 备份受限 `providers.json`，使用上述纯配置变换追加官网，保持文件权限和 owner，再使网关重新加载；先完成隔离合同测试及小额真实冒烟。
+
+新安装的 `setup-agent-gateway.mjs` 在官网变量齐全时可创建第三条线路，默认仍不启用应用流量；已有网关配置不会被安装脚本覆盖。
+官网启用标识为 1 的环境，后台发布/回滚费率时要求官网行存在。已有安装须在追加路由前核对该环境 web/worker 的有效启用标识；不能只根据密钥文件存在推断护栏已启用。撤销时先移除官网路由，
+排空进行中的运行，再将启用标识置 0、重启 web/worker，最后通过版本化操作恢复旧费率。
+不覆盖历史运行快照、账本或已结算成本。
 
 积分折算基准为 `1 积分 = 0.1 元`，Token 收费公式为 `四舍五入(上游人民币成本 × 1.2 ÷ 0.1, 4)`。例如成本为 0.001302 元时扣 0.0156 积分；同轮成功求解一次共扣 1.0156 积分。账本、预留、分桶退款和余额均保留 4 位小数；没有每轮最低 1 积分的 Token 费用。
 
