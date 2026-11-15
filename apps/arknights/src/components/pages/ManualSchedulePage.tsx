@@ -115,7 +115,7 @@ const OPERATOR_CATALOG_BY_ID = new Map(OPERATOR_CATALOG.map((operator) => [opera
 const OPERATOR_CATALOG_BY_NAME = new Map(OPERATOR_CATALOG.map((operator) => [operator.name, operator]));
 
 export interface ManualSchedulePageProps {
-  /** Development showcases can use the real editor without touching saved drafts. */
+  /** Development previews can disable local storage for drafts, posters and mood settings. */
   persistDraft?: boolean;
   initialPosterDocument?: SchedulePosterDocument | null;
   onImportPoster?: (document: SchedulePosterDocument) => void;
@@ -362,17 +362,19 @@ export function ManualSchedulePage({
       posterInitialization.current = (async () => {
         const { createPosterDocument, readPosterFile } = await import("@/schedule-poster-document");
         let saved: SchedulePosterDocument | null = null;
-        try {
-          const value = window.localStorage.getItem(POSTER_STORAGE_KEY);
-          if (value) saved = readPosterFile(value);
-        } catch { /* Poster metadata must not prevent manual draft restoration. */ }
+        if (persistDraft) {
+          try {
+            const value = window.localStorage.getItem(POSTER_STORAGE_KEY);
+            if (value) saved = readPosterFile(value);
+          } catch { /* Poster metadata must not prevent manual draft restoration. */ }
+        }
         setPosterSettings(current => current ?? saved ?? createPosterDocument(layout, draft, sourceOperbox ?? []));
       })().catch(error => {
         setPosterLoadError(error instanceof Error ? error.message : String(error));
       }).finally(() => { posterInitialization.current = null; });
     }
     await posterInitialization.current;
-  }, [draft, layout, posterSettings, sourceOperbox]);
+  }, [draft, layout, persistDraft, posterSettings, sourceOperbox]);
 
   useEffect(() => {
     if (initialPosterDocument) {
@@ -441,7 +443,7 @@ export function ManualSchedulePage({
   useEffect(() => {
     if (restored || !restorationReady) return;
     try {
-      const saved = initialDraft ?? loadManualScheduleDraft(window.localStorage);
+      const saved = initialDraft ?? (persistDraft ? loadManualScheduleDraft(window.localStorage) : null);
       if (!ownedOperators.length && !initialPosterDocument && !saved?.maaImport) return;
       if (saved) {
         const reconciled = reconcileManualScheduleDraft(saved, layout, operbox);
@@ -492,10 +494,10 @@ export function ManualSchedulePage({
   }, [canPersistDraft, draft, restored]);
 
   useEffect(() => {
-    if (!restored || !posterDocument) return;
+    if (!persistDraft || !restored || !posterDocument) return;
     try { window.localStorage.setItem(POSTER_STORAGE_KEY, JSON.stringify(posterDocument)); }
     catch { /* The user can still download the editable document. */ }
-  }, [restored, posterDocument]);
+  }, [persistDraft, restored, posterDocument]);
   const activeShift = Math.min(draft.activeShift, Math.max(0, draft.shifts.length - 1));
   const shiftRanges = manualShiftTimeRanges(draft.startTime, draft.shifts.map((shift) => shift.durationHours));
   const maaDraft = useMemo(() => ({
@@ -1229,7 +1231,7 @@ export function ManualSchedulePage({
       {storageWarning ? <p className="mb-3 text-sm text-amber-700" role="status">{storageWarning}</p> : null}
 
       {restored && <Suspense fallback={<Skeleton className="mt-8 h-48 w-full" />}>
-        <MoodSimulationPanel key={moodRevision} layout={layout} operbox={operbox ?? []} draft={draft}
+        <MoodSimulationPanel key={moodRevision} persistSettings={persistDraft} layout={layout} operbox={operbox ?? []} draft={draft}
           renderBoard={renderBoard}
           view={view} onViewChange={setView}
           posterContent={posterVisited ? posterSettings && posterDocument

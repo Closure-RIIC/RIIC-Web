@@ -219,7 +219,7 @@ const MoodDetailPanel = memo(function MoodDetailPanel({store,selected,name}: {
 });
 
 export type MoodBoardState = {rows:RoomRow[];shift:number;cycle:number;store:MoodViewStore;selected:string;onSelect:(name:string) => void};
-export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabled,onFiammettaEnabledChange,onTargetChange,renderBoard,settingsOpen,onSettingsOpenChange,view,onViewChange,posterContent}: {
+export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabled,onFiammettaEnabledChange,onTargetChange,renderBoard,settingsOpen,onSettingsOpenChange,view,onViewChange,posterContent,persistSettings=true}: {
   layout: BaseBlueprint; operbox: OperBoxEntry[]; draft: ManualScheduleDraft; fiammettaEnabled: boolean;
   onFiammettaEnabledChange: (enabled: boolean) => void;
   onTargetChange: (shift: number,target: string | null) => void;
@@ -227,6 +227,7 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
   view?: string;
   onViewChange?: (value: string) => void;
   posterContent?: ReactNode;
+  persistSettings?: boolean;
   settingsOpen:boolean;
   onSettingsOpenChange:(open:boolean) => void;
 }) {
@@ -267,9 +268,11 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
     return () => observer.disconnect();
   },[result,mode,pending]);
   useEffect(() => {
-    try {setSettings(readSettings(localStorage.getItem(MOOD_STORAGE_KEY),initialSignature.current));} catch {setStorageWarning(true);}
+    if (persistSettings) {
+      try {setSettings(readSettings(localStorage.getItem(MOOD_STORAGE_KEY),initialSignature.current));} catch {setStorageWarning(true);}
+    }
     setReady(true);
-  },[]);
+  },[persistSettings]);
   useEffect(() => {
     const scope=JSON.parse(configScope) as {shifts:number;names:string[];rooms:string[]};
     setSettings(current => {
@@ -278,9 +281,9 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
     });
   },[configScope,settings.cycles]);
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !persistSettings) return;
     try {localStorage.setItem(MOOD_STORAGE_KEY,JSON.stringify({signature,settings}));} catch {setStorageWarning(true);}
-  },[ready,signature,settings]);
+  },[ready,persistSettings,signature,settings]);
   const input=useMemo<MoodSimulationInput>(() => ({layout,operbox,draft,settings,fiammettaEnabled}),[layout,operbox,draft,settings,fiammettaEnabled]);
   // The active editor tab and display start clock must not trigger a new calculation.
   const calculationKey=useMemo(() => JSON.stringify({...input,draft:{...draft,activeShift:0,startTime:"00:00"}}),[input,draft]);
