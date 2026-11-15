@@ -6,6 +6,7 @@ import process from "node:process";
 import console from "node:console";
 import path from "node:path";
 import { createHash } from "node:crypto";
+import { withOfficialDeepSeekFallback } from "./agent-official-fallback.mjs";
 
 const environment=process.argv[2];
 if(process.platform!=="linux"||process.getuid()!==0||!["development","production"].includes(environment))throw new Error("Usage: root node setup-agent-gateway.mjs development|production");
@@ -36,7 +37,9 @@ if(!existsSync(`${root}/magpie/providers.json`)){
   const providers=[{id:"riic-deepseek",name:"RIIC DeepSeek",key:deepseek,chat:source.AGENT_LLM_DEEPSEEK_BASE_URL||source.AGENT_LLM_BASE_URL,models:[source.AGENT_LLM_DEEPSEEK_MODEL||source.AGENT_LLM_MODEL],maxConcurrency:4,maxRPM:60,queueLimit:8,queueWait:15},
     {id:"riic-glm",name:"RIIC GLM",key:glm,chat:source.AGENT_LLM_GLM_BASE_URL,models:[source.AGENT_LLM_GLM_MODEL],maxConcurrency:4,maxRPM:60,queueLimit:8,queueWait:15}];
   if(providers.some(p=>!p.chat||!p.models[0]))throw new Error("Upstream settings incomplete");
-  writeFileSync(`${root}/magpie/providers.json`,JSON.stringify({providers,groups:[{id:"riic-agent",name:"RIIC Agent",members:["riic-deepseek/deepseek-v4.1-flash","riic-glm/glm-5.3-flash"],routing:"order",affinity:"turn"}]},null,2),{mode:0o600});chownSync(`${root}/magpie/providers.json`,65532,65532);
+  const config={providers,groups:[{id:"riic-agent",name:"RIIC Agent",members:["riic-deepseek/deepseek-v4.1-flash","riic-glm/glm-5.3-flash"],routing:"order",affinity:"turn"}]};
+  const configured=source.AGENT_LLM_DEEPSEEK_OFFICIAL_API_KEY ? withOfficialDeepSeekFallback(config,source) : config;
+  writeFileSync(`${root}/magpie/providers.json`,JSON.stringify(configured,null,2),{mode:0o600});chownSync(`${root}/magpie/providers.json`,65532,65532);
 }
 try{symlinkSync("/riic-policy/plugins.json",`${root}/magpie/plugins.json`);}catch(error){if(error.code!=="EEXIST")throw error;}
 try{execFileSync("docker",["inspect",container],{stdio:"ignore"});}
@@ -50,7 +53,7 @@ if(!existsSync(envFile)){
   const entry=list?.find(k=>k.name===`riic-${environment}`||k.label===`riic-${environment}`);
   if(!entry?.id)throw new Error("Cannot identify application gateway key");
   execFileSync("docker",["exec",container,"/magpie","gateway-key","models",entry.id,"group/riic-agent"],{stdio:"pipe"});
-  const entries={AGENT_GATEWAY_ENABLED:"0",AGENT_GATEWAY_URL:`http://127.0.0.1:${port}/v1`,AGENT_GATEWAY_KEY:key,AGENT_GATEWAY_POLICY_DIR:policy};
+  const entries={AGENT_GATEWAY_ENABLED:"0",AGENT_GATEWAY_URL:`http://127.0.0.1:${port}/v1`,AGENT_GATEWAY_KEY:key,AGENT_GATEWAY_POLICY_DIR:policy,AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED:source.AGENT_LLM_DEEPSEEK_OFFICIAL_API_KEY ? "1" : "0"};
   if(environment==="development")for(const name of ["AGENT_KB_DIR","AGENT_PERSONA_CARD"])if(source[name])entries[name]=source[name];
   writeFileSync(envFile,Object.entries(entries).map(([k,v])=>`${k}=${JSON.stringify(v)}`).join("\n")+"\n",{mode:0o640});chownSync(envFile,0,gid);
 }

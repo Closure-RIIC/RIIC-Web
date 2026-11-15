@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { budgetPoints, defaultRatePolicy, parseRatePolicy, priceModelCall, tokenPoints } from "./rate-policy.ts";
+import { budgetPoints, defaultRatePolicy, officialDeepSeekRate, parseRatePolicy, priceModelCall, tokenPoints } from "./rate-policy.ts";
 test("actual model rates preserve cache partition, precision, FX and peak boundaries", () => {
   const policy = defaultRatePolicy();
   const usage = { inputTokens: 1_000_000, cachedInputTokens: 400_000, outputTokens: 100_000 };
@@ -15,6 +15,41 @@ test("actual model rates preserve cache partition, precision, FX and peak bounda
   assert.equal(priceModelCall(fx,"riic-glm","glm-5.3-flash",{inputTokens:1_000_000,cachedInputTokens:0,outputTokens:0},new Date()).upstreamRmb,"7.560000000000");
   assert.ok(budgetPoints(policy,20_000,2048)>0);
   assert.throws(() => budgetPoints(policy,512_001,2048));
+});
+
+test("official fallback uses its actual identity, official RMB prices and the existing markup", () => {
+  const policy = parseRatePolicy(defaultRatePolicy());
+  const rate = officialDeepSeekRate();
+  const usage = { inputTokens: 1_000_000, cachedInputTokens: 250_000, outputTokens: 100_000 };
+  const cost = (at: string) => priceModelCall(policy, rate.provider, rate.model, usage, new Date(at));
+  assert.deepEqual(cost("2026-11-16T01:00:00Z"), { upstreamRmb: "2.310000000000", chargedRmb: "2.772000000000" });
+  assert.deepEqual(cost("2026-11-16T04:00:00Z"), { upstreamRmb: "1.155000000000", chargedRmb: "1.386000000000" });
+  assert.equal(cost("2026-11-16T05:59:59Z").upstreamRmb, "1.155000000000");
+  assert.equal(cost("2026-11-16T06:00:00Z").upstreamRmb, "2.310000000000");
+  assert.equal(cost("2026-11-16T10:00:00Z").upstreamRmb, "1.155000000000");
+  assert.equal(cost("2026-11-15T01:00:00Z").upstreamRmb, "1.155000000000");
+  assert.equal(cost("2026-10-01T01:00:00Z").upstreamRmb, "1.155000000000");
+  assert.equal(cost("2027-02-05T01:00:00Z").upstreamRmb, "1.155000000000");
+  assert.equal(cost("2027-06-09T01:00:00Z").upstreamRmb, "1.155000000000");
+  assert.equal(cost("2027-09-15T01:00:00Z").upstreamRmb, "1.155000000000");
+  assert.equal(cost("2026-10-10T01:00:00Z").upstreamRmb, "1.155000000000", "make-up Saturday stays off-peak");
+  assert.throws(() => priceModelCall(policy, "riic-deepseek", rate.model, usage, new Date()));
+});
+
+test("legacy policies stay readable and only the exact third model is accepted", () => {
+  const policy = defaultRatePolicy();
+  const legacy = { ...policy, models: policy.models.slice(0, 2) };
+  assert.deepEqual(parseRatePolicy(legacy), legacy);
+  assert.throws(() => parseRatePolicy({ ...policy, models: [policy.models[0], policy.models[2]] }));
+  assert.throws(() => parseRatePolicy({ ...policy, models: [policy.models[0], policy.models[1], policy.models[1]] }));
+  assert.throws(() => parseRatePolicy({ ...policy, models: [...policy.models, policy.models[2]] }));
+  assert.throws(() => parseRatePolicy({ ...policy, models: policy.models.map((rate, i) => i === 2 ? { ...rate, provider: "untrusted" } : rate) }));
+  for (const offPeakDates of [["2026-02-30"], ["2026-1-01"], ["2026-01-01", "2026-01-01"], ["private-value"]]) {
+    assert.throws(() => parseRatePolicy({ ...policy, models: policy.models.map((rate, i) => i === 2 ? { ...rate, offPeakDates } : rate) }));
+  }
+  const parsed = parseRatePolicy(policy);
+  parsed.models[2].offPeakDates!.push("2028-01-01");
+  assert.notDeepEqual(parsed, policy, "parsed policy is an isolated snapshot");
 });
 
 test("all steps are summed before four-decimal settlement, while reservations round up", () => {
