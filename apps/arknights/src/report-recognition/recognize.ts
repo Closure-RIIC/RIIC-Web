@@ -46,7 +46,7 @@ const STANDARD_PROFILE: RecognitionProfile = {
 // columns move farther apart while the text stays at the icon's scale, and
 // the value column starts a little earlier than the 16:9 layout.
 const WIDE_STRIP_PROFILE: RecognitionProfile = {
-  id: "wide-strip", valueX0: 244, experienceX0: 240,
+  id: "wide-strip", valueX0: 244, experienceX0: 244,
   valueProbeX0: 224, valueProbeX1: 306,
   orderX0: 410, orderX1: 472,
 };
@@ -66,10 +66,10 @@ type Rgba = { data: Uint8Array | Uint8ClampedArray; width: number; height: numbe
 type Ink = { at(x: number, y: number): boolean; cyanAt(x: number, y: number): boolean; width: number; height: number; scale: number };
 
 /** 数值艺术字的青色笔画（用于区分数值行与白色百分比等其它内容）。 */
-function hsvCyan(r: number, g: number, b: number): boolean {
+function hsvCyan(r: number, g: number, b: number, minBrightness = 0.45): boolean {
   const max = Math.max(r, g, b) / 255;
   const min = Math.min(r, g, b) / 255;
-  if (max <= 0.45) return false;
+  if (max <= minBrightness) return false;
   const d = max - min;
   if (d <= 1e-6) return false;
   const s = d / max;
@@ -83,9 +83,9 @@ function hsvCyan(r: number, g: number, b: number): boolean {
 }
 
 /** 亮色墨迹（含青色与白色文字），用于行带检测与字形提取。 */
-function hsvInk(r: number, g: number, b: number): boolean {
+function hsvInk(r: number, g: number, b: number, minBrightness = 0.46): boolean {
   const max = Math.max(r, g, b) / 255;
-  if (max <= 0.46) return false;
+  if (max <= minBrightness) return false;
   if (hsvCyan(r, g, b)) return true;
   const min = Math.min(r, g, b) / 255;
   return (max - min) / max < 0.48;
@@ -95,9 +95,14 @@ function isAnchorYellow(r: number, g: number, b: number): boolean {
   return r > 200 && g > 170 && b < 110 && r - b > 110;
 }
 
-function makeInk(image: Rgba): Ink {
+function makeInk(image: Rgba, profile?: RecognitionProfile): Ink {
   const { data, width, height } = image;
   const channels = data.length / (width * height);
+  // Wide-strip JPEGs have cyan compression halos that join adjacent digits,
+  // while their gray order counts are dimmer than the standard screenshots.
+  // Separate thresholds retain the gray strokes but exclude the cyan halos.
+  const inkBrightness = profile?.id === "wide-strip" ? 0.35 : 0.46;
+  const cyanBrightness = profile?.id === "wide-strip" ? 0.55 : 0.45;
   return {
     width,
     height,
@@ -105,12 +110,12 @@ function makeInk(image: Rgba): Ink {
     at(x: number, y: number) {
       if (x < 0 || y < 0 || x >= width || y >= height) return false;
       const i = (y * width + x) * channels;
-      return hsvInk(data[i]!, data[i + 1]!, data[i + 2]!);
+      return hsvInk(data[i]!, data[i + 1]!, data[i + 2]!, inkBrightness);
     },
     cyanAt(x: number, y: number) {
       if (x < 0 || y < 0 || x >= width || y >= height) return false;
       const i = (y * width + x) * channels;
-      return hsvCyan(data[i]!, data[i + 1]!, data[i + 2]!);
+      return hsvCyan(data[i]!, data[i + 1]!, data[i + 2]!, cyanBrightness);
     },
   };
 }
@@ -494,11 +499,11 @@ function recognizePanel(ink: Ink, s: number, anchor: { x: number; y: number }, p
 /** 识别基建报表截图。输入为解码后的 RGBA 像素；图片解码由调用方在浏览器完成。 */
 export function recognizeReport(image: Rgba): ReportRecognitionOutcome {
   if (!image.width || !image.height) return { ok: false, reason: "decode" };
-  const ink = makeInk(image);
+  const profile = profileForRatio(image.width / image.height);
+  const ink = makeInk(image, profile);
   const s = ink.scale;
   const warnings: ReportRecognitionResult["warnings"] = [];
-  const ratio = image.width / image.height;
-  const profile = profileForRatio(ratio);
+
   if (!profile) warnings.push("odd-aspect-ratio");
   if (image.width < 1400) warnings.push("low-resolution");
   const anchors = yellowAnchors(image, s);

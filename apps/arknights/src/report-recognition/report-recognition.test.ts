@@ -11,6 +11,27 @@ async function recognizeFixture(name: string) {
   return recognizeReport({ data, width: info.width, height: info.height });
 }
 
+test("wide JPEG reads all fifteen metrics despite compression and dim order text", async () => {
+  const result = await recognizeFixture("wide-three-day-jpeg.jpg");
+  assert.ok(!("ok" in result));
+  if ("ok" in result) return;
+  assert.equal(result.kind, "three-day");
+  assert.equal(result.profile, "wide-strip");
+  const expected = [
+    { experience: 34000, goldValue: 52500, lmd: 64700, orderCount: 38, orundum: 0 },
+    { experience: 34000, goldValue: 53500, lmd: 64500, orderCount: 28, orundum: 0 },
+    { experience: 35000, goldValue: 52000, lmd: 64200, orderCount: 36, orundum: 0 },
+  ];
+  assert.equal(result.days.length, 3);
+  for (const [index, day] of result.days.entries()) {
+    for (const [key, value] of Object.entries(expected[index]!)) {
+      const metric = day[key as ReportMetricKey];
+      assert.equal(metric?.value, value, `day ${index + 1} ${key}`);
+      assert.ok(metric.maxDistance <= RECOGNITION_CONFIDENT_DISTANCE, `day ${index + 1} ${key} must autofill`);
+    }
+  }
+});
+
 test("clear three-day screenshot locates all panels and production rows", async () => {
   const result = await recognizeFixture("three-day.png");
   assert.ok(!("ok" in result));
