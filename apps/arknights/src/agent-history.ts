@@ -1,4 +1,5 @@
 import type { UIMessage } from "ai";
+import { createInlineThinkingFilter } from "./agent-answer.ts";
 
 export const AGENT_HISTORY_LIMIT = 5;
 
@@ -22,18 +23,25 @@ export function emptyAgentHistory(): AgentHistory {
 
 /** Finish partial stream states before a saved conversation is sent back to the SDK. */
 export function restoreAgentMessages(messages: UIMessage[]): UIMessage[] {
-  return structuredClone(messages).map((message) => ({
-    ...message,
-    parts: message.parts.flatMap<UIMessage["parts"][number]>((part) => {
-      if (part.type === "text" || part.type === "reasoning") return [{ ...part, state: "done" as const }];
-      if (part.type.startsWith("tool-") || part.type === "dynamic-tool") {
-        const tool = part as typeof part & { state: string };
-        if (tool.state === "input-streaming") return [];
-        if (tool.state === "input-available") return [{ ...tool, state: "output-error", errorText: "上次回复已中断，请重新提问。" } as typeof part];
-      }
-      return [part];
-    }),
-  })).filter((message) => message.parts.length > 0);
+  return structuredClone(messages).map((message) => {
+    const stripThinking = createInlineThinkingFilter();
+    return {
+      ...message,
+      parts: message.parts.flatMap<UIMessage["parts"][number]>((part) => {
+        if (message.role === "assistant" && part.type === "text") {
+          const text = stripThinking(part.text);
+          return text.trim() ? [{ ...part, text, state: "done" }] : [];
+        }
+        if (part.type === "text" || part.type === "reasoning") return [{ ...part, state: "done" as const }];
+        if (part.type.startsWith("tool-") || part.type === "dynamic-tool") {
+          const tool = part as typeof part & { state: string };
+          if (tool.state === "input-streaming") return [];
+          if (tool.state === "input-available") return [{ ...tool, state: "output-error", errorText: "上次回复已中断，请重新提问。" } as typeof part];
+        }
+        return [part];
+      }),
+    };
+  }).filter((message) => message.parts.length > 0);
 }
 
 export function updateAgentConversation(history: AgentHistory, id: string, messages: UIMessage[], now = Date.now()): AgentHistory {

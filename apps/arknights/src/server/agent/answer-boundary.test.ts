@@ -21,6 +21,18 @@ async function collect<T>(stream: ReadableStream<T>) {
   while (true) { const { done, value } = await reader.read(); if (done) return parts; parts.push(value); }
 }
 
+test("inline thinking stays out of streamed answers even when tags are split", async () => {
+  for (const [input, expected] of [
+    ["<think>隐藏内容</think>正文。<THINK>更多隐藏内容</THINK>结束。", "正文。结束。"],
+    ["正文。<think>未完的思考", "正文。"],
+    ["正文字面比较 1 < 2。", "正文字面比较 1 < 2。"],
+  ]) {
+    const model = new MockLanguageModelV4({ doStream: async () => ({ stream: stream([...text(input), finish()]) }) });
+    const parts = await collect((await withAgentAnswerBoundary(model).doStream({ prompt: [] })).stream);
+    assert.equal(parts.filter(part => part.type === "text-delta").map(part => part.delta).join(""), expected);
+  }
+});
+
 test("the SDK delivers each text delta before the provider ends the answer", { timeout: 5_000 }, async t => {
   let source!: ReadableStreamDefaultController<LanguageModelV4StreamPart>;
   let deliveries = 0;
