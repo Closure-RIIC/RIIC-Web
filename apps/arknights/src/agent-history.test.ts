@@ -41,6 +41,18 @@ test("restoring an interrupted stream resolves incomplete tool calls without cha
   assert.equal((messages[0].parts[0] as { state: string }).state, "streaming");
 });
 
+test("restoring a saved reply hides thinking split across text parts", () => {
+  const prompt = question("<think>这是什么标签？</think>");
+  const messages: UIMessage[] = [...prompt, { id: "answer", role: "assistant", parts: [
+    { type: "text", text: "<thi" },
+    { type: "text", text: "nk>隐藏内容</think>这是回答。" },
+  ] }];
+  assert.deepEqual(restoreAgentMessages(messages).map(message => message.parts), [
+    [{ type: "text", text: "<think>这是什么标签？</think>", state: "done" }],
+    [{ type: "text", text: "这是回答。", state: "done" }],
+  ]);
+});
+
 test("parsing rejects unsupported and malformed records and retains collapse preference", () => {
   assert.deepEqual(parseAgentHistory(null), emptyAgentHistory());
   assert.deepEqual(parseAgentHistory({ version: 99, conversations: [] }), emptyAgentHistory());
