@@ -460,15 +460,17 @@ function recognizePanel(ink: Ink, s: number, anchor: { x: number; y: number }, p
   // 汇总句行（总计制造了价值…的作战记录/贵金属）：数字右侧仍有文字墨迹。
   const sentences = content.filter((band) =>
     band.y0 >= anchor.y + 30 * s && band.y0 <= anchor.y + 160 * s
-    && bandHasInkBetween(ink, s, anchor, band, 330, 360));
+    && bandHasInkBetween(ink, s, anchor, band, 330, 360)
+    && bandHasInkBetween(ink, s, anchor, band, profile.valueX0, VALUE_X1, true));
   // 数值行：句尾无文字、标签跨度小且数值窗口有墨迹；明细行可能混入，但取最后两条即可。
   const narrowWithValue = content.filter((band) =>
     !sentences.includes(band)
     && band.y0 >= anchor.y + 160 * s && band.y0 <= anchor.y + 330 * s
     && bandHasInkBetween(ink, s, anchor, band, profile.valueProbeX0, profile.valueProbeX1, true));
   const day: RecognizedDay = {};
-  const experienceBand = sentences[0];
-  const goldBand = sentences[1];
+  // A missing summary must not shift the remaining row into another metric.
+  const experienceBand = sentences.length === 2 ? sentences[0] : undefined;
+  const goldBand = sentences.length === 2 ? sentences[1] : undefined;
   const orundumBand = narrowWithValue.at(-1);
   const lmdBand = narrowWithValue.at(-2);
   // 龙门币与合成玉两行实测间距约 41-46（基准宽度）；超过则说明中间缺行，宁缺勿错。
@@ -477,7 +479,7 @@ function recognizePanel(ink: Ink, s: number, anchor: { x: number; y: number }, p
     ["experience", experienceBand, profile.experienceX0 - Math.max(0, Math.round((s - 1) * 10))],
     ["goldValue", goldBand, profile.valueX0],
     ["lmd", pairGapOk ? lmdBand : undefined, profile.valueX0],
-    ["orundum", orundumBand, profile.valueX0],
+    ["orundum", pairGapOk ? orundumBand : undefined, profile.valueX0],
   ];
   for (const [key, band, xStart] of pairs) {
     if (!band) continue;
@@ -502,9 +504,9 @@ export function recognizeReport(image: Rgba): ReportRecognitionOutcome {
   if (!profile) warnings.push("odd-aspect-ratio");
   if (image.width < 1400) warnings.push("low-resolution");
   const anchors = yellowAnchors(image, s);
-  if (anchors.length === 0) return { ok: false, reason: "no-panel" };
-  const usable = anchors.length >= 3 ? anchors.slice(-3) : anchors.slice(-1);
-  if (anchors.length !== usable.length) warnings.push("panel-mismatch");
+  // Never silently drop columns or choose an arbitrary subset of anchors.
+  if (anchors.length !== 1 && anchors.length !== 3) return { ok: false, reason: "no-panel" };
+  const usable = anchors;
   // Some game clients export a wide report strip (roughly 2:1) where the
   // distance between panels grows but the panel typography stays at the
   // same size.  Use the yellow icon height for those screenshots instead of

@@ -109,3 +109,27 @@ for (const layout of [layout153, layout243, layout252, layout333, layout342] as 
     await expectReadableEfficiencies(poster);
   });
 }
+
+
+test("poster PNG export survives unavailable web fonts", async ({ page }, testInfo) => {
+  await mockApis(page);
+  await page.route("**/fonts/noto-sans-sc/**", route => route.abort("failed"));
+  const layout = layout243 as BaseBlueprint;
+  const doc = createPosterDocument(layout, createManualScheduleDraft());
+  await page.addInitScript(document => {
+    localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", "1");
+    sessionStorage.setItem("riic.schedule-poster.handoff.v1.manual", JSON.stringify(document));
+  }, doc);
+  await page.goto("/manual?tab=poster");
+  const workbench = page.locator("[data-poster-workbench]");
+  await expect(workbench.locator("[data-schedule-poster]")).toBeVisible({ timeout: 60_000 });
+  const download = page.waitForEvent("download", { timeout: 15000 });
+  await workbench.getByRole("button", { name: "导出一页 PNG", exact: true }).click();
+  const exported = await download;
+  const imagePath = testInfo.outputPath("poster-font-fallback.png");
+  await exported.saveAs(imagePath);
+  const image = await readFile(imagePath);
+  expect(image.readUInt32BE(16)).toBe(1920);
+  expect(image.readUInt32BE(20)).toBe(1080);
+  await expect(workbench.getByRole("alert")).toHaveCount(0);
+});

@@ -131,3 +131,48 @@ test("normal report profile accepts the compressed three-day fixture", async () 
   assert.equal(result.profile, "standard");
   assert.ok(!result.warnings.includes("odd-aspect-ratio"));
 });
+
+async function recognizeMaskedWideReport(rect: { x: number; y: number; width: number; height: number }) {
+  const { data, info } = await sharp(fileURLToPath(new URL("./fixtures/wide-three-day-jpeg.jpg", import.meta.url))).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  for (let y = rect.y; y < rect.y + rect.height; y++) {
+    for (let x = rect.x; x < rect.x + rect.width; x++) {
+      const offset = (y * info.width + x) * 4;
+      data.fill(0, offset, offset + 3);
+    }
+  }
+  return recognizeReport({ data, width: info.width, height: info.height });
+}
+
+test("missing orundum row never relabels LMD as orundum", async () => {
+  const result = await recognizeMaskedWideReport({ x: 0, y: 505, width: 2400, height: 45 });
+  assert.ok(!("ok" in result));
+  if ("ok" in result) return;
+  assert.ok(result.days.every(day => day.orundum === undefined));
+});
+
+test("missing EXP row never relabels gold as experience", async () => {
+  const result = await recognizeMaskedWideReport({ x: 0, y: 195, width: 2400, height: 40 });
+  assert.ok(!("ok" in result));
+  if ("ok" in result) return;
+  assert.ok(result.days.every(day => day.experience === undefined));
+});
+
+test("two detected panels are rejected rather than treated as one day", async () => {
+  const result = await recognizeMaskedWideReport({ x: 120, y: 125, width: 65, height: 65 });
+  assert.deepEqual(result, { ok: false, reason: "no-panel" });
+});
+
+
+test("missing LMD row leaves trade metrics blank instead of using a detail row", async () => {
+  const result = await recognizeMaskedWideReport({ x: 0, y: 460, width: 2400, height: 40 });
+  assert.ok(!("ok" in result));
+  if ("ok" in result) return;
+  assert.ok(result.days.every(day => day.lmd === undefined && day.orderCount === undefined && day.orundum === undefined));
+});
+
+test("missing gold summary leaves manufacturing metrics blank", async () => {
+  const result = await recognizeMaskedWideReport({ x: 0, y: 295, width: 2400, height: 40 });
+  assert.ok(!("ok" in result));
+  if ("ok" in result) return;
+  assert.ok(result.days.every(day => day.experience === undefined && day.goldValue === undefined));
+});
