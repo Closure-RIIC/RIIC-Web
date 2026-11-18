@@ -54,5 +54,18 @@
   "adjustmentLedgerId": "Adjustment ledger ID",
   "evidenceReason": "Evidence / reason",
   "resolve2": "Resolve",
-  "afdianTradeOptional": "Afdian transaction (optional; verifies payment and resolves review)"
+  "afdianTradeOptional": "Afdian transaction (optional; verifies payment and resolves review)",
+  "referralTitle": "Referral campaign",
+  "referralRules": "When a new user signs up through an invitation and authenticates with Skland, the inviter receives 10 permanent credits. Each inviter can earn rewards for 5 users, up to 50 credits in total.",
+  "referralPauseRules": "Disabling pauses new referral attribution and credit awards. Existing records remain, and enabling again does not reset the limit.",
+  "referralEnabled": "Campaign enabled",
+  "referralDisabled": "Campaign disabled",
+  "referralReason": "Reason (saved to the audit log)",
+  "referralEnable": "Enable campaign",
+  "referralDisable": "Disable campaign",
+  "referralRefresh": "Refresh",
+  "referralRegistered": "Referred registrations",
+  "referralQualified": "Authenticated referrals",
+  "referralRewarded": "Rewarded referrals",
+  "referralPoints": "Total credits awarded"
 }

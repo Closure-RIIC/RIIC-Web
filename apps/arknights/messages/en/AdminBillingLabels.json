@@ -45,5 +45,6 @@
   "rule_ids": "Rules",
   "provider": "Provider",
   "model": "Model",
-  "call_id": "Call ID"
+  "call_id": "Call ID",
+  "referral": "Referrals"
 }

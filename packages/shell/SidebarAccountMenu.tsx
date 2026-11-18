@@ -2,7 +2,7 @@
 
 import { cloneElement, useId, useRef, useState, type ComponentPropsWithRef, type MouseEvent, type ReactElement, type ReactNode } from "react";
 import { Menu } from "@base-ui/react/menu";
-import { BookOpen, ChevronDown, CircleHelp, CreditCard, LoaderCircle, LogOut, Settings, UserRound } from "lucide-react";
+import { BookOpen, ChevronDown, CircleHelp, CreditCard, Gift, LoaderCircle, LogOut, Settings, UserRound } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { FluidOrb } from "@riic/ui-primitives/fluid-orb";
 import { Skeleton } from "@riic/ui-primitives/skeleton";
@@ -13,7 +13,7 @@ import { getCatalog } from "@riic/arknights-domain/i18n/localize";
 import type Labels from "./messages/zh-CN/AccountMenu.json";
 import styles from "./SidebarAccountMenu.module.css";
 
-export type AccountMenuDestination = "billing" | "changelog" | "docs" | "settings";
+export type AccountMenuDestination = "billing" | "referral" | "changelog" | "docs" | "settings";
 type AccountLink = ReactElement<ComponentPropsWithRef<"a">>;
 
 function FooterLink({ link, ...props }: ComponentPropsWithRef<"a"> & { link: AccountLink }) {
@@ -30,7 +30,7 @@ export function SidebarAccountMenu({ user, pending, busy = false, unavailable = 
   unavailable?: boolean;
   language: { locale: AppLocale; pending?: boolean; error?: boolean; setLocale: (locale: AppLocale) => void };
   billingEnabled?: boolean;
-  links: Record<Exclude<AccountMenuDestination, "billing">, AccountLink> & { billing?: AccountLink };
+  links: Record<Exclude<AccountMenuDestination, "billing" | "referral">, AccountLink> & { billing?: AccountLink; referral?: AccountLink };
   currentPage?: string;
   onNavigate?: (event: MouseEvent<HTMLAnchorElement>, destination: AccountMenuDestination, trigger: HTMLElement | null) => void;
   onSignIn: (trigger: HTMLElement) => void;
@@ -38,6 +38,7 @@ export function SidebarAccountMenu({ user, pending, busy = false, unavailable = 
 }) {
   const labels = getCatalog<typeof Labels>(language.locale, "AccountMenu");
   const billingLink = links.billing;
+  const referralLink = links.referral;
   const { state, isMobile, setOpenMobile } = useSidebar();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -126,6 +127,11 @@ export function SidebarAccountMenu({ user, pending, busy = false, unavailable = 
             onClick={event => navigate(event, "billing")} data-primary-navigation-page="billing"
             render={(props, state) => cloneElement(billingLink, props, renderItemContent(state.highlighted, props.children))}>
             <CreditCard aria-hidden="true" />{labels.billing}
+          </Menu.LinkItem> : null}
+          {referralLink ? <Menu.LinkItem closeOnClick className={styles.item} aria-current={currentPage === "referral" ? "page" : undefined}
+            onClick={event => navigate(event, "referral")} data-primary-navigation-page="referral"
+            render={(props, state) => cloneElement(referralLink, props, renderItemContent(state.highlighted, props.children))}>
+            <Gift aria-hidden="true" />{labels.referral}
           </Menu.LinkItem> : null}
           <Menu.LinkItem closeOnClick className={styles.item} onClick={event => navigate(event, "changelog")} data-changelog-link
             render={(props, state) => cloneElement(links.changelog, props, renderItemContent(state.highlighted, props.children))}>

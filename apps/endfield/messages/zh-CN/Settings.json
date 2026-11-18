@@ -54,13 +54,13 @@
   "signInRegister": "登录 / 注册",
   "refreshSignInStatus": "刷新登录状态",
   "deleteAccount": "注销账号",
-  "permanentlyDeleteYourSharedRiicAccountAndItsCloud": "永久删除共用的 RIIC 账号及其云端数据，明日方舟和终末地都会退出登录。此操作无法恢复。",
+  "permanentlyDeleteYourSharedRiicAccountAndItsCloud": "永久删除共用的 RIIC 账号及其云端数据，明日方舟和终末地都会退出登录。邀请活动的防重复领奖摘要、邀请关系和奖励记录会持续保留，不随注销自动删除，详见隐私政策。此操作无法恢复。",
   "currentPassword": "当前密码",
   "hidePassword": "隐藏密码",
   "showPassword": "显示密码",
   "alsoClearEndfieldDataFromThisBrowser": "同时清除当前浏览器的终末地本地数据",
   "permanentlyDeleteAccount": "永久注销账号",
-  "thisAccountIsSharedByArknightsAndEndfieldPermanently": "此账号由明日方舟与终末地共用。永久删除账号及云端数据后无法恢复，是否继续？",
+  "thisAccountIsSharedByArknightsAndEndfieldPermanently": "此账号由明日方舟与终末地共用。邀请活动的防重复领奖摘要、邀请关系和奖励记录会持续保留，不随注销自动删除，详见隐私政策。永久删除账号及云端数据后无法恢复，是否继续？",
   "confirmDeletion": "确认注销",
   "deleting": "正在注销"
 }

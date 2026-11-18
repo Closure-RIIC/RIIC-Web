@@ -23,6 +23,8 @@ const ALLOWED_NAMES = new Set([
   "upgrade_simulation_submit",
   "upgrade_simulation_response",
   "page_view",
+  "referral_landing",
+  "referral_share",
   "js_error",
   "api_error",
 ]);

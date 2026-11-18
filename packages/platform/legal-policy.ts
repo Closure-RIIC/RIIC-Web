@@ -1,7 +1,7 @@
 export const LEGAL_EFFECTIVE_DATE = "2026-09-06";
-export const PRIVACY_EFFECTIVE_DATE = "2026-09-06";
+export const PRIVACY_EFFECTIVE_DATE = "2026-11-18";
 export const TERMS_VERSION = "2026-09-06-content-rights";
-export const PRIVACY_VERSION = "2026-09-06-processing-clarification";
+export const PRIVACY_VERSION = "2026-11-18-referral-retention";
 export const LEGAL_OFFICIAL_ACCOUNT_URL = "https://space.bilibili.com/3707051935009359";
 
 export interface SklandPolicyConsentRequest {

@@ -117,7 +117,7 @@
   "sklandLinkSReachedTheSevenDayLimitAnd": "有 {renewalDueCount} 个森空岛绑定已满七天，需要重新授权。当前仍有效的账号可以继续使用。",
   "overview": "概览",
   "infrastructure": "基建",
-  "rich1": "登录凭证将在 <value2></value2> 固定过期。按住下方按钮会永久删除全部森空岛账号、凭证、同步数据及可关联记录；MAA 导入与手动布局会保留。",
+  "rich1": "登录凭证将在 <value2></value2> 固定过期。按住下方按钮会永久删除全部森空岛账号、凭证、同步数据及可关联的运行记录；活动防重复领奖摘要、邀请关系和奖励记录会继续保留。MAA 导入与手动布局会保留。",
   "rich2": "扫码或导入凭证后会保留现有账号，并将新账号设为当前账号。最多同时登录 <element1>5</element1> 个账号。",
   "additional1": "{choice3, select, yes {七天授权期已结束，请重新授权} other {{choice4, select, yes {森空岛已绑定，请授权当前浏览器} other {把当前罗德岛带进排班助手}}}}",
   "additional2": "{state, select, expired {最近一次授权{hasExpiry, select, yes {已于 {expiry} 到期} other {已经到期}}。扫码或重新导入凭证后即可继续同步，现有排班设置不会被清除。} linked {网站账号仍保留 {count} 个森空岛绑定，但当前浏览器没有可用凭证。重新授权后即可继续同步。} other {使用森空岛 App 扫码，或从已登录的森空岛网页导入凭证，同步当前角色的干员与基建数据。}}"

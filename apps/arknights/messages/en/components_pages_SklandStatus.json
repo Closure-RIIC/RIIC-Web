@@ -117,7 +117,7 @@
   "sklandLinkSReachedTheSevenDayLimitAnd": "{renewalDueCount} Skland link(s) reached the seven-day limit and require authorization again. Accounts still valid remain usable.",
   "overview": "Overview",
   "infrastructure": "Infrastructure",
-  "rich1": "Credentials expire on <value2></value2>. Hold the button below to permanently delete all Skland accounts, credentials, synced data, and linked records. MAA imports and manual layouts are kept.",
+  "rich1": "Credentials expire on <value2></value2>. Hold the button below to permanently delete all Skland accounts, credentials, synced data, and linked run records. Identity digests used to prevent duplicate rewards, referral relationships and reward records remain. MAA imports and manual layouts are kept.",
   "rich2": "Scanning or importing credentials keeps existing accounts and selects the new account. Up to <element1>5</element1> accounts can be signed in.",
   "additional1": "{choice3, select, yes {Authorization expired — scan to renew} other {{choice4, select, yes {Skland is linked — authorize this browser} other {Bring your Rhodes Island into the scheduler}}}}",
   "additional2": "{state, select, expired {Your last authorization {hasExpiry, select, yes {expired on {expiry}} other {has expired}}. Scan again or import credentials to resume syncing. Existing schedule settings will be kept.} linked {Your website account keeps {count, plural, one {# Skland link} other {# Skland links}}, but this browser needs authorization. Authorize again to resume syncing.} other {Scan the QR code with the Skland app or import credentials from the Skland website to sync operator and base data.}}"

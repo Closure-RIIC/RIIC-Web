@@ -101,7 +101,7 @@
     "revokingSessions": "正在撤销 Session…",
     "signOutEverywhere": "退出全部设备",
     "deleteAccountPermanently": "永久注销账号",
-    "yourAccountAndAllSessionsWillBeDeletedImmediately": "账号与全部 Session 会立即删除。请输入当前密码确认，此操作不可撤销。",
+    "yourAccountAndAllSessionsWillBeDeletedImmediately": "账号与全部 Session 会立即删除。邀请活动的防重复领奖摘要、邀请关系和奖励记录会持续保留，不随注销自动删除，详见隐私政策。请输入当前密码确认，此操作不可撤销。",
     "currentPassword": "当前密码",
     "showCurrentPassword": "显示当前密码",
     "alsoClearThisBrowserSLocalWorkspaceAfterDeletion": "注销成功后同时清除当前浏览器的本地工作区",
