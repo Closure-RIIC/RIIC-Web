@@ -2,7 +2,10 @@
   --signal: #ffd501;
   position: relative;
   isolation: isolate;
-  margin-bottom: 16px;
+  width: clamp(740px, calc(100% * 2 / 3), 100%);
+  max-width: 100%;
+  margin: 0 auto 16px;
+  container-type: inline-size;
   background: #fafbfb;
   color: #202822;
   border: 1px solid #b6bfba;
@@ -76,7 +79,7 @@
 .link:hover .headline { text-decoration: underline; text-decoration-color: #c59300; text-underline-offset: 6px; text-decoration-thickness: 2px; }
 :global(html[lang="en"]) .offerValue { font-size: 35px; }
 :global(html[lang="en"]) .offerLabel { letter-spacing: 0; }
-@media (max-width: 1100px) {
+@container (max-width: 1000px) {
  .link { grid-template-columns: 124px minmax(0, 1fr) 230px; }
  .hazard { width: 123px; }
  .logo { width: 88px; }
@@ -87,7 +90,7 @@
  .games { gap: 6px; font-size: 11px; }
  .game + .game::before { margin-right: 6px; }
 }
-@media (max-width: 760px) {
+@container (max-width: 700px) {
  .link { grid-template-columns: 88px minmax(0, 1fr); }
  .brand { gap: 10px; padding: 18px 8px; }
  .logo { width: 63px; }
