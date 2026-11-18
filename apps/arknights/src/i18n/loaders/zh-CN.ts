@@ -92,6 +92,7 @@ export const loaders: Record<string, () => Promise<unknown>> = {
   "PosterLabels": () => import("../../../messages/zh-CN/PosterLabels.json", { with: { type: "json" } }).then(module => module.default),
   "PosterTextErrors": () => import("../../../messages/zh-CN/PosterTextErrors.json", { with: { type: "json" } }).then(module => module.default),
   "QualityWorkbench": () => import("../../../messages/zh-CN/QualityWorkbench.json", { with: { type: "json" } }).then(module => module.default),
+  "RainyunThanks": () => import("../../../messages/zh-CN/RainyunThanks.json", { with: { type: "json" } }).then(module => module.default),
   "Recruitment": () => import("../../../messages/zh-CN/Recruitment.json", { with: { type: "json" } }).then(module => module.default),
   "RecyclingRoom": () => import("../../../messages/zh-CN/RecyclingRoom.json", { with: { type: "json" } }).then(module => module.default),
   "ReleaseDialog": () => import("../../../messages/zh-CN/ReleaseDialog.json", { with: { type: "json" } }).then(module => module.default),

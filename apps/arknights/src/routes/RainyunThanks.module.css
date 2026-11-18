@@ -1,0 +1,63 @@
+.page { max-width: 1080px; margin: 36px auto 16px; }
+.hero { position: relative; display: grid; grid-template-columns: 240px minmax(0, 1fr); border: 1px solid #b6bfba; background: #fafbfb; color: #202822; box-shadow: 0 6px 18px #26392c0a; }
+.brand { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 36px 24px; }
+.logo { width: 166px; height: auto;  }
+.brand span { font-size: 12px; letter-spacing: .16em; color: #56635a; }
+.intro { position: relative; isolation: isolate; padding: 38px 40px; background: #e9eeeb; clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px)); }
+.intro::before { content: ""; position: absolute; inset: 0; background: #425b4b; opacity: .09; z-index: -1; mask: url("/images/ui/facility-grid.svg") center / 96px 96px repeat; pointer-events: none; }
+.intro h1 { border-left: 5px solid #ffd501; padding-left: 16px; font-size: 38px; font-weight: 750; line-height: 1.2; letter-spacing: -.03em; }
+.intro p { max-width: 590px; margin-top: 20px; color: #4c5c51; font-size: 14px; line-height: 1.95; }
+.primaryLink { display: inline-flex; align-items: center; justify-content: space-between; gap: 24px; min-height: 44px; margin-top: 24px; padding: 10px 16px; background: #ffd501; color: #000; font-size: 13px; font-weight: 650; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%); }
+.primaryLink:hover { background: #ffe65c; }
+.hazard { position: absolute; bottom: 0; left: 0; width: 239px; height: 7px; background: repeating-linear-gradient(125deg, #ffd501 0 8px, #000 8px 15px); }
+.section { margin-top: 38px; }
+.sectionTitle { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; font-size: 20px; line-height: 1.4; font-weight: 700; }
+.sectionTitle::before { content: ""; width: 5px; height: 22px; flex-shrink: 0; background: #ffd501; }
+.sectionTitle::after { content: ""; height: 1px; flex: 1; margin-left: 10px; background: var(--border); }
+.services { border: 1px solid #b6bfba; background: #f7f9f8; color: #202822; }
+.service { display: grid; grid-template-columns: 205px minmax(0, 1fr) 178px; gap: 24px; align-items: center; padding: 24px; }
+.service + .service { border-top: 1px solid #cbd3cd; }
+.serviceTitle { display: flex; align-items: center; gap: 14px; }
+.icon { width: 22px; height: 22px; flex-shrink: 0; color: #374b3e; }
+.service h3 { font-size: 16px; line-height: 1.6; font-weight: 650; }
+.service p { font-size: 13px; line-height: 1.9; color: #4c5c51; }
+.serviceLink { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding-left: 16px; border-left: 1px solid #c0cbc3; font-size: 12px; line-height: 1.6; color: #374b3e; }
+.serviceLink:hover { text-decoration: underline; text-underline-offset: 4px; }
+.gallery { display: grid; gap: 20px; }
+.figure { display: grid; grid-template-columns: 225px minmax(0, 1fr); border: 1px solid #b6bfba; background: #f7f9f8; color: #202822; }
+.figure figcaption { padding: 28px 24px; }
+.figure h3 { font-size: 17px; font-weight: 650; line-height: 1.5; }
+.figure p { margin-top: 13px; font-size: 13px; line-height: 1.95; color: #526157; }
+.screen { display: flex; align-items: center; padding: 18px; background: #e5eae6; min-width: 0; }
+.screen img { display: block; width: 100%; height: auto; border: 1px solid #c4cec6; }
+.page a:focus-visible { outline: 2px solid #ffd501; outline-offset: 4px; }
+@media (max-width: 850px) {
+ .hero { grid-template-columns: 180px minmax(0, 1fr); }
+ .logo { width: 125px; }
+ .hazard { width: 179px; }
+ .intro { padding: 28px; }
+ .intro h1 { font-size: 32px; }
+ .service { grid-template-columns: 175px minmax(0, 1fr); gap: 16px; }
+ .serviceLink { grid-column: 2; justify-content: flex-start; border: 0; padding: 0; }
+ .figure { grid-template-columns: 180px minmax(0, 1fr); }
+ .figure figcaption { padding: 22px 18px; }
+}
+@media (max-width: 580px) {
+ .page { margin-top: 20px; }
+ .hero { grid-template-columns: 1fr; }
+ .brand { flex-direction: row; justify-content: space-between; padding: 24px; gap: 18px; }
+ .logo { width: 110px; }
+ .brand span { font-size: 11px; letter-spacing: 0; }
+ .intro { padding: 26px 24px 30px; }
+ .intro h1 { font-size: 30px; }
+ .intro p { font-size: 13px; }
+ .hazard { width: 100px; height: 5px; }
+ .section { margin-top: 28px; }
+ .sectionTitle { font-size: 18px; }
+ .service { grid-template-columns: 1fr; gap: 12px; padding: 22px; }
+ .serviceLink { grid-column: auto; }
+ .figure { grid-template-columns: 1fr; }
+ .figure figcaption { padding: 22px; }
+ .figure p { margin-top: 8px; }
+ .screen { padding: 12px; }
+}

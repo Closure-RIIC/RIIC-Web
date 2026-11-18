@@ -482,8 +482,15 @@ test("a 768px solved plan defaults to list layout and stays inside the viewport"
   await page.setViewportSize({ width: 768, height: 900 });
   await page.goto("/");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  const sponsorBanner = page.locator("[data-rainyun-home-banner]");
+  await expect(sponsorBanner).toBeVisible();
+  await expect(sponsorBanner).toHaveAttribute("href", "https://www.rainyun.com/home");
+  await expect(sponsorBanner).toHaveAttribute("target", "_blank");
   await page.getByRole("button", { name: "生成排班" }).click();
   await expect(page.locator('[data-schedule-view="list"]')).toBeVisible();
+  await expect(sponsorBanner).toBeVisible();
+  await page.getByRole("button", { name: "关闭雨云横幅" }).click();
+  await expect(sponsorBanner).toHaveCount(0);
   await expect(page.getByRole("tab", { name: "一图流布局" })).toHaveCount(0);
 
   const dimensions = await page.evaluate(() => ({
@@ -493,24 +500,59 @@ test("a 768px solved plan defaults to list layout and stays inside the viewport"
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
 });
 
+test("Rainyun banner dismissal survives reload until the next local day", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-18T04:00:00Z") });
+  await mockApis(page);
+  await seedPreferences(page);
+  await page.goto("/");
+  const banner = page.locator("[data-rainyun-home-banner]");
+  await expect(banner).toBeVisible();
+  const close = page.getByRole("button", { name: "关闭雨云横幅", exact: true });
+  const bounds = await close.boundingBox();
+  expect(bounds!.width).toBeGreaterThanOrEqual(48);
+  expect(bounds!.height).toBeGreaterThanOrEqual(48);
+  await close.click();
+  await expect(banner).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  await expect(banner).toHaveCount(0);
+  await page.clock.setSystemTime(new Date("2026-11-19T04:00:00Z"));
+  await page.reload();
+  await expect(banner).toBeVisible();
+});
+
+test("Rainyun thanks page displays product screenshots without mobile overflow", async ({ page }) => {
+  await mockApis(page);
+  await page.goto("/thanks/rainyun");
+  await expect(page.getByRole("heading", { name: "感谢雨云", exact: true })).toBeVisible();
+  const panel = page.getByRole("region", { name: "雨云游戏面板" });
+  for (const name of ["RGP 面板", "游戏与服务端选择"]) {
+    const image = panel.getByRole("img", { name, exact: true });
+    await image.scrollIntoViewIfNeeded();
+    await expect.poll(() => image.evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  }
+  for (const width of [390, 768]) {
+    await page.setViewportSize({ width, height: 844 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  }
+});
+
 test("filing links and Rainyun cloud services align left on mobile and right on desktop", async ({ page }) => {
   await mockApis(page);
+  await mockAnonymousWebsiteSession(page);
   await seedPreferences(page);
   await page.goto("/");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
 
   const filingLink = page.getByRole("link", { name: "沪ICP备2026041492号" });
   const publicSecurityLink = page.getByRole("link", { name: "沪公网安备31011502407364号" });
-  const link = page.getByRole("link", { name: "由雨云提供云计算服务（在新标签页打开雨云官网）" });
+  const link = page.getByRole("link", { name: "由雨云提供云计算服务，查看致谢" });
   const image = link.locator("img");
   await expect(filingLink).toHaveAttribute("href", "https://beian.miit.gov.cn/");
   await expect(publicSecurityLink).toHaveAttribute("href", "https://www.beian.gov.cn/portal/registerSystemInfo?recordcode=31011502407364");
   await expect(publicSecurityLink).toHaveAttribute("rel", /noopener/);
   await expect.poll(() => publicSecurityLink.locator("img").evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
-  await expect(link).toHaveAttribute("href", "https://www.rainyun.com/riic_");
-  await expect(link).toHaveAttribute("target", "_blank");
-  await expect(link).toHaveAttribute("rel", /noopener/);
-  await expect(link).toHaveAttribute("rel", /noreferrer/);
+  await expect(link).toHaveAttribute("href", "/thanks/rainyun");
   await expect(link).toContainText("由");
   await expect(link).toContainText("提供云计算服务");
   await expect(image).toHaveAttribute("src", /rainyun-logo\.png/);
@@ -569,6 +611,13 @@ test("filing links and Rainyun cloud services align left on mobile and right on 
       expect(geometry.right).toBeCloseTo(geometry.footerRight - geometry.footerPaddingRight, 0);
     }
   }
+  await page.setViewportSize({ width: 390, height: 844 });
+  await link.click();
+  await expect(page.getByRole("heading", { name: "感谢雨云" })).toBeVisible();
+  const website = page.getByRole("link", { name: "访问雨云官网（新标签页）" });
+  await expect(website).toHaveAttribute("href", "https://www.rainyun.com/home");
+  await expect(website).toHaveAttribute("target", "_blank");
+  await expect(website).toHaveAttribute("rel", /noopener noreferrer/);
 });
 
 test("primary pages load their route modules and navigate on the first click", async ({ page }) => {
