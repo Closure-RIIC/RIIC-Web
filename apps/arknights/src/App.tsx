@@ -2769,11 +2769,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         <div className="flex w-full min-w-0 flex-col items-start gap-x-3 gap-y-1 md:ml-auto md:w-auto md:flex-row md:flex-wrap md:items-center md:justify-end">
           <FilingLinks />
           <span className="h-4 w-px shrink-0 bg-border max-md:hidden" aria-hidden="true" />
-          <a
-            href="https://www.rainyun.com/riic_"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label={intl("App.sponsoredByRainyunOpensInANewTab")}
+          <Link
+            to="/thanks/rainyun"
+            aria-label={intl("App.rainyunThanks")}
             data-rainyun-link
             className="inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-sm px-1 text-[11px] leading-none opacity-70 outline-none transition-[opacity,transform] duration-180 ease-[var(--motion-ease-out)] hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-foreground/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
           >
@@ -2788,7 +2786,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
               className="block h-5 w-14 -translate-y-0.5 object-contain sm:h-[23px] sm:w-16"
             />
             {locale === "en" ? null : <span className="block leading-none">{rawText.text(rawLocale, "cloudComputingProvidedBy")}</span>}
-          </a>
+          </Link>
         </div>
       </footer> : null}
         </div>

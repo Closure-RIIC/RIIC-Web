@@ -92,6 +92,7 @@ export const loaders: Record<string, () => Promise<unknown>> = {
   "PosterLabels": () => import("../../../messages/en/PosterLabels.json", { with: { type: "json" } }).then(module => module.default),
   "PosterTextErrors": () => import("../../../messages/en/PosterTextErrors.json", { with: { type: "json" } }).then(module => module.default),
   "QualityWorkbench": () => import("../../../messages/en/QualityWorkbench.json", { with: { type: "json" } }).then(module => module.default),
+  "RainyunThanks": () => import("../../../messages/en/RainyunThanks.json", { with: { type: "json" } }).then(module => module.default),
   "Recruitment": () => import("../../../messages/en/Recruitment.json", { with: { type: "json" } }).then(module => module.default),
   "RecyclingRoom": () => import("../../../messages/en/RecyclingRoom.json", { with: { type: "json" } }).then(module => module.default),
   "ReleaseDialog": () => import("../../../messages/en/ReleaseDialog.json", { with: { type: "json" } }).then(module => module.default),
