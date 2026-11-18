@@ -2,9 +2,7 @@
   --signal: #ffd501;
   position: relative;
   isolation: isolate;
-  width: clamp(740px, calc(100% * 2 / 3), 100%);
-  max-width: 100%;
-  margin: 0 auto 16px;
+  margin-bottom: 16px;
   container-type: inline-size;
   background: #fafbfb;
   color: #202822;
@@ -32,13 +30,13 @@
   display: grid;
   grid-template-columns: 152px minmax(0, 1fr) 270px;
   align-items: stretch;
-  min-height: 126px;
+  min-height: 86px;
   color: inherit;
   text-decoration: none;
 }
 .link:focus-visible { outline: 2px solid var(--signal); outline-offset: -4px; }
-.brand { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 13px; padding: 20px 10px; }
-.logo { width: 108px; height: auto;  }
+.brand { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 10px; }
+.logo { width: 90px; height: auto;  }
 .sponsor { font-size: 11px; color: #56635a; letter-spacing: .12em; }
 .message {
   position: relative;
@@ -46,8 +44,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 16px;
-  padding: 24px 38px;
+  gap: 6px;
+  padding: 10px 38px;
   background: #e9eeeb;
   clip-path: polygon(0 0, calc(100% - 26px) 0, 100% 26px, 100% 100%, 26px 100%, 0 calc(100% - 26px));
 }
@@ -60,18 +58,18 @@
   opacity: .09;
   mask: url("/images/ui/facility-grid.svg") center / 84px 84px repeat;
 }
-.headline { padding-left: 15px; border-left: 5px solid var(--signal); font-size: clamp(26px, 2.9vw, 40px); font-weight: 750; line-height: 1.15; letter-spacing: -.035em; }
+.headline { padding-left: 15px; border-left: 5px solid var(--signal); font-size: clamp(24px, 2.4vw, 32px); font-weight: 750; line-height: 1.15; letter-spacing: -.035em; }
 .games { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-left: 20px; font-size: 12px; line-height: 1.5; }
 .gameLabel { color: #526158; margin-right: 6px; }
 .game { color: #26372b; }
 .game + .game::before { content: "/"; margin-right: 10px; color: #87958b; }
-.offer { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 9px; padding: 20px 30px; }
+.offer { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 7px 30px; }
 .offer::before, .offer::after { content: ""; position: absolute; width: 16px; height: 16px; pointer-events: none; }
 .offer::before { left: 17px; top: 15px; border-top: 2px solid #8a998f; border-left: 2px solid #8a998f; }
 .offer::after { right: 17px; bottom: 15px; border-bottom: 2px solid var(--signal); border-right: 2px solid var(--signal); }
 .offerHeading { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 3px 10px; }
 .offerLabel { grid-column: 1; font-size: 12px; letter-spacing: .18em; line-height: 1.4; color: #4f6055; }
-.offerValue { grid-column: 1; font-family: var(--font-technical), sans-serif; font-size: 50px; font-weight: 700; line-height: 1; letter-spacing: -.04em; color: #202c24; box-shadow: inset 0 -8px 0 var(--signal); width: fit-content; white-space: nowrap; }
+.offerValue { grid-column: 1; font-family: var(--font-technical), sans-serif; font-size: 36px; font-weight: 700; line-height: 1; letter-spacing: -.04em; color: #202c24; box-shadow: inset 0 -8px 0 var(--signal); width: fit-content; white-space: nowrap; }
 .terms { font-size: 10px; line-height: 1.5; color: #58665d; }
 .close { position: absolute; top: 5px; right: 5px; display: grid; width: 48px; height: 48px; place-items: center; border: 1px solid #a7b3ab; background: #fafbfb; color: #28392d; cursor: pointer; z-index: 1; }
 .close:hover { color: #000; background: var(--signal); border-color: var(--signal); }
@@ -86,7 +84,7 @@
  .message { padding-inline: 24px; }
  .headline { font-size: 28px; }
  .offer { padding-inline: 27px; }
- .offerValue { font-size: 44px; }
+ .offerValue { font-size: 36px; }
  .games { gap: 6px; font-size: 11px; }
  .game + .game::before { margin-right: 6px; }
 }
