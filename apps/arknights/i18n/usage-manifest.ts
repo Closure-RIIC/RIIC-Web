@@ -6298,7 +6298,7 @@ export const references = [
   {
     "key": "AK_Raw_App.cloudComputingProvidedBy",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2790"
+    "source": "apps/arknights/src/App.tsx:2788"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.6Elite2Operators",
@@ -10573,7 +10573,7 @@ export const references = [
   {
     "key": "App.currentFacility",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2887"
+    "source": "apps/arknights/src/App.tsx:2885"
   },
   {
     "key": "App.environment",
@@ -10613,7 +10613,7 @@ export const references = [
   {
     "key": "App.newSetting",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2889"
+    "source": "apps/arknights/src/App.tsx:2887"
   },
   {
     "key": "App.pastedArknightsOperboxExportJson",
@@ -10646,6 +10646,11 @@ export const references = [
     "source": "apps/arknights/src/App.tsx:1442"
   },
   {
+    "key": "App.rainyunThanks",
+    "prefix": false,
+    "source": "apps/arknights/src/App.tsx:2774"
+  },
+  {
     "key": "App.rotationCycleInvalidSummary",
     "prefix": false,
     "source": "apps/arknights/src/App.tsx:1350"
@@ -10673,12 +10678,7 @@ export const references = [
   {
     "key": "App.sponsoredBy",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2780"
-  },
-  {
-    "key": "App.sponsoredByRainyunOpensInANewTab",
-    "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2776"
+    "source": "apps/arknights/src/App.tsx:2778"
   },
   {
     "key": "App.terms",
@@ -10788,7 +10788,7 @@ export const references = [
   {
     "key": "Common.factoryRecipe",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2888"
+    "source": "apps/arknights/src/App.tsx:2886"
   },
   {
     "key": "Common.language",
@@ -10833,7 +10833,7 @@ export const references = [
   {
     "key": "Common.tradeStrategy",
     "prefix": false,
-    "source": "apps/arknights/src/App.tsx:2888"
+    "source": "apps/arknights/src/App.tsx:2886"
   },
   {
     "key": "Common.unknownOperator",
@@ -17211,6 +17211,11 @@ export const references = [
     "source": "apps/arknights/src/app/privacy/page.tsx:16"
   },
   {
+    "key": "Metadata.rainyunThanks",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:84"
+  },
+  {
     "key": "Metadata.recruitment",
     "prefix": false,
     "source": "apps/arknights/src/routes/_workbench.recruitment.tsx:9"
@@ -19009,6 +19014,126 @@ export const references = [
     "key": "QualityWorkbench.youCanQueueTestsNowTheyWillRun",
     "prefix": false,
     "source": "apps/arknights/src/app/admin/quality/quality-client.tsx:182"
+  },
+  {
+    "key": "RainyunThanks.botIntro",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:17"
+  },
+  {
+    "key": "RainyunThanks.botTitle",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:17"
+  },
+  {
+    "key": "RainyunThanks.catalogDescription",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:68"
+  },
+  {
+    "key": "RainyunThanks.closeBanner",
+    "prefix": false,
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:87"
+  },
+  {
+    "key": "RainyunThanks.cloudIntro",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:15"
+  },
+  {
+    "key": "RainyunThanks.cloudTitle",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:15"
+  },
+  {
+    "key": "RainyunThanks.description",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:29"
+  },
+  {
+    "key": "RainyunThanks.gameCatalog",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:67"
+  },
+  {
+    "key": "RainyunThanks.gameIntro",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:16"
+  },
+  {
+    "key": "RainyunThanks.gameTitle",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:16"
+  },
+  {
+    "key": "RainyunThanks.homeBannerDescription",
+    "prefix": false,
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:74"
+  },
+  {
+    "key": "RainyunThanks.homeBannerMultiplayer",
+    "prefix": false,
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:76"
+  },
+  {
+    "key": "RainyunThanks.homeBannerOfferLabel",
+    "prefix": false,
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:83"
+  },
+  {
+    "key": "RainyunThanks.homeBannerOfferTerms",
+    "prefix": false,
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:84"
+  },
+  {
+    "key": "RainyunThanks.homeBannerOfferValue",
+    "prefix": false,
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:83"
+  },
+  {
+    "key": "RainyunThanks.homeBannerSevenDays",
+    "prefix": false,
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:78"
+  },
+  {
+    "key": "RainyunThanks.panelTitle",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:54"
+  },
+  {
+    "key": "RainyunThanks.readDocs",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:15"
+  },
+  {
+    "key": "RainyunThanks.rgpDescription",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:59"
+  },
+  {
+    "key": "RainyunThanks.rgpPanel",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:58"
+  },
+  {
+    "key": "RainyunThanks.servicesTitle",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:37"
+  },
+  {
+    "key": "RainyunThanks.title",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:21"
+  },
+  {
+    "key": "RainyunThanks.viewCloudServer",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:17"
+  },
+  {
+    "key": "RainyunThanks.visit",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:31"
   },
   {
     "key": "records.app_about_page_content",
