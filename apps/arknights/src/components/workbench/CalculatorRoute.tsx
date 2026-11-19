@@ -9,23 +9,22 @@ import { useWorkbench } from "@/workbench-context";
 
 import styles from "./RainyunBanner.module.css";
 
-const BANNER_DISMISSED_KEY = "riic:rainyun-banner-dismissed-day";
+const BANNER_DISMISSED_KEY = "riic:rainyun-banner-hidden-until";
 const BANNER_CHANGED_EVENT = "riic:rainyun-banner-changed";
-let dismissedDay = "";
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+let hiddenUntil = 0;
 
-function localDay() {
-  const now = new Date();
-  return `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+function bannerHiddenUntil() {
+  try {
+    const saved = Number(window.localStorage.getItem(BANNER_DISMISSED_KEY));
+    return Math.max(hiddenUntil, Number.isFinite(saved) ? saved : 0);
+  } catch {
+    return hiddenUntil;
+  }
 }
 
 function isBannerVisible() {
-  const today = localDay();
-  if (dismissedDay === today) return false;
-  try {
-    return window.localStorage.getItem(BANNER_DISMISSED_KEY) !== today;
-  } catch {
-    return true;
-  }
+  return bannerHiddenUntil() <= Date.now();
 }
 
 function subscribeBanner(onChange: () => void) {
@@ -33,9 +32,8 @@ function subscribeBanner(onChange: () => void) {
   function refresh() {
     onChange();
     clearTimeout(timer);
-    const midnight = new Date();
-    midnight.setHours(24, 0, 0, 0);
-    timer = setTimeout(refresh, midnight.getTime() - Date.now());
+    const remaining = bannerHiddenUntil() - Date.now();
+    if (remaining > 0) timer = setTimeout(refresh, Math.min(remaining, ONE_WEEK_MS));
   }
   window.addEventListener("storage", refresh);
   window.addEventListener("focus", refresh);
@@ -50,9 +48,9 @@ function subscribeBanner(onChange: () => void) {
 }
 
 function dismissBanner() {
-  dismissedDay = localDay();
+  hiddenUntil = Date.now() + ONE_WEEK_MS;
   try {
-    window.localStorage.setItem(BANNER_DISMISSED_KEY, dismissedDay);
+    window.localStorage.setItem(BANNER_DISMISSED_KEY, String(hiddenUntil));
   } catch { /* Still dismiss in this tab when storage is unavailable. */ }
   window.dispatchEvent(new Event(BANNER_CHANGED_EVENT));
 }
@@ -71,7 +69,6 @@ export function CalculatorRoute() {
             className={styles.link}>
             <span className={styles.brand}>
               <img src="/images/partners/rainyun-logo.png" alt="" width={1120} height={390} className={styles.logo} />
-              <span className={styles.sponsor}>{t("homeBannerTitle")}</span>
             </span>
             <span className={styles.message}>
               <span className={styles.headline}>{t("homeBannerDescription")}</span>

@@ -13,7 +13,6 @@
   "readDocs": "Read product docs (opens in a new tab)",
   "rgpDescription": "Use Rainyun’s own RGP panel to launch a Minecraft server, change settings, and manage backups from your browser.",
   "catalogDescription": "For Minecraft Java Edition, choose server software such as Paper, install a modpack, or upload an existing world.",
-  "homeBannerTitle": "Sponsored by Rainyun",
   "homeBannerDescription": "Build your server with Rainyun",
   "botTitle": "Build an AI chatbot",
   "botIntro": "Run AstrBot on a Rainyun cloud server. Connect a model and a messaging platform to chat or get answers through your bot.",

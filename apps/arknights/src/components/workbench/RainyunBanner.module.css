@@ -37,7 +37,6 @@
 .link:focus-visible { outline: 2px solid var(--signal); outline-offset: -4px; }
 .brand { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 10px; }
 .logo { width: 90px; height: auto;  }
-.sponsor { font-size: 11px; color: #56635a; letter-spacing: .12em; }
 .message {
   position: relative;
   isolation: isolate;
@@ -92,8 +91,7 @@
  .link { grid-template-columns: 88px minmax(0, 1fr); }
  .brand { gap: 10px; padding: 18px 8px; }
  .logo { width: 63px; }
- .sponsor { font-size: 9px; letter-spacing: 0; }
- .message { gap: 12px; padding: 25px 23px 23px 14px; clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px)); }
+ .message { gap: 12px; padding: 25px 58px 23px 14px; clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 14px 100%, 0 calc(100% - 14px)); }
  .headline { font-size: 21px; padding-left: 9px; border-left-width: 3px; }
  .games { padding-left: 12px; gap: 5px; font-size: 10px; }
  .gameLabel { width: 100%; }

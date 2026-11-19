@@ -17213,7 +17213,7 @@ export const references = [
   {
     "key": "Metadata.rainyunThanks",
     "prefix": false,
-    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:85"
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:84"
   },
   {
     "key": "Metadata.recruitment",
@@ -19028,12 +19028,12 @@ export const references = [
   {
     "key": "RainyunThanks.catalogDescription",
     "prefix": false,
-    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:69"
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:68"
   },
   {
     "key": "RainyunThanks.closeBanner",
     "prefix": false,
-    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:90"
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:87"
   },
   {
     "key": "RainyunThanks.cloudIntro",
@@ -19048,12 +19048,12 @@ export const references = [
   {
     "key": "RainyunThanks.description",
     "prefix": false,
-    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:30"
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:29"
   },
   {
     "key": "RainyunThanks.gameCatalog",
     "prefix": false,
-    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:68"
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:67"
   },
   {
     "key": "RainyunThanks.gameIntro",
@@ -19068,42 +19068,37 @@ export const references = [
   {
     "key": "RainyunThanks.homeBannerDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:77"
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:74"
   },
   {
     "key": "RainyunThanks.homeBannerMultiplayer",
     "prefix": false,
-    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:79"
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:76"
   },
   {
     "key": "RainyunThanks.homeBannerOfferLabel",
     "prefix": false,
-    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:86"
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:83"
   },
   {
     "key": "RainyunThanks.homeBannerOfferTerms",
     "prefix": false,
-    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:87"
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:84"
   },
   {
     "key": "RainyunThanks.homeBannerOfferValue",
     "prefix": false,
-    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:86"
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:83"
   },
   {
     "key": "RainyunThanks.homeBannerSevenDays",
     "prefix": false,
-    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:81"
-  },
-  {
-    "key": "RainyunThanks.homeBannerTitle",
-    "prefix": false,
-    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:74"
+    "source": "apps/arknights/src/components/workbench/CalculatorRoute.tsx:78"
   },
   {
     "key": "RainyunThanks.panelTitle",
     "prefix": false,
-    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:55"
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:54"
   },
   {
     "key": "RainyunThanks.readDocs",
@@ -19113,17 +19108,17 @@ export const references = [
   {
     "key": "RainyunThanks.rgpDescription",
     "prefix": false,
-    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:60"
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:59"
   },
   {
     "key": "RainyunThanks.rgpPanel",
     "prefix": false,
-    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:59"
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:58"
   },
   {
     "key": "RainyunThanks.servicesTitle",
     "prefix": false,
-    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:38"
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:37"
   },
   {
     "key": "RainyunThanks.title",
@@ -19138,7 +19133,7 @@ export const references = [
   {
     "key": "RainyunThanks.visit",
     "prefix": false,
-    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:32"
+    "source": "apps/arknights/src/routes/thanks.rainyun.tsx:31"
   },
   {
     "key": "records.app_about_page_content",

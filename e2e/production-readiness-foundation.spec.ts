@@ -500,7 +500,7 @@ test("a 768px solved plan defaults to list layout and stays inside the viewport"
   expect(dimensions.scrollWidth).toBeLessThanOrEqual(dimensions.clientWidth + 1);
 });
 
-test("Rainyun banner dismissal survives reload until the next local day", async ({ page }) => {
+test("Rainyun banner dismissal survives reload for one week", async ({ page }) => {
   await page.clock.install({ time: new Date("2026-11-18T04:00:00Z") });
   await mockApis(page);
   await seedPreferences(page);
@@ -517,6 +517,9 @@ test("Rainyun banner dismissal survives reload until the next local day", async 
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await expect(banner).toHaveCount(0);
   await page.clock.setSystemTime(new Date("2026-11-19T04:00:00Z"));
+  await page.reload();
+  await expect(page.getByRole("button", { name: "关闭雨云横幅" })).toHaveCount(0);
+  await page.clock.setSystemTime(new Date("2026-11-25T04:01:00Z"));
   await page.reload();
   await expect(banner).toBeVisible();
 });

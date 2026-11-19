@@ -23,7 +23,6 @@ function RainyunThanksPage() {
         <header className={styles.hero}>
           <div className={styles.brand}>
             <img src="/images/partners/rainyun-logo.png" alt="" width={1120} height={390} className={styles.logo} />
-            <span>{t("homeBannerTitle")}</span>
           </div>
           <div className={styles.intro}>
             <h1>{t("title")}</h1>

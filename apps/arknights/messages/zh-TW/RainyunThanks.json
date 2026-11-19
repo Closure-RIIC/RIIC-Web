@@ -13,7 +13,6 @@
   "readDocs": "查看產品文件（新分頁）",
   "rgpDescription": "用雨雲自研的 RGP 面板一鍵開啟 Minecraft 等遊戲伺服器，在網頁上修改設定、管理備份。",
   "catalogDescription": "以 Minecraft Java 版為例，可以選擇 Paper 等伺服器端軟體，也可以安裝整合包或上傳現有存檔。",
-  "homeBannerTitle": "由雨雲贊助",
   "homeBannerDescription": "架設伺服器，選雨雲",
   "botTitle": "架設 AI 聊天機器人",
   "botIntro": "可以在雨雲雲端伺服器上部署 AstrBot。設定模型和聊天平台後，就能透過機器人聊天或問答。",

@@ -2,7 +2,6 @@
 .hero { position: relative; display: grid; grid-template-columns: 240px minmax(0, 1fr); border: 1px solid #b6bfba; background: #fafbfb; color: #202822; box-shadow: 0 6px 18px #26392c0a; }
 .brand { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 36px 24px; }
 .logo { width: 166px; height: auto;  }
-.brand span { font-size: 12px; letter-spacing: .16em; color: #56635a; }
 .intro { position: relative; isolation: isolate; padding: 38px 40px; background: #e9eeeb; clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 24px 100%, 0 calc(100% - 24px)); }
 .intro::before { content: ""; position: absolute; inset: 0; background: #425b4b; opacity: .09; z-index: -1; mask: url("/images/ui/facility-grid.svg") center / 96px 96px repeat; pointer-events: none; }
 .intro h1 { border-left: 5px solid #ffd501; padding-left: 16px; font-size: 38px; font-weight: 750; line-height: 1.2; letter-spacing: -.03em; }
@@ -47,7 +46,6 @@
  .hero { grid-template-columns: 1fr; }
  .brand { flex-direction: row; justify-content: space-between; padding: 24px; gap: 18px; }
  .logo { width: 110px; }
- .brand span { font-size: 11px; letter-spacing: 0; }
  .intro { padding: 26px 24px 30px; }
  .intro h1 { font-size: 30px; }
  .intro p { font-size: 13px; }
