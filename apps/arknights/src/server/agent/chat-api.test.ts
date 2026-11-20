@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { register, registerHooks } from "node:module";
 import test from "node:test";
+import { defaultRatePolicy } from "../billing/rate-policy.ts";
+import { calculateAgentTokenCost } from "../billing/pricing.ts";
+import { splitPoints } from "../billing/points.ts";
 
 register("../../../../../scripts/ts-path-loader.mjs", import.meta.url);
 registerHooks({ resolve(specifier, context, next) {
@@ -15,6 +18,10 @@ test("chat API separates automatic gateway routing from direct model selection",
   let allowed = true;
   let sameOrigin = true;
   let balance = 1;
+  let configuredRates = true;
+  let rates = { id: "rates:test-1", policy: defaultRatePolicy("1.5") };
+  let finish: (event: Record<string, unknown>) => Promise<void>;
+  const settled: Array<Record<string, unknown>> = [];
   const calls: string[] = [];
   class PublicApiError extends Error {
     code: string;
@@ -23,14 +30,14 @@ test("chat API separates automatic gateway routing from direct model selection",
       this.code = code;
     }
   }
-  const unexpected = () => { throw new Error("Unexpected billing operation"); };
   const mocks: Array<[string | URL, Record<string, unknown>]> = [
     ["node:fs/promises", { appendFile: async () => {} }],
     ["ai", {
       convertToModelMessages: async (messages: unknown) => messages,
       stepCountIs: () => () => false,
-      streamText: ({ model }: { model: string }) => {
+      streamText: ({ model, onFinish }: { model: string; onFinish: typeof finish }) => {
         calls.push(`direct:${model}`);
+        finish = onFinish;
         return { toUIMessageStream: () => new ReadableStream({ start(controller) { controller.close(); } }) };
       },
       createUIMessageStreamResponse: () => Response.json({ mode: "direct" }),
@@ -57,7 +64,8 @@ test("chat API separates automatic gateway routing from direct model selection",
     }],
     [new URL("../billing/service.ts", import.meta.url), {
       getWallet: async () => ({ totalPoints: balance }),
-      createAgentUsage: unexpected, finalizeAgentUsage: unexpected,
+      createAgentUsage: async () => "test-usage",
+      finalizeAgentUsage: async (input: Record<string, unknown>) => { settled.push(input); },
     }],
     [new URL("./gateway-runtime.ts", import.meta.url), {
       agentGatewayEnabled: () => automatic,
@@ -79,9 +87,12 @@ test("chat API separates automatic gateway routing from direct model selection",
       listBuiltinAgentPersonas: async () => [], resolveAgentPersonaContent: async () => undefined,
     }],
     [new URL("./tools.ts", import.meta.url), { buildAgentTools: () => ({}) }],
-    [new URL("../billing/pricing.ts", import.meta.url), { calculateAgentTokenCost: unexpected }],
-    [new URL("../billing/points.ts", import.meta.url), { splitPoints: unexpected }],
-    [new URL("../billing/agent-accounting.ts", import.meta.url), { AgentAccountingError: class extends Error {} }],
+    [new URL("../billing/pricing.ts", import.meta.url), { calculateAgentTokenCost }],
+    [new URL("../billing/points.ts", import.meta.url), { splitPoints }],
+    [new URL("../billing/agent-accounting.ts", import.meta.url), {
+      AgentAccountingError: class extends Error {},
+      activeAgentPolicies: async () => { if (!configuredRates) throw new Error("Pricing not configured"); return { rates: structuredClone(rates) }; },
+    }],
     [new URL("./filter-policy.ts", import.meta.url), { AgentFilterError: class extends Error {} }],
     [new URL("./message-history.ts", import.meta.url), {
       AgentHistoryError: class extends Error {}, prepareAgentHistory: async (messages: unknown) => messages,
@@ -157,6 +168,8 @@ test("chat API separates automatic gateway routing from direct model selection",
     process.env.AGENT_LLM_PROVIDER = "deepseek";
     process.env.AGENT_LLM_DEEPSEEK_API_KEY = "test-deepseek-key";
     process.env.AGENT_LLM_GLM_API_KEY = "test-glm-key";
+    process.env.AGENT_LLM_DEEPSEEK_MODEL = "deepseek-v4.1-flash";
+    process.env.AGENT_LLM_GLM_MODEL = "glm-5.3-flash";
     for (const model of [undefined, "deepseek", "glm"]) {
       calls.length = 0;
       const response = await post(model);
@@ -164,5 +177,51 @@ test("chat API separates automatic gateway routing from direct model selection",
       assert.deepEqual(await response.json(), { mode: "direct" });
       assert.deepEqual(calls, [`direct:${model ?? "deepseek"}`]);
     }
+  });
+
+  const responseEvent = (model = "deepseek-v4.1-flash", usage: Record<string, unknown> = { inputTokens: 1000, outputTokens: 100, inputTokenDetails: { cacheReadTokens: 100 } }) => ({
+    model: { modelId: "deepseek-v4.1-flash" }, response: { modelId: model }, totalUsage: usage,
+    toolResults: [], steps: [{ response: { modelId: model } }], finishReason: "stop",
+  });
+
+  await t.test("direct billing uses the published multiplier and keeps its snapshot across a publication", async () => {
+    for (const row of rates.policy.models) delete row.peak;
+    settled.length = 0;
+    assert.equal((await post("deepseek")).status, 200);
+    const originalFinish = finish;
+    rates = { id: "rates:test-2", policy: { ...rates.policy, markup: "2" } };
+    await originalFinish(responseEvent());
+    assert.equal(settled[0].chargedPoints, 0.0195);
+    assert.equal((settled[0].metadata as Record<string, unknown>).rateVersion, "rates:test-1");
+    assert.equal((await post("deepseek")).status, 200);
+    await finish(responseEvent());
+    assert.equal(settled[1].chargedPoints, 0.026);
+    assert.equal((settled[1].metadata as Record<string, unknown>).rateVersion, "rates:test-2");
+  });
+
+  await t.test("missing policy and an unpriced model stop before the upstream request", async () => {
+    calls.length = 0;
+    configuredRates = false;
+    assert.notEqual((await post("deepseek")).status, 200);
+    configuredRates = true;
+    process.env.AGENT_LLM_DEEPSEEK_MODEL = "deepseek-unpriced";
+    assert.notEqual((await post("deepseek")).status, 200);
+    process.env.AGENT_LLM_DEEPSEEK_MODEL = "deepseek-v4.1-flash";
+    assert.ok(!calls.some(call => call.startsWith("direct:")));
+  });
+
+  await t.test("unknown returned model and missing usage remain unconfirmed", async () => {
+    const mixedModels = responseEvent();
+    mixedModels.steps.unshift({ response: { modelId: "unexpected-model" } });
+    const missingModel = responseEvent();
+    missingModel.steps = [];
+    for (const event of [responseEvent("unexpected-model"), mixedModels, missingModel, responseEvent("deepseek-v4.1-flash", { outputTokens: 10 })]) {
+      settled.length = 0;
+      assert.equal((await post("deepseek")).status, 200);
+      await finish(event);
+      assert.equal(settled[0].chargedPoints, undefined);
+      assert.equal((settled[0].metadata as Record<string, unknown>).usageConfirmed, false);
+    }
+    assert.equal(settled[0].inputTokens, undefined);
   });
 });

@@ -12,17 +12,17 @@ export type ModelRate = {
 export type RatePolicy = { markup: string; pointValueRmb: string; toolPoints: number; models: ModelRate[] };
 export type MeasuredUsage = { inputTokens: number; outputTokens: number; cachedInputTokens: number };
 
-export const OFFICIAL_DEEPSEEK_PROVIDER = "riic-deepseek-official";
-export const OFFICIAL_DEEPSEEK_MODEL = "deepseek-flash";
+export const SUPPLEMENTAL_MODEL_PROVIDER = "riic-deepseek-official";
+export const SUPPLEMENTAL_MODEL_ID = "deepseek-flash";
 
 // DeepSeek's RMB list price, checked 2026-11-16:
 // https://api-docs.deepseek.com/zh-cn/quick_start/pricing
 // Holiday schedules (weekends remain off-peak even on a make-up workday):
 // https://www.gov.cn/zhengce/zhengceku/202511/content_7047091.htm
 // https://www.gov.cn/zhengce/zhengceku/202611/content_7085102.htm
-export function officialDeepSeekRate(): ModelRate {
+export function supplementalModelRate(): ModelRate {
   return {
-    provider: OFFICIAL_DEEPSEEK_PROVIDER, model: OFFICIAL_DEEPSEEK_MODEL,
+    provider: SUPPLEMENTAL_MODEL_PROVIDER, model: SUPPLEMENTAL_MODEL_ID,
     currency: "RMB", exchangeRate: "1", input: "1", cachedInput: "0.02", output: "4",
     peak: { input: "2", cachedInput: "0.04", output: "8" },
     offPeakDates: [
@@ -42,12 +42,15 @@ export function officialDeepSeekRate(): ModelRate {
   };
 }
 
-export function defaultRatePolicy(): RatePolicy {
-  return { markup: "1.2", pointValueRmb: String(POINT_VALUE_RMB), toolPoints: SOLVE_TOOL_POINTS, models: [
+export function createRatePolicyDraft(): RatePolicy {
+  return { markup: "", pointValueRmb: String(POINT_VALUE_RMB), toolPoints: SOLVE_TOOL_POINTS, models: [
     { provider: "riic-deepseek", model: "deepseek-v4.1-flash", currency: "RMB", exchangeRate: "1", input: "1", cachedInput: "0.02", output: "4", peak: { input: "2", cachedInput: "0.04", output: "8" } },
     { provider: "riic-glm", model: "glm-5.3-flash", currency: "RMB", exchangeRate: "1", input: process.env.AGENT_GLM_INPUT_RMB_PER_MILLION ?? "1.08", cachedInput: process.env.AGENT_GLM_CACHED_INPUT_RMB_PER_MILLION ?? "0.216", output: process.env.AGENT_GLM_OUTPUT_RMB_PER_MILLION ?? "3.6" },
-    officialDeepSeekRate(),
+    supplementalModelRate(),
   ] };
+}
+export function defaultRatePolicy(markup: string): RatePolicy {
+  return parseRatePolicy({ ...createRatePolicyDraft(), markup });
 }
 function price(value: unknown, positive = false) {
   if (typeof value !== "string" || !/^\d{1,7}(\.\d{1,8})?$/.test(value) || (positive && new Decimal(value).lte(0))) throw new Error("Invalid decimal rate");
@@ -58,7 +61,7 @@ export function parseRatePolicy(value: unknown): RatePolicy {
   price(p.markup, true); price(p.pointValueRmb, true);
   if (p.pointValueRmb !== "0.1" || !Number.isInteger(p.toolPoints) || p.toolPoints !== 1 || !Array.isArray(p.models) || ![2, 3].includes(p.models.length)) throw new Error("Existing point and tool entitlements must be preserved");
   const expected = new Set(["riic-deepseek/deepseek-v4.1-flash", "riic-glm/glm-5.3-flash"]);
-  if (p.models.length === 3) expected.add(`${OFFICIAL_DEEPSEEK_PROVIDER}/${OFFICIAL_DEEPSEEK_MODEL}`);
+  if (p.models.length === 3) expected.add(`${SUPPLEMENTAL_MODEL_PROVIDER}/${SUPPLEMENTAL_MODEL_ID}`);
   for (const rate of p.models) {
     if (!expected.delete(`${rate.provider}/${rate.model}`) || !["RMB", "USD"].includes(rate.currency)) throw new Error("Unexpected or duplicate model");
     price(rate.exchangeRate, true);
