@@ -12,6 +12,7 @@ import type { GameCatalog } from "@/i18n/game-catalog";
 import { useState } from "react";
 
 import type { AgentPlanProjection } from "@/server/agent/plan-artifact";
+import { AgentPlanProductionSummary } from "./AgentPlanProductionSummary";
 
 const ROOM_TYPE_KEYS: Record<string, keyof typeof RawMessages> = {"control":"control","trading":"trading","manufacture":"manufacture","power":"power","dormitory":"dormitory","meeting":"meeting","hire":"hire","processing":"processing"};
 
@@ -40,14 +41,11 @@ function recommendationLine(item: unknown, locale: AppLocale, catalog: GameCatal
     .join(" ");
 }
 
-export function PlanArtifactView({ plan, dense = false }: { plan: AgentPlanProjection; dense?: boolean }) {
+export function PlanArtifactView({ plan, dense = false, showProduction = true }: { plan: AgentPlanProjection; dense?: boolean; showProduction?: boolean }) {
   const rawLocale = useRawLocale();
   const gameCatalog = useGameCatalog();
   const [activeShift, setActiveShift] = useState(0);
   const shift = plan.plans[activeShift] ?? plan.plans[0];
-  const production = plan.dailyProduction;
-  const productionEntries = Object.entries(production).filter(([key, value]) =>
-    typeof value === "number" && !key.startsWith("baseline"));
   const recommendations = plan.trainingAdvice?.recommendations ?? [];
 
   return (
@@ -56,12 +54,9 @@ export function PlanArtifactView({ plan, dense = false }: { plan: AgentPlanProje
         <span>{rawText.rich(rawLocale, "layout", { part1: richValue((<span className="font-medium text-foreground">{String(plan.layoutLabel ?? "?")}</span>)) })}</span>
         <span>{String(plan.operboxLabel ?? "")}</span>
         <span>{rawText.rich(rawLocale, "solvedInMs", { part1: richValue((String(plan.durationMs ?? "?"))) })}</span>
-        {productionEntries.length > 0 ? (
-          <span className="font-number">
-            {productionEntries.map(([key, value]) => `${key} ${value}`).join(" · ")}
-          </span>
-        ) : null}
       </div>
+
+      {showProduction ? <AgentPlanProductionSummary production={plan.dailyProduction} /> : null}
 
       <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={rawText.text(rawLocale, "switchShifts")}>
         {plan.plans.map((item, index) => (
