@@ -60,6 +60,9 @@ test("website policy, manifest, routing and paginated reading work without model
     assert.ok(prompt.includes(await loadKnowledgePolicy(root)));
     assert.ok(prompt.includes("固定先 query_skills"));
     assert.ok(prompt.includes("博士确认或调整后，再调 solve_schedule"));
+    assert.ok(prompt.includes("plan.dailyProduction.products"));
+    assert.ok(prompt.includes("不再加无人机或按班次时长缩放"));
+    assert.ok(prompt.includes("不把缺失当成0"));
     assert.ok(prompt.includes("简单计算无需加载"));
     assert.ok(prompt.includes("干员身份和专精资格必须先查站内数据"));
     assert.ok(prompt.includes("继续 current=0、target=3"));

@@ -490,7 +490,7 @@ export function buildAgentTools(ctx: AgentToolContext) {
             { layoutLabel: preset.label, sourceName, layout },
             createRequestId()
           );
-          const projected = projectPlanResult(publicResult);
+          const projected = projectPlanResult(publicResult, layout);
           const workbenchSession = {
             presetLabel: preset.label,
             layout,
