@@ -1,8 +1,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { budgetPoints, defaultRatePolicy, officialDeepSeekRate, parseRatePolicy, priceModelCall, tokenPoints } from "./rate-policy.ts";
+import { budgetPoints, createRatePolicyDraft, defaultRatePolicy, supplementalModelRate, parseRatePolicy, priceModelCall, tokenPoints } from "./rate-policy.ts";
+test("rate drafts require an explicitly published multiplier", () => {
+  const draft = createRatePolicyDraft();
+  assert.equal(draft.markup, "");
+  assert.throws(() => parseRatePolicy(draft));
+  assert.throws(() => defaultRatePolicy(undefined as unknown as string));
+  for (const markup of ["", "0", "-1", "NaN"]) assert.throws(() => defaultRatePolicy(markup));
+  assert.equal(defaultRatePolicy("1.35").markup, "1.35");
+  assert.equal(draft.markup, "", "supplying a multiplier does not mutate the unpublished template");
+});
 test("actual model rates preserve cache partition, precision, FX and peak boundaries", () => {
-  const policy = defaultRatePolicy();
+  const policy = defaultRatePolicy("1.2");
   const usage = { inputTokens: 1_000_000, cachedInputTokens: 400_000, outputTokens: 100_000 };
   assert.deepEqual(priceModelCall(policy,"riic-deepseek","deepseek-v4.1-flash",usage,new Date("2026-10-12T01:00:00Z")), { upstreamRmb: "2.016000000000", chargedRmb: "2.419200000000" });
   assert.equal(priceModelCall(policy,"riic-deepseek","deepseek-v4.1-flash",usage,new Date("2026-10-12T04:00:00Z")).upstreamRmb,"1.008000000000");
@@ -17,9 +26,9 @@ test("actual model rates preserve cache partition, precision, FX and peak bounda
   assert.throws(() => budgetPoints(policy,512_001,2048));
 });
 
-test("official fallback uses its actual identity, official RMB prices and the existing markup", () => {
-  const policy = parseRatePolicy(defaultRatePolicy());
-  const rate = officialDeepSeekRate();
+test("supplemental model uses its actual identity, RMB prices and the published markup", () => {
+  const policy = parseRatePolicy(defaultRatePolicy("1.2"));
+  const rate = supplementalModelRate();
   const usage = { inputTokens: 1_000_000, cachedInputTokens: 250_000, outputTokens: 100_000 };
   const cost = (at: string) => priceModelCall(policy, rate.provider, rate.model, usage, new Date(at));
   assert.deepEqual(cost("2026-11-16T01:00:00Z"), { upstreamRmb: "2.310000000000", chargedRmb: "2.772000000000" });
@@ -37,7 +46,7 @@ test("official fallback uses its actual identity, official RMB prices and the ex
 });
 
 test("legacy policies stay readable and only the exact third model is accepted", () => {
-  const policy = defaultRatePolicy();
+  const policy = defaultRatePolicy("1.2");
   const legacy = { ...policy, models: policy.models.slice(0, 2) };
   assert.deepEqual(parseRatePolicy(legacy), legacy);
   assert.throws(() => parseRatePolicy({ ...policy, models: [policy.models[0], policy.models[2]] }));
@@ -53,7 +62,7 @@ test("legacy policies stay readable and only the exact third model is accepted",
 });
 
 test("all steps are summed before four-decimal settlement, while reservations round up", () => {
-  const policy = defaultRatePolicy();
+  const policy = defaultRatePolicy("1.2");
   assert.equal(tokenPoints(policy, ["0.000004", "0.000004"]), 0.0001);
   assert.equal(tokenPoints(policy, ["0.000005"]), 0.0001);
   assert.equal(tokenPoints(policy, ["0.0000049"]), 0);

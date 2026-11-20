@@ -16,7 +16,8 @@ process.env.DATABASE_URL = url;
 const { getDatabasePool } = await import("@riic/platform-server/db");
 const accounting = await import("./agent-accounting.ts");
 const admin = await import("./admin.ts");
-const { officialDeepSeekRate } = await import("./rate-policy.ts");
+const { defaultRatePolicy } = await import("./rate-policy.ts");
+const { calculateAgentTokenCost } = await import("./pricing.ts");
 const { getWallet, createAgentUsage, finalizeAgentUsage, chargeAgentTool, refundFailedAgentTool, listUsage, listLedger } = await import("./service.ts");
 
 test("durable reservations, settlement, refunds and policy concurrency", async () => {
@@ -24,8 +25,21 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
   try {
     for (const id of [userId,actor]) await pool.query('INSERT INTO public."user" (id,name,email,role) VALUES ($1,$1,$2,$3)',[id,`${id}@example.test`,id===actor?"admin":"user"]);
     await pool.query("INSERT INTO app.billing_wallet (user_id,paid_points) VALUES ($1,50)",[userId]);
+    const originalRates = (await pool.query("SELECT * FROM app.agent_policy_version WHERE kind='rates' ORDER BY version")).rows;
+    const initial = await admin.getAgentPolicies();
+    assert.equal(initial.initialRates.markup, "");
+    assert.deepEqual((await pool.query("SELECT * FROM app.agent_policy_version WHERE kind='rates' ORDER BY version")).rows, originalRates, "opening the editor never creates or changes a rate version");
+    const previousActive = originalRates.find(row => row.status === "active");
+    if (!previousActive) await assert.rejects(accounting.activeAgentPolicies(), error => error instanceof accounting.AgentAccountingError && error.code === "policy_unavailable");
+    await assert.rejects(admin.changeAgentPolicy(actor, { kind: "rates", action: "draft", payload: initial.initialRates, expectedActive: previousActive?.id ?? null, reason: "missing multiplier" }));
+    const bootstrap = await admin.changeAgentPolicy(actor, { kind: "rates", action: "draft", payload: defaultRatePolicy("1.2"), expectedActive: previousActive?.id ?? null, reason: "explicit test rates" });
+    if (!previousActive) await assert.rejects(accounting.activeAgentPolicies(), error => error instanceof accounting.AgentAccountingError && error.code === "policy_unavailable");
+    await admin.changeAgentPolicy(actor, { kind: "rates", action: "publish", id: bootstrap.id, expectedActive: previousActive?.id ?? null, reason: "publish explicit test rates" });
     const policies = await accounting.activeAgentPolicies();
-    if (!policies.rates.policy.models.some(rate => rate.provider === "riic-deepseek-official")) policies.rates.policy.models.push(officialDeepSeekRate());
+    assert.equal(policies.rates.id, bootstrap.id);
+    const publishedPayload = (await pool.query("SELECT payload FROM app.agent_policy_version WHERE id=$1", [bootstrap.id])).rows[0].payload;
+    await admin.getAgentPolicies(); await accounting.activeAgentPolicies();
+    assert.deepEqual((await pool.query("SELECT payload FROM app.agent_policy_version WHERE id=$1", [bootstrap.id])).rows[0].payload, publishedPayload, "runtime and editor reads preserve published rates");
     // Keep the fixture deterministic across wall-clock peak/off-peak boundaries.
     delete policies.rates.policy.models[0].peak;
     delete policies.rates.policy.models[2].peak;
@@ -48,17 +62,17 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
     assert.equal(ledger[0].metadata.tokenPoints,0.0156);
     assert.equal(ledger[0].metadata.toolPoints,1);
     assert.equal((await pool.query("SELECT count(*)::int AS n FROM app.agent_usage WHERE id=$1",[run])).rows[0].n,1);
-    const officialRun = await begin();
-    const officialCall = await accounting.beginModelCall(officialRun, 0, 2000, 2048);
-    await accounting.finishModelCall({ id: officialCall.id, provider: "riic-deepseek-official", model: "deepseek-flash",
+    const supplementalRun = await begin();
+    const supplementalCall = await accounting.beginModelCall(supplementalRun, 0, 2000, 2048);
+    await accounting.finishModelCall({ id: supplementalCall.id, provider: "riic-deepseek-official", model: "deepseek-flash",
       usage: { inputTokens: 1000, cachedInputTokens: 100, outputTokens: 100 } });
-    await accounting.settleAgentRun(officialRun, "completed");
-    const officialDetail = await admin.billingRunDetail(officialRun);
-    assert.equal(officialDetail.calls[0].status, "measured");
-    assert.equal(officialDetail.calls[0].provider, "riic-deepseek-official");
-    assert.equal(Number(officialDetail.calls[0].upstream_rmb), 0.001302);
-    assert.equal(Number(officialDetail.calls[0].charged_rmb), 0.0015624);
-    assert.equal(officialDetail.run.charged_points, 0.0156);
+    await accounting.settleAgentRun(supplementalRun, "completed");
+    const supplementalDetail = await admin.billingRunDetail(supplementalRun);
+    assert.equal(supplementalDetail.calls[0].status, "measured");
+    assert.equal(supplementalDetail.calls[0].provider, "riic-deepseek-official");
+    assert.equal(Number(supplementalDetail.calls[0].upstream_rmb), 0.001302);
+    assert.equal(Number(supplementalDetail.calls[0].charged_rmb), 0.0015624);
+    assert.equal(supplementalDetail.run.charged_points, 0.0156);
     assert.equal((await getWallet(userId)).reservedPoints, 0);
     const refund={userId,action:"refund",referenceId:ledger[0].id,points:0.0156,reason:"integration refund",idempotencyKey:randomUUID()};
     await Promise.all([admin.adjustBilling(actor,refund),admin.adjustBilling(actor,refund)]);
@@ -105,23 +119,37 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
     await pool.query("UPDATE app.agent_run SET created_at=now()-interval '20 minutes' WHERE id=$1",[stale]);
     assert.ok(await accounting.recoverAgentRuns());assert.equal((await getWallet(userId)).reservedPoints,0);
 
-    const draft=await admin.changeAgentPolicy(actor,{kind:"rates",action:"draft",payload:policies.rates.policy,expectedActive:policies.rates.id,reason:"test draft"});
+    const frozenRun = await begin();
+    const draft=await admin.changeAgentPolicy(actor,{kind:"rates",action:"draft",payload:{...policies.rates.policy,markup:"1.75"},expectedActive:policies.rates.id,reason:"test draft"});
     const publications=await Promise.allSettled([1,2].map(()=>admin.changeAgentPolicy(actor,{kind:"rates",action:"publish",id:draft.id,expectedActive:policies.rates.id,reason:"test publish"})));
     assert.equal(publications.filter(r=>r.status==="fulfilled").length,1);
-    const officialEnabled = process.env.AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED;
+    const supplementalEnabled = process.env.AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED;
     try {
       process.env.AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED = "1";
       const legacyPolicy = { ...policies.rates.policy, models: policies.rates.policy.models.slice(0, 2) };
       const activeId = publications.find(result => result.status === "fulfilled").value.id;
       const legacyDraft = await admin.changeAgentPolicy(actor, { kind: "rates", action: "draft", payload: legacyPolicy, expectedActive: activeId, reason: "legacy fixture" });
-      await assert.rejects(admin.changeAgentPolicy(actor, { kind: "rates", action: "publish", id: legacyDraft.id, expectedActive: activeId, reason: "must retain official model" }), /官网/);
-      await assert.rejects(admin.changeAgentPolicy(actor, { kind: "rates", action: "rollback", id: legacyDraft.id, expectedActive: activeId, reason: "must retain official model" }), /官网/);
+      await assert.rejects(admin.changeAgentPolicy(actor, { kind: "rates", action: "publish", id: legacyDraft.id, expectedActive: activeId, reason: "must retain supplemental model" }), /备用模型/);
+      await assert.rejects(admin.changeAgentPolicy(actor, { kind: "rates", action: "rollback", id: legacyDraft.id, expectedActive: activeId, reason: "must retain supplemental model" }), /备用模型/);
       assert.equal((await accounting.activeAgentPolicies()).rates.id, activeId);
     } finally {
-      if (officialEnabled === undefined) delete process.env.AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED;
-      else process.env.AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED = officialEnabled;
+      if (supplementalEnabled === undefined) delete process.env.AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED;
+      else process.env.AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED = supplementalEnabled;
     }
+    const frozenCall = await accounting.beginModelCall(frozenRun, 0, 2000, 2048);
+    await accounting.finishModelCall({ ...callUsage, id: frozenCall.id });
+    await accounting.settleAgentRun(frozenRun, "completed");
+    assert.equal((await admin.billingRunDetail(frozenRun)).run.charged_points, 0.0156);
+    const updatedRates = (await accounting.activeAgentPolicies()).rates;
+    assert.equal(updatedRates.policy.markup, "1.75");
+    const updatedRun = await accounting.beginAgentRun({ userId, conversationId: `test-${randomUUID()}`, idempotencyKey: randomUUID(), requestHash: "updated-rate-test", rates: updatedRates, filterVersion: policies.filter.id });
+    const updatedCall = await accounting.beginModelCall(updatedRun, 0, 2000, 2048);
+    await accounting.finishModelCall({ ...callUsage, id: updatedCall.id });
+    await accounting.settleAgentRun(updatedRun, "completed");
+    assert.equal((await admin.billingRunDetail(updatedRun)).run.charged_points, 0.0228);
     assert.equal((await pool.query("SELECT rate_version FROM app.agent_run WHERE id=$1",[run])).rows[0].rate_version,policies.rates.id);
+    assert.equal((await admin.billingRunDetail(run)).run.policy.markup, "1.2");
+    assert.equal(Number((await pool.query("SELECT points_delta FROM app.billing_ledger WHERE id=$1", [ledger[0].id])).rows[0].points_delta), -1.0156);
     assert.ok((await admin.billingRunDetail(run)).calls.length===1);
     assert.ok((await admin.listBilling("wallets",new URLSearchParams({q:userId}))).total===1);
     assert.ok((await admin.billingOverview(new Date(Date.now()-86400_000),new Date())).runs>0);
@@ -186,6 +214,20 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
     const directUsage=(await listUsage(userId)).find(row=>row.id===direct);
     assert.equal(directUsage.points,0.0156);
     assert.equal(directUsage.chargedCostRmbFen,0.156);
+    for (const reason of ["missing_usage", "unknown_model"]) {
+      const unconfirmed = await createAgentUsage({ userId, toolName: "agent_chat", idempotencyKey: randomUUID() });
+      const beforeWallet = await getWallet(userId);
+      if (reason === "unknown_model") assert.throws(() => calculateAgentTokenCost(policies.rates.policy, "riic-deepseek", "unknown-deepseek-model", { inputTokens: 100, outputTokens: 10 }));
+      await finalizeAgentUsage({ usageId: unconfirmed, metadata: { rateVersion: policies.rates.id, usageIssue: reason } });
+      const row = (await pool.query("SELECT * FROM app.agent_usage WHERE id=$1", [unconfirmed])).rows[0];
+      assert.equal(row.status, "completed_unsettled");
+      assert.equal(row.metadata.settlement.usageConfirmed, false);
+      assert.equal(row.metadata.settlement.tokenPoints, null);
+      assert.equal((await listUsage(userId)).find(usage => usage.id === unconfirmed).tokenPoints, null);
+      assert.equal(row.metadata.rateVersion, policies.rates.id);
+      assert.equal((await pool.query("SELECT count(*)::int AS n FROM app.billing_ledger WHERE reference_id=$1 AND kind='token_settlement'", [unconfirmed])).rows[0].n, 0);
+      assert.deepEqual(await getWallet(userId), beforeWallet);
+    }
     const failedDirect=await chargeAgentTool({userId,toolName:"solve_schedule",points:1,idempotencyKey:randomUUID()});
     assert.equal((await getWallet(userId)).paidPoints,1.1078);
     await Promise.all([refundFailedAgentTool(failedDirect.usageId),refundFailedAgentTool(failedDirect.usageId)]);

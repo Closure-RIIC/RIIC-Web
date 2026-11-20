@@ -14,34 +14,43 @@ import type { RatePolicy } from "@/server/billing/rate-policy";
 import type { FilterPolicy } from "@/server/agent/filter-policy";
 
 export type PolicyVersion = { id: string; kind: "rates" | "filter"; status: string; payload: RatePolicy | FilterPolicy; created_at: string };
-export function PolicyEditor({ kind, versions, refresh }: { kind: "rates" | "filter"; versions: PolicyVersion[]; refresh: () => Promise<void> }) {
+export function PolicyEditor({ kind, versions, initialRates, refresh }: { kind: "rates" | "filter"; versions: PolicyVersion[]; initialRates?: RatePolicy; refresh: () => Promise<void> }) {
   const locale = useLocale();
-  const active = versions.find(v => v.kind === kind && v.status === "active")!;
-  const [payload, setPayload] = useState<RatePolicy | FilterPolicy>(() => structuredClone(active.payload));
+  const active = versions.find(v => v.kind === kind && v.status === "active");
+  const [payload, setPayload] = useState<RatePolicy | FilterPolicy | null>(() => {
+    const initial = active?.payload ?? (kind === "rates" ? initialRates : undefined);
+    return initial ? structuredClone(initial) : null;
+  });
   const [reason, setReason] = useState(""); const [error, setError] = useState(""); const [busy, setBusy] = useState(false);
   const [testText, setTestText] = useState(""); const [testResult, setTestResult] = useState("");
   const [confirm, setConfirm] = useState<{ action: string; id: string } | null>(null);
   const request = useAdminRequest();
   async function save(action: string, id?: string) {
+    if (!payload) return;
     setBusy(true); setError("");
     try {
-      await request("/api/admin/billing?section=policies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, id, kind, payload, reason, expectedActive: active.id }) });
+      await request("/api/admin/billing?section=policies", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action, id, kind, payload, reason, expectedActive: active?.id ?? null }) });
       setConfirm(null); await refresh();
     } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(false); }
   }
+  if (!payload) return <section className="rounded-xl border bg-card p-5"><p className="text-sm text-muted-foreground">{adminText.text(locale, "configurationUnavailable")}</p></section>;
   const rates = payload as RatePolicy; const filter = payload as FilterPolicy;
+  const multiplierValid = kind !== "rates" || (/^\d{1,7}(\.\d{1,8})?$/.test(rates.markup) && Number(rates.markup) > 0);
+  const missingModels = kind === "rates" ? initialRates?.models.filter(template => !rates.models.some(model => model.provider === template.provider && model.model === template.model)) ?? [] : [];
   const updateModel = (index: number, field: string, value: string, peak = false) => setPayload({ ...rates, models: rates.models.map((r, i) => i !== index ? r : peak ? { ...r, peak: { ...r.peak!, [field]: value } } : { ...r, [field]: value }) });
   return <section className="space-y-5 rounded-xl border bg-card p-5">
-    <div><h2 className="font-semibold">{kind === "rates" ? adminText.text(locale, "modelRates") : adminText.text(locale, "basicContentFilter")} · {active.id}</h2>
+    <div><h2 className="font-semibold">{kind === "rates" ? adminText.text(locale, "modelRates") : adminText.text(locale, "basicContentFilter")} · {active?.id ?? adminText.text(locale, "notPublished")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{kind === "rates" ? adminText.text(locale, "providerPricesPerMillionTokensPublishedRatesApply") : adminText.text(locale, "blockedInputIsRejectedWithoutChargeMatchingStreamed")}</p></div>
     {kind === "rates" ? <>
-      <Label>{adminText.text(locale, "serviceMultiplier")}<Input value={rates.markup} onChange={e => setPayload({ ...rates, markup: e.target.value })} inputMode="decimal" /></Label>
+      <div className="space-y-2"><Label>{adminText.text(locale, "serviceMultiplier")}<Input value={rates.markup} onChange={e => setPayload({ ...rates, markup: e.target.value })} inputMode="decimal" required aria-invalid={!multiplierValid} aria-describedby="service-multiplier-hint" placeholder={adminText.text(locale, "enterServiceMultiplier")} /></Label>
+        <p id="service-multiplier-hint" className="text-xs text-muted-foreground">{adminText.text(locale, "serviceMultiplierRequired")}</p></div>
       {rates.models.map((model, index) => <fieldset key={model.provider} className="space-y-3 rounded-lg border p-4"><legend className="px-2 text-sm font-medium">{model.model}</legend>
         <div className="grid gap-3 sm:grid-cols-3"><Label>{adminText.text(locale, "currency")}<select className="h-9 rounded-md border bg-background px-2" value={model.currency} onChange={e => updateModel(index, "currency", e.target.value)}><option>RMB</option><option>USD</option></select></Label>
           <Label>{adminText.text(locale, "rmbExchangeRate")}<Input value={model.exchangeRate} onChange={e => updateModel(index, "exchangeRate", e.target.value)} /></Label></div>
         {[false, ...(model.peak ? [true] : [])].map(peak => <div key={String(peak)} className="grid gap-3 sm:grid-cols-3">{(["input", "cachedInput", "output"] as const).map(field => <Label key={field}>{peak ? adminText.text(locale, "peak") : ""}{({ input: adminText.text(locale, "input"), cachedInput: adminText.text(locale, "cachedInput"), output: adminText.text(locale, "output") })[field]}<Input inputMode="decimal" value={(peak ? model.peak! : model)[field]} onChange={e => updateModel(index, field, e.target.value, peak)} /></Label>)}</div>)}
       </fieldset>)}
+      {missingModels.length > 0 && <Button variant="outline" disabled={busy} onClick={() => setPayload({ ...rates, models: [...rates.models, ...structuredClone(missingModels)] })}>{adminText.text(locale, "addReserveModelRate")}</Button>}
       <p className="text-xs text-muted-foreground">{adminText.text(locale, "deepseekPeakMondayFriday0912And14")}</p>
     </> : <>
       <div className="space-y-2">{filter.rules.map((rule, i) => <div key={rule.id} className="flex flex-wrap items-center gap-2">
@@ -58,7 +67,7 @@ export function PolicyEditor({ kind, versions, refresh }: { kind: "rates" | "fil
     </>}
     <Label>{adminText.text(locale, "changeReason")}<Input value={reason} onChange={e => setReason(e.target.value)} maxLength={500} /></Label>
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-    <Button disabled={busy || !reason.trim()} onClick={() => void save("draft")}>{adminText.text(locale, "saveDraft")}</Button>
+    <Button disabled={busy || !reason.trim() || !multiplierValid} onClick={() => void save("draft")}>{adminText.text(locale, "saveDraft")}</Button>
     <div className="space-y-2 border-t pt-4">{versions.filter(v => v.kind === kind).slice(0, 12).map(v => <div key={v.id} className="flex flex-wrap items-center gap-2 text-sm"><span className="mr-auto">{v.id} · {v.status} · {new Date(v.created_at).toLocaleString()}</span><Button size="sm" variant="ghost" onClick={() => setPayload(structuredClone(v.payload))}>{adminText.text(locale, "load")}</Button>{v.status !== "active" && <Button size="sm" variant="outline" disabled={busy || !reason.trim()} onClick={() => setConfirm({ action: v.status === "draft" ? "publish" : "rollback", id: v.id })}>{v.status === "draft" ? adminText.text(locale, "publish") : adminText.text(locale, "restoreThisVersion")}</Button>}</div>)}</div>
     <Dialog open={!!confirm} onOpenChange={open => { if (!open && !busy) setConfirm(null); }}><DialogContent><DialogHeader><DialogTitle>{adminText.text(locale, "publishConfiguration")}</DialogTitle><DialogDescription>{adminText.text(locale, "newRequestsWillUseThisConfigurationInFlight")} {confirm?.id}</DialogDescription></DialogHeader><DialogFooter><Button disabled={busy} onClick={() => confirm && void save(confirm.action, confirm.id)}>{adminText.text(locale, "confirmPublish")}</Button></DialogFooter></DialogContent></Dialog>
   </section>;

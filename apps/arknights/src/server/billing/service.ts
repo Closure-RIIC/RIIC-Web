@@ -9,7 +9,7 @@ import { getDatabase } from "@riic/platform-server/db";
 import { agentUsage, billingCdk, billingLedger, billingOrder, billingPayment, billingWallet } from "@riic/platform-server/db/schema";
 import { afdianCheckoutUrl, billingProduct, billingTestProductEnabled, POINT_VALUE_RMB, type BillingProduct } from "./config";
 import { cdkAvailability, hashCdk, randomCdk, validCdk } from "./cdk";
-import { roundPoints, sumPoints } from "./points.ts";
+import { roundPoints, sumPoints, validPoints } from "./points.ts";
 
 export type BillingWalletView = {
   paidPoints: number;
@@ -378,7 +378,7 @@ export async function listUsage(userId: string, limit = 40) {
     return {
       ...row,
       toolFeePoints: Number.isFinite(Number(settlement.toolPoints)) ? Number(settlement.toolPoints) : (row.toolName === "solve_schedule" ? 1 : 0),
-      tokenPoints: Number.isFinite(Number(settlement.tokenPoints)) ? Number(settlement.tokenPoints) : null,
+      tokenPoints: settlement.tokenPoints != null && Number.isFinite(Number(settlement.tokenPoints)) ? Number(settlement.tokenPoints) : null,
       createdAt: row.createdAt.toISOString(),
       upstreamCostRmb: row.upstreamCostRmbFen == null ? null : row.upstreamCostRmbFen / 100,
       chargedCostRmb: row.chargedCostRmbFen == null ? null : row.chargedCostRmbFen / 100,
@@ -405,6 +405,21 @@ export async function finalizeAgentUsage(input: {
     if (!usage) return null;
     if (usage.status === "completed" || usage.status === "completed_unsettled" || usage.status === "failed") return usage.id;
 
+    if (input.chargedPoints === undefined || !validPoints(input.chargedPoints)) {
+      await tx.update(agentUsage).set({
+        status: "completed_unsettled",
+        inputTokens: input.inputTokens ?? null,
+        outputTokens: input.outputTokens ?? null,
+        cachedInputTokens: input.cachedInputTokens ?? null,
+        upstreamCostRmbFen: null,
+        metadata: { ...(usage.metadata as Record<string, unknown> ?? {}), ...input.metadata,
+          settlement: { toolPoints: Math.max(0, usage.points), tokenPoints: null, settledTokenPoints: 0,
+            unsettledPoints: null, usageConfirmed: false } },
+        finalizedAt: new Date(),
+      }).where(eq(agentUsage.id, usage.id));
+      return usage.id;
+    }
+
     await ensureWallet(tx, usage.userId);
     let wallet = await lockWallet(tx, usage.userId);
     wallet = await expireWalletIfNeeded(tx, usage.userId, wallet);
@@ -412,7 +427,7 @@ export async function finalizeAgentUsage(input: {
     // Tool usage already contains its fixed fee (solve_schedule: 1 point).
     // Token points are additional and are never used to refund that tool fee.
     const toolPoints = Math.max(0, usage.points);
-    const tokenPoints = Math.max(0, roundPoints(input.chargedPoints ?? 0));
+    const tokenPoints = roundPoints(input.chargedPoints);
     const available = viewWallet(wallet).totalPoints;
     const settledTokenPoints = Math.min(tokenPoints, available);
     const unsettledPoints = sumPoints(tokenPoints, -settledTokenPoints);

@@ -3,9 +3,10 @@ import { createHash, randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { getDatabasePool } from "@riic/platform-server/db";
 import { compileFilterPolicy, parseFilterPolicy } from "../agent/filter-policy.ts";
-import { activeAgentPolicies, billingTransaction } from "./agent-accounting.ts";
-import { OFFICIAL_DEEPSEEK_MODEL, OFFICIAL_DEEPSEEK_PROVIDER, parseRatePolicy } from "./rate-policy.ts";
+import { ensureAgentFilterPolicy, billingTransaction } from "./agent-accounting.ts";
+import { SUPPLEMENTAL_MODEL_ID, SUPPLEMENTAL_MODEL_PROVIDER, createRatePolicyDraft, parseRatePolicy } from "./rate-policy.ts";
 import { parseResourcePolicy } from "../agent/resource-policy.ts";
+import { adminModelDirectory } from "../agent/admin-models.ts";
 import { sumPoints, validPoints } from "./points.ts";
 import { MIN_POINT_AMOUNT } from "../../billing-points.ts";
 
@@ -153,10 +154,10 @@ export async function adjustBilling(actor: string, input: unknown) {
   });
 }
 export async function getAgentPolicies() {
-  await activeAgentPolicies();
+  await ensureAgentFilterPolicy();
   const pool = getDatabasePool();
   const [versions, gateway] = await Promise.all([pool.query("SELECT * FROM app.agent_policy_version WHERE kind IN ('rates','filter') ORDER BY created_at DESC LIMIT 100"), pool.query("SELECT * FROM app.agent_gateway_status ORDER BY id")]);
-  return { versions: versions.rows, gateway: gateway.rows };
+  return { versions: versions.rows, gateway: gateway.rows, initialRates: createRatePolicyDraft(), models: adminModelDirectory(versions.rows) };
 }
 export async function changeAgentPolicy(actor: string, input: unknown) {
   const body = input as Record<string, unknown>;
@@ -166,7 +167,7 @@ export async function changeAgentPolicy(actor: string, input: unknown) {
   return billingTransaction(async client => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext('riic-agent-policy'))");
     const active = (await client.query("SELECT * FROM app.agent_policy_version WHERE kind=$1 AND status='active'", [kind])).rows[0];
-    if (body.expectedActive !== active?.id) throw new BillingAdminError("配置已更新，请刷新后重试。");
+    if ((body.expectedActive ?? null) !== (active?.id ?? null)) throw new BillingAdminError("配置已更新，请刷新后重试。");
     let payload = body.payload; let id: string;
     if (action === "publish") {
       const draft = (await client.query("SELECT * FROM app.agent_policy_version WHERE id=$1 AND kind=$2 AND status='draft'", [body.id, kind])).rows[0];
@@ -188,8 +189,8 @@ export async function changeAgentPolicy(actor: string, input: unknown) {
         let rates;
         try { rates = parseRatePolicy(payload); } catch { throw new BillingAdminError("费率版本校验失败，未发布。"); }
         if (process.env.AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED === "1" &&
-          !rates.models.some(rate => rate.provider === OFFICIAL_DEEPSEEK_PROVIDER && rate.model === OFFICIAL_DEEPSEEK_MODEL)) {
-          throw new BillingAdminError("已配置官网兜底，发布或回滚的费率必须包含官网模型；撤销兜底后才能恢复旧费率。");
+          !rates.models.some(rate => rate.provider === SUPPLEMENTAL_MODEL_PROVIDER && rate.model === SUPPLEMENTAL_MODEL_ID)) {
+          throw new BillingAdminError("已配置备用模型，发布或回滚的费率必须包含该模型；撤销备用模型配置后才能恢复旧费率。");
         }
       }
       if (kind === "resources") {

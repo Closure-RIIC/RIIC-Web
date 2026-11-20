@@ -10,11 +10,17 @@ For the production gateway, the verified base URL is
 `https://ai.codesonline.dev/v1`. Model IDs are `deepseek-v4.1-flash` and
 `glm-5.3-flash`; `ds-v4.1-flash` is not an accepted upstream model ID.
 
-With the production gateway enabled, the optional last-resort provider is
+With the production gateway enabled, the optional reserve model is
 `riic-deepseek-official/deepseek-flash` at `https://api.deepseek.com`. Its
 separate `AGENT_LLM_DEEPSEEK_OFFICIAL_{BASE_URL,MODEL,API_KEY}` settings and
 versioned RMB rate row are described in `AGENT_GATEWAY_OPERATIONS.md`. It follows
-the existing DeepSeek and GLM routes and keeps the existing 1.2 billing multiplier.
+the existing DeepSeek and GLM routes. All model prices and the service multiplier
+come from the published policy in billing management; Agent management only
+displays the model order. New installations require an administrator to enter
+and publish a multiplier. Existing active policies and historical bills remain
+unchanged. Direct requests also capture the published policy before calling a
+model; missing policy or an unpriced model stops the request. Missing usage or
+an unexpected response model leaves settlement unconfirmed.
 
 Store production secrets in the root-readable systemd EnvironmentFile
 `/etc/arknights-infra-agent-private.env`, loaded by the web service's

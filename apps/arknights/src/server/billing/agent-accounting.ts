@@ -4,7 +4,7 @@ import { Decimal } from "decimal.js";
 import type { PoolClient } from "pg";
 import { getDatabasePool } from "@riic/platform-server/db";
 import { DEFAULT_FILTER_POLICY, parseFilterPolicy, type FilterPolicy } from "../agent/filter-policy.ts";
-import { budgetPoints, defaultRatePolicy, parseRatePolicy, priceModelCall, tokenPoints, type MeasuredUsage, type RatePolicy } from "./rate-policy.ts";
+import { budgetPoints, parseRatePolicy, priceModelCall, tokenPoints, type MeasuredUsage, type RatePolicy } from "./rate-policy.ts";
 import { sumPoints, validPoints } from "./points.ts";
 
 type Run = { id: string; user_id: string; state: string; settlement: string; policy: RatePolicy; held_paid: number; held_monthly: number; tool_points: number; rate_version: string; delivered: boolean; monthly_expires_at: Date | null };
@@ -19,18 +19,23 @@ export async function billingTransaction<T>(fn: (client: PoolClient) => Promise<
   catch (error) { await client.query("ROLLBACK"); throw error; }
   finally { client.release(); }
 }
-export async function activeAgentPolicies() {
-  return billingTransaction(async client => {
+export async function ensureAgentFilterPolicy() {
+  await billingTransaction(async client => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext('riic-agent-policy'))");
-    for (const [kind, payload] of [["rates", defaultRatePolicy()], ["filter", DEFAULT_FILTER_POLICY]] as const) {
-      await client.query(`INSERT INTO app.agent_policy_version (id,kind,version,status,payload,published_at)
-        SELECT $1,$2,1,'active',$3,now() WHERE NOT EXISTS (SELECT 1 FROM app.agent_policy_version WHERE kind=$2)`, [`${kind}:1`, kind, JSON.stringify(payload)]);
-    }
-    const { rows } = await client.query<{ id: string; kind: string; payload: unknown }>("SELECT id,kind,payload FROM app.agent_policy_version WHERE status='active' AND kind IN ('rates','filter')");
-    const rates = rows.find(row => row.kind === "rates"); const filter = rows.find(row => row.kind === "filter");
-    if (!rates || !filter) throw new Error("Agent policy unavailable");
-    return { rates: { id: rates.id, policy: parseRatePolicy(rates.payload) }, filter: { id: filter.id, policy: parseFilterPolicy(filter.payload) } };
+    await client.query(`INSERT INTO app.agent_policy_version (id,kind,version,status,payload,published_at)
+      SELECT 'filter:1','filter',1,'active',$1,now() WHERE NOT EXISTS (SELECT 1 FROM app.agent_policy_version WHERE kind='filter')`, [JSON.stringify(DEFAULT_FILTER_POLICY)]);
   });
+}
+export async function activeAgentPolicies() {
+  await ensureAgentFilterPolicy();
+  const { rows } = await getDatabasePool().query<{ id: string; kind: string; payload: unknown }>("SELECT id,kind,payload FROM app.agent_policy_version WHERE status='active' AND kind IN ('rates','filter')");
+  const rates = rows.find(row => row.kind === "rates"); const filter = rows.find(row => row.kind === "filter");
+  if (!rates || !filter) throw new AgentAccountingError("policy_unavailable", "Agent 计费配置尚未发布，请联系管理员。");
+  try {
+    return { rates: { id: rates.id, policy: parseRatePolicy(rates.payload) }, filter: { id: filter.id, policy: parseFilterPolicy(filter.payload) } };
+  } catch {
+    throw new AgentAccountingError("policy_unavailable", "Agent 计费配置无效，请联系管理员。");
+  }
 }
 export async function recordFilterEvent(input: { requestId: string; userId: string; version: string; stage: string; ruleIds: string[] }) {
   await getDatabasePool().query(`INSERT INTO app.agent_filter_event (id,request_id,user_id,version,stage,rule_ids) VALUES ($1,$2,$3,$4,$5,$6)`,

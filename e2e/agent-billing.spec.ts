@@ -38,7 +38,19 @@ test("admin billing, filter policies, role boundaries and automatic Agent select
     expect((await pool.query("SELECT status FROM app.billing_review WHERE id=$1",["payment:"+paymentId])).rows[0].status).toBe("resolved");
     await page.getByRole("button",{name:"积分流水",exact:true}).click();await expect(page.getByRole("table")).toContainText("admin_credit");
     await page.getByRole("button",{name:"模型费率",exact:true}).click();await expect(page.getByText("deepseek-v4.1-flash",{exact:true})).toBeVisible();
+    // A fresh deployment must receive an explicit administrator-published multiplier.
+    await expect(page.getByLabel("服务倍率", { exact: true })).toHaveValue("");
+    await page.getByLabel("服务倍率", { exact: true }).fill("1.5");
+    await page.getByLabel("变更原因", { exact: true }).fill("E2E initial pricing publication");
+    await page.getByRole("button", { name: "保存草稿", exact: true }).click();
+    await expect(page.getByRole("button", { name: "发布", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "发布", exact: true }).click();
+    await page.getByRole("button", { name: "确认发布", exact: true }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.getByLabel("服务倍率", { exact: true })).toHaveValue("1.5");
     await page.goto("/admin/agent");await expect(page.getByRole("heading",{name:"Agent 管理",exact:true})).toBeVisible();
+    await expect(page.getByText("deepseek-flash", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("服务倍率", { exact: true })).toHaveCount(0);
     await page.getByLabel("测试文本（不会保存）",{exact:true}).fill("RIIC_FILTER_BLOCK_TEST");await page.getByRole("button",{name:"测试规则",exact:true}).click();await expect(page.getByText(/1 处命中/)).toBeVisible();
     await page.getByLabel("变更原因",{exact:true}).fill("E2E unchanged policy version");await page.getByRole("button",{name:"保存草稿",exact:true}).click();
     await expect(page.getByRole("button",{name:"发布",exact:true})).toBeVisible();await page.getByRole("button",{name:"发布",exact:true}).click();await page.getByRole("button",{name:"确认发布",exact:true}).click();await expect(page.getByRole("dialog")).toHaveCount(0);
