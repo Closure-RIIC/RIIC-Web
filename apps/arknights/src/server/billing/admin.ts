@@ -55,13 +55,19 @@ const listings = {
   usage: { from: `(SELECT coalesce(u.id,r.id) AS id,coalesce(u.user_id,r.user_id) AS user_id,coalesce(r.id,u.run_id) AS run_id,
     coalesce(u.tool_name,'agent_chat') AS tool_name,coalesce(r.state,u.status) AS status,coalesce(r.settlement,'legacy') AS settlement,coalesce(u.points,r.charged_points) AS points,
     u.input_tokens,u.output_tokens,u.cached_input_tokens,u.upstream_cost_rmb_fen,u.charged_cost_rmb_fen,
-    coalesce(r.created_at,u.created_at) AS created_at,u.metadata FROM app.agent_usage u FULL JOIN app.agent_run r ON r.id=u.id) t`, select: "t.*", q: "t.id || ' ' || coalesce(t.run_id,'') || ' ' || coalesce(t.user_id,'')", status: "t.status", time: "t.created_at" },
+    coalesce(r.created_at,u.created_at) AS created_at,u.metadata FROM app.agent_usage u FULL JOIN app.agent_run r ON r.id=u.id) t
+    LEFT JOIN public."user" u ON u.id=t.user_id`, select: "t.*,u.email", q: "concat_ws(' ',t.id,t.run_id,t.user_id,u.email)", status: "t.status", time: "t.created_at" },
   wallets: { from: 'app.billing_wallet t JOIN public."user" u ON u.id=t.user_id', select: "t.user_id,u.name,u.email,t.paid_points,t.monthly_points,t.monthly_expires_at,t.held_paid_points,t.held_monthly_points,t.updated_at", q: "t.user_id || ' ' || u.name || ' ' || u.email", status: "''", time: "t.updated_at" },
-  ledger: { from: "app.billing_ledger t", select: "t.*", q: "t.id || ' ' || t.user_id || ' ' || coalesce(t.reference_id,'')", status: "t.kind", time: "t.created_at" },
-  orders: { from: "app.billing_order t", select: "t.id,t.user_id,t.product_id,t.provider,t.status,t.amount_fen,t.points,t.custom_order_id,t.provider_order_id,t.created_at,t.paid_at", q: "t.id || ' ' || t.user_id || ' ' || t.custom_order_id || ' ' || coalesce(t.provider_order_id,'')", status: "t.status", time: "t.created_at" },
-  reviews: { from: "app.billing_review t", select: "t.*", q: "t.id || ' ' || coalesce(t.run_id,'') || ' ' || coalesce(t.evidence->>'trade','') || ' ' || coalesce(t.evidence->>'customOrderId','')", status: "t.status", time: "t.created_at" },
-  audit: { from: "app.billing_admin_audit t", select: "t.*", q: "t.id || ' ' || t.target || ' ' || coalesce(t.actor_id,'')", status: "t.action", time: "t.created_at" },
-  filters: { from: "app.agent_filter_event t", select: "t.*", q: "t.request_id || ' ' || coalesce(t.user_id,'')", status: "t.stage", time: "t.created_at" },
+  ledger: { from: 'app.billing_ledger t LEFT JOIN public."user" u ON u.id=t.user_id', select: "t.*,u.email", q: "concat_ws(' ',t.id,t.user_id,t.reference_id,u.email)", status: "t.kind", time: "t.created_at" },
+  orders: { from: 'app.billing_order t LEFT JOIN public."user" u ON u.id=t.user_id', select: "t.id,t.user_id,u.email,t.product_id,t.provider,t.status,t.amount_fen,t.points,t.custom_order_id,t.provider_order_id,t.created_at,t.paid_at", q: "concat_ws(' ',t.id,t.user_id,t.custom_order_id,t.provider_order_id,u.email)", status: "t.status", time: "t.created_at" },
+  reviews: { from: `app.billing_review t
+    LEFT JOIN app.agent_run r ON r.id=t.run_id
+    LEFT JOIN app.billing_payment p ON t.kind='afdian_payment' AND p.id=t.evidence->>'paymentId'
+    LEFT JOIN app.billing_order o ON t.kind='afdian_payment' AND
+      (o.id=p.order_id OR (p.order_id IS NULL AND o.custom_order_id=coalesce(p.custom_order_id,t.evidence->>'customOrderId')))
+    LEFT JOIN public."user" u ON u.id=coalesce(r.user_id,o.user_id)`, select: "t.*,coalesce(r.user_id,o.user_id) AS user_id,u.email", q: "concat_ws(' ',t.id,t.run_id,t.evidence->>'trade',t.evidence->>'customOrderId',r.user_id,o.user_id,u.email)", status: "t.status", time: "t.created_at" },
+  audit: { from: 'app.billing_admin_audit t LEFT JOIN public."user" u ON u.id=t.actor_id', select: "t.*,u.email AS actor_email", q: "concat_ws(' ',t.id,t.target,t.actor_id,u.email)", status: "t.action", time: "t.created_at" },
+  filters: { from: 'app.agent_filter_event t LEFT JOIN public."user" u ON u.id=t.user_id', select: "t.*,u.email", q: "concat_ws(' ',t.request_id,t.user_id,u.email)", status: "t.stage", time: "t.created_at" },
   attempts: { from: "app.agent_gateway_usage t", select: "t.*", q: "t.id || ' ' || coalesce(t.call_id,'') || ' ' || t.session_id", status: "t.provider", time: "t.created_at" },
 } as const;
 export async function listBilling(section: string, params: URLSearchParams) {
