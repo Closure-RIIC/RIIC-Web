@@ -101,7 +101,7 @@
     "revokingSessions": "Revoking sessions…",
     "signOutEverywhere": "Sign out everywhere",
     "deleteAccountPermanently": "Delete account permanently",
-    "yourAccountAndAllSessionsWillBeDeletedImmediately": "Your account and all sessions will be deleted immediately. Enter your current password to confirm. This cannot be undone.",
+    "yourAccountAndAllSessionsWillBeDeletedImmediately": "Your account and all sessions will be deleted immediately. Identity digests used to prevent duplicate referral rewards, referral relationships and reward records are retained indefinitely and are not automatically deleted with your account; see the privacy policy. Enter your current password to confirm. This cannot be undone.",
     "currentPassword": "Current password",
     "showCurrentPassword": "Show current password",
     "alsoClearThisBrowserSLocalWorkspaceAfterDeletion": "Also clear this browser''s local workspace after deletion",

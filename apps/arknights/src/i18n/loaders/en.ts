@@ -60,6 +60,7 @@ export const loaders: Record<string, () => Promise<unknown>> = {
   "AK_components_pages_MowerSchedulePage": () => import("../../../messages/en/AK_components_pages_MowerSchedulePage.json", { with: { type: "json" } }).then(module => module.default),
   "AK_components_pages_SklandStatus": () => import("../../../messages/en/AK_components_pages_SklandStatus.json", { with: { type: "json" } }).then(module => module.default),
   "AK_components_pages_UserSettingsPage": () => import("../../../messages/en/AK_components_pages_UserSettingsPage.json", { with: { type: "json" } }).then(module => module.default),
+  "AK_components_referral_ReferralPage": () => import("../../../messages/en/AK_components_referral_ReferralPage.json", { with: { type: "json" } }).then(module => module.default),
   "AK_components_setup_ManualOperboxPicker": () => import("../../../messages/en/AK_components_setup_ManualOperboxPicker.json", { with: { type: "json" } }).then(module => module.default),
   "AK_components_training_advice_TrainingAdviceActionCard": () => import("../../../messages/en/AK_components_training_advice_TrainingAdviceActionCard.json", { with: { type: "json" } }).then(module => module.default),
   "AK_components_workbench_AccountHealthRoute": () => import("../../../messages/en/AK_components_workbench_AccountHealthRoute.json", { with: { type: "json" } }).then(module => module.default),
