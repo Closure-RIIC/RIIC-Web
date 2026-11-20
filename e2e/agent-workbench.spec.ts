@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { mockApis } from "./production-readiness.fixture";
+import { mockApis, waitForOwnAnimations } from "./production-readiness.fixture";
 import { accountOrbColor } from "../apps/arknights/src/account-orb";
 import { openAgentHistory } from "./agent-history";
 
@@ -387,6 +387,7 @@ test("Uploaded personas keep independent avatars and persist on mobile", async (
   await expect(first.getByRole("button", { name: "上传头像", exact: true }).locator("svg")).toHaveCount(0);
   await expect(first.getByRole("button", { name: "上传头像", exact: true })).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(first.getByRole("button", { name: "删除人格卡", exact: true })).toHaveText("");
+  await waitForOwnAnimations(dialog);
   const controls = await first.evaluate(card => {
     const upload = card.querySelector<HTMLButtonElement>('[aria-label="上传头像"]')!;
     const remove = card.querySelector<HTMLButtonElement>('[aria-label="删除人格卡"]')!;

@@ -83,7 +83,7 @@ test("manual recycling assignments preserve the second slot across reload and mo
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('arknights-infra-manual-schedule-v1')!).shifts[0].rooms.recycling_station.operators)).toEqual([null, '阿米娅']);
   await page.reload();
   await expect(compact.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
-  expect(await compact.locator('[data-operator-identity]').evaluateAll(nodes => nodes.map(node => node.getAttribute('data-operator-identity')))).toEqual(['empty', '阿米娅']);
+  await expect.poll(() => compact.locator('[data-operator-identity]').evaluateAll(nodes => nodes.map(node => node.getAttribute('data-operator-identity')))).toEqual(['empty', '阿米娅']);
   await page.setViewportSize({ width: 390, height: 844 });
   const mobile = page.locator('[data-manual-editor-board] [data-schedule-view="list"] [data-room-group="recycle"]');
   await expect(mobile).toBeVisible();
