@@ -117,7 +117,7 @@
   "sklandLinkSReachedTheSevenDayLimitAnd": "有 {renewalDueCount} 個森空島繫結已滿七天，需要重新授權。當前仍有效的帳號可以繼續使用。",
   "overview": "概覽",
   "infrastructure": "基建",
-  "rich1": "登入憑證將在 <value2></value2> 固定過期。按住下方按鈕會永久刪除全部森空島帳號、憑證、同步資料及可關聯記錄；MAA 匯入與手動佈局會保留。",
+  "rich1": "登入憑證將在 <value2></value2> 固定過期。按住下方按鈕會永久刪除全部森空島帳號、憑證、同步資料及可關聯的執行記錄；活動防重複領獎摘要、邀請關係和獎勵記錄會繼續保留。MAA 匯入與手動佈局會保留。",
   "rich2": "掃碼或匯入憑證後會保留現有帳號，並將新帳號設為當前帳號。最多同時登入 <element1>5</element1> 個帳號。",
   "additional1": "{choice3, select, yes {七天授權期已結束，請重新授權} other {{choice4, select, yes {森空島已繫結，請授權當前瀏覽器} other {把當前羅德島帶進排班助手}}}}",
   "additional2": "{state, select, expired {最近一次授權{hasExpiry, select, yes {已於 {expiry} 到期} other {已經到期}}。掃描 QR Code 或重新匯入憑證後即可繼續同步，現有排班設定不會被清除。} linked {網站帳號仍保留 {count} 個森空島綁定，但目前瀏覽器沒有可用憑證。重新授權後即可繼續同步。} other {使用森空島 App 掃描 QR Code，或從已登入的森空島網頁匯入憑證，同步目前角色的幹員與基建資料。}}"

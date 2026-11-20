@@ -1,11 +1,14 @@
 import "@tanstack/react-start/server-only";
 
 import { and, eq, inArray } from "drizzle-orm";
-import { getDatabase } from "../db";
+import { PRIVACY_VERSION, TERMS_VERSION } from "@riic/platform/legal-policy";
+import { PublicApiError } from "../api-contract";
+import { getDatabase, getDatabasePool } from "../db";
 import { sklandBinding } from "../db/schema";
+import { qualifyReferral } from "../referral/service";
 import { emptySklandBindingSummary, summarizeSklandBindings } from "@riic/arknights-domain/skland-binding-state";
 import type { SklandBindingSummary } from "@riic/arknights-domain/types";
-import { sklandBindingKey } from "./session";
+import { sklandBindingKey, type SklandPolicyConsent } from "./session";
 
 export class SklandBindingConflictError extends Error {
   constructor() {
@@ -14,27 +17,32 @@ export class SklandBindingConflictError extends Error {
   }
 }
 
-export async function bindSklandAccount(websiteUserId: string, sklandUserId: string): Promise<SklandBindingSummary> {
+export async function bindSklandAccount(websiteUserId: string, sklandUserId: string, consent: SklandPolicyConsent): Promise<SklandBindingSummary> {
+  // Recheck at completion: a QR flow may have started under an older policy.
+  if (consent?.termsVersion !== TERMS_VERSION || consent?.privacyVersion !== PRIVACY_VERSION) {
+    throw new PublicApiError("AIC-AUTH-2005");
+  }
   const bindingKey = sklandBindingKey(sklandUserId);
-  const now = new Date();
-  await getDatabase().insert(sklandBinding).values({
-    bindingKey,
-    userId: websiteUserId,
-    createdAt: now,
-    lastAuthorizedAt: now,
-  }).onConflictDoNothing({ target: sklandBinding.bindingKey });
-
-  const [record] = await getDatabase()
-    .select({ userId: sklandBinding.userId })
-    .from(sklandBinding)
-    .where(eq(sklandBinding.bindingKey, bindingKey))
-    .limit(1);
-  if (!record || record.userId !== websiteUserId) throw new SklandBindingConflictError();
-
-  await getDatabase()
-    .update(sklandBinding)
-    .set({ lastAuthorizedAt: now })
-    .where(and(eq(sklandBinding.bindingKey, bindingKey), eq(sklandBinding.userId, websiteUserId)));
+  const client = await getDatabasePool().connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(`INSERT INTO skland_binding (binding_key, user_id, created_at, last_authorized_at)
+      VALUES ($1, $2, now(), now()) ON CONFLICT (binding_key) DO NOTHING`, [bindingKey, websiteUserId]);
+    const result = await client.query<{ user_id: string }>(
+      "SELECT user_id FROM skland_binding WHERE binding_key = $1 FOR UPDATE", [bindingKey],
+    );
+    if (result.rows[0]?.user_id !== websiteUserId) throw new SklandBindingConflictError();
+    await client.query("UPDATE skland_binding SET last_authorized_at = now() WHERE binding_key = $1 AND user_id = $2", [bindingKey, websiteUserId]);
+    // Authentication ownership, identity history and any reward commit together.
+    // Reauthorization safely retries qualification without granting twice.
+    await qualifyReferral(websiteUserId, bindingKey, client);
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
   return getSklandBindingSummary(websiteUserId);
 }
 

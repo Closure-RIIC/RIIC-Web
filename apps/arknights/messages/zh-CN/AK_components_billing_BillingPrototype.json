@@ -55,5 +55,7 @@
   "resumePayment": "恢复支付",
   "simulated": "模拟支付已到账，积分余额已更新。",
   "ordersCleared": "已清空 {count} 笔未支付订单。",
-  "expires": "到期 {date}"
+  "expires": "到期 {date}",
+  "referral_reward": "邀请拉新奖励",
+  "referral_welcome": "受邀新人奖励"
 }

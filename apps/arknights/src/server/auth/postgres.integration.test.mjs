@@ -25,6 +25,8 @@ const origin = "http://auth.integration.test";
 const baseURL = `${origin}/api/auth`;
 const password = "integration-password-1";
 const replacementPassword = "integration-password-2";
+// Better Auth stores keys as `${ip}|${path}`; this suite owns the 192.0.2.* range.
+const rateLimitKeyPattern = "192.0.2.%|/%";
 
 function cookieHeader(response) {
   return response.headers.getSetCookie().map((value) => value.split(";", 1)[0]).join("; ");
@@ -32,7 +34,7 @@ function cookieHeader(response) {
 
 test("Better Auth completes the PostgreSQL account lifecycle", async () => {
   const pool = new Pool({ connectionString: databaseUrl, max: 2 });
-  await pool.query('DELETE FROM "rateLimit"');
+  await pool.query('DELETE FROM "rateLimit" WHERE "key" LIKE $1', [rateLimitKeyPattern]);
   const emails = [];
   const auth = betterAuth({
     appName: "Authentication integration test",
@@ -249,7 +251,7 @@ test("Better Auth completes the PostgreSQL account lifecycle", async () => {
     await pool.query('DELETE FROM "session" WHERE user_id = $1', [bannedUserId]);
     await expectNoSession(bannedCookie);
     assert.equal((await signIn(bannedEmail)).status, 403, "banned user must not create a session");
-    const persistedRateLimits = await pool.query('SELECT count(*)::int AS count FROM "rateLimit"');
+    const persistedRateLimits = await pool.query('SELECT count(*)::int AS count FROM "rateLimit" WHERE "key" LIKE $1', [rateLimitKeyPattern]);
     assert.ok(persistedRateLimits.rows[0].count > 0, "Better Auth rate limits should be stored in PostgreSQL");
 
     await pool.query('INSERT INTO "skland_binding" (binding_key, user_id, last_authorized_at) VALUES ($1, $2, now()), ($3, $2, now() - interval \'8 days\')', [`binding-active-${suffix}`, primaryUserId, `binding-due-${suffix}`]);
@@ -262,7 +264,7 @@ test("Better Auth completes the PostgreSQL account lifecycle", async () => {
     if (createdUserIds.length > 0) await pool.query('DELETE FROM "user" WHERE id = ANY($1::text[])', [createdUserIds]);
     const orphanedBindings = await pool.query('SELECT count(*)::int AS count FROM "skland_binding" WHERE binding_key = ANY($1::text[])', [[`binding-active-${suffix}`, `binding-due-${suffix}`]]);
     assert.equal(orphanedBindings.rows[0].count, 0, "deleting a website user should cascade to Skland binding markers");
-    await pool.query('DELETE FROM "rateLimit"');
+    await pool.query('DELETE FROM "rateLimit" WHERE "key" LIKE $1', [rateLimitKeyPattern]);
     await pool.end();
   }
 });

@@ -65,6 +65,7 @@
     "./proxy": "./src/proxy.ts",
     "./public-plan": "./src/public-plan.ts",
     "./request-context": "./src/request-context.ts",
+    "./referral/service": "./src/referral/service.ts",
     "./request-diagnostics": "./src/request-diagnostics.ts",
     "./response-cookies": "./src/response-cookies.ts",
     "./runtime-data": "./src/runtime-data.ts",

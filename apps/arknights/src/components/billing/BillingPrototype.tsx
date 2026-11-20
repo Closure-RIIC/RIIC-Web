@@ -65,7 +65,7 @@ const toolLabels: Record<string, keyof typeof UiMessages> = {
 };
 const ledgerLabels: Record<string, keyof typeof UiMessages> = {
   topup: "topup", monthly_grant: "monthly_grant", cdk_issue: "cdk_issue",
-  cdk_redeem: "cdk_redeem", tool_charge: "tool_charge", tool_refund: "tool_refund", token_settlement: "token_settlement", agent_settlement: "agent_settlement",
+  cdk_redeem: "cdk_redeem", referral_reward: "referral_reward", referral_welcome: "referral_welcome", tool_charge: "tool_charge", tool_refund: "tool_refund", token_settlement: "token_settlement", agent_settlement: "agent_settlement",
 };
 const usageStatusLabels: Record<string, keyof typeof UiMessages> = {
   reserved: "reserved", completed: "completed", completed_unsettled: "completed_unsettled",

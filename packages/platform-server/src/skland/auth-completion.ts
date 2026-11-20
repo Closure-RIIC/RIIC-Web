@@ -34,7 +34,7 @@ export async function finalizeSklandAuthentication(
   }
 
   signal?.throwIfAborted();
-  const bindingSummary = await bindSklandAccount(websiteUserId, result.session.userId);
+  const bindingSummary = await bindSklandAccount(websiteUserId, result.session.userId, result.session.policyConsent);
   signal?.throwIfAborted();
   const next: SklandAccountStore = {
     ...previous,

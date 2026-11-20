@@ -211,6 +211,20 @@
       "when": 1793917712897,
       "tag": "0029_afdian_payment_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1794766623398,
+      "tag": "0030_agent_referral",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795198759913,
+      "tag": "0031_referral_reward_rules",
+      "breakpoints": true
     }
   ]
 }
