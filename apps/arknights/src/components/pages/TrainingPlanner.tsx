@@ -24,8 +24,12 @@ import { calculateTrainingPlan, defaultTrainingGoal, isTrainingFullyComplete, me
 import { buildTrainingPlannerContext } from "@/agent-page-context";
 import { loadTrainingGoals, loadTrainingInventory, saveTrainingGoals, saveTrainingInventory, takeTrainingPlannerHandoff } from "@/training-planner-store";
 import plannerDataJson from "@/generated/training-planner-data.json" with { type: "json" };
+import stageCodesJson from "@/generated/training-stage-codes.json" with { type: "json" };
 import { cn } from "@/lib/utils";
 import { workbenchPageAccent } from "@/workbench-accent";
+
+// Stage codes from the stage table at the same game-data revision as the planner.
+const stageCodes: Readonly<Partial<Record<string, string>>> = stageCodesJson;
 
 const plannerData = plannerDataJson as TrainingPlannerData;
 const OPERATOR_BY_ID = new Map(OPERATOR_CATALOG.map((operator) => [operator.id, operator]));
@@ -520,14 +524,17 @@ export function TrainingPlanner() {
           <section className="min-w-0" aria-labelledby="training-shortages-heading">
             <h2 id="training-shortages-heading" className="mb-2 border-b border-border pb-2 text-sm font-semibold">{t("materialShortages")}</h2>
             {result.shortages.length ? <div className="grid min-w-0">
-              {result.shortages.map((item) => <div key={item.id} className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] gap-2 border-b border-border/70 py-2">
+              {result.shortages.map((item) => {
+                const stageLabels = [...new Set(item.drops.flatMap((id) => stageCodes[id] ?? []))];
+                return <div key={item.id} className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] gap-2 border-b border-border/70 py-2">
                 {item.icon ? <img src={item.icon} alt="" width={36} height={36} className="size-9 object-contain" /> : <PackageOpen className="m-2 size-5 text-muted-foreground" aria-hidden="true" />}
                 <div className="min-w-0">
                   <div className="flex min-w-0 items-center justify-between gap-2 text-xs"><span className="min-w-0 break-words font-medium">{item.name}</span><strong className="font-number shrink-0 text-amber-700">−{numberText(item.missing)}</strong></div>
                   <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{t("needOwnedMissing", { need: numberText(item.need), stock: numberText(item.stock), missing: numberText(item.missing) })}</p>
-                  {item.drops.length ? <p className="mt-1 break-words text-[11px] leading-4 text-muted-foreground">{t("dropSources")}: {item.drops.join(" · ")}</p> : null}
+                  {stageLabels.length ? <p className="mt-1 break-words text-[11px] leading-4 text-muted-foreground">{t("dropSources")}: {stageLabels.join(" · ")}</p> : null}
                 </div>
-              </div>)}
+              </div>;
+              })}
             </div> : <p className="py-4 text-sm text-muted-foreground">{t("noMaterialShortages")}</p>}
           </section>
 
