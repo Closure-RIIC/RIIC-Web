@@ -56,5 +56,6 @@
   "simulated": "Simulated payment received. Your credit balance has been updated.",
   "ordersCleared": "{count, plural, one {Cleared # unpaid order.} other {Cleared # unpaid orders.}}",
   "expires": "Expires {date}",
-  "referral_reward": "Referral reward"
+  "referral_reward": "Referral reward",
+  "referral_welcome": "Welcome reward"
 }

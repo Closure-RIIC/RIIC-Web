@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
+import type { ReferralRules } from "@riic/contracts/referral";
 
-export type ReferralData = {
+export type ReferralData = ReferralRules & {
   enabled: boolean;
-  rewardPoints: number;
-  rewardLimit: number;
   maxPoints: number;
   account: null | {
     code: string;
@@ -11,6 +10,7 @@ export type ReferralData = {
     qualifiedCount: number;
     rewardedCount: number;
     earnedPoints: number;
+    welcomePoints: number;
     remainingRewards: number;
     referrals: Array<{
       id: string;

@@ -56,5 +56,6 @@
   "simulated": "模擬支付已入帳，積分餘額已更新。",
   "ordersCleared": "已清除 {count} 筆未支付訂單。",
   "expires": "到期日 {date}",
-  "referral_reward": "邀請拉新獎勵"
+  "referral_reward": "邀請拉新獎勵",
+  "referral_welcome": "受邀新人獎勵"
 }

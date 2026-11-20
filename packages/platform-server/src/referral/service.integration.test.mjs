@@ -29,9 +29,9 @@ test("referral campaign preserves attribution, identity and exactly-once capped 
     await pool.query('INSERT INTO public."user" (id,name,email,email_verified,signup_referral_code) VALUES ($1,$1,$2,true,$3)', [id, `${id}@example.test`, code]);
     return id;
   }
-  async function toggle(enabled) {
+  async function toggle(enabled, rules = {}) {
     const state = await referral.getReferralCampaign();
-    return referral.setReferralCampaign(actor, { enabled, reason: "integration test", idempotencyKey: randomUUID(), expectedUpdatedAt: state.updatedAt });
+    return referral.setReferralCampaign(actor, { enabled, ...rules, reason: "integration test", idempotencyKey: randomUUID(), expectedUpdatedAt: state.updatedAt });
   }
   async function bind(id, key = `referral-key-${randomUUID()}`, fail = false) {
     if (!keys.includes(key)) keys.push(key);
@@ -84,9 +84,11 @@ test("referral campaign preserves attribution, identity and exactly-once capped 
       assert.equal(closed.registeredCount, 1);
       assert.equal(closed.qualifiedCount, 1);
       assert.equal(closed.rewardedCount, 0);
+      assert.equal(await balance(recipient), 0);
       await toggle(true);
       const open = (await referral.getReferralSummary(inviter)).account;
       assert.equal(open.earnedPoints, 10);
+      assert.equal(await balance(recipient), 10);
       assert.equal(await balance(inviter), 10);
       assert.equal(open.referrals[0].status, "rewarded");
       assert.deepEqual(Object.keys(open.referrals[0]).sort(), ["createdAt", "id", "points", "qualifiedAt", "rewardedAt", "status"].sort());
@@ -97,6 +99,10 @@ test("referral campaign preserves attribution, identity and exactly-once capped 
       const bindingKeys = await Promise.all(recipients.map(id => bind(id)));
       await Promise.all(recipients.flatMap((id, index) => Array.from({ length: 3 }, () => referral.qualifyReferral(id, bindingKeys[index]))));
       const account = (await referral.getReferralSummary(inviter)).account;
+      assert.deepEqual(await Promise.all(recipients.map(balance)), recipients.map(() => 10));
+      const welcomeLedger = await pool.query("SELECT user_id,points_delta FROM app.billing_ledger WHERE kind='referral_welcome' AND user_id=ANY($1::text[])", [recipients]);
+      assert.equal(welcomeLedger.rowCount, recipients.length);
+      assert.ok(welcomeLedger.rows.every(row => Number(row.points_delta) === 10));
       assert.equal(account.registeredCount, 9);
       assert.equal(account.qualifiedCount, 9);
       assert.equal(account.rewardedCount, 5);
@@ -123,6 +129,7 @@ test("referral campaign preserves attribution, identity and exactly-once capped 
       await bind(recipient, identity);
       const summary = (await referral.getReferralSummary(otherInviter)).account;
       assert.equal(summary.referrals[0].status, "rejected");
+      assert.equal(await balance(recipient), 0);
       assert.equal(summary.earnedPoints, 0);
       assert.equal((await pool.query("SELECT first_user_id FROM app.referral_identity WHERE binding_key=$1", [identity])).rows[0].first_user_id, original);
       // The inviter's own previously used identity is equally ineligible.
@@ -186,11 +193,14 @@ test("referral campaign preserves attribution, identity and exactly-once capped 
       const key = `referral-key-${randomUUID()}`;
       await assert.rejects(bind(recipient, key, true), /simulated failure/);
       assert.equal(await balance(owner), 0);
+      assert.equal(await balance(recipient), 0);
+      assert.equal((await pool.query("SELECT id FROM app.billing_ledger WHERE user_id=ANY($1::text[])", [[owner, recipient]])).rowCount, 0);
       assert.equal((await pool.query("SELECT status FROM app.referral_registration WHERE invitee_user_id=$1", [recipient])).rows[0].status, "pending");
       assert.equal((await pool.query("SELECT binding_key FROM app.referral_identity WHERE binding_key=$1", [key])).rowCount, 0);
       assert.equal((await pool.query("SELECT binding_key FROM public.skland_binding WHERE binding_key=$1", [key])).rowCount, 0);
       await bind(recipient, key);
       assert.equal(await balance(owner), 10);
+      assert.equal(await balance(recipient), 10);
     });
 
     await t.test("forged binding evidence and malformed admin updates cannot issue points", async () => {
@@ -253,11 +263,64 @@ test("referral campaign preserves attribution, identity and exactly-once capped 
       assert.equal(await balance(owner), 0);
     });
 
+    await t.test("a newcomer can receive both kinds of credit from concurrent certifications in an invitation chain", async () => {
+      const first = await user();
+      const second = await invite((await referral.getReferralSummary(first)).account.code);
+      const third = await invite((await referral.getReferralSummary(second)).account.code);
+      await Promise.all([bind(second), bind(third)]);
+      assert.deepEqual(await Promise.all([first, second, third].map(balance)), [10, 20, 10]);
+      const summary = (await referral.getReferralSummary(second)).account;
+      assert.equal(summary.earnedPoints, 10);
+      assert.equal(summary.welcomePoints, 10);
+      assert.equal(summary.rewardedCount, 1);
+    });
+
+    await t.test("settlement uses current rules, caps only the inviter and preserves historical payouts", async () => {
+      const initialStats = (await referral.getReferralCampaign()).stats;
+      const owner = await user();
+      const code = (await referral.getReferralSummary(owner)).account.code;
+      const first = await invite(code);
+      const waiting = await invite(code);
+      const rules = { rewardPoints: 17, inviteePoints: 6, rewardLimit: 1 };
+      assert.equal(await balance(first), 0);
+      await toggle(true, rules);
+      await bind(first);
+      await toggle(false);
+      await bind(waiting);
+      assert.equal(await balance(waiting), 0);
+      await toggle(true, { inviteePoints: 23 });
+      const publicRules = await referral.getReferralSummary();
+      assert.equal(publicRules.rewardPoints, 17);
+      assert.equal(publicRules.rewardLimit, 1);
+      assert.equal(publicRules.inviteePoints, 23);
+      const ownerSummary = (await referral.getReferralSummary(owner)).account;
+      assert.equal(ownerSummary.rewardedCount, 1);
+      assert.equal(ownerSummary.earnedPoints, 17);
+      assert.equal(ownerSummary.referrals.filter(row => row.status === "capped").length, 1);
+      assert.equal((await referral.getReferralSummary(waiting)).account.welcomePoints, 23);
+      await toggle(true, { rewardPoints: 3, rewardLimit: 2 });
+      await bind(waiting);
+      const next = await invite(code);
+      await bind(next);
+      assert.deepEqual(await Promise.all([owner, first, waiting, next].map(balance)), [20, 6, 23, 23]);
+      const welcome = await pool.query("SELECT metadata,points_delta FROM app.billing_ledger WHERE user_id=$1 AND kind='referral_welcome'", [first]);
+      assert.equal(welcome.rowCount, 1);
+      assert.deepEqual(welcome.rows[0].metadata, rules);
+      const admin = await referral.getReferralCampaign();
+      assert.equal(admin.stats.welcomePoints - initialStats.welcomePoints, 52);
+      assert.equal(admin.stats.earnedPoints - initialStats.earnedPoints, 20);
+      for (const invalid of [{ rewardLimit: 0 }, { rewardLimit: 1001 }, { rewardPoints: 1.5 }, { inviteePoints: "3" }, { inviteePoints: 10001 }]) {
+        await assert.rejects(toggle(true, invalid), referral.ReferralError);
+      }
+      assert.equal((await referral.getReferralCampaign()).updatedAt, admin.updatedAt);
+    });
+
     await t.test("admin retries are idempotent and stale concurrent writes are rejected and audited", async () => {
       const before = await referral.getReferralCampaign();
       const change = { enabled: false, reason: "test close", idempotencyKey: randomUUID(), expectedUpdatedAt: before.updatedAt };
       await Promise.all([referral.setReferralCampaign(actor, change), referral.setReferralCampaign(actor, change)]);
       await assert.rejects(referral.setReferralCampaign(actor, { ...change, enabled: true }), referral.ReferralError);
+      await assert.rejects(referral.setReferralCampaign(actor, { ...change, inviteePoints: 4 }), referral.ReferralError);
       const current = await referral.getReferralCampaign();
       assert.match(current.updatedAt, /\.\d{6}Z$/);
       assert.notEqual(current.updatedAt, before.updatedAt);
@@ -267,6 +330,9 @@ test("referral campaign preserves attribution, identity and exactly-once capped 
       })));
       assert.equal(results.filter(result => result.status === "fulfilled").length, 1);
       assert.equal((await pool.query("SELECT count(*)::int AS count FROM app.billing_admin_audit WHERE idempotency_key=$1", [`referral:campaign:${change.idempotencyKey}`])).rows[0].count, 1);
+      const audit = (await pool.query("SELECT details FROM app.billing_admin_audit WHERE idempotency_key=$1", [`referral:campaign:${change.idempotencyKey}`])).rows[0].details;
+      assert.deepEqual(audit.before, { enabled: true, rewardPoints: 3, inviteePoints: 23, rewardLimit: 2 });
+      assert.deepEqual(audit.after, { ...audit.before, enabled: false });
     });
   } finally {
     await pool.query("UPDATE app.site_setting SET value=$1 WHERE key='agent_referral'", [JSON.stringify({ enabled: false })]);

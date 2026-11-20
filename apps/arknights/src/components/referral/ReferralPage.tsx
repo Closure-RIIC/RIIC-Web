@@ -94,12 +94,12 @@ function ReferralContent({ signedIn }: { signedIn: boolean }) {
     {!data.enabled ? <WorkbenchCard data-referral-disabled><h2 className="text-sm font-semibold">{text.text(locale, "paused")}</h2><p className={`${billing.caption} mt-2`}>{text.text(locale, "pausedDescription")}</p></WorkbenchCard> : null}
     {data.account ? <ReferralAccount data={data} account={data.account} /> : data.enabled ? <WorkbenchCard data-referral-sign-in>
       <h2 className="text-sm font-semibold">{text.text(locale, "joinTitle")}</h2>
-      <p className={`${billing.caption} mt-2`}>{text.text(locale, "joinDescription", { points: data.rewardPoints, max: data.maxPoints })}</p>
+      <p className={`${billing.caption} mt-2`}>{text.text(locale, "joinDescription", { points: data.rewardPoints, welcome: data.inviteePoints })}</p>
       <SetupActionButton variant="outline" className="mt-5" onClick={event => requestAccountSignIn(event.currentTarget)}>{text.text(locale, "signIn")}</SetupActionButton>
     </WorkbenchCard> : null}
     <WorkbenchCard aria-labelledby="referral-rules-heading">
       <div className={billing.sectionHeading}><h2 id="referral-rules-heading">{text.text(locale, "rules")}</h2></div>
-      <ul className={billing.records}>{(["eligibility", "limits", "pause"] as const).map(key => <li key={key}><details className={billing.usage}><summary className={billing.row}><span className={billing.recordTitle}>{text.text(locale, `${key}Title`)}</span><ChevronDown className={billing.chevron} aria-hidden="true" /></summary><p className={`${billing.caption} pb-4`}>{text.text(locale, `${key}Body`, { points: data.rewardPoints, count: data.rewardLimit, max: data.maxPoints })}</p></details></li>)}</ul>
+      <ul className={billing.records}>{(["eligibility", "limits", "pause"] as const).map(key => <li key={key}><details className={billing.usage}><summary className={billing.row}><span className={billing.recordTitle}>{text.text(locale, `${key}Title`)}</span><ChevronDown className={billing.chevron} aria-hidden="true" /></summary><p className={`${billing.caption} pb-4`}>{text.text(locale, `${key}Body`, { points: data.rewardPoints, count: data.rewardLimit, welcome: data.inviteePoints })}</p></details></li>)}</ul>
     </WorkbenchCard>
   </>;
 }
@@ -139,6 +139,7 @@ function ReferralAccount({ data, account }: { data: ReferralData; account: NonNu
         <h2 className={billing.caption}>{text.text(locale, "earned")}</h2>
         <p className={`${billing.balance} font-number`} data-referral-earned>{formatPoints(account.earnedPoints, locale)}<small>{text.text(locale, "points")}</small></p>
         <p className={`${billing.caption} mt-3`}>{text.text(locale, "permanent")}</p>
+        {account.welcomePoints > 0 && <p className={billing.caption}>{text.text(locale, "welcomeReceived", { points: account.welcomePoints })}</p>}
       </div>
       <dl className={billing.walletDetails}>
         <div><dt className={billing.caption}>{text.text(locale, "registered")}</dt><dd className={`${billing.balance} font-number`}>{account.registeredCount}<small>{text.text(locale, "people")}</small></dd></div>
@@ -166,9 +167,9 @@ function ReferralAccount({ data, account }: { data: ReferralData; account: NonNu
     <WorkbenchCard className={`${billing.product} ${billing.testPack}`} glass>
       <h2 className="text-sm font-semibold">{text.text(locale, "rewardTitle")}</h2>
       <p className={`${billing.price} font-number`}>+{formatPoints(data.rewardPoints, locale)}<span className="ml-2 text-xs font-normal text-muted-foreground">{text.text(locale, "perPerson")}</span></p>
-      <p className="text-xs leading-6 text-muted-foreground">{text.text(locale, "rewardDescription", { max: data.maxPoints })}</p>
+      <p className="text-xs leading-6 text-muted-foreground">{text.text(locale, "rewardDescription", { welcome: data.inviteePoints, count: data.rewardLimit })}</p>
       <div className={styles.progress} aria-label={text.text(locale, "rewarded", { count: account.rewardedCount, max: data.rewardLimit })}>
-        <div className={styles.segments} aria-hidden="true">{Array.from({ length: data.rewardLimit }, (_, index) => <span key={index} data-filled={index < account.rewardedCount || undefined} />)}</div>
+        <progress className={styles.progressBar} max={data.rewardLimit} value={Math.min(account.rewardedCount, data.rewardLimit)} aria-label={text.text(locale, "earned")} />
         <span className={billing.caption}>{text.text(locale, account.remainingRewards === 0 ? "full" : "remaining", { count: account.remainingRewards })}</span>
       </div>
     </WorkbenchCard>

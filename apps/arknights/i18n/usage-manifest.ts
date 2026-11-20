@@ -716,69 +716,89 @@ export const references = [
     "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
   },
   {
-    "key": "Admin_billing_console.referralDisable",
-    "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:60"
-  },
-  {
     "key": "Admin_billing_console.referralDisabled",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:58"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:73"
   },
   {
     "key": "Admin_billing_console.referralEnable",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:60"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:76"
   },
   {
     "key": "Admin_billing_console.referralEnabled",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:58"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:73"
+  },
+  {
+    "key": "Admin_billing_console.referralInviteeAmount",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:78"
+  },
+  {
+    "key": "Admin_billing_console.referralInviterAmount",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:78"
+  },
+  {
+    "key": "Admin_billing_console.referralLimit",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:78"
   },
   {
     "key": "Admin_billing_console.referralPauseRules",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:57"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:72"
   },
   {
     "key": "Admin_billing_console.referralPoints",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:66"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:92"
   },
   {
     "key": "Admin_billing_console.referralQualified",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:66"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:92"
   },
   {
     "key": "Admin_billing_console.referralReason",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:59"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:81"
   },
   {
     "key": "Admin_billing_console.referralRefresh",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:60"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:85"
   },
   {
     "key": "Admin_billing_console.referralRegistered",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:66"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:92"
   },
   {
     "key": "Admin_billing_console.referralRewarded",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:66"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:92"
   },
   {
     "key": "Admin_billing_console.referralRules",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:56"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:71"
+  },
+  {
+    "key": "Admin_billing_console.referralSave",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:82"
   },
   {
     "key": "Admin_billing_console.referralTitle",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:55"
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:70"
+  },
+  {
+    "key": "Admin_billing_console.referralWelcomeTotal",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-referral.tsx:92"
   },
   {
     "key": "Admin_billing_console.refund",
@@ -3796,6 +3816,11 @@ export const references = [
     "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:386"
   },
   {
+    "key": "AK_components_billing_BillingPrototype.referral_welcome",
+    "prefix": false,
+    "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:386"
+  },
+  {
     "key": "AK_components_billing_BillingPrototype.refunded",
     "prefix": false,
     "source": "apps/arknights/src/components/billing/BillingPrototype.tsx:49"
@@ -5228,32 +5253,32 @@ export const references = [
   {
     "key": "AK_components_referral_ReferralPage.close",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:155"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:156"
   },
   {
     "key": "AK_components_referral_ReferralPage.code",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:157"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:158"
   },
   {
     "key": "AK_components_referral_ReferralPage.copied",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:152"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:153"
   },
   {
     "key": "AK_components_referral_ReferralPage.copyCode",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:162"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:163"
   },
   {
     "key": "AK_components_referral_ReferralPage.copyFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:164"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:165"
   },
   {
     "key": "AK_components_referral_ReferralPage.copyLink",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:152"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:153"
   },
   {
     "key": "AK_components_referral_ReferralPage.description",
@@ -5278,17 +5303,17 @@ export const references = [
   {
     "key": "AK_components_referral_ReferralPage.empty",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:177"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:178"
   },
   {
     "key": "AK_components_referral_ReferralPage.full",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:172"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:173"
   },
   {
     "key": "AK_components_referral_ReferralPage.invite",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:149"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:150"
   },
   {
     "key": "AK_components_referral_ReferralPage.joinDescription",
@@ -5313,7 +5338,7 @@ export const references = [
   {
     "key": "AK_components_referral_ReferralPage.link",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:151"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:152"
   },
   {
     "key": "AK_components_referral_ReferralPage.loading",
@@ -5348,7 +5373,7 @@ export const references = [
   {
     "key": "AK_components_referral_ReferralPage.people",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:144"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:145"
   },
   {
     "key": "AK_components_referral_ReferralPage.permanent",
@@ -5358,7 +5383,7 @@ export const references = [
   {
     "key": "AK_components_referral_ReferralPage.perPerson",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:168"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:169"
   },
   {
     "key": "AK_components_referral_ReferralPage.points",
@@ -5368,32 +5393,32 @@ export const references = [
   {
     "key": "AK_components_referral_ReferralPage.qr",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:154"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:155"
   },
   {
     "key": "AK_components_referral_ReferralPage.qrDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:156"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:157"
   },
   {
     "key": "AK_components_referral_ReferralPage.qualified",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:145"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:146"
   },
   {
     "key": "AK_components_referral_ReferralPage.records",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:176"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:177"
   },
   {
     "key": "AK_components_referral_ReferralPage.registered",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:144"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:145"
   },
   {
     "key": "AK_components_referral_ReferralPage.remaining",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:172"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:173"
   },
   {
     "key": "AK_components_referral_ReferralPage.retry",
@@ -5403,17 +5428,17 @@ export const references = [
   {
     "key": "AK_components_referral_ReferralPage.rewardDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:169"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:170"
   },
   {
     "key": "AK_components_referral_ReferralPage.rewarded",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:145"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:146"
   },
   {
     "key": "AK_components_referral_ReferralPage.rewardTitle",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:167"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:168"
   },
   {
     "key": "AK_components_referral_ReferralPage.rules",
@@ -5423,12 +5448,12 @@ export const references = [
   {
     "key": "AK_components_referral_ReferralPage.shareDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:149"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:150"
   },
   {
     "key": "AK_components_referral_ReferralPage.showQr",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:154"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:155"
   },
   {
     "key": "AK_components_referral_ReferralPage.signIn",
@@ -5438,27 +5463,27 @@ export const references = [
   {
     "key": "AK_components_referral_ReferralPage.status_capped",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:178"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:179"
   },
   {
     "key": "AK_components_referral_ReferralPage.status_pending",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:178"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:179"
   },
   {
     "key": "AK_components_referral_ReferralPage.status_qualified",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:178"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:179"
   },
   {
     "key": "AK_components_referral_ReferralPage.status_rejected",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:178"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:179"
   },
   {
     "key": "AK_components_referral_ReferralPage.status_rewarded",
     "prefix": false,
-    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:178"
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:179"
   },
   {
     "key": "AK_components_referral_ReferralPage.title",
@@ -5474,6 +5499,11 @@ export const references = [
     "key": "AK_components_referral_ReferralPage.wallet",
     "prefix": false,
     "source": "apps/arknights/src/components/referral/ReferralPage.tsx:46"
+  },
+  {
+    "key": "AK_components_referral_ReferralPage.welcomeReceived",
+    "prefix": false,
+    "source": "apps/arknights/src/components/referral/ReferralPage.tsx:142"
   },
   {
     "key": "AK_components_setup_ManualOperboxPicker.e0BelowMax",

@@ -1,13 +1,12 @@
 import "@tanstack/react-start/server-only";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
+import { defaultReferralRules, referralRuleMaximums, type ReferralRules } from "@riic/contracts/referral";
 import { getDatabasePool } from "../db/index.ts";
 
 const CAMPAIGN_KEY = "agent_referral";
-export const REFERRAL_REWARD_POINTS = 10;
-export const REFERRAL_REWARD_LIMIT = 5;
 export class ReferralError extends Error {}
-type Campaign = { enabled: boolean; updatedAt: string | null };
+type Campaign = ReferralRules & { enabled: boolean; updatedAt: string | null };
 type Registration = {
   id: string; inviter_user_id: string; invitee_user_id: string; binding_key: string | null;
   status: string; points: number; created_at: Date; qualified_at: Date | null; rewarded_at: Date | null;
@@ -27,11 +26,11 @@ async function campaign(client: PoolClient, lock: "share" | "update" = "share"):
     FROM app.site_setting WHERE key=$1 FOR ${lock === "share" ? "SHARE" : "UPDATE"}`, [CAMPAIGN_KEY]);
   const row = result.rows[0];
   // The migration installs this row; an absent row is fail-closed.
-  return { enabled: row?.value?.enabled === true, updatedAt: row?.revision ?? null };
+  return { ...defaultReferralRules, ...row?.value, enabled: row?.value?.enabled === true, updatedAt: row?.revision ?? null };
 }
 
 const COUNT_COLUMNS = `count(*)::int AS "registeredCount",count(*) FILTER (WHERE qualified_at IS NOT NULL)::int AS "qualifiedCount",
-  count(*) FILTER (WHERE status='rewarded')::int AS "rewardedCount",coalesce(sum(points),0)::int AS "earnedPoints"`;
+  count(*) FILTER (WHERE status='rewarded')::int AS "rewardedCount",coalesce(sum(points),0)::float8 AS "earnedPoints"`;
 const ACTIVE_ACCOUNT = "NOT (coalesce(banned,false) AND (ban_expires IS NULL OR ban_expires>now()))";
 
 /** Only called by the server's new-user hook, before the user row is inserted. */
@@ -64,29 +63,41 @@ export async function captureReferralForNewUser(userId: string, code?: string | 
   await transaction(client => capture(client, userId, code));
 }
 
-async function award(client: PoolClient, registration: Registration, enabled: boolean): Promise<void> {
-  if (!enabled || registration.status !== "qualified") return;
+async function creditReferral(client: PoolClient, userId: string, registrationId: string, points: number,
+  kind: "referral_reward" | "referral_welcome", rules: ReferralRules) {
+  const { rows: [wallet] } = await client.query(`UPDATE app.billing_wallet SET paid_points=paid_points+$2,updated_at=now()
+    WHERE user_id=$1 RETURNING paid_points,monthly_points`, [userId, points]);
+  const key = kind === "referral_reward" ? "reward" : "welcome";
+  await client.query(`INSERT INTO app.billing_ledger
+    (id,user_id,kind,points_delta,paid_points_after,monthly_points_after,reference_type,reference_id,idempotency_key,metadata)
+    VALUES ($1,$2,$3,$4,$5,$6,'referral_registration',$7,$8,$9)`,
+  [randomUUID(), userId, kind, points, wallet.paid_points, wallet.monthly_points, registrationId,
+    `referral:${key}:${registrationId}`, JSON.stringify(rules)]);
+}
+
+async function award(client: PoolClient, registration: Registration, state: Campaign): Promise<void> {
+  if (!state.enabled || registration.status !== "qualified") return;
   const invitee = await client.query(`SELECT id FROM public."user" WHERE id=$1 AND email_verified=true AND ${ACTIVE_ACCOUNT}`, [registration.invitee_user_id]);
   if (!invitee.rowCount) return;
   const { rows: [owner] } = await client.query(`SELECT id FROM public."user" WHERE id=$1
     AND NOT (coalesce(banned,false) AND (ban_expires IS NULL OR ban_expires>now())) FOR SHARE`, [registration.inviter_user_id]);
   if (!owner) return;
-  await client.query("INSERT INTO app.billing_wallet (user_id) VALUES ($1) ON CONFLICT DO NOTHING", [owner.id]);
-  // This is the same wallet row lock used by purchases, CDKs and Agent charges.
-  await client.query("SELECT user_id FROM app.billing_wallet WHERE user_id=$1 FOR UPDATE", [owner.id]);
+  // A recipient can also invite someone. Acquire both wallet locks in stable order.
+  for (const userId of [owner.id, registration.invitee_user_id].sort()) {
+    await client.query("INSERT INTO app.billing_wallet (user_id) VALUES ($1) ON CONFLICT DO NOTHING", [userId]);
+    await client.query("SELECT user_id FROM app.billing_wallet WHERE user_id=$1 FOR UPDATE", [userId]);
+  }
   const { rows: [total] } = await client.query("SELECT count(*)::int AS count FROM app.referral_registration WHERE inviter_user_id=$1 AND status='rewarded'", [owner.id]);
-  if (total.count >= REFERRAL_REWARD_LIMIT) {
-    await client.query("UPDATE app.referral_registration SET status='capped',reason='inviter_limit' WHERE id=$1", [registration.id]);
+  const { rewardPoints, inviteePoints, rewardLimit } = state;
+  const rules = { rewardPoints, inviteePoints, rewardLimit };
+  await creditReferral(client, registration.invitee_user_id, registration.id, inviteePoints, "referral_welcome", rules);
+  if (total.count >= rewardLimit) {
+    await client.query("UPDATE app.referral_registration SET status='capped',reason='inviter_limit',invitee_points=$2 WHERE id=$1", [registration.id, inviteePoints]);
     return;
   }
-  const { rows: [updated] } = await client.query(`UPDATE app.billing_wallet SET paid_points=paid_points+$2,updated_at=now()
-    WHERE user_id=$1 RETURNING paid_points,monthly_points`, [owner.id, REFERRAL_REWARD_POINTS]);
-  await client.query(`INSERT INTO app.billing_ledger
-    (id,user_id,kind,points_delta,paid_points_after,monthly_points_after,reference_type,reference_id,idempotency_key,metadata)
-    VALUES ($1,$2,'referral_reward',$3,$4,$5,'referral_registration',$6,$7,$8)`,
-  [randomUUID(), owner.id, REFERRAL_REWARD_POINTS, updated.paid_points, updated.monthly_points, registration.id,
-    `referral:reward:${registration.id}`, JSON.stringify({ rewardPoints: REFERRAL_REWARD_POINTS, rewardLimit: REFERRAL_REWARD_LIMIT })]);
-  await client.query("UPDATE app.referral_registration SET status='rewarded',points=$2,rewarded_at=now() WHERE id=$1", [registration.id, REFERRAL_REWARD_POINTS]);
+  await creditReferral(client, owner.id, registration.id, rewardPoints, "referral_reward", rules);
+  await client.query("UPDATE app.referral_registration SET status='rewarded',points=$2,invitee_points=$3,rewarded_at=now() WHERE id=$1",
+    [registration.id, rewardPoints, inviteePoints]);
 }
 
 /** Called from the binding transaction; accepts only server-verified binding keys. */
@@ -119,7 +130,7 @@ export async function qualifyReferral(userId: string, bindingKey: string, existi
       await client.query("UPDATE app.referral_registration SET status='qualified',qualified_at=now(),binding_key=$2 WHERE id=$1", [registration.id, bindingKey]);
       registration.status = "qualified";
     }
-    await award(client, registration, state.enabled);
+    await award(client, registration, state);
   }, existing);
 }
 
@@ -127,7 +138,7 @@ async function retryQualified(id: string): Promise<void> {
   await transaction(async client => {
     const state = await campaign(client);
     const { rows: [registration] } = await client.query<Registration>("SELECT * FROM app.referral_registration WHERE id=$1 FOR UPDATE", [id]);
-    if (registration) await award(client, registration, state.enabled);
+    if (registration) await award(client, registration, state);
   });
 }
 
@@ -145,7 +156,8 @@ export async function getReferralSummary(userId?: string | null) {
   }
   return transaction(async client => {
     const state = await campaign(client);
-    const base = { enabled: state.enabled, rewardPoints: REFERRAL_REWARD_POINTS, rewardLimit: REFERRAL_REWARD_LIMIT, maxPoints: REFERRAL_REWARD_POINTS * REFERRAL_REWARD_LIMIT };
+    const { enabled, rewardPoints, inviteePoints, rewardLimit } = state;
+    const base = { enabled, rewardPoints, inviteePoints, rewardLimit, maxPoints: rewardPoints * rewardLimit };
     if (!userId) return { ...base, account: null };
     let code: string | undefined;
     for (let attempt = 0; attempt < 3 && !code; attempt++) {
@@ -155,7 +167,8 @@ export async function getReferralSummary(userId?: string | null) {
     if (!code) throw new ReferralError("邀请码生成失败，请重试。");
     const { rows } = await client.query<Registration>("SELECT * FROM app.referral_registration WHERE inviter_user_id=$1 ORDER BY created_at DESC,id LIMIT 100", [userId]);
     const { rows: [totals] } = await client.query<SummaryCounts>(`SELECT ${COUNT_COLUMNS} FROM app.referral_registration WHERE inviter_user_id=$1`, [userId]);
-    return { ...base, account: { code, ...totals, remainingRewards: Math.max(0, REFERRAL_REWARD_LIMIT - totals.rewardedCount),
+    const { rows: [ownInvitation] } = await client.query("SELECT invitee_points FROM app.referral_registration WHERE invitee_user_id=$1", [userId]);
+    return { ...base, account: { code, ...totals, welcomePoints: Number(ownInvitation?.invitee_points ?? 0), remainingRewards: Math.max(0, rewardLimit - totals.rewardedCount),
       referrals: rows.map(row => ({ id: row.id, createdAt: row.created_at.toISOString(), qualifiedAt: row.qualified_at?.toISOString() ?? null,
         rewardedAt: row.rewarded_at?.toISOString() ?? null, status: row.status, points: row.points })) } };
   });
@@ -164,8 +177,9 @@ export async function getReferralSummary(userId?: string | null) {
 export async function getReferralCampaign() {
   return transaction(async client => {
     const state = await campaign(client);
-    const { rows: [stats] } = await client.query<SummaryCounts>(`SELECT ${COUNT_COLUMNS} FROM app.referral_registration`);
-    return { ...state, stats: stats as SummaryCounts };
+    const { rows: [stats] } = await client.query<SummaryCounts & { welcomePoints: number }>(
+      `SELECT ${COUNT_COLUMNS},coalesce(sum(invitee_points),0)::float8 AS "welcomePoints" FROM app.referral_registration`);
+    return { ...state, stats };
   });
 }
 
@@ -175,8 +189,18 @@ export async function setReferralCampaign(actor: string, value: unknown) {
     || typeof input.idempotencyKey !== "string" || !input.idempotencyKey.trim() || input.idempotencyKey.length > 128
     || (input.expectedUpdatedAt !== null && typeof input.expectedUpdatedAt !== "string")) throw new ReferralError("活动配置无效，请填写操作原因并刷新后重试。");
   const reason = input.reason.trim();
+  // Older clients can still toggle the campaign without overwriting configured amounts.
+  const changes: Partial<ReferralRules> = {};
+  for (const key of Object.keys(defaultReferralRules) as (keyof ReferralRules)[]) {
+    if (!(key in input)) continue;
+    const amount = input[key];
+    if (typeof amount !== "number" || !Number.isInteger(amount) || amount < 1 || amount > referralRuleMaximums[key]) {
+      throw new ReferralError("奖励额度或人数上限超出有效范围。");
+    }
+    changes[key] = amount;
+  }
   const key = `referral:campaign:${input.idempotencyKey}`;
-  const fingerprint = createHash("sha256").update(JSON.stringify({ actor, enabled: input.enabled, reason, expectedUpdatedAt: input.expectedUpdatedAt })).digest("hex");
+  const fingerprint = createHash("sha256").update(JSON.stringify({ actor, enabled: input.enabled, reason, expectedUpdatedAt: input.expectedUpdatedAt, ...changes })).digest("hex");
   await transaction(async client => {
     const before = await campaign(client, "update");
     const { rows: [prior] } = await client.query("SELECT details FROM app.billing_admin_audit WHERE idempotency_key=$1", [key]);
@@ -185,10 +209,12 @@ export async function setReferralCampaign(actor: string, value: unknown) {
       return;
     }
     if (before.updatedAt !== input.expectedUpdatedAt) throw new ReferralError("活动配置已更新，请刷新后重试。");
+    const previous = { enabled: before.enabled, rewardPoints: before.rewardPoints, inviteePoints: before.inviteePoints, rewardLimit: before.rewardLimit };
+    const next = { ...previous, enabled: input.enabled, ...changes };
     await client.query(`INSERT INTO app.site_setting (key,value,updated_at) VALUES ($1,$2,clock_timestamp())
-      ON CONFLICT (key) DO UPDATE SET value=excluded.value,updated_at=greatest(excluded.updated_at,site_setting.updated_at+interval '1 microsecond')`, [CAMPAIGN_KEY, JSON.stringify({ enabled: input.enabled })]);
+      ON CONFLICT (key) DO UPDATE SET value=excluded.value,updated_at=greatest(excluded.updated_at,site_setting.updated_at+interval '1 microsecond')`, [CAMPAIGN_KEY, JSON.stringify(next)]);
     await client.query(`INSERT INTO app.billing_admin_audit (id,actor_id,action,target,reason,idempotency_key,details)
-      VALUES ($1,$2,'referral_campaign',$3,$4,$5,$6)`, [randomUUID(), actor, CAMPAIGN_KEY, reason, key, JSON.stringify({ fingerprint, before: before.enabled, after: input.enabled })]);
+      VALUES ($1,$2,'referral_campaign',$3,$4,$5,$6)`, [randomUUID(), actor, CAMPAIGN_KEY, reason, key, JSON.stringify({ fingerprint, before: previous, after: next })]);
   });
   return getReferralCampaign();
 }

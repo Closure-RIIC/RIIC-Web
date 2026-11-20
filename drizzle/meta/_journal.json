@@ -218,6 +218,13 @@
       "when": 1794766623398,
       "tag": "0030_agent_referral",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795198759913,
+      "tag": "0031_referral_reward_rules",
+      "breakpoints": true
     }
   ]
 }

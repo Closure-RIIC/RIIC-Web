@@ -348,6 +348,7 @@ export const referralRegistration = appSchema.table("referral_registration", {
   bindingKey: text("binding_key"),
   status: text("status").notNull().default("pending"),
   points: integer("points").notNull().default(0),
+  inviteePoints: integer("invitee_points").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   qualifiedAt: timestamp("qualified_at", { withTimezone: true }),
   rewardedAt: timestamp("rewarded_at", { withTimezone: true }),
@@ -358,7 +359,8 @@ export const referralRegistration = appSchema.table("referral_registration", {
   index("referral_registration_inviter_idx").on(table.inviterUserId, table.createdAt),
   check("referral_registration_not_self", sql`${table.inviterUserId} <> ${table.inviteeUserId}`),
   check("referral_registration_status", sql`${table.status} in ('pending','qualified','rewarded','rejected','capped')`),
-  check("referral_registration_reward", sql`(${table.status} = 'rewarded' and ${table.points} = 10 and ${table.rewardedAt} is not null and ${table.qualifiedAt} is not null) or (${table.status} <> 'rewarded' and ${table.points} = 0 and ${table.rewardedAt} is null)`),
+  check("referral_registration_inviter_reward", sql`(${table.status} = 'rewarded' and ${table.points} > 0 and ${table.rewardedAt} is not null and ${table.qualifiedAt} is not null) or (${table.status} <> 'rewarded' and ${table.points} = 0 and ${table.rewardedAt} is null)`),
+  check("referral_registration_invitee_reward", sql`${table.inviteePoints} = 0 or (${table.inviteePoints} > 0 and ${table.status} in ('rewarded','capped') and ${table.qualifiedAt} is not null)`),
 ]);
 export const qualityBatch = appSchema.table("quality_batch", {
   id: text("id").primaryKey(),

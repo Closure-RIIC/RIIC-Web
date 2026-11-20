@@ -11,6 +11,7 @@ test("referral campaign uses real admin permissions, audit and public visibility
   const users: string[] = [];
   const visitor = await browser.newContext({ baseURL });
   const regular = await browser.newContext({ baseURL });
+  let previous: { enabled: boolean; rewardPoints: number; inviteePoints: number; rewardLimit: number; updatedAt: string } | undefined;
   async function session(target: BrowserContext, role: string) {
     const id = `referral-browser-${randomUUID()}`;
     const token = randomUUID();
@@ -26,8 +27,8 @@ test("referral campaign uses real admin permissions, audit and public visibility
     await session(regular, "user");
     const previousResponse = await context.request.get("/api/admin/billing?section=referral");
     expect(previousResponse.status()).toBe(200);
-    const previous = (await previousResponse.json()).data;
-    const reset = await context.request.post("/api/admin/billing?section=referral", { headers: { origin: baseURL! }, data: { enabled: false, expectedUpdatedAt: previous.updatedAt, reason: "Browser validation initial state", idempotencyKey: randomUUID() } });
+    previous = (await previousResponse.json()).data;
+    const reset = await context.request.post("/api/admin/billing?section=referral", { headers: { origin: baseURL! }, data: { enabled: false, expectedUpdatedAt: previous!.updatedAt, reason: "Browser validation initial state", idempotencyKey: randomUUID() } });
     expect(reset.status()).toBe(200);
     const guestState = await visitor.request.get("/api/referral");
     expect((await guestState.json()).data).toMatchObject({ enabled: false, account: null });
@@ -35,13 +36,18 @@ test("referral campaign uses real admin permissions, audit and public visibility
     await page.getByRole("button", { name: "邀请活动", exact: true }).click();
     const campaign = page.locator("[data-billing-referral]");
     await expect(campaign).toContainText("活动已关闭");
-    await expect(campaign.getByRole("button", { name: "开启活动", exact: true })).toBeDisabled();
+    const save = campaign.getByRole("button", { name: "保存活动设置" });
+    await expect(save).toBeDisabled();
+    await campaign.getByRole("checkbox", { name: "开启活动" }).check();
+    await campaign.getByLabel("邀请人每次所得积分").fill("14");
+    await campaign.getByLabel("受邀新人所得积分").fill("8");
+    await campaign.getByLabel("每位邀请人累计奖励人数上限").fill("3");
     await campaign.getByLabel("操作原因（记录至审计）").fill("Browser validation enabled");
-    await campaign.getByRole("button", { name: "开启活动", exact: true }).click();
+    await save.click();
     await expect(campaign).toContainText("活动已开启");
     await page.screenshot({ path: testInfo.outputPath("referral-admin.png"), fullPage: true });
     const active = (await (await visitor.request.get("/api/referral")).json()).data;
-    expect(active).toMatchObject({ enabled: true, rewardPoints: 10, rewardLimit: 5, maxPoints: 50, account: null });
+    expect(active).toMatchObject({ enabled: true, rewardPoints: 14, inviteePoints: 8, rewardLimit: 3, maxPoints: 42, account: null });
     const accountState = (await (await regular.request.get("/api/referral")).json()).data;
     expect(accountState.account.code).toMatch(/^[A-F0-9]{24}$/);
     expect(accountState.account.earnedPoints).toBe(0);
@@ -53,10 +59,19 @@ test("referral campaign uses real admin permissions, audit and public visibility
     await expect(campaign).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
     await campaign.getByLabel("操作原因（记录至审计）").fill("Browser validation disabled");
-    await campaign.getByRole("button", { name: "关闭活动", exact: true }).click();
+    await campaign.getByRole("checkbox", { name: "开启活动" }).uncheck();
+    await save.click();
     await expect(campaign).toContainText("活动已关闭");
     expect((await (await visitor.request.get("/api/referral")).json()).data.enabled).toBe(false);
   } finally {
+    if (previous) {
+      const endpoint = "/api/admin/billing?section=referral";
+      const current = (await (await context.request.get(endpoint)).json()).data;
+      const restored = await context.request.post(endpoint, { headers: { origin: baseURL! }, data: {
+        ...previous, expectedUpdatedAt: current.updatedAt, reason: "Restore test configuration", idempotencyKey: randomUUID(),
+      } });
+      expect(restored.status()).toBe(200);
+    }
     await visitor.close(); await regular.close();
     await pool.query('DELETE FROM public."user" WHERE id=any($1::text[])', [users]);
     await pool.end();

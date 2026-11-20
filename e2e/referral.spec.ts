@@ -2,9 +2,9 @@ import { expect, test } from "@playwright/test";
 import { mockAnonymousWebsiteSession, mockApis, mockSignedInWebsiteSession, seedPreferences } from "./production-readiness.fixture";
 
 const invitationCode = "ABCDEF0123456789ABCDEF01";
-const campaign = { enabled: true, rewardPoints: 10, rewardLimit: 5, maxPoints: 50 };
+const campaign = { enabled: true, rewardPoints: 10, inviteePoints: 7, rewardLimit: 5, maxPoints: 50 };
 const account = {
-  code: invitationCode, registeredCount: 6, qualifiedCount: 5, rewardedCount: 5, earnedPoints: 50, remainingRewards: 0,
+  code: invitationCode, registeredCount: 6, qualifiedCount: 5, rewardedCount: 5, earnedPoints: 50, welcomePoints: 7, remainingRewards: 0,
   referrals: ["pending", "qualified", "rewarded", "rejected", "capped"].map((status, index) => ({
     id: `referral-${index}`, createdAt: "2026-11-16T00:00:00.000Z", qualifiedAt: status === "pending" ? null : "2026-11-16T00:10:00.000Z",
     rewardedAt: status === "rewarded" ? "2026-11-16T00:10:00.000Z" : null, status, points: status === "rewarded" ? 10 : 0,
@@ -31,6 +31,7 @@ test("closed campaign hides sharing and menu entry, then reflects reopening on f
   await page.goto("/referral");
   await expect(page.locator("[data-referral-disabled]")).toBeVisible();
   await expect(page.locator("[data-referral-earned]")).toContainText("50");
+  await expect(page.getByText("我的新人奖励已到账：7 永久积分")).toBeVisible();
   await expect(page.locator("[data-referral-copy]")).toHaveCount(0);
   await page.locator("[data-sidebar-account-trigger]").click();
   await expect(page.locator('[data-primary-navigation-page="referral"]')).toHaveCount(0);
