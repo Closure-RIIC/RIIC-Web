@@ -17,7 +17,7 @@ async function expectEmptyBoard(page: Page) {
 async function acknowledgeAutomaticResult(page: Page) {
   const notice = page.getByRole("dialog", { name: "排班已生成", exact: true });
   await expect(notice).toContainText("自动队列轮换结果已更新，可以查看或导出");
-  await notice.getByRole("button", { name: "关闭", exact: true }).click();
+  await notice.getByRole("button", { name: "关闭", exact: true }).first().click();
 }
 
 async function prepare(page: Page, queue = true, legacySelection?: string) {
@@ -77,7 +77,7 @@ for (const queue of [true, false]) test(`automatic rotation uses shared ${queue 
   await expect(tabs).toHaveText(["第 1 班", "第 2 班"]);
   const summary = page.locator("[data-plan-summary]");
   await expect(summary).toBeVisible();
-  await expect(summary.locator("[data-rotation-warnings]")).toContainText(fixture.data.rotation.warnings[0]);
+  await expect(page.locator("[data-rotation-warnings]")).toContainText(fixture.data.rotation.warnings[0]);
   await expect(summary.locator('[data-plan-support="morale"]')).toContainText("但书");
   const totals = await summary.locator("[data-daily-product]").allTextContents();
   expect(totals.length).toBeGreaterThan(0);

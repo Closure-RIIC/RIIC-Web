@@ -633,12 +633,12 @@ test("setup exposes and persists only worker-supported rotation profiles", async
   await expect(page.getByRole("option")).toHaveCount(7);
   await expect(rotationTrigger).toHaveJSProperty("readOnly", true);
   await page.getByRole("option", { name: /一天两换/ }).click();
-  await expect(rotationTrigger).toHaveValue("一天两换 · 12/12/12");
+  await expect(rotationTrigger).toHaveValue("一天两换三班倒 12/12/12");
   await rotationTrigger.click();
   await expect(page.locator('[data-slot="combobox-content"]')).toBeVisible();
   await expect(page.getByRole("option")).toHaveCount(7);
   await rotationTrigger.press("Escape");
-  await expect(rotationTrigger).toHaveValue("一天两换 · 12/12/12");
+  await expect(rotationTrigger).toHaveValue("一天两换三班倒 12/12/12");
   await expect(dialog.getByText("完整循环 24 小时")).toHaveCount(0);
   await expect(dialog.getByText("第 4 班 4h")).toHaveCount(0);
   await dialog.getByRole("button", { name: "检查设施", exact: true }).click();
