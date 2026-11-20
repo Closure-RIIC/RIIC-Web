@@ -17248,7 +17248,7 @@ export const references = [
   {
     "key": "Metadata.trainingPlanner",
     "prefix": false,
-    "source": "apps/arknights/src/routes/_workbench.training-plan.tsx:11"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:196"
   },
   {
     "key": "MoodSimulation.all",
@@ -20678,336 +20678,486 @@ export const references = [
   {
     "key": "TrainingPlanner.addOperator",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:349"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:380"
   },
   {
     "key": "TrainingPlanner.allOperators",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:576"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:686"
   },
   {
     "key": "TrainingPlanner.available",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:502"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:555"
   },
   {
     "key": "TrainingPlanner.bookEquivalent",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:509"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:562"
   },
   {
     "key": "TrainingPlanner.changeLevel",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:395"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:427"
   },
   {
     "key": "TrainingPlanner.chooseDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:570"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:680"
   },
   {
     "key": "TrainingPlanner.chooseOperators",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:569"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:679"
   },
   {
     "key": "TrainingPlanner.clearGoals",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:365"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:396"
   },
   {
     "key": "TrainingPlanner.costDetails",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:405"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:437"
   },
   {
     "key": "TrainingPlanner.costSourceNote",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:439"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:492"
   },
   {
     "key": "TrainingPlanner.craftCost",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:542"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:652"
   },
   {
     "key": "TrainingPlanner.craftEntry",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:541"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:651"
   },
   {
     "key": "TrainingPlanner.craftingPlan",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:515"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:568"
   },
   {
     "key": "TrainingPlanner.current",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:385"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:417"
   },
   {
     "key": "TrainingPlanner.currentBox",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:575"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:685"
   },
   {
     "key": "TrainingPlanner.dailyEstimate",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:549"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:659"
   },
   {
     "key": "TrainingPlanner.dailyEstimateNote",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:550"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:660"
   },
   {
     "key": "TrainingPlanner.days",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:556"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:666"
   },
   {
     "key": "TrainingPlanner.daysUnknown",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:556"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:666"
   },
   {
     "key": "TrainingPlanner.description",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:345"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:376"
   },
   {
     "key": "TrainingPlanner.dropSources",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:528"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:630"
   },
   {
     "key": "TrainingPlanner.elite",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:394"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:426"
   },
   {
     "key": "TrainingPlanner.experience",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:506"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:559"
   },
   {
     "key": "TrainingPlanner.experienceMissing",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:508"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:561"
   },
   {
     "key": "TrainingPlanner.experiencePerDay",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:553"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:663"
   },
   {
-    "key": "TrainingPlanner.filterItems",
+    "key": "TrainingPlanner.farmingAdd",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:473"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:105"
   },
   {
-    "key": "TrainingPlanner.inventoryReady",
+    "key": "TrainingPlanner.farmingAlternatives",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:451"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:168"
   },
   {
-    "key": "TrainingPlanner.inventorySaved",
+    "key": "TrainingPlanner.farmingApClosed",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:453"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:143"
   },
   {
-    "key": "TrainingPlanner.inventorySaveFailed",
+    "key": "TrainingPlanner.farmingApOpen",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:452"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:143"
   },
   {
-    "key": "TrainingPlanner.inventoryUnavailable",
+    "key": "TrainingPlanner.farmingBack",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:451"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:89"
   },
   {
-    "key": "TrainingPlanner.lmd",
+    "key": "TrainingPlanner.farmingBenchmark",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:131"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:174"
   },
   {
-    "key": "TrainingPlanner.lmdMissing",
+    "key": "TrainingPlanner.farmingCatalystExchange",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:502"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:136"
   },
   {
-    "key": "TrainingPlanner.lmdPerDay",
+    "key": "TrainingPlanner.farmingCertificateRuns",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:552"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:140"
   },
   {
-    "key": "TrainingPlanner.loadingInventory",
+    "key": "TrainingPlanner.farmingCombined",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:451"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:126"
   },
   {
-    "key": "TrainingPlanner.manufacture",
+    "key": "TrainingPlanner.farmingDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:541"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:88"
   },
   {
-    "key": "TrainingPlanner.masteryLevel",
+    "key": "TrainingPlanner.farmingError",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:418"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:587"
   },
   {
-    "key": "TrainingPlanner.masterySkill",
+    "key": "TrainingPlanner.farmingEstimate",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:416"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:633"
   },
   {
-    "key": "TrainingPlanner.materialShortages",
+    "key": "TrainingPlanner.farmingExample",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:512"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:94"
   },
   {
-    "key": "TrainingPlanner.materialStock",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:468"
-  },
-  {
-    "key": "TrainingPlanner.moduleLevel",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:428"
-  },
-  {
-    "key": "TrainingPlanner.moduleLockedUntil",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:435"
-  },
-  {
-    "key": "TrainingPlanner.moduleTargets",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:422"
-  },
-  {
-    "key": "TrainingPlanner.needOwnedMissing",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:527"
-  },
-  {
-    "key": "TrainingPlanner.noBox",
+    "key": "TrainingPlanner.farmingLoad",
     "prefix": false,
     "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:585"
   },
   {
-    "key": "TrainingPlanner.noCrafts",
+    "key": "TrainingPlanner.farmingLoading",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:545"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:585"
   },
   {
-    "key": "TrainingPlanner.noMaterialShortages",
+    "key": "TrainingPlanner.farmingMaterials",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:531"
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:91"
   },
   {
-    "key": "TrainingPlanner.noModules",
+    "key": "TrainingPlanner.farmingNoData",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:438"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:637"
   },
   {
-    "key": "TrainingPlanner.noTargets",
+    "key": "TrainingPlanner.farmingNote",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:369"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:592"
   },
   {
-    "key": "TrainingPlanner.redGold",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:132"
-  },
-  {
-    "key": "TrainingPlanner.refreshInventory",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:352"
-  },
-  {
-    "key": "TrainingPlanner.remove",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:387"
-  },
-  {
-    "key": "TrainingPlanner.resourceStock",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:449"
-  },
-  {
-    "key": "TrainingPlanner.resourceSummary",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:495"
-  },
-  {
-    "key": "TrainingPlanner.saveError",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:561"
-  },
-  {
-    "key": "TrainingPlanner.search",
+    "key": "TrainingPlanner.farmingPage",
     "prefix": false,
     "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:580"
   },
   {
+    "key": "TrainingPlanner.farmingPlan",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:599"
+  },
+  {
+    "key": "TrainingPlanner.farmingRelative",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:635"
+  },
+  {
+    "key": "TrainingPlanner.farmingRemove",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:115"
+  },
+  {
+    "key": "TrainingPlanner.farmingSaved",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:150"
+  },
+  {
+    "key": "TrainingPlanner.farmingSelect",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:99"
+  },
+  {
+    "key": "TrainingPlanner.farmingSeparate",
+    "prefix": false,
+    "source": "apps/arknights/src/routes/_workbench.farming-plan.tsx:148"
+  },
+  {
+    "key": "TrainingPlanner.farmingStage",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:606"
+  },
+  {
+    "key": "TrainingPlanner.farmingTotal",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:602"
+  },
+  {
+    "key": "TrainingPlanner.farmingUncovered",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:616"
+  },
+  {
+    "key": "TrainingPlanner.filterItems",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:526"
+  },
+  {
+    "key": "TrainingPlanner.inventoryReady",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:504"
+  },
+  {
+    "key": "TrainingPlanner.inventorySaved",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:506"
+  },
+  {
+    "key": "TrainingPlanner.inventorySaveFailed",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:505"
+  },
+  {
+    "key": "TrainingPlanner.inventoryUnavailable",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:504"
+  },
+  {
+    "key": "TrainingPlanner.lmd",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:133"
+  },
+  {
+    "key": "TrainingPlanner.lmdMissing",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:555"
+  },
+  {
+    "key": "TrainingPlanner.lmdPerDay",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:662"
+  },
+  {
+    "key": "TrainingPlanner.loadingInventory",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:504"
+  },
+  {
+    "key": "TrainingPlanner.manufacture",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:651"
+  },
+  {
+    "key": "TrainingPlanner.masteryLevel",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:455"
+  },
+  {
+    "key": "TrainingPlanner.masterySkill",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:454"
+  },
+  {
+    "key": "TrainingPlanner.materialShortages",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:565"
+  },
+  {
+    "key": "TrainingPlanner.materialStock",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:521"
+  },
+  {
+    "key": "TrainingPlanner.moduleLevel",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:481"
+  },
+  {
+    "key": "TrainingPlanner.moduleLockedUntil",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:488"
+  },
+  {
+    "key": "TrainingPlanner.moduleTargets",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:475"
+  },
+  {
+    "key": "TrainingPlanner.needOwnedMissing",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:629"
+  },
+  {
+    "key": "TrainingPlanner.noBox",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:695"
+  },
+  {
+    "key": "TrainingPlanner.noCrafts",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:655"
+  },
+  {
+    "key": "TrainingPlanner.noMaterialShortages",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:641"
+  },
+  {
+    "key": "TrainingPlanner.noModules",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:491"
+  },
+  {
+    "key": "TrainingPlanner.noSkillMaterials",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:471"
+  },
+  {
+    "key": "TrainingPlanner.noTargets",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:400"
+  },
+  {
+    "key": "TrainingPlanner.redGold",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:134"
+  },
+  {
+    "key": "TrainingPlanner.refreshInventory",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:383"
+  },
+  {
+    "key": "TrainingPlanner.remove",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:419"
+  },
+  {
+    "key": "TrainingPlanner.resourceStock",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:502"
+  },
+  {
+    "key": "TrainingPlanner.resourceSummary",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:548"
+  },
+  {
+    "key": "TrainingPlanner.saveError",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:671"
+  },
+  {
+    "key": "TrainingPlanner.search",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:690"
+  },
+  {
     "key": "TrainingPlanner.selected",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:363"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:394"
   },
   {
     "key": "TrainingPlanner.shortage",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:514"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:567"
   },
   {
     "key": "TrainingPlanner.skillLevel",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:409"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:441"
   },
   {
-    "key": "TrainingPlanner.sourceNote",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:560"
-  },
-  {
-    "key": "TrainingPlanner.stale",
-    "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:562"
-  },
-  {
-    "key": "TrainingPlanner.stock",
+    "key": "TrainingPlanner.skillMaterials",
     "prefix": false,
     "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:461"
   },
   {
+    "key": "TrainingPlanner.sourceNote",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:670"
+  },
+  {
+    "key": "TrainingPlanner.stale",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:672"
+  },
+  {
+    "key": "TrainingPlanner.stock",
+    "prefix": false,
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:514"
+  },
+  {
     "key": "TrainingPlanner.target",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:398"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:430"
   },
   {
     "key": "TrainingPlanner.targetMastery",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:417"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:446"
   },
   {
     "key": "TrainingPlanner.targetSkill",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:410"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:442"
   },
   {
     "key": "TrainingPlanner.title",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:344"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:375"
   },
   {
     "key": "TrainingPlanner.withGoldBars",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:503"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:556"
   },
   {
     "key": "TrainingPlanner.workshop",
     "prefix": false,
-    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:541"
+    "source": "apps/arknights/src/components/pages/TrainingPlanner.tsx:651"
   }
 ] as const;

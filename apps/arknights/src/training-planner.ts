@@ -127,6 +127,23 @@ function addCost(target: Record<string, number>, entries: readonly TrainingCostI
   for (const item of entries) target[item.id] = (target[item.id] ?? 0) + item.count;
 }
 
+export function trainingSkillCosts(goal: TrainingGoal, operator: TrainingPlannerOperator): TrainingCostItem[] {
+  const requirements: Record<string, number> = {};
+  for (let level = goal.currentSkillLevel + 1; level <= goal.targetSkillLevel; level += 1) {
+    addCost(requirements, operator.skillLevels[level - 2] ?? []);
+  }
+
+  for (const [skillId, target] of Object.entries(goal.targetMasteries)) {
+    const skill = operator.skills.find((entry) => entry.id === skillId);
+    const current = goal.currentMasteries[skillId] ?? 0;
+    for (let level = current + 1; level <= target; level += 1) {
+      addCost(requirements, skill?.masteries[level - 1] ?? []);
+    }
+  }
+
+  return Object.entries(requirements).map(([id, count]) => ({ id, count }));
+}
+
 function addGoalCosts(
   goal: TrainingGoal,
   rarity: number,
@@ -149,17 +166,7 @@ function addGoalCosts(
     addCost(requirements, operator.phases[elite] ?? []);
   }
 
-  for (let level = goal.currentSkillLevel + 1; level <= goal.targetSkillLevel; level += 1) {
-    addCost(requirements, operator.skillLevels[level - 2] ?? []);
-  }
-
-  for (const [skillId, target] of Object.entries(goal.targetMasteries)) {
-    const skill = operator.skills.find((entry) => entry.id === skillId);
-    const current = goal.currentMasteries[skillId] ?? 0;
-    for (let level = current + 1; level <= target; level += 1) {
-      addCost(requirements, skill?.masteries[level - 1] ?? []);
-    }
-  }
+  addCost(requirements, trainingSkillCosts(goal, operator));
 
   for (const [moduleId, target] of Object.entries(goal.targetModules)) {
     const module = operator.modules.find((entry) => entry.id === moduleId);

@@ -43,7 +43,7 @@ export function workbenchPageFromPathname(pathname: string): AppPage {
   if (pathname === WORKBENCH_PAGE_PATHS.manual) return "manual";
   if (pathname === WORKBENCH_PAGE_PATHS.mower) return "mower";
   if (pathname === WORKBENCH_PAGE_PATHS.training) return "training";
-  if (pathname === WORKBENCH_PAGE_PATHS["training-planner"]) return "training-planner";
+  if (pathname === WORKBENCH_PAGE_PATHS["training-planner"] || pathname === "/farming-plan") return "training-planner";
   if (pathname === WORKBENCH_PAGE_PATHS.mastery) return "mastery";
   if (pathname === WORKBENCH_PAGE_PATHS.recruitment) return "recruitment";
   if (pathname === WORKBENCH_PAGE_PATHS.inventory) return "inventory";

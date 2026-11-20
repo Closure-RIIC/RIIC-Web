@@ -1,5 +1,6 @@
 "use client";
 
+import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations, useLocale } from "use-intl";
 import { Check, ChevronDown, PackageOpen, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
@@ -20,7 +21,8 @@ import { manualLevelFor, maxEliteForRarity } from "@riic/arknights-domain/manual
 import { OPERATOR_CATALOG, type OperatorAssetRecord } from "@/operatorPortraits";
 import type { OperBoxEntry, SklandInventoryData, SklandOperatorStatus } from "@riic/arknights-domain/types";
 import { useWorkbench } from "@/workbench-context";
-import { calculateTrainingPlan, defaultTrainingGoal, isTrainingFullyComplete, mergeTrainingGoalCurrent, type TrainingGoal, type TrainingPlannerData } from "@/training-planner";
+import { trainingSkillCosts, calculateTrainingPlan, defaultTrainingGoal, isTrainingFullyComplete, mergeTrainingGoalCurrent, type TrainingGoal, type TrainingPlannerData } from "@/training-planner";
+import { availableFarmingDrops, planFarming, recommendFarming, type FarmingSnapshot } from "@/training-farming";
 import { buildTrainingPlannerContext } from "@/agent-page-context";
 import { loadTrainingGoals, loadTrainingInventory, saveTrainingGoals, saveTrainingInventory, takeTrainingPlannerHandoff } from "@/training-planner-store";
 import plannerDataJson from "@/generated/training-planner-data.json" with { type: "json" };
@@ -105,9 +107,9 @@ function mergeHandoff(
   return next;
 }
 
-function selectElement(label: string, value: number, onChange: (value: number) => void, options: number[], disabled = false) {
+function selectElement(label: string, value: number, onChange: (value: number) => void, options: number[], disabled = false, showLabel = true) {
   return <div className="grid min-w-0 gap-1 text-[11px] text-muted-foreground">
-    <span>{label}</span>
+    {showLabel ? <span>{label}</span> : null}
     <Combobox<number>
       items={options}
       filteredItems={options}
@@ -135,6 +137,22 @@ function inventoryLabel(itemId: string, translate: ReturnType<typeof useTranslat
 
 export function TrainingPlanner() {
   const t = useTranslations("TrainingPlanner");
+  const [farming, setFarming] = useState<FarmingSnapshot | null>(null);
+  const [farmingNow, setFarmingNow] = useState(0);
+  const [farmingStatus, setFarmingStatus] = useState<"idle" | "loading" | "error">("idle");
+
+  async function loadFarming() {
+    setFarmingStatus("loading");
+    try {
+      const response = await fetch("/api/training/farming", { signal: AbortSignal.timeout(18_000) });
+      if (!response.ok) throw new Error("Drop data unavailable");
+      setFarming(await response.json() as FarmingSnapshot);
+      setFarmingNow(Date.now());
+      setFarmingStatus("idle");
+    } catch {
+      setFarmingStatus("error");
+    }
+  }
   const locale = useLocale();
   const gameCatalog = useGameCatalog();
   const { trainingPlanner, inventory, agent } = useWorkbench();
@@ -259,6 +277,19 @@ export function TrainingPlanner() {
     data: plannerData,
     inventory: stock,
   }), [goals, stock]);
+  useEffect(() => {
+    if (!farming) return;
+    const refreshTime = () => setFarmingNow(Date.now());
+    const timer = window.setInterval(refreshTime, 30_000);
+    window.addEventListener("focus", refreshTime);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", refreshTime);
+    };
+  }, [farming]);
+  const farmingPlan = useMemo(() => farming ? planFarming(result.shortages, farming.drops, farmingNow) : null,
+    [farming, farmingNow, result.shortages]);
+
   const goalOperators = useMemo(() => goals.flatMap((goal) => {
     const operator = OPERATOR_BY_ID.get(goal.operatorId);
     return operator ? [{
@@ -378,8 +409,9 @@ export function TrainingPlanner() {
                 const currentEliteOptions = Array.from({ length: maxElite + 1 }, (_, index) => index);
                 const targetLevelMax = manualLevelFor(operator.rarity, goal.targetElite);
                 const currentLevelMax = manualLevelFor(operator.rarity, goal.currentElite);
+                const skillMaterials = trainingSkillCosts(goal, costs);
                 const modulesAvailable = costs.modules;
-                return <article key={goal.operatorId} className="grid min-w-0 gap-3 border border-border bg-card p-3 sm:p-4" data-training-goal={goal.operatorId}>
+                return <article key={goal.operatorId} className="grid min-w-0 gap-2 border border-border bg-card p-3" data-training-goal={goal.operatorId}>
                   <div className="flex min-w-0 items-start gap-3">
                     <OperatorIdentity name={operator.name} portrait={operator.portrait} compact>
                       <span className="font-number text-xs text-muted-foreground">{operator.rarity}★ · {currentById.get(operator.id)?.own ? t("current") : ""}</span>
@@ -401,23 +433,44 @@ export function TrainingPlanner() {
                     </div>
                   </div>
                   <details className="border-t border-border pt-2">
-                    <summary className="flex min-h-10 cursor-pointer items-center justify-between gap-3 text-xs font-medium">
+                    <summary className="flex min-h-8 cursor-pointer items-center justify-between gap-3 text-xs font-medium">
                       <span>{t("costDetails")}</span><ChevronDown className="size-4 text-muted-foreground" aria-hidden="true" />
                     </summary>
-                    <div className="grid min-w-0 gap-4 pt-2">
+                    <div className="grid min-w-0 gap-2 pt-1">
                       <div className="grid grid-cols-2 gap-2">
                         {selectElement(t("skillLevel"), goal.currentSkillLevel, (next) => updateGoal(operator.id, (entry) => ({ ...entry, currentSkillLevel: next })), Array.from({ length: 7 }, (_, index) => index + 1), !costs.skillLevels.length)}
                         {selectElement(t("targetSkill"), goal.targetSkillLevel, (next) => updateGoal(operator.id, (entry) => ({ ...entry, targetSkillLevel: next })), Array.from({ length: 7 }, (_, index) => index + 1), !costs.skillLevels.length)}
                       </div>
+                      {costs.skills.length > 0 ? (
+                        <div className="grid grid-cols-[minmax(0,1fr)_minmax(7rem,9rem)] gap-2 text-[11px] text-muted-foreground">
+                          <span>{t("skillLevel")}</span><span>{t("targetMastery")}</span>
+                        </div>
+                      ) : null}
                       {costs.skills.map((skill, index) => {
                         const current = goal.currentMasteries[skill.id] ?? 0;
                         const target = goal.targetMasteries[skill.id] ?? current;
-                        return <div key={skill.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-end gap-2">
-                          <span className="pb-2 text-xs text-muted-foreground">{t("masterySkill", { index: index + 1 })}</span>
-                          {selectElement(t("targetMastery"), target, (next) => updateGoal(operator.id, (entry) => ({ ...entry, targetMasteries: { ...entry.targetMasteries, [skill.id]: next } })), [0, 1, 2, 3], goal.targetElite < 2)}
-                          <span className="col-span-2 text-[11px] text-muted-foreground">{t("current")}: {t("masteryLevel", { level: current })}</span>
+                        return <div key={skill.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(7rem,9rem)] items-center gap-2">
+                          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
+                            <span>{t("masterySkill", { index: index + 1 })}</span>
+                            <span className="text-[11px] text-muted-foreground">{t("current")}: {t("masteryLevel", { level: current })}</span>
+                          </div>
+                          {selectElement(t("targetMastery"), target, (next) => updateGoal(operator.id, (entry) => ({ ...entry, targetMasteries: { ...entry.targetMasteries, [skill.id]: next } })), [0, 1, 2, 3], goal.targetElite < 2, false)}
                         </div>;
                       })}
+                      <div className="border-t border-border pt-3">
+                        <h3 className="mb-2 text-xs font-medium">{t("skillMaterials")}</h3>
+                        <ul className="flex flex-wrap gap-x-4 gap-y-2 text-xs">
+                          {skillMaterials.map(({ id, count }) => (
+                            <li key={id} className="flex items-center gap-1.5">
+                              {plannerData.items[id]?.icon ? <img src={plannerData.items[id].icon} alt="" width={24} height={24} className="size-6 object-contain" /> : null}
+                              <span>{inventoryLabel(id, t, gameCatalog.itemNames)} ×{numberText(count)}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        {skillMaterials.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">{t("noSkillMaterials")}</p>
+                        ) : null}
+                      </div>
                       {modulesAvailable.length ? <div className="grid gap-2 border-t border-border pt-3">
                         <h3 className="text-xs font-medium">{t("moduleTargets")}</h3>
                         {modulesAvailable.map((module) => {
@@ -519,15 +572,72 @@ export function TrainingPlanner() {
 
           <section className="min-w-0" aria-labelledby="training-shortages-heading">
             <h2 id="training-shortages-heading" className="mb-2 border-b border-border pb-2 text-sm font-semibold">{t("materialShortages")}</h2>
+            <Link
+              to="/farming-plan"
+              search={{ materials: result.shortages.map(({ id, missing }) => `${id}:${missing}`).join(",") }}
+              className="mb-2 inline-block text-sm underline underline-offset-4"
+            >
+              {t("farmingPage")}
+            </Link>
+            {result.shortages.length > 0 && !farming ? (
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                <Button type="button" variant="outline" size="sm" disabled={farmingStatus === "loading"} onClick={() => void loadFarming()}>
+                  {farmingStatus === "loading" ? t("farmingLoading") : t("farmingLoad")}
+                </Button>
+                {farmingStatus === "error" ? <span role="status" className="text-xs text-muted-foreground">{t("farmingError")}</span> : null}
+              </div>
+            ) : null}
+            {farming && result.shortages.length > 0 ? (
+              <p className="mb-2 text-xs leading-5 text-muted-foreground">
+                {t("farmingNote", { date: new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(farming.fetchedAt) })}{" "}
+                <a href="https://penguin-stats.io/" target="_blank" rel="noreferrer" className="underline">Penguin Statistics</a>{" · "}
+                <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noreferrer" className="underline">CC BY-NC 4.0</a>
+              </p>
+            ) : null}
+            {farmingPlan && result.shortages.length > 0 ? (
+              <div className="my-3 border border-border p-3">
+                <h3 className="text-sm font-semibold">{t("farmingPlan")}</h3>
+                {farmingPlan.stages.length > 0 ? (
+                  <>
+                    <p className="mt-1 text-xs">{t("farmingTotal", { sanity: numberText(farmingPlan.totalSanity) })}</p>
+                    <ul className="mt-2 space-y-2 text-xs">
+                      {farmingPlan.stages.map((stage) => (
+                        <li key={stage.stageId}>
+                          <strong>{t("farmingStage", { stage: stage.code, runs: numberText(stage.runs), sanity: numberText(stage.totalSanity) })}</strong>
+                          <p className="text-muted-foreground">{Object.entries(stage.expectedDrops).map(([id, quantity]) =>
+                            `${inventoryLabel(id, t, gameCatalog.itemNames)} ×${numberText(Math.round(quantity * 100) / 100)}`
+                          ).join(" · ")}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
+                {farmingPlan.uncovered.length > 0 ? (
+                  <p className="mt-2 text-xs text-amber-700">{t("farmingUncovered", {
+                    items: farmingPlan.uncovered.map((id) => inventoryLabel(id, t, gameCatalog.itemNames)).join(" · "),
+                  })}</p>
+                ) : null}
+              </div>
+            ) : null}
             {result.shortages.length ? <div className="grid min-w-0">
-              {result.shortages.map((item) => <div key={item.id} className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] gap-2 border-b border-border/70 py-2">
+              {result.shortages.map((item) => {
+                const recommendations = farming ? recommendFarming(availableFarmingDrops(farming.drops[item.id] ?? [], farmingNow), item.missing, farming.baselines[item.id]) : [];
+                return <div key={item.id} className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] gap-2 border-b border-border/70 py-2">
                 {item.icon ? <img src={item.icon} alt="" width={36} height={36} className="size-9 object-contain" /> : <PackageOpen className="m-2 size-5 text-muted-foreground" aria-hidden="true" />}
                 <div className="min-w-0">
                   <div className="flex min-w-0 items-center justify-between gap-2 text-xs"><span className="min-w-0 break-words font-medium">{item.name}</span><strong className="font-number shrink-0 text-amber-700">−{numberText(item.missing)}</strong></div>
                   <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{t("needOwnedMissing", { need: numberText(item.need), stock: numberText(item.stock), missing: numberText(item.missing) })}</p>
                   {item.drops.length ? <p className="mt-1 break-words text-[11px] leading-4 text-muted-foreground">{t("dropSources")}: {item.drops.join(" · ")}</p> : null}
+                  {farming ? recommendations.length ? (
+                    <ul className="mt-2 space-y-1 text-xs leading-5">
+                      {recommendations.map((stage) => <li key={stage.stageId}>{t("farmingEstimate", {
+                        stage: stage.code, runs: numberText(stage.runs), sanity: numberText(stage.totalSanity), samples: numberText(stage.times),
+                      })}{stage.relative !== undefined ? ` · ${t("farmingRelative", { percent: numberText(stage.relative) })}` : ""}</li>)}
+                    </ul>
+                  ) : <p className="mt-2 text-xs text-muted-foreground">{t("farmingNoData")}</p> : null}
                 </div>
-              </div>)}
+              </div>;
+              })}
             </div> : <p className="py-4 text-sm text-muted-foreground">{t("noMaterialShortages")}</p>}
           </section>
 
