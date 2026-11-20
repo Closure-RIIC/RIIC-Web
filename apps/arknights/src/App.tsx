@@ -128,6 +128,8 @@ import {
   validateCustomRotation,
   DEFAULT_ROTATION_PROFILE,
   isRotationProfile,
+  autoRotationFromKey,
+  DEFAULT_AUTO_ROTATION_HOURS,
   rotationDurations,
 } from "@riic/arknights-domain/rotation-settings";
 import type { CustomRotation } from "@riic/arknights-domain/rotation-settings";
@@ -363,8 +365,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [layoutSource, setLayoutSource] = useState<"local" | "skland">("local");
   const [localLayoutBackup, setLocalLayoutBackup] = useState<BaseBlueprint | null>(null);
   /**
-   * 换班方式的唯一状态：named profile（`abc_12_6_6`）或自定义编码
-   * （`custom_zb_16_8`）。渲染时解析，发请求前解码。
+   * 换班方式的唯一状态：named profile、自定义定时或自动轮换编码。
+   * 渲染时解析，发请求前解码。
    */
   const [rotationKey, setRotationKey] = useState<string>(DEFAULT_ROTATION_PROFILE);
   /** 受控组合主动补挂件；对应求解器 support_combinations_enable。 */
@@ -502,6 +504,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       setActiveShift(0);
       automaticMaaRef.current = { diagnosticId: finalizedResult.diagnosticId, maa: structuredClone(finalizedResult.maa) };
       setManualDroneShifts({});
+      if (finalizedResult.rotation.auto_rotation) {
+        setRotationKey(encodeRotationKey({ topology: "auto", shift_hours: finalizedResult.rotation.auto_rotation.timing.shift_hours }));
+      }
       setResult(finalizedResult);
       setLoading(false);
       if (currentBoxSourceRef.current !== "sample") completeOnboarding();
@@ -587,11 +592,12 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const publishManualAgentPageContext = useCallback((context: AgentPageContext | null) => {
     publishAgentPageContext("manual", context);
   }, [publishAgentPageContext]);
-  /** 菲亚、遥测、反馈只认 named profile；自定义时退回默认 profile。 */
-  const activeRotationProfile: RotationProfile = isRotationProfile(rotationKey) ? rotationKey : DEFAULT_ROTATION_PROFILE;
+  /** 自动轮换复用主备两班展示，实际请求保留自动轮换身份。 */
+  const activeRotationProfile: RotationProfile = autoRotationFromKey(rotationKey)
+    ? "main_backup_24_24" : isRotationProfile(rotationKey) ? rotationKey : DEFAULT_ROTATION_PROFILE;
   /** 从 key 解析出的自定义时长；named profile 时为默认值（不参与请求）。 */
   const customRotation: CustomRotation = customRotationFromKey(rotationKey) ?? DEFAULT_CUSTOM_ROTATION;
-  /** 云同步只保存 named profile。 */
+  /** 兼容只提供 named profile 的云端调用方。 */
   const applyCloudRotationProfile = useCallback<Dispatch<SetStateAction<RotationProfile>>>((value) => {
     setRotationKey((current) => {
       const profile = isRotationProfile(current) ? current : DEFAULT_ROTATION_PROFILE;
@@ -599,10 +605,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     });
   }, []);
   const effectiveFiammettaEnabled = effectiveFiammettaSetting(operbox, activeRotationProfile, fiammettaEnabled);
-  /** 发给求解器的 rotation：named profile 或 v7 拓扑对象；周期不合法时为 null。 */
+  /** 发给求解器的 rotation；自动模式统一使用当前 24/24 评价窗口。 */
   const resolvedRotation = (() => {
     const timing = decodeRotationKey(rotationKey);
     if (!timing) return null;
+    if (autoRotationFromKey(rotationKey)) return { topology: "auto" as const, shift_hours: DEFAULT_AUTO_ROTATION_HOURS };
     if (typeof timing === "string") return timing;
     const custom = customRotationFromKey(rotationKey);
     return custom && validateCustomRotation(custom) ? null : timing;
@@ -728,7 +735,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     localLayoutBackup,
     setLocalLayoutBackup,
     rotationProfile: activeRotationProfile,
+    rotationSelection: rotationKey,
     setRotationProfile: applyCloudRotationProfile,
+    setRotationSelection: setRotationKey,
     fiammettaEnabled,
     setFiammettaEnabled,
     result,
@@ -1711,7 +1720,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     const reproduction = {
       layout: structuredClone(layout),
       operbox: normalizeOperboxEntries(operbox),
-      rotation: activeRotationProfile,
+      rotation: result.rotation.auto_rotation
+        ? { topology: "auto" as const, shift_hours: result.rotation.auto_rotation.timing.shift_hours }
+        : resolvedRotation ?? activeRotationProfile,
       fiammettaEnabled: effectiveFiammettaEnabled,
       sourceType: boxSource,
     };
@@ -2365,6 +2376,8 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       : statusError,
     completed: progressionAdjustmentActivity.active ? progressionAdjustmentActivity.completed : planTask.status === "done",
     completedMaa: progressionAdjustmentActivity.active ? progressionAdjustmentActivity.maa : planTask.result?.maa,
+    completedDescription: !progressionAdjustmentActivity.active && planTask.result?.rotation.auto_rotation
+      ? intl("components_ui_live_activity.autoQueueResultReady") : undefined,
     kind: progressionAdjustmentActivity.active ? "progression-adjustment" : "schedule",
     queued: progressionAdjustmentActivity.active
       ? progressionAdjustmentActivity.loading && (
@@ -2592,7 +2605,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
           setLayoutDirty(JSON.stringify(restoredLayout) !== JSON.stringify(buildBlueprint(restoredPreset)));
           setLayoutSource("local");
           setLocalLayoutBackup(null);
-          setRotationKey(context.rotationProfile);
+          setRotationKey(saved.result.rotation.auto_rotation
+            ? encodeRotationKey({ topology: "auto", shift_hours: saved.result.rotation.auto_rotation.timing.shift_hours })
+            : context.rotationProfile);
           setFiammettaEnabled(context.fiammettaEnabled);
           setResult(saved.result);
           setActiveShift(0);
