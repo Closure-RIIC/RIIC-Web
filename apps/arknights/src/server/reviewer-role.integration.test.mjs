@@ -22,6 +22,7 @@ process.env.BETTER_AUTH_URL = origin;
 process.env.BETTER_AUTH_SECRET = "reviewer-integration-secret-not-for-production";
 process.env.BETTER_AUTH_ADMIN_USER_IDS = bootstrapId;
 process.env.BETA_PUBLIC_ORIGIN = origin;
+process.env.BETA_TRUST_PROXY_HEADERS = "1";
 process.env.BETA_RATE_LIMIT_ENABLED = "0";
 process.env.BETA_BUSINESS_DB_ENABLED = "1";
 process.env.BETA_BUSINESS_DB_READ_ENABLED = "1";
@@ -38,9 +39,10 @@ test("reviewer roles enforce real-session API boundaries and take effect without
   const targetId = `review-target-${randomUUID()}`;
   const adminId = `review-admin-${randomUUID()}`;
   const password = "Reviewer-Integration-2026!";
+  let ip = 1;
   function request(cookie, body, path = "/api/admin/users", method = body === undefined ? "GET" : "PATCH") {
     return new Request(`${origin}${path}`, {
-      method, headers: { origin, "content-type": "application/json", ...(cookie ? { cookie } : {}) },
+      method, headers: { origin, "content-type": "application/json", "x-real-ip": `198.51.100.${ip++}`, ...(cookie ? { cookie } : {}) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   }

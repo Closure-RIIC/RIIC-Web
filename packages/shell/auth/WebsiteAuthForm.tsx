@@ -17,6 +17,7 @@ import { OtpInput, type OtpInputHandle, type OtpStatus } from "./otp-input";
 import { PasswordStrength } from "./password-strength";
 import { authFailure, type AuthFailure } from "./auth-feedback";
 import { useAuthRequest } from "./use-auth-request";
+import { clearReferralCode, referralSignupHeaders } from "./referral-code";
 import styles from "./AuthForm.module.css";
 import { AuthAction } from "./AuthAction";
 export type AuthMode = "signin" | "signup" | "forgot";
@@ -187,7 +188,9 @@ export function WebsiteAuthForm({ onAuthenticated, legalOrigin = "", initialMode
           email: email.trim(),
           password,
           callbackURL: location.origin,
+          fetchOptions: { headers: referralSignupHeaders() },
         });
+        if (!result.error) clearReferralCode();
         if (!request.isCurrent(id)) return;
         if (result.error) throw result.error;
         setVerificationEmail(email.trim());
@@ -202,6 +205,7 @@ export function WebsiteAuthForm({ onAuthenticated, legalOrigin = "", initialMode
           password,
           callbackURL: location.href,
         });
+        if (!result.error) clearReferralCode();
         if (!request.isCurrent(id)) return;
         if (result.error) throw result.error;
         await confirmSession(id);

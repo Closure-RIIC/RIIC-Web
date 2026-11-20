@@ -54,5 +54,22 @@
   "adjustmentLedgerId": "Adjustment ledger ID",
   "evidenceReason": "Evidence / reason",
   "resolve2": "Resolve",
-  "afdianTradeOptional": "Afdian transaction (optional; verifies payment and resolves review)"
+  "afdianTradeOptional": "Afdian transaction (optional; verifies payment and resolves review)",
+  "referralTitle": "Referral campaign",
+  "referralRules": "Permanent credits are issued after an invited user registers, verifies their email and authenticates with Skland. The referral limit applies to inviters. Updated rules apply to future payouts. Settled amounts stay as recorded.",
+  "referralPauseRules": "Disabling pauses new referral attribution and credit awards. Existing records remain, and enabling again does not reset the limit.",
+  "referralEnabled": "Campaign enabled",
+  "referralDisabled": "Campaign disabled",
+  "referralReason": "Reason (saved to the audit log)",
+  "referralEnable": "Enable campaign",
+  "referralInviterAmount": "Inviter credits per referral",
+  "referralInviteeAmount": "Credits per invited newcomer",
+  "referralLimit": "Lifetime rewarded referrals per inviter",
+  "referralSave": "Save campaign settings",
+  "referralRefresh": "Refresh",
+  "referralRegistered": "Referred registrations",
+  "referralQualified": "Authenticated referrals",
+  "referralRewarded": "Inviter rewards issued",
+  "referralPoints": "Credits paid to inviters",
+  "referralWelcomeTotal": "Credits paid to newcomers"
 }

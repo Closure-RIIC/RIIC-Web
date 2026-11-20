@@ -12,11 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAdminRequest } from "../admin-context";
 import { BillingCodes } from "./billing-codes";
+import { BillingReferral } from "./billing-referral";
 import { PolicyEditor, type PolicyVersion } from "./policy-editor";
 
 type Row = Record<string, unknown>;
 type Listing = { rows: Row[]; total: number; page: number; pages: number };
-const tabs = ["summary","usage","wallets","ledger","orders","rates","reviews","codes","audit"] as const;
+const tabs = ["summary","usage","wallets","ledger","orders","rates","reviews","codes","referral","audit"] as const;
 const agentTabs = ["policies","filters","attempts"] as const;
 const columns: Record<string, string[]> = {
   usage: ["created_at", "user_id", "status", "settlement", "points", "input_tokens", "output_tokens", "upstream_cost_rmb_fen"],
@@ -41,7 +42,7 @@ export function BillingConsole({ agent = false }: { agent?: boolean }) {
   const reload = useCallback(async () => {
     const seq = ++sequence.current; setLoading(true); setError("");
     try {
-      if (section === "codes") return;
+      if (section === "codes" || section === "referral") return;
       const params = new URLSearchParams({ section: section === "rates" ? "policies" : section, page: String(page), q: query, status });
       if (from) params.set("from", new Date(`${from}T00:00:00+08:00`).toISOString());
       if (to) params.set("to", new Date(`${to}T23:59:59.999+08:00`).toISOString());
@@ -62,7 +63,7 @@ export function BillingConsole({ agent = false }: { agent?: boolean }) {
   const isTable = !!columns[section];
   return <div className="space-y-5">
     <nav className="flex flex-wrap gap-1" aria-label={adminText.text(locale, "billingManagement")}>{(agent ? agentTabs : tabs).map(id => <Button key={id} size="sm" variant={section === id ? "default" : "ghost"} aria-current={section === id ? "page" : undefined} onClick={() => { setSection(id); setPage(1); setListing(null); setStatus(""); }}>{labelsText.text(locale, id)}</Button>)}</nav>
-    {!['codes', 'rates', 'policies'].includes(section) && <form className="flex flex-wrap items-end gap-3" onSubmit={e => {
+    {!['codes', 'referral', 'rates', 'policies'].includes(section) && <form className="flex flex-wrap items-end gap-3" onSubmit={e => {
       e.preventDefault();
       const nextQuery = q.trim();
       if (page === 1 && query === nextQuery) void reload();
@@ -82,6 +83,7 @@ export function BillingConsole({ agent = false }: { agent?: boolean }) {
       {section === "reviews" && row.status === "open" && <Button size="sm" variant="outline" onClick={() => setReview({ id: String(row.id), reason: "", resolution: "platform_absorbed", ledgerId: "" })}>{adminText.text(locale, "resolve")}</Button>}
     </div></td></tr>)}</tbody></table>{!listing.rows.length && <p className="p-8 text-center text-sm text-muted-foreground">{adminText.text(locale, "noMatchingRecords")}</p>}</div><div className="flex items-center justify-between"><span className="text-sm">{listing.total} {adminText.text(locale, "records")} · {listing.page}/{listing.pages}</span><div className="flex gap-2"><Button variant="outline" disabled={loading || page <= 1} onClick={() => setPage(page-1)}>{adminText.text(locale, "previous")}</Button><Button variant="outline" disabled={loading || page >= listing.pages} onClick={() => setPage(page+1)}>{adminText.text(locale, "next")}</Button></div></div></>}
     {section === "codes" && <BillingCodes />}
+    {section === "referral" && <BillingReferral />}
     {["rates","policies"].includes(section) && policies && <>{section === "policies" && <div className="rounded-xl border bg-card p-4"><h2 className="font-semibold">{adminText.text(locale, "gatewaySyncStatus")}</h2>{policies.gateway.length ? policies.gateway.map(row => <p key={String(row.id)} className="mt-2 text-sm">{String(row.id)} · {String(row.status)} · {String(row.filter_version)} · {value("updated_at",row.updated_at)}</p>) : <p className="mt-2 text-sm text-muted-foreground">{adminText.text(locale, "waitingForGatewayWorker")}</p>}<p className="mt-2 text-xs text-muted-foreground">{adminText.text(locale, "deepseekFirstGlmOnFailureApplicationFilteringRemains")}</p></div>}<PolicyEditor key={`${section}:${policies.versions.find(v => v.kind === (section === "rates" ? "rates" : "filter") && v.status === "active")?.id}`} kind={section === "rates" ? "rates" : "filter"} versions={policies.versions} refresh={reload} /></>}
     <Dialog open={detail !== null} onOpenChange={open => { if (!open) setDetail(null); }}><DialogContent className="sm:max-w-3xl"><DialogHeader><DialogTitle>{adminText.text(locale, "recordDetails")}</DialogTitle><DialogDescription>{adminText.text(locale, "amountsRetainTheirOriginalPrecisionNullMeansUnknown")}</DialogDescription></DialogHeader><DialogBody><pre className="whitespace-pre-wrap break-all text-xs">{JSON.stringify(detail,null,2)}</pre></DialogBody></DialogContent></Dialog>
     <Dialog open={!!adjust} onOpenChange={open => { if (!open && !saving) setAdjust(null); }}><DialogContent><DialogHeader><DialogTitle>{adminText.text(locale, "pointAdjustment")}</DialogTitle><DialogDescription>{adminText.text(locale, "pointsOnlyNoCashRefundsRefundsRequireAn")}</DialogDescription></DialogHeader>{adjust && <DialogBody className="space-y-4"><p className="break-all text-xs">{adjust.userId} {adjust.referenceId}</p>{adjust.action !== "refund" && <Label>{adminText.text(locale, "action")}<select className="h-9 rounded-md border bg-background px-2" value={adjust.action} onChange={e => setAdjust({ ...adjust, action: e.target.value, providerOrderId: e.target.value === "credit" ? adjust.providerOrderId : "" })}><option value="credit">{adminText.text(locale, "creditPermanentPoints")}</option><option value="debit">{adminText.text(locale, "debitPermanentPoints")}</option></select></Label>}{adjust.action === "credit" && <Label>{adminText.text(locale, "afdianTradeOptional")}<Input value={adjust.providerOrderId} onChange={e => setAdjust({ ...adjust, providerOrderId: e.target.value })} /></Label>}<Label>{adminText.text(locale, "points2")}<Input type="number" min="0.0001" max="100000" step="0.0001" value={adjust.points} onChange={e => setAdjust({ ...adjust, points: e.target.value })} /></Label><Label>{adminText.text(locale, "reason")}<Input value={adjust.reason} onChange={e => setAdjust({ ...adjust, reason: e.target.value })} /></Label>{error && <p role="alert" className="text-sm text-destructive">{error}</p>}</DialogBody>}<DialogFooter><Button disabled={saving || !adjust?.reason.trim() || !Number(adjust?.points)} onClick={() => void mutation("adjust",adjust)}>{adminText.text(locale, "confirmAdjustment")}</Button></DialogFooter></DialogContent></Dialog>

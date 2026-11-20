@@ -54,5 +54,22 @@
   "adjustmentLedgerId": "調賬流水 ID",
   "evidenceReason": "處理依據",
   "resolve2": "確認處理",
-  "afdianTradeOptional": "愛發電交易號（選填；填寫後核驗付款並關閉對帳）"
+  "afdianTradeOptional": "愛發電交易號（選填；填寫後核驗付款並關閉對帳）",
+  "referralTitle": "邀請拉新活動",
+  "referralRules": "受邀新人首次註冊、驗證電子郵件並完成森空島認證後發放永久積分。人數上限僅用於邀請人。規則依發放時的設定生效，已結算紀錄保留原金額。",
+  "referralPauseRules": "關閉後停止新邀請歸因及積分發放，已有邀請與獎勵記錄保留；重新開啟不會重置額度。",
+  "referralEnabled": "活動已開啟",
+  "referralDisabled": "活動已關閉",
+  "referralReason": "操作原因（記錄至稽核）",
+  "referralEnable": "開啟活動",
+  "referralInviterAmount": "邀請人每次所得積分",
+  "referralInviteeAmount": "受邀新人所得積分",
+  "referralLimit": "每位邀請人累計獎勵人數上限",
+  "referralSave": "儲存活動設定",
+  "referralRefresh": "重新整理",
+  "referralRegistered": "邀請註冊人數",
+  "referralQualified": "已完成認證人數",
+  "referralRewarded": "已發邀請獎勵人次",
+  "referralPoints": "已發邀請人積分",
+  "referralWelcomeTotal": "已發新人積分"
 }

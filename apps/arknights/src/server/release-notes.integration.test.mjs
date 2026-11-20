@@ -21,6 +21,7 @@ process.env.BETTER_AUTH_URL = "http://127.0.0.1:5194";
 process.env.BETTER_AUTH_SECRET = "release-integration-secret-not-for-production-only";
 process.env.BETTER_AUTH_ADMIN_USER_IDS = "";
 process.env.BETA_PUBLIC_ORIGIN = "http://127.0.0.1:5194";
+process.env.BETA_TRUST_PROXY_HEADERS = "1";
 process.env.PLATFORM_PUBLIC_ORIGINS = "http://127.0.0.1:5194";
 const { handlePlatformRequest } = await import("@riic/platform-server/http-api");
 const { getDatabasePool } = await import("@riic/platform-server/db");
@@ -38,7 +39,7 @@ test("release lifecycle protects drafts, application/environment boundaries, per
   let ip = 1;
   function request(method = "GET", body, cookie, path = "/api/admin/releases", source = origin) {
     return new Request(`${origin}${path}`, {
-      method, headers: { origin: source, "content-type": "application/json", "x-forwarded-for": `192.0.2.${ip++}`, ...(cookie ? { cookie } : {}) },
+      method, headers: { origin: source, "content-type": "application/json", "x-real-ip": `203.0.113.${ip++}`, ...(cookie ? { cookie } : {}) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   }

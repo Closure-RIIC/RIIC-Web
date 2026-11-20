@@ -71,7 +71,7 @@ test("Endfield API authenticates, enforces consent/ownership, encrypts cookies a
   assert.doesNotMatch(sealed, /private-cred/);
   assert.equal(unsealOwnedSklandAccount(sealed, websiteUserOwnerTag("owner-a"))?.session.userId, "skland-user");
   assert.equal(unsealOwnedSklandAccount(sealed, websiteUserOwnerTag("owner-b")), null);
-  assert.deepEqual(calls.find(item => item[0] === "bind"), ["bind", "owner-a", "skland-user"]);
+  assert.deepEqual(calls.find(item => item[0] === "bind"), ["bind", "owner-a", "skland-user", session.policyConsent]);
   cookies[`skland_endfield_account_v1_${directId}`] = sealed;
   const accountList = await handleEndfieldSkland(new Request("https://riic.test/api/endfield/skland/accounts"), "accounts");
   assert.equal((await accountList.json()).data.accounts.length, 1, "Same Skland identity is not listed twice");

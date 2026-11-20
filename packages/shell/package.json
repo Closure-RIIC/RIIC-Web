@@ -35,6 +35,7 @@
     "./WebsiteAuthDialog": "./auth/WebsiteAuthDialog.tsx",
     "./auth/messages": "./auth/messages.ts",
     "./auth/client": "./auth/client.ts",
+    "./auth/referral-code": "./auth/referral-code.ts",
     "./auth/password-confirmation": "./auth/password-confirmation.ts",
     "./auth/password-input": "./auth/password-input.tsx",
     "./auth/otp-input": "./auth/otp-input.tsx",

@@ -54,5 +54,22 @@
   "adjustmentLedgerId": "调账流水 ID",
   "evidenceReason": "处理依据",
   "resolve2": "确认处理",
-  "afdianTradeOptional": "爱发电交易号（可选；填写后核验付款并关闭对账）"
+  "afdianTradeOptional": "爱发电交易号（可选；填写后核验付款并关闭对账）",
+  "referralTitle": "邀请拉新活动",
+  "referralRules": "受邀新人首次注册、验证邮箱并完成森空岛认证后发放永久积分。人数上限仅用于邀请人。规则按发放时的配置生效，已结算记录保留原金额。",
+  "referralPauseRules": "关闭后停止新邀请归因及积分发放，已有邀请与奖励记录保留；重新开启不会重置额度。",
+  "referralEnabled": "活动已开启",
+  "referralDisabled": "活动已关闭",
+  "referralReason": "操作原因（记录至审计）",
+  "referralEnable": "开启活动",
+  "referralInviterAmount": "邀请人每次所得积分",
+  "referralInviteeAmount": "受邀新人所得积分",
+  "referralLimit": "每位邀请人累计奖励人数上限",
+  "referralSave": "保存活动设置",
+  "referralRefresh": "刷新",
+  "referralRegistered": "邀请注册人数",
+  "referralQualified": "已完成认证人数",
+  "referralRewarded": "已发邀请奖励人次",
+  "referralPoints": "已发邀请人积分",
+  "referralWelcomeTotal": "已发新人积分"
 }
