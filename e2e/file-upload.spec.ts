@@ -17,6 +17,12 @@ const importedSchedule = {
       trading: [{ product: "Originium Shard", operators: ["锡兰"] }],
       manufacture: [{ product: "Battle Record", operators: [] }],
     },
+  }, {
+    name: "夜班",
+    rooms: {
+      trading: [{ product: "Originium Shard", operators: [] }],
+      manufacture: [{ product: "Battle Record", operators: ["锡兰"] }],
+    },
   }],
 };
 const uploadSelector = "[data-file-upload-dialog]";
@@ -362,6 +368,13 @@ test("manual upload enforces the 5 MiB boundary and preserves the draft and layo
   await expect(upload.getByRole("alert")).toBeVisible();
   expect(await workspaceData(page)).toEqual(before);
 
+  await chooseFile(page, upload, jsonFile("single-shift.json", {
+    ...importedSchedule, plans: importedSchedule.plans.slice(0, 1),
+  }));
+  await expect(upload.getByRole("alert")).toContainText("至少需要 2 个班次");
+  await expect(page.getByRole("dialog", { name: "导入这个 MAA 排班？" })).toHaveCount(0);
+  expect(await workspaceData(page)).toEqual(before);
+
   const buffer = Buffer.alloc(5 * 1024 * 1024, " ");
   Buffer.from(JSON.stringify(importedSchedule)).copy(buffer);
   await chooseFile(page, upload, { name: "schedule.json", mimeType: "application/json", buffer: Buffer.concat([buffer, Buffer.from(" ")]) });
@@ -449,7 +462,7 @@ test("mobile English upload supports the chooser, long filename errors and keybo
   await expect(upload).toBeVisible();
   await expect(upload.getByRole("alert")).toHaveCount(0);
   expect(await workspaceData(page)).toEqual(before);
-  await chooseFile(page, upload, jsonFile(`${"long-file-name-".repeat(12)}.txt`, importedSchedule), true);
+  await chooseFile(page, upload, jsonFile(`${"long-file-name-".repeat(12)}.csv`, importedSchedule), true);
   await expect(upload.getByRole("alert")).toContainText("not supported");
   const bounds = await upload.boundingBox();
   expect(bounds).not.toBeNull();

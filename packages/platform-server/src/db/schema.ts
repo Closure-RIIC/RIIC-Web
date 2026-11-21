@@ -25,6 +25,8 @@ export const user = pgTable("user", {
   banned: boolean("banned").default(false),
   banReason: text("ban_reason"),
   banExpires: timestamp("ban_expires", { withTimezone: true }),
+  // Server-only signup attribution, persisted atomically with the new account.
+  signupReferralCode: text("signup_referral_code"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
@@ -324,6 +326,42 @@ export const siteSetting = appSchema.table("site_setting", {
   value: jsonb("value").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+export const referralCode = appSchema.table("referral_code", {
+  userId: text("user_id").primaryKey().references(() => user.id, { onDelete: "cascade" }),
+  code: text("code").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, table => [uniqueIndex("referral_code_unique").on(table.code)]);
+
+// Opaque IDs deliberately survive account deletion: deleting/rebinding must not
+// release an identity or reset a previously awarded invitation.
+export const referralIdentity = appSchema.table("referral_identity", {
+  bindingKey: text("binding_key").primaryKey(),
+  firstUserId: text("first_user_id").notNull(),
+  firstSeenAt: timestamp("first_seen_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+export const referralRegistration = appSchema.table("referral_registration", {
+  id: text("id").primaryKey(),
+  inviterUserId: text("inviter_user_id").notNull(),
+  inviteeUserId: text("invitee_user_id").notNull(),
+  bindingKey: text("binding_key"),
+  status: text("status").notNull().default("pending"),
+  points: integer("points").notNull().default(0),
+  inviteePoints: integer("invitee_points").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  qualifiedAt: timestamp("qualified_at", { withTimezone: true }),
+  rewardedAt: timestamp("rewarded_at", { withTimezone: true }),
+  reason: text("reason"),
+}, table => [
+  uniqueIndex("referral_registration_invitee_unique").on(table.inviteeUserId),
+  uniqueIndex("referral_registration_identity_unique").on(table.bindingKey),
+  index("referral_registration_inviter_idx").on(table.inviterUserId, table.createdAt),
+  check("referral_registration_not_self", sql`${table.inviterUserId} <> ${table.inviteeUserId}`),
+  check("referral_registration_status", sql`${table.status} in ('pending','qualified','rewarded','rejected','capped')`),
+  check("referral_registration_inviter_reward", sql`(${table.status} = 'rewarded' and ${table.points} > 0 and ${table.rewardedAt} is not null and ${table.qualifiedAt} is not null) or (${table.status} <> 'rewarded' and ${table.points} = 0 and ${table.rewardedAt} is null)`),
+  check("referral_registration_invitee_reward", sql`${table.inviteePoints} = 0 or (${table.inviteePoints} > 0 and ${table.status} in ('rewarded','capped') and ${table.qualifiedAt} is not null)`),
+]);
 export const qualityBatch = appSchema.table("quality_batch", {
   id: text("id").primaryKey(),
   creatorId: text("creator_id").notNull(),

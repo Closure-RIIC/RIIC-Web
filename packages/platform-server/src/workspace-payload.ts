@@ -2,7 +2,7 @@ import { validateLayoutJson } from "@riic/arknights-domain/layout-validation";
 import { assertOperbox } from "@riic/arknights-domain/operbox";
 import { normalizePersistedPlanData } from "@riic/arknights-domain/persistence";
 import { effectiveFiammettaSetting } from "@riic/arknights-domain/plan-presentation";
-import { isRotationProfile } from "@riic/arknights-domain/rotation-settings";
+import { decodeRotationKey } from "@riic/arknights-domain/rotation-settings";
 import type {
   BaseBlueprint,
   BlueprintRoom,
@@ -13,6 +13,14 @@ import type {
   SavedPlanCalculationContext,
 } from "@riic/arknights-domain/types";
 import { PublicApiError } from "./api-contract.ts";
+
+/**
+ * 换班方式的合法字符串：named profile，或 `custom_zb_16_8` 一类的自定义编码。
+ * 服务端记录、工作区与计算上下文共用这一个判定。
+ */
+export function isSavedRotationProfile(value: unknown): value is string {
+  return typeof value === "string" && decodeRotationKey(value) !== null;
+}
 
 export type ValidatedWorkspace = {
   state: CloudWorkspaceState;
@@ -91,7 +99,7 @@ export function validateWorkspaceState(value: unknown): CloudWorkspaceState {
   const localLayoutBackup = value.localLayoutBackup === null ? null : sanitizeLayout(value.localLayoutBackup);
   if (!["maa", "sample", "skland"].includes(String(value.boxSource))) return invalidWorkspace("Box 来源无效。");
   if (!["local", "skland"].includes(String(value.layoutSource))) return invalidWorkspace("布局来源无效。");
-  if (!isRotationProfile(value.rotationProfile)) return invalidWorkspace("换班方式无效。");
+  if (!isSavedRotationProfile(value.rotationProfile)) return invalidWorkspace("换班方式无效。");
   if (typeof value.presetLabel !== "string" || value.presetLabel.length > 120) return invalidWorkspace("布局名称无效。");
   if (value.sourceName !== null && (typeof value.sourceName !== "string" || value.sourceName.length > 80)) {
     return invalidWorkspace("数据来源名称无效。");
@@ -110,7 +118,7 @@ export function validateWorkspaceState(value: unknown): CloudWorkspaceState {
     layoutDirty: value.layoutDirty,
     layoutSource: value.layoutSource as CloudWorkspaceState["layoutSource"],
     localLayoutBackup,
-    rotationProfile: value.rotationProfile,
+    rotationProfile: value.rotationProfile as CloudWorkspaceState["rotationProfile"],
     fiammettaEnabled: value.fiammettaEnabled,
     activeShift: Number(value.activeShift),
   };
@@ -122,11 +130,13 @@ export function validateSavedPlanCalculationContext(value: unknown): SavedPlanCa
     const layout = sanitizeLayout(value.layout);
     delete layout.scenario.base_workforce;
     if (typeof value.presetLabel !== "string" || value.presetLabel.length > 120) return null;
-    if (!isRotationProfile(value.rotationProfile) || typeof value.fiammettaEnabled !== "boolean") return null;
+    // named profile 或自定义时长的编码字符串都接受。
+    if (!isSavedRotationProfile(value.rotationProfile) || typeof value.fiammettaEnabled !== "boolean") return null;
     const context = {
       presetLabel: value.presetLabel,
       layout,
-      rotationProfile: value.rotationProfile,
+      // 存储层允许自定义时长的编码字符串，类型上仍是 RotationProfile 的宽化形式。
+      rotationProfile: value.rotationProfile as SavedPlanCalculationContext["rotationProfile"],
       fiammettaEnabled: value.fiammettaEnabled,
     };
     if (new TextEncoder().encode(JSON.stringify(context)).byteLength > 32 * 1024) return null;

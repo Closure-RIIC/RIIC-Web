@@ -13,7 +13,6 @@ import type {
   OperBoxEntry,
   PublicHealthData,
   PublicPlanData,
-  RotationProfile,
   SampleOperboxData,
   SavedPlanData,
   SavedPlanListData,
@@ -23,6 +22,7 @@ import type {
   SklandStatusData,
   SklandInventoryData,
 } from "@riic/arknights-domain/types";
+import type { RotationTiming } from "@riic/arknights-domain/types";
 import type { SklandPolicyConsentRequest } from "@riic/platform/legal-policy";
 import type { GameReportRecord, GameReportSource } from "@riic/arknights-domain/game-report";
 
@@ -158,13 +158,14 @@ export async function computePlan(payload: {
   operbox: OperBoxEntry[];
   sourceName: string | null;
   boxSource: "skland" | "maa" | "sample";
-  rotation: RotationProfile;
+  rotation: RotationTiming;
   fiammetta_enable?: boolean;
+  supportCombinationsEnable?: boolean;
 }, options: PlanRequestOptions = {}): Promise<PublicPlanData> {
   const invalid = payload.boxSource === "sample" ? null : await operboxPreflightError(payload.operbox, "AIC-BOX-1101");
   if (invalid) return Promise.reject(invalid);
   const requestPayload = payload.boxSource === "sample"
-    ? { layout: payload.layout, sourceName: payload.sourceName, boxSource: payload.boxSource, rotation: payload.rotation, fiammetta_enable: payload.fiammetta_enable }
+    ? { layout: payload.layout, sourceName: payload.sourceName, boxSource: payload.boxSource, rotation: payload.rotation, fiammetta_enable: payload.fiammetta_enable, supportCombinationsEnable: payload.supportCombinationsEnable }
     : payload;
   return requestData("/api/plan", {
     method: "POST",
@@ -202,13 +203,14 @@ export async function submitPlanTask(payload: {
   operbox: OperBoxEntry[];
   sourceName: string | null;
   boxSource: "skland" | "maa" | "sample";
-  rotation: RotationProfile;
+  rotation: RotationTiming;
   fiammetta_enable?: boolean;
+  supportCombinationsEnable?: boolean;
 }): Promise<PlanTaskSubmitData> {
   const invalid = payload.boxSource === "sample" ? null : await operboxPreflightError(payload.operbox, "AIC-BOX-1101");
   if (invalid) return Promise.reject(invalid);
   const requestPayload = payload.boxSource === "sample"
-    ? { layout: payload.layout, sourceName: payload.sourceName, boxSource: payload.boxSource, rotation: payload.rotation, fiammetta_enable: payload.fiammetta_enable }
+    ? { layout: payload.layout, sourceName: payload.sourceName, boxSource: payload.boxSource, rotation: payload.rotation, fiammetta_enable: payload.fiammetta_enable, supportCombinationsEnable: payload.supportCombinationsEnable }
     : payload;
   return requestData("/api/tasks", {
     method: "POST",

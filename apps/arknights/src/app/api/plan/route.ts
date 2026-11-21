@@ -18,8 +18,9 @@ import {
   successResponse,
 } from "@riic/platform-server/api-contract";
 import { safeDisplayName, toPublicPlanData } from "@riic/platform-server/public-plan";
-import { isRotationProfile } from "@riic/arknights-domain/rotation-settings";
-import type { BaseBlueprint, OperBoxEntry, PublicPlanData, RotationProfile, SavedPlanCalculationContext } from "@riic/arknights-domain/types";
+import { encodeRotationKey, isRotationProfile } from "@riic/arknights-domain/rotation-settings";
+import type { RotationTiming } from "@riic/arknights-domain/types";
+import type { BaseBlueprint, OperBoxEntry, PublicPlanData, SavedPlanCalculationContext } from "@riic/arknights-domain/types";
 import { activeSklandAccount, readSklandAccountStore } from "@riic/platform-server/skland/http";
 import { sklandDataOwnerTag } from "@riic/platform-server/skland/session";
 import { websiteSession as readWebsiteSession } from "@riic/platform-server/auth";
@@ -56,7 +57,8 @@ export async function POST(request: Request) {
     layoutTemplate: string;
     roomCount: number;
     operatorCount: number;
-    rotation: RotationProfile;
+    /** 换班方式的字符串形式：named profile 或 custom_zb_16_8 一类的编码。 */
+    rotation: string;
     fiammettaEnable: boolean;
     solverContext: SavedPlanCalculationContext;
     operboxContentHmac: string | null;
@@ -144,9 +146,20 @@ export async function POST(request: Request) {
         }],
       });
     }
-    let rotation: RotationProfile = "abc_12_6_6";
+/** v7 自定义时长：{ topology, shift_hours }，班次数由拓扑决定。 */
+function isRotationTiming(value: unknown): value is RotationTiming {
+  if (typeof value === "string") return isRotationProfile(value);
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+  const record = value as { topology?: unknown; shift_hours?: unknown };
+  const expected = record.topology === "main_backup" ? 2 : record.topology === "abc" ? 3 : null;
+  if (expected === null) return false;
+  if (!Array.isArray(record.shift_hours) || record.shift_hours.length !== expected) return false;
+  return record.shift_hours.every((hour) => typeof hour === "number" && Number.isFinite(hour) && hour > 0);
+}
+
+    let rotation: RotationTiming = "abc_12_6_6";
     if (body.rotation !== undefined) {
-      if (!isRotationProfile(body.rotation)) {
+      if (!isRotationTiming(body.rotation)) {
         throw new PublicApiError("AIC-PLAN-3001", {
           fieldErrors: [{
             path: "rotation",
@@ -158,7 +171,11 @@ export async function POST(request: Request) {
       rotation = body.rotation;
     }
     const fiammettaEnable = normalizeFiammettaEnable(body.fiammetta_enable);
-    assertFiammettaEnableCompatible(fiammettaEnable, rotation);
+    // 自定义时长没有 named profile 语义，菲亚兼容性只对 named profile 检查。
+    if (typeof rotation === "string") assertFiammettaEnableCompatible(fiammettaEnable, rotation);
+    // 私有记录、缓存键与日志只接受字符串：自定义时长编码成 custom_zb_16_8 一类的
+    // 键，既能区分不同时长，也能无损还原。求解请求仍发送 body.rotation 对象。
+    const rotationKey = encodeRotationKey(rotation);
     assertPlanCollectionLimits(body.operbox.length, body.layout.rooms.length, body.sourceName);
     let operbox: OperBoxEntry[];
     try {
@@ -182,7 +199,8 @@ export async function POST(request: Request) {
     const calculationContext = validateSavedPlanCalculationContext({
       presetLabel: body.layout.template,
       layout: body.layout,
-      rotationProfile: rotation,
+      // 计算上下文只接受换班方式的字符串形式，自定义时长用编码后的 key。
+      rotationProfile: rotationKey,
       fiammettaEnabled: fiammettaEnable,
     });
     if (!calculationContext) throw new PublicApiError("AIC-LAYOUT-1201");
@@ -212,7 +230,7 @@ export async function POST(request: Request) {
       layoutTemplate: body.layout.template,
       roomCount: body.layout.rooms.length,
       operatorCount: operbox.length,
-      rotation,
+      rotation: rotationKey,
       fiammettaEnable,
       solverContext: calculationContext,
       operboxContentHmac,
@@ -226,12 +244,12 @@ export async function POST(request: Request) {
           operbox,
           sourceType: recordContext.sourceType,
           sourceName,
-          rotation,
+          rotation: rotationKey,
           fiammettaEnable,
           solver: cacheSolver,
         });
         if (cache.kind === "hit") {
-          const persistedResult = normalizePersistedPlanData(cache.result, rotation);
+          const persistedResult = normalizePersistedPlanData(cache.result, rotationKey);
           if (!persistedResult) throw new PublicApiError("AIC-SYS-5000");
           const savedPlanContext = recordContext.operboxContentHmac && recordContext.operboxHmacKeyVersion
             ? resolveSavedPlanCalculationContext(recordContext.solverContext, persistedResult)

@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ManualOperboxPicker } from "@/components/setup/ManualOperboxPicker";
 import { RotationSettings } from "@/components/RotationSettings";
 import { PRESETS, maxRoomLevel, updateRoomLevel, updateFactoryRecipe, updateTradeOrder, factoryRecipeFor, tradeOrderFor } from "@riic/arknights-domain/blueprint";
-import { rotationDescription } from "@riic/arknights-domain/rotation-settings";
+import { isRotationProfile, rotationDescription } from "@riic/arknights-domain/rotation-settings";
 import { reproductionInputKey, type ReproductionPackage } from "@riic/arknights-domain/reproduction-package";
 import type { QualityDraftData } from "@riic/arknights-domain/quality";
 import { Check, Choice, download, Panel, useWorkbenchText } from "./workbench-ui";
@@ -37,7 +37,14 @@ export function DraftEditor({ draft, input, setInput, busy, onSave }: { draft: Q
           {room.kind === "trade_post" && <Choice label={t("orderType")} value={tradeOrderFor(room)} options={[{ value: "gold", label: t("lmdOrders") }, { value: "originium", label: t("orundumOrders") }]} onChange={value => setInput({ ...input, layout: updateTradeOrder(input.layout, room.id, value as "gold" | "originium") })} />}
         </div>)}</div>
       </details>
-      <RotationSettings value={input.rotation} onChange={rotation => setInput({ ...input, rotation })} />
+      {/* 质检草稿只复用已保存的请求：不提供“自定义”，因此选中值一定是 named profile。 */}
+      <RotationSettings
+        value={input.rotation}
+        onChange={rotation => {
+          // 该场景不提供“自定义”，选中值一定是 named profile。
+          if (isRotationProfile(rotation)) setInput({ ...input, rotation });
+        }}
+      />
       <Check label={t("enableFiammettaMoraleRecovery")} checked={input.fiammetta_enable} onChange={value => setInput({ ...input, fiammetta_enable: value })} />
       <details className="rounded-lg border p-3"><summary className="cursor-pointer text-sm font-medium">{t("operatorsAndLevelsOperators", { value1: input.operbox.length })}</summary><div className="mt-3"><ManualOperboxPicker operbox={input.operbox} onApply={operbox => setInput({ ...input, operbox })} compact /></div></details>
     </fieldset>

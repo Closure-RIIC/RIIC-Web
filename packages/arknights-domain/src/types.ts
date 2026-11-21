@@ -17,7 +17,9 @@ export type RoomKind =
   | "office"
   | "meeting_room"
   | "workshop"
-  | "training_room";
+  | "training_room"
+  /** 回收站：wire 名 `recycle`，全布局至多一座，等级 1–3，不带产物。 */
+  | "recycle";
 
 export interface BlueprintRoom {
   id: string;
@@ -92,6 +94,8 @@ export interface MaaRooms {
   meeting?: MaaRoom[];
   hire?: MaaRoom[];
   processing?: MaaRoom[];
+  /** 回收站：MAA 协议里的键名就是 `recycle`。 */
+  recycle?: MaaRoom[];
 }
 
 export interface MaaPlan {
@@ -101,7 +105,10 @@ export interface MaaPlan {
   period?: MaaPeriod[];
   duration?: number;
   groups?: MaaOperatorGroup[];
-  rooms: MaaRooms;
+  rooms: MaaRooms & {
+    recycle?: MaaRoom[];
+    training?: { operatorsA?: string[]; operatorsB?: string[]; skip?: boolean }[];
+  };
   Fiammetta?: { enable: boolean; target?: string | string[]; order?: MaaExecutionOrder };
   drones?: {
     enable?: boolean;
@@ -971,7 +978,7 @@ export interface FeedbackApiResponse {
 }
 
 export interface PlanComputeParams {
-  schema_version: 3;
+  schema_version: 7;
   layout: BaseBlueprint;
   operbox: OperBoxEntry[];
   labels?: {
@@ -979,11 +986,13 @@ export interface PlanComputeParams {
     operbox?: string | null;
   };
   options?: {
-    rotation?: RotationProfile;
+    rotation?: RotationTiming;
     top?: number;
     system_preferences?: Record<string, string>;
     maa_title?: string | null;
     fiammetta_enable?: boolean;
+    /** 受控组合主动补挂件；缺省 false，与求解器一致。 */
+    support_combinations_enable?: boolean;
   };
 }
 
@@ -991,8 +1000,25 @@ export type RotationProfile =
   | "abc_12_6_6"
   | "abc_12_12_12"
   | "main_backup_12_12"
+  | "main_backup_24_24"
   | "fiammetta_8_8_4_4"
-  | "abyssal_7_5_7_5";
+  | "abyssal_7_5_7_5"
+  /** 求解器对自定义二班的归一化名字：只知道两班，时长看 `shifts[].duration_hours`。 */
+  | "generic_main_backup"
+  /** 求解器对自定义三班的归一化名字：只知道三班，时长看 `shifts[].duration_hours`。 */
+  | "generic_abc";
+
+/** v7 换班拓扑：主备两班或 ABC 三班。 */
+export type RotationTopology = "main_backup" | "abc";
+
+/**
+ * `plan.compute` 的 `options.rotation`：
+ * named profile 字符串，或 v7 的 `{ topology, shift_hours }` 自定义时长。
+ */
+export type RotationTiming =
+  | RotationProfile
+  | { topology: "main_backup"; shift_hours: [number, number] }
+  | { topology: "abc"; shift_hours: [number, number, number] };
 
 export interface PlanApiResponse {
   success: boolean;

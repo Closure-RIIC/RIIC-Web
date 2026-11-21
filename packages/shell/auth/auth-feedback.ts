@@ -1,9 +1,11 @@
 export type AuthFailure =
   | "invalidCredentials" | "invalidEmail" | "unverifiedEmail" | "existingAccount"
   | "invalidCode" | "expiredCode" | "codeAttempts" | "expiredReset"
+  | "referralFormat" | "referralUnavailable"
   | "weakPassword" | "rateLimited" | "network" | "unavailable";
 
 const failureCodes: Record<string, AuthFailure> = {
+  REFERRAL_CODE_UNAVAILABLE: "referralUnavailable",
   INVALID_EMAIL_OR_PASSWORD: "invalidCredentials",
   INVALID_PASSWORD: "invalidCredentials",
   USER_NOT_FOUND: "invalidCredentials",

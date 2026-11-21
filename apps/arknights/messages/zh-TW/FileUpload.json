@@ -13,5 +13,5 @@
   "rosterTitle": "匯入幹員資料",
   "rosterDescription": "選擇 MAA 幹員 JSON 或相容的一圖流 Excel 檔案。",
   "layoutDescription": "選擇匯出的基建佈局 JSON 檔案。匯入成功後將更新當前佈局。",
-  "scheduleDescription": "選擇 MAA 排班 JSON 檔案，最大 5 MiB。替換草稿前會顯示匯入預覽。"
+  "scheduleDescription": "選擇 MAA 排班檔案（.json、.jsonc 或 .txt，支援註解），最大 5 MiB。替換草稿前會顯示匯入預覽。"
 }

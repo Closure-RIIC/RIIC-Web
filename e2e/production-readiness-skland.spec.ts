@@ -2001,7 +2001,7 @@ test("Skland status center keeps profile and recruitment in overview and support
   await expect(page.getByText("按计算器布局排列，快速核对进驻、心情与生产状态。", { exact: true })).toHaveCount(0);
   await expect(page.locator("[data-skland-compact-layout]")).toBeVisible();
   await expect(page.locator('[data-skland-compact-layout] article[data-room-group]')).toHaveCount(9);
-  const recycling = page.locator('[data-skland-compact-layout] [data-room-group="recycling"]');
+  const recycling = page.locator('[data-skland-compact-layout] [data-room-group="recycle"]');
   await expect(recycling).toContainText("森空岛暂未提供数据");
   await expect(recycling.locator('.infra-operator-slot')).toHaveCount(2);
   await expect(recycling.getByText("未知", { exact: true })).toHaveCount(2);
@@ -2208,8 +2208,8 @@ test(`Skland compact layout aligns both column endings when production is taller
       tradeTop: group("trading")[0]?.top,
       trainingTop: group("training")[0]?.top,
       meetingBottom: group("meeting")[0]?.bottom,
-      recyclingTop: group("recycling")[0]?.top,
-      recyclingBottom: group("recycling")[0]?.bottom,
+      recyclingTop: group("recycle")[0]?.top,
+      recyclingBottom: group("recycle")[0]?.bottom,
       processingBottom: group("processing")[0]?.bottom,
       trainingBottom: group("training")[0]?.bottom,
       trainingHeight: group("training")[0]?.height,

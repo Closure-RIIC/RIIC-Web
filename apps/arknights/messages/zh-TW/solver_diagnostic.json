@@ -26,5 +26,7 @@
   "guidance20": "重新登入或重新整理帳號狀態後再產生排班。",
   "guidance21": "請求未能完成",
   "guidance22": "請稍後再試，並保留診斷編號。",
-  "guidance23": "請按錯誤提示修正輸入後再試。"
+  "guidance23": "請按錯誤提示修正輸入後再試。",
+  "guidanceInsufficientPower": "補足發電站，或降低設施等級與產品配置後再生成。",
+  "guidanceRotationCycle": "把總時長調整到 24、36 或 48 小時後重試。"
 }

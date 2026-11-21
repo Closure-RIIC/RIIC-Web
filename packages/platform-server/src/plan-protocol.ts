@@ -3,7 +3,7 @@ import type {
   MaaJson,
   OperBoxEntry,
   PlanComputeParams,
-  RotationProfile,
+  RotationTiming,
   SolverObservation,
   SolverPingFingerprint,
   TrainingAdviceReport,
@@ -15,7 +15,7 @@ import { parseTrainingRoomSchedule } from "@riic/arknights-domain/training-room-
 export type ProtocolRecord = Record<string, unknown>;
 
 export const PLAN_PROTOCOL_VERSION = 1;
-export const PLAN_SCHEMA_VERSION = 3;
+export const PLAN_SCHEMA_VERSION = 7;
 
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const GIT_COMMIT_PATTERN = /^[0-9a-f]{40}$/;
@@ -47,8 +47,11 @@ export function createPlanComputeParams(input: {
   layout: BaseBlueprint;
   operbox: OperBoxEntry[];
   sourceName?: string | null;
-  rotation: RotationProfile;
+  /** named profile，或 v7 的 { topology, shift_hours } 自定义时长。 */
+  rotation: RotationTiming;
   fiammettaEnable?: boolean;
+  /** 受控组合主动补挂件；缺省 false，与求解器缺省一致。 */
+  supportCombinationsEnable?: boolean;
 }): PlanComputeParams {
   return {
     schema_version: PLAN_SCHEMA_VERSION,
@@ -64,6 +67,8 @@ export function createPlanComputeParams(input: {
       system_preferences: {},
       maa_title: `${input.sourceName ?? "Arknights InfraCalc"} · ${input.layout.template}`,
       fiammetta_enable: input.fiammettaEnable ?? true,
+      // v7 起显式声明：默认不主动补挂件，与求解器缺省一致，避免依赖隐式默认值。
+      support_combinations_enable: input.supportCombinationsEnable ?? false,
     },
   };
 }

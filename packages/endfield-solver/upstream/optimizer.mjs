@@ -17,10 +17,11 @@ import {
 } from './set.mjs';
 import {
   SLOTS, COST_BASE, EPS, ASSIST_MOOD, val, buildTimeline, crewStats, integrate, recoveryTable,
-  shiftFromRecovery, simulateFacility, simulateSingleFacility, timeToRecoverWrap,
+  shiftFromRecovery, simulateFacility, simulateSingleFacility, timeToRecoverWrap, integrateWrap,
 } from './evaluator.mjs';
 import { isUseful, relevantMask, crewSignatureGroups } from './candidates.mjs';
 import { comparePlans } from './comparator.mjs';
+import { DEFAULT_CLUE_PRIORITY } from './config.mjs';
 
 function maskAll(n) {
   let m = EMPTY;
@@ -140,9 +141,65 @@ export function clueBestOf(op) {
  * 档位严格按 α/β 排：只要解锁了 β 就按 β 计（β 永远在 α 之后），没有 β 才退回 α。
  * 因此别礼 E4（α7+β7）按 β7 = 7 计，E2/E3（只有 α7）按 α7 = 6 计。
  */
-export function clueRankOf(op) {
-  const best = clueBestOf(op);
-  return best ? best.rank : 5;
+/**
+ * 线索技能优先级（决策 79）：8 项排列（线索编号 1..7 + 白板）。
+ * 比较规则：**槽位优先**（列表靠前的编号，其任何技能都排在后面编号之前），
+ * 同一编号内 **β > α**。展开成 1..15 的 rank。
+ */
+function clueCandidatesOf(op) {
+  const out = [];
+  for (const s of op.skills) {
+    if (s.kind !== '概率') continue;
+    const clue = s.clueIndex;
+    if (!(clue >= 1 && clue <= 7)) continue;
+    out.push({ clue, tier: s.tier === 2 ? 2 : 1 });
+  }
+  return out;
+}
+
+/** 按 order 预计算槽位表（按顺序字符串缓存：同一配置只建一次 Map） */
+const CLUE_POS_CACHE = new Map();
+function cluePositions(order) {
+  const key = order.join('|');
+  let pos = CLUE_POS_CACHE.get(key);
+  if (!pos) {
+    pos = new Map();
+    let r = 1;
+    for (const item of order) {
+      if (item === '白板') { pos.set('白板', r); r += 1; continue; }
+      pos.set(`${item}:2`, r);       // β
+      pos.set(`${item}:1`, r + 1);   // α
+      r += 2;
+    }
+    if (CLUE_POS_CACHE.size > 64) CLUE_POS_CACHE.clear();
+    CLUE_POS_CACHE.set(key, pos);
+  }
+  return pos;
+}
+
+/** 按 order（8 项）求该干员“最优的那条”线索技能的 rank（1..15）与编号；无技能走白板槽位 */
+function clueBestByOrder(op, order) {
+  const pos = cluePositions(order);
+  let best = null;
+  for (const c of clueCandidatesOf(op)) {
+    const rank = pos.get(`${c.clue}:${c.tier}`);
+    if (rank === undefined) continue;
+    if (best === null || rank < best.rank) best = { rank, clue: c.clue };
+  }
+  if (best) return best;
+  return { rank: pos.get('白板') ?? 15, clue: null };
+}
+
+const CLUE_LEVELS = 15;
+
+/** 值只用于中枢机会成本：按 15 级名次线性递减（白板恒 0） */
+function clueValueByRank(rank) {
+  if (rank === null) return 0;
+  return Math.max(0, 0.60 * (CLUE_LEVELS - rank) / (CLUE_LEVELS - 1));
+}
+
+export function clueRankOf(op, order = DEFAULT_CLUE_PRIORITY) {
+  return clueBestByOrder(op, order).rank;
 }
 
 // ───────────────────────── 中枢枚举 ─────────────────────────
@@ -268,10 +325,10 @@ export function enumerateCenters(ops, cfg) {
  *   白板(5)/α7(6)/β7(7) → 0
  * 只用来给中枢挑"该把谁留在外面"，不参与任何产能计算。
  */
-const CLUE_PROB_VALUE = { 1: 0.60, 2: 0.45, 3: 0.30, 4: 0.15 };
-
-function clueValueOf(op) {
-  return CLUE_PROB_VALUE[clueRankOf(op)] ?? 0;
+function clueValueOf(op, cfg) {
+  const order = (cfg && cfg.cluePriority) || DEFAULT_CLUE_PRIORITY;
+  const best = clueBestByOrder(op, order);
+  return best.clue === null ? 0 : clueValueByRank(best.rank);
 }
 
 /** 各舱室能产出的类别 → 该类别在优先级里的位置（用来给机会成本加权） */
@@ -289,7 +346,7 @@ const ROOM_CATS = [
  *     "会客室用得上的人"便宜，中枢会先拿前者（用户要求：从低优先级往高优先级占用）。
  *  2. **线索概率也算价值**：中枢原来只看加成/减免，带 C2(1–6) 却无其它加成的人成本为 0，
  *     会被中枢无条件抢走，逼会客室改用"只有中枢技能、对会客室是白板"的人。
- *     现在按 Q13 的档位折算（见 CLUE_PROB_VALUE），线索 7/白板不折算。
+ *     现在按用户配置的线索技能顺序折算（决策 79），白板恒 0。
  */
 function skillValueOf(op, cfg) {
   const cats = (cfg && cfg.priority) || ['线索', '干员经验', '武器经验', '培养'];
@@ -312,7 +369,7 @@ function skillValueOf(op, cfg) {
     const r = val(op, room, '减免');
     if (r > 0) bump(Math.max(...Object.values(catMap).map(wOf)), r * 0.8);
   }
-  bump(wOf('线索'), clueValueOf(op));
+  bump(wOf('线索'), clueValueOf(op, cfg));
   return best;
 }
 
@@ -2013,7 +2070,7 @@ function dfs(ctx, catIdx, usedMask, assistLeft, prefixScore) {
  * 换成字典序更小的 charId 就是**等值**的。搜索阶段为了不让补位抢走后续类别的相关干员
  * 走了保守选择，这里在最终方案上做一次等价替换（保留原来的补位数，换人不动值）。
  */
-function upgradeFillers(ops, plan) {
+function upgradeFillers(ops, plan, cfg) {
   const picks = plan.picks || [];
   if (!picks.length) return;
   const centerUsed = plan.center && plan.center.used ? plan.center.used : EMPTY;
@@ -2030,8 +2087,8 @@ function upgradeFillers(ops, plan) {
   const byCharId = free.slice().sort((a, b) => (charIdOf(ops[a]) < charIdOf(ops[b]) ? -1 : 1));
   // 会客室补位：C2 只是"略优于白板"的次级排序，不影响产量（fillers 不带 b/r）
   const byClue = free.slice().sort((a, b) => {
-    const ra = clueRankOf(ops[a]);
-    const rb = clueRankOf(ops[b]);
+    const ra = clueRankOf(ops[a], cfg && cfg.cluePriority);
+    const rb = clueRankOf(ops[b], cfg && cfg.cluePriority);
     if (ra !== rb) return ra - rb;
     return charIdOf(ops[a]) < charIdOf(ops[b]) ? -1 : 1;
   });
@@ -2412,30 +2469,37 @@ export function solveLayout({ ops, cfg, testOptions = null }) {
   };
 
   let centersVisited = 0;
+  // 对一个中枢候选跑一次完整评估（DFS → 补白板 → 覆盖下限 → 落盘）。
+  // 抽出来给主循环和后处理（中枢阈值重排）共用，保证两条路径的裁决口径一致。
+  const evaluateCenter = (center, forceReduced) => {
+    const ctx = {
+      ...base, center, cum: recoveryTable(center.timeline), memo: new Map(),
+      centerKey: centerFingerprint(center), pickCache: new Map(), forceReduced,
+    };
+    const res = dfs(ctx, 0, center.used, cfg.assistPoints, []);
+    if (!res || res === PRUNED) return null;
+    // 补位等价替换（§6.8 第 5 条）：白板换成字典序更小的 charId，值不变；必须在算 usedMask 之前做
+    upgradeFillers(ops, { picks: res.picks, center }, cfg);
+    // 决策 71：候选必须在**补齐缺口之后**才参与比较。
+    // 原来按 `res.score` 选优、只对赢家补缺口；补缺口会抽人并改写 `score`（`finalizePlan` 2134-2135），
+    // 导致"按 A 排序、交付 B"——实测赢家 floor 前 69.52、floor 后 48.73，反而低于另一候选的交付分。
+    const plan = { center, picks: res.picks, score: res.score, catRes: res.catRes, usedMask: EMPTY };
+    plan.skipped = enforceCoverageFloor(ops, cfg, plan, specs).skipped;
+    finalizePlan(ops, cfg, plan);          // 幂等：score / catRes / usedMask 与 picks 对齐
+    plan.metrics = metricsOf({ score: plan.score, usedCount: sizeOf(plan.usedMask) });
+    return plan;
+  };
+
   const runCenters = (forceReduced) => {
     let chosen = null;
     for (const center of centers) {
       if (budget.exhausted) break;
       centersVisited += 1;
-      const ctx = {
-        ...base, center, cum: recoveryTable(center.timeline), memo: new Map(),
-        centerKey: centerFingerprint(center), pickCache: new Map(), forceReduced,
-      };
-      const res = dfs(ctx, 0, center.used, cfg.assistPoints, []);
-      if (!res || res === PRUNED) continue;
-      // 补位等价替换（§6.8 第 5 条）：白板换成字典序更小的 charId，值不变；必须在算 usedMask 之前做
-      upgradeFillers(ops, { picks: res.picks, center });
-      // 决策 71：候选必须在**补齐缺口之后**才参与比较。
-      // 原来按 `res.score` 选优、只对赢家补缺口；补缺口会抽人并改写 `score`（`finalizePlan` 2134-2135），
-      // 导致"按 A 排序、交付 B"——实测赢家 floor 前 69.52、floor 后 48.73，反而低于另一候选的交付分。
-      const plan = { center, picks: res.picks, score: res.score, catRes: res.catRes, usedMask: EMPTY };
-      plan.skipped = enforceCoverageFloor(ops, cfg, plan, specs).skipped;
-      finalizePlan(ops, cfg, plan);          // 幂等：score / catRes / usedMask 与 picks 对齐
-      const metrics = metricsOf({ score: plan.score, usedCount: sizeOf(plan.usedMask) });
-      plan.metrics = metrics;
-      if (!chosen || comparePlans(metrics, chosen.metrics, cfg) > 0) chosen = plan;
+      const plan = evaluateCenter(center, forceReduced);
+      if (!plan) continue;
+      if (!chosen || comparePlans(plan.metrics, chosen.metrics, cfg) > 0) chosen = plan;
       // 跨中枢现任（P5）：下一条中枢就能用上，弱中枢会更早被剪
-      if (!base.incumbent || comparePlans(metrics, base.incumbent, cfg) > 0) base.incumbent = metrics;
+      if (!base.incumbent || comparePlans(plan.metrics, base.incumbent, cfg) > 0) base.incumbent = plan.metrics;
     }
     return chosen;
   };
@@ -2454,6 +2518,103 @@ export function solveLayout({ ops, cfg, testOptions = null }) {
     // 直接构造"最小可行方案"：按优先级给每个舱各派 1 人做单班。保证只要还有干员就不返回"无方案"。
     approximations.add('搜索无解，已回退到最小可行方案（每舱 1 人单班）');
     best = buildMinimalPlan({ ops, cfg, specs, center: centers.find((c) => sizeOf(c.used) === 0) || centers[0] });
+  }
+
+  // ── 中枢阈值重排（后处理，决策 78）────────────────────────────────────
+  // 案例：中枢 B 班的恢复完全富余（uB_min=0），但 B 坐着一个有房间技能的人（昼雪），
+  // 而 A 班又恰好需要这档恢复。做法：反推当前方案的 uA/uB 阈值 → 在现有中枢成员里重新分班
+  // （优先把"房间技能价值高"的人赶出去）→ 用新中枢跑一次固定中枢的完整 DFS → 严格更好才接受。
+  const centerRepair = (plan, round) => {
+    if (!plan || !plan.center) return null;
+    const hc = plan.center.hCenter;
+    const margin = 1.005;
+    const needs = plan.picks.map((p) => ({
+      h: p.single ? 24 : (p.h ?? 24),
+      single: !!p.single,
+      dA: p.stA ? p.stA.d : 0,
+      dB: p.stB ? p.stB.d : 0,
+    }));
+    const stableAt = (uA, uB) => {
+      const segs = buildTimeline({ hCenter: hc, uA, uB });
+      for (const r of needs) {
+        const recA = integrateWrap(r.h, 24, segs);
+        const recB = integrateWrap(0, r.h, segs);
+        if (recA + 1e-9 < Math.min(1, r.dA * r.h) * margin) return false;
+        if (!r.single && recB + 1e-9 < Math.min(1, r.dB * (24 - r.h)) * margin) return false;
+      }
+      return true;
+    };
+    const curA = plan.center.uA ?? 0;
+    const curB = plan.center.uB ?? 0;
+    const search = (fn) => {
+      for (let u = 0; u <= 0.4801; u += 0.004) if (fn(u)) return u;
+      return null;
+    };
+    const uBMin = search((uB) => stableAt(curA, uB));
+    const uAMin = search((uA) => stableAt(uA, 0));
+    // 阈值算不出来（助力/衰减班导致不存在"全稳定"解）时退化为不设 u 下限，仍然尝试重排；
+    // 候选最终由固定中枢的完整 DFS 真实评估，不会因为阈值缺失而接受坏方案。
+    const tA = uAMin ?? 0;
+    const tB = uBMin ?? 0;
+    if (uAMin !== null && uBMin !== null
+      && curA - tA <= 0.004 && curB - tB <= 0.004) return null;   // 没有富余
+    const members = [...new Set([...(plan.center.idxA || []), ...(plan.center.idxB || [])])];
+    if (!members.length || members.length > 6) return null;
+    const recOf = new Map(members.map((i) => [i, val(ops[i], '中枢', '恢复')]));
+    const costOf = (i) => skillValueOf(ops[i], cfg);
+    const sparePool = orderedFillers(without(maskAll(ops.length), plan.center.used));
+    const assign = [];
+    const walk = (k, a, b, uA, uB, cost) => {
+      if (k === members.length) {
+        if (uA + 1e-9 < tA || uB + 1e-9 < tB) return;
+        assign.push({ a: [...a], b: [...b], uA, uB, cost });
+        return;
+      }
+      const i = members[k];
+      walk(k + 1, a, b, uA, uB, cost);                       // 离开中枢
+      if (a.length < cfg.centerSlots) walk(k + 1, [...a, i], b, uA + recOf.get(i), uB, cost + costOf(i));
+      if (b.length < cfg.centerSlots) walk(k + 1, a, [...b, i], uA, uB + recOf.get(i), cost + costOf(i));
+    };
+    walk(0, [], [], 0, 0, 0);
+    if (!assign.length) return null;
+    assign.sort((x, y) => (x.cost - y.cost)
+      || ((x.a.length + x.b.length) - (y.a.length + y.b.length))
+      || ((y.uA + y.uB) - (x.uA + x.uB)));
+    let improved = null;
+    const tried = new Set();
+    for (const cand of assign.slice(0, 6)) {
+      if (budget.exhausted) break;
+      const sig = `${cand.a.slice().sort().join(',')}|${cand.b.slice().sort().join(',')}`;
+      if (tried.has(sig)) continue;
+      tried.add(sig);
+      const idxA = cand.a.slice();
+      const idxB = cand.b.slice();
+      let used = [...idxA, ...idxB].reduce((m, i) => m | (1n << BigInt(i)), EMPTY);
+      // 空班补 1 个白板（与 enumerateCenters 的口径一致：只从"非中枢恢复"里挑最便宜的）
+      const fillFrom = sparePool.filter((i) => !has(used, i) && val(ops[i], '中枢', '恢复') <= 0);
+      if (!idxA.length && idxB.length) { if (!fillFrom.length) continue; idxA.push(fillFrom[0]); used |= 1n << BigInt(fillFrom[0]); }
+      if (!idxB.length && idxA.length) { if (!fillFrom.length) continue; idxB.push(fillFrom[0]); used |= 1n << BigInt(fillFrom[0]); }
+      const uA = idxA.reduce((s, i) => s + val(ops[i], '中枢', '恢复'), 0);
+      const uB = idxB.reduce((s, i) => s + val(ops[i], '中枢', '恢复'), 0);
+      const hCenter = idxA.length || idxB.length ? hc : 12;
+      const center = {
+        uA, uB, hCenter, timeline: buildTimeline({ hCenter, uA, uB }),
+        idxA, idxB, fillA: [], fillB: [], used,
+        cost: cand.cost, checkA: idxA.length > 0, checkB: idxB.length > 0,
+      };
+      const next = evaluateCenter(center, false);
+      if (!next) continue;
+      if (comparePlans(next.metrics, plan.metrics, cfg) > 0) {
+        if (!improved || comparePlans(next.metrics, improved.metrics, cfg) > 0) improved = next;
+      }
+    }
+    return improved;
+  };
+
+  for (let round = 0; round < 2 && best && !budget.exhausted; round += 1) {
+    const next = centerRepair(best, round);
+    if (!next) break;
+    best = next;
   }
 
   // 决策 65/71：覆盖下限已在候选循环内逐条执行，这里只取赢家自带的缺口记录。
@@ -2507,6 +2668,14 @@ export function solveLayout({ ops, cfg, testOptions = null }) {
     },
   };
 }
+
+
+
+
+
+
+
+
 
 
 

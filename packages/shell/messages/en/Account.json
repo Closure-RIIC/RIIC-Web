@@ -1,5 +1,7 @@
 {
   "AuthFeedback": {
+    "referralFormat": "Enter a 24-character code using digits and the letters A–F.",
+    "referralUnavailable": "This invitation code can’t be used right now. Check it or clear the field to continue.",
     "invalidCredentials": "The email or password is incorrect. Check your details or reset your password.",
     "invalidEmail": "Enter a valid email address.",
     "unverifiedEmail": "This email is not verified yet. Send a code to verify it before signing in.",
@@ -87,6 +89,7 @@
     "announcement": "Password strength: {strength}. {guessable, select, yes {This password pattern is easy to guess. } other {}}{unmet, select, yes {Still needed: {rules}.} other {All recommendations are met.}}"
   },
   "components_auth_WebsiteAccountPanel": {
+    "referralCodeOptional": "Invitation code (optional)",
     "somethingWentWrongTryAgainLater": "Something went wrong. Try again later.",
     "enterTheEmailAddressYouWantToVerify": "Enter the email address you want to verify.",
     "verificationCodeSentCompleteVerificationWithin10Minutes": "Verification code sent. Complete verification within 10 minutes.",
@@ -101,7 +104,7 @@
     "revokingSessions": "Revoking sessions…",
     "signOutEverywhere": "Sign out everywhere",
     "deleteAccountPermanently": "Delete account permanently",
-    "yourAccountAndAllSessionsWillBeDeletedImmediately": "Your account and all sessions will be deleted immediately. Enter your current password to confirm. This cannot be undone.",
+    "yourAccountAndAllSessionsWillBeDeletedImmediately": "Your account and all sessions will be deleted immediately. Identity digests used to prevent duplicate referral rewards, referral relationships and reward records are retained indefinitely and are not automatically deleted with your account; see the privacy policy. Enter your current password to confirm. This cannot be undone.",
     "currentPassword": "Current password",
     "showCurrentPassword": "Show current password",
     "alsoClearThisBrowserSLocalWorkspaceAfterDeletion": "Also clear this browser''s local workspace after deletion",

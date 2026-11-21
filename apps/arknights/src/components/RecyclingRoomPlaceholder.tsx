@@ -6,7 +6,7 @@ import { OperatorSlot } from "@/components";
 /** Unknown upstream data is distinct from a known empty room. */
 export function RecyclingRoomPlaceholder() {
   const t = useTranslations("RecyclingRoom");
-  return <InfraTechnicalCard group="recycling" className="min-w-0 px-3 py-2" dataSlot="recycling-data-unavailable">
+  return <InfraTechnicalCard group="recycle" className="min-w-0 px-3 py-2" dataSlot="recycling-data-unavailable">
     <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
       <div className="min-w-0">
         <h4 className="flex h-7 items-center gap-1.5 whitespace-nowrap text-sm font-medium">

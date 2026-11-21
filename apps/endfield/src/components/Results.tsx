@@ -7,6 +7,7 @@ import { AnimatedNumber } from "@riic/ui-primitives/animated-number";
 import { OperatorChip, OperatorPortrait, ProductionIcon } from "./GameArtwork";
 import { OperatorSkillTooltip } from "./OperatorSkillTooltip";
 import { Action, ActionContent, actionClassName, Notice, Section } from "@riic/endfield-ui";
+import { manualTemplate } from "@riic/endfield-solver/model.mjs";
 import type { ProductionSummary, Result, Mood } from "@riic/endfield-solver/index.mjs";
 import { downloadJson, useWorkspace } from "../state";
 import { DialogFrame } from "./DialogFrame";
@@ -113,7 +114,8 @@ function FacilityTile({ kind, label, level, plan, room, scores, production, bonu
   production?: Record<string, ProductionSummary>;
   bonusA: number | null; bonusB: number | null;
 }) {
-  const { locale, t } = useWorkspace();
+  const { workspace, locale, t } = useWorkspace();
+  const slots = kind === "center" ? manualTemplate(workspace.options).find(entry => entry.key === "中枢")?.slots ?? plan.a.length : 0;
   return <FacilityCard kind={kind} label={label} level={level} category={room?.category}>
     {!room ? <p className="ef-facility-output">{t("Results.shipWideMoraleRecovery")}</p> : null}
     <div className="ef-facility-shifts">
@@ -121,10 +123,15 @@ function FacilityTile({ kind, label, level, plan, room, scores, production, bonu
         <div className="ef-facility-shift-label"><div><b>{room?.single ? (index ? t("Results.rest") : t("Results.work")) : `${shift.toUpperCase()} ${t("Results.shift")}`}</b>
           <FacilityBonus kind={kind} value={index ? bonusB : bonusA} /></div>
           <span className="ef-shift-time">{room?.single ? `${(index ? room.restHours : room.workHours)?.toFixed(2) ?? "—"} h` : index ? `${hour(plan.hour)} – 24:00` : `00:00 – ${hour(plan.hour)}`}</span></div>
-        {plan[shift].length ? <div className="ef-facility-crew">{plan[shift].map(name => <OperatorSkillTooltip key={name} name={name}><div className="ef-result-operator">
+        {room?.single && index === 1 ? <p className="ef-facility-rest">{t("Results.theSameCrewReturnsAfterResting")}</p> : kind !== "center" && !plan[shift].length ? <p className="ef-facility-rest">{t("Results.noOperatorsAssigned")}</p> : <div className="ef-facility-crew">{Array.from({ length: Math.max(slots, plan[shift].length) }, (_, slot) => {
+          const name = plan[shift][slot];
+          return name ? <OperatorSkillTooltip key={slot} name={name}><div className="ef-result-operator">
           <OperatorPortrait name={name} size={kind === "center" ? 88 : 68} showTitle={false} />
           <span>{operatorName(name, locale)}</span>
-        </div></OperatorSkillTooltip>)}</div> : <p className="ef-facility-rest">{room?.single ? t("Results.theSameCrewReturnsAfterResting") : t("Results.noOperatorsAssigned")}</p>}
+        </div></OperatorSkillTooltip> : <div className="ef-result-operator" key={slot} data-trust-slot>
+          <span className="ef-manual-empty ef-trust-slot" aria-hidden>{t("Results.trustSlot")}</span>
+          <span>{t("Results.trustSlot")}</span>
+        </div>; })}</div>}
       </div>)}
     </div>
     {scores ? <FacilityOutputSummary scores={scores} production={production} /> : null}

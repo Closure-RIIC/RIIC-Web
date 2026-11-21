@@ -17,6 +17,7 @@ import { OtpInput, type OtpInputHandle, type OtpStatus } from "./otp-input";
 import { PasswordStrength } from "./password-strength";
 import { authFailure, type AuthFailure } from "./auth-feedback";
 import { useAuthRequest } from "./use-auth-request";
+import { clearReferralCode, normalizeReferralCode, readSignupReferralCode, referralSignupHeaders } from "./referral-code";
 import styles from "./AuthForm.module.css";
 import { AuthAction } from "./AuthAction";
 export type AuthMode = "signin" | "signup" | "forgot";
@@ -51,6 +52,7 @@ export function WebsiteAuthForm({ onAuthenticated, legalOrigin = "", initialMode
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [step, setStep] = useState<AuthStep>("details");
   const [name, setName] = useState("");
+  const [editedReferralCode, setEditedReferralCode] = useState<string>();
   const [nameError, setNameError] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -61,6 +63,7 @@ export function WebsiteAuthForm({ onAuthenticated, legalOrigin = "", initialMode
   const [otpStatus, setOtpStatus] = useState<OtpStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<AuthFailure | null>(null);
+  const referralError = error === "referralFormat" || error === "referralUnavailable";
   const [needsVerification, setNeedsVerification] = useState(false);
   const [verificationEmail, setVerificationEmail] = useState("");
   const [sessionFailed, setSessionFailed] = useState(false);
@@ -166,6 +169,10 @@ export function WebsiteAuthForm({ onAuthenticated, legalOrigin = "", initialMode
         return;
       }
       setConfirmPasswordError(null);
+      if (editedReferralCode?.trim() && !normalizeReferralCode(editedReferralCode)) {
+        setError("referralFormat");
+        return;
+      }
     }
     const id = request.begin();
     if (id === null) return;
@@ -187,10 +194,13 @@ export function WebsiteAuthForm({ onAuthenticated, legalOrigin = "", initialMode
           email: email.trim(),
           password,
           callbackURL: location.origin,
+          fetchOptions: { headers: referralSignupHeaders(editedReferralCode) },
         });
+        if (!result.error) clearReferralCode();
         if (!request.isCurrent(id)) return;
         if (result.error) throw result.error;
         setVerificationEmail(email.trim());
+        setEditedReferralCode(undefined);
         setPassword("");
         setConfirmPassword("");
         setStep("verify");
@@ -202,6 +212,7 @@ export function WebsiteAuthForm({ onAuthenticated, legalOrigin = "", initialMode
           password,
           callbackURL: location.href,
         });
+        if (!result.error) clearReferralCode();
         if (!request.isCurrent(id)) return;
         if (result.error) throw result.error;
         await confirmSession(id);
@@ -364,11 +375,23 @@ export function WebsiteAuthForm({ onAuthenticated, legalOrigin = "", initialMode
                   </div>
                 ) : null}
                 {mode === "signup" ? (
+                  <div className="grid gap-1.5">
+                    <Label htmlFor={`${fieldId}-referral`}>{intl("components_auth_WebsiteAccountPanel.referralCodeOptional")}</Label>
+                    <Input id={`${fieldId}-referral`} className={AUTH_INPUT_CLASS} disabled={busy}
+                      autoComplete="off" autoCapitalize="characters" spellCheck={false}
+                      value={editedReferralCode ?? readSignupReferralCode() ?? ""}
+                      onChange={event => { setEditedReferralCode(event.target.value); if (referralError) setError(null); }}
+                      aria-invalid={referralError} aria-describedby={referralError ? `${fieldId}-referral-error` : undefined}
+                    />
+                    {referralError && <p id={`${fieldId}-referral-error`} role="alert" className={styles.error}>{authFeedbackText.text(en, error)}</p>}
+                  </div>
+                ) : null}
+                {mode === "signup" ? (
                   <p className="text-xs leading-5 text-muted-foreground">
                     {intl.rich("components_auth_WebsiteAccountPanel.rich1", { element1: (chunks) => (<a className="underline underline-offset-2" href={`${legalOrigin}/terms`} target="_blank" rel="noopener noreferrer">{chunks}</a>), element2: (chunks) => (<a className="underline underline-offset-2" href={`${legalOrigin}/privacy`} target="_blank" rel="noopener noreferrer">{chunks}</a>) })}
                   </p>
                 ) : null}
-                {error ? <p role="alert" className={styles.error}>{authFeedbackText.text(en, error)}</p> : null}
+                {error && !referralError ? <p role="alert" className={styles.error}>{authFeedbackText.text(en, error)}</p> : null}
                 {needsVerification ? <div className={`${styles.notice} ${styles.buttonGroup}`}>
                   <AuthAction type="button" secondary disabled={busy} onClick={() => { setStep("verify"); setError(null); }}>{authFlowText.text(en, "useExistingCode")}</AuthAction>
                   <AuthAction type="button" disabled={busy || resendSeconds > 0} onClick={() => void sendVerificationCode()}>

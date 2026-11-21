@@ -756,7 +756,7 @@ test("plan completion reveals status, metrics, and schedule once without resetti
   const auxiliaryGrid = compactView.locator(".compact-auxiliary-grid");
   await expect.poll(() => auxiliaryGrid.evaluate((element) => ({
     columns: getComputedStyle(element).gridTemplateColumns.split(" ").length,
-    leftRows: new Set(Array.from(element.querySelectorAll(':scope > [data-room-group="meeting"], :scope > [data-room-group="training"], :scope > [data-room-group="recycling"]')).map((child) => child.getBoundingClientRect().y)).size,
+    leftRows: new Set(Array.from(element.querySelectorAll(':scope > [data-room-group="meeting"], :scope > [data-room-group="training"], :scope > [data-room-group="recycle"]')).map((child) => child.getBoundingClientRect().y)).size,
     rightRows: new Set(Array.from(element.querySelectorAll(':scope > [data-room-group="hire"], :scope > [data-room-group="processing"]')).map((child) => child.getBoundingClientRect().y)).size,
     fits: element.scrollWidth <= element.clientWidth + 1,
   }))).toEqual({ columns: 2, leftRows: 3, rightRows: 2, fits: true });

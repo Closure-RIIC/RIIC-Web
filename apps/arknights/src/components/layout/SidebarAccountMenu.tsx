@@ -7,6 +7,7 @@ import { useFeatureAccess } from "@/components/workbench/FeatureAccessProvider";
 import { useLanguageSwitch } from "@/i18n/client";
 import { authClient } from "@/lib/auth-client";
 import { useWebsiteSession } from "@/website-session";
+import { useReferralEnabled } from "@/components/referral/referral-client";
 import { workbenchHref, type AppPage } from "@/workbench-routes";
 
 export function SidebarAccountMenu({ page, onPageChange, onSessionChanged }: {
@@ -17,15 +18,17 @@ export function SidebarAccountMenu({ page, onPageChange, onSessionChanged }: {
   const language = useLanguageSwitch();
   const { data: session, isPending } = useWebsiteSession();
   const features = useFeatureAccess();
+  const referralEnabled = useReferralEnabled(session?.user.id ?? null, isPending);
   return <SharedAccountMenu user={session?.user} pending={isPending} language={language} billingEnabled={features.billing} currentPage={page}
     links={{
       billing: <Link to={workbenchHref("billing")} preload={false} />,
+      referral: referralEnabled ? <Link to={workbenchHref("referral")} preload={false} /> : undefined,
       changelog: <Link to="/changelog" preload={false} />,
       docs: <Link to="/docs" data-docs-link />,
       settings: <Link to={workbenchHref("settings")} preload={false} />,
     }}
     onNavigate={(event, destination, trigger) => {
-      if ((destination === "billing" || destination === "settings") && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) {
+      if ((destination === "billing" || destination === "referral" || destination === "settings") && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey && event.button === 0) {
         if (!onPageChange(destination, trigger ?? event.currentTarget)) event.preventDefault();
       }
     }}

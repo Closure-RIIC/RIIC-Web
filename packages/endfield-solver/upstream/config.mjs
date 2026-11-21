@@ -9,6 +9,9 @@ export const MFG_LAYOUTS = {
   '2武器': ['武器经验', '武器经验'],
 };
 export const CATEGORIES = ['线索', '干员经验', '武器经验', '培养'];
+// 线索技能优先级（决策 79）：8 项排列（线索编号 1..7 + 白板），槽位优先、槽内 β > α。
+export const CLUE_ITEMS = ['1', '2', '3', '4', '5', '6', '7', '白板'];
+export const DEFAULT_CLUE_PRIORITY = ['1', '2', '4', '5', '6', '3', '白板', '7'];
 export const GROW_KINDS = ['晶植', '菌类', '矿物'];
 export const MAX_ELITE = 4;
 
@@ -133,6 +136,21 @@ export function normalizePriority(raw) {
   return list.slice();
 }
 
+export function normalizeCluePriority(raw) {
+  const list = raw == null
+    ? DEFAULT_CLUE_PRIORITY.slice()
+    : (Array.isArray(raw) ? raw : String(raw).split(',').map((s) => s.trim()));
+  if (list.length !== CLUE_ITEMS.length) {
+    throw new ConfigError('--cluePriority', '必须正好是 ' + CLUE_ITEMS.join('/') + ' 的一个排列');
+  }
+  const seen = new Set();
+  for (const item of list) {
+    if (!CLUE_ITEMS.includes(item)) throw new ConfigError('--cluePriority', '不认识「' + item + '」');
+    if (seen.has(item)) throw new ConfigError('--cluePriority', '重复的项「' + item + '」');
+    seen.add(item);
+  }
+  return list.slice();
+}
 export function validateRoster(list, tableNames) {
   if (!Array.isArray(list) || list.length === 0) throw new ConfigError('roster', '名单为空');
   const seen = new Set();
@@ -180,6 +198,7 @@ export function normalizeConfig(args = {}) {
   const growInput = args.grow == null ? { 晶植: growCapacity } : args.grow;
   const grow = normalizeGrow(growInput, growCapacity);
   const priority = normalizePriority(args.priority);
+  const cluePriority = normalizeCluePriority(args.cluePriority);
   const assistOn = !!args.assist;
   // 预算 200 万节点 / 30 秒，先到先停
   const budget = {
@@ -202,6 +221,7 @@ export function normalizeConfig(args = {}) {
     growTotal,
     hasGrow: growTotal > 0,
     priority,
+    cluePriority,
     assistOn,
     assistPoints: assistOn ? 2 : 0,
     budget,
@@ -216,3 +236,5 @@ export function normalizeConfig(args = {}) {
     },
   };
 }
+
+

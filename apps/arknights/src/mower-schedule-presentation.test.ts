@@ -35,12 +35,13 @@ test("recycling uses the shared auxiliary room layout and preserves both operato
   const before = structuredClone(plan);
   const { rows, layout } = mowerSchedulePresentation(plan);
   const row = rows.find(row => row.roomId === "recycle")!;
-  assert.equal(row.group, "recycling");
+  assert.equal(row.group, "recycle");
   assert.equal(row.title, "回收站");
   assert.equal(row.slotAssignments?.[0], undefined);
   assert.equal(row.slotAssignments?.[1]?.name, "旅骨");
   assert.equal(row.level, 3);
-  assert.equal(layout.rooms.some(room => room.id === "recycle"), false);
+  // 回收站现在参与求解，会作为 recycle 房间写入布局。
+  assert.equal(layout.rooms.find(room => room.id === "recycle")?.kind, "recycle");
   assert.deepEqual(plan, before);
-  assert.equal(mowerSchedulePresentation({}).rows.find(row => row.group === "recycling")?.operators.length, 0);
+  assert.equal(mowerSchedulePresentation({}).rows.find(row => row.group === "recycle")?.operators.length, 0);
 });

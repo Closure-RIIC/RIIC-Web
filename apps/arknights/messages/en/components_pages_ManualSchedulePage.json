@@ -73,5 +73,6 @@
   "thisOperator": "this operator",
   "resultOutdated": "Result is out of date",
   "unsupportedSpecialTrade": "Shift {shift}, {room}: the special order of {operators} is not supported yet; calculated as a regular trading post.",
-  "eliteShort": "E"
+  "eliteShort": "E",
+  "scheduleNeedsAtLeastTwoShifts": "At least 2 shifts are required; this schedule has only 1."
 }

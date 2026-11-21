@@ -74,7 +74,7 @@ async function handle(request: Request, action: string) {
       const completionSignal = endfieldScanCompletionSignal(scanId, owner, request.signal);
       completionSignal.throwIfAborted();
       const account = upsertEndfieldAccount(directAccounts, authenticated.session, authenticated.result);
-      await bindSklandAccount(owner, authenticated.session.userId);
+      await bindSklandAccount(owner, authenticated.session.userId, authenticated.session.policyConsent);
       completionSignal.throwIfAborted();
       const response = successResponse({ status: "authenticated", accountId: account.accountId, roles: authenticated.result }, requestId);
       endfieldScanCompletionSignal(scanId, owner, completionSignal).throwIfAborted();
@@ -102,7 +102,7 @@ async function handle(request: Request, action: string) {
       request.signal.throwIfAborted();
       const account = upsertEndfieldAccount(directAccounts, authenticated.session, authenticated.result);
       // Same ownership rule as the existing Arknights connection.
-      await bindSklandAccount(owner, authenticated.session.userId);
+      await bindSklandAccount(owner, authenticated.session.userId, authenticated.session.policyConsent);
       request.signal.throwIfAborted();
       const response = successResponse({ accountId: account.accountId, roles: authenticated.result }, requestId);
       writeAccount(response, request, account, owner, true);

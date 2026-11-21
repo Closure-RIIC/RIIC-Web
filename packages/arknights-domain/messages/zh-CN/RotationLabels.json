@@ -1,7 +1,10 @@
 {
   "abc_12_6_6": "一天三换",
   "main_backup_12_12": "主备轮换",
+  "main_backup_24_24": "主备轮换",
   "abc_12_12_12": "一天两换",
   "fiammetta_8_8_4_4": "菲亚梅塔轮换",
-  "abyssal_7_5_7_5": "深海猎人轮换"
+  "abyssal_7_5_7_5": "深海猎人轮换",
+  "generic_main_backup": "自定义",
+  "generic_abc": "自定义"
 }

@@ -1,5 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { switchWorkbenchLanguage } from "./workbench-language";
+import { PRIVACY_EFFECTIVE_DATE } from "@riic/platform/legal-policy";
 import arkntoolsSource from "@riic/arknights-domain/generated/arkntools/source.json" with { type: "json" };
 import { twoShiftPlanData } from "./production-readiness.fixture";
 import { requestId, diagnosticId, waitForOwnAnimations, gotoStable, expectVisibleNumbersUseNumberFont, profile, planData, scheduleVisualPlanData, sampleData, authenticatedSklandSnapshot, mockApis, openSklandOverview, seedPreferences, seedV4Session } from "./production-readiness.fixture";
@@ -629,14 +630,14 @@ test("setup exposes and persists only worker-supported rotation profiles", async
   await expect(dialog.locator('[data-slot="select-trigger"]')).toHaveCount(0);
   await expect(page.getByRole("option", { name: /自动轮换/ })).toHaveCount(0);
   await expect(page.getByRole("option", { name: /一天两换/ })).toHaveCount(1);
-  await expect(page.getByRole("option", { name: /自定义/ })).toHaveCount(0);
-  await expect(page.getByRole("option")).toHaveCount(3);
+  await expect(page.getByRole("option", { name: /自定义/ })).toHaveCount(1);
+  await expect(page.getByRole("option")).toHaveCount(7);
   await expect(rotationTrigger).toHaveJSProperty("readOnly", true);
   await page.getByRole("option", { name: /一天两换/ }).click();
   await expect(rotationTrigger).toHaveValue("一天两换 · 12/12/12");
   await rotationTrigger.click();
   await expect(page.locator('[data-slot="combobox-content"]')).toBeVisible();
-  await expect(page.getByRole("option")).toHaveCount(3);
+  await expect(page.getByRole("option")).toHaveCount(7);
   await rotationTrigger.press("Escape");
   await expect(rotationTrigger).toHaveValue("一天两换 · 12/12/12");
   await expect(dialog.getByText("完整循环 24 小时")).toHaveCount(0);
@@ -702,7 +703,10 @@ test("layout level steppers respect bounds and keep recycling power at zero", as
   expect(await dialog.locator('[data-setup-footer] [role="status"]').innerText()).toBe(initialPowerStatus);
   for (let count = 0; count < 2; count++) await dialog.getByRole("button", { name: "recycling_station 等级加一" }).click();
   await expect(recyclingLevel).toHaveText("3");
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic-web-user-settings") ?? "{}").recyclingRoomLevel)).toBe(3);
+  await expect.poll(() => page.evaluate(() => {
+    const session = JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5") ?? "{}");
+    return session.layout?.rooms?.find((room: { kind: string }) => room.kind === "recycle")?.level;
+  })).toBe(3);
   expect(await dialog.locator('[data-setup-footer] [role="status"]').innerText()).toBe(initialPowerStatus);
   const controlLevel = dialog.locator('output[aria-label="control 等级"]');
   await expect(controlLevel).toHaveText("5");
@@ -740,7 +744,7 @@ test("layout facilities expose power-safe 342 defaults and responsive controls",
   await expect(dialog.locator('output[aria-label="dorm_1 等级"]')).toHaveText("2");
   const normalPowerStatus = dialog.getByText("电力正常 · 540/540", { exact: true });
   await expect(normalPowerStatus).toBeVisible();
-  await expect(normalPowerStatus).toHaveClass(/text-emerald-700/);
+  await expect(dialog.locator('[data-setup-footer] [role="status"]')).toHaveClass(/text-emerald-700/);
 
   const lowerFactoryRecipe = dialog.getByRole("group", { name: "制造站 3 配方" });
   await lowerFactoryRecipe.getByRole("button", { name: "源石碎片" }).click();
@@ -1095,7 +1099,7 @@ test("publishes the site terms and privacy policy with upstream policy links", a
   await page.setViewportSize({ width: 390, height: 844 });
   await gotoStable(page, "/privacy");
   await expect(page.getByRole("heading", { name: "隐私政策", level: 1 })).toBeVisible();
-  await expect(page.getByText("版本与生效日期：2026-09-06")).toBeVisible();
+  await expect(page.getByText(`版本与生效日期：${PRIVACY_EFFECTIVE_DATE}`)).toBeVisible();
   await expect(page.getByText(/服务端 CLI 运行记录和主动反馈的私有复现快照最多保存 30 天/)).toBeVisible();
   await expect(page.getByText(/提交的干员 Box、轮换设置、轮换次数、菲亚梅塔启用状态/)).toBeVisible();
   await expect(page.getByText(/第一方体验分析会自动记录/)).toBeVisible();

@@ -54,13 +54,13 @@
   "signInRegister": "Sign in / Register",
   "refreshSignInStatus": "Refresh sign-in status",
   "deleteAccount": "Delete account",
-  "permanentlyDeleteYourSharedRiicAccountAndItsCloud": "Permanently delete your shared RIIC account and its cloud data. Both games will be signed out. This cannot be undone.",
+  "permanentlyDeleteYourSharedRiicAccountAndItsCloud": "Permanently delete your shared RIIC account and its cloud data. Both games will be signed out. Identity digests used to prevent duplicate referral rewards, referral relationships and reward records are retained indefinitely and are not automatically deleted with your account; see the privacy policy. This cannot be undone.",
   "currentPassword": "Current password",
   "hidePassword": "Hide password",
   "showPassword": "Show password",
   "alsoClearEndfieldDataFromThisBrowser": "Also clear Endfield data from this browser",
   "permanentlyDeleteAccount": "Permanently delete account",
-  "thisAccountIsSharedByArknightsAndEndfieldPermanently": "This account is shared by Arknights and Endfield. Permanently delete it and its cloud data? This cannot be undone.",
+  "thisAccountIsSharedByArknightsAndEndfieldPermanently": "This account is shared by Arknights and Endfield. Identity digests used to prevent duplicate referral rewards, referral relationships and reward records are retained indefinitely and are not automatically deleted with your account; see the privacy policy. Permanently delete it and its cloud data? This cannot be undone.",
   "confirmDeletion": "Confirm deletion",
   "deleting": "Deleting"
 }

@@ -31,7 +31,7 @@ test("normalizes the complete allowlisted Worker ping fingerprint", () => {
       pong: true,
       protocol_version: 1,
       plan_schema_version: 1,
-      supported_plan_schema_versions: [1, 2, 3, 4],
+      supported_plan_schema_versions: [1, 2, 3, 4, 5, 6, 7],
       plan_contract_sha256: contracts["1"],
       plan_contract_sha256_by_version: { ...contracts, invalid: "e".repeat(64), "5": "invalid" },
       solver_executable_sha256: "50e9ecd20047c13f97c538807f51669cff99fedc1026d38360f4eebfc8364a1e",
@@ -47,7 +47,7 @@ test("normalizes the complete allowlisted Worker ping fingerprint", () => {
     pong: true,
     protocolVersion: 1,
     planSchemaVersion: 1,
-    supportedPlanSchemaVersions: [1, 2, 3, 4],
+    supportedPlanSchemaVersions: [1, 2, 3, 4, 5, 6, 7],
     planContractSha256: contracts["1"],
     planContractSha256ByVersion: [
       { version: 1, sha256: contracts["1"] },
@@ -74,7 +74,7 @@ test("uses plan.compute for matching versions regardless of schema byte hash", (
         pong: true,
         protocol_version: 1,
         plan_schema_version: 1,
-        supported_plan_schema_versions: [1, 2, 3],
+        supported_plan_schema_versions: [1, 2, 3, 4, 5, 6, 7],
         plan_contract_sha256: planContractSha256,
       },
     });
@@ -85,27 +85,38 @@ test("uses plan.compute for matching versions regardless of schema byte hash", (
   }
 });
 
-test("keeps a v4-capable Worker on the website v3 request without Check-only options", () => {
+test("sends the v7 request with explicit combination and invariant switches", () => {
   const capability = inspectPlanComputeCapability({
     ok: true,
     result: {
       protocol_version: 1,
-      plan_schema_version: 4,
-      supported_plan_schema_versions: [1, 2, 3, 4],
+      plan_schema_version: 7,
+      supported_plan_schema_versions: [1, 2, 3, 4, 5, 6, 7],
     },
   });
-  const params = createPlanComputeParams({
-    layout: { template: "243", drone_cap: 235, scenario: {}, rooms: [] },
-    operbox: [{ id: "char_1", name: "阿米娅", elite: 2, level: 80, own: true, potential: 6, rarity: 5 }],
-    sourceName: "Current Box",
-    rotation: "fiammetta_8_8_4_4",
-    fiammettaEnable: false,
-  });
+  const layout = { template: "243", drone_cap: 235, scenario: {}, rooms: [] };
+  const operbox = [{ id: "char_1", name: "阿米娅", elite: 2, level: 80, own: true, potential: 6, rarity: 5 }];
 
+  const named = createPlanComputeParams({
+    layout, operbox, sourceName: "Current Box", rotation: "fiammetta_8_8_4_4", fiammettaEnable: false,
+  });
   assert.equal(capability.supported, true);
-  assert.equal(params.schema_version, 3);
-  assert.equal(params.options?.fiammetta_enable, false);
-  assert.equal("assert_invariants" in (params.options ?? {}), false);
+  assert.equal(named.schema_version, 7);
+  assert.equal(named.options?.rotation, "fiammetta_8_8_4_4");
+  assert.equal(named.options?.fiammetta_enable, false);
+  // 挂件开关显式传递，不再依赖求解器缺省值。
+  assert.equal(named.options?.support_combinations_enable, false);
+  // 终态断言是调试开关，生产请求从不发送。
+  assert.equal("assert_invariants" in (named.options ?? {}), false);
+
+  const enabled = createPlanComputeParams({ layout, operbox, rotation: "abc_12_6_6", supportCombinationsEnable: true });
+  assert.equal(enabled.options?.support_combinations_enable, true);
+
+  // 自定义时长透传为 v7 的拓扑对象。
+  const custom = createPlanComputeParams({
+    layout, operbox, rotation: { topology: "main_backup", shift_hours: [8, 16] },
+  });
+  assert.deepEqual(custom.options?.rotation, { topology: "main_backup", shift_hours: [8, 16] });
 });
 
 test("keeps a legacy worker on the legacy plan method", () => {
@@ -145,7 +156,7 @@ test("normalizes Worker fingerprints and keeps them diagnostic-only", () => {
     result: {
       protocol_version: 1,
       plan_schema_version: 1,
-      supported_plan_schema_versions: [1, 2, 3],
+      supported_plan_schema_versions: [1, 2, 3, 4, 5, 6, 7],
       plan_contract_sha256: "not-a-hash",
       solver_executable_sha256: executableHash,
     },
@@ -161,7 +172,7 @@ test("normalizes Worker fingerprints and keeps them diagnostic-only", () => {
       result: {
         protocol_version: 1,
         plan_schema_version: 1,
-        supported_plan_schema_versions: [1, 2, 3],
+        supported_plan_schema_versions: [1, 2, 3, 4, 5, 6, 7],
         solver_executable_sha256: invalidFingerprint,
       },
     });
@@ -177,7 +188,7 @@ test("deployment readiness requires current versions and the configured artifact
     result: {
       protocol_version: 1,
       plan_schema_version: 1,
-      supported_plan_schema_versions: [1, 2, 3],
+      supported_plan_schema_versions: [1, 2, 3, 4, 5, 6, 7],
       solver_executable_sha256: executableHash,
     },
   });
@@ -198,7 +209,7 @@ test("feedback metadata reuses the matching private run observation and tolerate
     result: {
       protocol_version: 1,
       plan_schema_version: 1,
-      supported_plan_schema_versions: [1, 2, 3],
+      supported_plan_schema_versions: [1, 2, 3, 4, 5, 6, 7],
       plan_contract_sha256: "d".repeat(64),
       solver_executable_sha256: "e".repeat(64),
     },
@@ -220,7 +231,7 @@ test("validates the complete plan.compute success payload", () => {
   const payload = parsePlanComputePayload({
     ok: true,
     result: {
-      schema_version: 3,
+      schema_version: 7,
       profile: { schema_version: 4 },
       rotation: {
         profile: "abc_12_6_6",
@@ -260,7 +271,7 @@ function planComputeWithTrainingRoom(trainingRoom: unknown, plans = [
   return {
     ok: true,
     result: {
-      schema_version: 3,
+      schema_version: 7,
       profile: { schema_version: 4 },
       rotation: { profile: "abc_12_6_6", daily: {}, shifts: plans.map((_, index) => ({ index })) },
       maa: { title: "排班", plans },
@@ -365,14 +376,14 @@ test("rejects malformed training-room shift counts, names, duplicates, and MAA c
 
 test("rejects malformed successful plan.compute payloads", () => {
   assert.throws(
-    () => parsePlanComputePayload({ ok: true, result: { schema_version: 3, profile: {}, rotation: { shifts: [] } } }),
+    () => parsePlanComputePayload({ ok: true, result: { schema_version: 7, profile: {}, rotation: { shifts: [] } } }),
     /maa/
   );
   assert.throws(
     () => parsePlanComputePayload({
       ok: true,
       result: {
-        schema_version: 3,
+        schema_version: 7,
         profile: {},
         rotation: { shifts: [] },
         maa: {},
@@ -385,7 +396,7 @@ test("rejects malformed successful plan.compute payloads", () => {
     () => parsePlanComputePayload({
       ok: true,
       result: {
-        schema_version: 3,
+        schema_version: 7,
         profile: {},
         rotation: { shifts: [] },
         maa: {},

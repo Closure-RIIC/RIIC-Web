@@ -1,6 +1,6 @@
 import raw from "./data/ship-data.json" with { type: "json" };
 import { loadShipData, skillsAtElite, skillsAtNodes } from "./upstream/ship-data.mjs";
-import { normalizeConfig, validateRoster } from "./upstream/config.mjs";
+import { normalizeConfig, validateRoster, DEFAULT_CLUE_PRIORITY } from "./upstream/config.mjs";
 export const SOLVER_REVISION = "455d7f17e06d7bb08ab7cef0f154b72b72455fd4-output-v5";
 export const STORAGE_KEY = "riic:endfield:workspace:v1";
 export const CATEGORIES = ["线索", "干员经验", "武器经验", "培养"];
@@ -14,7 +14,8 @@ export const catalog = raw.operators.filter(op => op.shipSkills?.length).map(op 
 }));
 export const DEFAULT_OPTIONS = {
   mfg: "1干员1武器", levels: { center: 5, mfg1: 3, mfg2: 3, grow: 3, guest: 3 },
-  grow: { 晶植: 9, 菌类: 0, 矿物: 0 }, priority: [...CATEGORIES], assist: false, budget: 200000, time: 5000,
+  grow: { 晶植: 9, 菌类: 0, 矿物: 0 }, priority: [...CATEGORIES], cluePriority: [...DEFAULT_CLUE_PRIORITY],
+  assist: false, budget: 200000, time: 5000,
 };
 const allowedNames = new Set(catalog.map(op => op.name));
 
@@ -41,7 +42,8 @@ export function parseWorkspace(text) {
   const options = {
     mfg: cfg.mfgLabel,
     levels: { center: cfg.levels.center, mfg1: cfg.levels.manufacturing[0], mfg2: cfg.levels.manufacturing[1], grow: cfg.levels.grow, guest: cfg.levels.guest },
-    grow: { ...cfg.grow }, priority: [...cfg.priority], assist: cfg.assistOn, budget: cfg.budget.nodes, time: cfg.budget.ms,
+    grow: { ...cfg.grow }, priority: [...cfg.priority], cluePriority: [...cfg.cluePriority],
+    assist: cfg.assistOn, budget: cfg.budget.nodes, time: cfg.budget.ms,
   };
   let manual;
   if (value.manual !== undefined) {

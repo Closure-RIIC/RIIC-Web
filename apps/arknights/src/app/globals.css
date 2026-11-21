@@ -926,17 +926,17 @@ html[data-agent-keyboard] [data-agent-composer] {
 }
 
 /* Three two-slot facilities share one edge with two one-slot facilities. */
-.compact-auxiliary-grid:has(> [data-room-group="recycling"]) {
+.compact-auxiliary-grid:has(> [data-room-group="recycle"]) {
   grid-template-rows: repeat(6, minmax(0, 1fr));
 }
-.compact-auxiliary-grid:has(> [data-room-group="recycling"]) > [data-room-group="meeting"] { grid-row: 1 / 3; }
-.compact-auxiliary-grid:has(> [data-room-group="recycling"]) > [data-room-group="training"] { grid-row: 3 / 5; }
-.compact-auxiliary-grid > [data-room-group="recycling"] { grid-column: 1; grid-row: 5 / 7; }
-.compact-auxiliary-grid:has(> [data-room-group="recycling"]) > [data-room-group="hire"] { grid-row: 1 / 4; }
-.compact-auxiliary-grid:has(> [data-room-group="recycling"]) > [data-room-group="processing"] { grid-row: 4 / 7; }
+.compact-auxiliary-grid:has(> [data-room-group="recycle"]) > [data-room-group="meeting"] { grid-row: 1 / 3; }
+.compact-auxiliary-grid:has(> [data-room-group="recycle"]) > [data-room-group="training"] { grid-row: 3 / 5; }
+.compact-auxiliary-grid > [data-room-group="recycle"] { grid-column: 1; grid-row: 5 / 7; }
+.compact-auxiliary-grid:has(> [data-room-group="recycle"]) > [data-room-group="hire"] { grid-row: 1 / 4; }
+.compact-auxiliary-grid:has(> [data-room-group="recycle"]) > [data-room-group="processing"] { grid-row: 4 / 7; }
 
 @container (max-width: 539px) {
-  .compact-auxiliary-grid:has(> [data-room-group="recycling"]) {
+  .compact-auxiliary-grid:has(> [data-room-group="recycle"]) {
     grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   }
   .compact-auxiliary-grid [data-compact-room-heading] {
@@ -958,11 +958,11 @@ html[data-agent-keyboard] [data-agent-composer] {
 }
 
 @container (max-width: 359px) {
-  .compact-auxiliary-grid:has(> [data-room-group="recycling"]) {
+  .compact-auxiliary-grid:has(> [data-room-group="recycle"]) {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
   }
-  .compact-auxiliary-grid:has(> [data-room-group="recycling"]) > [data-room-group] {
+  .compact-auxiliary-grid:has(> [data-room-group="recycle"]) > [data-room-group] {
     grid-column: auto;
     grid-row: auto;
   }

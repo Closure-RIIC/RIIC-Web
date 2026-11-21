@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { readMaaImport } from "./maa-import-export.ts";
 import { createManualScheduleDraft, manualRoomCapacity, reconcileManualScheduleDraft, type ManualScheduleDraft } from "./manual-schedule.ts";
 import { manualEditableRooms } from "./recycling-room.ts";
 import { validateLayoutJson } from "@riic/arknights-domain/layout-validation";
@@ -13,6 +14,11 @@ const product = z.union([
 ]);
 const assignment = z.object({
   operators: z.array(text(80).nullable()).max(5),
+  maaSource: z.object({
+    primary: z.array(text(80).nullable()).max(5),
+    operators: z.array(z.union([text(80), z.object({ name: text(80).optional(), skill: z.number().optional() }), z.null()])).optional(),
+    candidates: z.array(text(80)).optional(), skip: z.boolean().optional(), useGroups: z.boolean().optional(),
+  }).optional(),
   product: product.optional(), autofill: z.boolean().optional(),
   autofillSlots: z.array(z.number().int().min(0).max(4)).max(5).optional(),
   manualSkillEfficiencyPct: z.number().finite().min(0).max(10000).optional(),
@@ -30,13 +36,17 @@ const schema = z.object({
       base_workforce: z.array(text(80)).max(200).optional(),
       initial_global: z.object({ monster_cuisine: z.number().min(0).max(100).optional() }).optional(),
     }),
-    rooms: z.array(z.object({ id: text(60), kind: z.enum(["control_center", "trade_post", "factory", "power_plant", "dormitory", "office", "meeting_room", "workshop", "training_room"]), level: z.number().int().min(1).max(5), product: product.optional(), dorm_beds: z.number().int().min(1).max(5).optional() })).min(1).max(25),
+    rooms: z.array(z.object({ id: text(60), kind: z.enum(["control_center", "trade_post", "factory", "power_plant", "dormitory", "office", "meeting_room", "workshop", "training_room", "recycle"]), level: z.number().int().min(1).max(5), product: product.optional(), dorm_beds: z.number().int().min(1).max(5).optional() })).min(1).max(25),
   }),
   draft: z.object({
     version: z.literal(3), scheduleMode: z.enum(["sequential", "period"]),
+    maaImport: z.string().optional(),
     externalOperatorNames: z.array(text(80)).max(200), startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).or(z.literal("")),
     activeShift: z.number().int().min(0).max(3), fiammettaEnabled: z.boolean(),
     shifts: z.array(z.object({
+      maaGroups: z.array(z.object({ name: text(80), operators: z.array(text(80)) })).optional(),
+      maaTraining: z.array(z.object({ operatorsA: z.array(text(80)).optional(), operatorsB: z.array(text(80)).optional(), skip: z.boolean().optional() })).max(1).optional(),
+      emptyRecycle: z.boolean().optional(),
       durationHours: z.number().positive().max(24), rooms: z.record(text(60), assignment),
       fiammettaTarget: text(80).nullable(), droneTargetRoomId: text(60).nullable(),
     })).min(1).max(4),
@@ -67,6 +77,7 @@ export function parsePosterDocument(value: unknown): SchedulePosterDocument {
   if (!parsed.success) throw new Error(`作业文件格式不正确：${parsed.error.issues[0]?.path.join(".")} ${parsed.error.issues[0]?.message}`);
   const doc = parsed.data;
   const errors = validateLayoutJson(doc.layout);
+  if (doc.draft.maaImport) readMaaImport(doc.draft.maaImport);
   const rooms = manualEditableRooms(doc.layout);
   if (doc.layout.rooms.filter(room => room.kind === "trade_post" || room.kind === "factory").length > 7) errors.push("单页最多支持 7 个生产设施。");
   if (doc.layout.rooms.filter(room => room.kind === "power_plant").length > 3) errors.push("最多支持 3 个发电站。");
@@ -77,14 +88,14 @@ export function parsePosterDocument(value: unknown): SchedulePosterDocument {
       if (!room) { errors.push(`未知设施 ${id}`); continue; }
       if (assignment.operators.length > manualRoomCapacity(room)) errors.push(`${id} 人数超过容量。`);
       if (new Set(assignment.autofillSlots ?? []).size !== (assignment.autofillSlots ?? []).length) errors.push(`${id} 的 AUTO 槽位重复。`);
-      if (assignment.autofillSlots?.length && ["training_room", "recycling"].includes(room.kind)) errors.push(`${id} 不支持 MAA 自动填充。`);
+      if (assignment.autofillSlots?.length && ["training_room", "recycle"].includes(room.kind)) errors.push(`${id} 不支持 MAA 自动填充。`);
       for (const slotIndex of assignment.autofillSlots ?? []) {
         if (slotIndex >= manualRoomCapacity(room)) errors.push(`${id} 的 AUTO 槽位超过设施容量。`);
         if (assignment.operators[slotIndex]) errors.push(`${id} 的 AUTO 槽位不能同时安排固定干员。`);
       }
       if (assignment.autofillSlots?.length && assignment.autofill === false) errors.push(`${id} 设置了 AUTO 槽位但关闭了设施自动填充。`);
       for (const name of assignment.operators.filter(Boolean)) {
-        if (used.has(name!)) errors.push(`第 ${index + 1} 班的 ${name} 重复入驻。`);
+        if (!doc.draft.maaImport && used.has(name!)) errors.push(`第 ${index + 1} 班的 ${name} 重复入驻。`);
         used.add(name!);
       }
       const p = assignment.product;

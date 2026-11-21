@@ -9,10 +9,10 @@ const layout: BaseBlueprint = { template: "test", drone_cap: 200, scenario: {}, 
   { id: "training_room", kind: "training_room", level: 3 },
 ] };
 
-test("recycling assignments retain two slots through storage without changing solver layouts or MAA output", () => {
+test("recycling assignments retain two slots through storage and MAA export without changing solver layouts", () => {
   const original = JSON.stringify(layout);
   let draft = reconcileManualScheduleDraft(createManualScheduleDraft(), layout);
-  const exportBefore = manualScheduleToMaa(draft, layout, false);
+  assert.equal(manualScheduleToMaa(draft, layout, false).plans[0]?.rooms.recycle, undefined);
   assert.equal(manualRoomCapacity(RECYCLING_ROOM), 2);
   draft = assignManualOperator({ draft, layout, shiftIndex: 0, roomId: RECYCLING_ROOM_ID, slotIndex: 1, operator: "阿米娅" }).draft;
   assert.deepEqual(draft.shifts[0]!.rooms[RECYCLING_ROOM_ID]!.operators, [null, "阿米娅"]);
@@ -24,7 +24,7 @@ test("recycling assignments retain two slots through storage without changing so
   assert.ok(loaded);
   const restored = reconcileManualScheduleDraft(loaded, layout);
   assert.deepEqual(restored.shifts[0]!.rooms[RECYCLING_ROOM_ID]!.operators, [null, "阿米娅"]);
-  assert.deepEqual(manualScheduleToMaa(restored, layout, false), exportBefore);
+  assert.deepEqual(manualScheduleToMaa(restored, layout, false).plans[0]?.rooms.recycle?.[0]?.operators, ["阿米娅"]);
   assert.equal(JSON.stringify(layout), original);
 });
 

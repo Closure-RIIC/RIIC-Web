@@ -1,5 +1,12 @@
 {
   "rotation": "Rotation",
   "chooseARotation": "Choose a rotation",
-  "noMatchingRotation": "No matching rotation"
+  "noMatchingRotation": "No matching rotation",
+  "custom": "Custom",
+  "shiftCount": "Shifts",
+  "shiftCountN": "{count} shifts",
+  "shiftHoursLabel": "Shift {index} hours",
+  "cycleTotal": "Total {total} h",
+  "cycleNotAllowed": "Total {total} h — only {allowed} h cycles are supported",
+  "hourMustBePositiveInteger": "Each shift needs at least 1 whole hour"
 }
