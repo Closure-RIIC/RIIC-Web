@@ -45,7 +45,8 @@ test("real session cookies cross Start API and SSR boundaries and enforce review
       expect((await session.json()).user.id).toBe(ids.get(role));
       for (const [pathname, permitted] of [
         ["/admin", role !== "user"], ["/admin/wishes", role !== "user"], ["/admin/issues", role !== "user"], ["/admin/quality", role !== "user"],
-        ["/admin/agent", role === "admin"], ["/admin/billing", role === "admin"], ["/agent", role === "admin"], ["/billing", role === "admin"], ["/admin/users", role === "admin"], ["/admin/changelog", role === "admin"],
+        // None of these database-role fixtures is on the server super-admin list.
+        ["/admin/agent", false], ["/admin/billing", role === "admin"], ["/agent", role === "admin"], ["/billing", role === "admin"], ["/admin/users", role === "admin"], ["/admin/changelog", role === "admin"],
       ] as const) {
         expect((await context.request.get(origin + pathname)).status(), role + ":" + pathname).toBe(permitted ? 200 : 404);
       }
