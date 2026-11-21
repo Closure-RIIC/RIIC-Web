@@ -2,7 +2,7 @@ import { createHmac, randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { expect, test, type BrowserContext } from "@playwright/test";
 
-test("referral campaign uses real admin permissions, audit and public visibility", async ({ page, context, browser, baseURL }, testInfo) => {
+test("referral campaign requires super-admin permissions and preserves audit and public visibility", async ({ page, context, browser, baseURL }, testInfo) => {
   const url = process.env.AUTH_INTEGRATION_DATABASE_URL;
   test.skip(!url || !process.env.BETTER_AUTH_SECRET, "Requires an isolated database and the server's test session secret.");
   if (!new URL(url!).pathname.endsWith("_test")) throw new Error("Only an isolated *_test database is allowed.");
@@ -11,9 +11,9 @@ test("referral campaign uses real admin permissions, audit and public visibility
   const users: string[] = [];
   const visitor = await browser.newContext({ baseURL });
   const regular = await browser.newContext({ baseURL });
+  const ordinaryAdmin = await browser.newContext({ baseURL });
   let previous: { enabled: boolean; rewardPoints: number; inviteePoints: number; rewardLimit: number; updatedAt: string } | undefined;
-  async function session(target: BrowserContext, role: string) {
-    const id = `referral-browser-${randomUUID()}`;
+  async function session(target: BrowserContext, role: string, id = `referral-browser-${randomUUID()}`) {
     const token = randomUUID();
     await pool.query('INSERT INTO public."user" (id,name,email,email_verified,role) VALUES ($1,$2,$3,true,$4)', [id, "Referral browser", `${id}@example.test`, role]);
     users.push(id);
@@ -23,11 +23,22 @@ test("referral campaign uses real admin permissions, audit and public visibility
     return id;
   }
   try {
-    const adminId = await session(context, "admin");
+    // This ID is configured only in playwright.config.ts's test server environment.
+    const adminId = await session(context, "user", "e2e-referral-super-admin");
     await session(regular, "user");
+    await session(ordinaryAdmin, "admin");
     const previousResponse = await context.request.get("/api/admin/billing?section=referral");
     expect(previousResponse.status()).toBe(200);
     previous = (await previousResponse.json()).data;
+    expect((await ordinaryAdmin.request.get("/api/admin/billing?section=referral")).status()).toBe(403);
+    const deniedAdmin = await ordinaryAdmin.request.post("/api/admin/billing?section=referral", { headers: { origin: baseURL! }, data: {
+      enabled: true, expectedUpdatedAt: previous!.updatedAt, reason: "Ordinary admin must be denied", idempotencyKey: randomUUID(),
+    } });
+    expect(deniedAdmin.status()).toBe(403);
+    const adminPage = await ordinaryAdmin.newPage();
+    await adminPage.goto("/admin/billing");
+    await expect(adminPage.getByRole("columnheader", { name: "邮箱", exact: true })).toBeVisible();
+    await expect(adminPage.getByRole("button", { name: "邀请活动", exact: true })).toHaveCount(0);
     const reset = await context.request.post("/api/admin/billing?section=referral", { headers: { origin: baseURL! }, data: { enabled: false, expectedUpdatedAt: previous!.updatedAt, reason: "Browser validation initial state", idempotencyKey: randomUUID() } });
     expect(reset.status()).toBe(200);
     const guestState = await visitor.request.get("/api/referral");
@@ -72,7 +83,7 @@ test("referral campaign uses real admin permissions, audit and public visibility
       } });
       expect(restored.status()).toBe(200);
     }
-    await visitor.close(); await regular.close();
+    await visitor.close(); await regular.close(); await ordinaryAdmin.close();
     await pool.query('DELETE FROM public."user" WHERE id=any($1::text[])', [users]);
     await pool.end();
   }

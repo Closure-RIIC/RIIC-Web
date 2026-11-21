@@ -3,7 +3,7 @@
 import { Link } from "@tanstack/react-router";
 import { usePathname } from "@/navigation";
 import { useTranslations } from "use-intl";
-import { ArrowUpRight, BookOpen, Bug, FlaskConical, Gauge, Gift, MessageSquareText, ShieldCheck, Sparkles, UsersRound } from "lucide-react";
+import { ArrowUpRight, BookOpen, Bug, FileDown, FlaskConical, Gauge, Gift, MessageSquareText, ShieldCheck, Sparkles, UserRoundCog, UsersRound } from "lucide-react";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 
 export const ADMIN_NAVIGATION = [
@@ -11,6 +11,8 @@ export const ADMIN_NAVIGATION = [
   { path: "/issues", title: "issues", description: "issuesHint", icon: Bug, adminOnly: false, group: "operations" },
   { path: "/wishes", title: "wishes", description: "wishesHint", icon: Sparkles, adminOnly: false, group: "operations" },
   { path: "/quality", title: "quality", description: "qualityHint", icon: FlaskConical, adminOnly: false, group: "operations" },
+  { path: "/permissions", title: "permissions", description: "permissionsHint", icon: UserRoundCog, adminOnly: true, group: "management" },
+  { path: "/agent-archive", title: "agentArchive", description: "agentArchiveHint", icon: FileDown, adminOnly: true, group: "management" },
   { path: "/skills", title: "skills", description: "skillsHint", icon: MessageSquareText, adminOnly: true, group: "management" },
   { path: "/changelog", title: "changelog", description: "changelogHint", icon: BookOpen, adminOnly: true, group: "management" },
   { path: "/users", title: "users", description: "usersHint", icon: UsersRound, adminOnly: true, group: "management" },
@@ -18,15 +20,16 @@ export const ADMIN_NAVIGATION = [
   { path: "/agent", title: "agent", description: "agentHint", icon: ShieldCheck, adminOnly: true, group: "management" },
 ] as const;
 
-export function adminNavigation(isAdmin: boolean, basePath: string) {
-  return ADMIN_NAVIGATION.filter(item => (isAdmin || !item.adminOnly) && (basePath === "/admin" || !["/billing", "/agent", "/wishes"].includes(item.path)));
+export function adminNavigation(isAdmin: boolean, basePath: string, isSuperAdmin = false) {
+  const superAdminPaths = ["/agent", "/permissions", "/agent-archive"];
+  return ADMIN_NAVIGATION.filter(item => (isAdmin || !item.adminOnly) && (isSuperAdmin || !superAdminPaths.includes(item.path)) && (basePath === "/admin" || !["/billing", "/wishes", ...superAdminPaths].includes(item.path)));
 }
 
-export function AdminNav({ isAdmin, name, basePath = "/admin" }: { isAdmin: boolean; name: string; basePath?: string }) {
+export function AdminNav({ isAdmin, isSuperAdmin = false, name, basePath = "/admin" }: { isAdmin: boolean; isSuperAdmin?: boolean; name: string; basePath?: string }) {
   const t = useTranslations("AdminWorkspace");
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
-  const items = adminNavigation(isAdmin, basePath);
+  const items = adminNavigation(isAdmin, basePath, isSuperAdmin);
   return <Sidebar collapsible="icon" mobileWidth="18rem" className="border-r-0">
     <SidebarHeader className="h-16 justify-center px-3">
       <Link to={basePath} onClick={() => setOpenMobile(false)} className="flex items-center gap-2.5 rounded-lg p-1 outline-none focus-visible:ring-2 focus-visible:ring-ring" aria-label={t("workspace")}>
@@ -60,7 +63,7 @@ export function AdminNav({ isAdmin, name, basePath = "/admin" }: { isAdmin: bool
       <SidebarMenu><SidebarMenuItem><SidebarMenuButton tooltip={t("backToSite")} className="h-10" render={<Link to="/" />}><ArrowUpRight className="size-4" aria-hidden="true" /><span>{t("backToSite")}</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu>
       <div className="flex items-center gap-2.5 border-t pt-4">
         <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold" aria-hidden="true">{name.slice(0, 2).toUpperCase()}</span>
-        <div className="grid min-w-0 group-data-[collapsible=icon]:hidden"><span className="truncate text-xs font-medium">{name}</span><span className="mt-0.5 text-[11px] text-muted-foreground">{t(isAdmin ? "administrator" : "reviewer")}</span></div>
+        <div className="grid min-w-0 group-data-[collapsible=icon]:hidden"><span className="truncate text-xs font-medium">{name}</span><span className="mt-0.5 text-[11px] text-muted-foreground">{t(isSuperAdmin ? "superAdministrator" : isAdmin ? "administrator" : "reviewer")}</span></div>
       </div>
     </SidebarFooter>
   </Sidebar>;

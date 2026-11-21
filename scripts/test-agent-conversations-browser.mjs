@@ -1,0 +1,41 @@
+import assert from "node:assert/strict";
+import { mkdir, readFile } from "node:fs/promises";
+import { chromium } from "@playwright/test";
+import process from "node:process";
+import console from "node:console";
+
+const origin = `http://127.0.0.1:${Number(process.env.AGENT_ARCHIVE_DEMO_PORT || 5186)}`;
+const browser = await chromium.launch({ headless: true });
+const context = await browser.newContext({ locale: "zh-CN", viewport: { width: 1365, height: 900 }, acceptDownloads: true });
+const page = await context.newPage();
+const errors = [];
+page.on("pageerror", error => errors.push(error.message));
+try {
+  await page.goto(`${origin}/agent-archive`);
+  await page.getByRole("heading", { name: "我的会话归档" }).waitFor();
+  await page.getByRole("button", { name: /示例：排班建议与重试记录/ }).click();
+  await page.getByRole("heading", { name: "用户 · user" }).first().waitFor();
+  await page.getByText("这是第二次尝试，前一次回答仍独立保留。此内容为本地合成示例。").waitFor();
+  assert.equal(await page.getByText("示例：其他账号的对话", { exact: true }).count(), 0);
+  const downloading = page.waitForEvent("download");
+  await page.getByRole("button", { name: "导出当前范围 · JSONL", exact: true }).click();
+  const download = await downloading;
+  await mkdir("output/agent-archive", { recursive: true });
+  await download.saveAs("output/agent-archive/own-conversations.jsonl");
+  const rows = (await readFile("output/agent-archive/own-conversations.jsonl", "utf8")).trim().split("\n").map(row => JSON.parse(row));
+  assert.equal(rows.at(-1).complete, true);
+  assert.equal(rows.filter(row => row.type === "turn").length, 2);
+  assert.ok(rows.filter(row => row.type === "turn").every(row => row.userId === "local-test-user"));
+  await page.screenshot({ path: "output/agent-archive/desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  assert.equal(await page.evaluate(() => globalThis.document.documentElement.scrollWidth > globalThis.innerWidth), false);
+  await page.screenshot({ path: "output/agent-archive/mobile.png", fullPage: true });
+  await page.setViewportSize({ width: 1365, height: 900 });
+  await page.goto(`${origin}/admin/agent-archive`);
+  await page.getByRole("heading", { name: "全站 Agent 会话归档", exact: true }).waitFor();
+  await page.getByRole("button", { name: /示例：其他账号的对话/ }).waitFor();
+  await page.getByRole("button", { name: /示例：排班建议与重试记录/ }).waitFor();
+  await page.screenshot({ path: "output/agent-archive/admin.png", fullPage: true });
+  assert.deepEqual(errors, []);
+  console.log("PASS: own archive, both roles and retries, browser download, mobile width, super administrator archive, no page errors.");
+} finally { await browser.close(); }

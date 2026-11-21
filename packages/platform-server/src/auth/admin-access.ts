@@ -7,6 +7,7 @@ export const WEBSITE_USER_ROLE = "user";
 export type WebsiteAdminAccess = {
   userId: string;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   isReviewer: boolean;
   canAccessReview: boolean;
   isBootstrapAdmin: boolean;
@@ -24,10 +25,13 @@ export function websiteAdminAccess(
   return {
     userId,
     isAdmin,
+    // Bootstrap IDs are the server-controlled root authority. A database admin
+    // role (including a stale session role) can never grant this permission.
+    isSuperAdmin: isBootstrapAdmin,
     isReviewer,
     canAccessReview: isAdmin || isReviewer,
     isBootstrapAdmin,
-    canManageAdminRoles: isAdmin,
+    canManageAdminRoles: isBootstrapAdmin,
   };
 }
 
@@ -42,7 +46,7 @@ export function canModerateWebsiteUser(
   actor: WebsiteAdminAccess,
   target: WebsiteAdminAccess,
 ): boolean {
-  return actor.isAdmin && (!target.isBootstrapAdmin || actor.isBootstrapAdmin);
+  return actor.isSuperAdmin || (actor.isAdmin && !target.canAccessReview);
 }
 
 export function isEligibleForWebsiteAdmin(emailVerified: boolean, banned: boolean | null): boolean {

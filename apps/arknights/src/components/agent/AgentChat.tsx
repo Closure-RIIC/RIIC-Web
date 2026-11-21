@@ -307,6 +307,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   const isMobile = useIsMobile();
   const en = useLocale();
   const intl = useTranslations();
+  const archiveText = useTranslations("AgentArchive");
   const appearanceText = useTranslations("AgentAppearance");
   const { store: historyStore, error: historyError } = useAgentHistory();
   const [agentStatus, setAgentStatus] = useState<AgentStatus>("loading");
@@ -617,6 +618,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
       </div> : null}
 
       {historyError ? <p role="alert" className="text-xs text-destructive">{uiText.text(en, "chatHistoryCouldNotBeSavedInThis")}</p> : null}
+      {messages.at(-1)?.parts.some(part => part.type === "data-agent-archive" && (part.data as { status?: string })?.status === "failed") ? <p role="alert" className="text-xs text-destructive">{archiveText("saveFailed")}</p> : null}
       {agentStatus === "ready" && personaUnavailable ? <p role="alert" className="text-xs text-destructive">{uiText.text(en, "thisPersonaIsUnavailableChooseAnotherPersonaTo")}</p> : null}
 
       <ChatPanel

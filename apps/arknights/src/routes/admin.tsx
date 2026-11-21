@@ -9,6 +9,6 @@ export const Route = createFileRoute("/admin")({
   component: TranslatedRouteComponent,
 });
 function AdminShell() {
-  const { isAdmin, name } = Route.useRouteContext();
-  return <AdminLayout isAdmin={isAdmin} name={name}><Outlet /></AdminLayout>;
+  const { isAdmin, isSuperAdmin, name } = Route.useRouteContext();
+  return <AdminLayout isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} name={name}><Outlet /></AdminLayout>;
 }

@@ -13,14 +13,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { adminNavigation, AdminNav } from "./admin-nav";
 
-export function AdminShell({ children, isAdmin, name, basePath = "/admin" }: {
-  children: ReactNode; isAdmin: boolean; name: string; basePath?: string;
+export function AdminShell({ children, isAdmin, isSuperAdmin = false, name, basePath = "/admin" }: {
+  children: ReactNode; isAdmin: boolean; isSuperAdmin?: boolean; name: string; basePath?: string;
 }) {
   const t = useTranslations("AdminWorkspace");
   const pathname = usePathname();
   const [searchOpen, setSearchOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const navigation = useMemo(() => adminNavigation(isAdmin, basePath), [isAdmin, basePath]);
+  const navigation = useMemo(() => adminNavigation(isAdmin, basePath, isSuperAdmin), [isAdmin, basePath, isSuperAdmin]);
   const current = navigation.find(item => pathname === basePath + item.path) ?? navigation[0];
   const matches = navigation.filter(item => `${t(item.title)} ${t(item.description)}`.toLocaleLowerCase().includes(query.toLocaleLowerCase().trim()));
   useEffect(() => {
@@ -35,7 +35,7 @@ export function AdminShell({ children, isAdmin, name, basePath = "/admin" }: {
   }, []);
   return <AppMotionProvider><SidebarProvider cookieName="riic_admin_sidebar" style={{ "--sidebar-width": "15rem" } as CSSProperties} className="bg-background text-foreground">
     <a href="#admin-content" className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-3 focus:text-primary-foreground">{t("skip")}</a>
-    <AdminNav isAdmin={isAdmin} name={name} basePath={basePath} />
+    <AdminNav isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} name={name} basePath={basePath} />
     <div className="relative flex min-w-0 w-full flex-1 flex-col bg-background">
       <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-3 border-b bg-background px-4 sm:px-6 lg:px-8">
         <SidebarTrigger aria-label={t("toggleSidebar")} className="size-9 shrink-0" />

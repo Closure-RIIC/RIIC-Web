@@ -58,6 +58,7 @@ export default defineConfig({
       APP_DEPLOYMENT_ENV: "development",
       // Use the actual browser origin for signed session cookies and CSRF checks.
       BETTER_AUTH_URL: baseURL,
+      BETTER_AUTH_ADMIN_USER_IDS: "e2e-referral-super-admin",
       ACCOUNT_CLOUD_SYNC_ENABLED: "1",
       // Existing interaction fixtures exercise the future public rollout.
       // The production-profile suite separately tests the admin boundary.

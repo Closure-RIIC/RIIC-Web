@@ -1,0 +1,14 @@
+{
+  "serverList": "超級管理員名單",
+  "refresh": "重新整理名單",
+  "serverListHint": "此名單由目前伺服器的 BETTER_AUTH_ADMIN_USER_IDS 設定決定。名單中的帳號擁有超級管理員權限。",
+  "serverListChange": "新增或移除超級管理員需要修改伺服器設定並重新啟動服務。移出名單後，帳號若仍有一般管理員角色，將繼續保留該角色。",
+  "loading": "正在讀取名單…",
+  "missingAccount": "找不到對應帳號",
+  "accountId": "帳號 ID",
+  "missingAccountHint": "此 ID 已設定，但資料庫中沒有對應帳號。",
+  "banned": "帳號已停用，目前無法使用後台權限。",
+  "serverManaged": "由伺服器名單授權",
+  "backendRoles": "一般後台角色",
+  "backendRolesHint": "搜尋帳號後點擊「管理帳戶」，可授予或撤銷一般管理員、審閱人角色。超級管理員名單由伺服器維護。"
+}

@@ -1,0 +1,14 @@
+{
+  "serverList": "Super administrators",
+  "refresh": "Refresh list",
+  "serverListHint": "This list comes from BETTER_AUTH_ADMIN_USER_IDS on the current server. Listed accounts have super administrator access.",
+  "serverListChange": "To add or remove a super administrator, update the server configuration and restart the service. Removing an account from this list preserves any ordinary administrator role it already has.",
+  "loading": "Loading server list…",
+  "missingAccount": "Account not found",
+  "accountId": "Account ID",
+  "missingAccountHint": "This ID is configured, but no matching account exists in the database.",
+  "banned": "This account is suspended and cannot access administration.",
+  "serverManaged": "Granted by the server list",
+  "backendRoles": "Delegated roles",
+  "backendRolesHint": "Search for an account and open its details to grant or revoke administrator and reviewer roles. Super administrators are managed through the server configuration."
+}

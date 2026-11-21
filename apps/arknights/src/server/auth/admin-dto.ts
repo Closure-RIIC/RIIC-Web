@@ -1,5 +1,5 @@
 import type { AdminSessionData, AdminUserData } from "@riic/arknights-domain/types";
-import { websiteAdminAccess } from "@riic/platform-server/auth/admin-access";
+import { canModerateWebsiteUser, websiteAdminAccess, type WebsiteAdminAccess } from "@riic/platform-server/auth/admin-access";
 import { sumPoints } from "../billing/points.ts";
 
 type AdminUserRecord = {
@@ -28,7 +28,7 @@ type AdminSessionRecord = {
   userAgent: string | null;
 };
 
-export function toAdminUserData(record: AdminUserRecord, bootstrapAdminIds: Set<string>): AdminUserData {
+export function toAdminUserData(record: AdminUserRecord, bootstrapAdminIds: Set<string>, actor?: WebsiteAdminAccess): AdminUserData {
   const access = websiteAdminAccess(record.id, record.role, bootstrapAdminIds);
   const monthlyExpiresAt = record.monthlyExpiresAt ?? null;
   const monthlyActive = monthlyExpiresAt !== null && monthlyExpiresAt.getTime() > Date.now();
@@ -43,6 +43,8 @@ export function toAdminUserData(record: AdminUserRecord, bootstrapAdminIds: Set<
     banReason: record.banReason,
     createdAt: record.createdAt.toISOString(),
     isAdmin: access.isAdmin,
+    isSuperAdmin: access.isSuperAdmin,
+    canModerate: actor ? canModerateWebsiteUser(actor, access) : false,
     isReviewer: access.isReviewer,
     isBootstrapAdmin: access.isBootstrapAdmin,
     sklandBindingCount: record.sklandBindingCount,

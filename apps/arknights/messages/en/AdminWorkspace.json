@@ -126,5 +126,10 @@
   "accessDenied": "This role cannot access this page.",
   "backOverview": "Back to overview",
   "previewReset": "Reset sample data",
-  "previewReadOnly": "Test execution, imports, and publishing are unavailable in this preview."
+  "previewReadOnly": "Test execution, imports, and publishing are unavailable in this preview.",
+  "superAdministrator": "Super administrator",
+  "permissions": "Permissions",
+  "permissionsHint": "View super administrators and grant or revoke administrator and reviewer roles.",
+  "agentArchive": "Conversation exports",
+  "agentArchiveHint": "Browse and export Agent conversations across all accounts."
 }

@@ -1,6 +1,6 @@
 import "@tanstack/react-start/server-only";
 
-import { and, count, desc, eq, gt, ilike, or } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, ilike, inArray, or } from "drizzle-orm";
 
 import type {
   AdminSessionsData,
@@ -29,7 +29,7 @@ import {
   websiteAdminAccess,
 } from "@riic/platform-server/auth/admin-access";
 import { toAdminSessionData, toAdminUserData } from "./auth/admin-dto";
-import { requireWebsiteAdmin } from "@riic/platform-server/auth/authorization";
+import { requireWebsiteAdmin, requireWebsiteSuperAdmin } from "@riic/platform-server/auth/authorization";
 import { configuredAdminIds } from "@riic/platform-server/auth/config";
 import { getDatabase } from "@riic/platform-server/db";
 import { billingWallet, session, user } from "@riic/platform-server/db/schema";
@@ -62,21 +62,25 @@ async function applyAdminUserMutation(request: Request, userId: string, mutation
   enforceRateLimit("admin-users-write", requestClientIp(request), 30, 10 * 60_000);
   if (!userId || userId.length > 100) throw new PublicApiError("AIC-REQ-1001");
 
-  const [targetRecord] = await getDatabase().select({
-    id: user.id,
-    role: user.role,
-    emailVerified: user.emailVerified,
-    banned: user.banned,
-  }).from(user).where(eq(user.id, userId)).limit(1);
-  if (!targetRecord) throw new PublicApiError("AIC-REQ-1001", { message: "目标用户不存在。" });
-  const targetAccess = websiteAdminAccess(targetRecord.id, targetRecord.role);
+  await getDatabase().transaction(async tx => {
+    // Lock both identities in a stable order. Role grants and moderation share
+    // these locks, so an account promoted concurrently cannot be moderated using
+    // an earlier, less privileged target role.
+    const records = await tx.select({ id: user.id, role: user.role, emailVerified: user.emailVerified, banned: user.banned })
+      .from(user).where(inArray(user.id, [...new Set([actor.userId, userId])])).orderBy(asc(user.id)).for("update");
+    const actorRecord = records.find(record => record.id === actor.userId);
+    const targetRecord = records.find(record => record.id === userId);
+    if (!actorRecord || actorRecord.banned || !websiteAdminAccess(actor.userId, actorRecord.role).isAdmin) throw new PublicApiError("AIC-AUTH-2009");
+    if (!targetRecord) throw new PublicApiError("AIC-REQ-1001", { message: "目标用户不存在。" });
+    const currentActor = websiteAdminAccess(actor.userId, actorRecord.role);
+    const targetAccess = websiteAdminAccess(targetRecord.id, targetRecord.role);
 
-  if (mutation.kind === "admin" || mutation.kind === "reviewer") {
-    if (!canChangeWebsiteAdminRole(actor, targetAccess)) {
-      throw new PublicApiError("AIC-AUTH-2009", {
-        message: targetAccess.isBootstrapAdmin
-          ? "初始管理员权限只能通过服务器环境变量调整。"
-          : "只有管理员可以调整后台角色。",
+    if (mutation.kind === "admin" || mutation.kind === "reviewer") {
+      if (!canChangeWebsiteAdminRole(currentActor, targetAccess)) {
+        throw new PublicApiError("AIC-AUTH-2009", {
+          message: targetAccess.isBootstrapAdmin
+            ? "超级管理员名单只能通过服务器环境变量调整。"
+            : "只有超级管理员可以调整后台角色。",
       });
     }
     if (mutation.enabled && !isEligibleForWebsiteAdmin(targetRecord.emailVerified, targetRecord.banned)) {
@@ -85,7 +89,7 @@ async function applyAdminUserMutation(request: Request, userId: string, mutation
     const role = mutation.kind === "admin" ? WEBSITE_ADMIN_ROLE : WEBSITE_REVIEWER_ROLE;
     // Revoking one role must not silently revoke a different role assigned meanwhile.
     if (!mutation.enabled && targetRecord.role !== role) return;
-    await getDatabase().update(user).set({
+    await tx.update(user).set({
       role: mutation.enabled ? role : WEBSITE_USER_ROLE,
       updatedAt: new Date(),
     }).where(eq(user.id, userId));
@@ -93,20 +97,20 @@ async function applyAdminUserMutation(request: Request, userId: string, mutation
   }
 
   if (mutation.kind === "revokeSessions") {
-    if (!canModerateWebsiteUser(actor, targetAccess)) {
-      throw new PublicApiError("AIC-AUTH-2009", { message: "受委派管理员不能撤销初始管理员的 Session。" });
+    if (!canModerateWebsiteUser(currentActor, targetAccess)) {
+      throw new PublicApiError("AIC-AUTH-2009", { message: "普通管理员只能管理普通用户的 Session。" });
     }
-    await getDatabase().delete(session).where(eq(session.userId, userId));
+    await tx.delete(session).where(eq(session.userId, userId));
     return;
   }
 
   if (userId === actor.userId && mutation.enabled) {
     throw new PublicApiError("AIC-REQ-1001", { message: "不能封禁当前管理员账号。" });
   }
-  if (mutation.enabled && !canModerateWebsiteUser(actor, targetAccess)) {
-    throw new PublicApiError("AIC-AUTH-2009", { message: "受委派管理员不能封禁初始管理员。" });
+  if (!canModerateWebsiteUser(currentActor, targetAccess)) {
+    throw new PublicApiError("AIC-AUTH-2009", { message: "普通管理员只能封禁或解封普通用户。" });
   }
-  await getDatabase().update(user).set(mutation.enabled ? {
+  await tx.update(user).set(mutation.enabled ? {
     banned: true,
     banReason: mutation.reason?.slice(0, 300) || "管理员封禁",
     updatedAt: new Date(),
@@ -116,7 +120,32 @@ async function applyAdminUserMutation(request: Request, userId: string, mutation
     banExpires: null,
     updatedAt: new Date(),
   }).where(eq(user.id, userId));
-  if (mutation.enabled) await getDatabase().delete(session).where(eq(session.userId, userId));
+  if (mutation.enabled) await tx.delete(session).where(eq(session.userId, userId));
+  });
+}
+
+export async function handleGetAdminPermissions(request: Request) {
+  const requestId = createRequestId();
+  const startedAt = performance.now();
+  let response: Response;
+  try {
+    const actor = await requireWebsiteSuperAdmin(request);
+    enforceRateLimit("admin-permissions-read", actor.userId, 60, 60_000);
+    const ids = [...configuredAdminIds()];
+    const records = ids.length ? await getDatabase().select({ id: user.id, name: user.name, email: user.email, banned: user.banned })
+      .from(user).where(inArray(user.id, ids)) : [];
+    const byId = new Map(records.map(record => [record.id, record]));
+    // Enumerate the configured IDs, including missing accounts. The ordinary user
+    // search is capped at 100 rows and cannot represent the complete server list.
+    response = successResponse({ superAdmins: ids.map(id => {
+      const account = byId.get(id);
+      return { id, name: account?.name ?? null, email: account?.email ?? null, banned: account?.banned ?? null, exists: !!account };
+    }) }, requestId);
+  } catch (error) {
+    response = failureResponse(error, requestId, "/api/admin/permissions", startedAt);
+  }
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
 }
 
 export async function handleListAdminUsers(request: Request, route: AdminUserRoute = "/api/admin/users") {
@@ -152,7 +181,7 @@ export async function handleListAdminUsers(request: Request, route: AdminUserRou
           sklandBindingCount: bindingSummary?.totalCount ?? 0,
           sklandActiveBindingCount: bindingSummary?.activeCount ?? 0,
           sklandRenewalDueCount: bindingSummary?.renewalDueCount ?? 0,
-        }, bootstrapAdminIds);
+        }, bootstrapAdminIds, actor);
       }),
       permissions: { canManageAdminRoles: actor.canManageAdminRoles },
       summary,
@@ -170,9 +199,11 @@ export async function handleListAdminUserSessions(
   const requestId = createRequestId();
   const startedAt = performance.now();
   try {
-    await requireWebsiteAdmin(request);
+    const actor = await requireWebsiteAdmin(request);
     enforceRateLimit("admin-users", requestClientIp(request), 60, 10 * 60_000);
     if (!userId || userId.length > 100) throw new PublicApiError("AIC-REQ-1001");
+    const [target] = await getDatabase().select({ id: user.id, role: user.role }).from(user).where(eq(user.id, userId)).limit(1);
+    if (!target || !canModerateWebsiteUser(actor, websiteAdminAccess(target.id, target.role))) throw new PublicApiError("AIC-AUTH-2009");
     const sessions = await getDatabase().select({
       id: session.id,
       createdAt: session.createdAt,

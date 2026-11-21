@@ -1,0 +1,14 @@
+{
+  "serverList": "超级管理员名单",
+  "refresh": "刷新名单",
+  "serverListHint": "此名单由当前服务器的 BETTER_AUTH_ADMIN_USER_IDS 配置决定。名单中的账号拥有超级管理员权限。",
+  "serverListChange": "增加或移除超级管理员需要修改服务器配置并重启服务。移出名单后，账号若仍有普通管理员角色，将继续保留该角色。",
+  "loading": "正在读取名单…",
+  "missingAccount": "未找到对应账号",
+  "accountId": "账号 ID",
+  "missingAccountHint": "此 ID 已配置，但数据库中没有对应账号。",
+  "banned": "账号已封禁，当前无法使用后台权限。",
+  "serverManaged": "由服务器名单授权",
+  "backendRoles": "普通后台角色",
+  "backendRolesHint": "搜索账号后点击“管理账户”，可授予或撤销普通管理员、审阅人角色。超级管理员名单由服务器维护。"
+}

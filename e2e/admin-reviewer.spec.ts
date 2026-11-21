@@ -1,37 +1,22 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
-import { hashPassword } from "better-auth/crypto";
 import { Pool } from "pg";
 
-test("reviewer sees only overview and issues, and direct admin routes remain protected", async ({ page, context, request, baseURL }) => {
-  test.skip(!process.env.AUTH_INTEGRATION_DATABASE_URL, "Requires an isolated authentication test database.");
+test("reviewer routes remain protected and user management displays roles without duplicate grants", async ({ page, context, baseURL }) => {
+  const url = process.env.AUTH_INTEGRATION_DATABASE_URL;
+  test.skip(!url || !process.env.BETTER_AUTH_SECRET, "Requires an isolated database and the server's test session secret.");
+  if (!new URL(url!).pathname.endsWith("_test")) throw new Error("Only an isolated *_test database is allowed.");
   test.setTimeout(180_000);
-  const pool = new Pool({ connectionString: process.env.AUTH_INTEGRATION_DATABASE_URL, max: 1 });
+  const pool = new Pool({ connectionString: url, max: 1 });
   const id = `e2e-reviewer-${randomUUID()}`;
-  const password = "Reviewer-Browser-Test-2026!";
+  const token = randomUUID();
   try {
     await pool.query('INSERT INTO "user" (id,name,email,email_verified,role) VALUES ($1,$2,$3,true,$4)', [id, "Reviewer browser test", `${id}@example.test`, "reviewer"]);
-    await pool.query("INSERT INTO account (id,account_id,provider_id,user_id,password) VALUES ($1,$2,'credential',$2,$3)", [randomUUID(), id, await hashPassword(password)]);
-    const login = await request.post("/api/auth/sign-in/email", {
-      headers: { origin: baseURL! },
-      data: { email: `${id}@example.test`, password },
-    });
-    expect(login.status(), await login.text()).toBe(200);
-    const sessionCookies: string[] = [];
-    for (const header of login.headersArray().filter(header => header.name.toLowerCase() === "set-cookie")) {
-      const pair = header.value.split(";", 1)[0];
-      const separator = pair.indexOf("=");
-      if (!pair.slice(0, separator).endsWith("session_token")) continue;
-      sessionCookies.push(pair);
-      await context.addCookies([{
-        name: pair.slice(0, separator), value: pair.slice(separator + 1),
-        domain: new URL(baseURL!).hostname, path: "/", httpOnly: true,
-        secure: header.value.toLowerCase().includes("; secure"), sameSite: "Lax",
-      }]);
-    }
-    // Reuse the real signed session for direct authorization assertions.
-    expect(sessionCookies).toHaveLength(1);
-    const apiHeaders = { cookie: sessionCookies.join("; ") };
+    await pool.query("INSERT INTO public.session (id,user_id,token,expires_at) VALUES ($1,$2,$3,now()+interval '1 hour')", [randomUUID(), id, token]);
+    const signedToken = encodeURIComponent(`${token}.${createHmac("sha256", process.env.BETTER_AUTH_SECRET!).update(token).digest("base64")}`);
+    await context.addCookies([{ name: "better-auth.session_token", value: signedToken, domain: new URL(baseURL!).hostname, path: "/", httpOnly: true, sameSite: "Lax" }]);
+    // Exercise the real session lookup and authorization without creating credentials.
+    const apiHeaders = { cookie: `better-auth.session_token=${signedToken}`, origin: baseURL! };
     await page.goto("/admin");
     const nav = page.locator("nav").filter({ has: page.locator('a[href="/admin/issues"]') });
     await expect(nav.locator('a[href="/admin"]')).toBeVisible();
@@ -58,40 +43,29 @@ test("reviewer sees only overview and issues, and direct admin routes remain pro
       if (response.status() === 503) expect((await response.json()).error.code).toBe("AIC-DATA-8002");
     }
     expect((await context.request.get("/api/admin/diagnostics", { headers: apiHeaders })).status()).toBe(200);
-    // The real API assignment lifecycle is covered by reviewer-role.integration;
-    // exercise the role controls here with a bootstrap user's response.
+    // Assignment is covered by reviewer-role.integration and the four-role browser script.
+    // Even a response advertising role-management permission must not add controls here.
     await pool.query('UPDATE "user" SET role=$1 WHERE id=$2', ["admin", id]);
-    let isReviewer = false;
     let verifiedUsers = 45549;
     await page.route("**/api/admin/users**", async route => {
-      if (route.request().method() === "PATCH") {
-        const body = route.request().postDataJSON();
-        expect(Object.keys(body)).toEqual(["isReviewer"]);
-        isReviewer = body.isReviewer;
-        await route.fulfill({ json: { success: true, data: { updated: true } } });
-      } else {
-        await route.fulfill({ json: { success: true, data: {
-          permissions: { canManageAdminRoles: true },
-          summary: { verifiedUsers },
-          users: [{ id: "role-control-test", name: "Role control test", email: "reviewer@example.test",
-            emailVerified: true, banned: false, banReason: null, createdAt: new Date().toISOString(),
-            isAdmin: false, isReviewer, isBootstrapAdmin: false,
-            sklandBindingCount: 0, sklandActiveBindingCount: 0, sklandRenewalDueCount: 0 }],
-        } } });
-      }
+      expect(route.request().method()).toBe("GET");
+      await route.fulfill({ json: { success: true, data: {
+        permissions: { canManageAdminRoles: true },
+        summary: { verifiedUsers },
+        users: [{ id: "role-control-test", name: "Role control test", email: "reviewer@example.test",
+          emailVerified: true, banned: false, banReason: null, createdAt: new Date().toISOString(),
+          isAdmin: false, isReviewer: true, isBootstrapAdmin: false, isSuperAdmin: false, canModerate: true,
+          paidPoints: 0, monthlyPoints: 0, monthlyExpiresAt: null, totalPoints: 0,
+          sklandBindingCount: 0, sklandActiveBindingCount: 0, sklandRenewalDueCount: 0 }],
+      } } });
     });
-    await context.addCookies([{ name: "riic-locale", value: "zh", domain: new URL(baseURL!).hostname, path: "/" }]);
+    await context.addCookies([{ name: "aic_locale", value: "zh-CN", domain: new URL(baseURL!).hostname, path: "/" }]);
     await page.goto("/admin/users");
     await expect(page.locator("[data-admin-verified-users]")).toContainText("45,549");
+    await expect(page.getByRole("cell", { name: /^(审阅人|Reviewer)$/ })).toBeVisible();
     await page.getByRole("button", { name: /管理账户|Manage account/, exact: true }).click();
-    await page.getByRole("button", { name: /设为审阅人|Grant reviewer/, exact: true }).click();
-    await page.getByRole("dialog").getByRole("button", { name: /确认设为审阅人|Confirm reviewer/, exact: true }).click();
-    await expect(page.getByRole("button", { name: /撤销审阅人|Revoke reviewer/, exact: true })).toBeVisible();
-    expect(isReviewer).toBe(true);
-    await page.getByRole("button", { name: /撤销审阅人|Revoke reviewer/, exact: true }).click();
-    await page.getByRole("dialog").getByRole("button", { name: /确认取消|Confirm revocation/, exact: true }).click();
-    await expect(page.getByRole("button", { name: /设为审阅人|Grant reviewer/, exact: true })).toBeVisible();
-    expect(isReviewer).toBe(false);
+    await expect(page.getByRole("button", { name: /^(设为管理员|取消管理员|设为审阅人|撤销审阅人|Grant admin|Revoke admin|Grant reviewer|Revoke reviewer)$/ })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /^(查看 Session|View sessions)$/ })).toBeVisible();
     verifiedUsers = 0;
     await page.getByRole("search").getByRole("button", { name: /^(搜索|Search)$/ }).click();
     await expect(page.locator("[data-admin-verified-users] dd").first()).toHaveText("0");

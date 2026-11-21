@@ -1,5 +1,5 @@
 import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, successResponse } from "@riic/platform-server/api-contract";
-import { requireWebsiteAdmin } from "@riic/platform-server/auth/authorization";
+import { requireWebsiteSuperAdmin } from "@riic/platform-server/auth/authorization";
 import { getDatabasePool } from "@riic/platform-server/db";
 import { BillingAdminError, changeAgentPolicy } from "@/server/billing/admin";
 import { importAgentResources } from "@/server/agent/resources";
@@ -10,7 +10,7 @@ async function handle(request: Request) {
   const requestId = createRequestId(); const start = performance.now();
   let response: Response;
   try {
-    const { session } = await requireWebsiteAdmin(request);
+    const { session } = await requireWebsiteSuperAdmin(request);
     let data: unknown;
     if (request.method === "GET") {
       const id = new URL(request.url).searchParams.get("id");

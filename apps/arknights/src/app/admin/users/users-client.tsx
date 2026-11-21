@@ -21,7 +21,7 @@ const CLIENT_SKLAND_ENABLED = process.env.APP_CLIENT_SKLAND_ENABLED === "1";
 
 type RoleChange = { userId: string; name: string; email: string; action: "grantAdmin" | "revokeAdmin" | "grantReviewer" | "revokeReviewer" };
 
-export function AdminUserManagement() {
+export function AdminUserManagement({ rolesOnly = false }: { rolesOnly?: boolean }) {
   const request = useAdminFetch();
   const intl = useTranslations();
   // Language changes update copy without reloading or overwriting in-progress work.
@@ -150,7 +150,7 @@ export function AdminUserManagement() {
 
   return (
     <section id="users" className="grid min-w-0 gap-4" data-admin-user-management>
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-muted/20 px-4 py-4">
+      {!rolesOnly && <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border bg-muted/20 px-4 py-4">
         <div className="flex items-center gap-3">
           <span className="flex size-10 items-center justify-center rounded-lg bg-background shadow-sm"><UsersRound className="size-5 text-muted-foreground" aria-hidden="true" /></span>
           <dl data-admin-verified-users aria-busy={loading}>
@@ -160,7 +160,7 @@ export function AdminUserManagement() {
           </dl>
         </div>
         <p className="max-w-md text-xs leading-5 text-muted-foreground">{canManageAdminRoles === true ? intl("app_admin_users_users_client.theBootstrapAdministratorCanAlsoChangeAdministratorRoles") : canManageAdminRoles === false ? intl("app_admin_users_users_client.administratorRolesCanBeChangedOnlyByTheBootstrap") : ""}</p>
-      </div>
+      </div>}
       <form className="flex flex-wrap gap-2" role="search" onSubmit={event => {
         event.preventDefault();
         if (busyRef.current) return;
@@ -190,6 +190,7 @@ export function AdminUserManagement() {
               const sessions = sessionsByUser[entry.id];
               const actionBusy = loading || Boolean(busyKey);
               const expanded = expandedUser === entry.id;
+              const canChangeRole = rolesOnly && canManageAdminRoles === true && !entry.isBootstrapAdmin;
               return <Fragment key={entry.id}>
                 <tr className="border-t hover:bg-muted/30">
                   <td className="max-w-80 px-4 py-3"><div className="flex items-center gap-3"><span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium" aria-hidden="true">{entry.name.slice(0, 2).toUpperCase()}</span><span className="min-w-0"><span className="block truncate font-medium">{entry.name}</span><span className="mt-0.5 block truncate text-xs text-muted-foreground">{entry.email}</span></span></div></td>
@@ -200,17 +201,17 @@ export function AdminUserManagement() {
                 </tr>
                 {expanded && <tr className="border-t bg-muted/15"><td colSpan={5} className="p-4"><div id={`user-detail-${entry.id}`} className="grid gap-4" aria-label={entry.name}>
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span className="break-all">{entry.email}</span><span>· {t(entry.emailVerified ? "verified" : "unverified")}</span>
-                    {CLIENT_SKLAND_ENABLED && <span>{entry.sklandActiveBindingCount > 0 ? intl("app_admin_users_users_client.sklandActive", { sklandActiveBindingCount: entry.sklandActiveBindingCount }) : intl("app_admin_users_users_client.noActiveSklandAuthorization")}</span>}
-                    {CLIENT_SKLAND_ENABLED && entry.sklandRenewalDueCount > 0 && <span className="text-amber-700">{intl("app_admin_users_users_client.renewalDue")} · {entry.sklandRenewalDueCount}</span>}
+                    {!rolesOnly && CLIENT_SKLAND_ENABLED && <span>{entry.sklandActiveBindingCount > 0 ? intl("app_admin_users_users_client.sklandActive", { sklandActiveBindingCount: entry.sklandActiveBindingCount }) : intl("app_admin_users_users_client.noActiveSklandAuthorization")}</span>}
+                    {!rolesOnly && CLIENT_SKLAND_ENABLED && entry.sklandRenewalDueCount > 0 && <span className="text-amber-700">{intl("app_admin_users_users_client.renewalDue")} · {entry.sklandRenewalDueCount}</span>}
                   </div>
-                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground" data-user-billing-summary>
+                  {!rolesOnly && <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground" data-user-billing-summary>
                     <span className="font-medium text-foreground">{uiText.text(en, "points")} {entry.totalPoints}</span>
                     <span>{uiText.text(en, "permanent")} {entry.paidPoints}</span>
                     <span>{uiText.text(en, "monthly")} {entry.monthlyPoints}{entry.monthlyExpiresAt ? ` · ${uiText.text(en, "expires")} ${new Date(entry.monthlyExpiresAt).toLocaleDateString(locale)}` : ""}</span>
-                  </div>
+                  </div>}
                   {entry.banned && entry.banReason && <p className="text-xs text-destructive">{entry.banReason}</p>}
                   <div className="flex flex-wrap gap-2">
-                    {canManageAdminRoles && !entry.isBootstrapAdmin ? (
+                    {canChangeRole ? (
                       <Button
                         type="button"
                         size="sm"
@@ -222,8 +223,8 @@ export function AdminUserManagement() {
                         {entry.isAdmin ? (intl("app_admin_users_users_client.revokeAdmin")) : (intl("app_admin_users_users_client.grantAdmin"))}
                       </Button>
                     ) : null}
-                    <Button type="button" size="sm" variant="outline" disabled={actionBusy} onClick={() => void toggleSessions(entry.id)}>{sessions ? (intl("app_admin_users_users_client.hideSessions")) : (intl("app_admin_users_users_client.viewSessions"))}</Button>
-                    {canManageAdminRoles && !entry.isBootstrapAdmin ? (
+                    {!rolesOnly && <Button type="button" size="sm" variant="outline" disabled={actionBusy || !entry.canModerate} onClick={() => void toggleSessions(entry.id)}>{sessions ? (intl("app_admin_users_users_client.hideSessions")) : (intl("app_admin_users_users_client.viewSessions"))}</Button>}
+                    {canChangeRole ? (
                       <Button
                         type="button"
                         size="sm"
@@ -235,8 +236,8 @@ export function AdminUserManagement() {
                         {intl(entry.isReviewer ? "adminReviewer.revoke" : "adminReviewer.grant")}
                       </Button>
                     ) : null}
-                    <Button type="button" size="sm" variant="outline" disabled={actionBusy} onClick={() => void act(entry.id, "revokeSessions")}>{intl("app_admin_users_users_client.revokeSessions")}</Button>
-                    <Button type="button" size="sm" variant={entry.banned ? "outline" : "destructive"} disabled={actionBusy} onClick={() => void act(entry.id, entry.banned ? "unban" : "ban")}>{entry.banned ? (intl("app_admin_users_users_client.unsuspend")) : (intl("app_admin_users_users_client.suspend"))}</Button>
+                    {!rolesOnly && <Button type="button" size="sm" variant="outline" disabled={actionBusy || !entry.canModerate} onClick={() => void act(entry.id, "revokeSessions")}>{intl("app_admin_users_users_client.revokeSessions")}</Button>}
+                    {!rolesOnly && <Button type="button" size="sm" variant={entry.banned ? "outline" : "destructive"} disabled={actionBusy || !entry.canModerate} onClick={() => void act(entry.id, entry.banned ? "unban" : "ban")}>{entry.banned ? (intl("app_admin_users_users_client.unsuspend")) : (intl("app_admin_users_users_client.suspend"))}</Button>}
                   </div>
                 {sessions ? (
                   <div className="mt-4 grid gap-2 border-t pt-3">

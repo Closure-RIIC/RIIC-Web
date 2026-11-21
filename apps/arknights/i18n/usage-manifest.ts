@@ -543,192 +543,192 @@ export const references = [
   {
     "key": "Admin_billing_console.action",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:89"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:95"
   },
   {
     "key": "Admin_billing_console.actions",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "Admin_billing_console.adjust",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:81"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:87"
   },
   {
     "key": "Admin_billing_console.adjusted",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:96"
   },
   {
     "key": "Admin_billing_console.adjustmentLedgerId",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:96"
   },
   {
     "key": "Admin_billing_console.afdianTradeOptional",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:89"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:95"
   },
   {
     "key": "Admin_billing_console.amountsRetainTheirOriginalPrecisionNullMeansUnknown",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:88"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:94"
   },
   {
     "key": "Admin_billing_console.billingManagement",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "Admin_billing_console.confirmAdjustment",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:89"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:95"
   },
   {
     "key": "Admin_billing_console.creditPermanentPoints",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:89"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:95"
   },
   {
     "key": "Admin_billing_console.date",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:79"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:85"
   },
   {
     "key": "Admin_billing_console.debitPermanentPoints",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:89"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:95"
   },
   {
     "key": "Admin_billing_console.deepseekFirstGlmOnFailureApplicationFilteringRemains",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:87"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:93"
   },
   {
     "key": "Admin_billing_console.details",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "Admin_billing_console.evidenceReason",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:96"
   },
   {
     "key": "Admin_billing_console.fromBeijing",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:73"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:79"
   },
   {
     "key": "Admin_billing_console.gatewaySyncStatus",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:87"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:93"
   },
   {
     "key": "Admin_billing_console.knownCost",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:79"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:85"
   },
   {
     "key": "Admin_billing_console.knownModelCost",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:78"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
   },
   {
     "key": "Admin_billing_console.last30DaysByDefaultUnknownCostsRequire",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:79"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:85"
   },
   {
     "key": "Admin_billing_console.loading",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:76"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:82"
   },
   {
     "key": "Admin_billing_console.next",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
   },
   {
     "key": "Admin_billing_console.noMatchingRecords",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
   },
   {
     "key": "Admin_billing_console.openReviews",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:78"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
   },
   {
     "key": "Admin_billing_console.operationRecorded",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:59"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
   },
   {
     "key": "Admin_billing_console.originalMonthlyPointsExpired",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:59"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
   },
   {
     "key": "Admin_billing_console.payments",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:78"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
   },
   {
     "key": "Admin_billing_console.permanentPoints",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:78"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
   },
   {
     "key": "Admin_billing_console.platformAbsorbs",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:96"
   },
   {
     "key": "Admin_billing_console.pointAdjustment",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:89"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:95"
   },
   {
     "key": "Admin_billing_console.points",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:79"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:85"
   },
   {
     "key": "Admin_billing_console.points2",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:89"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:95"
   },
   {
     "key": "Admin_billing_console.pointsCharged",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:78"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
   },
   {
     "key": "Admin_billing_console.pointsOnlyNoCashRefundsRefundsRequireAn",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:89"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:95"
   },
   {
     "key": "Admin_billing_console.previous",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
   },
   {
     "key": "Admin_billing_console.reason",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:89"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:95"
   },
   {
     "key": "Admin_billing_console.recordDetails",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:88"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:94"
   },
   {
     "key": "Admin_billing_console.records",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
   },
   {
     "key": "Admin_billing_console.referralDisabled",
@@ -818,92 +818,92 @@ export const references = [
   {
     "key": "Admin_billing_console.refund",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:82"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:88"
   },
   {
     "key": "Admin_billing_console.reservedPoints",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:78"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
   },
   {
     "key": "Admin_billing_console.resolution",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:96"
   },
   {
     "key": "Admin_billing_console.resolve",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:83"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:89"
   },
   {
     "key": "Admin_billing_console.resolve2",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:96"
   },
   {
     "key": "Admin_billing_console.resolveReview",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:96"
   },
   {
     "key": "Admin_billing_console.runs",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:78"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
   },
   {
     "key": "Admin_billing_console.runs2",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:79"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:85"
   },
   {
     "key": "Admin_billing_console.searchRefresh",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:73"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:79"
   },
   {
     "key": "Admin_billing_console.statusKindBlankForAll",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:72"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:78"
   },
   {
     "key": "Admin_billing_console.thisRecordsTheResolutionCompletePointAdjustmentsFirst",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:96"
   },
   {
     "key": "Admin_billing_console.toBeijing",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:73"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:79"
   },
   {
     "key": "Admin_billing_console.unknown",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:79"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:85"
   },
   {
     "key": "Admin_billing_console.unknownCostRuns",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:78"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:84"
   },
   {
     "key": "Admin_billing_console.unknownNone",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:56"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:62"
   },
   {
     "key": "Admin_billing_console.userReferenceIdEmail",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:72"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:78"
   },
   {
     "key": "Admin_billing_console.verifiedNoDiscrepancy",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:90"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:96"
   },
   {
     "key": "Admin_billing_console.waitingForGatewayWorker",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:87"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:93"
   },
   {
     "key": "Admin_policy_editor.addRule",
@@ -1288,242 +1288,282 @@ export const references = [
   {
     "key": "AdminBillingLabels.action",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.actor_id",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.amount_fen",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.attempts",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.audit",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.call_id",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.codes",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.created_at",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.email",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.filters",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.held_monthly_points",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.held_paid_points",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.input_tokens",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.kind",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
+  },
+  {
+    "key": "AdminBillingLabels.known_cost_fen",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.ledger",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.model",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
+  },
+  {
+    "key": "AdminBillingLabels.month",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
+  },
+  {
+    "key": "AdminBillingLabels.monthly",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.monthly_expires_at",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.monthly_points",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.monthly_points_after",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.name",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.orders",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.output_tokens",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
+  },
+  {
+    "key": "AdminBillingLabels.paid_fen",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
+  },
+  {
+    "key": "AdminBillingLabels.paid_orders",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.paid_points",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.paid_points_after",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.points",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.points_delta",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.policies",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.product_id",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.provider",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.provider_order_id",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.rates",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.reason",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.reference_id",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.referral",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.resolution",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.reviews",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.rule_ids",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.run_id",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
+  },
+  {
+    "key": "AdminBillingLabels.runs",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.settlement",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.stage",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.status",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.summary",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.target",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
+  },
+  {
+    "key": "AdminBillingLabels.unknown_cost_calls",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
+  },
+  {
+    "key": "AdminBillingLabels.unknown_cost_runs",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.upstream_cost_rmb_fen",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.usage",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminBillingLabels.user_id",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.version",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:80"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:86"
   },
   {
     "key": "AdminBillingLabels.wallets",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:65"
+    "source": "apps/arknights/src/app/admin/billing/billing-console.tsx:71"
   },
   {
     "key": "AdminChangelog.actionError",
@@ -1781,6 +1821,66 @@ export const references = [
     "source": "apps/arknights/src/app/admin/changelog/changelog-manager.tsx:188"
   },
   {
+    "key": "AdminPermissions.accountId",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:48"
+  },
+  {
+    "key": "AdminPermissions.backendRoles",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:54"
+  },
+  {
+    "key": "AdminPermissions.backendRolesHint",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:55"
+  },
+  {
+    "key": "AdminPermissions.banned",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:49"
+  },
+  {
+    "key": "AdminPermissions.loading",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:44"
+  },
+  {
+    "key": "AdminPermissions.missingAccount",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:46"
+  },
+  {
+    "key": "AdminPermissions.missingAccountHint",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:49"
+  },
+  {
+    "key": "AdminPermissions.refresh",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:39"
+  },
+  {
+    "key": "AdminPermissions.serverList",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:38"
+  },
+  {
+    "key": "AdminPermissions.serverListChange",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:42"
+  },
+  {
+    "key": "AdminPermissions.serverListHint",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:41"
+  },
+  {
+    "key": "AdminPermissions.serverManaged",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/permissions/page.tsx:49"
+  },
+  {
     "key": "adminReviewer.confirm",
     "prefix": false,
     "source": "apps/arknights/src/app/admin/users/users-client.tsx:296"
@@ -1838,7 +1938,17 @@ export const references = [
   {
     "key": "AdminWorkspace.agent",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:51"
+  },
+  {
+    "key": "AdminWorkspace.agentArchive",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:51"
+  },
+  {
+    "key": "AdminWorkspace.agentArchiveHint",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/admin-shell.tsx:25"
   },
   {
     "key": "AdminWorkspace.agentHint",
@@ -1863,12 +1973,12 @@ export const references = [
   {
     "key": "AdminWorkspace.backToSite",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:60"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:63"
   },
   {
     "key": "AdminWorkspace.billing",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:51"
   },
   {
     "key": "AdminWorkspace.billingHint",
@@ -2183,7 +2293,7 @@ export const references = [
   {
     "key": "AdminWorkspace.changelog",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:51"
   },
   {
     "key": "AdminWorkspace.changelogHint",
@@ -2213,7 +2323,7 @@ export const references = [
   {
     "key": "AdminWorkspace.issues",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:51"
   },
   {
     "key": "AdminWorkspace.issuesHint",
@@ -2223,7 +2333,7 @@ export const references = [
   {
     "key": "AdminWorkspace.management",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:42"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:45"
   },
   {
     "key": "AdminWorkspace.nameOrder",
@@ -2233,7 +2343,7 @@ export const references = [
   {
     "key": "AdminWorkspace.navigation",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:38"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:41"
   },
   {
     "key": "AdminWorkspace.newest",
@@ -2268,12 +2378,12 @@ export const references = [
   {
     "key": "AdminWorkspace.operations",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:42"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:45"
   },
   {
     "key": "AdminWorkspace.overview",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:51"
   },
   {
     "key": "AdminWorkspace.overviewHint",
@@ -2284,6 +2394,16 @@ export const references = [
     "key": "AdminWorkspace.page",
     "prefix": false,
     "source": "apps/arknights/src/app/admin/billing/code-history.tsx:77"
+  },
+  {
+    "key": "AdminWorkspace.permissions",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:51"
+  },
+  {
+    "key": "AdminWorkspace.permissionsHint",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/admin-page.tsx:15"
   },
   {
     "key": "AdminWorkspace.preview",
@@ -2323,7 +2443,7 @@ export const references = [
   {
     "key": "AdminWorkspace.quality",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:51"
   },
   {
     "key": "AdminWorkspace.qualityHint",
@@ -2378,7 +2498,7 @@ export const references = [
   {
     "key": "AdminWorkspace.skills",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:51"
   },
   {
     "key": "AdminWorkspace.skillsHint",
@@ -2399,6 +2519,11 @@ export const references = [
     "key": "AdminWorkspace.status",
     "prefix": false,
     "source": "apps/arknights/src/app/admin/billing/code-history.tsx:58"
+  },
+  {
+    "key": "AdminWorkspace.superAdministrator",
+    "prefix": false,
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:66"
   },
   {
     "key": "AdminWorkspace.suspended",
@@ -2423,7 +2548,7 @@ export const references = [
   {
     "key": "AdminWorkspace.users",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:51"
   },
   {
     "key": "AdminWorkspace.usersHint",
@@ -2438,7 +2563,7 @@ export const references = [
   {
     "key": "AdminWorkspace.wishes",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:48"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:51"
   },
   {
     "key": "AdminWorkspace.wishesHint",
@@ -2448,7 +2573,7 @@ export const references = [
   {
     "key": "AdminWorkspace.workspace",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/admin-nav.tsx:32"
+    "source": "apps/arknights/src/app/admin/admin-nav.tsx:35"
   },
   {
     "key": "AgentAppearance.glowName",
@@ -2464,6 +2589,146 @@ export const references = [
     "key": "AgentAppearance.selectCloud",
     "prefix": false,
     "source": "apps/arknights/src/components/agent/AgentAppearancePicker.tsx:30"
+  },
+  {
+    "key": "AgentArchive.account",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:94"
+  },
+  {
+    "key": "AgentArchive.adminHint",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:92"
+  },
+  {
+    "key": "AgentArchive.adminTitle",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:25"
+  },
+  {
+    "key": "AgentArchive.assistant",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:117"
+  },
+  {
+    "key": "AgentArchive.back",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:91"
+  },
+  {
+    "key": "AgentArchive.delete",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:114"
+  },
+  {
+    "key": "AgentArchive.deleteConfirm",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:78"
+  },
+  {
+    "key": "AgentArchive.detail",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:112"
+  },
+  {
+    "key": "AgentArchive.empty",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:105"
+  },
+  {
+    "key": "AgentArchive.exportAll",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:88"
+  },
+  {
+    "key": "AgentArchive.exportConversation",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:88"
+  },
+  {
+    "key": "AgentArchive.exportHint",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:100"
+  },
+  {
+    "key": "AgentArchive.failed",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:82"
+  },
+  {
+    "key": "AgentArchive.failedStatus",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:116"
+  },
+  {
+    "key": "AgentArchive.filter",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:97"
+  },
+  {
+    "key": "AgentArchive.from",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:95"
+  },
+  {
+    "key": "AgentArchive.hint",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:92"
+  },
+  {
+    "key": "AgentArchive.loading",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:102"
+  },
+  {
+    "key": "AgentArchive.more",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:110"
+  },
+  {
+    "key": "AgentArchive.noReply",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:119"
+  },
+  {
+    "key": "AgentArchive.refresh",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:97"
+  },
+  {
+    "key": "AgentArchive.saveFailed",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:621"
+  },
+  {
+    "key": "AgentArchive.select",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:123"
+  },
+  {
+    "key": "AgentArchive.structuredPart",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:118"
+  },
+  {
+    "key": "AgentArchive.title",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:25"
+  },
+  {
+    "key": "AgentArchive.to",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:96"
+  },
+  {
+    "key": "AgentArchive.turns",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:107"
+  },
+  {
+    "key": "AgentArchive.user",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentArchive.tsx:117"
   },
   {
     "key": "AgentPersonas",
@@ -3108,47 +3373,47 @@ export const references = [
   {
     "key": "AK_components_agent_AgentChat.addAttachment",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:657"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:659"
   },
   {
     "key": "AK_components_agent_AgentChat.addCreditsToGetStarted",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:678"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:680"
   },
   {
     "key": "AK_components_agent_AgentChat.askAboutTheCurrentShiftRoomAssignmentsOr",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:690"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:692"
   },
   {
     "key": "AK_components_agent_AgentChat.askAboutYourBaseOperatorsOrNextUpgrade",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:637"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:639"
   },
   {
     "key": "AK_components_agent_AgentChat.askDirectlyAboutYourAccountOperatorsOrBase",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:696"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:698"
   },
   {
     "key": "AK_components_agent_AgentChat.askYourAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:637"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:639"
   },
   {
     "key": "AK_components_agent_AgentChat.assistantIsNotAvailableYet",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:675"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:677"
   },
   {
     "key": "AK_components_agent_AgentChat.assistantMode",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:599"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:600"
   },
   {
     "key": "AK_components_agent_AgentChat.attachFiles",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:656"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:658"
   },
   {
     "key": "AK_components_agent_AgentChat.attack",
@@ -3158,7 +3423,7 @@ export const references = [
   {
     "key": "AK_components_agent_AgentChat.auto",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:594"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:595"
   },
   {
     "key": "AK_components_agent_AgentChat.avatarProcessError",
@@ -3173,52 +3438,52 @@ export const references = [
   {
     "key": "AK_components_agent_AgentChat.backToLatest",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:625"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:627"
   },
   {
     "key": "AK_components_agent_AgentChat.chatHistoryCouldNotBeSavedInThis",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:619"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:620"
   },
   {
     "key": "AK_components_agent_AgentChat.closeAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:585"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:586"
   },
   {
     "key": "AK_components_agent_AgentChat.closure",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:352"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:353"
   },
   {
     "key": "AK_components_agent_AgentChat.closureAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:590"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:591"
   },
   {
     "key": "AK_components_agent_AgentChat.connectingToClosure",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:674"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:676"
   },
   {
     "key": "AK_components_agent_AgentChat.conversation",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:673"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:675"
   },
   {
     "key": "AK_components_agent_AgentChat.couldNotConnectToTheAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:676"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:678"
   },
   {
     "key": "AK_components_agent_AgentChat.currentPage",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:684"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:686"
   },
   {
     "key": "AK_components_agent_AgentChat.deep",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:356"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:357"
   },
   {
     "key": "AK_components_agent_AgentChat.defaultValue",
@@ -3233,17 +3498,17 @@ export const references = [
   {
     "key": "AK_components_agent_AgentChat.doctor",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:704"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:706"
   },
   {
     "key": "AK_components_agent_AgentChat.enterToSendShiftEnterForANew",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:661"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:663"
   },
   {
     "key": "AK_components_agent_AgentChat.fast",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:356"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:357"
   },
   {
     "key": "AK_components_agent_AgentChat.fireworks",
@@ -3253,12 +3518,12 @@ export const references = [
   {
     "key": "AK_components_agent_AgentChat.generatedSchedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:731"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:733"
   },
   {
     "key": "AK_components_agent_AgentChat.includeCurrentPageContext",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:614"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:615"
   },
   {
     "key": "AK_components_agent_AgentChat.knights",
@@ -3268,7 +3533,7 @@ export const references = [
   {
     "key": "AK_components_agent_AgentChat.liveConversation",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:693"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:695"
   },
   {
     "key": "AK_components_agent_AgentChat.manualValue",
@@ -3278,47 +3543,47 @@ export const references = [
   {
     "key": "AK_components_agent_AgentChat.message",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:636"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:638"
   },
   {
     "key": "AK_components_agent_AgentChat.newConversation",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:584"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:585"
   },
   {
     "key": "AK_components_agent_AgentChat.pageContext",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:612"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:613"
   },
   {
     "key": "AK_components_agent_AgentChat.pageGuide",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:683"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:685"
   },
   {
     "key": "AK_components_agent_AgentChat.pageSharingIsOffOnlyYourMessageWill",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:689"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:691"
   },
   {
     "key": "AK_components_agent_AgentChat.pageSummaryIsShared",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:687"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:689"
   },
   {
     "key": "AK_components_agent_AgentChat.persona",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:658"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:660"
   },
   {
     "key": "AK_components_agent_AgentChat.pleaseRefreshThePageAndTryAgain",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:676"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:678"
   },
   {
     "key": "AK_components_agent_AgentChat.reply",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:723"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:725"
   },
   {
     "key": "AK_components_agent_AgentChat.sami",
@@ -3328,22 +3593,22 @@ export const references = [
   {
     "key": "AK_components_agent_AgentChat.sendMessage",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:630"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:632"
   },
   {
     "key": "AK_components_agent_AgentChat.shareWithAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:615"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:616"
   },
   {
     "key": "AK_components_agent_AgentChat.signIn",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:677"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:679"
   },
   {
     "key": "AK_components_agent_AgentChat.signInToMeetClosure",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:677"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:679"
   },
   {
     "key": "AK_components_agent_AgentChat.siracusa",
@@ -3353,77 +3618,77 @@ export const references = [
   {
     "key": "AK_components_agent_AgentChat.stopGenerating",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:631"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:633"
   },
   {
     "key": "AK_components_agent_AgentChat.theModelConnectionNeedsToBeConfiguredPlease",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:675"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:677"
   },
   {
     "key": "AK_components_agent_AgentChat.thePageSummaryIsUnavailableYouCanStill",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:689"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:691"
   },
   {
     "key": "AK_components_agent_AgentChat.thinking",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:724"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:726"
   },
   {
     "key": "AK_components_agent_AgentChat.thinking2",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:724"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:726"
   },
   {
     "key": "AK_components_agent_AgentChat.thisPersonaIsUnavailableChooseAnotherPersonaTo",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:620"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:622"
   },
   {
     "key": "AK_components_agent_AgentChat.thisSavedReplyContainsInvalidFormattingPleaseAsk",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:723"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:725"
   },
   {
     "key": "AK_components_agent_AgentChat.tryAgain",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:744"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:746"
   },
   {
     "key": "AK_components_agent_AgentChat.upTo4Attachments8MbEach",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:661"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:663"
   },
   {
     "key": "AK_components_agent_AgentChat.useYourWebsiteAccountToAccessTheAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:677"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:679"
   },
   {
     "key": "AK_components_agent_AgentChat.viewPaymentPlans",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:678"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:680"
   },
   {
     "key": "AK_components_agent_AgentChat.whatWouldYouLikeToKnow",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:694"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:696"
   },
   {
     "key": "AK_components_agent_AgentChat.workingOnYourRequest",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:741"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:743"
   },
   {
     "key": "AK_components_agent_AgentChat.youNeedAtLeast1CreditToUse",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:678"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:680"
   },
   {
     "key": "AK_components_agent_AgentChat.yourAccountBaseAndTrainingInOneConversation",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:591"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:592"
   },
   {
     "key": "AK_components_agent_AgentComposerMenu.addAttachment",
@@ -3558,32 +3823,32 @@ export const references = [
   {
     "key": "AK_components_agent_AgentHistoryNavigation.collapseChatHistory",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:24"
+    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:25"
   },
   {
     "key": "AK_components_agent_AgentHistoryNavigation.expandChatHistory",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:24"
+    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:25"
   },
   {
     "key": "AK_components_agent_AgentHistoryNavigation.generatingReply",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:37"
+    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:38"
   },
   {
     "key": "AK_components_agent_AgentHistoryNavigation.historyCouldNotBeSavedKeepThisPage",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:41"
+    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:43"
   },
   {
     "key": "AK_components_agent_AgentHistoryNavigation.thisBrowserLatest5Chats",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:41"
+    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:43"
   },
   {
     "key": "AK_components_agent_AgentHistoryNavigation.yourChatsWillAppearHere",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:41"
+    "source": "apps/arknights/src/components/agent/AgentHistoryNavigation.tsx:43"
   },
   {
     "key": "AK_components_auth_WebsiteAccountDialog.close",
@@ -6688,27 +6953,27 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.attachmentLimit",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:501"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:502"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.attachmentReadFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:513"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:514"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.attachmentUnsupported",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:506"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:507"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.avatarNotSaved",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:565"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:566"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.avatarReadFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:572"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:573"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.calculatedUsingTheAllElite2SampleRosterThis",
@@ -6738,7 +7003,7 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.emptyPersona",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:543"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:544"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.expAvailableMissingAboutStrategicBattleRecords",
@@ -6778,7 +7043,7 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.importPersonaCard",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:770"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:772"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.layout",
@@ -6793,7 +7058,7 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.localPersonaStorage",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:778"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:780"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.masteryControlCenterSwapAllowanceMin",
@@ -6848,37 +7113,37 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.persona",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:663"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:665"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaNotSaved",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:547"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:548"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaPreview",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:764"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:766"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaReadFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:557"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:558"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaRemovalNotSaved",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:767"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:769"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaSelectionNotSaved",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:382"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:383"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaTooLarge",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:526"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:527"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.recruitmentMinRoster",
@@ -6898,7 +7163,7 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.removeLocalPersonaCard",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:767"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:769"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.roster",
@@ -6918,17 +7183,17 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.saving",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:760"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:762"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.selectedPersonaPreview",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:764"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:766"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.selectPersona",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:765"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:767"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.simplePlan",
@@ -7083,22 +7348,22 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadAvatar",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:760"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:762"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadPersonaAvatar",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:776"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:778"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadPersonaCard",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:772"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:774"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadPersonaFile",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:777"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:779"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.viewTheFullScheduleInChatSwitchBetweenShifts",

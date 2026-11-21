@@ -12,6 +12,7 @@ import { useLocale } from "use-intl";
 import { useAgentHistory } from "@/hooks/use-agent-history";
 import { useAgentRunningConversations } from "./AgentRuntimeProvider";
 import { SidebarMenuAction, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem, useSidebar } from "@/components/ui/sidebar";
+import { AgentArchiveLink } from "./AgentArchive";
 
 export function AgentHistoryNavigation({ active }: { active: boolean }) {
   const en = useLocale();
@@ -38,6 +39,7 @@ export function AgentHistoryNavigation({ active }: { active: boolean }) {
           </SidebarMenuSubButton>
         </SidebarMenuSubItem>)}
       </SidebarMenuSub>
+      <AgentArchiveLink />
       <p className="px-4 py-1 text-[10px] leading-4 text-muted-foreground">{error ? (uiText.text(en, "historyCouldNotBeSavedKeepThisPage")) : history.conversations.length ? (uiText.text(en, "thisBrowserLatest5Chats")) : (uiText.text(en, "yourChatsWillAppearHere"))}</p>
     </div>
   </>;

@@ -116,7 +116,14 @@
     "test:i18n": "node --test --experimental-strip-types scripts/i18n/*.test.mjs packages/contracts/locale.test.ts packages/shell/message-resources.test.ts apps/arknights/src/i18n/config.test.ts",
     "test:skland-qr": "node --experimental-transform-types --experimental-test-module-mocks --import ./scripts/register-hooks.mjs --test packages/platform-server/src/skland/scan-*.test.ts",
     "test:referral": "node --experimental-strip-types --experimental-test-module-mocks --import ./scripts/register-hooks.mjs --test packages/platform-server/src/auth/referral-hooks.test.ts packages/platform-server/src/skland/bindings-referral.test.ts apps/arknights/src/server/referral-api.test.ts packages/shell/auth/referral-code.test.ts",
-    "test:referral-integration": "node --experimental-transform-types --experimental-test-module-mocks --import ./scripts/register-hooks.mjs --test packages/platform-server/src/referral/service.integration.test.mjs && node --experimental-transform-types --test packages/platform-server/src/auth/referral-hooks.integration.test.mjs"
+    "test:referral-integration": "node --experimental-transform-types --experimental-test-module-mocks --import ./scripts/register-hooks.mjs --test packages/platform-server/src/referral/service.integration.test.mjs && node --experimental-transform-types --test packages/platform-server/src/auth/referral-hooks.integration.test.mjs",
+    "dev:agent-conversations": "node scripts/dev-agent-conversations.mjs",
+    "test:agent-conversations": "node scripts/test-agent-conversations.mjs",
+    "test:agent-conversations:browser": "node scripts/test-agent-conversations-browser.mjs",
+    "test:agent-conversations:live": "node --experimental-strip-types scripts/test-agent-conversations-live.mjs",
+    "test:billing-monthly": "node scripts/test-billing-monthly.mjs",
+    "test:admin-permissions": "node scripts/test-admin-permissions.mjs",
+    "test:super-admin:browser": "node scripts/test-super-admin-browser.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

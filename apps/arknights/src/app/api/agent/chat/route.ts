@@ -1,5 +1,6 @@
 import { convertToModelMessages, createUIMessageStreamResponse, stepCountIs, streamText, type UIMessage } from "ai";
 import { appendFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 
 import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, successResponse } from "@riic/platform-server/api-contract";
 import { requireFeatureSession } from "@/server/auth/feature-access";
@@ -20,6 +21,7 @@ import { AgentHistoryError, prepareAgentHistory } from "@/server/agent/message-h
 import { withAgentAnswerBoundary } from "@/server/agent/answer-boundary";
 import { activeAgentResources } from "@/server/agent/resources";
 import { agentPageContextPrompt, normalizeAgentPageContext } from "@/agent-page-context";
+import { beginConversationRecording, type ConversationRecorder } from "@/server/agent/conversation-stream";
 
 
 // ── 临时监控（诊断"返回内容异常"用，问题定位后整段删除）──
@@ -125,6 +127,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const requestId = createRequestId();
   const startedAt = performance.now();
+  let recorder: ConversationRecorder | undefined;
   try {
     assertSameOrigin(request);
     const { session } = await requireAgentAccess(request);
@@ -181,11 +184,15 @@ export async function POST(request: Request) {
       messages: body.messages.map(monitorMessage),
     });
     const streamPolicy = createAgentStreamPolicy(request.signal);
+    const system = `${await buildAgentSystemPrompt(personaContent, resources?.policy)}${agentPageContextPrompt(pageContext)}`;
+    const modelMessages = await convertToModelMessages(messages, { tools });
+    recorder = await beginConversationRecording({ userId: session.user.id, conversationId: body.conversationId ?? body.id,
+      attemptId: body.attemptId, requestId, model: settings.model, messages: body.messages, signal: request.signal });
     const result = streamText({
       ...streamPolicy.options,
       model: withAgentAnswerBoundary(getAgentModel(settings)),
-      system: `${await buildAgentSystemPrompt(personaContent, resources?.policy)}${agentPageContextPrompt(pageContext)}`,
-      messages: await convertToModelMessages(messages, { tools }),
+      system,
+      messages: modelMessages,
       tools,
       stopWhen: stepCountIs(12),
       onFinish: async (event) => {
@@ -255,6 +262,7 @@ export async function POST(request: Request) {
       },
     });
     const stream = result.toUIMessageStream({
+      generateMessageId: randomUUID,
       sendReasoning: false,
       onError: (error) => {
         const message = streamPolicy.errorText(error);
@@ -278,9 +286,11 @@ export async function POST(request: Request) {
     });
     return createUIMessageStreamResponse({
       headers: { "X-Request-Id": requestId, "X-Agent-Resource-Version": resources?.id ?? "configured" },
-      stream: stream.pipeThrough(streamPolicy.transform),
+      stream: recorder ? recorder.wrap(stream.pipeThrough(streamPolicy.transform)) : stream.pipeThrough(streamPolicy.transform),
+      consumeSseStream: recorder ? ({ stream }) => stream.pipeTo(new WritableStream()).catch(() => {}) : undefined,
     });
   } catch (error) {
+    await recorder?.fail();
     // 临时监控：记录请求级失败
     void monitorLog({
       event: "agent_request_error",
