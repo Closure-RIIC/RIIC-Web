@@ -9,13 +9,19 @@ export const getPublicPageConfig = createServerFn({ method: "GET" }).handler(asy
 
 export const getReviewerAccess = createServerFn({ method: "GET" }).handler(async () => {
   const { requireWebsiteReviewer } = await import("@riic/platform-server/auth/authorization");
-  try { const access = await requireWebsiteReviewer(getRequest()); return { isAdmin: access.isAdmin, name: access.session.user.name }; }
+  try { const access = await requireWebsiteReviewer(getRequest()); return { isAdmin: access.isAdmin, isSuperAdmin: access.isSuperAdmin, name: access.session.user.name }; }
   catch { throw notFound(); }
 });
 
 export const getAdminAccess = createServerFn({ method: "GET" }).handler(async () => {
   const { requireWebsiteAdmin } = await import("@riic/platform-server/auth/authorization");
   try { await requireWebsiteAdmin(getRequest()); return { isAdmin: true }; }
+  catch { throw notFound(); }
+});
+
+export const getSuperAdminAccess = createServerFn({ method: "GET" }).handler(async () => {
+  const { requireWebsiteSuperAdmin } = await import("@riic/platform-server/auth/authorization");
+  try { await requireWebsiteSuperAdmin(getRequest()); return { isSuperAdmin: true }; }
   catch { throw notFound(); }
 });
 

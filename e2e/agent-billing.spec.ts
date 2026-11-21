@@ -1,26 +1,29 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { test, expect, type BrowserContext } from "@playwright/test";
-import { hashPassword } from "better-auth/crypto";
 import { Pool } from "pg";
 
-test("admin billing, filter policies, role boundaries and automatic Agent selection", async ({page,context,browser,baseURL})=>{
+test("super-admin billing, filter policies, role boundaries and automatic Agent selection", async ({page,context,browser,baseURL})=>{
   const url=process.env.AUTH_INTEGRATION_DATABASE_URL;
   if(!url||!new URL(url).pathname.endsWith("_test"))throw new Error("Isolated *_test database required");
-  const pool=new Pool({connectionString:url,max:2});const users:string[]=[];const reviewer=await browser.newContext({baseURL});
+  const pool=new Pool({connectionString:url,max:2});const users:string[]=[];const reviewer=await browser.newContext({baseURL});const ordinary=await browser.newContext({baseURL});
   const paymentId=randomUUID();const trade=`afdian-e2e-${paymentId}`;
-  async function login(target:BrowserContext,role:string){
-    const id=`agent-e2e-${randomUUID()}`;const password="Agent-E2E-2026!";users.push(id);
+  async function login(target:BrowserContext,role:string,id=`agent-e2e-${randomUUID()}`){
+    users.push(id);const token=randomBytes(32).toString("base64url");
+    const signature=createHmac("sha256","isolated-agent-billing-e2e-secret-20261012").update(token).digest("base64");
     await pool.query('INSERT INTO public."user" (id,name,email,email_verified,role) VALUES ($1,$2,$3,true,$4)',[id,`Agent ${role}`,`${id}@example.test`,role]);
-    await pool.query("INSERT INTO account (id,account_id,provider_id,user_id,password) VALUES ($1,$2,'credential',$2,$3)",[randomUUID(),id,await hashPassword(password)]);
-    const response=await target.request.post("/api/auth/sign-in/email",{headers:{origin:baseURL!},data:{email:`${id}@example.test`,password}});
-    expect(response.status()).toBe(200);return id;
+    await pool.query("INSERT INTO public.session (id,user_id,token,expires_at) VALUES ($1,$2,$3,now()+interval '1 hour')",[randomUUID(),id,token]);
+    await target.addCookies([{name:"better-auth.session_token",value:encodeURIComponent(`${token}.${signature}`),url:baseURL!}]);
+    return id;
   }
   try {
-    const admin=await login(context,"admin");await login(reviewer,"reviewer");
+    const admin=await login(context,"user","agent-billing-e2e-super-admin");await login(reviewer,"reviewer");await login(ordinary,"admin");
     await pool.query("INSERT INTO app.billing_wallet (user_id,paid_points) VALUES ($1,20)",[admin]);
     await pool.query("INSERT INTO app.billing_payment (id,provider,provider_order_id,amount_fen,provider_status,status,evidence) VALUES ($1,'afdian',$2,30,2,'review',$3)",[paymentId,trade,JSON.stringify({trade})]);
     await pool.query("INSERT INTO app.billing_review (id,kind,evidence) VALUES ($1,'afdian_payment',$2)",["payment:"+paymentId,JSON.stringify({paymentId,trade})]);
     for(const section of ["summary","wallets","policies","audit"]){expect((await reviewer.request.get(`/api/admin/billing?section=${section}`)).status()).toBe(403);}
+    for(const section of ["summary","monthly","policies","audit","referral"]){expect((await ordinary.request.get(`/api/admin/billing?section=${section}`)).status()).toBe(403);}
+    expect((await ordinary.request.get("/api/admin/billing?section=wallets")).status()).toBe(200);
+    expect((await ordinary.request.post("/api/admin/billing?section=policies",{headers:{origin:baseURL!},data:{action:"draft",kind:"filter",payload:{rules:[],allow:[]},reason:"ordinary admin must not change global policies"}})).status()).toBe(403);
     expect((await context.request.post("/api/admin/billing?section=adjust",{headers:{origin:"https://other.test"},data:{userId:admin,action:"credit",points:1,reason:"forged",idempotencyKey:randomUUID()}})).status()).toBe(403);
     await page.goto("/admin/billing");await expect(page.getByRole("heading",{name:"计费管理",exact:true})).toBeVisible();
     await expect(page.getByText("已知模型成本 ¥",{exact:true})).toBeVisible();
@@ -48,5 +51,5 @@ test("admin billing, filter policies, role boundaries and automatic Agent select
     await page.setViewportSize({width:375,height:812});await page.goto("/admin/billing");await expect(page.getByRole("heading",{name:"计费管理",exact:true})).toBeVisible();
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth+1)).toBe(true);
     await context.addCookies([{name:"riic-locale",value:"en",domain:"127.0.0.1",path:"/"}]);await page.reload();await expect(page.getByRole("heading",{name:"Billing",exact:true})).toBeVisible();await expect(page.getByRole("button",{name:"Usage & cost",exact:true})).toBeVisible();
-  }finally{await reviewer.close();await pool.query("DELETE FROM app.billing_review WHERE id=$1",["payment:"+paymentId]);await pool.query("DELETE FROM app.billing_payment WHERE id=$1",[paymentId]);await pool.query('DELETE FROM public."user" WHERE id=any($1::text[])',[users]);await pool.end();}
+  }finally{await reviewer.close();await ordinary.close();await pool.query("DELETE FROM app.billing_review WHERE id=$1",["payment:"+paymentId]);await pool.query("DELETE FROM app.billing_payment WHERE id=$1",[paymentId]);await pool.query('DELETE FROM public."user" WHERE id=any($1::text[])',[users]);await pool.end();}
 });

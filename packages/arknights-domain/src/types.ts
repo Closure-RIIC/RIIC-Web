@@ -1309,6 +1309,8 @@ export interface AdminUserData {
   banReason: string | null;
   createdAt: string;
   isAdmin: boolean;
+  isSuperAdmin?: boolean;
+  canModerate?: boolean;
   isReviewer: boolean;
   isBootstrapAdmin: boolean;
   sklandBindingCount: number;

@@ -46,5 +46,13 @@
   "provider": "Provider",
   "model": "Model",
   "call_id": "Call ID",
-  "referral": "Referrals"
+  "referral": "Referrals",
+  "monthly": "Monthly report",
+  "month": "Month (Beijing time)",
+  "runs": "Runs",
+  "paid_orders": "Paid orders",
+  "paid_fen": "Payments (CNY)",
+  "known_cost_fen": "Known model cost (CNY)",
+  "unknown_cost_runs": "Runs with unknown cost",
+  "unknown_cost_calls": "Calls with unknown cost"
 }

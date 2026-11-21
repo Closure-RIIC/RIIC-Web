@@ -214,7 +214,7 @@ test("Better Auth completes the PostgreSQL account lifecycle", async () => {
     const grantedRole = await pool.query('SELECT role FROM "user" WHERE id = $1', [delegatedAdminId]);
     const delegatedAccess = websiteAdminAccess(delegatedAdminId, grantedRole.rows[0].role, bootstrapIds);
     assert.equal(delegatedAccess.isAdmin, true, "database admin role should grant administrator access");
-    assert.equal(delegatedAccess.canManageAdminRoles, true, "database administrators can assign roles");
+    assert.equal(delegatedAccess.canManageAdminRoles, false, "database administrators cannot assign backend roles");
     const delegatedAdminSignIn = await signIn(delegatedAdminEmail);
     assert.equal(delegatedAdminSignIn.status, 200, await delegatedAdminSignIn.clone().text());
     const delegatedAdminCookie = cookieHeader(delegatedAdminSignIn);

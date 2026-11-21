@@ -225,6 +225,13 @@
       "when": 1795198759913,
       "tag": "0031_referral_reward_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795236670270,
+      "tag": "0032_agent_conversation_archive",
+      "breakpoints": true
     }
   ]
 }

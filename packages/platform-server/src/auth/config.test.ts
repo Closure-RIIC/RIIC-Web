@@ -37,7 +37,7 @@ test("local development trusts only loopback aliases on the configured protocol 
   assert.deepEqual(localAuthTrustedOrigins("https://localhost.evil.test:5174", "development", "local"), []);
 });
 
-test("all administrators can assign roles while bootstrap administrators remain protected", () => {
+test("only server-listed super administrators can assign roles and moderate privileged users", () => {
   const bootstrapIds = new Set(["bootstrap"]);
   const bootstrap = websiteAdminAccess("bootstrap", "user", bootstrapIds);
   const delegated = websiteAdminAccess("delegated", "admin", bootstrapIds);
@@ -46,17 +46,21 @@ test("all administrators can assign roles while bootstrap administrators remain 
   assert.deepEqual(bootstrap, {
     userId: "bootstrap",
     isAdmin: true,
+    isSuperAdmin: true,
     isReviewer: false,
     canAccessReview: true,
     isBootstrapAdmin: true,
     canManageAdminRoles: true,
   });
   assert.equal(delegated.isAdmin, true);
-  assert.equal(delegated.canManageAdminRoles, true);
+  assert.equal(delegated.isSuperAdmin, false);
+  assert.equal(canModerateWebsiteUser(delegated, delegated), false);
+  assert.equal(canModerateWebsiteUser(delegated, websiteAdminAccess("reviewer", "reviewer", bootstrapIds)), false);
+  assert.equal(delegated.canManageAdminRoles, false);
   assert.equal(regular.isAdmin, false);
   assert.equal(canChangeWebsiteAdminRole(bootstrap, delegated), true);
-  assert.equal(canChangeWebsiteAdminRole(delegated, regular), true);
-  assert.equal(canChangeWebsiteAdminRole(delegated, websiteAdminAccess("peer", "admin", bootstrapIds)), true);
+  assert.equal(canChangeWebsiteAdminRole(delegated, regular), false);
+  assert.equal(canChangeWebsiteAdminRole(delegated, websiteAdminAccess("peer", "admin", bootstrapIds)), false);
   assert.equal(canChangeWebsiteAdminRole(delegated, bootstrap), false);
   assert.equal(regular.canManageAdminRoles, false);
   assert.equal(canChangeWebsiteAdminRole(regular, delegated), false);

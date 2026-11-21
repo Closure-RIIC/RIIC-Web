@@ -21,15 +21,16 @@ export async function requireWebsiteSession(request: Request | Headers) {
   return session;
 }
 
-async function requireWebsiteAccess(request: Request | Headers, permission: "isAdmin" | "canAccessReview") {
+async function requireWebsiteAccess(request: Request | Headers, permission: "isAdmin" | "isSuperAdmin" | "canAccessReview") {
   const session = await requireWebsiteSession(request);
   const [record] = await getDatabase()
-    .select({ role: user.role })
+    .select({ role: user.role, banned: user.banned })
     .from(user)
     .where(eq(user.id, session.user.id))
     .limit(1);
   const access = websiteAdminAccess(session.user.id, record?.role);
-  if (!record || !access[permission]) throw new PublicApiError("AIC-AUTH-2009");
+  const impersonatedBy = (session as { session?: { impersonatedBy?: unknown } }).session?.impersonatedBy;
+  if (!record || record.banned || impersonatedBy || !access[permission]) throw new PublicApiError("AIC-AUTH-2009");
   return { session, ...access };
 }
 
@@ -39,4 +40,8 @@ export function requireWebsiteAdmin(request: Request | Headers) {
 
 export function requireWebsiteReviewer(request: Request | Headers) {
   return requireWebsiteAccess(request, "canAccessReview");
+}
+
+export function requireWebsiteSuperAdmin(request: Request | Headers) {
+  return requireWebsiteAccess(request, "isSuperAdmin");
 }

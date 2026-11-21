@@ -24,7 +24,7 @@ test("preview reuses all six pages and keeps requests inside the sample transpor
   expect(errors).toEqual([]);
 });
 
-test("users filter, paginate, search, and preserve role confirmation", async ({ page }) => {
+test("users filter, paginate, search, and display roles without duplicate grants", async ({ page }) => {
   await page.goto("/admin-preview/users");
   const table = page.getByRole("table", { name: "用户管理", exact: true });
   await expect(table.getByRole("row")).toHaveCount(11);
@@ -41,10 +41,7 @@ test("users filter, paginate, search, and preserve role confirmation", async ({ 
   await expect(table.getByRole("row")).toHaveCount(2);
   await expect(table).toContainText("Kestrel");
   await page.getByRole("button", { name: "管理账户", exact: true }).click();
-  await page.getByRole("button", { name: "设为审阅人", exact: true }).click();
-  await expect(page.getByRole("dialog")).toContainText("Kestrel");
-  await page.getByRole("dialog").getByRole("button", { name: "确认设为审阅人", exact: true }).click();
-  await expect(page.getByRole("button", { name: "撤销审阅人", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^(设为管理员|取消管理员|设为审阅人|撤销审阅人)$/ })).toHaveCount(0);
   await page.getByRole("button", { name: "查看 Session", exact: true }).click();
   await expect(page.locator("#users")).toContainText("Preview browser");
 });

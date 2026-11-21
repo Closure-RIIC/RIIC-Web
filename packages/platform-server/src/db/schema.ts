@@ -96,6 +96,55 @@ export const sklandBinding = pgTable("skland_binding", {
 
 export const appSchema = pgSchema("app");
 
+export const agentConversation = appSchema.table("agent_conversation", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  clientId: text("client_id").notNull(),
+  title: text("title").notNull(),
+  nextSequence: integer("next_sequence").default(0).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, table => [
+  uniqueIndex("agent_conversation_owner_client_idx").on(table.userId, table.clientId),
+  index("agent_conversation_owner_updated_idx").on(table.userId, table.updatedAt),
+]);
+
+export const agentConversationTurn = appSchema.table("agent_conversation_turn", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull().references(() => agentConversation.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  sequence: integer("sequence").notNull(),
+  attemptId: text("attempt_id").notNull(),
+  requestId: text("request_id").notNull(),
+  runId: text("run_id"),
+  model: text("model").notNull(),
+  status: text("status").notNull(),
+  userMessage: jsonb("user_message").$type<Record<string, unknown>>().notNull(),
+  assistantMessage: jsonb("assistant_message").$type<Record<string, unknown>>(),
+  userText: text("user_text").notNull(),
+  assistantText: text("assistant_text").default("").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  finishedAt: timestamp("finished_at", { withTimezone: true }),
+}, table => [
+  uniqueIndex("agent_conversation_turn_attempt_idx").on(table.userId, table.attemptId),
+  uniqueIndex("agent_conversation_turn_sequence_idx").on(table.conversationId, table.sequence),
+  index("agent_conversation_turn_export_idx").on(table.createdAt, table.id),
+  check("agent_conversation_turn_status_check", sql`${table.status} IN ('streaming','completed','cancelled','failed','interrupted')`),
+]);
+
+export const agentConversationAudit = appSchema.table("agent_conversation_audit", {
+  id: text("id").primaryKey(),
+  actorId: text("actor_id").notNull(),
+  requestId: text("request_id").notNull(),
+  action: text("action").notNull(),
+  scope: jsonb("scope").$type<Record<string, unknown>>().notNull(),
+  result: text("result").notNull(),
+  recordCount: integer("record_count").default(0).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Archival ownership is independent of expiring Skland / gacha credentials.
 export const gachaArchive = appSchema.table("gacha_archive", {
   uid: text("uid").primaryKey(),

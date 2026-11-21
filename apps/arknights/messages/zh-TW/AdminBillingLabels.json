@@ -46,5 +46,13 @@
   "provider": "供應商",
   "model": "模型",
   "call_id": "呼叫 ID",
-  "referral": "邀請活動"
+  "referral": "邀請活動",
+  "monthly": "月度統計",
+  "month": "月份（北京時間）",
+  "runs": "對話輪數",
+  "paid_orders": "付款訂單數",
+  "paid_fen": "收款（元）",
+  "known_cost_fen": "已知模型成本（元）",
+  "unknown_cost_runs": "成本未知輪數",
+  "unknown_cost_calls": "成本未知呼叫數"
 }

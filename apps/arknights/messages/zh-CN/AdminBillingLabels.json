@@ -46,5 +46,13 @@
   "provider": "供应商",
   "model": "模型",
   "call_id": "调用 ID",
-  "referral": "邀请活动"
+  "referral": "邀请活动",
+  "monthly": "月度统计",
+  "month": "月份（北京时间）",
+  "runs": "对话轮数",
+  "paid_orders": "支付订单数",
+  "paid_fen": "收款（元）",
+  "known_cost_fen": "已知模型成本（元）",
+  "unknown_cost_runs": "成本未知轮数",
+  "unknown_cost_calls": "成本未知调用数"
 }

@@ -1,5 +1,5 @@
 import "@tanstack/react-start/server-only";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { convertToModelMessages, createUIMessageStreamResponse, stepCountIs, streamText, type ToolSet, type UIMessage } from "ai";
 import { PublicApiError } from "@riic/platform-server/api-contract";
 import { activeAgentPolicies, agentSessionId, beginAgentRun, beginToolCharge, finishToolCharge, recordFilterEvent } from "../billing/agent-accounting.ts";
@@ -13,6 +13,7 @@ import { prepareAgentHistory } from "./message-history.ts";
 import { withAgentAnswerBoundary } from "./answer-boundary.ts";
 import type { AgentResourcePolicy } from "./resource-policy.ts";
 import { agentPageContextPrompt, type AgentPageContext } from "../../agent-page-context.ts";
+import { beginConversationRecording } from "./conversation-stream.ts";
 
 export async function gatewayChat(request: Request, userId: string, requestId: string, body: {
   messages: UIMessage[]; id?: unknown; conversationId?: unknown; attemptId?: unknown; pageContext?: AgentPageContext | null;
@@ -36,8 +37,12 @@ export async function gatewayChat(request: Request, userId: string, requestId: s
   const messages = await prepareAgentHistory(body.messages, check);
   const system = `${await buildAgentSystemPrompt(personaContent, resources?.policy)}${agentPageContextPrompt(body.pageContext ?? null)}`;
   await check(system, "system");
-  const runId = await beginAgentRun({ userId, conversationId, idempotencyKey: attemptId,
-    requestHash: createHash("sha256").update(JSON.stringify({ messages, system, resources: resources?.id })).digest("hex"), rates: policies.rates, filterVersion: policies.filter.id });
+  const recorder = await beginConversationRecording({ userId, conversationId, attemptId, requestId, model: "gateway/automatic", messages: body.messages, signal: request.signal });
+  let runId: string;
+  try {
+    runId = await beginAgentRun({ userId, conversationId, idempotencyKey: attemptId,
+      requestHash: createHash("sha256").update(JSON.stringify({ messages, system, resources: resources?.id })).digest("hex"), rates: policies.rates, filterVersion: policies.filter.id });
+  } catch (error) { await recorder?.fail(); throw error; }
   const run = createGatewayRun({ runId, sessionId: agentSessionId(userId, conversationId), requestId, userId, filterVersion: policies.filter.id, filter });
   try {
     const tools: ToolSet = buildAgentTools({ request, userId, gatewayBilling: true, resources: resources?.policy });
@@ -69,9 +74,10 @@ export async function gatewayChat(request: Request, userId: string, requestId: s
       onError: () => run.finalize("failed"),
     });
     // Consume the SDK stream even after a disconnected browser, so cancellation and accounting finish.
+    const stream = result.toUIMessageStream({ generateMessageId: randomUUID, sendReasoning: false, onError: error => policy.errorText(error) }).pipeThrough(policy.transform);
     return createUIMessageStreamResponse({ headers: { "X-Request-Id": requestId, "X-Agent-Run-Id": runId, "X-Agent-Resource-Version": resources?.id ?? "configured" },
-      stream: result.toUIMessageStream({ sendReasoning: false, onError: error => policy.errorText(error) }).pipeThrough(policy.transform),
+      stream: recorder ? recorder.wrap(stream, runId) : stream,
       consumeSseStream: ({ stream }) => stream.pipeTo(new WritableStream()).catch(() => {}),
     });
-  } catch (error) { await run.finalize(error instanceof AgentFilterError ? "blocked" : "failed"); throw error; }
+  } catch (error) { await recorder?.fail(); await run.finalize(error instanceof AgentFilterError ? "blocked" : "failed"); throw error; }
 }

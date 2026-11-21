@@ -126,5 +126,10 @@
   "accessDenied": "此角色無法訪問這個頁面。",
   "backOverview": "返回概覽",
   "previewReset": "重置演示資料",
-  "previewReadOnly": "復現執行、匯入和釋出等操作在演示中不可用。"
+  "previewReadOnly": "復現執行、匯入和釋出等操作在演示中不可用。",
+  "superAdministrator": "超級管理員",
+  "permissions": "權限管理",
+  "permissionsHint": "檢視超級管理員名單，授予或撤銷一般管理員和審閱人角色。",
+  "agentArchive": "對話匯出",
+  "agentArchiveHint": "查詢全站 Agent 對話並匯出保存。"
 }

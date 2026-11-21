@@ -33,13 +33,27 @@ test("changelog preview keeps each site's drafts separate", async () => {
 test("sample account changes stay within one preview instance", async () => {
   const request = createAdminPreviewRequest(true, "en");
   const path = "/api/admin/users/preview-user-3";
+  const initial = await (await request("/api/admin/users")).json();
+  assert.equal(initial.data.permissions.canManageAdminRoles, false);
+  assert.equal(initial.data.users[0].isSuperAdmin, true);
+  assert.equal(initial.data.users[0].canModerate, false);
+  assert.equal(initial.data.users.find((user: { id: string }) => user.id === "preview-user-3").canModerate, true);
   assert.equal((await request(path, { method: "PATCH", body: JSON.stringify({ isReviewer: true }) })).status, 200);
   const changed = await (await request("/api/admin/users?q=Kestrel")).json();
   assert.equal(changed.data.users[0].isReviewer, true);
+  assert.equal(changed.data.users[0].isSuperAdmin, false);
+  assert.equal(changed.data.users[0].canModerate, false);
   const fresh = createAdminPreviewRequest(true, "en");
   const reset = await (await fresh("/api/admin/users?q=Kestrel")).json();
   assert.equal(reset.data.users[0].isReviewer, false);
+  assert.equal(reset.data.users[0].canModerate, true);
   assert.equal(reset.data.summary.verifiedUsers, 15);
+  assert.equal((await request(path, { method: "PATCH", body: JSON.stringify({ isReviewer: false }) })).status, 200);
+  assert.equal((await (await request("/api/admin/users?q=Kestrel")).json()).data.users[0].canModerate, true);
+  assert.equal((await request(path, { method: "PATCH", body: JSON.stringify({ isAdmin: true }) })).status, 200);
+  assert.equal((await (await request("/api/admin/users?q=Kestrel")).json()).data.users[0].canModerate, false);
+  assert.equal((await request(path, { method: "PATCH", body: JSON.stringify({ isAdmin: false }) })).status, 200);
+  assert.equal((await (await request("/api/admin/users?q=Kestrel")).json()).data.users[0].canModerate, true);
   assert.equal((await request("/api/admin/users/preview-user-0", { method: "PATCH", body: JSON.stringify({ isAdmin: false }) })).status, 400);
 });
 

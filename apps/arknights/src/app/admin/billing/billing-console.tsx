@@ -17,9 +17,11 @@ import { PolicyEditor, type PolicyVersion } from "./policy-editor";
 
 type Row = Record<string, unknown>;
 type Listing = { rows: Row[]; total: number; page: number; pages: number };
-const tabs = ["summary","usage","wallets","ledger","orders","rates","reviews","codes","referral","audit"] as const;
+const tabs = ["summary","monthly","usage","wallets","ledger","orders","rates","reviews","codes","referral","audit"] as const;
+const ordinaryTabs = ["wallets","ledger","orders","reviews","codes"] as const;
 const agentTabs = ["policies","filters","attempts"] as const;
 const columns: Record<string, string[]> = {
+  monthly: ["month", "runs", "points", "paid_orders", "paid_fen", "known_cost_fen", "unknown_cost_runs", "unknown_cost_calls"],
   usage: ["created_at", "user_id", "status", "settlement", "points", "input_tokens", "output_tokens", "upstream_cost_rmb_fen"],
   wallets: ["name", "email", "paid_points", "monthly_points", "monthly_expires_at", "held_paid_points", "held_monthly_points"],
   ledger: ["created_at", "user_id", "kind", "points_delta", "paid_points_after", "monthly_points_after", "reference_id"],
@@ -27,10 +29,12 @@ const columns: Record<string, string[]> = {
   reviews: ["created_at", "run_id", "kind", "status", "resolution"], audit: ["created_at", "actor_id", "action", "target", "reason"],
   filters: ["created_at", "user_id", "stage", "version", "rule_ids"], attempts: ["created_at", "provider", "model", "call_id"],
 };
-const labels = ["summary","usage","wallets","ledger","orders","rates","reviews","codes","audit","policies","filters","attempts","settlement","created_at","user_id","status","points","input_tokens","output_tokens","upstream_cost_rmb_fen","name","email","paid_points","monthly_points","monthly_expires_at","held_paid_points","held_monthly_points","kind","points_delta","paid_points_after","monthly_points_after","reference_id","product_id","amount_fen","provider_order_id","run_id","resolution","actor_id","action","target","reason","stage","version","rule_ids","provider","model","call_id"] as const;
+const labels = ["monthly","month","runs","paid_orders","paid_fen","known_cost_fen","unknown_cost_runs","unknown_cost_calls","summary","usage","wallets","ledger","orders","rates","reviews","codes","audit","policies","filters","attempts","settlement","created_at","user_id","status","points","input_tokens","output_tokens","upstream_cost_rmb_fen","name","email","paid_points","monthly_points","monthly_expires_at","held_paid_points","held_monthly_points","kind","points_delta","paid_points_after","monthly_points_after","reference_id","product_id","amount_fen","provider_order_id","run_id","resolution","actor_id","action","target","reason","stage","version","rule_ids","provider","model","call_id"] as const;
 export function BillingConsole({ agent = false }: { agent?: boolean }) {
   const locale = useLocale();
-  const request = useAdminRequest(); const [section, setSection] = useState(agent ? "policies" : "summary");
+  const request = useAdminRequest(); const [section, setSection] = useState(agent ? "policies" : "wallets");
+  const [capabilities, setCapabilities] = useState<{ isSuperAdmin: boolean } | null>(null);
+
   const [page, setPage] = useState(1); const [q, setQ] = useState(""); const [query, setQuery] = useState(""); const [status, setStatus] = useState("");
   const [from, setFrom] = useState(""); const [to, setTo] = useState("");
   const [listing, setListing] = useState<Listing | null>(null); const [summary, setSummary] = useState<Row | null>(null);
@@ -39,19 +43,21 @@ export function BillingConsole({ agent = false }: { agent?: boolean }) {
   const [detail, setDetail] = useState<unknown>(null); const sequence = useRef(0);
   const [adjust, setAdjust] = useState<{ userId: string; action: string; referenceId: string; providerOrderId: string; points: string; reason: string; idempotencyKey: string } | null>(null);
   const [review, setReview] = useState<{ id: string; resolution: string; reason: string; ledgerId: string } | null>(null); const [saving, setSaving] = useState(false);
+  useEffect(() => { let current = true; void request<{ isSuperAdmin: boolean }>("/api/admin/billing?section=access").then(access => { if (current) { setCapabilities(access); setSection(agent ? "policies" : access.isSuperAdmin ? "summary" : "wallets"); } }).catch(error => { if (current) setError(String(error)); }); return () => { current = false; }; }, [agent, request]);
   const reload = useCallback(async () => {
+    if (!capabilities) return;
     const seq = ++sequence.current; setLoading(true); setError("");
     try {
       if (section === "codes" || section === "referral") return;
       const params = new URLSearchParams({ section: section === "rates" ? "policies" : section, page: String(page), q: query, status });
       if (from) params.set("from", new Date(`${from}T00:00:00+08:00`).toISOString());
-      if (to) params.set("to", new Date(`${to}T23:59:59.999+08:00`).toISOString());
+      if (to) params.set("to", new Date(new Date(`${to}T00:00:00+08:00`).getTime() + 86400_000).toISOString());
       const data = await request<Listing & Row & { versions: PolicyVersion[]; gateway: Row[] }>(`/api/admin/billing?${params}`);
       if (seq !== sequence.current) return;
-      if (section === "summary") setSummary(data); else if (["rates", "policies"].includes(section)) setPolicies(data); else setListing(data);
+      if (section === "monthly") { const rows = data.months as Row[]; setListing({ rows, total: rows.length, page: 1, pages: 1 }); } else if (section === "summary") setSummary(data); else if (["rates", "policies"].includes(section)) setPolicies(data); else setListing(data);
     } catch (e) { if (seq === sequence.current) setError(e instanceof Error ? e.message : String(e)); }
     finally { if (seq === sequence.current) setLoading(false); }
-  }, [section, page, query, status, from, to, request]);
+  }, [section, page, query, status, from, to, request, capabilities]);
   useEffect(() => { void reload(); const counter = sequence; return () => { counter.current++; }; }, [reload]);
   const value = (key: string, v: unknown) => v === null || v === undefined ? adminText.text(locale, "unknownNone") : key.endsWith("_fen") ? (Number(v) / 100).toFixed(2) : key.endsWith("_at") ? new Date(String(v)).toLocaleString() : typeof v === "object" ? JSON.stringify(v) : String(v);
   async function mutation(kind: string, body: unknown) {
@@ -62,14 +68,14 @@ export function BillingConsole({ agent = false }: { agent?: boolean }) {
   }
   const isTable = !!columns[section];
   return <div className="space-y-5">
-    <nav className="flex flex-wrap gap-1" aria-label={adminText.text(locale, "billingManagement")}>{(agent ? agentTabs : tabs).map(id => <Button key={id} size="sm" variant={section === id ? "default" : "ghost"} aria-current={section === id ? "page" : undefined} onClick={() => { setSection(id); setPage(1); setListing(null); setStatus(""); }}>{labelsText.text(locale, id)}</Button>)}</nav>
+    <nav className="flex flex-wrap gap-1" aria-label={adminText.text(locale, "billingManagement")}>{(agent ? capabilities?.isSuperAdmin ? agentTabs : [] : capabilities?.isSuperAdmin ? tabs : ordinaryTabs).map(id => <Button key={id} size="sm" variant={section === id ? "default" : "ghost"} aria-current={section === id ? "page" : undefined} onClick={() => { setSection(id); setPage(1); setListing(null); setStatus(""); }}>{labelsText.text(locale, id)}</Button>)}</nav>
     {!['codes', 'referral', 'rates', 'policies'].includes(section) && <form className="flex flex-wrap items-end gap-3" onSubmit={e => {
       e.preventDefault();
       const nextQuery = q.trim();
       if (page === 1 && query === nextQuery) void reload();
       else { setPage(1); setQuery(nextQuery); }
     }}>
-      {isTable && <><Label>{adminText.text(locale, "userReferenceIdEmail")}<Input value={q} onChange={e => setQ(e.target.value)} /></Label><Label>{adminText.text(locale, "statusKindBlankForAll")}<Input value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} /></Label></>}
+      {isTable && section !== "monthly" && <><Label>{adminText.text(locale, "userReferenceIdEmail")}<Input value={q} onChange={e => setQ(e.target.value)} /></Label><Label>{adminText.text(locale, "statusKindBlankForAll")}<Input value={status} onChange={e => { setStatus(e.target.value); setPage(1); }} /></Label></>}
       <Label>{adminText.text(locale, "fromBeijing")}<Input type="date" value={from} onChange={e => { setFrom(e.target.value); setPage(1); }} /></Label><Label>{adminText.text(locale, "toBeijing")}<Input type="date" value={to} onChange={e => { setTo(e.target.value); setPage(1); }} /></Label><Button type="submit" variant="outline" disabled={loading}>{adminText.text(locale, "searchRefresh")}</Button>
     </form>}
     {error && <p role="alert" className="rounded-lg border border-destructive/30 p-3 text-sm text-destructive">{error}</p>}{notice && <p role="status" className="text-sm">{notice}</p>}
@@ -77,7 +83,7 @@ export function BillingConsole({ agent = false }: { agent?: boolean }) {
     {section === "summary" && summary && <><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{([
       ["runs", adminText.text(locale, "runs")], ["points", adminText.text(locale, "pointsCharged")], ["known_cost_fen", adminText.text(locale, "knownModelCost")], ["unknown_cost_runs", adminText.text(locale, "unknownCostRuns")], ["paid_fen", adminText.text(locale, "payments")], ["paid_points", adminText.text(locale, "permanentPoints")], ["reserved_points", adminText.text(locale, "reservedPoints")], ["open_reviews", adminText.text(locale, "openReviews")],
     ] as const).map(([key, label]) => <div key={key} className="rounded-xl border bg-card p-4"><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold tabular-nums">{value(key, summary[key])}</p></div>)}</div><p className="text-sm text-muted-foreground">{adminText.text(locale, "last30DaysByDefaultUnknownCostsRequire")}</p><div className="overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm"><thead><tr>{[adminText.text(locale, "date"),adminText.text(locale, "runs2"),adminText.text(locale, "points"),adminText.text(locale, "knownCost"),adminText.text(locale, "unknown")].map(label => <th key={label} className="p-3">{label}</th>)}</tr></thead><tbody>{(summary.series as Row[] ?? []).map(row => <tr key={String(row.day)} className="border-t">{["day","runs","points","known_cost_fen","unknown_cost_runs"].map(key => <td key={key} className="p-3 tabular-nums">{value(key,row[key])}</td>)}</tr>)}</tbody></table></div></>}
-    {isTable && listing && <><div className="overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm"><thead><tr>{columns[section].map(key => <th className="whitespace-nowrap p-3" key={key}>{labels.includes(key as typeof labels[number]) ? labelsText.text(locale, key as keyof typeof LabelMessages) : key}</th>)}<th className="p-3">{adminText.text(locale, "actions")}</th></tr></thead><tbody>{listing.rows.map((row, index) => <tr key={String(row.id ?? row.user_id ?? index)} className="border-t">{columns[section].map(key => <td key={key} className={key === "provider_order_id" || key === "reference_id" ? "whitespace-nowrap p-3 font-mono tabular-nums select-all" : "max-w-64 truncate p-3 tabular-nums"} title={value(key,row[key])}>{value(key,row[key])}</td>)}<td className="p-3"><div className="flex gap-1"><Button size="sm" variant="ghost" onClick={async () => { try { setDetail(section === "usage" && row.run_id ? await request(`/api/admin/billing?section=run&id=${encodeURIComponent(String(row.run_id))}`) : row); } catch (e) { setError(String(e)); } }}>{adminText.text(locale, "details")}</Button>
+    {isTable && listing && <><div className="overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm"><thead><tr>{columns[section].map(key => <th className="whitespace-nowrap p-3" key={key}>{labels.includes(key as typeof labels[number]) ? labelsText.text(locale, key as keyof typeof LabelMessages) : key}</th>)}<th className="p-3">{adminText.text(locale, "actions")}</th></tr></thead><tbody>{listing.rows.map((row, index) => <tr key={String(row.id ?? row.user_id ?? index)} className="border-t">{columns[section].map(key => <td key={key} className={key === "provider_order_id" || key === "reference_id" ? "whitespace-nowrap p-3 font-mono tabular-nums select-all" : "max-w-64 truncate p-3 tabular-nums"} title={value(key,row[key])}>{value(key,row[key])}</td>)}<td className="p-3"><div className="flex gap-1">{section !== "monthly" && <Button size="sm" variant="ghost" onClick={async () => { try { setDetail(section === "usage" && row.run_id ? await request(`/api/admin/billing?section=run&id=${encodeURIComponent(String(row.run_id))}`) : row); } catch (e) { setError(String(e)); } }}>{adminText.text(locale, "details")}</Button>}
       {section === "wallets" && <Button size="sm" variant="outline" onClick={() => setAdjust({ userId: String(row.user_id), action: "credit", referenceId: "", providerOrderId: "", points: "", reason: "", idempotencyKey: crypto.randomUUID() })}>{adminText.text(locale, "adjust")}</Button>}
       {section === "ledger" && Number(row.points_delta) < 0 && <Button size="sm" variant="outline" onClick={() => setAdjust({ userId: String(row.user_id), action: "refund", referenceId: String(row.id), providerOrderId: "", points: "", reason: "", idempotencyKey: crypto.randomUUID() })}>{adminText.text(locale, "refund")}</Button>}
       {section === "reviews" && row.status === "open" && <Button size="sm" variant="outline" onClick={() => setReview({ id: String(row.id), reason: "", resolution: "platform_absorbed", ledgerId: "" })}>{adminText.text(locale, "resolve")}</Button>}
