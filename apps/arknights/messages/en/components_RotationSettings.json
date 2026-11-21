@@ -2,11 +2,13 @@
   "rotation": "Rotation",
   "chooseARotation": "Choose a rotation",
   "noMatchingRotation": "No matching rotation",
-  "custom": "Custom",
+  "custom": "Custom durations",
   "shiftCount": "Shifts",
   "shiftCountN": "{count} shifts",
   "shiftHoursLabel": "Shift {index} hours",
   "cycleTotal": "Total {total} h",
   "cycleNotAllowed": "Total {total} h — only {allowed} h cycles are supported",
-  "hourMustBePositiveInteger": "Each shift needs at least 1 whole hour"
+  "hourMustBePositiveInteger": "Each shift needs at least 1 whole hour",
+  "auto": "Automatic queue rotation",
+  "autoDescription": "Set primary and backup teams for each facility using the in-game rotation queue."
 }

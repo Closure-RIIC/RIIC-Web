@@ -20,6 +20,7 @@ test("Nitro poster API validates and persists a share document outside the relea
   const document = createPosterDocument(layoutJson, draft, [
     { id: "char_002_amiya", name: "阿米娅", elite: 2, level: 73, own: true, potential: 4, rarity: 5 },
     { id: "char_254_vodfox", name: "巫恋", elite: 1, level: 42, own: true, potential: 2, rarity: 5 },
+    { id: "char_348_ceylon", name: "锡兰", elite: 1, level: 26, own: false, potential: 1, rarity: 5 },
   ]);
   try {
     const rejected = await createSchedulePoster(new Request("http://localhost/api/schedule-posters", {
