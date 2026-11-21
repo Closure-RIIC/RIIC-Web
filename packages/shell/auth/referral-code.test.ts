@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, beforeEach, test } from "node:test";
-import { clearReferralCode, normalizeReferralCode, readReferralCode, referralSignupHeaders, rememberReferralCode } from "./referral-code.ts";
+import { clearReferralCode, normalizeReferralCode, readReferralCode, readSignupReferralCode, referralSignupHeaders, rememberReferralCode } from "./referral-code.ts";
 
 const first = "ABCDEF0123456789ABCDEF01";
 const second = "0123456789ABCDEF01234567";
@@ -51,6 +51,17 @@ test("signup captures the current landing link before its campaign request compl
   assert.deepEqual(referralSignupHeaders(), { "x-riic-referral-code": second });
   window.location.href = `https://riic.example/other?ref=${first}`;
   assert.deepEqual(referralSignupHeaders(), { "x-riic-referral-code": second });
+});
+
+test("the edited signup field overrides both the current link and the stored invitation, including when cleared", () => {
+  rememberReferralCode(first);
+  window.location.href = `https://riic.example/referral?ref=${second.toLowerCase()}`;
+  assert.equal(readSignupReferralCode(), second);
+  assert.deepEqual(referralSignupHeaders(` ${first.toLowerCase()} `), {
+    "x-riic-referral-code": first, "x-riic-require-referral": "1",
+  });
+  assert.deepEqual(referralSignupHeaders(""), {});
+  assert.deepEqual(referralSignupHeaders("bad-code"), {});
 });
 
 test("blocked browser storage preserves referral navigation in memory and can be cleared", () => {

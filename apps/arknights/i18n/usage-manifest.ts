@@ -136,6 +136,16 @@ export const references = [
     "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
   },
   {
+    "key": "Account.AuthFeedback.referralFormat",
+    "prefix": false,
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
+  },
+  {
+    "key": "Account.AuthFeedback.referralUnavailable",
+    "prefix": false,
+    "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
+  },
+  {
     "key": "Account.AuthFeedback.unavailable",
     "prefix": false,
     "source": "packages/shell/auth/ResetPasswordForm.tsx:212"
@@ -153,12 +163,12 @@ export const references = [
   {
     "key": "Account.AuthFlow.changeEmail",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:424"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:443"
   },
   {
     "key": "Account.AuthFlow.checkSpam",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:421"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:440"
   },
   {
     "key": "Account.AuthFlow.requestNewReset",
@@ -173,27 +183,27 @@ export const references = [
   {
     "key": "Account.AuthFlow.retrySession",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:437"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:456"
   },
   {
     "key": "Account.AuthFlow.sendCode",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:379"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:398"
   },
   {
     "key": "Account.AuthFlow.sessionChecking",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:435"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:454"
   },
   {
     "key": "Account.AuthFlow.sessionTitle",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:74"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:76"
   },
   {
     "key": "Account.AuthFlow.sessionUnavailable",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:435"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:454"
   },
   {
     "key": "Account.AuthFlow.signInWithNewPassword",
@@ -203,7 +213,7 @@ export const references = [
   {
     "key": "Account.AuthFlow.useExistingCode",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:377"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:396"
   },
   {
     "key": "Account.AuthValidation.announcement",
@@ -233,7 +243,7 @@ export const references = [
   {
     "key": "Account.AuthValidation.nameHint",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:281"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:288"
   },
   {
     "key": "Account.AuthValidation.nameLength",
@@ -288,7 +298,7 @@ export const references = [
   {
     "key": "Account.components_auth_WebsiteAccountPanel.8128Characters",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:318"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:325"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.backToSignIn",
@@ -298,157 +308,162 @@ export const references = [
   {
     "key": "Account.components_auth_WebsiteAccountPanel.confirmPassword",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:337"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:344"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.createAccount",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:389"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:408"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.createAccountAndSendCode",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:392"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:411"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.displayName",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:262"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:269"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.email",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:286"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:293"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.emailVerified2",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:76"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:78"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.emailVerifiedYouCanNowSignIn",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:240"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:247"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.enterEmailVerificationCode",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:75"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:77"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.enterThe6DigitCodeFromTheEmail",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:415"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:434"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.enterThePasswordAgain",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:354"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:361"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.enterTheSamePasswordAgain",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:366"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:373"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.forgotPassword",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:293"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:300"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.ifThisEmailIsRegisteredAResetMessageWill",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:184"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:190"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.iHaveAnAccount",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:389"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:408"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.password",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:292"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:299"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.processing",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:392"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:411"
   },
   {
-    "key": "Account.components_auth_WebsiteAccountPanel.resendCode",
-    "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:426"
-  },
-  {
-    "key": "Account.components_auth_WebsiteAccountPanel.resendInS",
+    "key": "Account.components_auth_WebsiteAccountPanel.referralCodeOptional",
     "prefix": false,
     "source": "packages/shell/auth/WebsiteAuthForm.tsx:379"
   },
   {
+    "key": "Account.components_auth_WebsiteAccountPanel.resendCode",
+    "prefix": false,
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:445"
+  },
+  {
+    "key": "Account.components_auth_WebsiteAccountPanel.resendInS",
+    "prefix": false,
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:398"
+  },
+  {
     "key": "Account.components_auth_WebsiteAccountPanel.resetEmailSent",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:76"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:78"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.rich1",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:372"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:391"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.sendResetEmail",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:392"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:411"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.sentTo",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:401"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:420"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.shownOnThisWebsite",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:275"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:282"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.showPassword",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:320"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:327"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.showPasswordConfirmation",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:356"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:363"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.signIn",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:384"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:403"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.theCodeIsIncorrectOrExpiredTryAgain",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:416"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:435"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.verificationCodeSentCompleteVerificationWithin10Minutes",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:124"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:126"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.verified",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:417"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:436"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.verifyEmail",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:428"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:447"
   },
   {
     "key": "Account.components_auth_WebsiteAccountPanel.verifying",
     "prefix": false,
-    "source": "packages/shell/auth/WebsiteAuthForm.tsx:428"
+    "source": "packages/shell/auth/WebsiteAuthForm.tsx:447"
   },
   {
     "key": "Account.components_interior_otp_input.digitOf",

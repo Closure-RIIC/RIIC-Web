@@ -1,3 +1,5 @@
+import { REQUIRE_REFERRAL_HEADER } from "@riic/contracts/referral";
+
 const REFERRAL_STORAGE_KEY = "riic-referral-code";
 const CODE_PATTERN = /^[A-F0-9]{24}$/;
 let memoryCode: string | null = null;
@@ -24,13 +26,22 @@ export function readReferralCode(): string | null {
   return memoryCode;
 }
 
-export function referralSignupHeaders(): Record<string, string> {
+export function readSignupReferralCode(): string | null {
   // The shared account dialog can submit before the landing page has loaded.
   try {
     const url = new URL(window.location.href);
-    if (url.pathname === "/referral") rememberReferralCode(url.searchParams.get("ref"));
+    const linked = url.pathname === "/referral" && normalizeReferralCode(url.searchParams.get("ref"));
+    if (linked) return linked;
   } catch { /* A stored invitation remains usable when location is unavailable. */ }
-  const code = readReferralCode();
+  return readReferralCode();
+}
+
+export function referralSignupHeaders(editedCode?: string): Record<string, string> {
+  if (editedCode !== undefined) {
+    const code = normalizeReferralCode(editedCode);
+    return code ? { "x-riic-referral-code": code, [REQUIRE_REFERRAL_HEADER]: "1" } : {};
+  }
+  const code = rememberReferralCode(readSignupReferralCode());
   return code ? { "x-riic-referral-code": code } : {};
 }
 
