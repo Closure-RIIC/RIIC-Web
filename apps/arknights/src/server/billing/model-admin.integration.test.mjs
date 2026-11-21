@@ -220,12 +220,15 @@ test("model catalog bootstrap, history and publication keep a usable active conf
       const draft = await saveSettings(active, jointEnabled);
       const trigger = `joint_failure_${randomUUID().replaceAll("-", "")}`;
       const before = (await pool.query("SELECT id,status,payload FROM app.agent_policy_version ORDER BY id")).rows;
-      const migrationUrl = new URL(process.env.DATABASE_MIGRATION_URL || url);
-      const runtimeUrl = new URL(url);
-      assert.deepEqual([migrationUrl.hostname, migrationUrl.port, migrationUrl.pathname],
-        [runtimeUrl.hostname, runtimeUrl.port, runtimeUrl.pathname], "Fault injection must stay in the isolated runtime test database");
       // Fixture DDL belongs to the migration role; publication still uses the limited runtime pool.
-      const migration = new Client({ connectionString: migrationUrl.toString() });
+      const migration = new Client({ connectionString: process.env.DATABASE_MIGRATION_URL || url });
+      const runtime = new Client({ connectionString: url });
+      const target = client => {
+        const { host, port, database } = client.connectionParameters;
+        assert.ok(database.endsWith("_test"), "Resolved fault-injection database must be isolated");
+        return [host, port, database];
+      };
+      assert.deepEqual(target(migration), target(runtime), "Fault injection must stay in the isolated runtime test database");
       await migration.connect();
       try {
         await migration.query(`CREATE FUNCTION app.${trigger}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
