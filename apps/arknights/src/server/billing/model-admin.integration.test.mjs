@@ -4,6 +4,7 @@ import { register, registerHooks } from "node:module";
 import process from "node:process";
 import test from "node:test";
 import { URL, URLSearchParams } from "node:url";
+import { Client } from "pg";
 
 register("../../../../../scripts/ts-path-loader.mjs", import.meta.url);
 registerHooks({ resolve(specifier, context, next) { return specifier === "server-only" ? { shortCircuit: true, url: "data:text/javascript,export{}" } : next(specifier, context); } });
@@ -219,16 +220,27 @@ test("model catalog bootstrap, history and publication keep a usable active conf
       const draft = await saveSettings(active, jointEnabled);
       const trigger = `joint_failure_${randomUUID().replaceAll("-", "")}`;
       const before = (await pool.query("SELECT id,status,payload FROM app.agent_policy_version ORDER BY id")).rows;
-      await pool.query(`CREATE FUNCTION app.${trigger}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
-        IF NEW.action = 'model_settings_publish' AND NEW.reason = 'force joint audit rollback' THEN RAISE EXCEPTION 'forced joint audit failure'; END IF; RETURN NEW; END $$`);
+      const migrationUrl = new URL(process.env.DATABASE_MIGRATION_URL || url);
+      const runtimeUrl = new URL(url);
+      assert.deepEqual([migrationUrl.hostname, migrationUrl.port, migrationUrl.pathname],
+        [runtimeUrl.hostname, runtimeUrl.port, runtimeUrl.pathname], "Fault injection must stay in the isolated runtime test database");
+      // Fixture DDL belongs to the migration role; publication still uses the limited runtime pool.
+      const migration = new Client({ connectionString: migrationUrl.toString() });
+      await migration.connect();
       try {
-        await pool.query(`CREATE TRIGGER ${trigger} BEFORE INSERT ON app.billing_admin_audit FOR EACH ROW EXECUTE FUNCTION app.${trigger}()`);
-        await assert.rejects(publishSettings(active, draft.id, "force joint audit rollback"), /forced joint audit failure/);
-        assert.deepEqual((await pool.query("SELECT id,status,payload FROM app.agent_policy_version ORDER BY id")).rows, before);
-        assert.deepEqual((await currentSettings()).active, active);
+        await migration.query(`CREATE FUNCTION app.${trigger}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+          IF NEW.action = 'model_settings_publish' AND NEW.reason = 'force joint audit rollback' THEN RAISE EXCEPTION 'forced joint audit failure'; END IF; RETURN NEW; END $$`);
+        try {
+          await migration.query(`CREATE TRIGGER ${trigger} BEFORE INSERT ON app.billing_admin_audit FOR EACH ROW EXECUTE FUNCTION app.${trigger}()`);
+          await assert.rejects(publishSettings(active, draft.id, "force joint audit rollback"), /forced joint audit failure/);
+          assert.deepEqual((await pool.query("SELECT id,status,payload FROM app.agent_policy_version ORDER BY id")).rows, before);
+          assert.deepEqual((await currentSettings()).active, active);
+        } finally {
+          await migration.query(`DROP TRIGGER IF EXISTS ${trigger} ON app.billing_admin_audit`);
+          await migration.query(`DROP FUNCTION app.${trigger}()`);
+        }
       } finally {
-        await pool.query(`DROP TRIGGER IF EXISTS ${trigger} ON app.billing_admin_audit`);
-        await pool.query(`DROP FUNCTION app.${trigger}()`);
+        await migration.end();
       }
     });
 

@@ -24,7 +24,7 @@ try {
     const args = process.argv.includes("--browser") ? ["node_modules/@playwright/test/cli.js","test","--config=playwright.agent-billing.config.ts"]
       : ["--experimental-transform-types", "--experimental-test-module-mocks", "--test", "--test-concurrency=1", "apps/arknights/src/server/billing/agent-accounting.integration.test.mjs", "apps/arknights/src/server/billing/cdk.integration.test.mjs", "apps/arknights/src/server/billing/payments.integration.test.mjs", "apps/arknights/src/server/billing/reconciliation.integration.test.mjs", "apps/arknights/src/server/billing/model-admin.integration.test.mjs"];
     const child = spawn(process.execPath, args, {
-      stdio: "inherit", env: { ...process.env, DATABASE_URL: connectionString, AUTH_INTEGRATION_DATABASE_URL: connectionString },
+      stdio: "inherit", env: { ...process.env, DATABASE_URL: connectionString, DATABASE_MIGRATION_URL: connectionString, AUTH_INTEGRATION_DATABASE_URL: connectionString },
     }); child.once("error", reject); child.once("exit", resolve);
   }); process.exitCode = Number(code ?? 1);
 } finally {
