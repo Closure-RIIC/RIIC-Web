@@ -69,6 +69,34 @@ test("closed or invalid invitations leave normal signup unchanged and lookup fai
   await assert.rejects(unavailable.user.create.before(newUser, context()), /database unavailable/);
 });
 
+test("email signup rejects an unavailable manual code before creating the account and accepts a corrected code", async () => {
+  const { betterAuth } = await import("better-auth");
+  const { memoryAdapter } = await import("better-auth/adapters/memory");
+  const records: Record<string, Array<Record<string, unknown>>> = { user: [], account: [], session: [], verification: [] };
+  const validCode = "ABCDEF0123456789ABCDEF01";
+  const auth = betterAuth({
+    baseURL: "https://referral.example.test", secret: "referral-unit-test-secret-for-signup-only",
+    database: memoryAdapter(records), user: { additionalFields: websiteReferralUserFields },
+    emailAndPassword: { enabled: true, autoSignIn: false },
+    databaseHooks: createWebsiteReferralDatabaseHooks({
+      prepare: async code => code === validCode ? code : null,
+      capture: async () => {}, captureFailed: () => assert.fail(),
+    }),
+  });
+  const signup = (code: string) => auth.api.signUpEmail({
+    body: { name: "邀请测试", email: "manual@example.test", password: "TestPassword123!" },
+    headers: new Headers({ "x-riic-referral-code": code, "x-riic-require-referral": "1" }), asResponse: true,
+  });
+  const rejected = await signup("0123456789ABCDEF01234567");
+  assert.equal(rejected.status, 400);
+  assert.equal((await rejected.json()).code, "REFERRAL_CODE_UNAVAILABLE");
+  assert.equal(records.user.length, 0);
+  assert.equal(records.account.length, 0);
+  const accepted = await signup(validCode);
+  assert.equal(accepted.status, 200);
+  assert.equal(records.user[0].signupReferralCode, validCode);
+});
+
 test("after-hook failure preserves the durable marker and successful account creation for recovery", async () => {
   let failures = 0;
   const hooks = createWebsiteReferralDatabaseHooks({

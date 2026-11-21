@@ -1,4 +1,5 @@
-import type { BetterAuthOptions } from "better-auth";
+import { APIError, type BetterAuthOptions } from "better-auth";
+import { REQUIRE_REFERRAL_HEADER } from "@riic/contracts/referral";
 
 import { websiteAccountNameDatabaseHooks } from "./account-name-hooks";
 
@@ -28,10 +29,14 @@ export function createWebsiteReferralDatabaseHooks(dependencies = defaultDepende
       create: {
         async before(user: Parameters<CreateUserHook>[0], context: Parameters<CreateUserHook>[1]) {
           const named = await websiteAccountNameDatabaseHooks.user.create.before(user);
-          const code = (context?.headers ?? context?.request?.headers)?.get("x-riic-referral-code")?.trim();
+          const headers = context?.headers ?? context?.request?.headers;
+          const code = headers?.get("x-riic-referral-code")?.trim();
           const signupReferralCode = context?.path === "/sign-up/email" && code
             ? await dependencies.prepare(code)
             : null;
+          if (context?.path === "/sign-up/email" && headers?.get(REQUIRE_REFERRAL_HEADER) === "1" && !signupReferralCode) {
+            throw new APIError("BAD_REQUEST", { code: "REFERRAL_CODE_UNAVAILABLE", message: "This invitation code cannot be used." });
+          }
           // This private marker is inserted with the new user. An after hook runs
           // after the auth transaction and must not be the only attribution copy.
           return { data: { ...named.data, signupReferralCode } };

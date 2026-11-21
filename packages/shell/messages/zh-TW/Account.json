@@ -1,5 +1,7 @@
 {
   "AuthFeedback": {
+    "referralFormat": "邀請碼應為 24 碼，只能包含數字和字母 A–F。",
+    "referralUnavailable": "這個邀請碼目前無法使用，請核對或清空後繼續註冊。",
     "invalidCredentials": "郵箱或密碼不正確，請檢查後重試，也可以找回密碼。",
     "invalidEmail": "請輸入有效的郵箱地址。",
     "unverifiedEmail": "這個郵箱尚未驗證。傳送驗證碼，完成驗證後即可登入。",
@@ -87,6 +89,7 @@
     "announcement": "密碼強度：{strength}。{guessable, select, yes {這個密碼模式容易被猜到。} other {}}{unmet, select, yes {還需要：{rules}。} other {全部規則均已滿足。}}"
   },
   "components_auth_WebsiteAccountPanel": {
+    "referralCodeOptional": "邀請碼（選填）",
     "somethingWentWrongTryAgainLater": "操作失敗，請稍後重試。",
     "enterTheEmailAddressYouWantToVerify": "請先輸入要驗證的郵箱。",
     "verificationCodeSentCompleteVerificationWithin10Minutes": "驗證碼已傳送，請在 10 分鐘內完成驗證。",

@@ -1,3 +1,5 @@
+export const REQUIRE_REFERRAL_HEADER = "x-riic-require-referral";
+
 export type ReferralRules = {
   rewardPoints: number;
   inviteePoints: number;

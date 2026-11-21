@@ -1,5 +1,7 @@
 {
   "AuthFeedback": {
+    "referralFormat": "Enter a 24-character code using digits and the letters A–F.",
+    "referralUnavailable": "This invitation code can’t be used right now. Check it or clear the field to continue.",
     "invalidCredentials": "The email or password is incorrect. Check your details or reset your password.",
     "invalidEmail": "Enter a valid email address.",
     "unverifiedEmail": "This email is not verified yet. Send a code to verify it before signing in.",
@@ -87,6 +89,7 @@
     "announcement": "Password strength: {strength}. {guessable, select, yes {This password pattern is easy to guess. } other {}}{unmet, select, yes {Still needed: {rules}.} other {All recommendations are met.}}"
   },
   "components_auth_WebsiteAccountPanel": {
+    "referralCodeOptional": "Invitation code (optional)",
     "somethingWentWrongTryAgainLater": "Something went wrong. Try again later.",
     "enterTheEmailAddressYouWantToVerify": "Enter the email address you want to verify.",
     "verificationCodeSentCompleteVerificationWithin10Minutes": "Verification code sent. Complete verification within 10 minutes.",
