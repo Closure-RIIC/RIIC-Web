@@ -112,8 +112,8 @@ export function ManualPage() {
                 const slot = <SlotTrigger className="ef-result-operator ef-manual-operator" disabled={busy || !ready}
                   data-manual-slot={`${a.key}:${shift}:${i}`} aria-label={`${label} · ${shift.toUpperCase()} · ${t("Manual.slot")} ${i + 1} · ${name ? operatorLabel(name) : t("Manual.selectOperator")}`}
                   onClick={() => { if (owned.size) setSlot({ key: a.key, shift, index: i }); }}>
-                  {name ? <OperatorPortrait name={name} size={kind === "center" ? 88 : 68} showTitle={false} /> : <span className="ef-manual-empty" aria-hidden><Plus size={24} /></span>}
-                  <span>{name ? operatorLabel(name) : t("Manual.selectOperator")}</span>
+                  {name ? <OperatorPortrait name={name} size={kind === "center" ? 88 : 68} showTitle={false} /> : kind === "center" ? <span className="ef-manual-empty ef-trust-slot" aria-hidden>{t("Results.trustSlot")}</span> : <span className="ef-manual-empty" aria-hidden><Plus size={24} /></span>}
+                  <span>{name ? operatorLabel(name) : kind === "center" ? t("Results.trustSlot") : t("Manual.selectOperator")}</span>
                 </SlotTrigger>;
                 return <div className="ef-manual-slot" key={i}>
                   {name ? <OperatorSkillTooltip name={name}>{slot}</OperatorSkillTooltip> : slot}

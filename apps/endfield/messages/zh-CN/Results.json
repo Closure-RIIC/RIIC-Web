@@ -52,5 +52,6 @@
   "days": "天",
   "day": "模拟日",
   "effectiveOutput": "等效产出",
-  "noPlanFoundWithinTheBudgetCheckYourRoster": "本次预算内没有生成方案。请检查干员数量、设施等级或增大搜索预算。"
+  "noPlanFoundWithinTheBudgetCheckYourRoster": "本次预算内没有生成方案。请检查干员数量、设施等级或增大搜索预算。",
+  "trustSlot": "信赖位"
 }

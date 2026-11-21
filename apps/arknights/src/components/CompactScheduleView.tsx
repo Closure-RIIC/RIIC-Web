@@ -1,7 +1,7 @@
 "use client";
 import { useTranslations, useLocale } from "use-intl";
 
-import type { CSSProperties } from "react";
+import { memo, type CSSProperties } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { MOTION_DURATION, MOTION_EASE_OUT } from "@/motion";
 import { ArrowLeftRight, Check, FileWarning, Package, Trash2 } from "lucide-react";
@@ -10,7 +10,8 @@ import { DroneIcon } from "@/components/DroneIcon";
 
 import { maxRoomLevel } from "@riic/arknights-domain/blueprint";
 import { AnimatedNumber, AnimatedText } from "@/components/AnimatedText";
-import { LevelDiamonds, OperatorSlot, roomVisualFor } from "@/components";
+import { BoardOperatorSlot, LevelDiamonds, roomVisualFor } from "@/components";
+import type { MoodViewStore } from "@/mood-view-store";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { presentRoomEfficiency } from "@riic/arknights-domain/efficiency";
@@ -37,7 +38,7 @@ import { useGameCatalog } from "@/i18n/game-data-client";
 import { PRODUCT_ICON_URLS } from "@/product-assets";
 
 export interface CompactScheduleViewProps {
-  simulation?: { moods: Readonly<Record<string, number>>; selected: string; onSelect: (name: string) => void };
+  simulation?: MoodViewStore;
   noRoomSkillOperators?: ReadonlyMap<string, ReadonlySet<string>>;
   rows: RoomRow[];
   layout: BaseBlueprint;
@@ -125,7 +126,7 @@ function roomSlotCountFor(group: string) {
   return 5;
 }
 
-function CompactRoomCard({
+const CompactRoomCard = memo(function CompactRoomCard({
   simulation,
   noRoomSkillOperators,
   row,
@@ -338,13 +339,12 @@ function CompactRoomCard({
   const efficiencyContent = efficiencyBlock ?? emptyWorkstationState;
 
   const operators = slots.map(({ slot, positionLabel }, index) => (
-    <OperatorSlot
+    <BoardOperatorSlot
       key={`${row.key}-${index}`}
+      store={simulation}
       slot={slot}
       highlightNoLayoutSkill={Boolean(slot && noRoomSkillOperators?.get(row.roomId)?.has(slot.name))}
-      elite={simulation ? undefined : slot ? eliteByOperator?.get(slot.name) : undefined}
-      currentMorale={slot && simulation ? Math.round((simulation.moods[slot.name] ?? 24) * 100) / 100 : undefined}
-      selectionMode={Boolean(simulation)}
+      elite={slot ? eliteByOperator?.get(slot.name) : undefined}
       nameColor="white"
       operatorLevel={slot ? levelByOperator?.get(slot.name) : undefined}
       autofill={Boolean(
@@ -358,8 +358,8 @@ function CompactRoomCard({
       transitionDelay={Math.min(index, 2) * 0.02}
       positionLabel={positionLabel}
       unavailable={row.unavailableSlotIndices?.includes(index)}
-      onActivate={simulation && slot ? () => simulation.onSelect(slot.name) : onSlotClick ? () => onSlotClick(row, index) : undefined}
-      sortSelected={simulation ? slot?.name === simulation.selected : sortSelection?.roomId === row.roomId && sortSelection.slotIndex === index}
+      onActivate={onSlotClick ? () => onSlotClick(row, index) : undefined}
+      sortSelected={sortSelection?.roomId === row.roomId && sortSelection.slotIndex === index}
       onSortActivate={sortMode && onSortSlotClick ? () => onSortSlotClick(row, index) : undefined}
     />
   ));
@@ -428,7 +428,19 @@ function CompactRoomCard({
       </div>
     </div>
   );
-}
+}, (prev, next) => {
+  const before=prev as Record<string, unknown>, after=next as Record<string, unknown>;
+  for (const key of new Set([...Object.keys(before),...Object.keys(after)])) {
+    if (key === "efficiency" || key === "style" || key === "visual" || key === "slots") continue;
+    if (before[key] !== after[key]) return false;
+  }
+  if (prev.slots.length !== next.slots.length) return false;
+  for (let index=0;index<prev.slots.length;index+=1) {
+    if (prev.slots[index]!.slot !== next.slots[index]!.slot) return false;
+    if (prev.slots[index]!.positionLabel !== next.slots[index]!.positionLabel) return false;
+  }
+  return true;
+});
 
 function CompactDroneButton({ row, selected, onChange }: { row: RoomRow; selected: boolean; onChange: (row: RoomRow) => void }) {
   const intl = useTranslations();

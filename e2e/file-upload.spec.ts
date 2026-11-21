@@ -462,7 +462,7 @@ test("mobile English upload supports the chooser, long filename errors and keybo
   await expect(upload).toBeVisible();
   await expect(upload.getByRole("alert")).toHaveCount(0);
   expect(await workspaceData(page)).toEqual(before);
-  await chooseFile(page, upload, jsonFile(`${"long-file-name-".repeat(12)}.txt`, importedSchedule), true);
+  await chooseFile(page, upload, jsonFile(`${"long-file-name-".repeat(12)}.csv`, importedSchedule), true);
   await expect(upload.getByRole("alert")).toContainText("not supported");
   const bounds = await upload.boundingBox();
   expect(bounds).not.toBeNull();

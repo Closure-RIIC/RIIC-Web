@@ -30,6 +30,7 @@ test("roster, elite stages, facilities, production, priorities and manual change
     next => next.options.mfg = "2干员",
     next => next.options.grow.晶植++,
     next => next.options.priority.reverse(),
+    next => next.options.cluePriority.reverse(),
     next => next.options.assist = true,
     next => next.options.budget++,
     next => next.options.time++,

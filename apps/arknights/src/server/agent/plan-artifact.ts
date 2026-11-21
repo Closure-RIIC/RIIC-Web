@@ -86,7 +86,7 @@ export function projectPlanResult(publicResult: ReturnType<typeof toPublicPlanDa
     rooms: Object.entries(plan.rooms).flatMap(([roomType, roomList]) =>
       ((roomList ?? []) as MaaRoom[]).map((room, roomIndex) => ({
         room: `${roomType}${roomIndex + 1}`,
-        operators: room.operators.map((operator) =>
+        operators: roomType === "training" ? [plan.rooms.training?.[roomIndex]?.operatorsB?.[0], plan.rooms.training?.[roomIndex]?.operatorsA?.[0]].filter((name): name is string => !!name) : (room.operators ?? []).map((operator) =>
           typeof operator === "string" ? operator : operator?.name ?? "（未安排干员）"
         ),
       }))

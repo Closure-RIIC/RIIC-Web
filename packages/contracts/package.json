@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./locale": "./locale.ts",
+    "./referral": "./referral.ts",
     "./account-session": "./account-session.ts",
     "./api": "./api.ts"
   }

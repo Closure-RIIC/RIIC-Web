@@ -21,7 +21,7 @@ const referenceCatalog = raw as unknown as {
   producers: [string, number, string, string, string, string, string, [string, number, number][]][];
   spread: string[]; knownOperators: string[];
 };
-const additions = moodCatalogAdditions(referenceCatalog.skills);
+const additions = moodCatalogAdditions();
 export const catalog: typeof referenceCatalog = {
   ...referenceCatalog,
   skills: { ...referenceCatalog.skills, ...additions.skills },
