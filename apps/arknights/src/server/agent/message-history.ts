@@ -12,15 +12,19 @@ export async function prepareAgentHistory(messages: UIMessage[], check: (text: s
   for (const message of messages) {
     if (!message || !["user", "assistant"].includes(message.role) || !Array.isArray(message.parts)) throw new AgentHistoryError("对话格式无效。");
     const parts: UIMessage["parts"] = [];
-    const stripThinking = createInlineThinkingFilter();
+    let stripThinking = createInlineThinkingFilter();
     // Preserve only the final answer after the last historical tool, not narration.
     const lastTool = message.role === "assistant" ? message.parts.reduce((last, part, index) => part && typeof part.type === "string" && (part.type.startsWith("tool-") || part.type === "dynamic-tool") ? index : last, -1) : -1;
     for (const [index, part] of message.parts.entries()) {
       if (!part || typeof part.type !== "string") throw new AgentHistoryError("对话格式无效。");
+      if (part.type === "step-start" || part.type.startsWith("tool-") || part.type === "dynamic-tool") {
+        stripThinking = createInlineThinkingFilter();
+      }
       if (part.type === "text") {
         if (typeof part.text !== "string") throw new AgentHistoryError("对话格式无效。");
+        if (message.role === "assistant" && index <= lastTool) continue;
         const text = message.role === "assistant" ? stripThinking(part.text) : part.text;
-        if (message.role === "assistant" && (index <= lastTool || !text.trim() || INTERNAL_ANSWER_MARKERS.test(text))) continue;
+        if (message.role === "assistant" && (!text.trim() || INTERNAL_ANSWER_MARKERS.test(text))) continue;
         await check(text, "input");
         parts.push({ type: "text", text });
       } else if (part.type === "file" && message.role === "user") {

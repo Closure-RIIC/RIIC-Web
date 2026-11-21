@@ -24,10 +24,13 @@ export function emptyAgentHistory(): AgentHistory {
 /** Finish partial stream states before a saved conversation is sent back to the SDK. */
 export function restoreAgentMessages(messages: UIMessage[]): UIMessage[] {
   return structuredClone(messages).map((message) => {
-    const stripThinking = createInlineThinkingFilter();
+    let stripThinking = createInlineThinkingFilter();
     return {
       ...message,
       parts: message.parts.flatMap<UIMessage["parts"][number]>((part) => {
+        if (part.type === "step-start" || part.type.startsWith("tool-") || part.type === "dynamic-tool") {
+          stripThinking = createInlineThinkingFilter();
+        }
         if (message.role === "assistant" && part.type === "text") {
           const text = stripThinking(part.text);
           return text.trim() ? [{ ...part, text, state: "done" }] : [];
