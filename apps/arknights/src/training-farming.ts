@@ -1,3 +1,5 @@
+import solver from "javascript-lp-solver";
+
 export type FarmingDrop = {
   stageId: string;
   code: string;
@@ -14,8 +16,25 @@ export type FarmingSnapshot = {
   baselines: Record<string, FarmingDrop>;
 };
 
-export function availableFarmingDrops(drops: readonly FarmingDrop[], now: number) {
+export function cnGameWeekday(now: number) {
+  return new Date(now + 4 * 60 * 60 * 1000).getUTCDay();
+}
+
+export const CHIP_STAGE_DAYS: Readonly<Partial<Record<string, readonly number[]>>> = {
+  pro_a_2: [1, 4, 5, 0],
+  pro_b_2: [1, 2, 5, 6],
+  pro_c_2: [3, 4, 6, 0],
+  pro_d_2: [2, 3, 6, 0],
+};
+
+export const CHIP_STAGE_BY_ITEM: Readonly<Partial<Record<string, string>>> = {
+  "3212": "pro_c_2", "3222": "pro_d_2", "3232": "pro_a_2", "3242": "pro_b_2",
+  "3252": "pro_b_2", "3262": "pro_a_2", "3272": "pro_c_2", "3282": "pro_d_2",
+};
+
+export function availableFarmingDrops(drops: readonly FarmingDrop[], now: number, includeScheduledChips = false) {
   return drops.filter((drop) =>
+    (includeScheduledChips || (CHIP_STAGE_DAYS[drop.stageId]?.includes(cnGameWeekday(now)) ?? true)) &&
     (drop.opensAt === undefined || drop.opensAt <= now) &&
     (drop.closesAt === undefined || now < drop.closesAt));
 }
@@ -45,10 +64,10 @@ const ap5Min = 20;
 const ap5Average = 21;
 const ap5Max = 22;
 
-export function planCatalystExchange(catalysts: number, now: number) {
-  const certificates = catalysts * certificatesPerCatalyst;
+export function planCatalystExchange(catalysts: number, now: number, ownedCertificates = 0) {
+  const certificates = Math.max(0, catalysts * certificatesPerCatalyst - ownedCertificates);
   // CN resets at 04:00 UTC+8, so shift the UTC weekday by four hours.
-  const weekday = new Date(now + 4 * 60 * 60 * 1000).getUTCDay();
+  const weekday = cnGameWeekday(now);
   const runs = Math.ceil(certificates / ap5Average);
   return {
     certificates, runs, sanity: runs * ap5Sanity,
@@ -58,13 +77,13 @@ export function planCatalystExchange(catalysts: number, now: number) {
   };
 }
 
-export function planFarming(needs: readonly Need[], drops: FarmingSnapshot["drops"], now: number) {
+export function planFarming(needs: readonly Need[], drops: FarmingSnapshot["drops"], now: number, includeScheduledChips = false) {
   const candidates = new Map<string, Candidate>();
   const remaining = new Map<string, number>();
   const uncovered: string[] = [];
   for (const need of needs) {
     if (!Number.isSafeInteger(need.missing) || need.missing <= 0) continue;
-    const available = availableFarmingDrops(drops[need.id] ?? [], now);
+    const available = availableFarmingDrops(drops[need.id] ?? [], now, includeScheduledChips);
     if (!available.length) {
       uncovered.push(need.id);
       continue;
@@ -82,14 +101,16 @@ export function planFarming(needs: readonly Need[], drops: FarmingSnapshot["drop
 
   const required = new Map(remaining);
   const separate = new Map<string, number>();
+  const sanityPerItem = new Map<string, number>();
   let separateSanity = 0;
   for (const [id, missing] of remaining) {
-    const best = recommendFarming(availableFarmingDrops(drops[id] ?? [], now), missing)[0];
+    const best = recommendFarming(availableFarmingDrops(drops[id] ?? [], now, includeScheduledChips), missing)[0];
     separateSanity += best.totalSanity;
+    sanityPerItem.set(id, best.totalSanity / missing);
     separate.set(best.stageId, Math.max(separate.get(best.stageId) ?? 0, best.runs));
   }
 
-  function greedyPlan(excludedStageId?: string) {
+  function greedyPlan(excludedStageId?: string, weightBySanity = false) {
     const remaining = new Map(required);
     const plan = new Map<string, PlanStage>();
     // Pick a batch that fills at least one shortage, then re-score the remaining ones.
@@ -106,7 +127,9 @@ export function planFarming(needs: readonly Need[], drops: FarmingSnapshot["drop
         let coverage = 0;
         for (const [id, rate] of stage.yields) {
           const missing = remaining.get(id);
-          if (missing !== undefined) coverage += Math.min(1, runs * rate / missing);
+          if (missing === undefined) continue;
+          const covered = Math.min(missing, runs * rate);
+          coverage += weightBySanity ? covered * sanityPerItem.get(id)! : covered / missing;
         }
         const score = coverage / (runs * stage.drop.sanity);
         if (!best || score > best.score ||
@@ -175,7 +198,36 @@ export function planFarming(needs: readonly Need[], drops: FarmingSnapshot["drop
     if (total(trimmed) < total(stages)) stages = trimmed;
   }
 
+  function linearPlan(): PlanStage[] | null {
+    if (!required.size) return [];
+    const entries = [...candidates.values()];
+    const constraints = Object.fromEntries([...required].map(([id, missing]) => [id, { min: missing }]));
+    const variables = Object.fromEntries(entries.map(({ drop, yields }, index) => [
+      `stage${index}`, { sanity: drop.sanity, ...Object.fromEntries(yields) },
+    ]));
+    const solution = solver.Solve({ optimize: "sanity", opType: "min", constraints, variables }) as
+      { feasible: boolean; bounded?: boolean } & Record<string, unknown>;
+    if (!solution.feasible || solution.bounded === false) return null;
+
+    const totals = new Map<string, number>();
+    const result: PlanStage[] = [];
+    for (const [index, { drop, yields }] of entries.entries()) {
+      const value = solution[`stage${index}`];
+      if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) continue;
+      const runs = Math.ceil(value);
+      const expectedDrops: Record<string, number> = {};
+      for (const [id, rate] of yields) {
+        expectedDrops[id] = rate * runs;
+        totals.set(id, (totals.get(id) ?? 0) + expectedDrops[id]);
+      }
+      result.push({ stageId: drop.stageId, code: drop.code, runs, totalSanity: runs * drop.sanity, expectedDrops });
+    }
+    return [...required].every(([id, missing]) => (totals.get(id) ?? 0) + 1e-9 >= missing) ? result : null;
+  }
+
+  consider(linearPlan());
   consider(greedyPlan());
+  consider(greedyPlan(undefined, true));
   // Try alternatives to the most expensive commitments in the initial plan.
   const priorities = [...stages].sort((a, b) => b.totalSanity - a.totalSanity);
   for (const stage of priorities.slice(0, 6)) consider(greedyPlan(stage.stageId));

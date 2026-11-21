@@ -1,3 +1,4 @@
+import { CHIP_STAGE_DAYS } from "@/training-farming";
 import type { FarmingDrop, FarmingSnapshot } from "@/training-farming";
 
 const base = "https://penguin-stats.io/PenguinStats/api/v2";
@@ -29,7 +30,7 @@ async function refresh(): Promise<FarmingSnapshot> {
   ]);
   const now = Date.now();
   const eligible = new Map(stages.filter((stage) => {
-    return ["MAIN", "SUB", "ACTIVITY"].includes(stage.stageType) &&
+    return (["MAIN", "SUB", "ACTIVITY"].includes(stage.stageType) || CHIP_STAGE_DAYS[stage.stageId] !== undefined) &&
       Number.isSafeInteger(stage.apCost) && stage.apCost > 0;
   }).map((stage) => [stage.stageId, stage]));
   const drops: FarmingSnapshot["drops"] = Object.create(null);

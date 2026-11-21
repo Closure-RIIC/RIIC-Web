@@ -119,7 +119,8 @@ test("unpacks high-rarity requirements through recipes and includes crafting fee
 test("adds skill, mastery and module costs from the remaining level onward", () => {
   const result = calculateTrainingPlan({
     goals: [goal("char_100_a", {
-      targetSkillLevel: 3,
+      currentElite: 2, currentLevel: 60, targetElite: 2, targetLevel: 60,
+      targetSkillLevel: 7,
       targetMasteries: { skill_a: 2 },
       targetModules: { module_a: 2 },
     })],
@@ -133,6 +134,20 @@ test("adds skill, mastery and module costs from the remaining level onward", () 
   assert.equal(result.requirements["30135"], 1);
   assert.equal(result.requirements.mod_unlock_token, 1);
   assert.equal(result.lmd, 4_600);
+});
+
+test("ignores saved mastery and module targets when their prerequisites are no longer met", () => {
+  const result = calculateTrainingPlan({
+    goals: [goal("char_100_a", {
+      targetMasteries: { skill_a: 3 },
+      targetModules: { module_a: 2 },
+    })],
+    operators: [{ id: "char_100_a", rarity: 6 }],
+    data,
+    inventory: {},
+  });
+  assert.deepEqual(result.requirements, {});
+  assert.equal(result.lmd, 0);
 });
 
 test("calculates level experience and LMD deltas and values red gold as an optional reserve", () => {

@@ -1,5 +1,7 @@
 "use client";
 
+import { useTrainingFarmingPlan } from "@/hooks/use-training-farming-plan";
+
 import { Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslations, useLocale } from "use-intl";
@@ -14,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { localizedOperatorName } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
@@ -21,18 +24,20 @@ import { manualLevelFor, maxEliteForRarity } from "@riic/arknights-domain/manual
 import { OPERATOR_CATALOG, type OperatorAssetRecord } from "@/operatorPortraits";
 import type { OperBoxEntry, SklandInventoryData, SklandOperatorStatus } from "@riic/arknights-domain/types";
 import { useWorkbench } from "@/workbench-context";
-import { trainingSkillCosts, calculateTrainingPlan, defaultTrainingGoal, isTrainingFullyComplete, mergeTrainingGoalCurrent, type TrainingGoal, type TrainingPlannerData } from "@/training-planner";
-import { availableFarmingDrops, planFarming, recommendFarming, type FarmingSnapshot } from "@/training-farming";
+import { canPlanMastery, trainingSkillCosts, calculateTrainingPlan, defaultTrainingGoal, isTrainingFullyComplete, mergeTrainingGoalCurrent, type TrainingGoal, type TrainingPlannerData } from "@/training-planner";
+import { availableFarmingDrops, PURCHASE_CERTIFICATE, recommendFarming, type FarmingSnapshot } from "@/training-farming";
 import { buildTrainingPlannerContext } from "@/agent-page-context";
 import { loadTrainingGoals, loadTrainingInventory, saveTrainingGoals, saveTrainingInventory, takeTrainingPlannerHandoff } from "@/training-planner-store";
 import plannerDataJson from "@/generated/training-planner-data.json" with { type: "json" };
+import stageCodesJson from "@/generated/training-stage-codes.json" with { type: "json" };
 import { cn } from "@/lib/utils";
 import { workbenchPageAccent } from "@/workbench-accent";
 
+const stageCodes: Readonly<Partial<Record<string, string>>> = stageCodesJson;
 const plannerData = plannerDataJson as TrainingPlannerData;
 const OPERATOR_BY_ID = new Map(OPERATOR_CATALOG.map((operator) => [operator.id, operator]));
 const BOOK_IDS = ["2001", "2002", "2003", "2004"];
-const MONEY_IDS = ["4001", "3003"];
+const MONEY_IDS = ["4001", "3003", PURCHASE_CERTIFICATE];
 const MATERIAL_IDS = (() => {
   const ids = new Set(Object.values(plannerData.operators).flatMap((operator) => [
   ...operator.phases.flatMap((phase) => phase.map((item) => item.id)),
@@ -107,9 +112,53 @@ function mergeHandoff(
   return next;
 }
 
-function selectElement(label: string, value: number, onChange: (value: number) => void, options: number[], disabled = false, showLabel = true) {
+function LevelControl({ label, maxLabel, value, min = 1, max, disabled = false, onChange }: {
+  label: string;
+  maxLabel: string;
+  value: number;
+  min?: number;
+  max: number;
+  disabled?: boolean;
+  onChange: (level: number) => void;
+}) {
+  return (
+    <div className="grid min-w-0 gap-1 text-[11px] text-muted-foreground">
+      <span>{label} · {value}/{max}</span>
+      <div className="flex min-w-0 items-center gap-2">
+        <input
+          type="range" min={min} max={max} step={1} value={value} disabled={disabled || max <= min}
+          aria-label={label} className="min-w-0 flex-1 accent-lime-600 disabled:opacity-50"
+          onChange={(event) => onChange(event.target.valueAsNumber)}
+        />
+        <Input
+          key={value} type="number" inputMode="numeric" min={min} max={max} step={1} disabled={disabled}
+          defaultValue={value} aria-label={label} className="h-8 w-14 shrink-0 px-1.5 text-center"
+          onBlur={(event) => {
+            const input = event.currentTarget;
+            const entered = input.valueAsNumber;
+            const next = Number.isFinite(entered) ? Math.max(min, Math.min(max, Math.round(entered))) : value;
+            input.value = String(next);
+            if (next !== value) onChange(next);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              event.currentTarget.blur();
+            }
+          }}
+        />
+        <Button type="button" size="sm" variant="outline" className="h-8 shrink-0 px-2"
+          aria-label={`${label} · ${maxLabel}`} disabled={disabled || value >= max} onClick={() => onChange(max)}>
+          {maxLabel}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function selectElement(label: string, value: number, onChange: (value: number) => void, options: number[], disabled = false) {
   return <div className="grid min-w-0 gap-1 text-[11px] text-muted-foreground">
-    {showLabel ? <span>{label}</span> : null}
+    <span>{label}</span>
     <Combobox<number>
       items={options}
       filteredItems={options}
@@ -287,8 +336,8 @@ export function TrainingPlanner() {
       window.removeEventListener("focus", refreshTime);
     };
   }, [farming]);
-  const farmingPlan = useMemo(() => farming ? planFarming(result.shortages, farming.drops, farmingNow) : null,
-    [farming, farmingNow, result.shortages]);
+  const { plan: farmingPlan, pending: farmingSolving, failed: farmingSolveFailed } =
+    useTrainingFarmingPlan(result.shortages, farming?.drops, farmingNow);
 
   const goalOperators = useMemo(() => goals.flatMap((goal) => {
     const operator = OPERATOR_BY_ID.get(goal.operatorId);
@@ -421,15 +470,17 @@ export function TrainingPlanner() {
                     </Button>
                   </div>
                   <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
-                      <label className="col-span-2 text-xs font-medium text-muted-foreground">{t("current")}</label>
+                    <div className="grid min-w-0 grid-cols-[minmax(3.75rem,0.65fr)_minmax(0,1fr)] gap-2 max-xl:grid-cols-1">
+                      <label className="col-span-full text-xs font-medium text-muted-foreground">{t("current")}</label>
                       {selectElement(t("elite", { level: goal.currentElite }), goal.currentElite, (next) => updateGoal(operator.id, (entry) => ({ ...entry, currentElite: next, currentLevel: Math.min(entry.currentLevel, manualLevelFor(operator.rarity, next)) })), currentEliteOptions)}
-                      {selectElement(t("changeLevel"), goal.currentLevel, (next) => updateGoal(operator.id, (entry) => ({ ...entry, currentLevel: next })), Array.from({ length: currentLevelMax }, (_, index) => index + 1))}
+                      <LevelControl label={t("levelControlLabel", { side: t("current") })} maxLabel={t("levelMax")} value={goal.currentLevel}
+                        max={currentLevelMax} onChange={(next) => updateGoal(operator.id, (entry) => ({ ...entry, currentLevel: next }))} />
                     </div>
-                    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
-                      <label className="col-span-2 text-xs font-medium text-muted-foreground">{t("target")}</label>
+                    <div className="grid min-w-0 grid-cols-[minmax(3.75rem,0.65fr)_minmax(0,1fr)] gap-2 max-xl:grid-cols-1">
+                      <label className="col-span-full text-xs font-medium text-muted-foreground">{t("target")}</label>
                       {selectElement(t("elite", { level: goal.targetElite }), goal.targetElite, (next) => updateGoal(operator.id, (entry) => ({ ...entry, targetElite: next, targetLevel: Math.min(entry.targetLevel, manualLevelFor(operator.rarity, next)) })), currentEliteOptions)}
-                      {selectElement(t("changeLevel"), goal.targetLevel, (next) => updateGoal(operator.id, (entry) => ({ ...entry, targetLevel: next })), Array.from({ length: targetLevelMax }, (_, index) => index + 1))}
+                      <LevelControl label={t("levelControlLabel", { side: t("target") })} maxLabel={t("levelMax")} value={goal.targetLevel}
+                        max={targetLevelMax} onChange={(next) => updateGoal(operator.id, (entry) => ({ ...entry, targetLevel: next }))} />
                     </div>
                   </div>
                   <details className="border-t border-border pt-2">
@@ -437,24 +488,24 @@ export function TrainingPlanner() {
                       <span>{t("costDetails")}</span><ChevronDown className="size-4 text-muted-foreground" aria-hidden="true" />
                     </summary>
                     <div className="grid min-w-0 gap-2 pt-1">
-                      <div className="grid grid-cols-2 gap-2">
-                        {selectElement(t("skillLevel"), goal.currentSkillLevel, (next) => updateGoal(operator.id, (entry) => ({ ...entry, currentSkillLevel: next })), Array.from({ length: 7 }, (_, index) => index + 1), !costs.skillLevels.length)}
-                        {selectElement(t("targetSkill"), goal.targetSkillLevel, (next) => updateGoal(operator.id, (entry) => ({ ...entry, targetSkillLevel: next })), Array.from({ length: 7 }, (_, index) => index + 1), !costs.skillLevels.length)}
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <LevelControl label={t("skillLevel")} maxLabel={t("levelMax")} value={goal.currentSkillLevel} max={7}
+                          disabled={!costs.skillLevels.length} onChange={(next) => updateGoal(operator.id, (entry) => ({ ...entry, currentSkillLevel: next }))} />
+                        <LevelControl label={t("targetSkill")} maxLabel={t("levelMax")} value={goal.targetSkillLevel} max={7}
+                          disabled={!costs.skillLevels.length} onChange={(next) => updateGoal(operator.id, (entry) => ({ ...entry, targetSkillLevel: next }))} />
                       </div>
-                      {costs.skills.length > 0 ? (
-                        <div className="grid grid-cols-[minmax(0,1fr)_minmax(7rem,9rem)] gap-2 text-[11px] text-muted-foreground">
-                          <span>{t("skillLevel")}</span><span>{t("targetMastery")}</span>
-                        </div>
-                      ) : null}
                       {costs.skills.map((skill, index) => {
                         const current = goal.currentMasteries[skill.id] ?? 0;
                         const target = goal.targetMasteries[skill.id] ?? current;
-                        return <div key={skill.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(7rem,9rem)] items-center gap-2">
+                        return <div key={skill.id} className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:items-center">
                           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs">
                             <span>{t("masterySkill", { index: index + 1 })}</span>
                             <span className="text-[11px] text-muted-foreground">{t("current")}: {t("masteryLevel", { level: current })}</span>
                           </div>
-                          {selectElement(t("targetMastery"), target, (next) => updateGoal(operator.id, (entry) => ({ ...entry, targetMasteries: { ...entry.targetMasteries, [skill.id]: next } })), [0, 1, 2, 3], goal.targetElite < 2, false)}
+                          <LevelControl label={t("targetMastery")} maxLabel={t("levelMax")} min={0} max={3}
+                            value={target} disabled={!canPlanMastery(goal)} onChange={(next) => updateGoal(operator.id, (entry) => ({
+                              ...entry, targetMasteries: { ...entry.targetMasteries, [skill.id]: next },
+                            }))} />
                         </div>;
                       })}
                       <div className="border-t border-border pt-3">
@@ -477,14 +528,23 @@ export function TrainingPlanner() {
                           const current = goal.currentModules[module.id] ?? 0;
                           const target = goal.targetModules[module.id] ?? current;
                           const available = goal.targetElite === 2 && goal.targetLevel >= module.unlockLevel;
-                          return <div key={module.id} className="grid min-w-0 grid-cols-[minmax(0,1fr)_5rem] items-center gap-2">
-                            <span className="min-w-0 text-xs leading-5"><span className="block break-words">{module.name}</span><span className="text-muted-foreground">{t("current")}: {t("moduleLevel", { level: current })}</span></span>
-                            {selectElement(t("moduleTargets"), target, (next) => updateGoal(operator.id, (entry) => {
+                          const control = <LevelControl label={t("moduleTargets")} maxLabel={t("levelMax")} min={0} max={3}
+                              value={target} disabled={!available} onChange={(next) => updateGoal(operator.id, (entry) => {
                               const targets = { ...entry.targetModules };
                               if (next <= (entry.currentModules[module.id] ?? 0)) delete targets[module.id];
                               else targets[module.id] = next;
                               return { ...entry, targetModules: targets };
-                            }), [0, 1, 2, 3], !available)}
+                            })} />;
+                          return <div key={module.id} className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] sm:items-center">
+                            <span className="min-w-0 text-xs leading-5"><span className="block break-words">{module.name}</span><span className="text-muted-foreground">{t("current")}: {t("moduleLevel", { level: current })}</span></span>
+                            {available ? control : (
+                              <Tooltip>
+                                <TooltipTrigger render={<div tabIndex={0} aria-label={module.name} className="min-w-0 cursor-help rounded-sm focus-visible:outline-2 focus-visible:outline-ring" />}>
+                                  <div className="pointer-events-none">{control}</div>
+                                </TooltipTrigger>
+                                <TooltipContent>{t("moduleLockedUntil", { level: module.unlockLevel })}</TooltipContent>
+                              </Tooltip>
+                            )}
                             {!available && target > current ? <span className="col-span-2 text-[11px] text-amber-700">{t("moduleLockedUntil", { level: module.unlockLevel })}</span> : null}
                           </div>;
                         })}
@@ -574,7 +634,7 @@ export function TrainingPlanner() {
             <h2 id="training-shortages-heading" className="mb-2 border-b border-border pb-2 text-sm font-semibold">{t("materialShortages")}</h2>
             <Link
               to="/farming-plan"
-              search={{ materials: result.shortages.map(({ id, missing }) => `${id}:${missing}`).join(",") }}
+              search={{ materials: result.shortages.map(({ id, missing }) => `${id}:${missing}`).join(","), certificates: countFor(PURCHASE_CERTIFICATE) || undefined }}
               className="mb-2 inline-block text-sm underline underline-offset-4"
             >
               {t("farmingPage")}
@@ -594,6 +654,8 @@ export function TrainingPlanner() {
                 <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noreferrer" className="underline">CC BY-NC 4.0</a>
               </p>
             ) : null}
+            {farmingSolving && <p role="status" className="text-xs text-muted-foreground">{t("farmingSolving")}</p>}
+            {farmingSolveFailed && <p role="status" className="text-xs text-muted-foreground">{t("farmingSolveFailed")}</p>}
             {farmingPlan && result.shortages.length > 0 ? (
               <div className="my-3 border border-border p-3">
                 <h3 className="text-sm font-semibold">{t("farmingPlan")}</h3>
@@ -612,6 +674,19 @@ export function TrainingPlanner() {
                     </ul>
                   </>
                 ) : null}
+          {farmingPlan.crafts.length > 0 && (
+            <div className="mt-3 space-y-1 border-t border-border pt-2 text-xs">
+              <h3 className="font-medium">{t("craftingPlan")}</h3>
+              <ul className="space-y-1">
+                {farmingPlan.crafts.map((craft, index) => (
+                  <li key={`${craft.id}:${index}`}>
+                    {inventoryLabel(craft.id, t, gameCatalog.itemNames)} ×{numberText(craft.count)} · {t("craftEntry", { count: numberText(craft.batches), facility: t("workshop"), level: craft.level })}
+                    {" · "}{t("craftCost", { count: numberText(craft.lmd) })}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
                 {farmingPlan.uncovered.length > 0 ? (
                   <p className="mt-2 text-xs text-amber-700">{t("farmingUncovered", {
                     items: farmingPlan.uncovered.map((id) => inventoryLabel(id, t, gameCatalog.itemNames)).join(" · "),
@@ -621,13 +696,14 @@ export function TrainingPlanner() {
             ) : null}
             {result.shortages.length ? <div className="grid min-w-0">
               {result.shortages.map((item) => {
+                const stageLabels = [...new Set(item.drops.flatMap((id) => stageCodes[id] ?? []))];
                 const recommendations = farming ? recommendFarming(availableFarmingDrops(farming.drops[item.id] ?? [], farmingNow), item.missing, farming.baselines[item.id]) : [];
                 return <div key={item.id} className="grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] gap-2 border-b border-border/70 py-2">
                 {item.icon ? <img src={item.icon} alt="" width={36} height={36} className="size-9 object-contain" /> : <PackageOpen className="m-2 size-5 text-muted-foreground" aria-hidden="true" />}
                 <div className="min-w-0">
                   <div className="flex min-w-0 items-center justify-between gap-2 text-xs"><span className="min-w-0 break-words font-medium">{item.name}</span><strong className="font-number shrink-0 text-amber-700">−{numberText(item.missing)}</strong></div>
                   <p className="mt-1 text-[11px] leading-4 text-muted-foreground">{t("needOwnedMissing", { need: numberText(item.need), stock: numberText(item.stock), missing: numberText(item.missing) })}</p>
-                  {item.drops.length ? <p className="mt-1 break-words text-[11px] leading-4 text-muted-foreground">{t("dropSources")}: {item.drops.join(" · ")}</p> : null}
+                  {stageLabels.length ? <p className="mt-1 break-words text-[11px] leading-4 text-muted-foreground">{t("dropSources")}: {stageLabels.join(" · ")}</p> : null}
                   {farming ? recommendations.length ? (
                     <ul className="mt-2 space-y-1 text-xs leading-5">
                       {recommendations.map((stage) => <li key={stage.stageId}>{t("farmingEstimate", {

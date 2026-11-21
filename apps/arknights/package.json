@@ -39,6 +39,7 @@
     "decimal.js": "^10.6.0",
     "drizzle-orm": "^0.45.4",
     "html2canvas-pro": "2.5.0",
+    "javascript-lp-solver": "1.0.3",
     "lucide-react": "^1.61.0",
     "motion": "^14.6.0",
     "overlayscrollbars": "^2.17.0",
