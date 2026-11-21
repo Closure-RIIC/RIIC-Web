@@ -9,6 +9,7 @@ import layout342 from "@riic/arknights-domain/layouts/342.json" with { type: "js
 import { createManualScheduleDraft, manualRoomCapacity } from "../apps/arknights/src/manual-schedule";
 import { createPosterDocument } from "../apps/arknights/src/schedule-poster-document";
 import sampleTeams from "../apps/arknights/src/schedule-poster-sample.json" with { type: "json" };
+import fullBox from "../fixtures/operbox_full_e2.json" with { type: "json" };
 import { mockApis } from "./production-readiness.fixture";
 
 async function expectReadableHeader(poster: Locator) {
@@ -95,6 +96,22 @@ async function expectReadableEfficiencies(poster: Locator) {
         if (rect.top < bounds.top - .5 || rect.bottom > bounds.bottom + .5) failures.push(`${label}: portrait clipped vertically`);
       }
       if (panel.scrollWidth > panel.clientWidth + 1) failures.push(`${label}: efficiency panel overflows`);
+      if (shift.closest("[data-schedule-poster]")!.getAttribute("data-shift-count") === "2") {
+        const centerY = (element: Element) => {
+          const rect = element.getBoundingClientRect();
+          return (rect.top + rect.bottom) / 2;
+        };
+        const aligned = (left: Element, right: Element) => Math.abs(centerY(left) - centerY(right)) <= scale * .75;
+        const paperLabel = panel.querySelector(".poster-paper-efficiency>i")!;
+        const paperValue = panel.querySelector(".poster-paper-efficiency>span")!;
+        if (!aligned(paperLabel, paperValue)) failures.push(`${label}: paper label and value centers differ`);
+        const equivalent = panel.querySelector(".poster-equivalent-efficiency");
+        if (equivalent) {
+          const firstValue = equivalent.querySelector(".poster-equivalent-values>span")!;
+          if (!aligned(equivalent.querySelector("i")!, firstValue)) failures.push(`${label}: equivalent label is not centered on its first value`);
+          if (!aligned(paperValue, firstValue)) failures.push(`${label}: paper and equivalent first values are on different rows`);
+        }
+      }
       const walker = document.createTreeWalker(panel, NodeFilter.SHOW_TEXT);
       while (walker.nextNode()) {
         if (!walker.currentNode.textContent?.trim()) continue;
@@ -233,6 +250,79 @@ async function expectReadableSupportNotes(poster: Locator) {
     return failures;
   });
   expect(failures).toEqual([]);
+}
+
+for (const mode of ["native", "manual"] as const) {
+  test(`${mode} two-shift poster shows only meaningful trade equivalents with aligned labels`, async ({ page }, testInfo) => {
+    test.setTimeout(120_000);
+    await mockApis(page);
+    const layout = structuredClone(layout333) as BaseBlueprint;
+    layout.rooms.find(room => room.id === "trade_3")!.product = { trade: { order: "gold" } };
+    const draft = createManualScheduleDraft([12, 12]);
+    const teams = [
+      { trade_1: ["但书", "古米", "空爆"], trade_2: ["巫恋", "龙舌兰", "柏喙"], trade_3: ["芬", "香草", "玫兰莎"] },
+      { trade_1: ["但书", "龙舌兰", "柏喙"], trade_2: ["巫恋", "古米", "空爆"], trade_3: ["芬", "香草", "玫兰莎"] },
+    ];
+    for (const [index, shift] of draft.shifts.entries()) {
+      for (const [roomId, operators] of Object.entries(teams[index]!)) {
+        shift.rooms[roomId] = { operators, manualSkillEfficiencyPct: 123.46 };
+      }
+    }
+    const names = new Set(teams.flatMap(shift => Object.values(shift).flat()));
+    const doc = createPosterDocument(layout, draft, fullBox.filter(operator => names.has(operator.name)));
+    doc.efficiencyMode = mode;
+    doc.meta.title = "两班贸易与赤金等效";
+    await page.addInitScript(doc => {
+      localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", "1");
+      sessionStorage.setItem("riic.schedule-poster.handoff.v1.manual", JSON.stringify(doc));
+    }, doc);
+    await page.setViewportSize({ width: 1600, height: 1200 });
+    await page.goto("/manual?tab=poster");
+    const workbench = page.locator("[data-poster-workbench]");
+    const poster = workbench.locator("[data-schedule-poster]");
+    const efficiency = (roomId: string, shift: number) =>
+      poster.locator(`[data-poster-room="${roomId}"] [data-poster-shift="${shift}"] .poster-efficiency-pair`);
+    await expect(poster).toHaveAttribute("data-shift-count", "2", { timeout: 60_000 });
+    await expect(poster.locator(".poster-output")).toHaveAttribute("data-production-ready", "false");
+    await expect(poster.locator(".poster-equivalent-efficiency")).toHaveCount(0);
+    if (mode === "manual") await expect(efficiency("trade_3", 0).locator(".poster-paper-efficiency>span")).toHaveText("123.46%");
+    // Keep the shipped WASM calculation: these teams exercise distinct order rules.
+    await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
+    await expect(poster.locator(".poster-output")).toHaveAttribute("data-production-ready", "true", { timeout: 30_000 });
+    const proviso = efficiency("trade_1", 0);
+    await expect(proviso.locator(".poster-equivalent-values>span")).toHaveText([/^\d+(?:\.\d+)?%贸易$/]);
+    await expect(proviso).not.toHaveAttribute("title", /赤金等效/);
+    for (const [roomId, shift] of [["trade_2", 0], ["trade_1", 1]] as const) {
+      const values = efficiency(roomId, shift).locator(".poster-equivalent-values>span");
+      await expect(values).toHaveText([/^\d+(?:\.\d+)?%贸易$/, /^\+\s*\d+(?:\.\d+)?%赤金$/]);
+      expect(Number((await values.nth(1).innerText()).match(/\d+(?:\.\d+)?/)![0])).toBeGreaterThan(0);
+    }
+    for (const [roomId, shift] of [["trade_3", 0], ["trade_3", 1], ["trade_2", 1]] as const) {
+      const regular = efficiency(roomId, shift);
+      await expect(regular).toHaveAttribute("title", /订单倍率 1 =/);
+      await expect(regular.locator(".poster-equivalent-efficiency")).toHaveCount(0);
+      await expect(regular).not.toHaveAttribute("title", /等效效率|赤金等效/);
+      if (mode === "manual") await expect(regular.locator(".poster-paper-efficiency>span")).toHaveText("123.5%");
+    }
+    await page.evaluate(() => document.fonts.ready);
+    for (const width of [1600, 390]) {
+      await page.setViewportSize({ width, height: 1200 });
+      await expectReadableHeader(poster);
+      await expectReadableEfficiencies(poster);
+      await expectReadableMembers(poster);
+    }
+    if (mode === "native") {
+      await page.setViewportSize({ width: 1600, height: 1200 });
+      const download = page.waitForEvent("download");
+      await workbench.getByRole("button", { name: "导出一页 PNG", exact: true }).click();
+      const imagePath = testInfo.outputPath("333-2-shifts-trade-equivalents.png");
+      await (await download).saveAs(imagePath);
+      const image = await readFile(imagePath);
+      expect(image.readUInt32BE(16)).toBe(1920);
+      expect(image.readUInt32BE(20)).toBe(1080);
+      await testInfo.attach("two-shift-trade-equivalents", { path: imagePath, contentType: "image/png" });
+    }
+  });
 }
 
 test("four-shift poster keeps cross-day timing and support targets clear in preview and PNG", async ({ page }, testInfo) => {

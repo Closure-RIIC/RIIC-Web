@@ -60,7 +60,7 @@ async function expectUncalculated(page: Page) {
   await expect(output(page).locator(".poster-output-values>div")).toHaveCount(0);
   const efficiency = poster(page).locator('[data-poster-room="trade_1"] .poster-efficiency-pair').first();
   await expect(efficiency).not.toHaveAttribute("title", /总效率 = 基础/);
-  await expect(efficiency.locator(".poster-equivalent-values")).not.toContainText("%");
+  await expect(efficiency.locator(".poster-equivalent-efficiency")).toHaveCount(0);
   await expect(workbench(page).getByRole("button", { name: "重新计算", exact: true })).toBeEnabled();
   expect(await cachedEvaluation(page)).toBeNull();
 }

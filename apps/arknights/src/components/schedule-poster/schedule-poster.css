@@ -80,7 +80,7 @@
 .poster-shift-meta { display:flex; font-size:12px; color:#69765e; line-height:18px; }
 .poster-shift-meta>span:first-child { display:flex; gap:4px; align-items:center; white-space:nowrap; }
 .poster-efficiency-pair { display:flex; flex-direction:column; gap:1px; color:#293626; font-size:15px; line-height:23px; font-weight:600; white-space:nowrap; font-variant-numeric:tabular-nums; }
-.poster-efficiency-pair>span { display:flex; align-items:baseline; gap:3px; }
+.poster-efficiency-pair>span { display:flex; align-items:center; gap:3px; }
 .poster-efficiency-pair>.poster-equivalent-efficiency { flex-direction:column; align-items:flex-start; gap:0; }
 .poster-equivalent-values { display:flex; flex-direction:column; gap:0; white-space:nowrap; }
 .poster-equivalent-values>span { white-space:nowrap; font-weight:500; }
@@ -132,8 +132,8 @@
 .schedule-poster[data-shift-count='2'] .poster-single .poster-members { margin:0; }
 .schedule-poster[data-shift-count='2'] .poster-production-content { grid-template-columns:minmax(0,1fr); align-content:start; gap:5px; }
 .schedule-poster[data-shift-count='2'] .poster-efficiency-panel { justify-self:start; }
-.schedule-poster[data-shift-count='2'] .poster-efficiency-pair { flex-direction:row; gap:14px; font-size:16px; line-height:24px; }
-.schedule-poster[data-shift-count='2'] .poster-efficiency-pair>.poster-equivalent-efficiency { flex-direction:row; gap:4px; }
+.schedule-poster[data-shift-count='2'] .poster-efficiency-pair { flex-direction:row; align-items:flex-start; gap:14px; font-size:16px; line-height:24px; }
+.schedule-poster:is([data-shift-count='2'],[data-shift-count='4']) .poster-efficiency-pair>.poster-equivalent-efficiency { display:grid; grid-template-columns:auto minmax(0,1fr); align-items:start; column-gap:4px; row-gap:0; }
 .schedule-poster[data-shift-count='2'] .poster-production-row[data-room-count="4"] .poster-member { --poster-card-scale:.72; }
 .schedule-poster[data-shift-count='4'] { --poster-control-scale:.60; --poster-production-scale:.55; --poster-support-scale:.46; }
 .schedule-poster[data-shift-count='4']:has(.poster-header-no-instructions) { --poster-support-scale:.49; }
@@ -146,7 +146,8 @@
 .schedule-poster[data-shift-count='4'] .poster-production .poster-shift-meta img { width:16px; height:16px; }
 .schedule-poster[data-shift-count='4'] .poster-production .poster-efficiency-pair { font-size:14px; line-height:22px; gap:0; }
 .schedule-poster[data-shift-count='4'] .poster-production .poster-efficiency-pair i { font-size:11px; line-height:18px; }
-.schedule-poster[data-shift-count='4'] .poster-efficiency-pair>.poster-equivalent-efficiency { flex-direction:row; align-items:baseline; gap:3px; }
+.schedule-poster[data-shift-count='4'] .poster-efficiency-pair>.poster-equivalent-efficiency { column-gap:3px; }
+.schedule-poster:is([data-shift-count='2'],[data-shift-count='4']) .poster-efficiency-pair>.poster-equivalent-efficiency>i { line-height:inherit; }
 .schedule-poster[data-shift-count='4'] .poster-control .poster-shift { padding:6px 8px; }
 .schedule-poster[data-shift-count='4'] .poster-control .poster-members { row-gap:6px; column-gap:5px; }
 .schedule-poster[data-shift-count='4'] .poster-control .poster-shift-label { margin-bottom:5px; }

@@ -144,6 +144,11 @@ export function SchedulePoster(props: Props) {
           const goldEquivalentEfficiency = typeof evaluation?.goldEquivalentEfficiency === "number"
             ? `${Math.round(evaluation.goldEquivalentEfficiency * 1000) / 10}%`
             : rawText.text(rawLocale, "waiting");
+          const showTradeEquivalent = room.kind === "trade_post" && evaluation
+            && Number.isFinite(evaluation.orderMultiplier) && evaluation.orderMultiplier !== 1
+            && Number.isFinite(evaluation.tradeEquivalentEfficiency);
+          const showGoldEquivalent = room.kind === "trade_post" && evaluation
+            && Number.isFinite(evaluation.goldEquivalentEfficiency) && evaluation.goldEquivalentEfficiency > 0;
           const efficiencyDetail = evaluation
             ? [
                 evaluation.specialTradeAnchor
@@ -151,8 +156,8 @@ export function SchedulePoster(props: Props) {
                   : rawText.text(rawLocale, "regularOrders"),
                 rawText.text(rawLocale, "totalEfficiency", { base: Math.round(evaluation.baseEfficiency * 1000) / 10, skill: Math.round(evaluation.skillEfficiency * 1000) / 10, global: Math.round(evaluation.globalEfficiency * 1000) / 10, total: Math.round(evaluation.totalEfficiency * 1000) / 10 }),
                 rawText.text(rawLocale, "finalEfficiency", { multiplier: evaluation.orderMultiplier, final: Math.round(evaluation.finalEfficiency * 1000) / 10 }),
-                rawText.text(rawLocale, "tradeEquivalent", { value: Math.round((evaluation.tradeEquivalentEfficiency ?? 0) * 1000) / 10 }),
-                rawText.text(rawLocale, "goldEquivalent", { efficiency: Math.round(evaluation.goldEquivalentEfficiency * 1000) / 10, daily: number(evaluation.goldEquivalentEfficiency * 10_000) }),
+                ...(showTradeEquivalent ? [rawText.text(rawLocale, "tradeEquivalent", { value: Math.round((evaluation.tradeEquivalentEfficiency ?? 0) * 1000) / 10 })] : []),
+                ...(showGoldEquivalent ? [rawText.text(rawLocale, "goldEquivalent", { efficiency: Math.round(evaluation.goldEquivalentEfficiency * 1000) / 10, daily: number(evaluation.goldEquivalentEfficiency * 10_000) })] : []),
               ].join("；")
             : rawText.text(rawLocale, "explainEfficiency");
           const timing = timingFor(index);
@@ -189,9 +194,12 @@ export function SchedulePoster(props: Props) {
                 <div className="poster-efficiency-panel">
                   <span className="poster-efficiency-pair" title={efficiencyDetail}>
                     <span className="poster-paper-efficiency"><i>{rawText.text(rawLocale, "skill")}</i> <span>{skillEfficiency}</span></span>
-                    {room.kind === "trade_post" ? <span className="poster-equivalent-efficiency">
+                    {showTradeEquivalent || showGoldEquivalent ? <span className="poster-equivalent-efficiency">
                       <i>{rawText.text(rawLocale, "equivalent")}</i>
-                      <span className="poster-equivalent-values"><span>{rawText.rich(rawLocale, "trading", { part1: richValue((equivalentEfficiency)) })}</span><span>{rawText.rich(rawLocale, "pureGold", { part1: richValue((goldEquivalentEfficiency)) })}</span></span>
+                      <span className="poster-equivalent-values">
+                        {showTradeEquivalent ? <span>{rawText.rich(rawLocale, "trading", { part1: richValue((equivalentEfficiency)) })}</span> : null}
+                        {showGoldEquivalent ? <span>{rawText.rich(rawLocale, "pureGold", { part1: richValue((goldEquivalentEfficiency)) })}</span> : null}
+                      </span>
                     </span> : null}
                   </span>
                 </div>
