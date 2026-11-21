@@ -5,6 +5,8 @@ import type { BaseBlueprint, PublicPlanData } from "@riic/arknights-domain/types
 import type { AccountHealthInput } from "./account-health-input.ts";
 import type { HealthAdviceReport } from "./account-health-advice.ts";
 import type { TrainingGoal, TrainingPlannerData, TrainingPlannerResult } from "./training-planner.ts";
+import { agentDailyProductionLines, createAgentDailyProduction } from "./agent-plan-production.ts";
+import { droneStoragePlanIndex } from "@riic/arknights-domain/drone-plan-mapping";
 
 import { AGENT_PAGE_CONTEXT_LIMIT, type AgentPageContext } from "./agent-page-context-shared.ts";
 export { AGENT_PAGE_CONTEXT_LIMIT, sameAgentPageContext, type AgentPageContext } from "./agent-page-context-shared.ts";
@@ -22,15 +24,8 @@ function roomLines(rows: readonly RoomRow[]): string[] {
   });
 }
 
-function productionLines(result: PublicPlanData | null): string[] {
-  const production = result?.rotation.daily.production;
-  if (!production) return [];
-  return [
-    `日均产出：龙门币 ${production.lmd}，赤金 ${production.pure_gold}，经验卡 ${production.battle_records}，源石碎片 ${production.originium_shards}，合成玉 ${production.orundum}`,
-    ...(result.rotation.daily.drone_production ? [
-      `无人机日均产出：龙门币 ${result.rotation.daily.drone_production.lmd}，赤金 ${result.rotation.daily.drone_production.pure_gold}，经验卡 ${result.rotation.daily.drone_production.battle_records}`,
-    ] : []),
-  ];
+function productionLines(layout: BaseBlueprint, result: PublicPlanData | null): string[] {
+  return result ? agentDailyProductionLines(createAgentDailyProduction({ layout, maa: result.maa, rotation: result.rotation })) : [];
 }
 
 function droneLine(plan: PublicPlanData["maa"]["plans"][number] | undefined): string {
@@ -59,7 +54,7 @@ function planLines(input: {
   return [
     `${prefix} ${input.index + 1}/${input.result.maa.plans.length}${plan.name ? `（${text(plan.name, 80)}）` : ""}：${plan.duration ?? "未知"} 小时。`,
     `班次效率：贸易 ${comparison?.scores.trade_score ?? "—"}，制造 ${comparison?.scores.manu_prod_sum ?? "—"}，供电 ${comparison?.scores.power_charge_sum ?? "—"}。`,
-    droneLine(plan),
+    droneLine(input.result.maa.plans[droneStoragePlanIndex(input.index, input.result.maa.plans.length)]),
     "设施安排：",
     ...roomLines(rows),
     ...(input.result.trainingRoom?.shifts[input.index] ? [`训练室：学员 ${text(input.result.trainingRoom.shifts[input.index]?.trainee, 60) || "未安排"}；协助 ${text(input.result.trainingRoom.shifts[input.index]?.trainer, 60) || "未安排"}。`] : []),
@@ -88,11 +83,11 @@ export function buildAutomaticScheduleContext(input: {
     `页面：自动排班结果；布局 ${text(layout.template, 80)}；设施数 ${layout.rooms.length}。`,
     scheduleResult ? `方案：${scheduleResult === result ? "当前方案" : "升级模拟方案"}；求解耗时 ${Math.max(0, Math.round(scheduleResult.durationMs))} 毫秒。` : "当前还没有排班结果。",
     plan ? `当前画面显示第 ${activeShift + 1}/${scheduleResult?.maa.plans.length ?? 1} 班。` : "",
+    ...productionLines(layout, scheduleResult),
     "当前画面中的设施安排：",
     ...roomLines(rows),
     comparison ? `本班效率：贸易 ${comparison.scores.trade_score}，制造 ${comparison.scores.manu_prod_sum}，供电 ${comparison.scores.power_charge_sum}。` : "",
     ...(scheduleResult ? ["全部班次（包含设施、干员、效率和无人机）：", ...allPlans] : []),
-    ...productionLines(scheduleResult),
   ]);
 }
 
@@ -106,7 +101,6 @@ export function buildManualScheduleContext(input: {
   const { layout, draft, activeShift, rows, result } = input;
   const shift = draft.shifts[activeShift];
   const duration = shift?.durationHours;
-  const production = result?.rotation.daily.production;
   const manualMaa = manualScheduleToMaa(draft, layout, draft.fiammettaEnabled);
   const allShiftLines = draft.shifts.flatMap((item, index) => {
     const assignmentByRoom = item.rooms;
@@ -137,22 +131,17 @@ export function buildManualScheduleContext(input: {
       ...roomLines(assignedRows),
     ];
   });
-  const metrics = production ? [
-    `当前预估日均产出：龙门币 ${production.lmd}，赤金 ${production.pure_gold}，经验卡 ${production.battle_records}，源石碎片 ${production.originium_shards}，合成玉 ${production.orundum}`,
-    ...(result?.rotation.daily.drone_production ? [
-      `当前预估无人机日均产出：龙门币 ${result.rotation.daily.drone_production.lmd}，赤金 ${result.rotation.daily.drone_production.pure_gold}，经验卡 ${result.rotation.daily.drone_production.battle_records}`,
-    ] : []),
-  ] : [];
+  const metrics = result ? agentDailyProductionLines(createAgentDailyProduction({ layout, maa: manualMaa, rotation: result.rotation })) : [];
   return createContext("manual", "手动排班", [
     `页面：手动排班编辑器；布局 ${text(layout.template, 80)}；排班模式 ${draft.scheduleMode === "period" ? "周期" : "连续"}。`,
     shift ? `当前编辑第 ${activeShift + 1}/${draft.shifts.length} 班，时长 ${duration ?? "未知"} 小时；开始时间 ${text(draft.startTime, 30)}。` : "",
     `当前班次法术 ${draft.fiammettaEnabled ? "已启用" : "未启用"}。`,
+    ...metrics,
     "当前画面中的设施安排：",
     ...roomLines(rows),
     "全部手动班次：",
     ...allShiftLines,
     result ? `当前效率评估已完成，提示 ${result.warnings.length} 条。` : "当前尚未生成效率评估。",
-    ...metrics,
   ]);
 }
 

@@ -41,6 +41,36 @@ test("restoring an interrupted stream resolves incomplete tool calls without cha
   assert.equal((messages[0].parts[0] as { state: string }).state, "streaming");
 });
 
+test("restoring a saved reply hides thinking split across text parts", () => {
+  const prompt = question("<think>这是什么标签？</think>");
+  const messages: UIMessage[] = [...prompt, { id: "answer", role: "assistant", parts: [
+    { type: "text", text: "<thi" },
+    { type: "text", text: "nk>隐藏内容</think>这是回答。" },
+  ] }];
+  assert.deepEqual(restoreAgentMessages(messages).map(message => message.parts), [
+    [{ type: "text", text: "<think>这是什么标签？</think>", state: "done" }],
+    [{ type: "text", text: "这是回答。", state: "done" }],
+  ]);
+});
+
+test("restoring a saved reply confines unclosed thinking to its model step", () => {
+  const tool: UIMessage["parts"][number] = { type: "tool-kb_read", toolCallId: "read", state: "output-available", input: {}, output: {} };
+  const dynamic: UIMessage["parts"][number] = { type: "dynamic-tool", toolName: "kb_read", toolCallId: "read", state: "output-available", input: {}, output: {} };
+  for (const boundary of [[{ type: "step-start" }], [tool], [dynamic], [tool, { type: "step-start" }]] satisfies UIMessage["parts"][]) {
+    const messages: UIMessage[] = [{ id: "answer", role: "assistant", parts: [
+      { type: "text", text: "<think>先查知识库" }, ...boundary,
+      { type: "text", text: "<thi" },
+      { type: "text", text: "nk>新一轮思考</think>制造站生产力提升30%。" },
+    ] }];
+    const saved = structuredClone(messages);
+    const restored = restoreAgentMessages(messages);
+    assert.deepEqual(restored[0].parts.filter(part => part.type === "text"), [
+      { type: "text", text: "制造站生产力提升30%。", state: "done" },
+    ]);
+    assert.deepEqual(messages, saved);
+  }
+});
+
 test("parsing rejects unsupported and malformed records and retains collapse preference", () => {
   assert.deepEqual(parseAgentHistory(null), emptyAgentHistory());
   assert.deepEqual(parseAgentHistory({ version: 99, conversations: [] }), emptyAgentHistory());
