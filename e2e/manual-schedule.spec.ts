@@ -148,9 +148,8 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await expect.poll(() => page.evaluate(() => localStorage.getItem("arknights-infra-manual-evaluation-v1"))).not.toBeNull();
   const tradeEfficiency = poster.locator('[data-poster-room="trade_1"] .poster-efficiency-pair');
   await expect(tradeEfficiency).toContainText("纸面");
-  await expect(tradeEfficiency).toContainText("等效");
-  await expect(tradeEfficiency).toContainText("贸易");
-  await expect(tradeEfficiency).toContainText("赤金");
+  await expect(tradeEfficiency).toHaveAttribute("title", /常规订单.*订单倍率 1 =/);
+  await expect(tradeEfficiency.locator(".poster-equivalent-efficiency")).toHaveCount(0);
   const personalBoxBeforeBulk = await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox);
   await workbench.getByRole("button", { name: "批量填写排班" }).click();
   const bulk = page.getByLabel("批量排班文本");
@@ -168,6 +167,8 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await expect(page.locator("[data-manual-result-outdated]")).toBeVisible();
   await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
   await expect(page.locator("[data-manual-result-outdated]")).toHaveCount(0);
+  await expect(tradeEfficiency.locator(".poster-equivalent-efficiency")).toContainText("等效");
+  await expect(tradeEfficiency.locator(".poster-equivalent-values")).toContainText("贸易");
   await expect(tradeEfficiency).toContainText(/(?:[1-9]\d*|\d+\.\d+)%赤金/);
   await expect(tradeEfficiency).toHaveAttribute("title", /巫恋 E2 \+ 龙舌兰 E2/);
   const control = poster.locator('[data-poster-room="control"] [data-poster-shift="0"]');
@@ -190,10 +191,18 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   });
   expect(productAlignment.product.x).toBeGreaterThanOrEqual(productAlignment.shift.right - 1);
   expect(productAlignment.product.x).toBeLessThan(productAlignment.heading.x + productAlignment.heading.width / 2);
-  const equivalentValueSizes = await poster.locator('[data-poster-room="trade_1"] .poster-equivalent-values').evaluateAll(nodes =>
+  const tradeShifts = poster.locator('[data-poster-room="trade_1"] [data-poster-shift]');
+  await expect(tradeShifts).toHaveCount(4);
+  await expect(tradeShifts.nth(0).locator(".poster-equivalent-efficiency")).toHaveCount(1);
+  for (let shift = 1; shift < 4; shift += 1) {
+    await expect(tradeShifts.nth(shift).locator(".poster-equivalent-efficiency")).toHaveCount(0);
+  }
+  const equivalentValues = tradeShifts.nth(0).locator(".poster-equivalent-values");
+  await expect(equivalentValues).toHaveCount(1);
+  const equivalentValueSizes = await equivalentValues.evaluateAll(nodes =>
     nodes.map(node => ({ clientWidth: node.clientWidth, scrollWidth: node.scrollWidth })),
   );
-  expect(equivalentValueSizes).toHaveLength(4);
+  expect(equivalentValueSizes).toHaveLength(1);
   expect(equivalentValueSizes.every(size => size.scrollWidth <= size.clientWidth + 1)).toBe(true);
   const productionLayout = await poster.locator('[data-poster-room="trade_1"] [data-poster-shift="0"]').evaluate(node => {
     const members = node.querySelector(".poster-members")!.getBoundingClientRect();
