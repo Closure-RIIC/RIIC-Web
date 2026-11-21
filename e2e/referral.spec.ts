@@ -104,6 +104,43 @@ test("guest signup sends its invitation once, keeps it on failure, and never add
   expect(await page.evaluate(() => sessionStorage.getItem("riic-referral-code"))).toBeNull();
 });
 
+test("signup lets a guest edit or remove a prefilled invitation and correct a rejected code", async ({ page }) => {
+  await mockAnonymousWebsiteSession(page);
+  await page.route("**/api/referral", route => route.fulfill({ json: { data: { ...campaign, account: null } } }));
+  const submissions: Array<{ code?: string; required?: string }> = [];
+  await page.route("**/api/auth/sign-up/email", route => {
+    const headers = route.request().headers();
+    submissions.push({ code: headers["x-riic-referral-code"], required: headers["x-riic-require-referral"] });
+    return submissions.length === 1
+      ? route.fulfill({ status: 400, json: { code: "REFERRAL_CODE_UNAVAILABLE", message: "Unavailable" } })
+      : route.fulfill({ json: { token: null, user: { id: "manual-signup", name: "邀请测试", email: "manual@example.test", emailVerified: false } } });
+  });
+  await page.goto(`/referral?ref=${invitationCode}`);
+  await page.getByRole("button", { name: "登录 / 注册网站账号", exact: true }).click();
+  const panel = page.locator("[data-website-account-panel]");
+  const field = panel.getByLabel("邀请码（选填）");
+  await expect(field).toHaveCount(0);
+  await panel.getByRole("button", { name: "创建账号", exact: true }).click();
+  await expect(field).toHaveValue(invitationCode);
+  await panel.getByLabel("昵称", { exact: true }).fill("邀请测试");
+  await panel.getByLabel("邮箱", { exact: true }).fill("manual@example.test");
+  await panel.getByLabel("密码", { exact: true }).fill("Axy123!?");
+  await panel.getByLabel("确认密码", { exact: true }).fill("Axy123!?");
+  const submit = panel.getByRole("button", { name: "创建账号并发送验证码", exact: true });
+  await field.fill("invalid");
+  await submit.click();
+  await expect(field).toHaveAttribute("aria-invalid", "true");
+  expect(submissions).toHaveLength(0);
+  await field.fill(" 0123456789abcdef01234567 ");
+  await submit.click();
+  await expect(panel.getByRole("alert")).toContainText("邀请码当前不可用");
+  expect(submissions).toEqual([{ code: "0123456789ABCDEF01234567", required: "1" }]);
+  await field.fill("");
+  await submit.click();
+  await expect(panel).toHaveAttribute("data-auth-step", "verify");
+  expect(submissions[1]).toEqual({ code: undefined, required: undefined });
+});
+
 test("failed campaign requests show a retry and never display demo rewards", async ({ page }) => {
   await mockSignedInWebsiteSession(page);
   await page.route("**/api/referral", async route => {
