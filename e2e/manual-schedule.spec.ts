@@ -4,6 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { createManualScheduleDraft, type ManualScheduleDraft } from "../apps/arknights/src/manual-schedule";
 import { createPosterDocument } from "../apps/arknights/src/schedule-poster-document";
 import layout243 from "@riic/arknights-domain/layouts/243.json" with { type: "json" };
+import fullBox from "../fixtures/operbox_full_e2.json" with { type: "json" };
 import { mockAnonymousWebsiteSession, mockSignedInWebsiteSession, mockApis, now, planData } from "./production-readiness.fixture";
 
 const operators = [
@@ -125,18 +126,16 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await expect(workbench).toBeVisible();
   await expect(poster.locator('[data-poster-room="trade_1"]')).toBeVisible();
   const dorm = poster.locator('[data-poster-room="dorm_1"]');
-  const hanger = dorm.locator('[data-poster-shift="0"] [data-poster-hanger-slot]');
+  const hangerSlots = dorm.locator('[data-poster-shift="0"] [data-poster-hanger-slot]');
   await expect(dorm.locator('[data-poster-shift="0"] .poster-member')).toHaveCount(6);
   await expect(poster.locator('[data-poster-room="trade_1"] [data-poster-shift="0"]')).toContainText("08:00—次日07:59");
-  const scheduledDormBefore = await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).shifts[0].rooms.dorm_1.operators);
-  await hanger.getByRole("button", { name: "空位", exact: true }).click();
+  await hangerSlots.nth(5).getByRole("button", { name: "空位", exact: true }).click();
   const hangerPicker = page.getByRole("dialog");
-  await expect(hangerPicker).toContainText("不会加入宿舍排班或参与效率计算");
+  await expect(hangerPicker).toContainText("其余床位自动填充");
   await hangerPicker.getByLabel("搜索可选干员或基建技能").fill("锡兰");
   await hangerPicker.getByRole("button", { name: /锡兰/ }).click();
-  await expect(hanger).toContainText("锡兰");
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).presentation.dormHangerOperators[0])).toBe("锡兰");
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).shifts[0].rooms.dorm_1.operators)).toEqual(scheduledDormBefore);
+  await expect(hangerSlots.first()).toContainText("锡兰");
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).shifts[0].rooms.dorm_2.operators[1])).toBe("锡兰");
   await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
   await expect(page.locator('[data-manual-editor-board] [data-room-title="宿舍 1"] .infra-operator-slot')).toHaveCount(5);
   await page.getByRole("tab", { name: "作业图", exact: true }).click();
@@ -149,16 +148,18 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await expect.poll(() => page.evaluate(() => localStorage.getItem("arknights-infra-manual-evaluation-v1"))).not.toBeNull();
   const tradeEfficiency = poster.locator('[data-poster-room="trade_1"] .poster-efficiency-pair');
   await expect(tradeEfficiency).toContainText("纸面");
-  await expect(tradeEfficiency).toContainText("等效");
-  await expect(tradeEfficiency).toContainText("贸易");
-  await expect(tradeEfficiency).toContainText("赤金");
+  await expect(tradeEfficiency.locator(".poster-paper-efficiency>span")).toHaveText("0%");
+  await expect(tradeEfficiency).toHaveAttribute("title", /常规订单.*订单倍率 1 =/);
+  await expect(tradeEfficiency.locator(".poster-equivalent-efficiency")).toHaveCount(0);
+  await expect(tradeEfficiency).not.toHaveAttribute("title", /等效效率|赤金等效/);
   const personalBoxBeforeBulk = await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox);
   await workbench.getByRole("button", { name: "批量填写排班" }).click();
   const bulk = page.getByLabel("批量排班文本");
   const shiftCount = await poster.locator('[data-poster-room="trade_1"] [data-poster-shift]').count();
   const tradeLine = `贸易站1：巫恋、龙舌兰、调香师 @自动 #龙门币${Array.from({ length: shiftCount - 1 }, () => " | -").join("")}`;
   const controlLine = `中枢：阿米娅、锡兰、auto、Free${Array.from({ length: shiftCount - 1 }, () => " | =").join("")}`;
-  await bulk.fill(`${tradeLine}\n${controlLine}`);
+  const dormLine = `宿舍2：auto${Array.from({ length: shiftCount - 1 }, () => " | =").join("")}`;
+  await bulk.fill(`${tradeLine}\n${controlLine}\n${dormLine}`);
   await page.getByRole("button", { name: "检查并应用" }).click();
   await expect.poll(() => page.evaluate(() => {
     const operator = JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).operators.find((entry: { name: string }) => entry.name === "调香师");
@@ -168,7 +169,11 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await expect(page.locator("[data-manual-result-outdated]")).toBeVisible();
   await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
   await expect(page.locator("[data-manual-result-outdated]")).toHaveCount(0);
+  await expect(tradeEfficiency.locator(".poster-equivalent-values>span")).toHaveCount(2);
+  await expect(tradeEfficiency).toContainText(/\d+(?:\.\d+)?%贸易/);
   await expect(tradeEfficiency).toContainText(/(?:[1-9]\d*|\d+\.\d+)%赤金/);
+  const goldEquivalentText = await tradeEfficiency.locator(".poster-equivalent-values>span").nth(1).innerText();
+  expect(Number(goldEquivalentText.match(/\d+(?:\.\d+)?/)?.[0])).toBeGreaterThan(0);
   await expect(tradeEfficiency).toHaveAttribute("title", /巫恋 E2 \+ 龙舌兰 E2/);
   const control = poster.locator('[data-poster-room="control"] [data-poster-shift="0"]');
   await expect(control).toContainText("AUTO");
@@ -190,10 +195,16 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   });
   expect(productAlignment.product.x).toBeGreaterThanOrEqual(productAlignment.shift.right - 1);
   expect(productAlignment.product.x).toBeLessThan(productAlignment.heading.x + productAlignment.heading.width / 2);
-  const equivalentValueSizes = await poster.locator('[data-poster-room="trade_1"] .poster-equivalent-values').evaluateAll(nodes =>
+  const tradeShifts = poster.locator('[data-poster-room="trade_1"] [data-poster-shift]');
+  await expect(tradeShifts).toHaveCount(4);
+  for (let shift = 0; shift < 4; shift += 1) {
+    await expect(tradeShifts.nth(shift).locator(".poster-equivalent-values")).toHaveCount(shift === 0 ? 1 : 0);
+  }
+  await expect(tradeShifts.first().locator(".poster-equivalent-values>span")).toHaveCount(2);
+  const equivalentValueSizes = await tradeShifts.first().locator(".poster-equivalent-values").evaluateAll(nodes =>
     nodes.map(node => ({ clientWidth: node.clientWidth, scrollWidth: node.scrollWidth })),
   );
-  expect(equivalentValueSizes).toHaveLength(4);
+  expect(equivalentValueSizes).toHaveLength(1);
   expect(equivalentValueSizes.every(size => size.scrollWidth <= size.clientWidth + 1)).toBe(true);
   const productionLayout = await poster.locator('[data-poster-room="trade_1"] [data-poster-shift="0"]').evaluate(node => {
     const members = node.querySelector(".poster-members")!.getBoundingClientRect();
@@ -276,6 +287,106 @@ for (const entry of ["handoff", "code"] as const) {
     await page.getByRole("tab", { name: "作业图", exact: true }).click();
     await expect(workbench.getByLabel("作业名称", { exact: true })).toHaveValue("修改后的作业");
     if (entry === "handoff") expect(await page.evaluate(() => sessionStorage.getItem("riic.schedule-poster.handoff.v1.manual"))).toBeNull();
+  });
+}
+
+for (const entry of ["file", "code"] as const) {
+  test(`inherited poster ${entry} keeps the complete author Box and can switch to personal training without losing assignments`, async ({ page }) => {
+    test.setTimeout(120_000);
+    await mockSignedInWebsiteSession(page);
+    const draft = createManualScheduleDraft([24], "08:00", "period");
+    draft.shifts[0]!.rooms.trade_1 = { operators: ["巫恋", "龙舌兰", "锡兰"] };
+    draft.fiammettaEnabled = true;
+    draft.shifts[0]!.fiammettaTarget = "银灰";
+    const authorBox = fullBox.map(operator => operator.name === "阿米娅"
+      ? { ...operator, elite: 1, level: 42, potential: 2 }
+      : operator.name === "巫恋" ? { ...operator, elite: 1, level: 42 }
+      : operator.name === "锡兰" ? { ...operator, elite: 1, level: 26 }
+      : operator.name === "12F" ? { ...operator, own: false, elite: -1, level: 0, potential: 0 } : { ...operator });
+    const document = createPosterDocument(layout243, draft, authorBox);
+    document.meta.title = "完整干员池作业";
+    const workbench = page.locator("[data-poster-workbench]");
+    const readDocument = () => page.evaluate(() => JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!));
+    if (entry === "code") {
+      await page.route("**/api/schedule-posters?code=abcdef123456", route => route.fulfill({ json: { document } }));
+      await page.goto("/manual?tab=poster&code=abcdef123456");
+    } else {
+      await page.goto("/manual?tab=poster");
+      await workbench.locator('input[type="file"][accept=".json"]').setInputFiles({
+        name: "author.riic.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(document)),
+      });
+    }
+    await expect(workbench.getByLabel("作业名称", { exact: true })).toHaveValue(document.meta.title, { timeout: 30_000 });
+    await expect.poll(async () => (await readDocument()).operators).toEqual(authorBox);
+    await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
+    const efficiency = workbench.locator('[data-poster-room="trade_1"] .poster-efficiency-pair');
+    await expect(efficiency).toHaveAttribute("title", /总效率 = 基础/);
+    await expect(efficiency).not.toHaveAttribute("title", /巫恋 E2/);
+
+    const myBox = fullBox.filter(operator => !["锡兰", "银灰", "菲亚梅塔"].includes(operator.name)).map(operator => operator.name === "阿米娅"
+      ? { ...operator, elite: 2, level: 73, potential: 4 }
+      : operator.name === "12F" ? { ...operator, own: false, elite: -1, level: 0, potential: 0 } : { ...operator });
+    const expectedBox = [...myBox, ...["锡兰", "银灰", "菲亚梅塔"].map(name => ({ ...authorBox.find(operator => operator.name === name)!, own: false }))];
+    await page.getByRole("button", { name: /配置\s*Box\s*与布局/, exact: true }).filter({ visible: true }).click();
+    const setup = page.locator("[data-setup-dialog]");
+    await setup.getByRole("button", { name: "第 1 步，共 3 步：干员数据", exact: true }).click();
+    await setup.getByRole("button", { name: "更换", exact: true }).click();
+    await setup.getByRole("tab", { name: "MAA", exact: true }).click();
+    if (entry === "file") {
+      await setup.getByRole("button", { name: "上传练度 JSON / XLSX", exact: true }).click();
+      const upload = page.getByRole("dialog", { name: "导入干员数据", exact: true });
+      await upload.locator('input[type="file"]').setInputFiles({
+        name: "personal-box.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(myBox)),
+      });
+      await expect(upload).toHaveCount(0);
+    } else {
+      await setup.getByRole("button", { name: "粘贴 JSON", exact: true }).click();
+      await setup.locator("#setup-maa-json").fill(JSON.stringify(myBox));
+      await setup.getByRole("button", { name: "导入 JSON", exact: true }).click();
+    }
+    await expect.poll(async () => (await readDocument()).operators).toEqual(expectedBox);
+    await setup.locator("[data-setup-footer]").getByRole("button", { name: /检查设施|继续/, exact: true }).click();
+    await setup.locator("[data-setup-footer]").getByRole("button", { name: "完成", exact: true }).click();
+    await expect(setup).toHaveCount(0);
+    await expect.poll(async () => (await readDocument()).draft.shifts[0].rooms.trade_1.operators).toEqual(["巫恋", "龙舌兰", "锡兰"]);
+    expect((await readDocument()).draft.fiammettaEnabled).toBe(true);
+    expect((await readDocument()).draft.shifts[0].fiammettaTarget).toBe("银灰");
+    await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
+    await expect(efficiency).toHaveAttribute("title", /巫恋 E2.*龙舌兰 E2/);
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox)).toEqual(operators);
+
+    await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
+    const otherTrade = page.locator('[data-manual-editor-board] [data-room-title="贸易站 2"]');
+    await otherTrade.getByRole("button", { name: "空置", exact: true }).first().click();
+    const picker = page.getByRole("dialog");
+    await picker.getByRole("tablist", { name: "工作房间" }).getByRole("tab", { name: "全部", exact: true }).click();
+    await picker.getByLabel("搜索可选干员或基建技能").fill("阿米娅");
+    await picker.locator('[data-operator-identity="阿米娅"]').click();
+    await expect(otherTrade.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
+    await expect.poll(async () => (await readDocument()).draft.shifts[0].rooms.trade_2.operators).toEqual(["阿米娅", null, null]);
+    await page.getByRole("tab", { name: "作业图", exact: true }).click();
+
+    await page.reload();
+    await expect(workbench.getByLabel("作业名称", { exact: true })).toHaveValue(document.meta.title, { timeout: 30_000 });
+    await expect.poll(async () => (await readDocument()).operators).toEqual(expectedBox);
+    await expect.poll(async () => (await readDocument()).draft.shifts[0].rooms.trade_1.operators).toEqual(["巫恋", "龙舌兰", "锡兰"]);
+    expect((await readDocument()).draft.shifts[0].rooms.trade_2.operators).toEqual(["阿米娅", null, null]);
+    expect((await readDocument()).draft.fiammettaEnabled).toBe(true);
+    expect((await readDocument()).draft.shifts[0].fiammettaTarget).toBe("银灰");
+    const pending = page.waitForEvent("download");
+    await workbench.getByRole("button", { name: "下载作业文件", exact: true }).click();
+    const downloaded = JSON.parse(await readFile((await (await pending).path())!, "utf8"));
+    expect(downloaded.operators).toEqual(expectedBox);
+    expect(downloaded.draft.shifts[0].rooms.trade_1.operators).toEqual(["巫恋", "龙舌兰", "锡兰"]);
+    expect(downloaded.draft.shifts[0].rooms.trade_2.operators).toEqual(["阿米娅", null, null]);
+    expect(downloaded.draft.shifts[0].fiammettaTarget).toBe("银灰");
+    const shared = page.waitForRequest(request => new URL(request.url()).pathname === "/api/schedule-posters" && request.method() === "POST");
+    await page.route("**/api/schedule-posters", route => route.fulfill({ json: { code: "fedcba654321" }, status: 201 }));
+    await workbench.getByRole("button", { name: "生成作业码", exact: true }).click();
+    expect((await shared).postDataJSON().operators).toEqual(expectedBox);
+    await page.getByRole("button", { name: "返回个人草稿", exact: true }).click();
+    await expect(workbench).toHaveCount(0);
+    expect(await page.evaluate(() => sessionStorage.getItem("riic.schedule-poster.working-copy.v1"))).toBeNull();
   });
 }
 
@@ -511,6 +622,69 @@ test("manual MAA downloads normalize dorm autofill without changing the editor s
     }
   }
   await expect(autofill).toHaveAttribute("aria-pressed", "false");
+});
+
+test("poster hides an unspecified Fiammetta target but retains specified targets", async ({ page }) => {
+  const draft = createManualScheduleDraft([12, 12]);
+  draft.fiammettaEnabled = true;
+  draft.shifts[1]!.fiammettaTarget = "阿米娅";
+  draft.shifts[1]!.rooms.control = { operators: ["阿米娅"] };
+  await page.addInitScript(draft => {
+    localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify(draft));
+  }, draft);
+  await page.goto("/manual");
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  const notes = page.locator("[data-schedule-poster] .poster-support-notes > div");
+  await expect(notes).toHaveCount(2);
+  await expect(notes.nth(0).locator(".poster-fiammetta")).toHaveCount(0);
+  await expect(notes.nth(1).locator(".poster-fiammetta")).toContainText("阿米娅");
+});
+
+test("poster dorm cards skip AUTO and write all six occupants vertically back to the batch editor", async ({ page }) => {
+  await page.goto("/manual");
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  const workbench = page.locator("[data-poster-workbench]");
+  await workbench.getByRole("button", { name: "批量填写排班" }).click();
+  await page.getByLabel("批量排班文本").fill("宿舍1：森蚺、auto、塑心、虎狼丸 | = | -\n宿舍2：auto、爱丽丝、车尔尼 | = | -");
+  await page.getByRole("button", { name: "检查并应用" }).click();
+  const cards = workbench.locator('[data-poster-room="dorm_1"] [data-poster-shift="0"] [data-poster-hanger-slot]');
+  for (const [index, name] of ["森蚺", "爱丽丝", "塑心", "车尔尼", "虎狼丸"].entries()) await expect(cards.nth(index)).toContainText(name);
+  await cards.nth(5).getByRole("button", { name: "空位", exact: true }).click();
+  const picker = page.getByRole("dialog");
+  await picker.getByLabel("搜索可选干员或基建技能").fill("锡兰");
+  await picker.getByRole("button", { name: /锡兰/ }).click();
+  await expect(cards.nth(5)).toContainText("锡兰");
+  await expect.poll(() => page.evaluate(() => {
+    const draft = JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!);
+    return [1, 2, 3, 4].map(index => draft.shifts[0].rooms[`dorm_${index}`].operators);
+  })).toEqual([
+    ["森蚺", "虎狼丸", null, null, null], ["爱丽丝", "锡兰", null, null, null],
+    ["塑心", null, null, null, null], ["车尔尼", null, null, null, null],
+  ]);
+  await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
+  await expect(page.locator('[data-manual-editor-board] [data-room-title="宿舍 1"]')).toContainText("虎狼丸");
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  await workbench.getByRole("button", { name: "批量填写排班" }).click();
+  await expect(page.getByLabel("批量排班文本")).toHaveValue(/宿舍1：森蚺、虎狼丸、auto、auto、auto/);
+  await expect(page.getByLabel("批量排班文本")).toHaveValue(/宿舍2：爱丽丝、锡兰、auto、auto、auto/);
+  await expect(page.getByLabel("批量排班文本")).toHaveValue(/\| 森蚺、auto、塑心、虎狼丸 \| -/);
+});
+
+test("poster dorm conflict prompt names the room mapped from the selected card", async ({ page }) => {
+  const draft = createManualScheduleDraft([24], "08:00", "period");
+  draft.shifts[0]!.rooms.trade_1 = { operators: ["阿米娅", null, null] };
+  await page.addInitScript(value => {
+    localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify(value));
+  }, draft);
+  await page.goto("/manual");
+  await page.getByRole("tab", { name: "作业图", exact: true }).click();
+  const cards = page.locator('[data-poster-room="dorm_1"] [data-poster-shift="0"] [data-poster-hanger-slot]');
+  await cards.nth(5).getByRole("button", { name: "空位", exact: true }).click();
+  const picker = page.getByRole("dialog");
+  await picker.getByLabel("搜索可选干员或基建技能").fill("阿米娅");
+  await picker.getByRole("button", { name: /阿米娅/ }).click();
+  const moveDialog = page.getByRole("dialog", { name: "移动该干员？" });
+  await expect(moveDialog).toContainText("是否移动到宿舍 2");
 });
 
 test("poster bulk text derives facility autofill from slot markers and defaults empty facilities to auto", async ({ page }) => {
