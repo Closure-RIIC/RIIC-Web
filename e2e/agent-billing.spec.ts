@@ -3,7 +3,7 @@ import { test, expect, type BrowserContext } from "@playwright/test";
 import { hashPassword } from "better-auth/crypto";
 import { Pool } from "pg";
 
-test("admin billing, filter policies, role boundaries and automatic Agent selection", async ({page,context,browser,baseURL})=>{
+test("admin billing, filter policies, role boundaries and gateway model choices", async ({page,context,browser,baseURL})=>{
   const url=process.env.AUTH_INTEGRATION_DATABASE_URL;
   if(!url||!new URL(url).pathname.endsWith("_test"))throw new Error("Isolated *_test database required");
   const pool=new Pool({connectionString:url,max:2});const users:string[]=[];const reviewer=await browser.newContext({baseURL});
@@ -22,7 +22,12 @@ test("admin billing, filter policies, role boundaries and automatic Agent select
     await pool.query("INSERT INTO app.billing_review (id,kind,evidence) VALUES ($1,'afdian_payment',$2)",["payment:"+paymentId,JSON.stringify({paymentId,trade})]);
     for(const section of ["summary","wallets","policies","audit"]){expect((await reviewer.request.get(`/api/admin/billing?section=${section}`)).status()).toBe(403);}
     expect((await context.request.post("/api/admin/billing?section=adjust",{headers:{origin:"https://other.test"},data:{userId:admin,action:"credit",points:1,reason:"forged",idempotencyKey:randomUUID()}})).status()).toBe(403);
+    const summaryReady = page.waitForResponse(response => {
+      const url = new URL(response.url());
+      return response.request().method() === "GET" && url.pathname === "/api/admin/billing" && url.searchParams.get("section") === "summary";
+    });
     await page.goto("/admin/billing");await expect(page.getByRole("heading",{name:"计费管理",exact:true})).toBeVisible();
+    expect((await summaryReady).status()).toBe(200);
     await expect(page.getByText("已知模型成本 ¥",{exact:true})).toBeVisible();
     await page.getByRole("button",{name:"用户钱包",exact:true}).click();
     await page.getByRole("row").filter({hasText:admin}).getByRole("button",{name:"调账",exact:true}).click();
@@ -37,7 +42,7 @@ test("admin billing, filter policies, role boundaries and automatic Agent select
     expect((await pool.query("SELECT status FROM app.billing_payment WHERE id=$1",[paymentId])).rows[0].status).toBe("fulfilled");
     expect((await pool.query("SELECT status FROM app.billing_review WHERE id=$1",["payment:"+paymentId])).rows[0].status).toBe("resolved");
     await page.getByRole("button",{name:"积分流水",exact:true}).click();await expect(page.getByRole("table")).toContainText("admin_credit");
-    await page.getByRole("button",{name:"模型费率",exact:true}).click();await expect(page.getByText("deepseek-v4.1-flash",{exact:true})).toBeVisible();
+    await page.getByRole("button",{name:"模型费率",exact:true}).click();await expect(page.getByRole("group", { name: "DeepSeek Flash", exact: true }).getByLabel("实际供应商型号", { exact: true })).toHaveValue("deepseek-v4.1-flash");
     // A fresh deployment must receive an explicit administrator-published multiplier.
     await expect(page.getByLabel("服务倍率", { exact: true })).toHaveValue("");
     await page.getByLabel("服务倍率", { exact: true }).fill("1.5");
@@ -54,7 +59,14 @@ test("admin billing, filter policies, role boundaries and automatic Agent select
     await page.getByLabel("测试文本（不会保存）",{exact:true}).fill("RIIC_FILTER_BLOCK_TEST");await page.getByRole("button",{name:"测试规则",exact:true}).click();await expect(page.getByText(/1 处命中/)).toBeVisible();
     await page.getByLabel("变更原因",{exact:true}).fill("E2E unchanged policy version");await page.getByRole("button",{name:"保存草稿",exact:true}).click();
     await expect(page.getByRole("button",{name:"发布",exact:true})).toBeVisible();await page.getByRole("button",{name:"发布",exact:true}).click();await page.getByRole("button",{name:"确认发布",exact:true}).click();await expect(page.getByRole("dialog")).toHaveCount(0);
-    const access=await context.request.get("/api/agent/chat");expect(access.status()).toBe(200);const config=await access.json();expect(config.data.automatic).toBe(true);expect(config.data.models).toEqual([]);
+    const access=await context.request.get("/api/agent/chat");expect(access.status()).toBe(200);const config=await access.json();
+    expect(config.data).toMatchObject({ automatic: false, gateway: true, defaultModel: "deepseek" });
+    expect(config.data.models.map((model: { id: string }) => model.id)).toEqual(["deepseek", "glm", "gpt"]);
+    expect(config.data.models).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: "deepseek", available: true }),
+      expect.objectContaining({ id: "glm", available: true }),
+      expect.objectContaining({ id: "gpt", available: false, reason: "disabled" }),
+    ]));
     const rejected=await context.request.post("/api/agent/chat",{headers:{origin:baseURL!},data:{conversationId:randomUUID(),attemptId:randomUUID(),messages:[{id:randomUUID(),role:"user",parts:[{type:"text",text:"RIIC_FILTER_BLOCK_TEST"}]}]}});
     expect(rejected.status()).toBe(400);expect((await pool.query("SELECT paid_points FROM app.billing_wallet WHERE user_id=$1",[admin])).rows[0].paid_points).toBe("23.0000");
     await page.setViewportSize({width:375,height:812});await page.goto("/admin/billing");await expect(page.getByRole("heading",{name:"计费管理",exact:true})).toBeVisible();
