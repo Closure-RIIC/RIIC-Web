@@ -620,6 +620,8 @@ export function ShiftTabs({
   }
 
   const labelForShift = (index: number) => {
+    // 自动轮换的时长是评价窗口，不作为班次页签的换班时长显示。
+    if (rotation && "auto_rotation" in rotation && rotation.auto_rotation) return shiftTabLabel(undefined, index, en);
     const shift = rotation?.shifts[index];
     const durationHours = shift?.duration_hours ?? durations?.[index];
     return localize_components.text(en, "additional1", { hasDuration: durationHours !== undefined ? "yes" : "no", index: index + 1, hours: durationHours !== undefined ? compactNumber(durationHours) : "", label: shiftTabLabel(shift, index, en) });
