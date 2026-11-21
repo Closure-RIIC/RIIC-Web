@@ -141,11 +141,36 @@ test("slow GPU motion samples fewer pixels and restores the full authored qualit
       canvas.setAttribute("data-size-changes", String(Number(canvas.getAttribute("data-size-changes")) + records.length));
     }).observe(canvas, { attributes: true, attributeFilter: ["width", "height"] });
   });
+  type CompletedFurFrame = { frame: number; scale: number; pixels: number; press: number };
+  type ObservedAvatar = HTMLElement & { completedFurFrames: Readonly<CompletedFurFrame>[] };
+  await avatar.evaluate(element => {
+    const observed = element as ObservedAvatar;
+    let lastFrame = Number(element.getAttribute("data-fur-frames"));
+    observed.completedFurFrames = [];
+    // The observer runs after paint synchronously updates every frame attribute.
+    // Retain those values together even if the renderer settles before mouse.down returns.
+    new MutationObserver(() => {
+      const frame = Number(element.getAttribute("data-fur-frames"));
+      if (!Number.isFinite(frame) || frame <= lastFrame) return;
+      lastFrame = frame;
+      observed.completedFurFrames.push(Object.freeze({
+        frame,
+        scale: Number(element.getAttribute("data-fur-resolution-scale")),
+        pixels: Number(element.getAttribute("data-fur-pixels")),
+        press: Number(element.getAttribute("data-fur-press")),
+      }));
+    }).observe(element, { attributes: true, attributeFilter: ["data-fur-frames"] });
+  });
   const bounds = await avatar.boundingBox();
   await page.mouse.move(bounds!.x + bounds!.width / 2, bounds!.y + bounds!.height / 2);
   await page.mouse.down();
-  await expect.poll(async () => Number(await avatar.getAttribute("data-fur-resolution-scale")), { timeout: 15_000 }).toBeLessThan(1);
-  expect(Number(await avatar.getAttribute("data-fur-pixels"))).toBeLessThan(fullPixels);
+  const pressed = { frame: null as CompletedFurFrame | null };
+  await expect.poll(async () => {
+    pressed.frame = await avatar.evaluate(element => (element as ObservedAvatar).completedFurFrames.find(frame => frame.press > 0 && frame.scale < 1) ?? null);
+    return pressed.frame?.scale ?? 1;
+  }, { timeout: 15_000 }).toBeLessThan(1);
+  expect(pressed.frame!.press).toBeGreaterThan(0);
+  expect(pressed.frame!.pixels).toBeLessThan(fullPixels);
   await expect(avatar).toHaveAttribute("data-fur-shells", "64");
   if (direct) {
     expect(await surface.evaluate(canvas => ({ width: (canvas as HTMLCanvasElement).width, height: (canvas as HTMLCanvasElement).height }))).toEqual(fullSurface);

@@ -3633,57 +3633,57 @@ export const references = [
   {
     "key": "AK_components_agent_AgentChat.abyssal",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:134"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:135"
   },
   {
     "key": "AK_components_agent_AgentChat.addAttachment",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:726"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:728"
   },
   {
     "key": "AK_components_agent_AgentChat.addCreditsToGetStarted",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:750"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:752"
   },
   {
     "key": "AK_components_agent_AgentChat.askAboutTheCurrentShiftRoomAssignmentsOr",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:762"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:764"
   },
   {
     "key": "AK_components_agent_AgentChat.askAboutYourBaseOperatorsOrNextUpgrade",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:706"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:708"
   },
   {
     "key": "AK_components_agent_AgentChat.askDirectlyAboutYourAccountOperatorsOrBase",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:768"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:770"
   },
   {
     "key": "AK_components_agent_AgentChat.askYourAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:706"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:708"
   },
   {
     "key": "AK_components_agent_AgentChat.assistantIsNotAvailableYet",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:747"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:749"
   },
   {
     "key": "AK_components_agent_AgentChat.assistantModel",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:405"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:407"
   },
   {
     "key": "AK_components_agent_AgentChat.attachFiles",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:725"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:727"
   },
   {
     "key": "AK_components_agent_AgentChat.attack",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:134"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:135"
   },
   {
     "key": "AK_components_agent_AgentChat.avatarProcessError",
@@ -3698,342 +3698,342 @@ export const references = [
   {
     "key": "AK_components_agent_AgentChat.backToLatest",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:694"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:696"
   },
   {
     "key": "AK_components_agent_AgentChat.chatHistoryCouldNotBeSavedInThis",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:688"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:690"
   },
   {
     "key": "AK_components_agent_AgentChat.closeAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:662"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:664"
   },
   {
     "key": "AK_components_agent_AgentChat.closure",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:378"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:380"
   },
   {
     "key": "AK_components_agent_AgentChat.closureAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:667"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:669"
   },
   {
     "key": "AK_components_agent_AgentChat.connectingToClosure",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:746"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:748"
   },
   {
     "key": "AK_components_agent_AgentChat.continueWithoutImages",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:830"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:832"
   },
   {
     "key": "AK_components_agent_AgentChat.conversation",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:745"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:747"
   },
   {
     "key": "AK_components_agent_AgentChat.couldNotConnectToTheAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:748"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:750"
   },
   {
     "key": "AK_components_agent_AgentChat.currentPage",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:756"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:758"
   },
   {
     "key": "AK_components_agent_AgentChat.defaultValue",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:133"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:134"
   },
   {
     "key": "AK_components_agent_AgentChat.defence",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:134"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:135"
   },
   {
     "key": "AK_components_agent_AgentChat.doctor",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:776"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:778"
   },
   {
     "key": "AK_components_agent_AgentChat.enterToSendShiftEnterForANew",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:733"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:735"
   },
   {
     "key": "AK_components_agent_AgentChat.fireworks",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:134"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:135"
   },
   {
     "key": "AK_components_agent_AgentChat.generatedSchedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:803"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:805"
   },
   {
     "key": "AK_components_agent_AgentChat.imageHistoryLimit",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:527"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:529"
   },
   {
     "key": "AK_components_agent_AgentChat.imageRepeatBilling",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:732"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:734"
   },
   {
     "key": "AK_components_agent_AgentChat.imagesExcluded",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:731"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:733"
   },
   {
     "key": "AK_components_agent_AgentChat.includeCurrentPageContext",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:683"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:685"
   },
   {
     "key": "AK_components_agent_AgentChat.keepCurrentModel",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:829"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:831"
   },
   {
     "key": "AK_components_agent_AgentChat.knights",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:134"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:135"
   },
   {
     "key": "AK_components_agent_AgentChat.liveConversation",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:765"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:767"
   },
   {
     "key": "AK_components_agent_AgentChat.manualValue",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:133"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:134"
   },
   {
     "key": "AK_components_agent_AgentChat.message",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:705"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:707"
   },
   {
     "key": "AK_components_agent_AgentChat.messagePayloadTooLarge",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:530"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:532"
   },
   {
     "key": "AK_components_agent_AgentChat.modelDisabled",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:88"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:89"
   },
   {
     "key": "AK_components_agent_AgentChat.modelImageBudgetMissing",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:88"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:89"
   },
   {
     "key": "AK_components_agent_AgentChat.modelRateMissing",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:88"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:89"
   },
   {
     "key": "AK_components_agent_AgentChat.modelRouteUnconfigured",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:88"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:89"
   },
   {
     "key": "AK_components_agent_AgentChat.modelUnavailable",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:88"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:89"
   },
   {
     "key": "AK_components_agent_AgentChat.newConversation",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:661"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:663"
   },
   {
     "key": "AK_components_agent_AgentChat.newImagesNeedVision",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:397"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:399"
   },
   {
     "key": "AK_components_agent_AgentChat.pageContext",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:681"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:683"
   },
   {
     "key": "AK_components_agent_AgentChat.pageGuide",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:755"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:757"
   },
   {
     "key": "AK_components_agent_AgentChat.pageSharingIsOffOnlyYourMessageWill",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:761"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:763"
   },
   {
     "key": "AK_components_agent_AgentChat.pageSummaryIsShared",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:759"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:761"
   },
   {
     "key": "AK_components_agent_AgentChat.persona",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:727"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:729"
   },
   {
     "key": "AK_components_agent_AgentChat.pleaseRefreshThePageAndTryAgain",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:748"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:750"
   },
   {
     "key": "AK_components_agent_AgentChat.reply",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:795"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:797"
   },
   {
     "key": "AK_components_agent_AgentChat.sami",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:134"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:135"
   },
   {
     "key": "AK_components_agent_AgentChat.selectModel",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:406"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:408"
   },
   {
     "key": "AK_components_agent_AgentChat.sendMessage",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:699"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:701"
   },
   {
     "key": "AK_components_agent_AgentChat.shareWithAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:684"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:686"
   },
   {
     "key": "AK_components_agent_AgentChat.signIn",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:749"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:751"
   },
   {
     "key": "AK_components_agent_AgentChat.signInToMeetClosure",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:749"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:751"
   },
   {
     "key": "AK_components_agent_AgentChat.siracusa",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:134"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:135"
   },
   {
     "key": "AK_components_agent_AgentChat.stopGenerating",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:700"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:702"
   },
   {
     "key": "AK_components_agent_AgentChat.switchToTextDescription",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:826"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:828"
   },
   {
     "key": "AK_components_agent_AgentChat.switchToTextTitle",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:823"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:825"
   },
   {
     "key": "AK_components_agent_AgentChat.switchToVision",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:730"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:732"
   },
   {
     "key": "AK_components_agent_AgentChat.textModel",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:407"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:409"
   },
   {
     "key": "AK_components_agent_AgentChat.theModelConnectionNeedsToBeConfiguredPlease",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:747"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:749"
   },
   {
     "key": "AK_components_agent_AgentChat.thePageSummaryIsUnavailableYouCanStill",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:761"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:763"
   },
   {
     "key": "AK_components_agent_AgentChat.thinking",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:796"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:798"
   },
   {
     "key": "AK_components_agent_AgentChat.thinking2",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:796"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:798"
   },
   {
     "key": "AK_components_agent_AgentChat.thisPersonaIsUnavailableChooseAnotherPersonaTo",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:689"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:691"
   },
   {
     "key": "AK_components_agent_AgentChat.thisSavedReplyContainsInvalidFormattingPleaseAsk",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:795"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:797"
   },
   {
     "key": "AK_components_agent_AgentChat.tryAgain",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:816"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:818"
   },
   {
     "key": "AK_components_agent_AgentChat.upTo4Attachments8MbEach",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:733"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:735"
   },
   {
     "key": "AK_components_agent_AgentChat.useYourWebsiteAccountToAccessTheAssistant",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:749"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:751"
   },
   {
     "key": "AK_components_agent_AgentChat.viewPaymentPlans",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:750"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:752"
   },
   {
     "key": "AK_components_agent_AgentChat.visionModel",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:407"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:409"
   },
   {
     "key": "AK_components_agent_AgentChat.visionUnavailable",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:730"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:732"
   },
   {
     "key": "AK_components_agent_AgentChat.whatWouldYouLikeToKnow",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:766"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:768"
   },
   {
     "key": "AK_components_agent_AgentChat.workingOnYourRequest",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:813"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:815"
   },
   {
     "key": "AK_components_agent_AgentChat.youNeedAtLeast1CreditToUse",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:750"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:752"
   },
   {
     "key": "AK_components_agent_AgentChat.yourAccountBaseAndTrainingInOneConversation",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:668"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:670"
   },
   {
     "key": "AK_components_agent_AgentComposerMenu.addAttachment",
@@ -7288,512 +7288,582 @@ export const references = [
   {
     "key": "AK_Raw_components_agent_AgentChat.6Elite2Operators",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:276"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:278"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.attachment",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:310"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:312"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.attachmentLimit",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:573"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:575"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.attachmentReadFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:590"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:592"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.attachmentUnsupported",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:578"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:580"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.avatarNotSaved",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:642"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:644"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.avatarReadFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:649"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:651"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.calculatedUsingTheAllElite2SampleRosterThis",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:199"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:201"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.craftingCost",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:239"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:241"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.craftingSuggestions",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:236"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:238"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.currentELvTargetELv",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:228"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:230"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.elite2RosterReady",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:161"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:162"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.emptyPersona",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:620"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:622"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.expAvailableMissingAboutStrategicBattleRecords",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:230"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:232"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.fastPlan",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:204"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:206"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.file",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:309"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:311"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.goldOrder",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:163"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:164"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.handoffFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:175"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:177"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.image",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:309"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:311"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.imageAttachment",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:308"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:310"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.importPersonaCard",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:856"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:858"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.layout",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:159"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:160"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.lmdAvailableMissing",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:229"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:231"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.localPersonaStorage",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:864"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:866"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.masteryControlCenterSwapAllowanceMin",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:196"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:198"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.minimum",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:253"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:255"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.missingMaterials",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:231"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:233"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.noCombinationsMatchTheCurrentTagsAndFilters",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:249"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:251"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.notCurrentlyOwned",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:227"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:229"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.notOwned",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:256"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:258"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.openCalculator",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:178"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:180"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.operators",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:160"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:161"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.operatorsElite2",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:275"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:277"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.originiumOrder",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:163"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:164"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.persona",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:735"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:737"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaNotSaved",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:624"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:626"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaPreview",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:850"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:852"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaReadFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:634"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:636"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaRemovalNotSaved",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:853"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:855"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaSelectionNotSaved",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:438"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:440"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.personaTooLarge",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:603"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:605"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.recruitmentMinRoster",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:247"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:249"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.remainingMaterials",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:234"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:236"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.removeAttachment",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:310"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:312"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.removeLocalPersonaCard",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:853"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:855"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.roster",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:195"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:197"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.rosterOperatorsElite2",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:268"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:270"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.sampleRosterYourOwnershipStatusIsUnknown",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:248"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:250"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.saving",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:846"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:848"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.selectedPersonaPreview",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:850"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:852"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.selectPersona",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:851"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:853"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.simplePlan",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:204"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:206"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.sklandDisconnected",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:268"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:270"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.sklandSnapshot",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:198"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:200"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.swaps",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:204"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:206"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.thisQueryHasNotFinishedPleaseTryAgainLater",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:299"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:301"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.thisRequestWasStoppedYouCanAskAgain",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:299"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:301"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_analyze_daily_production",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_analyze_stock_and_training",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_calculate_mastery",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_calculate_recruitment",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_calculate_training",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_diagnose_account",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_diagnose_account_health",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_kb_read",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_kb_route",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_load_agent_skill",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_preview_solve_defaults",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_query_skills",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_resolve_operator",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tool_solve_schedule",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:110"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:111"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.toolComplete",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:298"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:300"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.toolError",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:298"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:300"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.toolFailed",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:299"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:301"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.toolRunning",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:298"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:300"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.toolStopped",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:298"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:300"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.tradingOrders",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:163"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:164"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.unknownLevel",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:274"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:276"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.unknownSource",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:268"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:270"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.unknownTime",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:198"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:200"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.unnamedFile",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:309"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:311"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadAvatar",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:846"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:848"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadPersonaAvatar",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:862"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:864"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadPersonaCard",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:858"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:860"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.uploadPersonaFile",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:863"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:865"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.viewTheFullScheduleInChatSwitchBetweenShifts",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:184"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:186"
   },
   {
     "key": "AK_Raw_components_agent_AgentChat.yourInventoryCoversThisTarget",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/AgentChat.tsx:234"
+    "source": "apps/arknights/src/components/agent/AgentChat.tsx:236"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.control",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:22"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:23"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.dailyProductionWithDrones",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:31"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.deviceShardCost",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:46"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.dormitory",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:22"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:23"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.elite2",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:35"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:36"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.hire",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:22"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:23"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.layout",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:56"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:54"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.manufacture",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:22"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:23"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.meeting",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:22"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:23"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.orirockShardCost",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:46"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.power",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:22"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:23"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.processing",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:22"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:23"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.productionExperience",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:36"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.productionExperienceUnit",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:39"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.productionGold",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:36"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.productionLmd",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:36"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.productionLmdUnit",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:39"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.productionNetLmd",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:36"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.productionOrundum",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:36"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.productionOrundumUnit",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:39"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.productionPiecesUnit",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:39"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.productionShards",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:36"
+  },
+  {
+    "key": "AK_Raw_components_agent_PlanArtifactView.productionUnavailable",
+    "prefix": false,
+    "source": "apps/arknights/src/components/agent/AgentPlanProductionSummary.tsx:28"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.shift",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:77"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:72"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.solvedInMs",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:58"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:56"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.switchShifts",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:66"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:61"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.trading",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:22"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:23"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.trainingRecommendations",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:99"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:94"
   },
   {
     "key": "AK_Raw_components_agent_PlanArtifactView.unassigned",
     "prefix": false,
-    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:90"
+    "source": "apps/arknights/src/components/agent/PlanArtifactView.tsx:85"
   },
   {
     "key": "AK_Raw_components_billing_BillingPrototype.availableCredits",
@@ -14778,7 +14848,7 @@ export const references = [
   {
     "key": "components_PlanResultSummary.deviceRecipeName",
     "prefix": false,
-    "source": "apps/arknights/src/originium-lmd-cost.ts:38"
+    "source": "apps/arknights/src/originium-lmd-cost.ts:43"
   },
   {
     "key": "components_PlanResultSummary.estimatedDailyProduction",
@@ -14863,7 +14933,7 @@ export const references = [
   {
     "key": "components_PlanResultSummary.netIncome",
     "prefix": false,
-    "source": "apps/arknights/src/originium-lmd-cost.ts:35"
+    "source": "apps/arknights/src/originium-lmd-cost.ts:40"
   },
   {
     "key": "components_PlanResultSummary.noChanges",
@@ -14893,7 +14963,7 @@ export const references = [
   {
     "key": "components_PlanResultSummary.orirockRecipeName",
     "prefix": false,
-    "source": "apps/arknights/src/originium-lmd-cost.ts:38"
+    "source": "apps/arknights/src/originium-lmd-cost.ts:43"
   },
   {
     "key": "components_PlanResultSummary.orundumBottleneckBalanced",
@@ -15003,12 +15073,12 @@ export const references = [
   {
     "key": "components_PlanResultSummary.shardCostAssumption",
     "prefix": false,
-    "source": "apps/arknights/src/originium-lmd-cost.ts:37"
+    "source": "apps/arknights/src/originium-lmd-cost.ts:42"
   },
   {
     "key": "components_PlanResultSummary.shardManufacturingCost",
     "prefix": false,
-    "source": "apps/arknights/src/originium-lmd-cost.ts:34"
+    "source": "apps/arknights/src/originium-lmd-cost.ts:39"
   },
   {
     "key": "components_PlanResultSummary.shardRecipe",

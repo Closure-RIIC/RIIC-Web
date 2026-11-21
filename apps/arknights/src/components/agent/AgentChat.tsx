@@ -25,6 +25,7 @@ import { Link } from "@tanstack/react-router";
 import { useLocale, useTranslations } from "use-intl";
 
 import { PlanArtifactView } from "@/components/agent/PlanArtifactView";
+import { AgentPlanProductionSummary } from "@/components/agent/AgentPlanProductionSummary";
 import { Button } from "@/components/ui/button";
 import { Combobox, ComboboxContent, ComboboxTrigger, ComboboxItem, ComboboxList } from "@/components/ui/combobox";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -163,6 +164,7 @@ export function ToolResultSummary({ name, output, openLabel }: { name: string; o
             <span>{rawText.rich(rawLocale, "tradingOrders", { part1: richValue((record.tradeOrders.map((order) => (order === "originium" ? rawText.text(rawLocale, "originiumOrder") : rawText.text(rawLocale, "goldOrder"))).join(" / "))) })}</span>
           ) : null}
         </div>
+        <AgentPlanProductionSummary production={plan.dailyProduction} />
         {handoff ? (
           <div className="flex flex-wrap items-center gap-3">
             <Button
@@ -182,7 +184,7 @@ export function ToolResultSummary({ name, output, openLabel }: { name: string; o
         ) : null}
         <details className="rounded border bg-muted/20 px-2 py-1">
           <summary className="cursor-pointer select-none text-xs font-medium">{rawText.text(rawLocale, "viewTheFullScheduleInChatSwitchBetweenShifts")}</summary>
-          <div className="mt-2"><PlanArtifactView plan={plan} dense /></div>
+          <div className="mt-2"><PlanArtifactView plan={plan} dense showProduction={false} /></div>
         </details>
       </div>
     );

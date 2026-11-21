@@ -63,3 +63,24 @@ test("shared input mode admits validated images without inventing a per-image to
   await assert.rejects(prepareAgentHistory(messages, async () => {}, { selection: { ...shared, maxImages: 1 } }), /超过模型限制/);
   await assert.rejects(prepareAgentHistory(fileMessage("image/png", Buffer.from("invalid")), async () => {}, { selection: shared }), /无法读取/);
 });
+test("a follow-up preserves the final answer after an unclosed thinking tag in an earlier step", async () => {
+  const tool: UIMessage["parts"][number] = { type: "tool-kb_read", toolCallId: "read", state: "output-available", input: {}, output: {} };
+  const dynamic: UIMessage["parts"][number] = { type: "dynamic-tool", toolName: "kb_read", toolCallId: "read", state: "output-available", input: {}, output: {} };
+  for (const boundary of [[{ type: "step-start" }], [tool], [dynamic], [tool, { type: "step-start" }]] satisfies UIMessage["parts"][]) {
+    const messages: UIMessage[] = [
+      { id: "a1", role: "assistant", parts: [
+        { type: "text", text: "<think>先查知识库" }, ...boundary,
+        { type: "text", text: "<thi" },
+        { type: "text", text: "nk>新一轮思考</think>制造站生产力提升30%。" },
+      ] },
+      { id: "u2", role: "user", parts: [{ type: "text", text: "说明原因" }] },
+    ];
+    const checked: string[] = [];
+    const prepared = await prepareAgentHistory(messages, async text => { checked.push(text); });
+    assert.deepEqual(prepared, [
+      { id: "a1", role: "assistant", parts: [{ type: "text", text: "制造站生产力提升30%。" }] },
+      messages[1],
+    ]);
+    assert.deepEqual(checked, ["制造站生产力提升30%。", "说明原因"]);
+  }
+});

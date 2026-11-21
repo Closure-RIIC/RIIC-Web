@@ -7,6 +7,7 @@
 - `RIIC-knowledge/agent/KNOWLEDGE_RULES.md` 是共享知识规则唯一真源。网站通过 `knowledge-policy.ts` 加载；独立入口通过 `agent/load-policy.mjs` 展开 SYSTEM_PROMPT 模板。网站不注入独立 RAG 的 context/question 模板。
 - 外部人格卡保持身份与语气职责，宿主明确知识规则和工具编排优先级，不修改外部角色内容。网站就是 riic.autos，可由本地工具完成的直接调用，产品使用问答、MAA 配置及账号支持按具体能力处理。
 - 所有技能查询固定 `query_skills → kb_route → kb_read`：先游戏原文与解锁条件，再隐性释义；用法、组合与培养正文按需读取。成功检索没有特殊释义时按原文正常答，不声明检索情况；工具故障只说明相关限制，不能声称没有规则。
+- 流式正文、历史恢复与追问上下文过滤正文中的 `<think>` 内容；同一模型步骤内支持跨文本片段的标签，在工具或 `step-start` 边界重置过滤状态，避免前一步未闭合标签吞掉后续最终答案。追问只保留最后一次历史工具调用后的正文。
 - `query_skills` 复用网页 `operatorBuildingSkillList` 与搜索能力，支持干员名/id、英文与拼音，返回持有者与解锁练度。`diagnose_account({operators:[...]})` 复用已加载干员池，返回指定干员 own/elite/level；示例池与未知名称为 null；森空岛完整持有列表中缺少的已知干员为 false，MAA 部分上传中未出现条目保留未知。
 - `load_agent_skill` 从 KB manifest 白名单按 id 加载 1/3/4/6/7；模型可自主组合。2/5/8 仍为未接入草稿，现有工具没有通用产出诊断/回本计算接口，相关问题只引用既有结论或定性说明。
 - 简单排班、专精、公招不查机制 KB、不加载 skill；排班保留既有预览确认。知识卡片只显示友好状态与查询对象，如“技能查询 完成 · 巫恋”“知识库阅读 完成《违约索赔》”，不展开路径、检索覆盖或原文片段。`output.error` 与 `output-error` 统一只显示一次失败信息，知识错误使用友好提示避免泄漏内部诊断。
@@ -126,6 +127,14 @@ AGENT_KB_DIR=E:/arknights-infra-project/RIIC-knowledge
 待验证（需填入真实 API key）：多轮对话、工具编排正确性、搓玉场景全链路对话。
 
 ## 结果验收链路（工作台注入为主，已实现）
+
+### 排班产出摘要
+
+`solve_schedule` 的 `plan.dailyProduction` 使用 `schemaVersion: 1` 的结构化摘要：`basis: daily_24h` 表示完整轮班折算24小时，`includesDrones: true` 表示五项最终值已包含无人机增量。`products` 固定包含经验、龙门币、赤金、合成玉和源石碎片，每项提供 `id`、名称、单位、已取整的 `value`、`net` 和来源明细；`null` 表示不可用，合法零产出仍为 `0`。`droneAllocations` 记录各班分配目标，`shardRecipe` 标明碎片成本配方（默认固源岩）。
+
+`apps/arknights/src/agent-plan-production.ts` 复用计算器的 `createCalculatorProductionPresentation` 及共享碎片成本函数，不改写原始求解结果。经验和龙门币合入无人机一次；赤金按网页的价值域汇总后转为枚数，保留等效赤金与日常获取来源；有碎片制造时龙门币显示扣除制造成本的净值。36小时轮换不再次日化。精简投影的 `efficiencies` 仅保留诊断用途，回答默认比较最终产出。
+
+聊天结果卡片、完整排班卡片与自动/手动排班页面上下文使用同一摘要。页面上下文采用默认固源岩成本假设；计算器抽屉中临时切换到装置配方不改变该默认快照。旧历史的 `dailyProduction` 可能仍是效率字段，卡片显示“产出不可用”，保留排班与工作台交接，不将历史效率当作产量或自动重新求解。回归覆盖同份结果的五项显示值、153/252配方切换、无人机增量、赤金价值换算、36小时日化、两种碎片成本、未知值及三语言卡片。
 
 核心思路：agent 的排班结果不另起炉灶，而是**注入现有工作台**，班次切换、手动排班导入、效率视图等全部现有功能即刻可用。
 
