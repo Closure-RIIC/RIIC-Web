@@ -74,7 +74,15 @@ export function createAdminPreviewRequest(isAdmin: boolean, en: AppLocale): Admi
 
     if (path === "/api/admin/users" && method === "GET") {
       const query = (url.searchParams.get("q") ?? "").toLocaleLowerCase();
-      return success({ users: users.filter(user => `${user.name} ${user.email}`.toLocaleLowerCase().includes(query)), summary: { verifiedUsers: users.filter(user => user.emailVerified).length }, permissions: { canManageAdminRoles: true } });
+      return success({
+        users: users.filter(user => `${user.name} ${user.email}`.toLocaleLowerCase().includes(query)).map(user => ({
+          ...user,
+          isSuperAdmin: user.isBootstrapAdmin,
+          canModerate: isAdmin && !user.isBootstrapAdmin && !user.isAdmin && !user.isReviewer,
+        })),
+        summary: { verifiedUsers: users.filter(user => user.emailVerified).length },
+        permissions: { canManageAdminRoles: false },
+      });
     }
     if (path.startsWith("/api/admin/users/")) {
       const [, , , , id, resource] = path.split("/");

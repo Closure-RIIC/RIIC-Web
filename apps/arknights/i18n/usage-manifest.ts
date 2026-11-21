@@ -3138,22 +3138,22 @@ export const references = [
   {
     "key": "AK_app_admin_preview_preview_data.sampleBaseline",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:140"
+    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:148"
   },
   {
     "key": "AK_app_admin_preview_preview_data.sampleCurrentVersion",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:139"
+    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:147"
   },
   {
     "key": "AK_app_admin_preview_preview_data.sampleExpiredSession",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:101"
+    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:109"
   },
   {
     "key": "AK_app_admin_preview_preview_data.sampleIncompleteLayoutInput",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:100"
+    "source": "apps/arknights/src/app/admin-preview/preview-data.ts:108"
   },
   {
     "key": "AK_app_admin_preview_preview_data.sampleSuspendedAccount",
