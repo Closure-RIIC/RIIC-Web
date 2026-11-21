@@ -1883,32 +1883,32 @@ export const references = [
   {
     "key": "adminReviewer.confirm",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:296"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:297"
   },
   {
     "key": "adminReviewer.eligible",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:232"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:233"
   },
   {
     "key": "adminReviewer.grant",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:235"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:236"
   },
   {
     "key": "adminReviewer.grantDescription",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:275"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:276"
   },
   {
     "key": "adminReviewer.revoke",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:235"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:236"
   },
   {
     "key": "adminReviewer.revokeDescription",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:275"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:276"
   },
   {
     "key": "AdminWorkspace.accessDenied",
@@ -2303,7 +2303,7 @@ export const references = [
   {
     "key": "AdminWorkspace.closeDetails",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:199"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:200"
   },
   {
     "key": "AdminWorkspace.createdAt",
@@ -2313,7 +2313,7 @@ export const references = [
   {
     "key": "AdminWorkspace.details",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:199"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:200"
   },
   {
     "key": "AdminWorkspace.filterScope",
@@ -2363,12 +2363,12 @@ export const references = [
   {
     "key": "AdminWorkspace.noResults",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:255"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:256"
   },
   {
     "key": "AdminWorkspace.noResultsHint",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:255"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:256"
   },
   {
     "key": "AdminWorkspace.oldest",
@@ -2458,7 +2458,7 @@ export const references = [
   {
     "key": "AdminWorkspace.resetFilters",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:255"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:256"
   },
   {
     "key": "AdminWorkspace.resultCount",
@@ -2558,7 +2558,7 @@ export const references = [
   {
     "key": "AdminWorkspace.verified",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:202"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:203"
   },
   {
     "key": "AdminWorkspace.wishes",
@@ -3223,22 +3223,22 @@ export const references = [
   {
     "key": "AK_app_admin_users_users_client.expires",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:209"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:210"
   },
   {
     "key": "AK_app_admin_users_users_client.monthly",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:209"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:210"
   },
   {
     "key": "AK_app_admin_users_users_client.permanent",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:208"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:209"
   },
   {
     "key": "AK_app_admin_users_users_client.points",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:207"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:208"
   },
   {
     "key": "AK_app_help_beginner_page_client.backToHelp",
@@ -10823,7 +10823,7 @@ export const references = [
   {
     "key": "app_admin_users_users_client.admin",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:196"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:197"
   },
   {
     "key": "app_admin_users_users_client.administratorRoleGranted",
@@ -10843,22 +10843,22 @@ export const references = [
   {
     "key": "app_admin_users_users_client.bootstrapAdmin",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:196"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:197"
   },
   {
     "key": "app_admin_users_users_client.cancel",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:285"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:286"
   },
   {
     "key": "app_admin_users_users_client.confirmAdministrator",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:296"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:297"
   },
   {
     "key": "app_admin_users_users_client.confirmRevocation",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:296"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:297"
   },
   {
     "key": "app_admin_users_users_client.couldNotLoadSessions",
@@ -10873,67 +10873,67 @@ export const references = [
   {
     "key": "app_admin_users_users_client.created",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:245"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:246"
   },
   {
     "key": "app_admin_users_users_client.expires",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:245"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:246"
   },
   {
     "key": "app_admin_users_users_client.grantAdmin",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:222"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:223"
   },
   {
     "key": "app_admin_users_users_client.grantAdministratorRole",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:272"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:273"
   },
   {
     "key": "app_admin_users_users_client.hideSessions",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:225"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:226"
   },
   {
     "key": "app_admin_users_users_client.loadingUsers",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:260"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:261"
   },
   {
     "key": "app_admin_users_users_client.noActiveSessions",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:248"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:249"
   },
   {
     "key": "app_admin_users_users_client.noActiveSklandAuthorization",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:203"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:204"
   },
   {
     "key": "app_admin_users_users_client.onlyVerifiedActiveAccountsCanBecomeAdministrators",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:219"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:220"
   },
   {
     "key": "app_admin_users_users_client.renewalDue",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:204"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:205"
   },
   {
     "key": "app_admin_users_users_client.revokeAdmin",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:222"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:223"
   },
   {
     "key": "app_admin_users_users_client.revokeAdministratorRole",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:272"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:273"
   },
   {
     "key": "app_admin_users_users_client.revokeSessions",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:238"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:239"
   },
   {
     "key": "app_admin_users_users_client.search",
@@ -10948,12 +10948,12 @@ export const references = [
   {
     "key": "app_admin_users_users_client.sklandActive",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:203"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:204"
   },
   {
     "key": "app_admin_users_users_client.suspend",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:239"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:240"
   },
   {
     "key": "app_admin_users_users_client.theBootstrapAdministratorCanAlsoChangeAdministratorRoles",
@@ -10963,27 +10963,27 @@ export const references = [
   {
     "key": "app_admin_users_users_client.thisActionDoesNotChangeTheAccountPasswordOr",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:282"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:283"
   },
   {
     "key": "app_admin_users_users_client.thisUser",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:278"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:279"
   },
   {
     "key": "app_admin_users_users_client.unknownBrowser",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:246"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:247"
   },
   {
     "key": "app_admin_users_users_client.unknownIp",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:246"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:247"
   },
   {
     "key": "app_admin_users_users_client.unsuspend",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:239"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:240"
   },
   {
     "key": "app_admin_users_users_client.verifiedUsers",
@@ -10998,17 +10998,17 @@ export const references = [
   {
     "key": "app_admin_users_users_client.viewSessions",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:225"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:226"
   },
   {
     "key": "app_admin_users_users_client.willBeAbleToSearchAndSuspendUsersAnd",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:278"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:279"
   },
   {
     "key": "app_admin_users_users_client.willImmediatelyLoseAccessToUserManagement",
     "prefix": false,
-    "source": "apps/arknights/src/app/admin/users/users-client.tsx:277"
+    "source": "apps/arknights/src/app/admin/users/users-client.tsx:278"
   },
   {
     "key": "app_help_layout.helpCenter",
