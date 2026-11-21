@@ -384,6 +384,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [accountHealthAgentPageContext, setAccountHealthAgentPageContext] = useState<AgentPageContext | null>(null);
   const [trainingPlannerAgentPageContext, setTrainingPlannerAgentPageContext] = useState<AgentPageContext | null>(null);
   const [manualEvaluationPending, setManualEvaluationPending] = useState(false);
+  const manualEvaluationRevision = useRef(0);
   const [pendingManualDraftReplacement, setPendingManualDraftReplacement] = useState<ManualScheduleDraft | null>(null);
   const [inputMode, setInputMode] = useState<"skland" | "maa" | "manual">(CLIENT_SKLAND_ENABLED ? "skland" : "maa");
   const [maaPaste, setMaaPaste] = useState("");
@@ -608,7 +609,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     return custom && validateCustomRotation(custom) ? null : timing;
   })();
   const effectiveManualFiammettaEnabled = Boolean(
-    manualFiammettaEnabled && (manualPosterBox ?? operbox)?.some((operator) => operator.own && operator.name === "菲亚梅塔")
+    manualFiammettaEnabled && (manualPosterBox !== null || operbox?.some((operator) => operator.own && operator.name === "菲亚梅塔"))
   );
   const setupConfigurationKey = useMemo(() => JSON.stringify({
     layout,
@@ -1188,6 +1189,11 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
       const { readOperboxFile } = await import("@riic/arknights-domain/operbox");
       const entries = await readOperboxFile(file);
       signal?.throwIfAborted();
+      if (setupMode === "manual" && manualPosterBox) {
+        setManualPosterBox(entries);
+        setInputError(null);
+        return;
+      }
       setOperbox(entries);
       setFileName(file.name);
       setBoxSource("maa");
@@ -1247,6 +1253,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     try {
       const { readOperboxText } = await import("@riic/arknights-domain/operbox");
       const entries = await readOperboxText(maaPaste);
+      if (setupMode === "manual" && manualPosterBox) {
+        setManualPosterBox(entries);
+        return true;
+      }
       setOperbox(entries);
       setFileName(intl("App.pastedArknightsOperboxExportJson"));
       setBoxSource("maa");
@@ -1261,6 +1271,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
 
   function handleManualBox(entries: OperBoxEntry[]) {
     setInputError(null);
+    if (setupMode === "manual" && manualPosterBox) {
+      setManualPosterBox(normalizeOperboxEntries(entries));
+      return;
+    }
     setOperbox(normalizeOperboxEntries(entries));
     setFileName(intl("App.manuallySelectedBox"));
     setBoxSource("maa");
@@ -1526,19 +1540,26 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     draft: ManualScheduleDraft;
     operbox?: OperBoxEntry[];
   }) {
-    if (manualEvaluationPending) return;
+    if (manualEvaluationPending) return false;
+    const revision = ++manualEvaluationRevision.current;
     setManualEvaluationPending(true);
     try {
       const { assembleNativeManualPlanResult } = await import("./manual-plan-result");
+      if (revision !== manualEvaluationRevision.current) return false;
       const result = await assembleNativeManualPlanResult({ draft: input.draft, layout, operbox: input.operbox ?? operbox });
+      if (revision !== manualEvaluationRevision.current) return false;
       setManualPlanResult(result);
       try {
-        persistManualEvaluationCache(window.localStorage, result);
+        if (manualPosterBox === null) persistManualEvaluationCache(window.localStorage, result);
       } catch {
         // The in-memory result remains available for the current workbench session.
       }
+      return true;
+    } catch (error) {
+      if (revision !== manualEvaluationRevision.current) return false;
+      throw error;
     } finally {
-      setManualEvaluationPending(false);
+      if (revision === manualEvaluationRevision.current) setManualEvaluationPending(false);
     }
   }
 
@@ -1546,19 +1567,26 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     draft: ManualScheduleDraft;
     operbox?: OperBoxEntry[];
   }) {
-    if (manualEvaluationPending) return;
+    if (manualEvaluationPending) return false;
+    const revision = ++manualEvaluationRevision.current;
     setManualEvaluationPending(true);
     try {
       const { assemblePaperManualPlanResult } = await import("./manual-plan-result");
+      if (revision !== manualEvaluationRevision.current) return false;
       const result = await assemblePaperManualPlanResult({ draft: input.draft, layout, operbox: input.operbox ?? operbox });
+      if (revision !== manualEvaluationRevision.current) return false;
       setManualPlanResult(result);
       try {
-        persistManualEvaluationCache(window.localStorage, result);
+        if (manualPosterBox === null) persistManualEvaluationCache(window.localStorage, result);
       } catch {
         // The in-memory result remains available for the current workbench session.
       }
+      return true;
+    } catch (error) {
+      if (revision !== manualEvaluationRevision.current) return false;
+      throw error;
     } finally {
-      setManualEvaluationPending(false);
+      if (revision === manualEvaluationRevision.current) setManualEvaluationPending(false);
     }
   }
 
@@ -1567,6 +1595,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   function clearManualEvaluation() {
+    // Imports replace the working schedule even when the layout is unchanged.
+    // Any earlier calculation must stop publishing results, cache or pending state.
+    manualEvaluationRevision.current += 1;
     setManualPlanResult(null);
     setManualEvaluationPending(false);
     try {
@@ -1888,6 +1919,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   function handleManualImportedLayout(nextLayout: BaseBlueprint) {
+    clearManualEvaluation();
     setLayout(structuredClone(nextLayout));
     setPreset(PRESETS.find((candidate) => candidate.label === nextLayout.template) ?? preset);
     setLayoutDirty(true);
@@ -2203,7 +2235,10 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   };
 
   function useSklandSnapshotFromSetup() {
-    if (sklandScheduleSnapshot) applySklandSnapshot(sklandScheduleSnapshot);
+    if (!sklandScheduleSnapshot) return;
+    if (setupMode === "manual" && manualPosterBox) {
+      setManualPosterBox(normalizeOperboxEntries(sklandScheduleSnapshot.operbox));
+    } else applySklandSnapshot(sklandScheduleSnapshot);
   }
 
   function handleSklandAuthenticated(session: SklandSessionData) {
@@ -2833,7 +2868,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
         onMaaFile={handleFile}
         onMaaPaste={handleMaaPaste}
         workingCopy={setupMode === "manual" && Boolean(manualPosterBox)}
-        onManualBox={setupMode === "manual" && manualPosterBox ? setManualPosterBox : handleManualBox}
+        onManualBox={handleManualBox}
         onRequireWebsiteAccount={requireWebsiteAccountFromSetup}
         presets={PRESETS}
         preset={preset}
