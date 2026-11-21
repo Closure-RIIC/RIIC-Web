@@ -1,13 +1,16 @@
 import assert from "node:assert/strict";
 import { register, registerHooks } from "node:module";
 import test from "node:test";
+import { defaultRatePolicy } from "../billing/rate-policy.ts";
+import { calculateAgentTokenCost } from "../billing/pricing.ts";
+import { splitPoints } from "../billing/points.ts";
 
 register("../../../../../scripts/ts-path-loader.mjs", import.meta.url);
 registerHooks({ resolve(specifier, context, next) {
   return specifier === "server-only" ? { shortCircuit: true, url: "data:text/javascript,export{}" } : next(specifier, context);
 } });
 
-test("chat API separates automatic gateway routing from direct model selection", async t => {
+test("chat API validates model selection while preserving the authenticated gateway boundary", async t => {
   const originalEnv = { ...process.env };
   t.after(() => { process.env = originalEnv; });
   for (const key of Object.keys(process.env)) if (key.startsWith("AGENT_LLM_")) delete process.env[key];
@@ -15,6 +18,10 @@ test("chat API separates automatic gateway routing from direct model selection",
   let allowed = true;
   let sameOrigin = true;
   let balance = 1;
+  let configuredRates = true;
+  let rates = { id: "rates:test-1", policy: defaultRatePolicy("1.5") };
+  let finish: (event: Record<string, unknown>) => Promise<void>;
+  const settled: Array<Record<string, unknown>> = [];
   const calls: string[] = [];
   class PublicApiError extends Error {
     code: string;
@@ -23,14 +30,14 @@ test("chat API separates automatic gateway routing from direct model selection",
       this.code = code;
     }
   }
-  const unexpected = () => { throw new Error("Unexpected billing operation"); };
   const mocks: Array<[string | URL, Record<string, unknown>]> = [
     ["node:fs/promises", { appendFile: async () => {} }],
     ["ai", {
       convertToModelMessages: async (messages: unknown) => messages,
       stepCountIs: () => () => false,
-      streamText: ({ model }: { model: string }) => {
+      streamText: ({ model, onFinish }: { model: string; onFinish: typeof finish }) => {
         calls.push(`direct:${model}`);
+        finish = onFinish;
         return { toUIMessageStream: () => new ReadableStream({ start(controller) { controller.close(); } }) };
       },
       createUIMessageStreamResponse: () => Response.json({ mode: "direct" }),
@@ -57,11 +64,15 @@ test("chat API separates automatic gateway routing from direct model selection",
     }],
     [new URL("../billing/service.ts", import.meta.url), {
       getWallet: async () => ({ totalPoints: balance }),
-      createAgentUsage: unexpected, finalizeAgentUsage: unexpected,
+      createAgentUsage: async () => "test-usage",
+      finalizeAgentUsage: async (input: Record<string, unknown>) => { settled.push(input); },
     }],
     [new URL("./gateway-runtime.ts", import.meta.url), {
       agentGatewayEnabled: () => automatic,
       gatewaySettings: () => ({ model: "group/riic-agent" }),
+    }],
+    [new URL("./model-catalog.ts", import.meta.url), {
+      configuredAgentChoices: () => [{id:"deepseek",label:"DeepSeek Flash",vision:false,available:true},{id:"glm",label:"GLM-5.3 Flash",vision:false,available:true},{id:"gpt",label:"GPT-6.1 Sol",vision:true,available:false,reason:"disabled"}],
     }],
     [new URL("./gateway-chat.ts", import.meta.url), {
       gatewayChat: async (_request: Request, userId: string) => {
@@ -79,9 +90,12 @@ test("chat API separates automatic gateway routing from direct model selection",
       listBuiltinAgentPersonas: async () => [], resolveAgentPersonaContent: async () => undefined,
     }],
     [new URL("./tools.ts", import.meta.url), { buildAgentTools: () => ({}) }],
-    [new URL("../billing/pricing.ts", import.meta.url), { calculateAgentTokenCost: unexpected }],
-    [new URL("../billing/points.ts", import.meta.url), { splitPoints: unexpected }],
-    [new URL("../billing/agent-accounting.ts", import.meta.url), { AgentAccountingError: class extends Error {} }],
+    [new URL("../billing/pricing.ts", import.meta.url), { calculateAgentTokenCost }],
+    [new URL("../billing/points.ts", import.meta.url), { splitPoints }],
+    [new URL("../billing/agent-accounting.ts", import.meta.url), {
+      AgentAccountingError: class extends Error {},
+      activeAgentPolicies: async () => { if (!configuredRates) throw new Error("Pricing not configured"); return { rates: structuredClone(rates), models: { id: "models:1", policy: { defaultModel: "deepseek" } } }; },
+    }],
     [new URL("./filter-policy.ts", import.meta.url), { AgentFilterError: class extends Error {} }],
     [new URL("./message-history.ts", import.meta.url), {
       AgentHistoryError: class extends Error {}, prepareAgentHistory: async (messages: unknown) => messages,
@@ -103,12 +117,14 @@ test("chat API separates automatic gateway routing from direct model selection",
     }),
   }));
 
-  await t.test("gateway-only metadata with a null provider can be sent back by an existing client", async () => {
+  await t.test("gateway exposes choices and accepts the legacy omitted selection", async () => {
     const metadata = await (await GET(new Request("https://riic.test/api/agent/chat"))).json();
     assert.equal(metadata.data.enabled, true);
-    assert.equal(metadata.data.automatic, true);
+    assert.equal(metadata.data.automatic, false);
+    assert.equal(metadata.data.defaultModel, "deepseek");
     assert.equal(metadata.data.provider, null);
-    assert.deepEqual(metadata.data.models, []);
+    assert.equal(metadata.data.models.length, 3);
+    assert.equal(metadata.data.models[2].available, false);
     calls.length = 0;
     const response = await post(metadata.data.provider);
     assert.equal(response.status, 200);
@@ -116,13 +132,18 @@ test("chat API separates automatic gateway routing from direct model selection",
     assert.deepEqual(calls, ["rate", "gateway"]);
   });
 
-  await t.test("gateway mode ignores missing and stale client model selections, including retries", async () => {
-    for (const model of [undefined, "deepseek", "glm", "group/riic-agent", "stale-model"]) {
+  await t.test("gateway validates stable model IDs, including retries", async () => {
+    for (const model of [undefined, "deepseek", "glm", "gpt"]) {
       calls.length = 0;
       const response = await post(model, { attemptId: "test-retry-attempt-0002" });
       assert.equal(response.status, 200);
       assert.deepEqual(calls, ["rate", "gateway"]);
     }
+  });
+
+  await t.test("gateway rejects arbitrary models and image modes before routing", async () => {
+    for (const model of ["group/riic-agent", "stale-model", {}, 42]) assert.equal((await post(model)).status,400);
+    assert.equal((await post("deepseek", {images:"forged"})).status,400);
   });
 
   await t.test("gateway requests still require access, credit, origin and valid messages", async () => {
@@ -157,6 +178,8 @@ test("chat API separates automatic gateway routing from direct model selection",
     process.env.AGENT_LLM_PROVIDER = "deepseek";
     process.env.AGENT_LLM_DEEPSEEK_API_KEY = "test-deepseek-key";
     process.env.AGENT_LLM_GLM_API_KEY = "test-glm-key";
+    process.env.AGENT_LLM_DEEPSEEK_MODEL = "deepseek-v4.1-flash";
+    process.env.AGENT_LLM_GLM_MODEL = "glm-5.3-flash";
     for (const model of [undefined, "deepseek", "glm"]) {
       calls.length = 0;
       const response = await post(model);
@@ -164,5 +187,51 @@ test("chat API separates automatic gateway routing from direct model selection",
       assert.deepEqual(await response.json(), { mode: "direct" });
       assert.deepEqual(calls, [`direct:${model ?? "deepseek"}`]);
     }
+  });
+
+  const responseEvent = (model = "deepseek-v4.1-flash", usage: Record<string, unknown> = { inputTokens: 1000, outputTokens: 100, inputTokenDetails: { cacheReadTokens: 100 } }) => ({
+    model: { modelId: "deepseek-v4.1-flash" }, response: { modelId: model }, totalUsage: usage,
+    toolResults: [], steps: [{ response: { modelId: model } }], finishReason: "stop",
+  });
+
+  await t.test("direct billing uses the published multiplier and keeps its snapshot across a publication", async () => {
+    for (const row of rates.policy.models) delete row.peak;
+    settled.length = 0;
+    assert.equal((await post("deepseek")).status, 200);
+    const originalFinish = finish;
+    rates = { id: "rates:test-2", policy: { ...rates.policy, markup: "2" } };
+    await originalFinish(responseEvent());
+    assert.equal(settled[0].chargedPoints, 0.0195);
+    assert.equal((settled[0].metadata as Record<string, unknown>).rateVersion, "rates:test-1");
+    assert.equal((await post("deepseek")).status, 200);
+    await finish(responseEvent());
+    assert.equal(settled[1].chargedPoints, 0.026);
+    assert.equal((settled[1].metadata as Record<string, unknown>).rateVersion, "rates:test-2");
+  });
+
+  await t.test("missing policy and an unpriced model stop before the upstream request", async () => {
+    calls.length = 0;
+    configuredRates = false;
+    assert.notEqual((await post("deepseek")).status, 200);
+    configuredRates = true;
+    process.env.AGENT_LLM_DEEPSEEK_MODEL = "deepseek-unpriced";
+    assert.notEqual((await post("deepseek")).status, 200);
+    process.env.AGENT_LLM_DEEPSEEK_MODEL = "deepseek-v4.1-flash";
+    assert.ok(!calls.some(call => call.startsWith("direct:")));
+  });
+
+  await t.test("unknown returned model and missing usage remain unconfirmed", async () => {
+    const mixedModels = responseEvent();
+    mixedModels.steps.unshift({ response: { modelId: "unexpected-model" } });
+    const missingModel = responseEvent();
+    missingModel.steps = [];
+    for (const event of [responseEvent("unexpected-model"), mixedModels, missingModel, responseEvent("deepseek-v4.1-flash", { outputTokens: 10 })]) {
+      settled.length = 0;
+      assert.equal((await post("deepseek")).status, 200);
+      await finish(event);
+      assert.equal(settled[0].chargedPoints, undefined);
+      assert.equal((settled[0].metadata as Record<string, unknown>).usageConfirmed, false);
+    }
+    assert.equal(settled[0].inputTokens, undefined);
   });
 });

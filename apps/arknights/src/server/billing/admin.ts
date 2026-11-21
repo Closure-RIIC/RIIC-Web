@@ -3,11 +3,18 @@ import { createHash, randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { getDatabasePool } from "@riic/platform-server/db";
 import { compileFilterPolicy, parseFilterPolicy } from "../agent/filter-policy.ts";
-import { activeAgentPolicies, billingTransaction } from "./agent-accounting.ts";
-import { OFFICIAL_DEEPSEEK_MODEL, OFFICIAL_DEEPSEEK_PROVIDER, parseRatePolicy } from "./rate-policy.ts";
+import { ensureAgentFilterPolicy, billingTransaction } from "./agent-accounting.ts";
+import { SUPPLEMENTAL_MODEL_ID, SUPPLEMENTAL_MODEL_PROVIDER, createRatePolicyDraft, parseRatePolicy, findModelRate, type RatePolicy } from "./rate-policy.ts";
+import { configuredAgentChoices, selectAgentModel } from "../agent/model-catalog.ts";
+import { defaultModelPolicy, parseModelPolicy, type AgentModelPolicy } from "../agent/model-policy.ts";
+import { AGENT_MODEL_IDS, AGENT_MODELS } from "../../agent-models.ts";
+import { agentLlmSettings } from "../agent/config.ts";
 import { parseResourcePolicy } from "../agent/resource-policy.ts";
+import { adminModelDirectory } from "../agent/admin-models.ts";
 import { sumPoints, validPoints } from "./points.ts";
 import { MIN_POINT_AMOUNT } from "../../billing-points.ts";
+import type { AgentModelSettingsPayload, AgentModelSettingsVersion, ModelSettingsData } from "../../agent-model-settings.ts";
+import type { BillingModelStats } from "../../billing-model-stats.ts";
 
 export class BillingAdminError extends Error {}
 function numericBillingFields(row: Record<string, unknown>) {
@@ -28,7 +35,7 @@ async function audit(client: PoolClient, actor: string, action: string, target: 
 }
 export async function billingOverview(from: Date, to: Date) {
   const pool = getDatabasePool();
-  const [usage, orders, wallet, exceptions, series] = await Promise.all([
+  const [usage, orders, wallet, exceptions, series, modelStats] = await Promise.all([
     pool.query(`SELECT count(*)::int AS runs,coalesce(sum(points),0)::text AS points,
       count(*) FILTER (WHERE upstream_cost_rmb_fen IS NULL)::int AS unknown_cost_runs,
       (coalesce(sum(upstream_cost_rmb_fen) FILTER (WHERE coalesce(metadata->>'billingVersion','') NOT IN ('4','5')),0)
@@ -42,8 +49,9 @@ export async function billingOverview(from: Date, to: Date) {
     pool.query(`SELECT (created_at AT TIME ZONE 'Asia/Shanghai')::date::text AS day,count(*)::int AS runs,
       sum(points)::text AS points,count(*) FILTER (WHERE upstream_cost_rmb_fen IS NULL)::int AS unknown_cost_runs,
       sum(upstream_cost_rmb_fen)::text AS known_cost_fen FROM app.agent_usage WHERE created_at >= $1 AND created_at < $2 GROUP BY 1 ORDER BY 1`, [from, to]),
+    billingModelStats("c.created_at >= $1 AND c.created_at < $2", [from, to]),
   ]);
-  return { ...usage.rows[0], ...orders.rows[0], ...wallet.rows[0], ...exceptions.rows[0], series: series.rows };
+  return { ...usage.rows[0], ...orders.rows[0], ...wallet.rows[0], ...exceptions.rows[0], series: series.rows, modelStats };
 }
 export function billingRange(params: URLSearchParams) {
   const to = params.get("to") ? new Date(params.get("to")!) : new Date();
@@ -51,41 +59,83 @@ export function billingRange(params: URLSearchParams) {
   if (!Number.isFinite(+from) || !Number.isFinite(+to) || +from >= +to || +to - +from > 366 * 86400_000) throw new BillingAdminError("日期范围应在一年以内。");
   return { from, to };
 }
+const actualRateJoin = `LEFT JOIN LATERAL (
+  SELECT rate FROM jsonb_array_elements(CASE WHEN jsonb_typeof(r.policy->'models')='array' THEN r.policy->'models' ELSE '[]'::jsonb END) rate
+  WHERE rate->>'provider'=c.provider AND rate->>'model'=c.model LIMIT 1
+) actual_rate ON true`;
+const pricingTierSql = `CASE WHEN c.input_tokens IS NULL OR actual_rate.rate IS NULL THEN NULL
+  WHEN c.input_tokens::numeric > CASE WHEN (actual_rate.rate->'longContext'->>'inputTokenThreshold') ~ '^[0-9]+$'
+    THEN (actual_rate.rate->'longContext'->>'inputTokenThreshold')::numeric ELSE NULL END THEN 'long-context'
+  ELSE 'base' END`;
 const listings = {
   usage: { from: `(SELECT coalesce(u.id,r.id) AS id,coalesce(u.user_id,r.user_id) AS user_id,coalesce(r.id,u.run_id) AS run_id,
     coalesce(u.tool_name,'agent_chat') AS tool_name,coalesce(r.state,u.status) AS status,coalesce(r.settlement,'legacy') AS settlement,coalesce(u.points,r.charged_points) AS points,
-    u.input_tokens,u.output_tokens,u.cached_input_tokens,u.upstream_cost_rmb_fen,u.charged_cost_rmb_fen,
-    coalesce(r.created_at,u.created_at) AS created_at,u.metadata FROM app.agent_usage u FULL JOIN app.agent_run r ON r.id=u.id) t`, select: "t.*", q: "t.id || ' ' || coalesce(t.run_id,'') || ' ' || coalesce(t.user_id,'')", status: "t.status", time: "t.created_at" },
+    u.input_tokens,u.output_tokens,u.cached_input_tokens,u.cache_write_tokens,u.upstream_cost_rmb_fen,u.charged_cost_rmb_fen,
+    coalesce(r.created_at,u.created_at) AS created_at,u.metadata,
+    r.model_selection->>'id' AS selected_model_id,r.model_selection->>'label' AS selected_model_label,
+    coalesce((SELECT jsonb_agg(jsonb_build_object('provider',actual.provider,'model',actual.model) ORDER BY actual.provider,actual.model)
+      FROM (SELECT DISTINCT c.provider,c.model FROM app.agent_model_call c WHERE c.run_id=r.id AND (c.provider IS NOT NULL OR c.model IS NOT NULL)) actual),'[]'::jsonb) AS actual_models
+    FROM app.agent_usage u FULL JOIN app.agent_run r ON r.id=u.id) t`, select: "t.*", q: "t.id || ' ' || coalesce(t.run_id,'') || ' ' || coalesce(t.user_id,'') || ' ' || coalesce(t.selected_model_id,'') || ' ' || coalesce(t.selected_model_label,'') || ' ' || t.actual_models::text", status: "t.status", time: "t.created_at" },
   wallets: { from: 'app.billing_wallet t JOIN public."user" u ON u.id=t.user_id', select: "t.user_id,u.name,u.email,t.paid_points,t.monthly_points,t.monthly_expires_at,t.held_paid_points,t.held_monthly_points,t.updated_at", q: "t.user_id || ' ' || u.name || ' ' || u.email", status: "''", time: "t.updated_at" },
   ledger: { from: "app.billing_ledger t", select: "t.*", q: "t.id || ' ' || t.user_id || ' ' || coalesce(t.reference_id,'')", status: "t.kind", time: "t.created_at" },
   orders: { from: "app.billing_order t", select: "t.id,t.user_id,t.product_id,t.provider,t.status,t.amount_fen,t.points,t.custom_order_id,t.provider_order_id,t.created_at,t.paid_at", q: "t.id || ' ' || t.user_id || ' ' || t.custom_order_id || ' ' || coalesce(t.provider_order_id,'')", status: "t.status", time: "t.created_at" },
   reviews: { from: "app.billing_review t", select: "t.*", q: "t.id || ' ' || coalesce(t.run_id,'') || ' ' || coalesce(t.evidence->>'trade','') || ' ' || coalesce(t.evidence->>'customOrderId','')", status: "t.status", time: "t.created_at" },
   audit: { from: "app.billing_admin_audit t", select: "t.*", q: "t.id || ' ' || t.target || ' ' || coalesce(t.actor_id,'')", status: "t.action", time: "t.created_at" },
   filters: { from: "app.agent_filter_event t", select: "t.*", q: "t.request_id || ' ' || coalesce(t.user_id,'')", status: "t.stage", time: "t.created_at" },
-  attempts: { from: "app.agent_gateway_usage t", select: "t.*", q: "t.id || ' ' || coalesce(t.call_id,'') || ' ' || t.session_id", status: "t.provider", time: "t.created_at" },
+  attempts: { from: `(SELECT g.*,c.run_id,r.user_id,
+    CASE WHEN c.id IS NULL THEN NULL ELSE jsonb_build_object('id',c.id,'status',c.status,'provider',c.provider,'model',c.model,
+      'inputTokens',c.input_tokens,'cachedInputTokens',c.cached_input_tokens,'cacheWriteTokens',c.cache_write_tokens,'outputTokens',c.output_tokens,
+      'upstreamRmb',c.upstream_rmb::text,'chargedRmb',c.charged_rmb::text,'pricingTier',${pricingTierSql}) END AS related_call
+    FROM app.agent_gateway_usage g LEFT JOIN app.agent_model_call c ON c.id=g.call_id LEFT JOIN app.agent_run r ON r.id=c.run_id ${actualRateJoin}) t`,
+    select: "t.*", q: "t.id || ' ' || coalesce(t.call_id,'') || ' ' || coalesce(t.session_id,'') || ' ' || coalesce(t.user_id,'') || ' ' || coalesce(t.provider,'') || ' ' || coalesce(t.model,'')", status: "t.provider", time: "t.created_at" },
 } as const;
+function listingFilter(section: keyof typeof listings, params: URLSearchParams, range = billingRange(params)) {
+  const config = listings[section];
+  const q = (params.get("q") ?? "").trim().slice(0, 200); const status = (params.get("status") ?? "").slice(0, 80);
+  return { where: `WHERE ($1='' OR (${config.q}) ILIKE '%' || $1 || '%') AND ($2='' OR ${config.status}=$2)
+    AND ($5 OR (${config.time} >= $3 AND ${config.time} < $4))`, values: [q, status, range.from, range.to, section === "wallets"] };
+}
+async function billingModelStats(predicate: string, values: unknown[]): Promise<BillingModelStats[]> {
+  const { rows } = await getDatabasePool().query(`SELECT c.provider,c.model,count(*)::int AS calls,
+    sum(c.input_tokens)::text AS input_tokens,sum(c.cached_input_tokens)::text AS cached_input_tokens,sum(c.output_tokens)::text AS output_tokens,
+    CASE WHEN count(c.cache_write_tokens)=count(*) THEN sum(c.cache_write_tokens)::text ELSE NULL END AS cache_write_tokens,
+    sum(c.upstream_rmb)::text AS upstream_rmb,sum(c.charged_rmb)::text AS charged_rmb,
+    count(*) FILTER (WHERE (${pricingTierSql})='long-context')::int AS long_context_calls,
+    count(*) FILTER (WHERE c.input_tokens IS NULL OR c.cached_input_tokens IS NULL OR c.output_tokens IS NULL)::int AS unknown_usage_calls,
+    count(*) FILTER (WHERE c.upstream_rmb IS NULL OR c.charged_rmb IS NULL)::int AS unknown_cost_calls,
+    count(*) FILTER (WHERE EXISTS (SELECT 1 FROM app.billing_review review WHERE review.run_id=r.id AND review.status='open'
+        AND (review.evidence->>'callId'=c.id OR review.kind='settlement')))::int AS pending_review_calls
+    FROM app.agent_model_call c JOIN app.agent_run r ON r.id=c.run_id ${actualRateJoin}
+    WHERE ${predicate} GROUP BY c.provider,c.model ORDER BY c.provider NULLS LAST,c.model NULLS LAST`, values);
+  return rows.map(row => {
+    const modelId = AGENT_MODEL_IDS.find(id => AGENT_MODELS[id].provider === row.provider) ?? null;
+    return { modelId, label: modelId ? AGENT_MODELS[modelId].label : row.model, provider: row.provider, model: row.model,
+      calls: row.calls, inputTokens: row.input_tokens, cachedInputTokens: row.cached_input_tokens, cacheWriteTokens: row.cache_write_tokens, outputTokens: row.output_tokens,
+      knownUpstreamRmb: row.upstream_rmb, knownChargedRmb: row.charged_rmb, longContextCalls: row.long_context_calls,
+      unknownUsageCalls: row.unknown_usage_calls, unknownCostCalls: row.unknown_cost_calls, pendingReviewCalls: row.pending_review_calls };
+  });
+}
 export async function listBilling(section: string, params: URLSearchParams) {
   if (!(section in listings)) throw new BillingAdminError("未知记录类型。");
   const config = listings[section as keyof typeof listings];
   const page = Number(params.get("page") || "1");
   if (!Number.isSafeInteger(page) || page < 1 || page > 10_000) throw new BillingAdminError("页码无效。");
-  const { from, to } = billingRange(params);
-  const q = (params.get("q") ?? "").trim().slice(0, 200); const status = (params.get("status") ?? "").slice(0, 80);
-  const where = `WHERE ($1='' OR (${config.q}) ILIKE '%' || $1 || '%') AND ($2='' OR ${config.status}=$2)
-    AND ($5 OR (${config.time} >= $3 AND ${config.time} < $4))`;
-  const values = [q, status, from, to, section === "wallets"];
+  const { where, values } = listingFilter(section as keyof typeof listings, params);
   const pool = getDatabasePool();
-  const [rows, count] = await Promise.all([
+  const [rows, count, modelStats] = await Promise.all([
     pool.query(`SELECT ${config.select} FROM ${config.from} ${where} ORDER BY ${config.time} DESC LIMIT 25 OFFSET $6`, [...values, (page - 1) * 25]),
     pool.query(`SELECT count(*)::int AS total FROM ${config.from} ${where}`, values),
+    section === "usage" || section === "attempts" ? billingModelStats(section === "usage"
+      ? `c.run_id IN (SELECT t.run_id FROM ${config.from} ${where})`
+      : `c.id IN (SELECT t.call_id FROM ${config.from} ${where})`, values) : Promise.resolve(undefined),
   ]);
-  return { rows: rows.rows.map(numericBillingFields), total: count.rows[0].total, page, pages: Math.max(1, Math.ceil(count.rows[0].total / 25)) };
+  return { rows: rows.rows.map(numericBillingFields), total: count.rows[0].total, page, pages: Math.max(1, Math.ceil(count.rows[0].total / 25)), ...(modelStats ? { modelStats } : {}) };
 }
 export async function billingRunDetail(id: string) {
   const pool = getDatabasePool();
   const [runs, calls, tools, ledger, reviews] = await Promise.all([
     pool.query("SELECT * FROM app.agent_run WHERE id=$1", [id]),
-    pool.query("SELECT * FROM app.agent_model_call WHERE run_id=$1 ORDER BY step", [id]),
+    pool.query(`SELECT c.*,${pricingTierSql} AS pricing_tier FROM app.agent_model_call c JOIN app.agent_run r ON r.id=c.run_id ${actualRateJoin} WHERE c.run_id=$1 ORDER BY c.step`, [id]),
     pool.query("SELECT * FROM app.agent_tool_charge WHERE run_id=$1 ORDER BY created_at", [id]),
     pool.query("SELECT * FROM app.billing_ledger WHERE reference_id=$1 ORDER BY created_at", [id]),
     pool.query("SELECT * FROM app.billing_review WHERE run_id=$1 ORDER BY created_at", [id]),
@@ -152,21 +202,125 @@ export async function adjustBilling(actor: string, input: unknown) {
     return details;
   });
 }
+type StoredModelSettings = AgentModelSettingsPayload & { linkedVersions?: { ratesId: string; modelsId: string } };
+type ModelSettingsRow = { id: string; version: number; status: AgentModelSettingsVersion["status"]; payload: StoredModelSettings; created_at: Date | string };
+function parseModelSettings(value: unknown): AgentModelSettingsPayload {
+  if (!value || typeof value !== "object" || (value as AgentModelSettingsPayload).schema !== 1) throw new Error("Invalid model settings");
+  const payload = value as AgentModelSettingsPayload;
+  return { schema: 1, rates: parseRatePolicy(payload.rates), models: parseModelPolicy(payload.models) };
+}
+async function insertPolicyVersion(client: PoolClient, kind: string, payload: unknown, actor: string | null) {
+  const version = Number((await client.query("SELECT coalesce(max(version),0)+1 AS version FROM app.agent_policy_version WHERE kind=$1", [kind])).rows[0].version);
+  const id = `${kind}:${version}`;
+  await client.query("INSERT INTO app.agent_policy_version (id,kind,version,payload,author_id) VALUES ($1,$2,$3,$4,$5)", [id, kind, version, JSON.stringify(payload), actor]);
+  return id;
+}
+/** Call while holding riic-agent-policy; bind each historical pair without changing its individual snapshots. */
+async function ensureModelSettingsBaseline(client: PoolClient, actor: string | null = null) {
+  const { rows } = await client.query<{ id: string; kind: string; payload: unknown }>("SELECT id,kind,payload FROM app.agent_policy_version WHERE status='active' AND kind IN ('rates','models')");
+  const rates = rows.find(row => row.kind === "rates"); const models = rows.find(row => row.kind === "models");
+  if (!rates || !models) return null;
+  let payload: AgentModelSettingsPayload;
+  try { payload = parseModelSettings({ schema: 1, rates: rates.payload, models: models.payload }); }
+  catch { return null; } // Keep invalid historical versions readable for administrator repair.
+  const linkedVersions = { ratesId: rates.id, modelsId: models.id };
+  const active = (await client.query<ModelSettingsRow>("SELECT * FROM app.agent_policy_version WHERE kind='model-settings' AND status='active'")).rows[0];
+  if (active?.payload.linkedVersions?.ratesId === rates.id && active.payload.linkedVersions.modelsId === models.id) return { id: active.id, ...linkedVersions, payload };
+  const id = await insertPolicyVersion(client, "model-settings", { ...payload, linkedVersions }, actor);
+  await client.query("UPDATE app.agent_policy_version SET status='retired' WHERE kind='model-settings' AND status='active'");
+  await client.query("UPDATE app.agent_policy_version SET status='active',published_at=now() WHERE id=$1", [id]);
+  return { id, ...linkedVersions, payload };
+}
+function modelSettingsVersion(row: ModelSettingsRow): AgentModelSettingsVersion {
+  return { id: row.id, version: row.version, status: row.status, payload: parseModelSettings(row.payload),
+    created_at: new Date(row.created_at).toISOString(), ratesId: row.payload.linkedVersions?.ratesId ?? null, modelsId: row.payload.linkedVersions?.modelsId ?? null };
+}
+async function currentModelVersionIds(client: PoolClient) {
+  const { rows } = await client.query<{ id: string; kind: string }>("SELECT id,kind FROM app.agent_policy_version WHERE status='active' AND kind IN ('rates','models')");
+  return { ratesId: rows.find(row => row.kind === "rates")?.id ?? null, modelsId: rows.find(row => row.kind === "models")?.id ?? null };
+}
+function validateEnabledModelRates(models: AgentModelPolicy, rates: RatePolicy, modelsId: string) {
+  for (const entry of models.models.filter(row => row.enabled)) {
+    const selected = selectAgentModel(entry.id, { id: modelsId, policy: models }, rates);
+    for (const route of selected.routes ?? [selected]) findModelRate(rates, route.provider, route.model);
+  }
+}
 export async function getAgentPolicies() {
-  await activeAgentPolicies();
-  const pool = getDatabasePool();
-  const [versions, gateway] = await Promise.all([pool.query("SELECT * FROM app.agent_policy_version WHERE kind IN ('rates','filter') ORDER BY created_at DESC LIMIT 100"), pool.query("SELECT * FROM app.agent_gateway_status ORDER BY id")]);
-  return { versions: versions.rows, gateway: gateway.rows };
+  await ensureAgentFilterPolicy();
+  return billingTransaction(async client => {
+    await client.query("SELECT pg_advisory_xact_lock(hashtext('riic-agent-policy'))");
+    const active = await ensureModelSettingsBaseline(client);
+    const expectedActive = await currentModelVersionIds(client);
+    const versions = await client.query(`SELECT * FROM (
+      SELECT *,row_number() OVER (PARTITION BY kind ORDER BY (status='active') DESC,created_at DESC,version DESC) AS policy_rank
+      FROM app.agent_policy_version WHERE kind IN ('rates','filter','models')
+    ) versions WHERE policy_rank<=34 ORDER BY created_at DESC,version DESC`);
+    const jointVersions = await client.query<ModelSettingsRow>("SELECT * FROM app.agent_policy_version WHERE kind='model-settings' ORDER BY (status='active') DESC,created_at DESC,version DESC LIMIT 34");
+    const gateway = await client.query("SELECT * FROM app.agent_gateway_status ORDER BY id");
+    let initialModels = defaultModelPolicy();
+    try { initialModels = parseModelPolicy(versions.rows.find(row => row.kind === "models" && row.status === "active")?.payload); } catch { /* Use an editable template when historical data is invalid. */ }
+    const initialPayload: AgentModelSettingsPayload = active?.payload ?? { schema: 1, rates: createRatePolicyDraft(), models: initialModels };
+    const modelSettings: ModelSettingsData = { active, expectedActive, initialPayload, versions: jointVersions.rows.map(modelSettingsVersion) };
+    // An unpublished template has no multiplier. Availability must not price it.
+    const availableRates = active?.payload.rates ?? { ...createRatePolicyDraft(), markup: "1", models: [] };
+    return { versions: versions.rows, gateway: gateway.rows, initialRates: createRatePolicyDraft(), modelSettings,
+      models: configuredAgentChoices(initialPayload.models, availableRates), modelDirectory: adminModelDirectory(versions.rows),
+      modelConfiguration: configuredAgentChoices({ ...initialPayload.models, models: initialPayload.models.models.map(row => ({ ...row, enabled: true })) }, availableRates),
+      rateModels: [...AGENT_MODEL_IDS.map(id => ({ id, provider: AGENT_MODELS[id].provider, model: agentLlmSettings(id).model })),
+        { id: "deepseek-official", provider: SUPPLEMENTAL_MODEL_PROVIDER, model: process.env.AGENT_LLM_DEEPSEEK_OFFICIAL_MODEL?.trim() || SUPPLEMENTAL_MODEL_ID }] };
+  });
+}
+export async function changeAgentModelSettings(actor: string, input: unknown) {
+  const body = input as Record<string, unknown>;
+  const reason = field(body?.reason, "变更原因", 500); const action = field(body.action, "操作");
+  if (!["draft", "publish", "rollback"].includes(action)) throw new BillingAdminError("配置操作无效。");
+  const expected = body.expectedActive as { ratesId?: unknown; modelsId?: unknown } | undefined;
+  if (!expected || (expected.ratesId !== null && typeof expected.ratesId !== "string") || (expected.modelsId !== null && typeof expected.modelsId !== "string")) throw new BillingAdminError("请刷新模型配置后重试。");
+  await ensureAgentFilterPolicy();
+  return billingTransaction(async client => {
+    await client.query("SELECT pg_advisory_xact_lock(hashtext('riic-agent-policy'))");
+    const active = await ensureModelSettingsBaseline(client, actor);
+    const current = await currentModelVersionIds(client);
+    if (expected.ratesId !== current.ratesId || expected.modelsId !== current.modelsId) throw new BillingAdminError("配置已更新，请刷新后重试。");
+    let source = body.payload;
+    if (action !== "draft") {
+      const id = field(body.id, "配置版本");
+      const row = (await client.query<ModelSettingsRow>("SELECT * FROM app.agent_policy_version WHERE id=$1 AND kind='model-settings'", [id])).rows[0];
+      if (!row || (action === "publish" ? row.status !== "draft" : row.status === "draft")) throw new BillingAdminError(action === "publish" ? "草稿不存在或已经发布。" : "回滚版本不存在或尚未发布。");
+      source = row.payload;
+    }
+    let payload: AgentModelSettingsPayload;
+    try { payload = parseModelSettings(source); }
+    catch { throw new BillingAdminError("配置格式无效，请检查模型能力、图片预算和费率。"); }
+    if (action !== "draft") {
+      try {
+        validateEnabledModelRates(payload.models, payload.rates, current.modelsId ?? "unpublished");
+      } catch { throw new BillingAdminError("模型线路、图片预算或费率未完整配置，未发布。请先停用受影响模型或补齐配置。"); }
+    }
+    const id = action === "publish" ? String(body.id) : await insertPolicyVersion(client, "model-settings", payload, actor);
+    let ratesId = current.ratesId; let modelsId = current.modelsId;
+    if (action !== "draft") {
+      ratesId = await insertPolicyVersion(client, "rates", payload.rates, actor);
+      modelsId = await insertPolicyVersion(client, "models", payload.models, actor);
+      await client.query("UPDATE app.agent_policy_version SET status='retired' WHERE kind IN ('rates','models','model-settings') AND status='active'");
+      await client.query("UPDATE app.agent_policy_version SET status='active',published_at=now() WHERE id=ANY($1::text[])", [[ratesId, modelsId]]);
+      await client.query("UPDATE app.agent_policy_version SET status='active',published_at=now(),payload=$2 WHERE id=$1", [id, JSON.stringify({ ...payload, linkedVersions: { ratesId, modelsId } })]);
+    }
+    await audit(client, actor, `model_settings_${action}`, id, reason, randomUUID(), { previous: { id: active?.id ?? null, ...current }, ratesId, modelsId,
+      ...(action === "rollback" ? { restoredFrom: body.id } : {}) });
+    return { id, action, status: action === "draft" ? "draft" : "active", ratesId, modelsId };
+  });
 }
 export async function changeAgentPolicy(actor: string, input: unknown) {
   const body = input as Record<string, unknown>;
   const reason = field(body?.reason, "变更原因", 500); const action = field(body.action, "操作");
   const kind = field(body.kind, "配置类型");
-  if (!["rates", "filter", "resources"].includes(kind) || !["draft", "publish", "rollback"].includes(action)) throw new BillingAdminError("配置操作无效。");
+  if (!["rates", "filter", "resources", "models"].includes(kind) || !["draft", "publish", "rollback"].includes(action)) throw new BillingAdminError("配置操作无效。");
   return billingTransaction(async client => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext('riic-agent-policy'))");
     const active = (await client.query("SELECT * FROM app.agent_policy_version WHERE kind=$1 AND status='active'", [kind])).rows[0];
-    if (body.expectedActive !== active?.id) throw new BillingAdminError("配置已更新，请刷新后重试。");
+    if ((body.expectedActive ?? null) !== (active?.id ?? null)) throw new BillingAdminError("配置已更新，请刷新后重试。");
+    if (kind === "rates" || kind === "models") await ensureModelSettingsBaseline(client, actor);
     let payload = body.payload; let id: string;
     if (action === "publish") {
       const draft = (await client.query("SELECT * FROM app.agent_policy_version WHERE id=$1 AND kind=$2 AND status='draft'", [body.id, kind])).rows[0];
@@ -177,28 +331,33 @@ export async function changeAgentPolicy(actor: string, input: unknown) {
         const old = (await client.query("SELECT payload FROM app.agent_policy_version WHERE id=$1 AND kind=$2", [body.id, kind])).rows[0];
         if (!old) throw new BillingAdminError("回滚版本不存在。"); payload = old.payload;
       }
-      try { payload = kind === "rates" ? parseRatePolicy(payload) : kind === "resources" ? parseResourcePolicy(payload) : parseFilterPolicy(payload); }
+      try { payload = kind === "rates" ? parseRatePolicy(payload) : kind === "models" ? parseModelPolicy(payload) : kind === "resources" ? parseResourcePolicy(payload) : parseFilterPolicy(payload); }
       catch { throw new BillingAdminError("配置格式无效，请检查费率、词条或规则上限。"); }
       const version = (await client.query("SELECT coalesce(max(version),0)+1 AS version FROM app.agent_policy_version WHERE kind=$1", [kind])).rows[0].version;
       id = `${kind}:${version}`;
       await client.query("INSERT INTO app.agent_policy_version (id,kind,version,payload,author_id) VALUES ($1,$2,$3,$4,$5)", [id,kind,version,JSON.stringify(payload),actor]);
     }
     if (action !== "draft") {
-      if (kind === "rates") {
-        let rates;
-        try { rates = parseRatePolicy(payload); } catch { throw new BillingAdminError("费率版本校验失败，未发布。"); }
-        if (process.env.AGENT_GATEWAY_OFFICIAL_FALLBACK_ENABLED === "1" &&
-          !rates.models.some(rate => rate.provider === OFFICIAL_DEEPSEEK_PROVIDER && rate.model === OFFICIAL_DEEPSEEK_MODEL)) {
-          throw new BillingAdminError("已配置官网兜底，发布或回滚的费率必须包含官网模型；撤销兜底后才能恢复旧费率。");
+      // Validate at publication too: a draft can outlive route and rate changes.
+      try {
+        if (kind === "models") {
+          const policy = parseModelPolicy(payload);
+          const rates = parseRatePolicy((await client.query("SELECT payload FROM app.agent_policy_version WHERE kind='rates' AND status='active'")).rows[0]?.payload);
+          validateEnabledModelRates(policy, rates, id);
+        } else if (kind === "rates") {
+          const rates = parseRatePolicy(payload);
+          const modelRow = (await client.query("SELECT payload FROM app.agent_policy_version WHERE kind='models' AND status='active'")).rows[0];
+          validateEnabledModelRates(modelRow ? parseModelPolicy(modelRow.payload) : defaultModelPolicy(), rates, id);
         }
-      }
+      } catch { throw new BillingAdminError("模型线路、图片预算或费率未完整配置，未发布。请先停用受影响模型或补齐配置。"); }
       if (kind === "resources") {
         try { parseResourcePolicy(payload); } catch { throw new BillingAdminError("资源版本校验失败，未发布。"); }
       }
       await client.query("UPDATE app.agent_policy_version SET status='retired' WHERE kind=$1 AND status='active'", [kind]);
       await client.query("UPDATE app.agent_policy_version SET status='active',published_at=now() WHERE id=$1", [id]);
     }
-    await audit(client, actor, `policy_${action}`, id, reason, randomUUID(), { previous: active?.id });
+    const combined = action !== "draft" && (kind === "rates" || kind === "models") ? await ensureModelSettingsBaseline(client, actor) : null;
+    await audit(client, actor, `policy_${action}`, id, reason, randomUUID(), { previous: active?.id, ...(combined ? { modelSettingsId: combined.id } : {}) });
     return { id, status: action === "draft" ? "draft" : "active" };
   });
 }

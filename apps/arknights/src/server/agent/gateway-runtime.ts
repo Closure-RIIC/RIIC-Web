@@ -8,9 +8,14 @@ import { createFilteredTextBuffer, type CompiledFilter } from "./filter-policy.t
 import { withAgentModelTimeout } from "./stream-policy.ts";
 import { gatewaySettings } from "./gateway-config.ts";
 import { recordGatewayRoute } from "./gateway-route.ts";
+import type { AgentModelSelection } from "./model-policy.ts";
+import { modelCallBudget } from "./model-budget.ts";
+import { readRuntimeCacheWriteTokens } from "./gateway-usage.ts";
 export { agentGatewayEnabled, gatewaySettings } from "./gateway-config.ts";
-export function createGatewayRun(input: { runId: string; sessionId: string; requestId: string; userId: string; filterVersion: string; filter: CompiledFilter }) {
-  const settings = gatewaySettings();
+export function createGatewayRun(input: { runId: string; sessionId: string; requestId: string; userId: string; filterVersion: string; filter: CompiledFilter; selection: AgentModelSelection }) {
+  const settings = gatewaySettings(input.selection);
+  const routes = input.selection.routes ?? [{ provider: input.selection.provider, model: input.selection.model }];
+  let replyModel = { id: input.selection.id as string, label: input.selection.label };
   let step = 0; let delivered = false; let terminal: Promise<void> | undefined;
   const active = new Set<Promise<void>>();
   async function finalize(state: "completed" | "failed" | "cancelled" | "blocked") {
@@ -18,6 +23,8 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
     return terminal;
   }
   const provider = createOpenAICompatible({ name: "riic-magpie", baseURL: settings.baseURL, apiKey: settings.apiKey,
+    // Magpie bridges the GPT route to Responses. Use the model's default medium reasoning effort.
+    transformRequestBody: body => input.selection.protocol === "responses" ? { ...body, reasoning_effort: "medium" } : body,
     headers: { "X-Magpie-Session": input.sessionId, "User-Agent": "RIIC-Agent/1" } });
   const model = wrapLanguageModel({ model: withAgentModelTimeout(provider.chatModel(settings.model)), middleware: {
     specificationVersion: "v4",
@@ -35,8 +42,7 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
       };
       const end = () => { done(); active.delete(completion); };
       try {
-        const bytes = Buffer.byteLength(JSON.stringify({ prompt: params.prompt, tools: params.tools }));
-        call = await beginModelCall(input.runId, step++, bytes, params.maxOutputTokens ?? 2048);
+        call = await beginModelCall(input.runId, step++, modelCallBudget(input.selection, params));
         const response = await doStream();
         responseStarted = true;
         const headers = response.response?.headers ?? {};
@@ -44,6 +50,8 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
         if (providerId && actualModel?.startsWith(`${providerId}/`)) actualModel = actualModel.slice(providerId.length + 1);
         gatewayRequestId = headers["x-request-id"] ?? headers["x-magpie-request-id"];
         if (!providerId || !actualModel) { await response.stream.cancel(); throw new Error("Gateway actual model identity missing"); }
+        if (!routes.some(route => route.provider === providerId && route.model === actualModel)) { await response.stream.cancel(); throw new Error("Gateway returned an unselected model"); }
+        replyModel = { id: providerId === input.selection.provider ? input.selection.id : providerId, label: providerId === input.selection.provider ? input.selection.label : actualModel };
         try { findModelRate(call.policy, providerId, actualModel); }
         catch (error) { await response.stream.cancel(); throw error; }
         const reader = response.stream.getReader();
@@ -95,9 +103,17 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
                 toolParts.delete(value.toolCallId);
               }
               if (value.type === "finish") {
-                const measured = value.usage.inputTokens.total !== undefined && value.usage.outputTokens.total !== undefined;
+                let measured = value.usage.inputTokens.total !== undefined && value.usage.outputTokens.total !== undefined;
+                let cacheWriteTokens: number | undefined; let usageError: string | undefined;
+                if (measured) {
+                  try { cacheWriteTokens = readRuntimeCacheWriteTokens(value.usage); }
+                  catch { measured = false; usageError = "invalid_cache_write_usage"; }
+                }
                 await finishModelCall({ id: call!.id, provider: providerId, model: actualModel, gatewayRequestId,
-                  usage: measured ? { inputTokens: value.usage.inputTokens.total!, outputTokens: value.usage.outputTokens.total!, cachedInputTokens: value.usage.inputTokens.cacheRead ?? 0 } : undefined });
+                  ...(usageError ? { error: usageError } : {}),
+                  usage: measured ? { inputTokens: value.usage.inputTokens.total!, outputTokens: value.usage.outputTokens.total!, cachedInputTokens: value.usage.inputTokens.cacheRead ?? 0,
+                    ...(cacheWriteTokens === undefined ? {} : { cacheWriteTokens }),
+                    ...(value.usage.outputTokens.reasoning === undefined ? {} : { reasoningTokens: value.usage.outputTokens.reasoning }) } : undefined });
                 finished = true;
               }
               if (value.type === "error") throw new Error("Upstream stream failed");
@@ -121,7 +137,7 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
       }
     },
   } });
-  return { model, finalize, async deliver() {
+  return { model, finalize, replyModel: () => replyModel, async deliver() {
     if (!delivered) { await markRunDelivered(input.runId); delivered = true; }
   } };
 }

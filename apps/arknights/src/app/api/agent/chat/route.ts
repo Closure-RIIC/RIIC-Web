@@ -14,7 +14,9 @@ import { calculateAgentTokenCost } from "@/server/billing/pricing";
 import { splitPoints } from "@/server/billing/points";
 import { agentGatewayEnabled, gatewaySettings } from "@/server/agent/gateway-runtime";
 import { gatewayChat } from "@/server/agent/gateway-chat";
-import { AgentAccountingError } from "@/server/billing/agent-accounting";
+import { AgentAccountingError, activeAgentPolicies } from "@/server/billing/agent-accounting";
+import { configuredAgentChoices } from "@/server/agent/model-catalog";
+import { isAgentModelId } from "@/agent-models";
 import { AgentFilterError } from "@/server/agent/filter-policy";
 import { AgentHistoryError, prepareAgentHistory } from "@/server/agent/message-history";
 import { withAgentAnswerBoundary } from "@/server/agent/answer-boundary";
@@ -106,14 +108,20 @@ export async function GET(request: Request) {
     const settings = agentLlmSettings();
     const automatic = agentGatewayEnabled();
     if (automatic) gatewaySettings();
+    const policies = automatic ? await activeAgentPolicies() : null;
+    const catalog = policies?.models;
+    const choices = policies ? configuredAgentChoices(policies.models.policy, policies.rates.policy)
+      : agentModelChoices().map(choice => ({ ...choice, vision: false, available: true }));
     return successResponse(
       {
         enabled: automatic || settings.configured,
-        automatic,
+        automatic: false,
+        gateway: automatic,
+        defaultModel: catalog?.policy.defaultModel ?? settings.provider,
         provider: settings.configured ? settings.provider : null,
         model: settings.configured ? settings.model : null,
         personas: await listBuiltinAgentPersonas((await activeAgentResources())?.policy),
-        models: automatic ? [] : agentModelChoices(),
+        models: choices,
       },
       requestId
     );
@@ -130,7 +138,7 @@ export async function POST(request: Request) {
     const { session } = await requireAgentAccess(request);
     const automatic = agentGatewayEnabled();
     if (automatic) enforceRateLimit("agent-chat", session.user.id, 20, 60_000);
-    const body = (await readJsonBody(request, 16 * 1024 * 1024)) as { model?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; messages?: UIMessage[]; pageContext?: unknown; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
+    const body = (await readJsonBody(request, 16 * 1024 * 1024)) as { model?: unknown; images?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; messages?: UIMessage[]; pageContext?: unknown; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
     if (!Array.isArray(body.messages) || body.messages.length === 0) {
       const response = failureResponse(new Error("缺少对话消息。"), requestId, "/api/agent/chat", startedAt);
       return new Response(response.body, { status: 400, headers: response.headers });
@@ -154,7 +162,9 @@ export async function POST(request: Request) {
         return new Response(response.body, { status: 413, headers: response.headers });
       }
     }
-    // Automatic routing owns model selection, including for older clients that send null or a stale selection.
+    if (body.model !== undefined && !(automatic && body.model === null) && !isAgentModelId(body.model)) throw new PublicApiError("AIC-REQ-1001", { message: "请选择可用的模型。" });
+    if (body.images !== undefined && body.images !== "include" && body.images !== "exclude") throw new PublicApiError("AIC-REQ-1001", { message: "图片上下文选项无效。" });
+    // The gateway owns credentials; the selected catalog entry owns routing for the whole run.
     if (automatic) return await gatewayChat(request, session.user.id, requestId, { ...body, messages: body.messages, pageContext }, personaContent, resources ?? undefined);
     if (body.model !== undefined && body.model !== "deepseek" && body.model !== "glm") {
       throw new PublicApiError("AIC-REQ-1001", { message: "请选择可用的模型。" });
@@ -169,7 +179,16 @@ export async function POST(request: Request) {
       );
       return new Response(response.body, { status: 503, headers: response.headers });
     }
-    const messages = await prepareAgentHistory(body.messages, async () => {});
+    const rates = (await activeAgentPolicies()).rates;
+    const rateProvider = `riic-${settings.provider}`;
+    const pricedAt = new Date();
+    // Validate the configured model before any provider request or tool execution.
+    try {
+      calculateAgentTokenCost(rates.policy, rateProvider, settings.model, { inputTokens: 0, outputTokens: 0 }, pricedAt);
+    } catch {
+      throw new AgentAccountingError("policy_unavailable", "当前模型的计费配置不可用，请联系管理员。");
+    }
+    const messages = await prepareAgentHistory(body.messages, async () => {}, { images: body.images });
     const tools = buildAgentTools({ request, userId: session.user.id, resources: resources?.policy });
     // 临时监控：记录本次请求的完整输入（含历史消息与附件元数据）
     await monitorLog({
@@ -217,9 +236,19 @@ export async function POST(request: Request) {
           }));
         }
         const usage = event.totalUsage;
-        const model = String((event.model as { modelId?: unknown }).modelId ?? "unknown");
+        const model = String(event.response.modelId ?? "unknown");
         const usageIdList = [...usageIds];
-        const turnPricing = calculateAgentTokenCost(model, { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, cachedInputTokens: usage.inputTokenDetails.cacheReadTokens });
+        let turnPricing: ReturnType<typeof calculateAgentTokenCost> | undefined;
+        try {
+          if (model !== settings.model || event.steps.length === 0 || event.steps.some(step => step.response.modelId !== settings.model)) {
+            throw new Error("Unexpected response model");
+          }
+          turnPricing = calculateAgentTokenCost(rates.policy, rateProvider, model, {
+            inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens,
+          }, pricedAt);
+        } catch {
+          // Preserve an unconfirmed usage record instead of inventing a zero charge.
+        }
         const splitTokens = (total: number | undefined, index: number) => {
           const normalized = Math.max(0, Math.floor(total ?? 0));
           const count = Math.max(1, usageIdList.length);
@@ -231,17 +260,17 @@ export async function POST(request: Request) {
           // same token usage is not charged repeatedly to every tool record.
           const inputTokens = splitTokens(usage.inputTokens, index);
           const outputTokens = splitTokens(usage.outputTokens, index);
-          const cachedInputTokens = Math.min(inputTokens, splitTokens(usage.inputTokenDetails.cacheReadTokens, index));
-          const pricing = calculateAgentTokenCost(model, {
-            inputTokens,
-            outputTokens,
-            cachedInputTokens,
-          });
+          const cachedInputTokens = Math.min(inputTokens, splitTokens(usage.inputTokenDetails?.cacheReadTokens, index));
+          const pricing = turnPricing ? calculateAgentTokenCost(rates.policy, rateProvider, model, {
+            inputTokens: usage.inputTokens === undefined ? undefined : inputTokens,
+            outputTokens: usage.outputTokens === undefined ? undefined : outputTokens,
+            cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens === undefined ? undefined : cachedInputTokens,
+          }, pricedAt) : undefined;
           await finalizeAgentUsage({
             usageId,
-            inputTokens,
-            outputTokens,
-            cachedInputTokens,
+            inputTokens: usage.inputTokens === undefined ? undefined : inputTokens,
+            outputTokens: usage.outputTokens === undefined ? undefined : outputTokens,
+            cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens === undefined ? undefined : cachedInputTokens,
             upstreamCostRmbFen: pricing?.providerCostRmbFen,
             chargedCostRmbFen: pricing?.chargedCostRmbFen,
             chargedPoints: turnPricing ? splitPoints(turnPricing.chargedPoints, usageIdList.length, index) : undefined,
@@ -249,6 +278,10 @@ export async function POST(request: Request) {
               model,
               finishReason: event.finishReason,
               pricing,
+              rateVersion: rates.id,
+              ratePolicy: rates.policy,
+              pricedAt: pricedAt.toISOString(),
+              usageConfirmed: turnPricing !== undefined,
             },
           });
         }
