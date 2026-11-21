@@ -127,6 +127,14 @@ AGENT_KB_DIR=E:/arknights-infra-project/RIIC-knowledge
 
 ## 结果验收链路（工作台注入为主，已实现）
 
+### 排班产出摘要
+
+`solve_schedule` 的 `plan.dailyProduction` 使用 `schemaVersion: 1` 的结构化摘要：`basis: daily_24h` 表示完整轮班折算24小时，`includesDrones: true` 表示五项最终值已包含无人机增量。`products` 固定包含经验、龙门币、赤金、合成玉和源石碎片，每项提供 `id`、名称、单位、已取整的 `value`、`net` 和来源明细；`null` 表示不可用，合法零产出仍为 `0`。`droneAllocations` 记录各班分配目标，`shardRecipe` 标明碎片成本配方（默认固源岩）。
+
+`apps/arknights/src/agent-plan-production.ts` 复用计算器的 `createCalculatorProductionPresentation` 及共享碎片成本函数，不改写原始求解结果。经验和龙门币合入无人机一次；赤金按网页的价值域汇总后转为枚数，保留等效赤金与日常获取来源；有碎片制造时龙门币显示扣除制造成本的净值。36小时轮换不再次日化。精简投影的 `efficiencies` 仅保留诊断用途，回答默认比较最终产出。
+
+聊天结果卡片、完整排班卡片与自动/手动排班页面上下文使用同一摘要。页面上下文采用默认固源岩成本假设；计算器抽屉中临时切换到装置配方不改变该默认快照。旧历史的 `dailyProduction` 可能仍是效率字段，卡片显示“产出不可用”，保留排班与工作台交接，不将历史效率当作产量或自动重新求解。回归覆盖同份结果的五项显示值、153/252配方切换、无人机增量、赤金价值换算、36小时日化、两种碎片成本、未知值及三语言卡片。
+
 核心思路：agent 的排班结果不另起炉灶，而是**注入现有工作台**，班次切换、手动排班导入、效率视图等全部现有功能即刻可用。
 
 - `solve_schedule` 求解后把「精简投影 + 完整工作台会话（完整求解结果、布局、box、换班参数）」落库 `app.agent_plan_artifact`（7 天 TTL，仅本人可读，v2 结构）。
