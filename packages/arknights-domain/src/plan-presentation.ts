@@ -1,9 +1,9 @@
 import { factoryRecipeFromMaaProduct } from "./factory-recipes.ts";
-import type { BaseBlueprint, OperBoxEntry, PublicPlanData, RotationProfile } from "./types.ts";
+import type { BaseBlueprint, OperBoxEntry, PublicPlanData } from "./types.ts";
 
 export function effectiveFiammettaSetting(
   operbox: readonly OperBoxEntry[] | null,
-  rotationProfile: RotationProfile,
+  rotationProfile: string,
   enabled: boolean,
 ): boolean {
   const ownsFiammetta = Boolean(operbox?.some((operator) => operator.own && operator.name === "菲亚梅塔"));
