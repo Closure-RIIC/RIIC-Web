@@ -37,7 +37,7 @@ test("sample account changes stay within one preview instance", async () => {
   assert.equal(initial.data.permissions.canManageAdminRoles, false);
   assert.equal(initial.data.users[0].isSuperAdmin, true);
   assert.equal(initial.data.users[0].canModerate, false);
-  assert.equal(initial.data.users.find(user => user.id === "preview-user-3").canModerate, true);
+  assert.equal(initial.data.users.find((user: { id: string }) => user.id === "preview-user-3").canModerate, true);
   assert.equal((await request(path, { method: "PATCH", body: JSON.stringify({ isReviewer: true }) })).status, 200);
   const changed = await (await request("/api/admin/users?q=Kestrel")).json();
   assert.equal(changed.data.users[0].isReviewer, true);
