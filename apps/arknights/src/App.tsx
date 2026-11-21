@@ -384,6 +384,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   const [accountHealthAgentPageContext, setAccountHealthAgentPageContext] = useState<AgentPageContext | null>(null);
   const [trainingPlannerAgentPageContext, setTrainingPlannerAgentPageContext] = useState<AgentPageContext | null>(null);
   const [manualEvaluationPending, setManualEvaluationPending] = useState(false);
+  const manualEvaluationRevision = useRef(0);
   const [pendingManualDraftReplacement, setPendingManualDraftReplacement] = useState<ManualScheduleDraft | null>(null);
   const [inputMode, setInputMode] = useState<"skland" | "maa" | "manual">(CLIENT_SKLAND_ENABLED ? "skland" : "maa");
   const [maaPaste, setMaaPaste] = useState("");
@@ -1539,19 +1540,26 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     draft: ManualScheduleDraft;
     operbox?: OperBoxEntry[];
   }) {
-    if (manualEvaluationPending) return;
+    if (manualEvaluationPending) return false;
+    const revision = ++manualEvaluationRevision.current;
     setManualEvaluationPending(true);
     try {
       const { assembleNativeManualPlanResult } = await import("./manual-plan-result");
+      if (revision !== manualEvaluationRevision.current) return false;
       const result = await assembleNativeManualPlanResult({ draft: input.draft, layout, operbox: input.operbox ?? operbox });
+      if (revision !== manualEvaluationRevision.current) return false;
       setManualPlanResult(result);
       try {
-        persistManualEvaluationCache(window.localStorage, result);
+        if (manualPosterBox === null) persistManualEvaluationCache(window.localStorage, result);
       } catch {
         // The in-memory result remains available for the current workbench session.
       }
+      return true;
+    } catch (error) {
+      if (revision !== manualEvaluationRevision.current) return false;
+      throw error;
     } finally {
-      setManualEvaluationPending(false);
+      if (revision === manualEvaluationRevision.current) setManualEvaluationPending(false);
     }
   }
 
@@ -1559,19 +1567,26 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
     draft: ManualScheduleDraft;
     operbox?: OperBoxEntry[];
   }) {
-    if (manualEvaluationPending) return;
+    if (manualEvaluationPending) return false;
+    const revision = ++manualEvaluationRevision.current;
     setManualEvaluationPending(true);
     try {
       const { assemblePaperManualPlanResult } = await import("./manual-plan-result");
+      if (revision !== manualEvaluationRevision.current) return false;
       const result = await assemblePaperManualPlanResult({ draft: input.draft, layout, operbox: input.operbox ?? operbox });
+      if (revision !== manualEvaluationRevision.current) return false;
       setManualPlanResult(result);
       try {
-        persistManualEvaluationCache(window.localStorage, result);
+        if (manualPosterBox === null) persistManualEvaluationCache(window.localStorage, result);
       } catch {
         // The in-memory result remains available for the current workbench session.
       }
+      return true;
+    } catch (error) {
+      if (revision !== manualEvaluationRevision.current) return false;
+      throw error;
     } finally {
-      setManualEvaluationPending(false);
+      if (revision === manualEvaluationRevision.current) setManualEvaluationPending(false);
     }
   }
 
@@ -1580,6 +1595,9 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   function clearManualEvaluation() {
+    // Imports replace the working schedule even when the layout is unchanged.
+    // Any earlier calculation must stop publishing results, cache or pending state.
+    manualEvaluationRevision.current += 1;
     setManualPlanResult(null);
     setManualEvaluationPending(false);
     try {
@@ -1901,6 +1919,7 @@ function WorkbenchAppContent({ children }: { children: ReactNode }) {
   }
 
   function handleManualImportedLayout(nextLayout: BaseBlueprint) {
+    clearManualEvaluation();
     setLayout(structuredClone(nextLayout));
     setPreset(PRESETS.find((candidate) => candidate.label === nextLayout.template) ?? preset);
     setLayoutDirty(true);

@@ -134,8 +134,8 @@ export interface ManualSchedulePageProps {
   result: ManualPlanResult | null;
   onAgentContextChange?: (context: AgentPageContext | null) => void;
   evaluationPending: boolean;
-  onEvaluate: (input: { draft: ManualScheduleDraft; operbox?: OperBoxEntry[] }) => Promise<void>;
-  onPaperEvaluate: (input: { draft: ManualScheduleDraft; operbox?: OperBoxEntry[] }) => Promise<void>;
+  onEvaluate: (input: { draft: ManualScheduleDraft; operbox?: OperBoxEntry[] }) => Promise<boolean>;
+  onPaperEvaluate: (input: { draft: ManualScheduleDraft; operbox?: OperBoxEntry[] }) => Promise<boolean>;
   onRestoreEvaluation: (result: ManualPlanResult) => void;
   onOpenCalculator: () => void;
   onShiftDurationsChange: (durations: number[]) => void;
@@ -314,6 +314,8 @@ export function ManualSchedulePage({
   const [posterVisited, setPosterVisited] = useState(Boolean(initialPosterDocument));
   const [evaluatedKey, setEvaluatedKey] = useState("");
   const [calculationError, setCalculationError] = useState("");
+  const calculationRevision = useRef(0);
+  useEffect(() => () => { calculationRevision.current += 1; }, []);
   const assignedNamesKey = JSON.stringify([...new Set(draft.shifts.flatMap(shift => [
     ...Object.values(shift.rooms).flatMap(room => room.operators),
     shift.fiammettaTarget,
@@ -936,6 +938,7 @@ export function ManualSchedulePage({
     if (next.draft.fiammettaEnabled !== fiammettaEnabled) onFiammettaEnabledChange(next.draft.fiammettaEnabled);
   }
   function importPoster(next: SchedulePosterDocument) {
+    calculationRevision.current += 1;
     if (onImportPoster) { onImportPoster(next); return; }
     const operators = posterOperators(next);
     onPosterWorkingBoxChange?.(operators);
@@ -954,15 +957,19 @@ export function ManualSchedulePage({
   }
   async function calculateSchedule(mode: "native" | "manual") {
     if (evaluationPending) return;
+    const revision = ++calculationRevision.current;
     setCalculationError("");
-    // posterSettings 为空时（海报尚未初始化）先把它建出来：否则 efficiencyMode 写不进去，
-    // evaluationKey 末尾会一直停在 "native"，纸面模式算完的结果会被当作过期数据丢掉。
-    if (!posterSettings) await ensurePosterReady();
-    setPosterSettings(current => current ? { ...current, efficiencyMode: mode } : current);
     try {
-      await (mode === "native" ? onEvaluate : onPaperEvaluate)({ draft, operbox });
-      setEvaluatedKey(JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, mode]));
-    } catch (error) { setCalculationError(error instanceof Error ? error.message : "@manual:calculationFailed"); }
+      // posterSettings 为空时（海报尚未初始化）先把它建出来：否则 efficiencyMode 写不进去，
+      // evaluationKey 末尾会一直停在 "native"，纸面模式算完的结果会被当作过期数据丢掉。
+      if (!posterSettings) await ensurePosterReady();
+      if (revision !== calculationRevision.current) return;
+      setPosterSettings(current => current ? { ...current, efficiencyMode: mode } : current);
+      const accepted = await (mode === "native" ? onEvaluate : onPaperEvaluate)({ draft, operbox });
+      if (accepted && revision === calculationRevision.current) setEvaluatedKey(JSON.stringify([layout, { ...draft, activeShift: 0, startTime: "00:00" }, operbox, mode]));
+    } catch (error) {
+      if (revision === calculationRevision.current) setCalculationError(error instanceof Error ? error.message : "@manual:calculationFailed");
+    }
   }
 
   async function prepareMaaImport(file: File, signal: AbortSignal) {
@@ -1012,6 +1019,7 @@ export function ManualSchedulePage({
 
   function confirmMaaImport() {
     if (!maaImportPreview) return;
+    calculationRevision.current += 1;
     setMoodRevision(value => value + 1);
     const imported = maaImportPreview.draft;
     onImportedLayoutChange(maaImportPreview.layout);
