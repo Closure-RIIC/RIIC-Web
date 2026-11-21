@@ -17,6 +17,14 @@ const validEvent = {
   meta: { device_type: "desktop", dpr: 1.25, save_data: false },
 };
 
+test("referral funnel events omit invitation codes and account identities", () => {
+  for (const name of ["referral_landing", "referral_share"]) {
+    assert.ok(validateTelemetryEvent({ sessionId: "referral-session", type: "interaction", name, page: "/referral" }));
+    assert.equal(validateTelemetryEvent({ sessionId: "referral-session", type: "interaction", name, meta: { referralCode: "PRIVATE" } }), null);
+  }
+  assert.equal(validateTelemetryEvent({ sessionId: "referral-session", type: "interaction", name: "referral_reward" }), null);
+});
+
 test("invalid telemetry reports schema paths without retaining submitted values",()=>{
   assert.equal(telemetryValidationIssue(validEvent),null);
   assert.equal(telemetryValidationIssue({...validEvent,durationMs:-1})?.path,"durationMs");

@@ -45,5 +45,6 @@
   "rule_ids": "命中规则",
   "provider": "供应商",
   "model": "模型",
-  "call_id": "调用 ID"
+  "call_id": "调用 ID",
+  "referral": "邀请活动"
 }

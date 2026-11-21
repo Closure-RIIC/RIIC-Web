@@ -5,7 +5,7 @@ import { betterAuth } from "better-auth";
 import { admin, emailOTP } from "better-auth/plugins";
 import { getDatabase } from "../db";
 import { deleteWebsiteAccountPrivateArtifacts } from "./account-deletion";
-import { websiteAccountNameDatabaseHooks } from "./account-name-hooks";
+import { websiteReferralDatabaseHooks, websiteReferralUserFields } from "./referral-hooks";
 import { sendAuthEmail } from "./email";
 import { configuredAdminIds, localAuthTrustedOrigins, requireAuthBaseUrl, requireAuthSecret } from "./config";
 import { passwordStrengthHook } from "./password-strength-hook";
@@ -29,7 +29,7 @@ function createAuth() {
     },
     secret: requireAuthSecret(),
     database: drizzleAdapter(getDatabase(), { provider: "pg" }),
-    databaseHooks: websiteAccountNameDatabaseHooks,
+    databaseHooks: websiteReferralDatabaseHooks,
     hooks: { before: passwordStrengthHook },
     emailAndPassword: {
       enabled: true,
@@ -50,6 +50,7 @@ function createAuth() {
     },
     rateLimit: { enabled: true, storage: "database" },
     user: {
+      additionalFields: websiteReferralUserFields,
       deleteUser: {
         enabled: true,
         beforeDelete: async (user) => deleteWebsiteAccountPrivateArtifacts(user.id),

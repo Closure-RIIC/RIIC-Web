@@ -1,4 +1,4 @@
-export type AppPage = "calculator" | "manual" | "mower" | "training" | "training-planner" | "mastery" | "recruitment" | "inventory" | "gacha" | "skill-query" | "skland" | "account" | "account-health" | "settings" | "billing" | "agent" | "changelog";
+export type AppPage = "calculator" | "manual" | "mower" | "training" | "training-planner" | "mastery" | "recruitment" | "inventory" | "gacha" | "skill-query" | "skland" | "account" | "account-health" | "settings" | "billing" | "referral" | "agent" | "changelog";
 
 export const SKLAND_TABS = ["overview", "inventory", "infrastructure"] as const;
 export type SklandTab = typeof SKLAND_TABS[number];
@@ -33,6 +33,7 @@ export const WORKBENCH_PAGE_PATHS: Record<AppPage, string> = {
   skland: "/skland",
   account: "/account",
   billing: "/billing",
+  referral: "/referral",
   agent: "/agent",
   "account-health": "/account-health",
   settings: "/settings",
@@ -52,6 +53,7 @@ export function workbenchPageFromPathname(pathname: string): AppPage {
   if (pathname === WORKBENCH_PAGE_PATHS.skland || sklandTabFromPathname(pathname)) return "skland";
   if (pathname === WORKBENCH_PAGE_PATHS.account) return "account";
   if (pathname === WORKBENCH_PAGE_PATHS.billing) return "billing";
+  if (pathname === WORKBENCH_PAGE_PATHS.referral) return "referral";
   if (pathname === WORKBENCH_PAGE_PATHS.agent) return "agent";
   if (pathname === WORKBENCH_PAGE_PATHS["account-health"]) return "account-health";
   if (pathname === WORKBENCH_PAGE_PATHS.settings) return "settings";
