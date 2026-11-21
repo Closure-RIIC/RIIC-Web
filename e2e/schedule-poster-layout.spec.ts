@@ -64,8 +64,8 @@ async function expectReadableHeader(poster: Locator) {
     const output = header.querySelector(".poster-output")!.getBoundingClientRect();
     if (instructions) {
       const notes = instructions.getBoundingClientRect();
-      if (Math.min(notes.bottom, output.bottom) <= Math.max(notes.top, output.top) || output.right > notes.left + tolerance) {
-        failures.push("production summary and instructions must share a row");
+      if (Math.min(notes.bottom, output.bottom) <= Math.max(notes.top, output.top) || notes.right > output.left + tolerance) {
+        failures.push("instructions must precede production summary in the same row");
       }
     }
     return failures;
