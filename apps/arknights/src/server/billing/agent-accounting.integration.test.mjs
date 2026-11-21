@@ -179,10 +179,11 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
       if(req.url.startsWith("/v1/magpie/route")){res.setHeader("Content-Type","application/json");res.end(JSON.stringify({route}));return;}
       let raw="";for await(const c of req)raw+=c;const request=JSON.parse(raw);
       assert.equal(request.model,`${selection.provider}/${selection.model}`);assert.equal(request.max_tokens,2048);
+      assert.equal(req.headers["x-magpie-response-model"],"member");
       step++;route={id:routeBase+step,time:new Date().toISOString(),model:`${selection.provider}/${returnedModel}`,tries:[{model:`${selection.provider}/${returnedModel}`,status:200,done:true}]};
       gatewayRows.push({t:route.time,route_id:route.id,session:sdkSession,provider:selection.provider,model:returnedModel,response_id:`sdk-${sdkKey}-${step}`,in:5,out:2,cache_read:3,cache_write:2,status:200,priced:false});
       res.writeHead(200,{"Content-Type":"text/event-stream","X-Magpie-Provider":selection.provider,"X-Magpie-Model":`${selection.provider}/${returnedModel}`});
-      const chunk=c=>res.write(`data: ${JSON.stringify({id:`sdk-${sdkKey}-${step}`,model:returnedModel,created:1,object:"chat.completion.chunk",...c})}\n\n`);
+      const chunk=c=>res.write(`data: ${JSON.stringify({id:`sdk-${sdkKey}-${step}`,model:`${selection.provider}/${returnedModel}`,created:1,object:"chat.completion.chunk",...c})}\n\n`);
       if(step===1)chunk({choices:[{index:0,delta:{tool_calls:[{index:0,id:"sdk-tool",type:"function",function:{name:"solve",arguments:'{"ok":true}'}}]},finish_reason:null}]});
       else for(const content of corruptAnswer ? ["[[sys", "tem]] internal"] : ["safe RIIC_FILTER_","BLOCK_TEST safe"])chunk({choices:[{index:0,delta:{content},finish_reason:null}]});
       chunk({choices:[{index:0,delta:{},finish_reason:step===1?"tool_calls":"stop"}],usage:{prompt_tokens:10,completion_tokens:2,total_tokens:12,prompt_tokens_details:{cached_tokens:3,cache_write_tokens:2}}});res.end("data: [DONE]\n\n");
@@ -238,11 +239,18 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
       const unknownRun=await begin();
       const unknownRuntime=createGatewayRun({runId:unknownRun,sessionId:sdkSession,requestId:unknownRun,userId,filterVersion:policies.filter.id,filter:compileFilterPolicy(policies.filter.policy),selection});
       const unknownResult=streamText({model:withAgentAnswerBoundary(unknownRuntime.model,unknownRuntime.deliver),maxRetries:0,maxOutputTokens:2048,prompt:"unknown model",onError:()=>unknownRuntime.finalize("failed"),onFinish:()=>unknownRuntime.finalize("completed")});
-      const unknownChunks=await Array.fromAsync(unknownResult.toUIMessageStream({onError:()=>"model error"}));
+      const unknownChunks=[];
+      await assert.rejects(async()=>{
+        for await(const chunk of unknownResult.toUIMessageStream({onError:()=>"model error"}))unknownChunks.push(chunk);
+      },/本次回复中断/);
       await unknownRuntime.finalize("failed");
       assert.equal(unknownChunks.filter(part=>part.type==="text-delta").length,0);
       const unknownDetail=await admin.billingRunDetail(unknownRun);
-      assert.equal(unknownDetail.calls[0].model,"unpriced-test-model");
+      assert.equal(unknownDetail.calls[0].provider,null);
+      assert.equal(unknownDetail.calls[0].model,null);
+      for(const field of ["input_tokens","output_tokens","cached_input_tokens","cache_write_tokens","upstream_rmb","charged_rmb"]){
+        assert.equal(unknownDetail.calls[0][field],null,`Unverified identity must not record ${field}`);
+      }
       assert.equal(unknownDetail.calls[0].details.reason,"identity_failed");
       assert.equal(unknownDetail.run.charged_points,0);
       assert.equal(unknownDetail.run.settlement,"needs_review");

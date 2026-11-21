@@ -172,7 +172,12 @@ use `AGENT_LLM_DEEPSEEK_OFFICIAL_{BASE_URL,MODEL,API_KEY}` and are never borrowe
 
 A model call reserves the maximum cost among its frozen candidate routes and
 settles by the actual gateway provider/model using the original rate snapshot.
-Unexpected identities and missing usage retain the existing review behavior.
+Requests use `X-Magpie-Response-Model: member`; SDK response metadata must identify
+an exact member of the frozen, priced routes before it can determine billing.
+HTTP identity headers can be sent by a keepalive before fallback completes and
+are not an authoritative billing source. Missing, unexpected or ambiguous member
+identities enter review. A valid identity remains attached to later interruptions
+or cancellation; missing usage retains the existing review behavior.
 Peak prices and off-peak calendar dates are optional for every rate row; currently
 the two DeepSeek suppliers use peak prices. Templates do not prefill calendar dates;
 administrators enter and publish them through billing administration. Updating code

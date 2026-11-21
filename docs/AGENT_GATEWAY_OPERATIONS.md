@@ -56,8 +56,11 @@ GPT 卡片可录入按总输入 token 分档的普通与高峰单价。当前供
 `deploy/agent-model-source.mjs` 的 `withSupplementalModelSource(config, source)`
 生成追加备用模型的配置，保留原两条模型及密钥，并设置 `firstToken=10`、
 `queueWait=1`、`patience=-1`。前两条线路在连接、响应头或首内容阶段持续无响应时
-切换，角色帧和 keepalive 不算内容。Magpie 每候选 15 秒会提前发送响应头，因此
-首内容等待必须小于 15 秒，才能继续使用响应头中的真实模型身份结算。
+切换，角色帧和 keepalive 不算内容。该等待值控制回退时延，不作为计费身份可靠性的前提。
+应用固定请求 `X-Magpie-Response-Model: member`，从 SDK 响应元数据读取实际
+`provider/model`，再核对本轮冻结的候选集合与费率快照。Magpie 的保活机制可能
+在候选尚未确定时提前发送 HTTP 身份头，因此这些头不用于确定结算线路。
+缺失、未知或歧义的响应身份进入待对账；合法身份在后续断流或取消时保留。
 最后一个候选仍受应用 60 秒首语义输出和整轮 10 分钟限制。
 已输出正文、推理或工具内容后不自动重放；`affinity=turn` 会在同一轮工具续调中
 沿用已成功的候选，下一用户轮次再恢复优先顺序。

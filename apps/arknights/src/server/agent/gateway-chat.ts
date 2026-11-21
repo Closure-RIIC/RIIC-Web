@@ -78,7 +78,12 @@ export async function gatewayChat(request: Request, userId: string, requestId: s
       stream: result.toUIMessageStream({ sendReasoning: false,
         messageMetadata: ({ part }) => part.type === "start" || part.type === "start-step" || part.type === "finish" ? { replyModel: run.replyModel() } : undefined,
         onError: error => policy.errorText(error) }).pipeThrough(policy.transform),
-      consumeSseStream: ({ stream }) => stream.pipeTo(new WritableStream()).catch(() => {}),
+      // Native stream failures can bypass the SDK callbacks. The server-side
+      // consumer owns the final fallback; finalize is idempotent across both paths.
+      consumeSseStream: ({ stream }) => stream.pipeTo(new WritableStream()).then(
+        () => run.finalize(request.signal.aborted ? "cancelled" : "completed"),
+        () => run.finalize(request.signal.aborted ? "cancelled" : "failed"),
+      ).catch(error => console.error("Agent stream settlement failed", { runId, error })),
     });
   } catch (error) { await run.finalize(error instanceof AgentFilterError ? "blocked" : "failed"); throw error; }
 }

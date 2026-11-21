@@ -33,8 +33,9 @@ test("real SDK streaming preserves cache writes for accounting without inventing
       const body = JSON.parse(raw);
       assert.equal(body.model, "riic-gpt/gpt-6.1-sol");
       assert.equal(body.reasoning_effort, "medium");
+      assert.equal(request.headers["x-magpie-response-model"], "member");
       response.writeHead(200, { "Content-Type": "text/event-stream", "X-Magpie-Provider": "riic-gpt", "X-Magpie-Model": "gpt-6.1-sol" });
-      const chunk = { id: "cache-write:test", object: "chat.completion.chunk", created: 1, model: "gpt-6.1-sol" };
+      const chunk = { id: "cache-write:test", object: "chat.completion.chunk", created: 1, model: "riic-gpt/gpt-6.1-sol" };
       for (const event of [
         { ...chunk, choices: [{ index: 0, delta: { content: "Verified reply." }, finish_reason: null }] },
         { ...chunk, choices: [{ index: 0, delta: {}, finish_reason: "stop" }] },

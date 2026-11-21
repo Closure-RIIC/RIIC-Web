@@ -21,6 +21,15 @@ below do not replace those gates.
 - A run freezes route candidates and rates, reserves the largest candidate charge,
   and settles using the actual gateway model identity. Model settings and rates
   publish and roll back together through the existing administrative workflow.
+- Request member identities in streamed response metadata and validate the complete
+  provider/model against the frozen routes and rates before accepting content or
+  usage. Early HTTP identity headers may describe a route that later falls back;
+  they must not select a tariff. Missing or invalid member identities release the
+  reservation without charging and enter reconciliation. A verified identity remains
+  available after a partial response or cancellation.
+- The server-side stream consumer finalizes success, failure and cancellation even
+  when a native stream rejection bypasses SDK callbacks. This path shares the same
+  idempotent settlement as those callbacks, so reservations are released once.
 - Peak prices are optional for every provider. GPT long-context prices apply to the
   whole call only when total input exceeds 272000 tokens. Historical `peak: null`
   remains readable without rewriting stored policy snapshots.
@@ -58,6 +67,12 @@ On Windows with Node 22.23.4, the integrated development tree passed:
 
 Earlier full-check and browser results came from preceding development trees.
 They are not evidence for the final PR candidate after synchronization with develop.
+
+The subsequent member-identity correction passed 67 model/gateway tests and 21
+pinned Magpie contracts. The latter includes a synthetic route with a 20-second
+first-token deadline that reproduces early HTTP headers followed by an official
+fallback; production retains its 10-second deadline. These targeted results do not
+replace final candidate database, build and browser gates.
 
 ## Validation boundaries
 

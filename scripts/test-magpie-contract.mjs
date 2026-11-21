@@ -8,6 +8,8 @@ import process from "node:process";
 import console from "node:console";
 import { setTimeout as delay } from "node:timers/promises";
 import { once } from "node:events";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { streamText } from "ai";
 import { buildAgentGatewayConfig } from "../deploy/agent-model-gateway-config.mjs";
 
 if (!process.env.MAGPIE_TEST_BINARY || !process.env.MAGPIE_TEST_PLUGIN || !process.env.MAGPIE_BUN) throw new Error("Pinned Magpie binary, word-guard and Bun paths required");
@@ -25,8 +27,8 @@ try {
       if(req.url.endsWith("/models")){res.setHeader("Content-Type","application/json");res.end(JSON.stringify({data:[{id:upstreamModel}]}));return;}
       let raw="";for await(const c of req)raw+=c;const body=JSON.parse(raw); counts[name]++;
       const last=body.messages.at(-1).content;
-      if(name!=="official" && ["timeout-fallback", "keepalive-fallback"].includes(last)) {
-        if(last==="keepalive-fallback") {
+      if((name!=="official" && ["timeout-fallback", "keepalive-fallback"].includes(last)) || (name==="primary" && last==="held-identity")) {
+        if(last==="keepalive-fallback" || last==="held-identity") {
           res.writeHead(200,{"Content-Type":"text/event-stream"});
           res.write(": still waiting\n\n");
           res.write(`data: ${JSON.stringify({id:"empty-role",model:"test-model",object:"chat.completion.chunk",created:1,choices:[{index:0,delta:{role:"assistant"},finish_reason:null}]})}\n\n`);
@@ -36,7 +38,7 @@ try {
         return;
       }
       if(name==="primary"&&["fallback","affinity-tool"].includes(last)){res.writeHead(429,{"Content-Type":"application/json"});res.end(JSON.stringify({error:{message:"contract rate limit"}}));return;}
-      if(name!=="official"&&last==="http-fallback"){res.writeHead(503,{"Content-Type":"application/json"});res.end(JSON.stringify({error:{message:"contract unavailable"}}));return;}
+      if((name!=="official"&&last==="http-fallback") || (name==="backup"&&last==="held-identity")){res.writeHead(503,{"Content-Type":"application/json"});res.end(JSON.stringify({error:{message:"contract unavailable"}}));return;}
       assert.equal(body.model,upstreamModel);assert.equal(body.stream_options.include_usage,true);
       res.setHeader("Content-Type","text/event-stream");
       const id=`contract-${name}-${counts[name]}`;
@@ -105,6 +107,11 @@ try {
   // upstreams only; the production official-host guard remains strict.
   planned.providers.find(provider=>provider.id==="riic-deepseek-official").chat="http://127.0.0.1:3501/v1";
   planned.groups[0].firstToken=firstToken;
+  // A separate synthetic group deterministically crosses Magpie's fixed 15s
+  // held-header threshold. The production group above keeps its 10s setting
+  // when MAGPIE_CONTRACT_FIRST_TOKEN_SECONDS=10; this 20s case is not a change
+  // to the production timeout or evidence of its ordinary fallback timing.
+  planned.groups.push({ ...planned.groups[0], id:"riic-held-identity", name:"riic-held-identity", firstToken:20 });
   await writeFile(path.join(cfg,"providers.json"),JSON.stringify(planned));
   await writeFile(path.join(cfg,"plugins.json"),JSON.stringify({plugins:[{spec:process.env.MAGPIE_TEST_PLUGIN,options:{words:["RIIC_FILTER_BLOCK_TEST"],patterns:[],action:"reject",check:"all",message:"RIIC contract policy rejection"}}]}));
   const startGateway=async()=>{
@@ -118,7 +125,7 @@ try {
   };
   await startGateway();
   const chat=async(text,model="group/riic-agent",extra={})=>{
-    const response=await globalThis.fetch("http://127.0.0.1:3498/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","X-Magpie-Session":`contract-${text}`},body:JSON.stringify({model,messages:[{role:"user",content:text}],stream:true,stream_options:{include_usage:true},max_tokens:32,reasoning_effort:"medium",...extra})});
+    const response=await globalThis.fetch("http://127.0.0.1:3498/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json","X-Magpie-Session":`contract-${text}`,"X-Magpie-Response-Model":"member"},body:JSON.stringify({model,messages:[{role:"user",content:text}],stream:true,stream_options:{include_usage:true},max_tokens:32,reasoning_effort:"medium",...extra})});
     return {response,text:await response.text()};
   };
   const normal=await chat("normal");assert.equal(normal.response.status,200);assert.equal(normal.response.headers.get("x-magpie-model"),"riic-deepseek/test-model");assert.match(normal.text,/contract ok/);
@@ -147,14 +154,27 @@ try {
     const before={...counts};const started=Date.now();
     const result=await chat(text);
     assert.equal(result.response.status,200);assert.match(result.text,/contract ok/);
-    assert.equal(result.response.headers.get("x-magpie-provider"),"riic-deepseek-official");
-    assert.equal(result.response.headers.get("x-magpie-model"),"riic-deepseek-official/deepseek-flash");
+    const members=result.text.split("\n").filter(line=>line.startsWith("data: {")).map(line=>JSON.parse(line.slice(6)).model).filter(Boolean);
+    assert.ok(members.length>0,`${text}: answering member is present in SSE`);
+    assert.ok(members.every(member=>member==="riic-deepseek-official/deepseek-flash"),`${text}: SSE identifies the final answering member`);
     for(const name of ["primary","backup","official"])assert.equal(counts[name]-before[name],1,`${text}: ${name} attempted once`);
     assert.ok(Date.now()-started<firstToken*2000+6000,"both unresponsive upstreams are bounded");
     const data=await (await globalThis.fetch(`http://127.0.0.1:3498/v1/magpie/route?session=contract-${text}`)).json();
     assert.ok(data.route.tries.length>=3,"all three attempts are retained");
     assert.equal(data.route.model,"riic-deepseek-official/deepseek-flash");
   }
+  await startGateway();
+  const beforeHeld={...counts};let heldHeaders;
+  const sdkGateway=createOpenAICompatible({name:"contract-magpie",baseURL:"http://127.0.0.1:3498/v1",apiKey:"contract-only",includeUsage:true,
+    headers:{"X-Magpie-Session":"contract-held-identity","X-Magpie-Response-Model":"member"},
+    fetch:async(input,init)=>{const response=await globalThis.fetch(input,init);heldHeaders=response.headers;return response;}});
+  const held=streamText({model:sdkGateway.chatModel("group/riic-held-identity"),prompt:"held-identity",maxOutputTokens:32,maxRetries:0});
+  assert.equal(await held.text,"contract ok");
+  assert.equal(heldHeaders.get("x-magpie-model"),"riic-deepseek/test-model","held keepalive commits the early primary HTTP identity");
+  assert.equal((await held.response).modelId,"riic-deepseek-official/deepseek-flash","real SDK metadata uses the final member despite early headers");
+  for(const name of ["primary","backup","official"])assert.equal(counts[name]-beforeHeld[name],1,`held-identity: ${name} attempted once`);
+  const heldRoute=await (await globalThis.fetch("http://127.0.0.1:3498/v1/magpie/route?session=contract-held-identity")).json();
+  assert.equal(heldRoute.route.model,"riic-deepseek-official/deepseek-flash");
   await startGateway();
   const recovered=await chat("recovered");assert.equal(recovered.response.headers.get("x-magpie-provider"),"riic-deepseek","healthy primary is preferred when no circuit cooldown applies");
   const beforePartial={...counts};const partial=await chat("partial");
@@ -193,7 +213,7 @@ try {
   const visionRow=usage.rows.find(r=>r.session==="contract-vision"&&r.status===200);
   assert.ok(visionRow,"Responses call is imported into gateway usage");assert.equal(visionRow.in,60);assert.equal(visionRow.cache_read,30);assert.equal(visionRow.cache_write,20);assert.equal(visionRow.out,12);assert.match(visionRow.response_id,/contract-response-/);
   assert.equal(visionRow.in+visionRow.cache_read+visionRow.cache_write,visionUsage.prompt_tokens,"ledger input partitions reconstruct the Chat total");
-  console.log(JSON.stringify({passed:true,checks:["managed group upgrade clears legacy routing controls","identity headers","stream usage and cache partition","tool call deltas","input guard rejects before upstream","429 fallback","same-turn affinity and next-turn reset","two 503 failures reach third model","two no-header timeouts reach third model","role and keepalive-only streams reach third model","primary recovery","partial output is not replayed","failed attempt ledger","explicit selection has no fallback","Responses image and tool bridge","Responses tool-result continuation","Responses usage and cache partition","Responses cache writes survive Chat and ledger","Responses cancellation","reasoning effort mapping"],version:"0.1.1203"}));
+  console.log(JSON.stringify({passed:true,checks:["managed group upgrade clears legacy routing controls","identity headers","stream usage and cache partition","tool call deltas","input guard rejects before upstream","429 fallback","same-turn affinity and next-turn reset","two 503 failures reach third model","two no-header timeouts reach third model","role and keepalive-only streams reach third model","final SDK member identity survives early primary headers (synthetic 20s threshold)","primary recovery","partial output is not replayed","failed attempt ledger","explicit selection has no fallback","Responses image and tool bridge","Responses tool-result continuation","Responses usage and cache partition","Responses cache writes survive Chat and ledger","Responses cancellation","reasoning effort mapping"],version:"0.1.1203"}));
 } finally {
   if(child&&child.exitCode===null){const exited=once(child,"exit");child.kill();await exited;}
   await Promise.all(servers.map(server=>new Promise(resolve=>{server.closeAllConnections();server.close(resolve);})));
