@@ -12,8 +12,8 @@ test("admin beta denies direct pages and APIs without exposing either navigation
     session: { expiresAt: "2099-01-01T00:00:00Z" },
   } }));
   await page.goto("/");
-  await expect(page.locator("[data-sidebar-account-name]")).toHaveText("Member");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator("[data-sidebar-account-name]")).toHaveText("Member");
   await page.locator("[data-sidebar-account-trigger]").click();
   await expect(page.locator('[data-primary-navigation-page="agent"], [data-primary-navigation-page="billing"], [data-agent-history], [data-agent-floating-widget]')).toHaveCount(0);
   await page.keyboard.press("Escape");
