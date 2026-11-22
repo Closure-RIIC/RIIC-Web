@@ -13,5 +13,19 @@
   "hire": "辦公室",
   "processing": "加工站",
   "elite2": "精二",
-  "unassigned": "（未安排幹員）"
+  "unassigned": "（未安排幹員）",
+  "dailyProductionWithDrones": "預估日均產出（含無人機）",
+  "productionUnavailable": "此歷史結果暫無日均產出摘要。",
+  "productionExperience": "經驗",
+  "productionLmd": "龍門幣",
+  "productionNetLmd": "淨龍門幣",
+  "productionGold": "赤金",
+  "productionOrundum": "合成玉",
+  "productionShards": "源石碎片",
+  "productionExperienceUnit": "經驗",
+  "productionLmdUnit": "龍門幣",
+  "productionOrundumUnit": "合成玉",
+  "productionPiecesUnit": "枚",
+  "orirockShardCost": "淨龍門幣已按固源岩配方扣除碎片成本：每枚 1,600 龍門幣。",
+  "deviceShardCost": "淨龍門幣已按裝置配方扣除碎片成本：每枚 1,000 龍門幣。"
 }

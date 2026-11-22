@@ -67,7 +67,7 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
           export const AGENT_BROADCAST_CHANNEL="test";
           export const requestAgentArtifactOpen=()=>{};
           export const agentArtifactFromOutput=(output)=>output?.workbenchSession ? {session:output.workbenchSession,preset:"243"} : null;
-          ${["PlanArtifactView", "MarkdownMessage", "WorkbenchPageHeading", "WorkbenchCard", "FluidOrb", "PersonaAvatar", "AgentCreditBalance", "AgentConversationScrollArea", "ChatBubble", "ChatPanel", "LoadingState", "PromptBar", "StreamingText", "ThinkingState", "Button", "Dialog", "DialogBody", "DialogContent", "DialogDescription", "DialogFooter", "DialogHeader", "DialogTitle"].map((name) => `export const ${name}=({children})=>children ?? null;`).join("\n")}
+          ${["PlanArtifactView", "AgentPlanProductionSummary", "MarkdownMessage", "WorkbenchPageHeading", "WorkbenchCard", "FluidOrb", "PersonaAvatar", "AgentCreditBalance", "AgentConversationScrollArea", "ChatBubble", "ChatPanel", "LoadingState", "PromptBar", "StreamingText", "ThinkingState", "Button", "Dialog", "DialogBody", "DialogContent", "DialogDescription", "DialogFooter", "DialogHeader", "DialogTitle"].map((name) => `export const ${name}=({children})=>children ?? null;`).join("\n")}
         ` }));
       } }] });
     const { AgentToolCard, formatEnvironmentSummary } = await import(pathToFileURL(outfile).href);
@@ -101,6 +101,58 @@ test("agent cards group sources, expose only knowledge subjects, and render fail
       assert.equal(failure.split("请确认目标干员").length - 1, 1);
       const knowledge = render({ type: "tool-kb_read", state, output: { error: "E:/private/secret" }, errorText: "E:/private/secret" });
       assert.equal(knowledge.split("本次查询暂未完成").length - 1, 1); assert.doesNotMatch(knowledge, /private/);
+    }
+  } finally { await rm(temporary, { recursive: true, force: true }); }
+});
+
+test("agent production summary renders localized final daily amounts and handles historical results", async () => {
+  const root = fileURLToPath(new URL("../../../", import.meta.url));
+  const temporary = await mkdtemp(path.join(root, ".agent-production-test-"));
+  try {
+    const outfile = path.join(temporary, "production.mjs");
+    await build({ entryPoints: [path.join(root, "src/components/agent/AgentPlanProductionSummary.tsx")], outfile, bundle: true,
+      platform: "node", format: "esm", packages: "external", jsx: "automatic" });
+    const { AgentPlanProductionSummary } = await import(pathToFileURL(outfile).href);
+    const production = {
+      schemaVersion: 1, basis: "daily_24h", includesDrones: true, source: "solver", shardRecipe: "orirock",
+      droneAllocations: [{ shift: 1, durationHours: 12, room: "manufacture", index: 2 }],
+      products: [
+        { id: "experience", label: "经验", unit: "经验", value: 76_925, net: false, breakdown: [] },
+        { id: "lmd-orders", label: "龙门币", unit: "龙门币", value: 25_288, net: false, breakdown: [] },
+        { id: "gold", label: "赤金", unit: "枚", value: 61, net: false, breakdown: [] },
+        { id: "orundum", label: "合成玉", unit: "合成玉", value: 0, net: false, breakdown: [] },
+        { id: "shards", label: "源石碎片", unit: "枚", value: null, net: false, breakdown: [] },
+      ],
+    };
+    for (const [locale, title, labels] of [
+      ["zh-CN", "预估日均产出（含无人机）", ["经验", "龙门币", "赤金", "合成玉", "源石碎片"]],
+      ["zh-TW", "預估日均產出（含無人機）", ["經驗", "龍門幣", "赤金", "合成玉", "源石碎片"]],
+      ["en", "Estimated daily output (including drones)", ["Experience", "LMD", "Pure Gold", "Orundum", "Originium Shards"]],
+    ]) {
+      const messages = await loadMessages(locale, ["AK_Raw_components_agent_PlanArtifactView"]);
+      const render = (value) => renderToStaticMarkup(React.createElement(IntlProvider, { locale, messages, timeZone: "Asia/Shanghai" }, React.createElement(AgentPlanProductionSummary, { production: value })));
+      const html = render(production);
+      assert.ok(html.includes(title));
+      for (const label of labels) assert.ok(html.includes(label));
+      assert.match(html, /76,925/);
+      assert.match(html, /25,288/);
+      assert.match(html, /data-agent-production-product="gold"[\s\S]*?>61</);
+      assert.match(html, /data-agent-production-product="orundum"[\s\S]*?>0</);
+      assert.match(html, /data-agent-production-product="shards"[\s\S]*?>—</);
+      assert.doesNotMatch(html, /daily_manufacture|daily_trade|undefined|NaN/);
+      assert.doesNotMatch(html, /data-agent-shard-cost/);
+      const net = render({ ...production, products: production.products.map((product) => product.id === "lmd-orders" ? { ...product, value: -1_600, net: true } : product) });
+      assert.ok(net.includes(locale === "en" ? "Net LMD" : locale === "zh-TW" ? "淨龍門幣" : "净龙门币"));
+      assert.match(net, /-1,600/);
+      assert.match(net, /data-agent-shard-cost/);
+      assert.ok(net.includes(locale === "en" ? "Orirock recipe cost: 1,600 LMD per shard" : "固源岩配方扣除碎片成本：每枚 1,600"));
+      const device = render({ ...production, shardRecipe: "device", products: production.products.map((product) => product.id === "lmd-orders" ? { ...product, net: true } : product) });
+      assert.ok(device.includes(locale === "en" ? "Device recipe cost: 1,000 LMD per shard" : locale === "zh-TW" ? "裝置配方扣除碎片成本：每枚 1,000" : "装置配方扣除碎片成本：每枚 1,000"));
+      for (const historical of [undefined, null, {}, { daily_trade_efficiency: 2.46, daily_manufacture_efficiency: 11.05 }]) {
+        const legacy = render(historical);
+        assert.match(legacy, /data-agent-production-unavailable/);
+        assert.doesNotMatch(legacy, /data-agent-production-product|11\.05|2\.46/);
+      }
     }
   } finally { await rm(temporary, { recursive: true, force: true }); }
 });

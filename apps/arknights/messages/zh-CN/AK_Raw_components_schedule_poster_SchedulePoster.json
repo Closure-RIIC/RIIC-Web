@@ -20,6 +20,8 @@
   "goldValue": "赤金价值",
   "experience": "经验",
   "orundum": "合成玉",
+  "shards": "源石碎片",
+  "shardProduction": "制造环节 · 枚/日",
   "noOriginiumDrones": "搓玉无人机增量未计入",
   "originiumBottleneck": "按搓玉产线瓶颈估算",
   "waiting": "待计算",
