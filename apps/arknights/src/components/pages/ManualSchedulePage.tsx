@@ -527,7 +527,6 @@ export function ManualSchedulePage({
         return product ? [[room.id, product] as const] : [];
       }),
   ), [activeShift, draft.shifts, layout.rooms]);
-  const activeDronePlan = maa.plans[droneStoragePlanIndex(activeShift, maa.plans.length)];
   const trainingRoom = layout.rooms.find((room) => room.kind === "training_room");
   const trainingAssignment = trainingRoom ? draft.shifts[activeShift]?.rooms[trainingRoom.id] : undefined;
   const activeTrainingRoomShift = useMemo(() => trainingRoom ? {
@@ -1245,27 +1244,31 @@ export function ManualSchedulePage({
       </div>
 
       {externalNames.length ? <p className="mb-3 text-xs text-muted-foreground">{rawText.rich(rawLocale, "exampleTrainingLevelsFromThisScheduleNotPersonalOwnership", { part1: richValue((externalNames.join("、"))) })}</p> : null}
-      <ManualProductionSummary
-        result={result}
-        activeShift={activeShift}
-        controlsSlot={(
-          <PlanSupportSummary
-            drones={activeDronePlan?.drones}
-            target={fiammettaEnabled ? fiammettaTarget : null}
-            portrait={fiammettaEnabled ? fiammettaPortrait : null}
-            automatic={false}
-            automaticDisabled
-            onChooseFacility={() => setDronePickerOpen(true)}
-          />
-        )}
-      />
-
-      {calculationError ? <p role="alert" className="mb-3 text-sm text-destructive">{calculationError === "@manual:calculationFailed" ? rawText.text(rawLocale, "calculationFailed") : calculationError}</p> : null}
-      {storageWarning ? <p className="mb-3 text-sm text-amber-700" role="status">{storageWarning}</p> : null}
-
       {restored && <Suspense fallback={<Skeleton className="mt-8 h-48 w-full" />}>
         <MoodSimulationPanel key={moodRevision} layout={layout} operbox={operbox ?? []} draft={draft}
           renderBoard={renderBoard}
+          renderSummary={({replay,shift}) => {
+            const summaryShift = shift ?? activeShift;
+            const target = fiammettaEnabled ? draft.shifts[summaryShift]?.fiammettaTarget : null;
+            return <>
+              <ManualProductionSummary
+                result={result}
+                activeShift={summaryShift}
+                controlsSlot={shift === null ? <Skeleton className="col-span-2 min-h-[84px]" /> : (
+                  <PlanSupportSummary
+                    drones={maa.plans[droneStoragePlanIndex(summaryShift, maa.plans.length)]?.drones}
+                    target={target}
+                    portrait={target ? operatorPortraitFor(target) : null}
+                    automatic={false}
+                    automaticDisabled={!replay}
+                    onChooseFacility={() => { if (!replay) setDronePickerOpen(true); }}
+                  />
+                )}
+              />
+              {calculationError ? <p role="alert" className="mb-3 text-sm text-destructive">{calculationError === "@manual:calculationFailed" ? rawText.text(rawLocale, "calculationFailed") : calculationError}</p> : null}
+              {storageWarning ? <p className="mb-3 text-sm text-amber-700" role="status">{storageWarning}</p> : null}
+            </>;
+          }}
           view={view} onViewChange={setView}
           posterContent={posterVisited ? posterSettings && posterDocument
             ? <Suspense fallback={<Skeleton className="h-64 w-full" />}><PosterWorkbench document={posterDocument}
