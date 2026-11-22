@@ -264,8 +264,9 @@ test("model catalog bootstrap, history and publication keep a usable active conf
       const legacy = (await currentSettings()).active;
       assert.equal(legacy.ratesId, priceDraft.id); assert.equal(legacy.modelsId, unchangedModelsId);
       assert.equal(legacy.payload.rates.markup, "1.4"); assert.notEqual(legacy.id, after.id);
-      const expectedRows = (await pool.query("SELECT kind,count(*)::int AS n FROM app.agent_policy_version WHERE kind IN ('rates','models','model-settings') AND status='active' GROUP BY kind ORDER BY kind")).rows;
-      assert.deepEqual(expectedRows, [{ kind: "model-settings", n: 1 }, { kind: "models", n: 1 }, { kind: "rates", n: 1 }]);
+      const activeRows = (await pool.query("SELECT kind,count(*)::int AS n FROM app.agent_policy_version WHERE kind IN ('rates','models','model-settings') AND status='active' GROUP BY kind")).rows;
+      // Each kind must have one active row regardless of the database collation.
+      assert.deepEqual(Object.fromEntries(activeRows.map(row => [row.kind, row.n])), { "model-settings": 1, models: 1, rates: 1 });
     });
 
     await t.test("model statistics follow the full filtered range, preserve unknown costs and trace attempts without double counting", async () => {
