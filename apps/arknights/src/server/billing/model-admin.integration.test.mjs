@@ -302,6 +302,21 @@ test("model catalog bootstrap, history and publication keep a usable active conf
       const usage = await listBilling("usage", params);
       assert.equal(usage.total, 30); assert.equal(usage.rows.length, 5);
       assert.equal(usage.modelStats.reduce((sum, row) => sum + row.calls, 0), 30);
+      const actorEmail = (await pool.query('SELECT email FROM public."user" WHERE id=$1', [actor])).rows[0].email;
+      const byEmail = await listBilling("usage", new URLSearchParams({ ...range, q: actorEmail.toUpperCase(), page: "2" }));
+      assert.equal(byEmail.total, 30); assert.equal(byEmail.rows.length, 5);
+      assert.ok(byEmail.rows.every(row => row.user_id === actor && row.email === actorEmail));
+      assert.deepEqual(byEmail.modelStats, usage.modelStats, "email search must filter all model totals, not just the visible page");
+      const otherEmail = await listBilling("usage", new URLSearchParams({ ...range, q: `${otherUser}@example.test` }));
+      assert.equal(otherEmail.total, 1); assert.equal(otherEmail.rows[0].user_id, otherUser);
+      assert.equal(otherEmail.modelStats.reduce((sum, row) => sum + row.calls, 0), 1);
+      const bySelection = await listBilling("usage", new URLSearchParams({ ...range, q: "Snapshot GLM" }));
+      const byActualModel = await listBilling("usage", new URLSearchParams({ ...range, q: "glm-5.3-flash" }));
+      for (const listing of [bySelection, byActualModel]) {
+        assert.equal(listing.total, 1); assert.equal(listing.rows[0].run_id, fixtures[28].runId);
+        assert.equal(listing.modelStats.length, 1); assert.equal(listing.modelStats[0].calls, 1);
+        assert.equal(listing.modelStats[0].provider, "riic-glm");
+      }
       const gpt = usage.modelStats.find(row => row.provider === "riic-gpt");
       assert.equal(gpt.modelId, "gpt"); assert.equal(gpt.calls, 28);
       assert.equal(gpt.longContextCalls, 2); // Strict > threshold, and historical policies without the tier stay base.

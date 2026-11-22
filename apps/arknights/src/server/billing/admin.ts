@@ -75,13 +75,18 @@ const listings = {
     r.model_selection->>'id' AS selected_model_id,r.model_selection->>'label' AS selected_model_label,
     coalesce((SELECT jsonb_agg(jsonb_build_object('provider',actual.provider,'model',actual.model) ORDER BY actual.provider,actual.model)
       FROM (SELECT DISTINCT c.provider,c.model FROM app.agent_model_call c WHERE c.run_id=r.id AND (c.provider IS NOT NULL OR c.model IS NOT NULL)) actual),'[]'::jsonb) AS actual_models
-    FROM app.agent_usage u FULL JOIN app.agent_run r ON r.id=u.id) t`, select: "t.*", q: "t.id || ' ' || coalesce(t.run_id,'') || ' ' || coalesce(t.user_id,'') || ' ' || coalesce(t.selected_model_id,'') || ' ' || coalesce(t.selected_model_label,'') || ' ' || t.actual_models::text", status: "t.status", time: "t.created_at" },
+    FROM app.agent_usage u FULL JOIN app.agent_run r ON r.id=u.id) t LEFT JOIN public."user" owner ON owner.id=t.user_id`, select: "t.*,owner.email", q: "t.id || ' ' || coalesce(t.run_id,'') || ' ' || coalesce(t.user_id,'') || ' ' || coalesce(owner.email,'') || ' ' || coalesce(t.selected_model_id,'') || ' ' || coalesce(t.selected_model_label,'') || ' ' || t.actual_models::text", status: "t.status", time: "t.created_at" },
   wallets: { from: 'app.billing_wallet t JOIN public."user" u ON u.id=t.user_id', select: "t.user_id,u.name,u.email,t.paid_points,t.monthly_points,t.monthly_expires_at,t.held_paid_points,t.held_monthly_points,t.updated_at", q: "t.user_id || ' ' || u.name || ' ' || u.email", status: "''", time: "t.updated_at" },
-  ledger: { from: "app.billing_ledger t", select: "t.*", q: "t.id || ' ' || t.user_id || ' ' || coalesce(t.reference_id,'')", status: "t.kind", time: "t.created_at" },
-  orders: { from: "app.billing_order t", select: "t.id,t.user_id,t.product_id,t.provider,t.status,t.amount_fen,t.points,t.custom_order_id,t.provider_order_id,t.created_at,t.paid_at", q: "t.id || ' ' || t.user_id || ' ' || t.custom_order_id || ' ' || coalesce(t.provider_order_id,'')", status: "t.status", time: "t.created_at" },
-  reviews: { from: "app.billing_review t", select: "t.*", q: "t.id || ' ' || coalesce(t.run_id,'') || ' ' || coalesce(t.evidence->>'trade','') || ' ' || coalesce(t.evidence->>'customOrderId','')", status: "t.status", time: "t.created_at" },
-  audit: { from: "app.billing_admin_audit t", select: "t.*", q: "t.id || ' ' || t.target || ' ' || coalesce(t.actor_id,'')", status: "t.action", time: "t.created_at" },
-  filters: { from: "app.agent_filter_event t", select: "t.*", q: "t.request_id || ' ' || coalesce(t.user_id,'')", status: "t.stage", time: "t.created_at" },
+  ledger: { from: 'app.billing_ledger t LEFT JOIN public."user" u ON u.id=t.user_id', select: "t.*,u.email", q: "concat_ws(' ',t.id,t.user_id,t.reference_id,u.email)", status: "t.kind", time: "t.created_at" },
+  orders: { from: 'app.billing_order t LEFT JOIN public."user" u ON u.id=t.user_id', select: "t.id,t.user_id,u.email,t.product_id,t.provider,t.status,t.amount_fen,t.points,t.custom_order_id,t.provider_order_id,t.created_at,t.paid_at", q: "concat_ws(' ',t.id,t.user_id,t.custom_order_id,t.provider_order_id,u.email)", status: "t.status", time: "t.created_at" },
+  reviews: { from: `app.billing_review t
+    LEFT JOIN app.agent_run r ON r.id=t.run_id
+    LEFT JOIN app.billing_payment p ON t.kind='afdian_payment' AND p.id=t.evidence->>'paymentId'
+    LEFT JOIN app.billing_order o ON t.kind='afdian_payment' AND
+      (o.id=p.order_id OR (p.order_id IS NULL AND o.custom_order_id=coalesce(p.custom_order_id,t.evidence->>'customOrderId')))
+    LEFT JOIN public."user" u ON u.id=coalesce(r.user_id,o.user_id)`, select: "t.*,coalesce(r.user_id,o.user_id) AS user_id,u.email", q: "concat_ws(' ',t.id,t.run_id,t.evidence->>'trade',t.evidence->>'customOrderId',r.user_id,o.user_id,u.email)", status: "t.status", time: "t.created_at" },
+  audit: { from: 'app.billing_admin_audit t LEFT JOIN public."user" u ON u.id=t.actor_id', select: "t.*,u.email AS actor_email", q: "concat_ws(' ',t.id,t.target,t.actor_id,u.email)", status: "t.action", time: "t.created_at" },
+  filters: { from: 'app.agent_filter_event t LEFT JOIN public."user" u ON u.id=t.user_id', select: "t.*,u.email", q: "concat_ws(' ',t.request_id,t.user_id,u.email)", status: "t.stage", time: "t.created_at" },
   attempts: { from: `(SELECT g.*,c.run_id,r.user_id,
     CASE WHEN c.id IS NULL THEN NULL ELSE jsonb_build_object('id',c.id,'status',c.status,'provider',c.provider,'model',c.model,
       'inputTokens',c.input_tokens,'cachedInputTokens',c.cached_input_tokens,'cacheWriteTokens',c.cache_write_tokens,'outputTokens',c.output_tokens,
