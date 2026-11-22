@@ -30,14 +30,24 @@ type Policies = { modelSettings: ModelSettingsData; versions: PolicyVersion[]; g
 const tabs = ["summary","usage","wallets","ledger","orders","rates","reviews","codes","referral","audit"] as const;
 const agentTabs = ["usage","policies","filters","attempts"] as const;
 const columns: Record<string, string[]> = {
-  usage: ["created_at", "user_id", "selected_model_label", "actual_models", "status", "settlement", "points", "input_tokens", "cached_input_tokens", "cache_write_tokens", "output_tokens", "upstream_cost_rmb_fen"],
+  usage: ["created_at", "email", "selected_model_label", "actual_models", "status", "settlement", "points", "input_tokens", "cached_input_tokens", "cache_write_tokens", "output_tokens", "upstream_cost_rmb_fen"],
   wallets: ["name", "email", "paid_points", "monthly_points", "monthly_expires_at", "held_paid_points", "held_monthly_points"],
-  ledger: ["created_at", "user_id", "kind", "points_delta", "paid_points_after", "monthly_points_after", "reference_id"],
-  orders: ["created_at", "user_id", "product_id", "status", "amount_fen", "points", "provider_order_id"],
-  reviews: ["created_at", "run_id", "kind", "status", "resolution"], audit: ["created_at", "actor_id", "action", "target", "reason"],
-  filters: ["created_at", "user_id", "stage", "version", "rule_ids"], attempts: ["created_at", "provider", "model", "input_tokens", "cached_input_tokens", "cache_write_tokens", "output_tokens", "pricing_tier", "upstream_cost_rmb_fen", "call_id"],
+  ledger: ["created_at", "email", "kind", "points_delta", "paid_points_after", "monthly_points_after", "reference_id"],
+  orders: ["created_at", "email", "product_id", "status", "amount_fen", "points", "provider_order_id"],
+  reviews: ["created_at", "run_id", "email", "kind", "status", "resolution"], audit: ["created_at", "actor_email", "action", "target", "reason"],
+  filters: ["created_at", "email", "stage", "version", "rule_ids"], attempts: ["created_at", "provider", "model", "input_tokens", "cached_input_tokens", "cache_write_tokens", "output_tokens", "pricing_tier", "upstream_cost_rmb_fen", "call_id"],
 };
-const labels = ["summary","usage","wallets","ledger","orders","rates","reviews","codes","audit","policies","filters","attempts","settlement","created_at","user_id","status","points","input_tokens","output_tokens","upstream_cost_rmb_fen","name","email","paid_points","monthly_points","monthly_expires_at","held_paid_points","held_monthly_points","kind","points_delta","paid_points_after","monthly_points_after","reference_id","product_id","amount_fen","provider_order_id","run_id","resolution","actor_id","action","target","reason","stage","version","rule_ids","provider","model","call_id","selected_model_label","actual_models","cached_input_tokens","cache_write_tokens","pricing_tier"] as const;
+const labels = ["summary","usage","wallets","ledger","orders","rates","reviews","codes","audit","policies","filters","attempts","settlement","created_at","status","points","input_tokens","output_tokens","upstream_cost_rmb_fen","name","email","paid_points","monthly_points","monthly_expires_at","held_paid_points","held_monthly_points","kind","points_delta","paid_points_after","monthly_points_after","reference_id","product_id","amount_fen","provider_order_id","run_id","resolution","actor_email","action","target","reason","stage","version","rule_ids","provider","model","call_id","selected_model_label","actual_models","cached_input_tokens","cache_write_tokens","pricing_tier"] as const;
+const valueLabels: Record<string, keyof typeof AdminMessages> = {
+  "reviews.kind.settlement": "reviewSettlement", "reviews.kind.missing": "reviewMissing",
+  "reviews.kind.unknown_model_or_usage": "reviewUnknownUsage", "reviews.kind.afdian_payment": "reviewPayment",
+  "reviews.status.open": "reviewOpen", "reviews.status.resolved": "reviewResolved",
+  "reviews.resolution.platform_absorbed": "platformAbsorbs", "reviews.resolution.verified": "verifiedNoDiscrepancy",
+  "reviews.resolution.adjusted": "adjusted", "reviews.resolution.automatically_fulfilled": "automaticallyFulfilled",
+  "reviews.resolution.previously_fulfilled": "previouslyFulfilled",
+  "usage.settlement.reserved": "settlementReserved", "usage.settlement.settled": "settlementSettled",
+  "usage.settlement.needs_review": "settlementNeedsReview", "usage.settlement.legacy": "settlementLegacy",
+};
 export function BillingConsole({ agent = false }: { agent?: boolean }) {
   const locale = useLocale();
   const request = useAdminRequest(); const [section, setSection] = useState(agent ? "policies" : "summary");
@@ -67,7 +77,23 @@ export function BillingConsole({ agent = false }: { agent?: boolean }) {
   const providerLabels = { primary: adminText.text(locale, "primaryModel"), secondary: adminText.text(locale, "secondaryModel"), reserve: adminText.text(locale, "reserveModel"), vision: adminText.text(locale, "visionModel"), modelService: adminText.text(locale, "modelService") };
   const directory = policies?.modelDirectory ?? [];
   const detailValue = billingDetailReplacer(directory, providerLabels);
-  const value = (key: string, v: unknown, record: Row = {}) => v === null || v === undefined ? adminText.text(locale, key === "cache_write_tokens" ? "cacheWriteNotRecorded" : "unknownNone") : key === "provider" ? String(billingProviderDisplay(v, record, directory, providerLabels)) : key.endsWith("_fen") ? (Number(v) / 100).toFixed(2) : key.endsWith("_at") ? new Date(String(v)).toLocaleString() : typeof v === "object" ? JSON.stringify(v, detailValue) : String(v);
+  const codeLabel = (key: string, code: string) => {
+    const label = valueLabels[`${section}.${key}.${code}`];
+    return label ? `${adminText.text(locale, label)}（${code}）` : code;
+  };
+  const value = (key: string, v: unknown, record: Row = {}): string => {
+    if (v === null || v === undefined) return adminText.text(locale, key === "cache_write_tokens" ? "cacheWriteNotRecorded" : "unknownNone");
+    if (key === "provider") return String(billingProviderDisplay(v, record, directory, providerLabels));
+    if (key === "resolution") {
+      let resolution = v;
+      if (typeof resolution === "string") { try { resolution = JSON.parse(resolution); } catch { /* Plain codes predate structured resolutions. */ } }
+      if (resolution && typeof resolution === "object" && "resolution" in resolution && typeof resolution.resolution === "string") {
+        const result = resolution as { resolution: string; reason?: unknown; ledgerId?: unknown };
+        return [codeLabel(key, result.resolution), result.reason, result.ledgerId].filter(part => typeof part === "string" && part).join(" · ");
+      }
+    }
+    return key.endsWith("_fen") ? (Number(v) / 100).toFixed(2) : key.endsWith("_at") ? new Date(String(v)).toLocaleString() : typeof v === "object" ? JSON.stringify(v, detailValue) : codeLabel(key, String(v));
+  };
   const tableValue = (key: string, row: Row) => {
     if (key === "actual_models") return (row.actual_models as { provider: string; model: string }[] | undefined)?.map(model => String(model.model)).join(", ") || adminText.text(locale, "unknownNone");
     if (section === "attempts") {
@@ -106,7 +132,7 @@ export function BillingConsole({ agent = false }: { agent?: boolean }) {
     ] as const).map(([key, label]) => <div key={key} className="rounded-xl border bg-card p-4"><p className="text-sm text-muted-foreground">{label}</p><p className="mt-2 text-2xl font-semibold tabular-nums">{value(key, summary[key])}</p></div>)}</div><p className="text-sm text-muted-foreground">{adminText.text(locale, "last30DaysByDefaultUnknownCostsRequire")}</p><div className="overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm"><thead><tr>{[adminText.text(locale, "date"),adminText.text(locale, "runs2"),adminText.text(locale, "points"),adminText.text(locale, "knownCost"),adminText.text(locale, "unknown")].map(label => <th key={label} className="p-3">{label}</th>)}</tr></thead><tbody>{(summary.series as Row[] ?? []).map(row => <tr key={String(row.day)} className="border-t">{["day","runs","points","known_cost_fen","unknown_cost_runs"].map(key => <td key={key} className="p-3 tabular-nums">{value(key,row[key])}</td>)}</tr>)}</tbody></table></div></>}
     {section === "summary" && summary?.modelStats && <ModelUsageSummary rows={summary.modelStats} />}
     {["usage", "attempts"].includes(section) && listing?.modelStats && <ModelUsageSummary rows={listing.modelStats} gateway={section === "attempts"} />}
-    {isTable && listing && <><div className="overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm"><thead><tr>{columns[section].map(key => <th className="whitespace-nowrap p-3" key={key}>{labels.includes(key as typeof labels[number]) ? labelsText.text(locale, key as keyof typeof LabelMessages) : key}</th>)}<th className="p-3">{adminText.text(locale, "actions")}</th></tr></thead><tbody>{listing.rows.map((row, index) => <tr key={String(row.id ?? row.user_id ?? index)} className="border-t">{columns[section].map(key => <td key={key} className={key === "provider_order_id" || key === "reference_id" ? "whitespace-nowrap p-3 font-mono tabular-nums select-all" : "max-w-64 truncate p-3 tabular-nums"} title={tableValue(key,row)}>{tableValue(key,row)}</td>)}<td className="p-3"><div className="flex gap-1"><Button size="sm" variant="ghost" onClick={async () => { try { setDetail(section === "usage" && row.run_id ? await request(`/api/admin/billing?section=run&id=${encodeURIComponent(String(row.run_id))}`) : row); } catch (e) { setError(String(e)); } }}>{adminText.text(locale, "details")}</Button>
+    {isTable && listing && <><div className="overflow-x-auto rounded-xl border"><table className="w-full text-left text-sm"><thead><tr>{columns[section].map(key => <th className="whitespace-nowrap p-3" key={key}>{labels.includes(key as typeof labels[number]) ? labelsText.text(locale, key as keyof typeof LabelMessages) : key}</th>)}<th className="p-3">{adminText.text(locale, "actions")}</th></tr></thead><tbody>{listing.rows.map((row, index) => <tr key={String(row.id ?? row.user_id ?? index)} className="border-t">{columns[section].map(key => <td key={key} className={key === "email" || key === "actor_email" ? "min-w-48 max-w-80 break-all p-3" : key === "resolution" ? "min-w-48 max-w-80 whitespace-normal break-words p-3" : key === "provider_order_id" || key === "reference_id" || key === "run_id" ? "whitespace-nowrap p-3 font-mono tabular-nums select-all" : "max-w-64 truncate p-3 tabular-nums"} title={tableValue(key,row)}>{tableValue(key,row)}</td>)}<td className="p-3"><div className="flex gap-1"><Button size="sm" variant="ghost" onClick={async () => { try { setDetail(section === "usage" && row.run_id ? await request(`/api/admin/billing?section=run&id=${encodeURIComponent(String(row.run_id))}`) : row); } catch (e) { setError(String(e)); } }}>{adminText.text(locale, "details")}</Button>
       {section === "wallets" && <Button size="sm" variant="outline" onClick={() => setAdjust({ userId: String(row.user_id), action: "credit", referenceId: "", providerOrderId: "", points: "", reason: "", idempotencyKey: crypto.randomUUID() })}>{adminText.text(locale, "adjust")}</Button>}
       {section === "ledger" && Number(row.points_delta) < 0 && <Button size="sm" variant="outline" onClick={() => setAdjust({ userId: String(row.user_id), action: "refund", referenceId: String(row.id), providerOrderId: "", points: "", reason: "", idempotencyKey: crypto.randomUUID() })}>{adminText.text(locale, "refund")}</Button>}
       {section === "reviews" && row.status === "open" && <Button size="sm" variant="outline" onClick={() => setReview({ id: String(row.id), reason: "", resolution: "platform_absorbed", ledgerId: "" })}>{adminText.text(locale, "resolve")}</Button>}

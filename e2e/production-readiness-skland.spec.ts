@@ -52,6 +52,8 @@ async function expectNonTextContrast(foreground: Locator, background: Locator) {
 }
 
 test.beforeEach(async ({ page }) => {
+  // Keep the mocked website session independent of real cloud consent requests.
+  await page.route("**/api/account/data-consent", route => route.fulfill({ json: { success: true, data: { current: false, cloudSyncEnabled: false } } }));
   await page.route("**/api/auth/get-session", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
