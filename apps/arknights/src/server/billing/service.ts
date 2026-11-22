@@ -391,6 +391,7 @@ export async function finalizeAgentUsage(input: {
   inputTokens?: number;
   outputTokens?: number;
   cachedInputTokens?: number;
+  cacheWriteTokens?: number;
   upstreamCostRmbFen?: number | null;
   chargedCostRmbFen?: number | null;
   chargedPoints?: number;
@@ -411,6 +412,7 @@ export async function finalizeAgentUsage(input: {
         inputTokens: input.inputTokens ?? null,
         outputTokens: input.outputTokens ?? null,
         cachedInputTokens: input.cachedInputTokens ?? null,
+        cacheWriteTokens: input.cacheWriteTokens ?? null,
         upstreamCostRmbFen: null,
         metadata: { ...(usage.metadata as Record<string, unknown> ?? {}), ...input.metadata,
           settlement: { toolPoints: Math.max(0, usage.points), tokenPoints: null, settledTokenPoints: 0,
@@ -474,6 +476,7 @@ export async function finalizeAgentUsage(input: {
       inputTokens: input.inputTokens ?? null,
       outputTokens: input.outputTokens ?? null,
       cachedInputTokens: input.cachedInputTokens ?? null,
+      cacheWriteTokens: input.cacheWriteTokens ?? null,
       upstreamCostRmbFen: input.upstreamCostRmbFen ?? null,
       chargedCostRmbFen: new Decimal(sumPoints(toolPoints, settledTokenPoints)).mul(POINT_VALUE_RMB).mul(100).toNumber(),
       metadata,

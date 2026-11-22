@@ -110,6 +110,7 @@ Magpie 插件异常会 fail-open，因此应用层过滤是必要防线。网关
 - 上游 SSE 使用 OpenAI `prompt_tokens` 总量；网关用量 API 的 `in` 是普通输入，核对时要加 `cache_read` 和 `cache_write`。旧网关遥测在重新导入时可补齐这些计数，不改写历史调用费用。
 - GPT Responses 的 `input_tokens` 经 Magpie 转换为 `prompt_tokens`，包含图片输入；`input_tokens_details.cached_tokens` 和 `cache_write_tokens` 是其中的缓存读取、写入子集，不可再次计入总输入。`output_tokens` 已包含推理 token 时也不得叠加推理明细。图片详情只有上游确实提供时才能记录为实测；base64 长度不等于图片 token。
 - 每条线路可在模型费率中开启“单独计算缓存写入”，填写基础档及已启用高峰、长上下文各档的写入价，再保存发布。未开启的版本继续原计费公式；开启后普通输入量为总输入减缓存读写量，四项分别计价，预扣纳入写入最高价。后台不自动猜测供应商写价，也不修改既有生效策略。
+- 旧 DeepSeek/GLM 直连回滚路径同样读取已发布写入价，请求前只核对费率与线路配置；逐步读取 SDK 写入计数，并核对原始用量中的 `cache_creation_input_tokens`（Anthropic）或 `prompt_tokens_details.cache_write_tokens`（OpenAI-compatible）。原始字段缺失时不采纳 SDK 补出的零；原始字段存在时还须与 SDK 已提供的计数一致。只有每步均明确报量（含显式零）才汇总；任一步缺失或非法时，已启用写价的该轮保留未确认用量，不将缺失补零计费。启用写价前需确认所用直连协议的报量能力。多个工具记录按普通输入、缓存读、缓存写分别分摊，并只分配一次整轮费用；历史未启用写价的费率继续原公式。
 - 写入用量由 SDK 原始 usage 提取；缺失时为“未记录”，明确零才是零。启用写入计价但未取得该计数的调用进入待对账；历史未记录用量不回填零或重计价。固定 Magpie 会把上游缺失写入字段归一化为零，因此启用前仍需确认供应商的报量契约。
 - 首版仅使用当前供应商默认缓存时长（GPT 为 30 分钟）。固定网关不完整保留 GPT 12 小时写入明细，后台不提供时长切换。上线先执行 `0033_agent_cache_write_tokens`（两项可空列，无历史回填），再更新网站与 Agent worker。
 - `/v1/magpie/usage/requests` 的 `response_id` 用于与实际调用关联，再校验会话和模型；不凭时间猜测关联。

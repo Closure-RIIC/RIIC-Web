@@ -259,12 +259,13 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
     // The direct-provider rollback path must retain fractional fees and refund failed solvers.
     await pool.query("UPDATE app.billing_wallet SET paid_points=2,monthly_points=0.1234,monthly_expires_at=now()+interval '1 day' WHERE user_id=$1",[userId]);
     const direct = await createAgentUsage({userId,toolName:"agent_chat",idempotencyKey:randomUUID()});
-    await Promise.all([1,2].map(()=>finalizeAgentUsage({usageId:direct,chargedPoints:0.0156,upstreamCostRmbFen:0.1302,chargedCostRmbFen:0.15624})));
+    await Promise.all([1,2].map(()=>finalizeAgentUsage({usageId:direct,chargedPoints:0.0156,upstreamCostRmbFen:0.1302,chargedCostRmbFen:0.15624,inputTokens:1000,cachedInputTokens:100,cacheWriteTokens:200,outputTokens:100})));
     assert.equal((await getWallet(userId)).monthlyPoints,0.1078);
     assert.equal((await getWallet(userId)).paidPoints,2);
     const directUsage=(await listUsage(userId)).find(row=>row.id===direct);
     assert.equal(directUsage.points,0.0156);
     assert.equal(directUsage.chargedCostRmbFen,0.156);
+    assert.equal(directUsage.cacheWriteTokens,200);
     for (const reason of ["missing_usage", "unknown_model"]) {
       const unconfirmed = await createAgentUsage({ userId, toolName: "agent_chat", idempotencyKey: randomUUID() });
       const beforeWallet = await getWallet(userId);
@@ -272,6 +273,7 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
       await finalizeAgentUsage({ usageId: unconfirmed, metadata: { rateVersion: policies.rates.id, usageIssue: reason } });
       const row = (await pool.query("SELECT * FROM app.agent_usage WHERE id=$1", [unconfirmed])).rows[0];
       assert.equal(row.status, "completed_unsettled");
+      assert.equal(row.cache_write_tokens, null);
       assert.equal(row.metadata.settlement.usageConfirmed, false);
       assert.equal(row.metadata.settlement.tokenPoints, null);
       assert.equal((await listUsage(userId)).find(usage => usage.id === unconfirmed).tokenPoints, null);

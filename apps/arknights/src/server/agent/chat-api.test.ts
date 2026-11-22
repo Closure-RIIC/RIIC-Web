@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { register, registerHooks } from "node:module";
 import test from "node:test";
 import { defaultRatePolicy } from "../billing/rate-policy.ts";
-import { calculateAgentTokenCost } from "../billing/pricing.ts";
+import { calculateAgentTokenCost, sumAgentCacheWriteTokens } from "../billing/pricing.ts";
 import { splitPoints } from "../billing/points.ts";
 
 register("../../../../../scripts/ts-path-loader.mjs", import.meta.url);
@@ -90,7 +90,7 @@ test("chat API validates model selection while preserving the authenticated gate
       listBuiltinAgentPersonas: async () => [], resolveAgentPersonaContent: async () => undefined,
     }],
     [new URL("./tools.ts", import.meta.url), { buildAgentTools: () => ({}) }],
-    [new URL("../billing/pricing.ts", import.meta.url), { calculateAgentTokenCost }],
+    [new URL("../billing/pricing.ts", import.meta.url), { calculateAgentTokenCost, sumAgentCacheWriteTokens }],
     [new URL("../billing/points.ts", import.meta.url), { splitPoints }],
     [new URL("../billing/agent-accounting.ts", import.meta.url), {
       AgentAccountingError: class extends Error {},
@@ -191,7 +191,7 @@ test("chat API validates model selection while preserving the authenticated gate
 
   const responseEvent = (model = "deepseek-v4.1-flash", usage: Record<string, unknown> = { inputTokens: 1000, outputTokens: 100, inputTokenDetails: { cacheReadTokens: 100 } }) => ({
     model: { modelId: "deepseek-v4.1-flash" }, response: { modelId: model }, totalUsage: usage,
-    toolResults: [], steps: [{ response: { modelId: model } }], finishReason: "stop",
+    toolResults: [] as Array<{ output: { billing: { usageId: string } } }>, steps: [{ response: { modelId: model }, usage }], finishReason: "stop",
   });
 
   await t.test("direct billing uses the published multiplier and keeps its snapshot across a publication", async () => {
@@ -222,7 +222,7 @@ test("chat API validates model selection while preserving the authenticated gate
 
   await t.test("unknown returned model and missing usage remain unconfirmed", async () => {
     const mixedModels = responseEvent();
-    mixedModels.steps.unshift({ response: { modelId: "unexpected-model" } });
+    mixedModels.steps.unshift({ response: { modelId: "unexpected-model" }, usage: {} });
     const missingModel = responseEvent();
     missingModel.steps = [];
     for (const event of [responseEvent("unexpected-model"), mixedModels, missingModel, responseEvent("deepseek-v4.1-flash", { outputTokens: 10 })]) {
@@ -233,5 +233,66 @@ test("chat API validates model selection while preserving the authenticated gate
       assert.equal((settled[0].metadata as Record<string, unknown>).usageConfirmed, false);
     }
     assert.equal(settled[0].inputTokens, undefined);
+  });
+
+  await t.test("direct cache-write pricing admits valid configurations and settles explicit counters for both providers", async () => {
+    const originalRates = rates;
+    rates = { id: "rates:write", policy: defaultRatePolicy("1.2") };
+    for (const rate of rates.policy.models) { delete rate.peak; rate.cacheWrite = "3"; }
+    try {
+      for (const [provider, model] of [["deepseek", "deepseek-v4.1-flash"], ["glm", "glm-5.3-flash"]]) {
+        for (const count of [0, 200]) {
+          settled.length = 0;
+          assert.equal((await post(provider)).status, 200);
+          const usage = { inputTokens: 1000, outputTokens: 100, inputTokenDetails: { cacheReadTokens: 100, cacheWriteTokens: count } };
+          await finish(responseEvent(model, usage));
+          assert.equal(settled[0].cacheWriteTokens, count);
+          assert.equal((settled[0].metadata as Record<string, unknown>).usageConfirmed, true);
+          assert.equal(settled[0].chargedPoints, calculateAgentTokenCost(rates.policy, `riic-${provider}`, model,
+            { inputTokens: 1000, outputTokens: 100, cachedInputTokens: 100, cacheWriteTokens: count }).chargedPoints);
+        }
+      }
+    } finally { rates = originalRates; }
+  });
+
+  await t.test("missing or invalid per-step cache writes cannot become a measured aggregate", async () => {
+    const originalRates = rates;
+    rates = { id: "rates:write", policy: defaultRatePolicy("1.2") };
+    rates.policy.models[0].cacheWrite = "3"; rates.policy.models[0].peak!.cacheWrite = "6";
+    try {
+      const known = { inputTokens: 100, outputTokens: 10, inputTokenDetails: { cacheReadTokens: 0, cacheWriteTokens: 10 } };
+      const partial = responseEvent("deepseek-v4.1-flash", { inputTokens: 200, outputTokens: 20, inputTokenDetails: { cacheReadTokens: 0, cacheWriteTokens: 10 } });
+      partial.steps = [responseEvent("deepseek-v4.1-flash", known).steps[0], responseEvent().steps[0]];
+      const synthesizedZero = responseEvent("deepseek-v4.1-flash", { inputTokens: 100, outputTokens: 10,
+        inputTokenDetails: { cacheReadTokens: 0, cacheWriteTokens: 0 }, raw: { input_tokens: 100, output_tokens: 10 } });
+      for (const event of [responseEvent(), partial, synthesizedZero, responseEvent("deepseek-v4.1-flash", { ...known, inputTokenDetails: { cacheWriteTokens: -1 } })]) {
+        settled.length = 0;
+        assert.equal((await post("deepseek")).status, 200);
+        await finish(event);
+        assert.equal(settled[0].chargedPoints, undefined);
+        assert.equal(settled[0].cacheWriteTokens, undefined);
+        assert.equal((settled[0].metadata as Record<string, unknown>).usageConfirmed, false);
+      }
+    } finally { rates = originalRates; }
+  });
+
+  await t.test("multiple direct tool records preserve exclusive cache buckets and charge the turn once", async () => {
+    const originalRates = rates;
+    rates = { id: "rates:write", policy: defaultRatePolicy("1.2") };
+    rates.policy.models[0].cacheWrite = "3"; rates.policy.models[0].peak!.cacheWrite = "6";
+    try {
+      settled.length = 0;
+      assert.equal((await post("deepseek")).status, 200);
+      const event = responseEvent("deepseek-v4.1-flash", { inputTokens: 2, outputTokens: 10, inputTokenDetails: { cacheReadTokens: 1, cacheWriteTokens: 1 } });
+      event.toolResults = ["tool-a", "tool-b"].map(usageId => ({ output: { billing: { usageId } } }));
+      await finish(event);
+      assert.equal(settled.length, 2);
+      for (const row of settled) assert.ok(Number(row.inputTokens) >= Number(row.cachedInputTokens) + Number(row.cacheWriteTokens));
+      for (const [field, expected] of [["inputTokens", 2], ["cachedInputTokens", 1], ["cacheWriteTokens", 1], ["outputTokens", 10]] as const) {
+        assert.equal(settled.reduce((sum, row) => sum + Number(row[field]), 0), expected);
+      }
+      const expected = calculateAgentTokenCost(rates.policy, "riic-deepseek", "deepseek-v4.1-flash", { inputTokens: 2, outputTokens: 10, cachedInputTokens: 1, cacheWriteTokens: 1 }).chargedPoints;
+      assert.equal(settled.reduce((sum, row) => sum + Number(row.chargedPoints), 0), expected);
+    } finally { rates = originalRates; }
   });
 });

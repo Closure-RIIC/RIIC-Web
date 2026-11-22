@@ -10,7 +10,8 @@ import { createAgentStreamPolicy } from "@/server/agent/stream-policy";
 import { buildAgentSystemPrompt } from "@/server/agent/persona";
 import { listBuiltinAgentPersonas, resolveAgentPersonaContent } from "@/server/agent/persona-catalog";
 import { buildAgentTools } from "@/server/agent/tools";
-import { calculateAgentTokenCost } from "@/server/billing/pricing";
+import { calculateAgentTokenCost, sumAgentCacheWriteTokens } from "@/server/billing/pricing";
+import { findModelRate } from "@/server/billing/rate-policy";
 import { splitPoints } from "@/server/billing/points";
 import { agentGatewayEnabled, gatewaySettings } from "@/server/agent/gateway-runtime";
 import { gatewayChat } from "@/server/agent/gateway-chat";
@@ -184,7 +185,7 @@ export async function POST(request: Request) {
     const pricedAt = new Date();
     // Validate the configured model before any provider request or tool execution.
     try {
-      calculateAgentTokenCost(rates.policy, rateProvider, settings.model, { inputTokens: 0, outputTokens: 0 }, pricedAt);
+      findModelRate(rates.policy, rateProvider, settings.model);
     } catch {
       throw new AgentAccountingError("policy_unavailable", "当前模型的计费配置不可用，请联系管理员。");
     }
@@ -239,12 +240,15 @@ export async function POST(request: Request) {
         const model = String(event.response.modelId ?? "unknown");
         const usageIdList = [...usageIds];
         let turnPricing: ReturnType<typeof calculateAgentTokenCost> | undefined;
+        let cacheWriteTokens: number | undefined;
         try {
           if (model !== settings.model || event.steps.length === 0 || event.steps.some(step => step.response.modelId !== settings.model)) {
             throw new Error("Unexpected response model");
           }
+          cacheWriteTokens = sumAgentCacheWriteTokens(event.steps.map(step => step.usage));
           turnPricing = calculateAgentTokenCost(rates.policy, rateProvider, model, {
             inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens,
+            cacheWriteTokens,
           }, pricedAt);
         } catch {
           // Preserve an unconfirmed usage record instead of inventing a zero charge.
@@ -258,19 +262,26 @@ export async function POST(request: Request) {
           // Provider usage is reported at the model-step level. When one turn
           // invokes multiple billable tools, split the step totals once so the
           // same token usage is not charged repeatedly to every tool record.
-          const inputTokens = splitTokens(usage.inputTokens, index);
+          const measuredWriteTokens = cacheWriteTokens === undefined ? undefined : splitTokens(cacheWriteTokens, index);
           const outputTokens = splitTokens(usage.outputTokens, index);
-          const cachedInputTokens = Math.min(inputTokens, splitTokens(usage.inputTokenDetails?.cacheReadTokens, index));
+          const cachedInputTokens = splitTokens(usage.inputTokenDetails?.cacheReadTokens, index);
+          // Partition exclusive input buckets before splitting so every record
+          // preserves input >= cache read + cache write, including one-token shares.
+          const inputTokens = turnPricing
+            ? splitTokens(usage.inputTokens! - (usage.inputTokenDetails?.cacheReadTokens ?? 0) - (cacheWriteTokens ?? 0), index) + cachedInputTokens + (measuredWriteTokens ?? 0)
+            : splitTokens(usage.inputTokens, index);
           const pricing = turnPricing ? calculateAgentTokenCost(rates.policy, rateProvider, model, {
             inputTokens: usage.inputTokens === undefined ? undefined : inputTokens,
             outputTokens: usage.outputTokens === undefined ? undefined : outputTokens,
             cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens === undefined ? undefined : cachedInputTokens,
+            cacheWriteTokens: measuredWriteTokens,
           }, pricedAt) : undefined;
           await finalizeAgentUsage({
             usageId,
             inputTokens: usage.inputTokens === undefined ? undefined : inputTokens,
             outputTokens: usage.outputTokens === undefined ? undefined : outputTokens,
             cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens === undefined ? undefined : cachedInputTokens,
+            cacheWriteTokens: measuredWriteTokens,
             upstreamCostRmbFen: pricing?.providerCostRmbFen,
             chargedCostRmbFen: pricing?.chargedCostRmbFen,
             chargedPoints: turnPricing ? splitPoints(turnPricing.chargedPoints, usageIdList.length, index) : undefined,
