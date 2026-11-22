@@ -1,6 +1,6 @@
 import { wrapLanguageModel } from "ai";
 import type { LanguageModelV4, LanguageModelV4StreamPart } from "@ai-sdk/provider";
-import { INTERNAL_ANSWER_MARKERS } from "../../agent-answer.ts";
+import { createInlineThinkingFilter, INTERNAL_ANSWER_MARKERS } from "../../agent-answer.ts";
 
 // Keep only suffixes that could still become one of INTERNAL_ANSWER_MARKERS.
 // JSON whitespace and tool names are variable length, so a fixed tail is not enough.
@@ -35,6 +35,7 @@ export function withAgentAnswerBoundary(model: LanguageModelV4, delivered?: () =
     specificationVersion: "v4",
     wrapStream: async ({ doStream }) => {
       const result = await doStream();
+      const stripThinking = createInlineThinkingFilter();
       let text: TextPart[] = [];
       let pending = "";
       let length = 0;
@@ -79,6 +80,11 @@ export function withAgentAnswerBoundary(model: LanguageModelV4, delivered?: () =
             if (hasTools) return;
             if (part.type === "text-delta") length += part.delta.length;
             if (length > 64_000) { blocked = true; discard(output); output.enqueue({ type: "error", error: new Error("Agent answer exceeds limit") }); return; }
+            if (part.type === "text-delta") {
+              const delta = stripThinking(part.delta);
+              if (!delta) return;
+              part = { ...part, delta };
+            }
             text.push(part);
             if (part.type === "text-delta") pending += part.delta;
             if (INTERNAL_ANSWER_MARKERS.test(pending)) {

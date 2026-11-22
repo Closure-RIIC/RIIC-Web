@@ -1,5 +1,21 @@
 # Frontend Serve Guide
 
+## Calculator rotation choices and automatic rotation
+
+The calculator offers these choices in order: three crews with two changes (`12/12/12`), three crews with three changes (`12/6/6`), main/backup crews (`24/24`), automatic queue rotation, and custom timed durations. Automatic rotation is a normal `plan.compute` request with `options.rotation` set to `{ "topology": "auto", "shift_hours": [24, 24] }`; it uses the same task endpoint, queue, worker, result DTO and persistence path as timed plans. The protocol also accepts the string `"auto"` for the default 24/24 request. Default automatic results use `main_backup_24_24`; explicit non-24/24 automatic timing uses `generic_main_backup` for ordinary consumers, with `rotation.auto_rotation` retaining timing, completeness, per-room missing seats and constant dorm support. Shift assignments, Fiammetta actions, transitions, drone actions and warnings remain in the normal rotation and MAA output.
+
+Each automatic request is checked against the returned two-shift profile and `auto_rotation` metadata before acceptance. Incomplete assignments and fallback warnings remain available to the common result UI. Existing production summary, drone controls, schedule board, MAA download, saved-result restore, upgrade comparison and normal task cancellation all consume the same `PublicPlanData` path.
+
+The UI uses fixed `24/24` evaluation hours for automatic queue rotation, without duration inputs. Older automatic selections without a result are normalized to 24/24. Historical results keep their original timing for cloud storage and reproduction; starting a new automatic calculation always submits 24/24 and updates the stored selection when it completes. The selected mode and ordinary result survive local session reloads. Changing inputs invalidates the displayed result, and cancellation uses the regular queued plan task. The automatic support-combination control remains hidden.
+
+Automatic results use the existing `ScheduleBoard`, `PlanResultSummary`, `PlanSupportSummary`, `ShiftTabs`, production summary and MAA download. The selected tab is an ordinary synchronized shift. Staffing and room efficiency come from the returned assignments and rotation rows; production and drone output use the existing calculation path. No second queue DTO or client-side output adaptation is involved.
+
+Automatic requests use the ordinary `/api/plan` or `/api/tasks` admission, authentication, sample-data validation, account exclusion, rate windows and cancellation. With the queue enabled, the ordinary worker claims and solves the task through its persistent `infra-cli serve` lane. The old automatic endpoint, immediate reservations, per-request CLI spawn and separate result DTO have been removed.
+
+Automatic queue completion uses its own localized success message in both the notification and result dialog. The message is captured with the completed activity so later mode changes do not relabel that result.
+
+Automatic shift tabs display only the shift number; timed rotation modes retain their duration suffix. The completion message is “自动队列轮换结果已更新，可以查看或导出”. The common empty schedule board remains visible before results and after cancellation or failure.
+
 The plan task worker keeps four isolated `infra-cli serve` processes alive, one per solver lane, instead of spawning a CLI process for every layout. The worker reuses the warmed first lane's verified capability for cache identity, while website health checks use a separate client in the web process. Each lane still owns at most one active request, so logs and protocol responses retain an unambiguous owner.
 
 ## Transport
@@ -33,23 +49,23 @@ The frontend uses `plan.compute` when `protocol_version` matches and `supported_
   "result": {
     "pong": true,
     "protocol_version": 1,
-    "plan_schema_version": 4,
-    "supported_plan_schema_versions": [1, 2, 3, 4],
+    "plan_schema_version": 8,
+    "supported_plan_schema_versions": [1, 2, 3, 4, 5, 6, 7, 8],
     "plan_contract_sha256": "<diagnostic-schema-fingerprint>",
     "solver_executable_sha256": "<running-executable-fingerprint>"
   }
 }
 ```
 
-`plan_contract_sha256` and `solver_executable_sha256` are diagnostic identities, not capability switches. In particular, LF and CRLF copies of the same schema may have different byte hashes without changing compatibility. Missing or different schema hashes therefore do not select the legacy route. A genuinely missing or mismatched `protocol_version`, or a supported-schema list that omits v3, keeps using the legacy `plan` method for runtime compatibility. `plan_schema_version` reports the Worker's current schema but does not override an explicit v3 entry in the supported list.
+`plan_contract_sha256` and `solver_executable_sha256` are diagnostic identities, not capability switches. In particular, LF and CRLF copies of the same schema may have different byte hashes without changing compatibility. Missing or different schema hashes therefore do not select the legacy route. A genuinely missing or mismatched `protocol_version`, or a supported-schema list that omits v8, keeps using the legacy `plan` method for timed-plan runtime compatibility. Automatic requests require v8 and reject this downgrade. `plan_schema_version` reports the Worker's current schema but does not override an explicit v8 entry in the supported list.
 
-Capability negotiation is by membership: a Worker advertising `supported_plan_schema_versions: [1, 2, 3, 4]` still receives the website's v3 request. The website continues to send `fiammetta_enable`; it does not send the v4 `assert_invariants` option used by internal Check workflows.
+Capability negotiation is by membership: a Worker advertising `supported_plan_schema_versions: [1, 2, 3, 4, 5, 6, 7, 8]` receives the website's v8 request. The website continues to send `fiammetta_enable`; it does not send the v4 `assert_invariants` option used by internal Check workflows.
 
-Deployment health is intentionally stricter than runtime routing when `INFRA_CLI_EXPECTED_SHA256` is configured. In that mode the server pins CLI selection to the packaged platform binary in `bin/`, requires the current protocol plus v3 support, and requires the Worker fingerprint to match that artifact. A version or executable mismatch makes `plannerReady` false so the release runner rolls back; `INFRA_CLI_PATH` and a persisted active CLI cannot silently replace the verified artifact. Local or unmanaged environments may omit the expected hash, retain normal CLI candidate selection, and keep a legacy Worker available. The contract hash is recorded but never compared against a frontend constant.
+Deployment health is intentionally stricter than runtime routing when `INFRA_CLI_EXPECTED_SHA256` is configured. In that mode the server pins CLI selection to the packaged platform binary in `bin/`, requires the current protocol plus v8 support, and requires the Worker fingerprint to match that artifact. A version or executable mismatch makes `plannerReady` false so the release runner rolls back; `INFRA_CLI_PATH` and a persisted active CLI cannot silently replace the verified artifact. Local or unmanaged environments may omit the expected hash, retain normal CLI candidate selection, and keep a legacy Worker available. The contract hash is recorded but never compared against a frontend constant.
 
 Solver contract smoke tests require the private solver binary and are maintained outside this public repository. Public unit and E2E suites use fixtures and mock API responses; they do not download, execute, or depend on a solver artifact.
 
-## `plan.compute` v1
+## `plan.compute` v8
 
 The request contains the complete layout and operbox inline:
 
@@ -58,7 +74,7 @@ The request contains the complete layout and operbox inline:
   "id": 2,
   "method": "plan.compute",
   "params": {
-    "schema_version": 3,
+    "schema_version": 8,
     "layout": {
       "template": "243",
       "drone_cap": 235,
@@ -90,7 +106,7 @@ Successful responses contain all outputs inline:
   "ok": true,
   "elapsed_ms": 123,
   "result": {
-    "schema_version": 3,
+    "schema_version": 8,
     "profile": {},
     "rotation": {
       "profile": "abc_12_6_6",
@@ -112,7 +128,7 @@ Successful responses contain all outputs inline:
 
 The frontend validates `schema_version`, `profile`, `rotation.shifts`, and `maa` before marking the run successful. `training_room` is optional for compatibility with older Workers. When present, it must use schema version 1, contain exactly one entry per `maa.plans` shift, and provide both `trainee` and `trainer` as trimmed names or `null`. A name may not exceed 80 characters, occupy both training positions, or also appear in an explicit MAA room in the same shift. It then persists the inline profile and MAA values into the run directory so debug bundle paths always refer to real files.
 
-Newer Workers may include `rotation.shifts[].assignment` and `rotation.shifts[].notes` in an otherwise valid v3 response. They are accepted as private transport details but are not part of the normalized public rotation DTO; schedule presentation and MAA export continue to use the normalized rotation and `maa` payload.
+Schema v8 may include `rotation.shifts[].assignment`, `transition` and `notes`. They are accepted as private transport details but are not part of the normalized public rotation DTO; schedule presentation and MAA export continue to use the normalized rotation and `maa` payload.
 
 Error responses use the normal serve envelope:
 
@@ -142,11 +158,11 @@ All paths are selected by the frontend. After a successful response, the fronten
 
 The CLI response is an internal transport object. It must never be returned directly from a HTTP route handler.
 
-`packages/platform-server/src/infra.ts` may retain CLI paths, commands, stdout, stderr, serve requests/responses, the ping observation and run-directory metadata for local diagnostics. Feedback looks up that exact private run by diagnostic ID and copies its solver observation into private `meta.json`; old or missing runs use `solver: null`. `packages/platform-server/src/public-plan.ts` is the required boundary before `/api/plan`: it constructs a new allowlisted DTO containing profile, MAA, rotation, duration, an opaque diagnostic ID and, when supplied by the current Worker, optional `trainingRoom` and `trainingAdvice` values parsed through their own strict public contracts. The optional Worker `trainingRoom` result remains separate from `maa.plans[*].rooms`. Explicit manual assignments and imported MAA files may carry the public `training` room protocol (`operatorsA`, `operatorsB`, and `skip`); the shared export sanitizer preserves those fields without forwarding private training runtime data. See [MAA schedule file I/O](MAA_SCHEDULE_IO.md). Rotation is rebuilt through `packages/arknights-domain/src/rotation-result.ts`; only the selected profile, daily summary, normalized shifts, team state, weighted efficiency and normalized room efficiency are public. Raw `efficiencies`, assignments, solver identities and future unknown Worker or training fields are not forwarded in production.
+`packages/platform-server/src/infra.ts` may retain CLI paths, commands, stdout, stderr, serve requests/responses, the ping observation and run-directory metadata for local diagnostics. Feedback looks up that exact private run by diagnostic ID and copies its solver observation into private `meta.json`; old or missing runs use `solver: null`. `packages/platform-server/src/public-plan.ts` is the required boundary before `/api/plan`: it constructs a new allowlisted DTO containing profile, MAA, rotation, duration, an opaque diagnostic ID and, when supplied by the current Worker, optional `trainingRoom` and `trainingAdvice` values parsed through their own strict public contracts. The optional Worker `trainingRoom` result remains separate from `maa.plans[*].rooms`. Explicit manual assignments and imported MAA files may carry the public `training` room protocol (`operatorsA`, `operatorsB`, and `skip`); the shared export sanitizer preserves those fields without forwarding private training runtime data. See [MAA schedule file I/O](MAA_SCHEDULE_IO.md). Rotation is rebuilt through `packages/arknights-domain/src/rotation-result.ts`; the selected profile, daily summary, normalized shifts, team state, weighted efficiency and normalized room efficiency are public. Automatic `rotation.auto_rotation` metadata and `rotation.warnings` are additionally normalized through explicit field allowlists. Raw `efficiencies`, assignments, solver identities and future unknown Worker or training fields are not forwarded in production.
 
 The persisted `run-envelope.json`, `stdout.txt`, `stderr.txt`, `result.json` and `debug-bundle.json` are private diagnostic artifacts. Feedback links to the durable envelope while expansion is pending. Ordinary product API responses, plan history and browser persistence must not contain these logs. Log wording is not a stable protocol: frontend code must not infer Worker capability, progress or solver stage from log text.
 
-The administrator issue-triage API is the deliberate, authenticated exception. `/api/admin/feedback`, `/api/admin/feedback/<id>`, `/api/admin/plan-runs`, and `/api/admin/plan-runs/<id>` require the current website administrator role and return non-cacheable responses. List responses contain only review summaries. Detail responses rebuild a reproduction allowlist containing the layout, normalized operator Box, rotation profile and count, Fiammetta state, error text, and at most 16 KiB from each retained output tail. Current and compatible legacy private run artifacts are retained for at most 30 days; legacy debug bundles are read only as an input source for the same response allowlist. Detail responses identify cache hits, absent, missing, invalid, incomplete, and expired artifacts without exposing storage paths. They never return commands, filesystem paths, credentials, the raw debug bundle, or unknown artifact fields. Feedback mutations require a same-origin request and are rate-limited; one bulk deletion accepts at most 100 feedback IDs and does not delete the linked plan run. Product pages do not call these administrator endpoints.
+The administrator issue-triage API is the deliberate, authenticated exception. `/api/admin/feedback`, `/api/admin/feedback/<id>`, `/api/admin/plan-runs`, and `/api/admin/plan-runs/<id>` require the current website administrator role and return non-cacheable responses. List responses contain only review summaries. Detail responses rebuild a reproduction allowlist containing the layout, normalized operator Box, exact rotation request timing and shift count, Fiammetta state, error text, and at most 16 KiB from each retained output tail. Current and compatible legacy private run artifacts are retained for at most 30 days; legacy debug bundles are read only as an input source for the same response allowlist. Detail responses identify cache hits, absent, missing, invalid, incomplete, and expired artifacts without exposing storage paths. They never return commands, filesystem paths, credentials, the raw debug bundle, or unknown artifact fields. Feedback mutations require a same-origin request and are rate-limited; one bulk deletion accepts at most 100 feedback IDs and does not delete the linked plan run. Product pages do not call these administrator endpoints.
 
 The server appends diagnostic values under `data.debug` only when `BETA_DEBUG_TOOLS_ENABLED=1` and that `/api/plan` request explicitly carries `?beta=1`. The query parameter cannot override a disabled server switch or the production deployment policy, while an ordinary development request remains limited to the core allowlist plus the two optional training fields even when the server switch is enabled. Public contract tests recursively reject internal field names in production responses, and the v5 browser persistence layer strips `data.debug` even in a debug session.
 

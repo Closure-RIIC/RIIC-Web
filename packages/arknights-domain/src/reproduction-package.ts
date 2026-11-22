@@ -1,10 +1,10 @@
 import { assertOperbox } from "./operbox.ts";
 import { validateLayoutJson } from "./layout-validation.ts";
-import { isRotationProfile } from "./rotation-settings.ts";
-import type { BaseBlueprint, OperBoxEntry, RotationProfile } from "./types.ts";
+import { isRotationTiming } from "./rotation-settings.ts";
+import type { BaseBlueprint, OperBoxEntry, RotationTiming } from "./types.ts";
 
 export const REPRODUCTION_FILE_LIMIT = 2 * 1024 * 1024;
-export type ReproductionSettings = { layout: BaseBlueprint; rotation: RotationProfile; fiammetta_enable: boolean };
+export type ReproductionSettings = { layout: BaseBlueprint; rotation: RotationTiming; fiammetta_enable: boolean };
 export type ReproductionPackage = ReproductionSettings & {
   format: "riic-reproduction";
   version: 1;
@@ -28,7 +28,7 @@ export function parseReproductionPackage(value: unknown, boxSettings?: Reproduct
   const operbox = assertOperbox(raw.operbox);
   const errors = validateLayoutJson(raw.layout);
   if (errors.length) throw new Error(`布局无效：${errors.join("；")}`);
-  if (!isRotationProfile(raw.rotation)) throw new Error("缺少有效的轮换参数。");
+  if (!isRotationTiming(raw.rotation)) throw new Error("缺少有效的轮换参数。");
   if (typeof raw.fiammetta_enable !== "boolean") throw new Error("缺少有效的菲亚梅塔设置。");
   if (raw.diagnosticId !== undefined && (typeof raw.diagnosticId !== "string" || raw.diagnosticId.length > 100)) throw new Error("诊断编号无效。");
   const supported = new Set(["format", "version", "operbox", "layout", "rotation", "fiammetta_enable", "diagnosticId"]);
@@ -36,7 +36,7 @@ export function parseReproductionPackage(value: unknown, boxSettings?: Reproduct
   if (unknown.length) throw new Error(`包含尚不支持的参数，不能静默忽略：${unknown.join("、")}`);
   return {
     format: "riic-reproduction", version: 1, operbox,
-    layout: structuredClone(raw.layout as BaseBlueprint), rotation: raw.rotation,
+    layout: structuredClone(raw.layout as BaseBlueprint), rotation: structuredClone(raw.rotation) as RotationTiming,
     fiammetta_enable: raw.fiammetta_enable,
     ...(typeof raw.diagnosticId === "string" ? { diagnosticId: raw.diagnosticId } : {}),
   };

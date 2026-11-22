@@ -8,7 +8,7 @@
   "signedInAccount": "已登录账号",
   "unknownOperator": "未知干员",
   "personalBoxRequired": "当前排班缺少可提交的个人干员 Box，请重新导入后生成排班。",
-  "copiedTraining": "作业练度（非个人干员池）",
+  "copiedTraining": "作业副本干员池",
   "tradeStrategy": "贸易策略",
   "factoryRecipe": "制造配方",
   "requestFailed": "请求失败，请稍后重试。"
