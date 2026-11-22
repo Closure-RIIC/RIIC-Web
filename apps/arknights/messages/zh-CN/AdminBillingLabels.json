@@ -46,5 +46,10 @@
   "provider": "供应商",
   "model": "模型",
   "call_id": "调用 ID",
-  "referral": "邀请活动"
+  "referral": "邀请活动",
+  "selected_model_label": "选择模型",
+  "actual_models": "实际模型",
+  "cached_input_tokens": "缓存读取 token",
+  "pricing_tier": "计价档位",
+  "cache_write_tokens": "缓存写入 token"
 }

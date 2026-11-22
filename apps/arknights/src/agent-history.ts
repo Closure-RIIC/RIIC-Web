@@ -1,13 +1,20 @@
 import type { UIMessage } from "ai";
+import type { AgentModelId } from "./agent-models.ts";
 import { createInlineThinkingFilter } from "./agent-answer.ts";
 
 export const AGENT_HISTORY_LIMIT = 5;
 
-export interface AgentConversation {
+export interface AgentConversationPreferences {
+  selectedModel?: AgentModelId;
+  imageMode?: "include" | "exclude";
+}
+
+export interface AgentConversation extends AgentConversationPreferences {
   id: string;
   title: string;
   updatedAt: number;
   messages: UIMessage[];
+  preferencesUpdatedAt?: number;
 }
 
 export interface AgentHistory {
@@ -47,17 +54,28 @@ export function restoreAgentMessages(messages: UIMessage[]): UIMessage[] {
   }).filter((message) => message.parts.length > 0);
 }
 
-export function updateAgentConversation(history: AgentHistory, id: string, messages: UIMessage[], now = Date.now()): AgentHistory {
+export function updateAgentConversation(history: AgentHistory, id: string, messages: UIMessage[], now = Date.now(), preferences?: AgentConversationPreferences, preferencesUpdatedAt = now): AgentHistory {
   const firstUser = messages.find((message) => message.role === "user");
   if (!firstUser) return history;
   const title = firstUser.parts.filter((part) => part.type === "text").map((part) => part.text).join(" ").replace(/\s+/g, " ").trim()
     || firstUser.parts.find((part) => part.type === "file")?.filename || "…";
-  const conversation: AgentConversation = { id, title: [...title].slice(0, 40).join(""), updatedAt: now, messages: structuredClone(messages) };
+  const previous = history.conversations.find((entry) => entry.id === id);
+  const appliedPreferences = preferencesUpdatedAt >= (previous?.preferencesUpdatedAt ?? 0) ? preferences : undefined;
+  const preferencesChanged = appliedPreferences && (appliedPreferences.selectedModel !== previous?.selectedModel || appliedPreferences.imageMode !== previous?.imageMode);
+  const conversation: AgentConversation = { selectedModel: previous?.selectedModel, imageMode: previous?.imageMode, ...appliedPreferences,
+    preferencesUpdatedAt: preferencesChanged ? preferencesUpdatedAt : previous?.preferencesUpdatedAt,
+    id, title: [...title].slice(0, 40).join(""), updatedAt: now, messages: structuredClone(messages) };
   return {
     ...history,
     conversations: [conversation, ...history.conversations.filter((entry) => entry.id !== id)]
       .sort((a, b) => b.updatedAt - a.updatedAt).slice(0, AGENT_HISTORY_LIMIT),
   };
+}
+
+/** A preference change must preserve the last message checkpoint. */
+export function updateAgentConversationPreferences(history: AgentHistory, id: string, preferences: AgentConversationPreferences, now = Date.now()): AgentHistory {
+  if (!history.conversations.some((entry) => entry.id === id)) return history;
+  return { ...history, conversations: history.conversations.map((entry) => entry.id === id ? { ...entry, ...preferences, preferencesUpdatedAt: now } : entry) };
 }
 
 export function parseAgentHistory(value: unknown): AgentHistory {
@@ -75,7 +93,11 @@ export function parseAgentHistory(value: unknown): AgentHistory {
         && (part.type !== "file" || (typeof part.url === "string" && typeof part.mediaType === "string"))))) return false;
     ids.add(entry.id);
     return true;
-  }).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, AGENT_HISTORY_LIMIT);
+  }).map((entry) => ({ ...entry,
+    selectedModel: entry.selectedModel === "deepseek" || entry.selectedModel === "glm" || entry.selectedModel === "gpt" ? entry.selectedModel : undefined,
+    imageMode: entry.imageMode === "exclude" ? "exclude" as const : "include" as const,
+    preferencesUpdatedAt: Number.isFinite(entry.preferencesUpdatedAt) ? entry.preferencesUpdatedAt : undefined,
+  })).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, AGENT_HISTORY_LIMIT);
   return { version: 1, conversations, activeId: typeof raw.activeId === "string" ? raw.activeId : "", expanded: raw.expanded !== false };
 }
 
@@ -83,7 +105,11 @@ export function mergeAgentHistories(stored: AgentHistory, incoming: AgentHistory
   const conversations = new Map(stored.conversations.map((entry) => [entry.id, entry]));
   for (const entry of incoming.conversations) {
     const previous = conversations.get(entry.id);
-    if (!previous || entry.updatedAt >= previous.updatedAt) conversations.set(entry.id, entry);
+    if (!previous) { conversations.set(entry.id, entry); continue; }
+    const latestMessages = entry.updatedAt >= previous.updatedAt ? entry : previous;
+    const latestPreferences = (entry.preferencesUpdatedAt ?? 0) >= (previous.preferencesUpdatedAt ?? 0) ? entry : previous;
+    conversations.set(entry.id, { ...latestMessages, selectedModel: latestPreferences.selectedModel,
+      imageMode: latestPreferences.imageMode, preferencesUpdatedAt: latestPreferences.preferencesUpdatedAt });
   }
   return { ...incoming, conversations: [...conversations.values()].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, AGENT_HISTORY_LIMIT) };
 }

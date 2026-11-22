@@ -1,10 +1,12 @@
 import type { UIMessage } from "ai";
 import { createInlineThinkingFilter, INTERNAL_ANSWER_MARKERS } from "../../agent-answer.ts";
+import { hasAgentImageBudget, type AgentModelSelection } from "./model-policy.ts";
 
 export class AgentHistoryError extends Error {}
 
 /** Prepare untrusted browser history for the model, never execute historical tools. */
-export async function prepareAgentHistory(messages: UIMessage[], check: (text: string, stage: string) => Promise<void>) {
+export async function prepareAgentHistory(messages: UIMessage[], check: (text: string, stage: string) => Promise<void>, options?: { selection?: AgentModelSelection; images?: unknown }) {
+  if (options?.images !== undefined && options.images !== "include" && options.images !== "exclude") throw new AgentHistoryError("图片上下文选项无效。");
   if (!Array.isArray(messages) || !messages.length || messages.length > 200
     || Buffer.byteLength(JSON.stringify(messages)) > 16_000_000) throw new AgentHistoryError("对话过长，请新建对话或缩小附件。");
   const prepared: UIMessage[] = [];
@@ -30,17 +32,35 @@ export async function prepareAgentHistory(messages: UIMessage[], check: (text: s
       } else if (part.type === "file" && message.role === "user") {
         attachments++;
         if (attachments > 4 || typeof part.url !== "string" || part.url.length > 12_000_000) throw new AgentHistoryError("附件过多或过大，请压缩后重试。");
-        const match = /^data:(image\/(?:png|jpeg|webp)|text\/plain);base64,([A-Za-z0-9+/]*={0,2})$/.exec(part.url);
+        const match = /^data:(image\/(?:png|jpeg|webp)|text\/(?:plain|markdown));base64,([A-Za-z0-9+/]*={0,2})$/.exec(part.url);
         if (!match || match[1] !== part.mediaType) throw new AgentHistoryError("仅支持 PNG、JPEG、WebP 图片与文本附件。");
-        if (part.mediaType === "text/plain") {
+        if (part.mediaType === "text/plain" || part.mediaType === "text/markdown") {
           const text = Buffer.from(match[2], "base64").toString("utf8");
           await check(text, "attachment"); parts.push({ type: "text", text });
-        } else parts.push({ type: "file", url: part.url, mediaType: part.mediaType });
+        } else {
+          if (options?.images === "exclude") continue;
+          const selection = options?.selection;
+          if (!selection?.vision || !hasAgentImageBudget(selection)) throw new AgentHistoryError("当前模型不支持图片，请选择已配置的识图模型，或仅携带文字继续。");
+          const data = Buffer.from(match[2], "base64");
+          if (!data.length || data.length > selection.maxImageBytes || data.toString("base64") !== match[2]) throw new AgentHistoryError("图片数据无效或超过大小限制。");
+          try {
+            const { default: sharp } = await import("sharp");
+            const image = sharp(data, { failOn: "error", limitInputPixels: selection.maxImagePixels, animated: false });
+            const metadata = await image.metadata();
+            if (`image/${metadata.format}` !== part.mediaType || !metadata.width || !metadata.height || (metadata.pages ?? 1) !== 1) throw new Error("Invalid image format");
+            // Decode before upstream, strip metadata, and keep a fixed maximum image dimension.
+            const normalized = await image.rotate().resize({ width: 2048, height: 2048, fit: "inside", withoutEnlargement: true }).png().toBuffer();
+            if (normalized.length > selection.maxImageBytes) throw new Error("Image exceeds normalized byte limit");
+            parts.push({ type: "file", url: `data:image/png;base64,${normalized.toString("base64")}`, mediaType: "image/png" });
+          } catch { throw new AgentHistoryError("图片无法读取或尺寸过大，请上传有效的 PNG、JPEG、WebP 静态图片。"); }
+        }
       }
       // Browser tool results, reasoning, metadata and executable states are discarded.
     }
     if (parts.length) prepared.push({ id: message.id, role: message.role, parts });
   }
   if (!prepared.length || prepared.at(-1)?.role !== "user") throw new AgentHistoryError("请发送新的问题后重试。");
+  const imageCount = prepared.flatMap(message => message.parts).filter(part => part.type === "file").length;
+  if (imageCount > (options?.selection?.maxImages ?? 0)) throw new AgentHistoryError("本轮图片超过模型限制，请减少图片或新建对话。");
   return prepared;
 }

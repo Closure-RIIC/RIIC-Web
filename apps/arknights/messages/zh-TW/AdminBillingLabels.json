@@ -46,5 +46,10 @@
   "provider": "供應商",
   "model": "模型",
   "call_id": "呼叫 ID",
-  "referral": "邀請活動"
+  "referral": "邀請活動",
+  "selected_model_label": "選擇模型",
+  "actual_models": "實際模型",
+  "cached_input_tokens": "快取讀取 token",
+  "pricing_tier": "計價級距",
+  "cache_write_tokens": "快取寫入 token"
 }

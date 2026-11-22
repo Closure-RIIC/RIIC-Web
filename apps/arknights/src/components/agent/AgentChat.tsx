@@ -34,7 +34,7 @@ import { FluidOrb } from "@/components/ui/fluid-orb";
 import { accountOrbColor } from "@/account-orb";
 import { requestAccountSignIn } from "@riic/shell/account-sign-in";
 import { AgentConversationScrollArea } from "./AgentConversationScrollArea";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChatBubble, ChatPanel, LoadingState, PromptBar, StreamingText, ThinkingState, ToolChip } from "./beautiful/ChatPrimitives";
 import dialogueStyles from "./beautiful/Dialogue.module.css";
 import billingStyles from "@/components/billing/BillingPrototype.module.css";
@@ -57,17 +57,38 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { AGENT_BROADCAST_CHANNEL, agentArtifactFromOutput, requestAgentArtifactOpen } from "@/agent-artifact-bridge";
 import type { AgentPlanProjection } from "@/server/agent/plan-artifact";
 import type { AgentPageContext } from "@/agent-page-context";
+import type { AgentModelChoice, AgentModelId } from "@/agent-models";
 
 type AgentStatus = "loading" | "ready" | "unconfigured" | "unauthenticated" | "payment_required" | "unavailable";
-type AgentModelChoice = { id: "deepseek" | "glm"; label: string };
 
 type PersonaCard = UploadedAgentPersona;
 
 const BUILTIN_PERSONA_THEMES = { blue: billingStyles.monthly, red: personaStyles.closure, yellow: personaStyles.sunny } satisfies Record<BuiltinAgentPersona["theme"], string>;
 const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
 const MAX_ATTACHMENTS = 4;
-const ACCEPTED_ATTACHMENT_TYPES = ["image/", "text/", "application/pdf", "application/json", "application/vnd.openxmlformats-officedocument", "application/vnd.ms-excel"];
-const ACCEPTED_ATTACHMENT_EXTENSIONS = [".md", ".markdown", ".txt", ".json", ".pdf", ".csv", ".xlsx"];
+const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
+const TEXT_ATTACHMENT_EXTENSION = /\.(?:txt|md|markdown)$/i;
+
+function attachmentMediaType(file: File): string | undefined {
+  if (ACCEPTED_IMAGE_TYPES.includes(file.type)) return file.type;
+  if (TEXT_ATTACHMENT_EXTENSION.test(file.name) && ["", "text/plain", "text/markdown", "application/octet-stream"].includes(file.type)) return "text/plain";
+  if (!file.type) {
+    if (/\.png$/i.test(file.name)) return "image/png";
+    if (/\.jpe?g$/i.test(file.name)) return "image/jpeg";
+    if (/\.webp$/i.test(file.name)) return "image/webp";
+  }
+  return undefined;
+}
+
+function isImagePart(part: UIMessage["parts"][number]): part is FileUIPart {
+  return part.type === "file" && part.mediaType.startsWith("image/");
+}
+
+function modelAvailabilityText(choice: AgentModelChoice, locale: AppLocale) {
+  const reason = choice.reason;
+  return uiText.text(locale, reason === "disabled" ? "modelDisabled" : reason === "route_unconfigured" ? "modelRouteUnconfigured"
+    : reason === "rate_missing" ? "modelRateMissing" : reason === "image_budget_missing" ? "modelImageBudgetMissing" : "modelUnavailable");
+}
 
 const TOOL_LABELS: Record<string, keyof typeof RawMessages> = {
   resolve_operator: "tool_resolve_operator",
@@ -317,8 +338,9 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     if (agentStatus === "payment_required") setCreditRevision(value => value + 1);
   }), [agentStatus]);
   const [modelChoices, setModelChoices] = useState<AgentModelChoice[]>([]);
-  const [automaticRouting, setAutomaticRouting] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<AgentModelChoice["id"]>();
+  const [selectedModel, setSelectedModel] = useState<AgentModelId>();
+  const [imageMode, setImageMode] = useState<"include" | "exclude">("include");
+  const [pendingModel, setPendingModel] = useState<AgentModelId>();
   const [draft, setDraft] = useState("");
   const [attachments, setAttachments] = useState<FileUIPart[]>([]);
   const { selectedPersona, uploadedPersonas } = useAgentPersona();
@@ -345,7 +367,11 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   const [restoredMessageIds] = useState(() => new Set(initialMessages.map((message) => message.id)));
   const runtime = useAgentRuntime();
   const [runtimeConversation] = useState(() => runtime.getConversation(userId ?? "anonymous", conversationId, initialMessages, historyStore.save,
-    () => new Chat({ id: conversationId, messages: initialMessages, transport: new DefaultChatTransport({ api: "/api/agent/chat" }) })));
+    () => new Chat({ id: conversationId, messages: initialMessages, transport: new DefaultChatTransport({ api: "/api/agent/chat",
+      prepareSendMessagesRequest: ({ id, messages, body, trigger, messageId }) => ({ body: { ...body, id, trigger, messageId,
+        messages: body?.images === "exclude" ? messages.map(message => ({ ...message, parts: message.parts.filter(part => !isImagePart(part)) })).filter(message => message.parts.length > 0) : messages,
+      } }),
+    }) })));
   const { messages, sendMessage, status, error, stop, clearError, regenerate } = useChat({
     chat: runtimeConversation.chat,
     throttle: 50,
@@ -355,8 +381,38 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   const personaTheme = pureMode ? billingStyles.monthly : activePersona?.kind === "builtin" ? BUILTIN_PERSONA_THEMES[activePersona.theme] : !activePersona ? personaStyles.closure : "";
   const personaUnavailable = activePersona?.kind === "builtin" && !builtinPersonas.some(persona => persona.id === activePersona.id);
   const displayTurns = useMemo(() => buildAgentDisplayTurns(messages, busy), [messages, busy]);
-  const modeLabel = (id?: AgentModelChoice["id"]) => id === "glm" ? (uiText.text(en, "deep")) : (uiText.text(en, "fast"));
   const currentModel = modelChoices.find((choice) => choice.id === selectedModel);
+  const historyHasImages = messages.some(message => message.parts.some(isImagePart));
+  const newImagesNeedVision = attachments.some(isImagePart) && !currentModel?.vision;
+  const historyNeedsDecision = historyHasImages && imageMode === "include" && !currentModel?.vision;
+  const visionModel = modelChoices.find(choice => choice.vision && choice.available);
+
+  const applyModel = (id: AgentModelId, images: "include" | "exclude") => {
+    setSelectedModel(id); setImageMode(images); setUploadError(null);
+    runtime.setRequestOptions(runtimeConversation, { ...runtimeConversation.requestOptions,
+      body: { ...runtimeConversation.requestOptions?.body, model: id, images } });
+    historyStore.setPreferences(conversationId, { selectedModel: id, imageMode: images });
+  };
+  const selectModel = (choice: AgentModelChoice) => {
+    if (!choice.available || busy || runtimeConversation.running) return;
+    if (!choice.vision && attachments.some(isImagePart)) {
+      setUploadError(uiText.text(en, "newImagesNeedVision")); return;
+    }
+    if (!choice.vision && historyHasImages && imageMode !== "exclude") { setPendingModel(choice.id); return; }
+    applyModel(choice.id, choice.vision ? "include" : imageMode);
+  };
+  const modelSelector = modelChoices.length ? <Combobox items={modelChoices} filteredItems={modelChoices}
+    value={currentModel ?? null} itemToStringValue={(choice) => choice.label} isItemEqualToValue={(choice, value) => choice.id === value.id}
+    disabled={busy} onValueChange={(choice) => { if (choice) selectModel(choice); }}>
+    <ComboboxTrigger ref={modeAnchor} aria-label={uiText.text(en, "assistantModel")} className={`${dialogueStyles.modeTrigger} max-w-52`}>
+      <span className="min-w-0 text-left"><span className="block truncate text-xs font-semibold">{currentModel?.label ?? uiText.text(en, "selectModel")}</span>
+        <span className="block truncate text-[10px] leading-4 text-muted-foreground">{currentModel?.vision ? uiText.text(en, "visionModel") : uiText.text(en, "textModel")}</span></span>
+    </ComboboxTrigger>
+    <ComboboxContent anchor={modeAnchor} className="min-w-60"><ComboboxList>{(choice) => <ComboboxItem key={choice.id} value={choice} disabled={!choice.available} className="min-h-14">
+      <span><span className="block font-medium">{choice.label}{choice.vision ? ` · ${uiText.text(en, "visionModel")}` : ""}</span>
+        {!choice.available ? <span className="block text-xs text-muted-foreground">{modelAvailabilityText(choice, en)}</span> : null}</span>
+    </ComboboxItem>}</ComboboxList></ComboboxContent>
+  </Combobox> : null;
 
   useEffect(() => {
     const mobile = window.matchMedia("(max-width: 767px)");
@@ -402,17 +458,18 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
         }
         const payload = (await response.json()) as {
           success?: boolean;
-          data?: { enabled?: boolean; automatic?: boolean; personas?: { id?: unknown }[]; provider?: AgentModelChoice["id"] | null; models?: AgentModelChoice[] };
+          data?: { enabled?: boolean; defaultModel?: AgentModelId; personas?: { id?: unknown }[]; provider?: AgentModelId | null; models?: AgentModelChoice[] };
         };
         if (!cancelled) {
-          const choices = payload.data?.models ?? [];
-          const automatic = payload.data?.automatic === true;
+          const choices = (payload.data?.models ?? []).map(choice => ({ ...choice, available: choice.available !== false, vision: choice.vision === true }));
           setModelChoices(choices);
-          setAutomaticRouting(automatic);
-          const previous = (runtimeConversation.requestOptions?.body as { model?: unknown } | undefined)?.model;
-          setSelectedModel(automatic ? undefined : choices.find((choice) => choice.id === previous)?.id
-            ?? choices.find((choice) => choice.id === "deepseek")?.id
-            ?? choices[0]?.id ?? payload.data?.provider ?? undefined);
+          const saved = historyStore.getSnapshot().history.conversations.find(entry => entry.id === conversationId);
+          const options = runtimeConversation.requestOptions?.body as { model?: unknown; images?: unknown } | undefined;
+          const previous = options?.model ?? saved?.selectedModel;
+          const restored = choices.find(choice => choice.id === previous && choice.available);
+          const fallback = choices.find(choice => choice.id === payload.data?.defaultModel && choice.available) ?? choices.find(choice => choice.available);
+          setSelectedModel(restored?.id ?? fallback?.id ?? payload.data?.provider ?? undefined);
+          setImageMode((options?.images ?? saved?.imageMode) === "exclude" ? "exclude" : "include");
           setBuiltinPersonas((payload.data?.personas ?? []).flatMap(card => {
             const persona = builtinAgentPersona(card.id);
             return persona ? [persona] : [];
@@ -430,7 +487,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     return () => {
       cancelled = true;
     };
-  }, [runtimeConversation, creditRevision]);
+  }, [runtimeConversation, creditRevision, historyStore, conversationId]);
 
   // 求解完成时通知同浏览器内已打开的工作台标签页（幂等，每个工具结果只广播一次）。
   // Restoring history must not re-announce old solver results to other pages.
@@ -463,11 +520,23 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   const submit = async (text: string, files = attachments) => {
     const trimmed = text.trim();
     if (!personaHydrated || personaUnavailable || (!trimmed && files.length === 0) || busy || runtimeConversation.running || agentStatus !== "ready") return;
+    if (currentModel?.available === false) { setUploadError(modelAvailabilityText(currentModel, en)); return; }
+    if (files.some(isImagePart) && !currentModel?.vision) { setUploadError(uiText.text(en, "newImagesNeedVision")); return; }
+    if (historyNeedsDecision && selectedModel) { setPendingModel(selectedModel); return; }
+    const requestMessages = [...messages, { id: "draft", role: "user" as const, parts: [{ type: "text" as const, text: trimmed }, ...files] }]
+      .map(message => ({ ...message, parts: imageMode === "exclude" ? message.parts.filter(part => !isImagePart(part)) : message.parts }));
+    if (requestMessages.reduce((count, message) => count + message.parts.filter(part => part.type === "file").length, 0) > MAX_ATTACHMENTS) {
+      setUploadError(uiText.text(en, "imageHistoryLimit")); return;
+    }
+    if (new TextEncoder().encode(JSON.stringify(requestMessages)).byteLength > 15 * 1024 * 1024) {
+      setUploadError(uiText.text(en, "messagePayloadTooLarge")); return;
+    }
+    historyStore.setPreferences(conversationId, { selectedModel, imageMode });
     setDraft("");
     setAttachments([]);
     followLatest();
     runtime.setRequestOptions(runtimeConversation, { body: {
-      model: automaticRouting ? undefined : selectedModel,
+      model: selectedModel, images: imageMode,
       conversationId, attemptId: crypto.randomUUID(),
       ...(pureMode ? { persona: { kind: "none" } } : activePersona ? { persona: activePersona.kind === "builtin" ? { id: activePersona.id, kind: "builtin" } : { id: activePersona.id, name: activePersona.name, content: activePersona.content } } : {}),
       pageContext: compact && sharePageContext ? pageContext ?? null : null,
@@ -482,12 +551,15 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     if (busy || runtimeConversation.running) return;
     const question = [...messages].reverse().find((message) => message.role === "user");
     if (!question) return;
+    if (currentModel?.available === false) { setUploadError(modelAvailabilityText(currentModel, en)); return; }
+    if (historyNeedsDecision && selectedModel) { setPendingModel(selectedModel); return; }
+    historyStore.setPreferences(conversationId, { selectedModel, imageMode });
     clearError();
     followLatest();
     runtime.setRequestOptions(runtimeConversation, { body: {
       ...runtimeConversation.requestOptions?.body,
       ...(readAgentReplyPersona(question.metadata).mode === "pure" ? { persona: { kind: "none" } } : {}),
-      model: automaticRouting ? undefined : selectedModel,
+      model: selectedModel, images: imageMode,
       conversationId,
       attemptId: crypto.randomUUID(),
       pageContext: compact && sharePageContext ? pageContext ?? null : null,
@@ -503,13 +575,18 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
       setUploadError(rawText.text(rawLocale, "attachmentLimit", { count: MAX_ATTACHMENTS }));
       return;
     }
-    const invalid = incoming.find((file) => file.size > MAX_ATTACHMENT_BYTES || !(ACCEPTED_ATTACHMENT_TYPES.some((type) => file.type.startsWith(type)) || ACCEPTED_ATTACHMENT_EXTENSIONS.some((extension) => file.name.toLowerCase().endsWith(extension))));
+    const invalid = incoming.find((file) => file.size > MAX_ATTACHMENT_BYTES || !attachmentMediaType(file));
     if (invalid) {
       setUploadError(rawText.text(rawLocale, "attachmentUnsupported", { name: invalid.name }));
       return;
     }
     try {
       const next = await convertFileListToFileUIParts(fileList);
+      for (const [index, part] of next.entries()) {
+        part.mediaType = attachmentMediaType(incoming[index])!;
+        part.url = part.url.replace(/^data:[^;]*;base64,/, `data:${part.mediaType};base64,`);
+      }
+      if (currentModel?.vision && next.some(isImagePart)) setImageMode("include");
       setAttachments((current) => [...current, ...next].slice(0, MAX_ATTACHMENTS));
     } catch {
       setUploadError(rawText.text(rawLocale, "attachmentReadFailed"));
@@ -593,16 +670,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
           <p className="mt-2 hidden text-xs text-muted-foreground md:block">{uiText.text(en, "yourAccountBaseAndTrainingInOneConversation")}</p>
         </div>
         <div className={dialogueStyles.headerActions}>
-        {automaticRouting && <span className="text-xs text-muted-foreground">{uiText.text(en, "auto")}</span>}
-        {modelChoices.length > 0 ? <Combobox items={modelChoices} filteredItems={modelChoices}
-          value={currentModel ?? null}
-          itemToStringValue={(choice) => `${modeLabel(choice.id)} ${choice.label}`} isItemEqualToValue={(choice, value) => choice.id === value.id}
-          disabled={busy} onValueChange={(choice) => { if (choice) setSelectedModel(choice.id); }}>
-          <ComboboxTrigger ref={modeAnchor} aria-label={`${uiText.text(en, "assistantMode")}：${modeLabel(selectedModel)}`} className={dialogueStyles.modeTrigger}>
-            <span className="min-w-0 text-left"><span className="block truncate text-xs font-semibold">{modeLabel(selectedModel)}</span><span className="block truncate text-[10px] leading-4 text-muted-foreground">{currentModel?.label}</span></span>
-          </ComboboxTrigger>
-          <ComboboxContent anchor={modeAnchor} className="min-w-56"><ComboboxList>{(choice) => <ComboboxItem key={choice.id} value={choice} className="min-h-14"><span><span className="block font-medium">{modeLabel(choice.id)}</span><span className="block text-xs text-muted-foreground">{choice.label}</span></span></ComboboxItem>}</ComboboxList></ComboboxContent>
-        </Combobox> : null}
+        {modelSelector}
         <AgentCreditBalance enabled={billingAllowed && (agentStatus === "ready" || agentStatus === "payment_required" || agentStatus === "unconfigured")} busy={busy} en={en} />
         <Button type="button" variant="outline" size="sm" aria-label={uiText.text(en, "newConversation")} title={uiText.text(en, "newConversation")} className={dialogueStyles.newConversation} disabled={busy || messages.length === 0} onClick={() => { runtime.flush(); historyStore.startNew(); }}>
           <Plus className="size-4" aria-hidden="true" /><span className="max-md:hidden">{uiText.text(en, "newConversation")}</span>
@@ -610,6 +678,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
         </div>
       </header>}
       </div>
+      {compact && modelSelector ? <div className="flex min-w-0 items-center gap-2 px-3 py-1" data-agent-compact-model>{modelSelector}</div> : null}
       {compact && onSharePageContextChange ? <div className={dialogueStyles.compactContextBar}>
         <span className={dialogueStyles.compactContextLabel}><FileText size={13} aria-hidden="true" />{uiText.text(en, "pageContext")}</span>
         <label className={dialogueStyles.compactShare}>
@@ -628,7 +697,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
           </Button> : null}
           <PromptBar
             busy={busy}
-            disabled={!personaHydrated || personaUnavailable || (!draft.trim() && attachments.length === 0)}
+            disabled={!personaHydrated || personaUnavailable || currentModel?.available === false || newImagesNeedVision || (!draft.trim() && attachments.length === 0)}
             sendLabel={uiText.text(en, "sendMessage")}
             stopLabel={uiText.text(en, "stopGenerating")}
             onSend={() => void submit(draft)}
@@ -655,11 +724,14 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
               <AgentComposerMenu compact={compact} en={en} personaName={personaName} onAttach={() => fileInputRef.current?.click()} onPersona={() => setPersonaOpen(true)} attachmentCount={attachments.length}>
                 {attachments.map((file, index) => <AttachmentPreview key={`${file.filename}-${index}`} file={file} onRemove={() => setAttachments((current) => current.filter((_, itemIndex) => itemIndex !== index))} />)}
               </AgentComposerMenu>
-              <input ref={fileInputRef} type="file" aria-label={uiText.text(en, "attachFiles")} multiple accept="image/*,.md,.markdown,.txt,.json,.pdf,.csv,.xlsx" className="hidden" onChange={(event) => { void addFiles(event.target.files); event.currentTarget.value = ""; }} />
+              <input ref={fileInputRef} type="file" aria-label={uiText.text(en, "attachFiles")} multiple accept="image/png,image/jpeg,image/webp,.md,.markdown,.txt" className="hidden" onChange={(event) => { void addFiles(event.target.files); event.currentTarget.value = ""; }} />
               {!compact ? <Button type="button" variant="ghost" size="icon" className="hidden md:inline-flex size-9 rounded-lg text-muted-foreground" aria-label={uiText.text(en, "addAttachment")} title={uiText.text(en, "addAttachment")} onClick={() => fileInputRef.current?.click()}><Paperclip className="size-4" aria-hidden="true" /></Button> : null}
               <Button type="button" variant="ghost" size="sm" disabled={busy} className={compact ? dialogueStyles.compactPersonaButton : "hidden md:inline-flex max-w-40 rounded-lg text-xs text-muted-foreground"} aria-label={compact ? `${uiText.text(en, "persona")}：${personaName}` : undefined} onClick={() => setPersonaOpen(true)}>{compact ? null : <Settings2 className="size-3.5 shrink-0" aria-hidden="true" />}<span className="truncate">{compact ? personaName : `${uiText.text(en, "persona")}：${personaName}`}</span>{compact ? <ChevronDown className="size-3 shrink-0" aria-hidden="true" /> : null}</Button>
             </>}
           />
+          {newImagesNeedVision ? <div role="status" className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground"><span>{uiText.text(en, "newImagesNeedVision")}</span>{visionModel ? <Button size="sm" variant="outline" disabled={busy} onClick={() => applyModel(visionModel.id, "include")}>{uiText.text(en, "switchToVision")}</Button> : <span>{uiText.text(en, "visionUnavailable")}</span>}</div> : null}
+          {historyHasImages && imageMode === "exclude" ? <p role="status" className="mt-2 text-xs text-muted-foreground">{uiText.text(en, "imagesExcluded")}</p> : null}
+          {currentModel?.vision && imageMode === "include" && (historyHasImages || attachments.some(isImagePart)) ? <p className="mt-2 text-xs text-muted-foreground" data-agent-image-billing>{uiText.text(en, "imageRepeatBilling")}</p> : null}
           {uploadError ? <p role="alert" className="mt-2 px-1 text-xs text-destructive">{uploadError}</p> : !compact ? <p className="mt-2 hidden flex-wrap justify-between gap-1 px-1 text-[10px] text-muted-foreground md:flex"><span>{uiText.text(en, "upTo4Attachments8MbEach")}</span><span>{uiText.text(en, "enterToSendShiftEnterForANew")}</span></p> : null}
         </> : agentStatus === "unconfigured" || agentStatus === "payment_required" ? <div className="flex justify-start">
           <Button type="button" variant="outline" className="min-h-11 rounded-full px-4" onClick={() => setPersonaOpen(true)}><Settings2 className="size-4" aria-hidden="true" />{rawText.text(rawLocale, "persona")}：{personaName}</Button>
@@ -747,6 +819,20 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
         </AgentConversationScrollArea>
       </ChatPanel>
 
+      <Dialog open={pendingModel !== undefined} onOpenChange={(open) => { if (!open) setPendingModel(undefined); }}>
+        <DialogContent className="rounded-[16px] sm:max-w-md sm:rounded-[16px]">
+          <DialogHeader className="pb-2 sm:pb-2">
+            <DialogTitle className="gap-0 [&>span[aria-hidden]]:hidden">{uiText.text(en, "switchToTextTitle")}</DialogTitle>
+          </DialogHeader>
+          <DialogBody className="pt-0">
+            <DialogDescription>{uiText.text(en, "switchToTextDescription")}</DialogDescription>
+          </DialogBody>
+          <DialogFooter className="flex-col items-stretch pb-5 min-[360px]:flex-row min-[360px]:items-center sm:pb-5">
+            <Button variant="outline" className="min-w-0 whitespace-normal" onClick={() => setPendingModel(undefined)}>{uiText.text(en, "keepCurrentModel")}</Button>
+            <Button className="min-w-0 whitespace-normal" onClick={() => { if (pendingModel) applyModel(pendingModel, "exclude"); setPendingModel(undefined); }}>{uiText.text(en, "continueWithoutImages")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <Dialog open={personaOpen} onOpenChange={(open) => { if (!personaSaving) setPersonaOpen(open); }}>
         <DialogContent aria-describedby={undefined} className="flex max-h-[calc(100dvh-2rem)] flex-col sm:max-w-[min(1160px,calc(100vw-2rem))]">
           <AgentAppearancePicker title={rawText.text(rawLocale, "persona")} closureName={uiText.text(en, "closure")} disabled={personaSaving || busy}>

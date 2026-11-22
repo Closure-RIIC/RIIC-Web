@@ -3,6 +3,8 @@ import { mockApis } from "./production-readiness.fixture";
 
 async function prepare(page: Page) {
   await mockApis(page);
+  await page.route("**/api/account/data-consent", route => route.fulfill({ json: { success: true, data: { current: false, cloudSyncEnabled: false } } }));
+  await page.route("**/api/billing", route => route.fulfill({ json: { data: { wallet: { totalPoints: 1234 } } } }));
   await page.route("**/api/auth/get-session", (route) => route.fulfill({ json: {
     user: { id: "history-user", name: "博士", email: "history@example.test" },
     session: { expiresAt: "2099-01-01T00:00:00Z" },
@@ -145,7 +147,10 @@ test("Agent histories are isolated by account and storage errors stay visible", 
   await expect(page.locator("[data-agent-history]").getByRole("link")).toHaveCount(0);
   expect((await storedHistory(page)).conversations).toHaveLength(1);
   await page.addInitScript(() => { Object.defineProperty(window, "indexedDB", { get() { throw new DOMException("Blocked", "SecurityError"); } }); });
-  await page.reload();
-  await expect(page.getByRole("alert").filter({ hasText: "浏览器暂时无法保存对话历史" })).toBeVisible();
+  await Promise.all([
+    page.waitForResponse(response => response.url().endsWith("/api/agent/chat") && response.request().method() === "GET"),
+    page.reload(),
+  ]);
   await expect(input).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "浏览器暂时无法保存对话历史" })).toBeVisible();
 });

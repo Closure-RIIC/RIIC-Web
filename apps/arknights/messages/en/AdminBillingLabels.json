@@ -46,5 +46,10 @@
   "provider": "Provider",
   "model": "Model",
   "call_id": "Call ID",
-  "referral": "Referrals"
+  "referral": "Referrals",
+  "selected_model_label": "Selected model",
+  "actual_models": "Actual models",
+  "cached_input_tokens": "Cache-read tokens",
+  "pricing_tier": "Pricing tier",
+  "cache_write_tokens": "Cache-write tokens"
 }
