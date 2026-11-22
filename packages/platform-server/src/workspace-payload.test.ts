@@ -72,6 +72,18 @@ test("workspace payload reconstructs an exact state and layout whitelist", () =>
   assert.equal(JSON.stringify(result).includes("secret"), false);
 });
 
+test("automatic queue keys survive cloud validation and match the saved calculation context", () => {
+  const input = { ...state("maa"), rotationProfile: "auto_32_32" };
+  const workspace = validateWorkspacePutRequest({ state: input,
+    operbox: [{ id: "char_1", name: "测试干员", elite: 2, level: 80, own: true, potential: 1, rarity: 6 }], result: null });
+  assert.ok("state" in workspace);
+  const context = validateSavedPlanCalculationContext(input);
+  assert.ok(context);
+  assert.equal(workspace.state.rotationProfile, "auto_32_32");
+  assert.equal(workspaceMatchesSavedPlanContext(workspace.state, context, null), true);
+  assert.equal(workspaceMatchesSavedPlanContext({ ...workspace.state, rotationProfile: "generic_main_backup" }, context, null), false);
+});
+
 test("Skland-derived identity, Box and plan data cannot enter a cloud payload", () => {
   const sanitized = validateWorkspacePutRequest({ state: state("skland"), operbox: null, result: { token: "private" } });
   assert.ok("state" in sanitized);

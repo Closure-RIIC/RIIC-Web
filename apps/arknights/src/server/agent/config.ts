@@ -1,6 +1,7 @@
 import "@tanstack/react-start/server-only";
 
-export type AgentLlmProviderId = "deepseek" | "glm";
+import { AGENT_MODELS, type AgentModelId } from "../../agent-models.ts";
+export type AgentLlmProviderId = AgentModelId;
 
 export interface AgentLlmSettings {
   provider: AgentLlmProviderId;
@@ -11,8 +12,9 @@ export interface AgentLlmSettings {
 }
 
 const PROVIDER_PRESETS: Record<AgentLlmProviderId, { baseURL: string; model: string }> = {
-  deepseek: { baseURL: "https://api.deepseek.com/v1", model: "deepseek-chat" },
-  glm: { baseURL: "https://open.bigmodel.cn/api/paas/v4", model: "glm-4.6" },
+  deepseek: { baseURL: "https://api.deepseek.com/v1", model: AGENT_MODELS.deepseek.model },
+  glm: { baseURL: "https://open.bigmodel.cn/api/paas/v4", model: AGENT_MODELS.glm.model },
+  gpt: { baseURL: "", model: AGENT_MODELS.gpt.model },
 };
 
 function normalizeProvider(value: string | undefined): AgentLlmProviderId {
@@ -27,7 +29,7 @@ export function agentLlmSettings(selection?: AgentLlmProviderId): AgentLlmSettin
   const prefix = `AGENT_LLM_${provider.toUpperCase()}_`;
   // Legacy single-model settings apply only to the default provider. Never
   // send one provider's credential to a different provider's endpoint.
-  const legacy = (key: string) => provider === defaultProvider ? process.env[`AGENT_LLM_${key}`]?.trim() : undefined;
+  const legacy = (key: string) => provider !== "gpt" && provider === defaultProvider ? process.env[`AGENT_LLM_${key}`]?.trim() : undefined;
   const baseURL = process.env[`${prefix}BASE_URL`]?.trim() || legacy("BASE_URL") || preset.baseURL;
   const model = process.env[`${prefix}MODEL`]?.trim() || legacy("MODEL") || preset.model;
   const apiKey = process.env[`${prefix}API_KEY`]?.trim() || legacy("API_KEY") || "";

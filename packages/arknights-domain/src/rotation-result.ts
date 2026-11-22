@@ -76,6 +76,41 @@ function normalizedDroneProduction(value: unknown): RotationJson["daily"]["drone
   return { lmd, pure_gold: pureGold, battle_records: battleRecords };
 }
 
+function normalizedAutoRotation(value: unknown): RotationJson["auto_rotation"] | undefined {
+  if (!isObject(value) || typeof value.complete !== "boolean" || !isObject(value.timing)) return undefined;
+  const hours = value.timing.shift_hours;
+  if (!Array.isArray(hours) || hours.length !== 2
+    || !hours.every((hour) => typeof hour === "number" && Number.isFinite(hour) && hour >= 1 / 60)
+    || !Array.isArray(value.rooms) || !Array.isArray(value.constant_dorm_support)) return undefined;
+  const rooms = value.rooms.flatMap((raw) => {
+    if (!isObject(raw) || typeof raw.room_id !== "string" || typeof raw.facility !== "string"
+      || !Number.isInteger(raw.main_missing_seats) || Number(raw.main_missing_seats) < 0
+      || !Number.isInteger(raw.backup_missing_seats) || Number(raw.backup_missing_seats) < 0
+      || typeof raw.main_complete !== "boolean" || typeof raw.backup_complete !== "boolean") return [];
+    return [{
+      room_id: raw.room_id,
+      facility: raw.facility,
+      main_missing_seats: Number(raw.main_missing_seats),
+      backup_missing_seats: Number(raw.backup_missing_seats),
+      main_complete: raw.main_complete,
+      backup_complete: raw.backup_complete,
+    }];
+  });
+  if (rooms.length !== value.rooms.length) return undefined;
+  const constantDormSupport = value.constant_dorm_support.flatMap((raw) => {
+    if (!Array.isArray(raw) || raw.length !== 2 || typeof raw[0] !== "string"
+      || !Array.isArray(raw[1]) || !raw[1].every((name) => typeof name === "string")) return [];
+    return [[raw[0], [...raw[1]] as string[]] as [string, string[]]];
+  });
+  if (constantDormSupport.length !== value.constant_dorm_support.length) return undefined;
+  return {
+    timing: { shift_hours: [hours[0], hours[1]] },
+    complete: value.complete,
+    rooms,
+    constant_dorm_support: constantDormSupport,
+  };
+}
+
 function normalizedRoomLine(value: unknown): RotationRoomLine {
   if (!isObject(value)) return { room_id: "" };
 
@@ -196,6 +231,10 @@ export function normalizeRotationResult({
   const fallbackDurations = rotationOption(rotationProfile).durations;
   const production = normalizedDailyProduction(daily.production);
   const droneProduction = normalizedDroneProduction(daily.drone_production);
+  const autoRotation = normalizedAutoRotation(rotation.auto_rotation);
+  const warnings = Array.isArray(rotation.warnings)
+    ? rotation.warnings.filter((warning): warning is string => typeof warning === "string")
+    : [];
 
   return {
     profile: rotationProfile,
@@ -227,6 +266,8 @@ export function normalizeRotationResult({
       ...(production ? { production } : {}),
       ...(droneProduction ? { drone_production: droneProduction } : {}),
     },
+    ...(autoRotation ? { auto_rotation: autoRotation } : {}),
+    ...(warnings.length ? { warnings } : {}),
   };
 }
 

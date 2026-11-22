@@ -8,7 +8,7 @@
   "signedInAccount": "Signed-in account",
   "unknownOperator": "Unknown operator",
   "personalBoxRequired": "This schedule has no personal operator Box to submit. Import your Box again and generate a schedule.",
-  "copiedTraining": "Reference schedule training (not your roster)",
+  "copiedTraining": "Schedule copy roster",
   "tradeStrategy": "Trading strategy",
   "factoryRecipe": "Factory recipe",
   "requestFailed": "Request failed. Please try again later."

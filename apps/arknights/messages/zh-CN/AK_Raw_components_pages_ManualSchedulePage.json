@@ -1,7 +1,7 @@
 {
   "exampleTrainingLevelsFromThisScheduleNotPersonalOwnership": "作业示例练度（非个人持有）：<part1></part1>。可在 Box 与排班设置中调整练度。",
   "chooseADormitoryDecorationOperator": "选择宿舍挂件干员",
-  "usedOnlyInTheSchedulePosterThisOperatorIs": "仅用于作业图展示，不会加入宿舍排班或参与效率计算。",
+  "usedOnlyInTheSchedulePosterThisOperatorIs": "图中六个挂件按宿舍竖向顺序回填：宿舍1至4的第一位，再到宿舍1、2的第二位；其余床位自动填充。",
   "clearDecorationSlot": "<part1></part1>清空挂件位",
   "calculationFailed": "计算失败。"
 }

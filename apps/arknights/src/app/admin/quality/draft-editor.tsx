@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ManualOperboxPicker } from "@/components/setup/ManualOperboxPicker";
 import { RotationSettings } from "@/components/RotationSettings";
 import { PRESETS, maxRoomLevel, updateRoomLevel, updateFactoryRecipe, updateTradeOrder, factoryRecipeFor, tradeOrderFor } from "@riic/arknights-domain/blueprint";
-import { isRotationProfile, rotationDescription } from "@riic/arknights-domain/rotation-settings";
+import { decodeRotationKey, encodeRotationKey, rotationTimingDescription, toRotationTiming } from "@riic/arknights-domain/rotation-settings";
 import { reproductionInputKey, type ReproductionPackage } from "@riic/arknights-domain/reproduction-package";
 import type { QualityDraftData } from "@riic/arknights-domain/quality";
 import { Check, Choice, download, Panel, useWorkbenchText } from "./workbench-ui";
@@ -24,6 +24,9 @@ export function DraftEditor({ draft, input, setInput, busy, onSave }: { draft: Q
   const originalOperators = new Map(draft.original.operbox.map(operator => [operator.id, operator]));
   const changedOperators = input.operbox.filter(operator => Object.entries(operator).some(([key, value]) => originalOperators.get(operator.id)?.[key as keyof typeof operator] !== value)).map(operator => operator.name);
   const removedOperators = draft.original.operbox.filter(operator => !input.operbox.some(current => current.id === operator.id)).map(operator => operator.name);
+  const customTiming = typeof input.rotation === "object" && input.rotation.topology !== "auto"
+    ? { topology: input.rotation.topology, hours: [...input.rotation.shift_hours] }
+    : undefined;
 
   return <Panel id="draft-editor" title={t("editReproductionDraft")} description={t("changesApplyOnlyToTeamTestsYourPersonal")}>
     <div className="flex flex-wrap items-center gap-2"><Badge variant={dirty ? "outline" : "secondary"}>{dirty ? t("unsavedChanges") : t("savedRevision", { value1: draft.revision })}</Badge><span className="text-xs text-muted-foreground">{changed ? t("changedFromOriginal") : t("matchesOriginal")}</span></div>
@@ -37,12 +40,15 @@ export function DraftEditor({ draft, input, setInput, busy, onSave }: { draft: Q
           {room.kind === "trade_post" && <Choice label={t("orderType")} value={tradeOrderFor(room)} options={[{ value: "gold", label: t("lmdOrders") }, { value: "originium", label: t("orundumOrders") }]} onChange={value => setInput({ ...input, layout: updateTradeOrder(input.layout, room.id, value as "gold" | "originium") })} />}
         </div>)}</div>
       </details>
-      {/* 质检草稿只复用已保存的请求：不提供“自定义”，因此选中值一定是 named profile。 */}
+      {/* 自定义时长只能通过导入的 reproduction request 保留。 */}
       <RotationSettings
-        value={input.rotation}
+        value={encodeRotationKey(input.rotation)}
+        allowAuto
+        custom={customTiming}
+        onCustomChange={custom => setInput({ ...input, rotation: toRotationTiming(custom) })}
         onChange={rotation => {
-          // 该场景不提供“自定义”，选中值一定是 named profile。
-          if (isRotationProfile(rotation)) setInput({ ...input, rotation });
+          const timing = decodeRotationKey(rotation);
+          if (timing) setInput({ ...input, rotation: timing });
         }}
       />
       <Check label={t("enableFiammettaMoraleRecovery")} checked={input.fiammetta_enable} onChange={value => setInput({ ...input, fiammetta_enable: value })} />
@@ -50,7 +56,7 @@ export function DraftEditor({ draft, input, setInput, busy, onSave }: { draft: Q
     </fieldset>
     {changed && <div className="grid gap-2 rounded-lg bg-muted/50 p-3 text-sm"><h3 className="font-medium">{t("changesFromTheOriginalInput")}</h3><ul className="list-inside list-disc space-y-1 text-muted-foreground">
       {JSON.stringify(input.layout) !== JSON.stringify(draft.original.layout) && <li>{t("layoutOrRoomSettingsChanged")}</li>}
-      {input.rotation !== draft.original.rotation && <li>{rotationDescription(draft.original.rotation, en)} → {rotationDescription(input.rotation, en)}</li>}
+      {JSON.stringify(input.rotation) !== JSON.stringify(draft.original.rotation) && <li>{rotationTimingDescription(draft.original.rotation, en)} → {rotationTimingDescription(input.rotation, en)}</li>}
       {input.fiammetta_enable !== draft.original.fiammetta_enable && <li>{input.fiammetta_enable ? t("fiammettaEnabled") : t("fiammettaDisabled")}</li>}
       {!!changedOperators.length && <li>{t("addedOrChanged")}{changedOperators.join("、")}</li>}
       {!!removedOperators.length && <li>{t("removed")}{removedOperators.join("、")}</li>}

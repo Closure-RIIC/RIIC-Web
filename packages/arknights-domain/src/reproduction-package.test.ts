@@ -39,3 +39,14 @@ test("deduplication uses complete input, excludes source, and ignores object key
   const reversed = Object.fromEntries(Object.entries(first.layout).reverse());
   assert.equal(reproductionInputKey(first), reproductionInputKey({ ...second, layout: reversed as typeof first.layout }));
 });
+
+test("reproduction packages preserve the exact automatic request timing", () => {
+  const automatic = parseReproductionPackage({
+    ...original,
+    rotation: { topology: "auto", shift_hours: [24, 12] },
+  });
+  assert.deepEqual(automatic.rotation, { topology: "auto", shift_hours: [24, 12] });
+  assert.deepEqual(readReproductionPackage(JSON.stringify(automatic)).rotation, automatic.rotation);
+  assert.notEqual(reproductionInputKey(automatic), reproductionInputKey({ ...automatic, rotation: { topology: "auto", shift_hours: [24, 24] } }));
+  assert.throws(() => parseReproductionPackage({ ...original, rotation: { topology: "auto", shift_hours: [0.001, 24] } }), /轮换/);
+});
