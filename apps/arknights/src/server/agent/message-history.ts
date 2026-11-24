@@ -1,16 +1,30 @@
 import type { UIMessage } from "ai";
 import { createInlineThinkingFilter, INTERNAL_ANSWER_MARKERS } from "../../agent-answer.ts";
 import { hasAgentImageBudget, type AgentModelSelection } from "./model-policy.ts";
+import { AGENT_TEXT_ATTACHMENT_BYTES, AGENT_TEXT_ATTACHMENT_COUNT, AGENT_TEXT_PAYLOAD_BYTES, agentTextPayloadBytes, imageDataUrlLimit } from "../../agent-image-limits.ts";
 
 export class AgentHistoryError extends Error {}
 
 /** Prepare untrusted browser history for the model, never execute historical tools. */
 export async function prepareAgentHistory(messages: UIMessage[], check: (text: string, stage: string) => Promise<void>, options?: { selection?: AgentModelSelection; images?: unknown }) {
   if (options?.images !== undefined && options.images !== "include" && options.images !== "exclude") throw new AgentHistoryError("图片上下文选项无效。");
-  if (!Array.isArray(messages) || !messages.length || messages.length > 200
-    || Buffer.byteLength(JSON.stringify(messages)) > 16_000_000) throw new AgentHistoryError("对话过长，请新建对话或缩小附件。");
+  if (!Array.isArray(messages) || !messages.length || messages.length > 200) throw new AgentHistoryError("对话过长，请新建对话或缩小附件。");
+  let imageCount = 0;
+  for (const message of messages) {
+    if (!message || !["user", "assistant"].includes(message.role) || !Array.isArray(message.parts)) throw new AgentHistoryError("对话格式无效。");
+    for (const part of message.parts) {
+      if (!part || typeof part.type !== "string") throw new AgentHistoryError("对话格式无效。");
+      if (part.type === "file" && typeof part.mediaType !== "string") throw new AgentHistoryError("附件格式无效。");
+      if (message.role === "user" && part.type === "file" && part.mediaType.startsWith("image/") && options?.images !== "exclude") imageCount++;
+    }
+  }
+  const selection = options?.selection;
+  if (imageCount && (!selection?.vision || !hasAgentImageBudget(selection))) throw new AgentHistoryError("当前模型不支持图片，请选择已配置的识图模型，或仅携带文字继续。");
+  // Count the whole conversation before any image decoding or filtering work.
+  if (imageCount > (selection?.maxImages ?? 0)) throw new AgentHistoryError("本轮图片超过模型限制，请减少图片或新建对话。");
+  if (agentTextPayloadBytes(messages) > AGENT_TEXT_PAYLOAD_BYTES) throw new AgentHistoryError("对话过长，请新建对话或缩小文本附件。");
   const prepared: UIMessage[] = [];
-  let attachments = 0;
+  let textAttachments = 0;
   for (const message of messages) {
     if (!message || !["user", "assistant"].includes(message.role) || !Array.isArray(message.parts)) throw new AgentHistoryError("对话格式无效。");
     const parts: UIMessage["parts"] = [];
@@ -30,11 +44,15 @@ export async function prepareAgentHistory(messages: UIMessage[], check: (text: s
         await check(text, "input");
         parts.push({ type: "text", text });
       } else if (part.type === "file" && message.role === "user") {
-        attachments++;
-        if (attachments > 4 || typeof part.url !== "string" || part.url.length > 12_000_000) throw new AgentHistoryError("附件过多或过大，请压缩后重试。");
+        if (part.mediaType.startsWith("image/") && options?.images === "exclude") continue;
+        const textAttachment = part.mediaType === "text/plain" || part.mediaType === "text/markdown";
+        if (!textAttachment && !["image/png", "image/jpeg", "image/webp"].includes(part.mediaType)) throw new AgentHistoryError("仅支持 PNG、JPEG、WebP 图片与文本附件。");
+        const byteLimit = textAttachment ? AGENT_TEXT_ATTACHMENT_BYTES : (selection?.maxImageBytes ?? 0);
+        if (typeof part.url !== "string" || part.url.length > imageDataUrlLimit(byteLimit)) throw new AgentHistoryError("附件过大，请压缩后重试。");
         const match = /^data:(image\/(?:png|jpeg|webp)|text\/(?:plain|markdown));base64,([A-Za-z0-9+/]*={0,2})$/.exec(part.url);
         if (!match || match[1] !== part.mediaType) throw new AgentHistoryError("仅支持 PNG、JPEG、WebP 图片与文本附件。");
-        if (part.mediaType === "text/plain" || part.mediaType === "text/markdown") {
+        if (textAttachment) {
+          if (++textAttachments > AGENT_TEXT_ATTACHMENT_COUNT || Buffer.byteLength(match[2], "base64") > AGENT_TEXT_ATTACHMENT_BYTES) throw new AgentHistoryError("文本附件过多或过大，请压缩后重试。");
           const text = Buffer.from(match[2], "base64").toString("utf8");
           await check(text, "attachment"); parts.push({ type: "text", text });
         } else {
@@ -60,7 +78,5 @@ export async function prepareAgentHistory(messages: UIMessage[], check: (text: s
     if (parts.length) prepared.push({ id: message.id, role: message.role, parts });
   }
   if (!prepared.length || prepared.at(-1)?.role !== "user") throw new AgentHistoryError("请发送新的问题后重试。");
-  const imageCount = prepared.flatMap(message => message.parts).filter(part => part.type === "file").length;
-  if (imageCount > (options?.selection?.maxImages ?? 0)) throw new AgentHistoryError("本轮图片超过模型限制，请减少图片或新建对话。");
   return prepared;
 }

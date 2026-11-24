@@ -104,27 +104,37 @@ and filtered as text. Word, PDF and spreadsheets have no extraction pipeline and
 are rejected; selecting a vision model does not turn those formats into images.
 
 GPT starts disabled until its route, actual supplier rates, image limits and a
-valid image budget mode are configured. The versioned model policy supports:
+positive per-image reservation are configured. Each model step reserves the text
+estimate plus `image count × imageTokensPerImage`, plus maximum output. The text
+estimate remains the serialized text/tools UTF-8 byte length plus 8192, with image
+data replaced by a placeholder. There is no fixed 262144 input reservation cap;
+upstream context-window limits still apply.
 
-- `per-image` (also the default for older policies): reserve the text estimate plus
-  a verified `imageTokensPerImage` bound for each image. The bound must cover the
-  normalized images at the upstream default detail: the pinned Magpie bridge does
-  not preserve image detail overrides. A synthetic contract is not evidence of
-  supplier prices or the image bound. Do not substitute another model's patch rule.
-- `shared-input-limit`: when a model step contains images, reserve 262144 input
-  tokens for all text and images together. This is the existing whole-input
-  reservation cap, not a per-image allowance or a second image charge. The
-  `imageTokensPerImage` field is unused and may be zero; images are not free.
-  Without images, retain the existing text estimate. This local reservation policy
-  does not guarantee that supplier usage stays below the cap; excess usage follows
-  the existing settlement review path.
+New image policies start at 8192 reserved tokens per image, adjustable using
+observed usage. This is a starting estimate, not a supplier guarantee. Legacy
+`shared-input-limit` snapshots normalize to 8192 per image on read; legacy
+`per-image` and mode-less snapshots retain their configured amount. Normalization
+returns a copy, including for edit/rollback, and never rewrites stored snapshots
+or budgets of already-started calls.
 
-Both modes also reserve the maximum output for each model step. Image encoding
-length is not a token count. Final settlement uses measured input/output/cache
-usage. Image and reasoning details, when available, are subsets of those totals,
-never extra charges. If image detail is absent, report total input including
-images; do not fabricate an exact text/image split. Images resent in follow-ups or
-tool steps may incur input usage again, with actual cache discounts.
+Administrators configure image count, bytes and decoded pixels; defaults remain
+4 images, 8 MiB and 16 million pixels. Those defaults are no longer fixed maxima.
+Pixel protection bounds decoding memory; longest-edge normalization remains 2048.
+The public catalog supplies upload limits to the browser. Request-body allowance
+covers configured images including base64 expansion and JSON framing. Admission
+and execution share one policy snapshot; image count includes history and is
+checked before decoding. Text attachments remain independently limited to four,
+8 MiB each, with a 16 MiB non-image history payload. Deployment proxies/gateways
+must also accommodate the chosen limits; application acceptance alone does not
+verify their transport or memory capacity.
+
+Image encoding length is not a token count. Final settlement uses measured
+input/output/cache usage; excess usage enters review and stops subsequent steps.
+Image and reasoning details are subsets, never extra charges. Without image detail,
+report total input including images rather than an invented split. Images resent
+in follow-ups or tool steps are reserved again and may incur input usage again,
+with actual cache discounts. The pinned Magpie bridge does not preserve detail
+overrides; upstream default detail still applies.
 
 When switching an image conversation to a text model, the user explicitly chooses
 to continue with text only. Original images remain in local history but are
@@ -145,9 +155,9 @@ and image settings together. New requests read rates, filters and models under
 one policy lock; in-flight runs keep their snapshots. Policy publishing and rollback use the existing admin audit and
 optimistic version checks. Drain current runs before changing upstream routes.
 
-The current 262144 input reservation cap remains below the 272000 tariff threshold.
-If supplier usage exceeds the reserved bound, the call still enters review and
-stops subsequent steps; adding the tariff does not raise the admission limit.
+Reservations cover the applicable base/long-context tiers and peak prices for
+the estimated input. Usage above the saved per-call reservation still enters
+review; removing the fixed cap does not bypass settlement checks.
 
 The gateway is the supported GPT billing path. `AGENT_GATEWAY_ENABLED=0` retains
 the legacy DeepSeek/GLM path for controlled rollback and does not expose GPT.

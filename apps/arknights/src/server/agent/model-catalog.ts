@@ -25,7 +25,8 @@ export function configuredAgentChoices(policy: AgentModelPolicy, rates: RatePoli
     const reason = !entry.enabled ? "disabled" : !routes.length ? "route_unconfigured"
       : !priced ? "rate_missing"
       : definition.vision && !hasAgentImageBudget(entry) ? "image_budget_missing" : undefined;
-    return { id: entry.id, label: entry.label, vision: definition.vision, available: !reason, ...(reason ? { reason } : {}) };
+    return { id: entry.id, label: entry.label, vision: definition.vision, available: !reason, ...(reason ? { reason } : {}),
+      ...(definition.vision ? { imageLimits: { maxImages: entry.maxImages, maxImageBytes: entry.maxImageBytes, maxImagePixels: entry.maxImagePixels } } : {}) };
   });
 }
 export function selectAgentModel(value: unknown, catalog: { id: string; policy: AgentModelPolicy }, rates: RatePolicy): AgentModelSelection {

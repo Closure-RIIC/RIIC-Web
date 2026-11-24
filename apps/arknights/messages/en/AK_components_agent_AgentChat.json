@@ -81,7 +81,7 @@
   "switchToTextDescription": "This conversation contains images. Only text and existing text answers will be sent after switching; the model cannot inspect the original images. The images remain in this browser.",
   "keepCurrentModel": "Keep current model",
   "continueWithoutImages": "Continue with text only",
-  "imageHistoryLimit": "This turn can include up to 4 attachments, including history. Start a new conversation, or switch to a text model and confirm excluding previous images.",
+  "imageHistoryLimit": "This turn allows up to {count} images, including history. Remove images, start a new conversation, or switch to a text model and exclude images.",
   "messagePayloadTooLarge": "This turn contains too much text and attachment data. Compress images or start a new conversation.",
   "imageRepeatBilling": "Images count toward input tokens each time they are sent to the model with the conversation context."
 }

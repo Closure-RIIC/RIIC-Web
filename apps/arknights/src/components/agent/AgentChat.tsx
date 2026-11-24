@@ -58,14 +58,13 @@ import { AGENT_BROADCAST_CHANNEL, agentArtifactFromOutput, requestAgentArtifactO
 import type { AgentPlanProjection } from "@/server/agent/plan-artifact";
 import type { AgentPageContext } from "@/agent-page-context";
 import type { AgentModelChoice, AgentModelId } from "@/agent-models";
+import { AGENT_TEXT_ATTACHMENT_BYTES, AGENT_TEXT_ATTACHMENT_COUNT, AGENT_TEXT_PAYLOAD_BYTES, DEFAULT_AGENT_IMAGE_LIMITS, agentTextPayloadBytes, imageDataUrlLimit } from "@/agent-image-limits";
 
 type AgentStatus = "loading" | "ready" | "unconfigured" | "unauthenticated" | "payment_required" | "unavailable";
 
 type PersonaCard = UploadedAgentPersona;
 
 const BUILTIN_PERSONA_THEMES = { blue: billingStyles.monthly, red: personaStyles.closure, yellow: personaStyles.sunny } satisfies Record<BuiltinAgentPersona["theme"], string>;
-const MAX_ATTACHMENT_BYTES = 8 * 1024 * 1024;
-const MAX_ATTACHMENTS = 4;
 const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const TEXT_ATTACHMENT_EXTENSION = /\.(?:txt|md|markdown)$/i;
 
@@ -386,6 +385,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
   const newImagesNeedVision = attachments.some(isImagePart) && !currentModel?.vision;
   const historyNeedsDecision = historyHasImages && imageMode === "include" && !currentModel?.vision;
   const visionModel = modelChoices.find(choice => choice.vision && choice.available);
+  const imageLimits = currentModel?.imageLimits ?? visionModel?.imageLimits ?? DEFAULT_AGENT_IMAGE_LIMITS;
 
   const applyModel = (id: AgentModelId, images: "include" | "exclude") => {
     setSelectedModel(id); setImageMode(images); setUploadError(null);
@@ -525,10 +525,15 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     if (historyNeedsDecision && selectedModel) { setPendingModel(selectedModel); return; }
     const requestMessages = [...messages, { id: "draft", role: "user" as const, parts: [{ type: "text" as const, text: trimmed }, ...files] }]
       .map(message => ({ ...message, parts: imageMode === "exclude" ? message.parts.filter(part => !isImagePart(part)) : message.parts }));
-    if (requestMessages.reduce((count, message) => count + message.parts.filter(part => part.type === "file").length, 0) > MAX_ATTACHMENTS) {
-      setUploadError(uiText.text(en, "imageHistoryLimit")); return;
+    const requestFiles = requestMessages.filter(message => message.role === "user").flatMap(message => message.parts).filter(part => part.type === "file");
+    if (requestFiles.filter(isImagePart).length > imageLimits.maxImages) {
+      setUploadError(uiText.text(en, "imageHistoryLimit", { count: imageLimits.maxImages })); return;
     }
-    if (new TextEncoder().encode(JSON.stringify(requestMessages)).byteLength > 15 * 1024 * 1024) {
+    if (requestFiles.filter(part => !isImagePart(part)).length > AGENT_TEXT_ATTACHMENT_COUNT) {
+      setUploadError(rawText.text(rawLocale, "textAttachmentLimit", { count: AGENT_TEXT_ATTACHMENT_COUNT })); return;
+    }
+    if (requestFiles.some(part => part.url.length > imageDataUrlLimit(isImagePart(part) ? imageLimits.maxImageBytes : AGENT_TEXT_ATTACHMENT_BYTES))
+      || agentTextPayloadBytes(requestMessages) > AGENT_TEXT_PAYLOAD_BYTES) {
       setUploadError(uiText.text(en, "messagePayloadTooLarge")); return;
     }
     historyStore.setPreferences(conversationId, { selectedModel, imageMode });
@@ -571,13 +576,18 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
     if (!fileList?.length) return;
     setUploadError(null);
     const incoming = Array.from(fileList);
-    if (incoming.length + attachments.length > MAX_ATTACHMENTS) {
-      setUploadError(rawText.text(rawLocale, "attachmentLimit", { count: MAX_ATTACHMENTS }));
+    const imageFiles = incoming.filter(file => attachmentMediaType(file)?.startsWith("image/"));
+    if (imageFiles.length + attachments.filter(isImagePart).length > imageLimits.maxImages) {
+      setUploadError(rawText.text(rawLocale, "imageAttachmentLimit", { count: imageLimits.maxImages }));
       return;
     }
-    const invalid = incoming.find((file) => file.size > MAX_ATTACHMENT_BYTES || !attachmentMediaType(file));
+    if (incoming.length - imageFiles.length + attachments.filter(part => !isImagePart(part)).length > AGENT_TEXT_ATTACHMENT_COUNT) {
+      setUploadError(rawText.text(rawLocale, "textAttachmentLimit", { count: AGENT_TEXT_ATTACHMENT_COUNT })); return;
+    }
+    const byteLimit = (file: File) => attachmentMediaType(file)?.startsWith("image/") ? imageLimits.maxImageBytes : AGENT_TEXT_ATTACHMENT_BYTES;
+    const invalid = incoming.find((file) => file.size > byteLimit(file) || !attachmentMediaType(file));
     if (invalid) {
-      setUploadError(rawText.text(rawLocale, "attachmentUnsupported", { name: invalid.name }));
+      setUploadError(rawText.text(rawLocale, "attachmentUnsupported", { name: invalid.name, limit: byteLimit(invalid) / 1024 / 1024 }));
       return;
     }
     try {
@@ -587,7 +597,7 @@ export function AgentChat({ conversationId, initialMessages, userName, userId, b
         part.url = part.url.replace(/^data:[^;]*;base64,/, `data:${part.mediaType};base64,`);
       }
       if (currentModel?.vision && next.some(isImagePart)) setImageMode("include");
-      setAttachments((current) => [...current, ...next].slice(0, MAX_ATTACHMENTS));
+      setAttachments((current) => [...current, ...next]);
     } catch {
       setUploadError(rawText.text(rawLocale, "attachmentReadFailed"));
     }

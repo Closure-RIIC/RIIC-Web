@@ -8,7 +8,7 @@ const choices = [
   { id: "gpt", label: "GPT-6.1 Sol", vision: true, available: true, rates: { inputPointsPerMillion: "100", cachedInputPointsPerMillion: "10", outputPointsPerMillion: "400" } },
 ];
 type RequestBody = { model: string; images: string; messages: Array<{ parts: Array<{ type: string; mediaType?: string; url?: string }> }> };
-async function setup(page: Page, unavailableGpt = false) {
+async function setup(page: Page, unavailableGpt = false, imageLimits = { maxImages: 4, maxImageBytes: 8 * 1024 * 1024, maxImagePixels: 16_000_000 }) {
   await mockApis(page);
   await page.addInitScript(() => localStorage.setItem("riic.agent.appearance.v1", "glow-cloud"));
   await page.route("**/api/account/data-consent", route => route.fulfill({ json: { success: true, data: { current: false, cloudSyncEnabled: false } } }));
@@ -19,7 +19,7 @@ async function setup(page: Page, unavailableGpt = false) {
   const requests: RequestBody[] = [];
   await page.route("**/api/agent/chat", route => {
     if (route.request().method() === "GET") return route.fulfill({ json: { success: true, data: {
-      enabled: true, automatic: true, defaultModel: "deepseek", models: choices.map(choice => choice.id === "gpt" && unavailableGpt ? { ...choice, available: false, reason: "image_budget_missing" } : choice),
+      enabled: true, automatic: true, defaultModel: "deepseek", models: choices.map(choice => choice.id === "gpt" ? { ...choice, imageLimits, ...(unavailableGpt ? { available: false, reason: "image_budget_missing" } : {}) } : choice),
     } } });
     const body = route.request().postDataJSON() as RequestBody;
     requests.push(body);
@@ -183,4 +183,39 @@ test("restoring a disabled preference selects an available model without showing
   finally { finish(); }
   await expect(page.getByText("回答 2", { exact: true })).toBeVisible();
   expect(requests[1].model).toBe("deepseek");
+});
+
+
+test("admin image limits allow more than four images and more than eight MiB without lifting text limits", async ({ page }) => {
+  const requests = await setup(page, false, { maxImages: 8, maxImageBytes: 10 * 1024 * 1024, maxImagePixels: 32_000_000 });
+  await page.goto("/agent");
+  const selector = page.getByRole("combobox", { name: "助理模型" });
+  await expect(selector).toContainText("DeepSeek Flash");
+  await selector.click();
+  await page.getByRole("option", { name: /GPT-6.1 Sol/ }).click();
+  const upload = page.getByLabel("上传附件", { exact: true });
+  const pixel = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=", "base64");
+  await upload.setInputFiles({ name: "too-large.png", mimeType: "image/png", buffer: Buffer.alloc(10 * 1024 * 1024 + 1) });
+  await expect(page.getByRole("alert")).toContainText("超过 10 MiB");
+  const large = Buffer.concat([pixel, Buffer.alloc(9 * 1024 * 1024)]);
+  await upload.setInputFiles([
+    ...Array.from({ length: 5 }, (_, index) => ({ name: `picture-${index}.png`, mimeType: "image/png", buffer: index < 2 ? large : pixel })),
+    { name: "notes.txt", mimeType: "text/plain", buffer: Buffer.from("test notes") },
+  ]);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  const input = page.locator("[data-agent-composer] textarea");
+  await input.fill("读取五张图片和笔记");
+  await page.getByRole("button", { name: "发送", exact: true }).click();
+  await expect(page.getByText("回答 1", { exact: true })).toBeVisible();
+  const files = requests[0].messages.flatMap(message => message.parts).filter(part => part.type === "file");
+  expect(files.filter(part => part.mediaType === "image/png")).toHaveLength(5);
+  expect(files.filter(part => part.mediaType === "text/plain")).toHaveLength(1);
+  expect(Buffer.byteLength(JSON.stringify(requests[0]))).toBeGreaterThan(16 * 1024 * 1024);
+  await upload.setInputFiles({ name: "large-notes.txt", mimeType: "text/plain", buffer: Buffer.alloc(8 * 1024 * 1024 + 1) });
+  await expect(page.getByRole("alert")).toContainText("超过 8 MiB");
+  await upload.setInputFiles(Array.from({ length: 4 }, (_, index) => ({ name: `next-${index}.png`, mimeType: "image/png", buffer: pixel })));
+  await input.fill("继续识图");
+  await page.getByRole("button", { name: "发送", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("本轮最多发送 8 张图片（含历史图片）");
+  expect(requests).toHaveLength(1);
 });

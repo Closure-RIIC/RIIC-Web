@@ -111,7 +111,6 @@ export function ModelSettingsEditor({ settings, refresh, modelChoices = [], rate
       const rate = payload.rates.models.find(row => row.provider === identity.provider);
       const route = rateModels.find(row => row.provider === identity.provider);
       const choice = modelChoices.find(row => row.id === model.id);
-      const imageBudgetMode = model.imageBudgetMode ?? "per-image";
       const isDefault = payload.models.defaultModel === model.id;
       const status = adminText.text(locale, choice?.available ? "modelReady" : choice?.reason === "route_unconfigured" ? "routeMissing" : choice?.reason === "rate_missing" ? "rateMissing" : choice?.reason === "image_budget_missing" ? "imageBudgetMissing" : "modelNotReady");
       return <fieldset key={model.id} disabled={busy} className="min-w-0 space-y-4 rounded-xl border bg-card p-4 sm:p-5" data-model-settings-card={model.id}>
@@ -132,20 +131,19 @@ export function ModelSettingsEditor({ settings, refresh, modelChoices = [], rate
           <summary className="cursor-pointer text-sm font-medium">{adminText.text(locale, "imageAdvancedSettings")}</summary>
           <div className="mt-4 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Label className={FIELD_CLASS}>{adminText.text(locale, "imageBudgetMode")}<select className={SELECT_CLASS} value={imageBudgetMode} onChange={event => updateModel(model.id, { imageBudgetMode: event.target.value as NonNullable<AgentModelEntry["imageBudgetMode"]> })}><option value="per-image">{adminText.text(locale, "imageBudgetPerImage")}</option><option value="shared-input-limit">{adminText.text(locale, "imageBudgetSharedInput")}</option></select></Label>
-              <Label className={FIELD_CLASS}>{adminText.text(locale, "maxImages")}<Input type="number" min="0" max="4" value={model.maxImages} onChange={event => updateModel(model.id, { maxImages: Number(event.target.value) })} /></Label>
+              <Label className={FIELD_CLASS}>{adminText.text(locale, "maxImages")}<Input type="number" min="0" value={model.maxImages} onChange={event => updateModel(model.id, { maxImages: Number(event.target.value) })} /></Label>
             </div>
-            <p className="text-xs leading-relaxed text-muted-foreground">{adminText.text(locale, imageBudgetMode === "shared-input-limit" ? "imageBudgetSharedInputHint" : "imageBudgetPerImageHint")}</p>
+            <p className="text-xs leading-relaxed text-muted-foreground">{adminText.text(locale, "imageBudgetPerImageHint")}</p>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label className={FIELD_CLASS}>{adminText.text(locale, "maxImageBytes")}<Input type="number" inputMode="decimal" min={1024 / BYTES_PER_MIB} max={8} step="any" value={model.maxImageBytes / BYTES_PER_MIB} aria-describedby={`${model.id}-image-bytes-help`} onChange={event => updateModel(model.id, { maxImageBytes: Math.round(Number(event.target.value) * BYTES_PER_MIB) })} /></Label>
+                <Label className={FIELD_CLASS}>{adminText.text(locale, "maxImageBytes")}<Input type="number" inputMode="decimal" min={1024 / BYTES_PER_MIB} step="any" value={model.maxImageBytes / BYTES_PER_MIB} aria-describedby={`${model.id}-image-bytes-help`} onChange={event => updateModel(model.id, { maxImageBytes: Math.round(Number(event.target.value) * BYTES_PER_MIB) })} /></Label>
                 <p id={`${model.id}-image-bytes-help`} className="text-xs leading-relaxed text-muted-foreground">{adminText.text(locale, "maxImageBytesHint")}</p>
               </div>
               <div className="space-y-2">
-                <Label className={FIELD_CLASS}>{adminText.text(locale, "maxImagePixels")}<Input type="number" inputMode="decimal" min={1024 / PIXELS_PER_MEGAPIXEL} max={16} step="any" value={model.maxImagePixels / PIXELS_PER_MEGAPIXEL} aria-describedby={`${model.id}-image-pixels-help`} onChange={event => updateModel(model.id, { maxImagePixels: Math.round(Number(event.target.value) * PIXELS_PER_MEGAPIXEL) })} /></Label>
+                <Label className={FIELD_CLASS}>{adminText.text(locale, "maxImagePixels")}<Input type="number" inputMode="decimal" min={1024 / PIXELS_PER_MEGAPIXEL} step="any" value={model.maxImagePixels / PIXELS_PER_MEGAPIXEL} aria-describedby={`${model.id}-image-pixels-help`} onChange={event => updateModel(model.id, { maxImagePixels: Math.round(Number(event.target.value) * PIXELS_PER_MEGAPIXEL) })} /></Label>
                 <p id={`${model.id}-image-pixels-help`} className="text-xs leading-relaxed text-muted-foreground">{adminText.text(locale, "maxImagePixelsHint")}</p>
               </div>
-              {imageBudgetMode === "per-image" ? <Label className={FIELD_CLASS}>{adminText.text(locale, "imageTokensPerImage")}<Input type="number" min="0" max="60000" value={model.imageTokensPerImage} onChange={event => updateModel(model.id, { imageTokensPerImage: Number(event.target.value) })} /></Label> : null}
+              <Label className={FIELD_CLASS}>{adminText.text(locale, "imageTokensPerImage")}<Input type="number" min="0" value={model.imageTokensPerImage} onChange={event => updateModel(model.id, { imageTokensPerImage: Number(event.target.value) })} /></Label>
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">{adminText.text(locale, "imageBudgetHint")}</p>
           </div>
@@ -222,11 +220,10 @@ function ModelSettingsSnapshot({ payload, version, locale }: { payload: AgentMod
           </div> : <p className="text-xs text-muted-foreground">{adminText.text(locale, "gptLongContextDisabled")}</p> : null}
         </> : <p>{adminText.text(locale, "modelRateNotConfigured")}</p>}
         {AGENT_MODELS[model.id].vision ? <dl className="grid gap-2 border-t pt-2 sm:grid-cols-2">
-          <div><dt className="text-muted-foreground">{adminText.text(locale, "imageBudgetMode")}</dt><dd>{adminText.text(locale, model.imageBudgetMode === "shared-input-limit" ? "imageBudgetSharedInput" : "imageBudgetPerImage")}</dd></div>
           <div><dt className="text-muted-foreground">{adminText.text(locale, "maxImages")}</dt><dd>{model.maxImages}</dd></div>
           <div><dt className="text-muted-foreground">{adminText.text(locale, "maxImageBytes")}</dt><dd>{model.maxImageBytes / BYTES_PER_MIB}</dd></div>
           <div><dt className="text-muted-foreground">{adminText.text(locale, "maxImagePixels")}</dt><dd>{model.maxImagePixels / PIXELS_PER_MEGAPIXEL}</dd></div>
-          {model.imageBudgetMode !== "shared-input-limit" ? <div><dt className="text-muted-foreground">{adminText.text(locale, "imageTokensPerImage")}</dt><dd>{model.imageTokensPerImage}</dd></div> : null}
+          <div><dt className="text-muted-foreground">{adminText.text(locale, "imageTokensPerImage")}</dt><dd>{model.imageTokensPerImage}</dd></div>
         </dl> : null}
       </div>;
     })}

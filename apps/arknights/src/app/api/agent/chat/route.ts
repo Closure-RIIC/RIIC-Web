@@ -18,6 +18,7 @@ import { gatewayChat } from "@/server/agent/gateway-chat";
 import { AgentAccountingError, activeAgentPolicies } from "@/server/billing/agent-accounting";
 import { configuredAgentChoices } from "@/server/agent/model-catalog";
 import { isAgentModelId } from "@/agent-models";
+import { agentRequestBodyLimit } from "@/agent-image-limits";
 import { AgentFilterError } from "@/server/agent/filter-policy";
 import { AgentHistoryError, prepareAgentHistory } from "@/server/agent/message-history";
 import { withAgentAnswerBoundary } from "@/server/agent/answer-boundary";
@@ -139,7 +140,11 @@ export async function POST(request: Request) {
     const { session } = await requireAgentAccess(request);
     const automatic = agentGatewayEnabled();
     if (automatic) enforceRateLimit("agent-chat", session.user.id, 20, 60_000);
-    const body = (await readJsonBody(request, 16 * 1024 * 1024)) as { model?: unknown; images?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; messages?: UIMessage[]; pageContext?: unknown; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
+    // Bound transport before parsing with the same policy snapshot used for this run.
+    // Selection-specific counts and decoded sizes are checked by prepareAgentHistory.
+    const policies = automatic ? await activeAgentPolicies() : undefined;
+    const bodyLimit = Math.max(agentRequestBodyLimit(), ...(policies?.models.policy.models.filter(model => model.enabled).map(agentRequestBodyLimit) ?? []));
+    const body = (await readJsonBody(request, bodyLimit)) as { model?: unknown; images?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; messages?: UIMessage[]; pageContext?: unknown; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
     if (!Array.isArray(body.messages) || body.messages.length === 0) {
       const response = failureResponse(new Error("缺少对话消息。"), requestId, "/api/agent/chat", startedAt);
       return new Response(response.body, { status: 400, headers: response.headers });
@@ -152,21 +157,10 @@ export async function POST(request: Request) {
     catch (error) {
       return failureResponse(new PublicApiError("AIC-REQ-1001", { message: "所选人格卡暂不可用，请重新选择。", cause: error }), requestId, "/api/agent/chat", startedAt);
     }
-    const fileParts = body.messages.flatMap((message) => Array.isArray(message?.parts) ? message.parts.filter((part) => part?.type === "file") : []).map((part) => part as unknown as { url?: unknown; mediaType?: unknown; filename?: unknown });
-    if (fileParts.length > 4) {
-      const response = failureResponse(new Error("一次最多发送 4 个附件。"), requestId, "/api/agent/chat", startedAt);
-      return new Response(response.body, { status: 413, headers: response.headers });
-    }
-    for (const part of fileParts) {
-      if (typeof part.url !== "string" || part.url.length > 12_000_000) {
-        const response = failureResponse(new Error("附件过大，请压缩后重试。"), requestId, "/api/agent/chat", startedAt);
-        return new Response(response.body, { status: 413, headers: response.headers });
-      }
-    }
     if (body.model !== undefined && !(automatic && body.model === null) && !isAgentModelId(body.model)) throw new PublicApiError("AIC-REQ-1001", { message: "请选择可用的模型。" });
     if (body.images !== undefined && body.images !== "include" && body.images !== "exclude") throw new PublicApiError("AIC-REQ-1001", { message: "图片上下文选项无效。" });
     // The gateway owns credentials; the selected catalog entry owns routing for the whole run.
-    if (automatic) return await gatewayChat(request, session.user.id, requestId, { ...body, messages: body.messages, pageContext }, personaContent, resources ?? undefined);
+    if (automatic) return await gatewayChat(request, session.user.id, requestId, { ...body, messages: body.messages, pageContext }, personaContent, resources ?? undefined, policies);
     if (body.model !== undefined && body.model !== "deepseek" && body.model !== "glm") {
       throw new PublicApiError("AIC-REQ-1001", { message: "请选择可用的模型。" });
     }
