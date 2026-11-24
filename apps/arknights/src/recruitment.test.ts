@@ -2,6 +2,20 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { calculateRecruitment, RECRUITMENT_OPERATORS, recruitmentOwnership } from "./recruitment.ts";
 
+test("the current CN pool includes Mulberry, Saileach and Roberta tag combinations", () => {
+  for (const id of ["char_473_mberry", "char_479_sleach", "char_484_robrta"]) {
+    assert.ok(RECRUITMENT_OPERATORS.some((operator) => operator.id === id), `Missing recruitment operator: ${id}`);
+  }
+  const supporterMelee = calculateRecruitment([5, 9], 540).find((result) => result.tags.length === 2);
+  assert.ok(supporterMelee);
+  assert.equal(supporterMelee.minimumRarity, 4);
+  assert.ok(supporterMelee.operators.some((operator) => operator.id === "char_484_robrta"));
+  const topVanguard = calculateRecruitment([11, 8], 540).find((result) => result.tags.length === 2);
+  assert.ok(topVanguard?.operators.some((operator) => operator.id === "char_479_sleach"));
+  const seniorMedic = calculateRecruitment([14, 4], 540).find((result) => result.tags.length === 2);
+  assert.ok(seniorMedic?.operators.some((operator) => operator.id === "char_473_mberry"));
+});
+
 test("enumerates all one-to-three tag combinations without duplicates", () => {
   const tags = [1, 9, 19, 20, 14];
   const results = calculateRecruitment(tags);
