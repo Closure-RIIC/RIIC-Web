@@ -9,7 +9,7 @@ const ef = process.env.ENDFIELD_E2E_ORIGIN ?? "http://127.0.0.1:5196";
 const admin = process.env.ADMIN_E2E_ORIGIN ?? "http://127.0.0.1:5199";
 for (const origin of [ak, ef, admin]) if (!["localhost", "127.0.0.1"].includes(new URL(origin).hostname)) throw new Error("Local isolated fixtures only");
 const browser = await chromium.launch(), results = [], errors = [];
-const labels = { "zh-CN": "简体中文", "zh-TW": "繁體中文（台灣）", en: "English" };
+const labels = { "zh-CN": "简体中文", "zh-TW": "繁體中文", en: "English" };
 const ready = page => page.locator('body[data-app-hydrated="true"]').waitFor();
 async function pageFor(origin, cookie) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
@@ -122,7 +122,7 @@ try {
     await page.getByRole('menuitemradio', { name: 'English', exact: true }).click();
     await expect.poll(() => blocked).toBeGreaterThan(0);
     await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
-    await expect(page.getByRole('menuitemradio', { name: '繁體中文（台灣）', exact: true })).toBeDisabled();
+    await expect(page.getByRole('menuitemradio', { name: '繁體中文', exact: true })).toBeDisabled();
     release(); await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await page.keyboard.press('Escape'); await expect(input).toHaveValue('preserved query');
     result(origin + ' delayed resources switch atomically and preserve input'); await context.close();
