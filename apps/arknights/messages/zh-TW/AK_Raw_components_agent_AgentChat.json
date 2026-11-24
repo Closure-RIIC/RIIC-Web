@@ -66,7 +66,7 @@
   "avatarNotSaved": "頭像儲存失敗，請檢查瀏覽器儲存空間後重試。",
   "avatarReadFailed": "頭像讀取失敗，請選擇其他圖片重試。",
   "attachmentLimit": "一次最多傳送 {count} 個附件。",
-  "attachmentUnsupported": "{name} 不支援，或超過 8 MB 大小限制。",
+  "attachmentUnsupported": "{name} 不受支援，或超過 8 MB。僅支援 PNG、JPEG、WebP、TXT 和 Markdown。",
   "remainingMaterials": " 等 {count} 項",
   "toolRunning": "正在呼叫 {label}…",
   "toolStopped": "{label} 已停止",

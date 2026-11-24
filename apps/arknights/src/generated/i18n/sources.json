@@ -7,7 +7,7 @@
     "packages/arknights-domain/src/generated/arkntools/source.json": "3d3252b0b4d9e3bbc1b02dbec48731f96a7e5d91272468338f3ae6f55747e19a",
     "packages/arknights-domain/src/generated/arkntools/operator-catalog.json": "dfe183061b8a27975836c7d8ec45b29e2ada771cd9fa0ec6d45dc9801e34a53f",
     "packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json": "ce544edc18b429503dd9bdcae6d1fe890ef94c49fff65516af3de3545f64a3f7",
-    "apps/arknights/src/generated/item-name-catalog.json": "fa3fb34a8e17479bfbbf31f53488c75890f91f54d201450b0996e3555202e11a",
+    "apps/arknights/src/generated/item-name-catalog.json": "7152c6582dd06c7dc4062fdbc3b26bfd0de62b2520cb4e3e245654a8b6c36229",
     "packages/arknights-domain/src/generated/operator-english-names.json": "fb16929757c2e3d7aa7292de5b2d58331d8843cbe9d5dffe4e2d42766650c7de",
     "apps/arknights/src/generated/building-skill-english.json": "9bf697ec02013f0685654eba6a546afb05a538243c1ae959c45a81a5cf2e6d23",
     "apps/arknights/src/generated/building-skill-english-manual.json": "bf42ababa9313cbf4af3d743e3c57560ce732df0f01ab0c0654fe6d7291d214c",
@@ -24,9 +24,9 @@
     "assets/locales/us/material.json": "630a53355e2eb486f64fe0e6b3b2fda879d517f1dcf0cb6ac30eb1bf49674af7"
   },
   "outputs": {
-    "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json": "ca8c7f5d47be3e7af31d9527fd46c1aae2d926018eed81a4ed24e8f91af557dc",
-    "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json": "1f54c41e9de9f6d002dc3a5a0636e85a9a09016de1b2eebc58d0ee8605fa8538",
-    "apps/arknights/src/generated/i18n/en/ArknightsGameData.json": "f64262e4adb87b2e0b3c4a982bf0c8766d887db49d0c91661e80810f4ebb3be5",
+    "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json": "cfc17a8a70cc08f742e053c76e1de185b39daca81ec3c5fd0492dfaf0f545c9f",
+    "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json": "4c4f09c203408336fef627a024ba85e7d3da0cb7e2806fbad9bb9ce44f65e025",
+    "apps/arknights/src/generated/i18n/en/ArknightsGameData.json": "c224a6b9ace7146f7f06316af6a368be7160475aedd3e7c1f241e72e35dff2a8",
     "apps/arknights/src/generated/i18n/operator-aliases.json": "1fa3ff906477ca68c99441a28d484b31deffcfab797ebc26eaca176e70a7aa72"
   },
   "coverage": {

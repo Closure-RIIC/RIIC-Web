@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { UIMessage } from "ai";
-import { emptyAgentHistory, mergeAgentHistories, parseAgentHistory, restoreAgentMessages, updateAgentConversation } from "./agent-history.ts";
+import { emptyAgentHistory, mergeAgentHistories, parseAgentHistory, restoreAgentMessages, updateAgentConversation, updateAgentConversationPreferences } from "./agent-history.ts";
 
 const question = (text: string): UIMessage[] => [{ id: "user", role: "user", parts: [{ type: "text", text }] }];
 
@@ -41,6 +41,36 @@ test("restoring an interrupted stream resolves incomplete tool calls without cha
   assert.equal((messages[0].parts[0] as { state: string }).state, "streaming");
 });
 
+test("restoring a saved reply hides thinking split across text parts", () => {
+  const prompt = question("<think>这是什么标签？</think>");
+  const messages: UIMessage[] = [...prompt, { id: "answer", role: "assistant", parts: [
+    { type: "text", text: "<thi" },
+    { type: "text", text: "nk>隐藏内容</think>这是回答。" },
+  ] }];
+  assert.deepEqual(restoreAgentMessages(messages).map(message => message.parts), [
+    [{ type: "text", text: "<think>这是什么标签？</think>", state: "done" }],
+    [{ type: "text", text: "这是回答。", state: "done" }],
+  ]);
+});
+
+test("restoring a saved reply confines unclosed thinking to its model step", () => {
+  const tool: UIMessage["parts"][number] = { type: "tool-kb_read", toolCallId: "read", state: "output-available", input: {}, output: {} };
+  const dynamic: UIMessage["parts"][number] = { type: "dynamic-tool", toolName: "kb_read", toolCallId: "read", state: "output-available", input: {}, output: {} };
+  for (const boundary of [[{ type: "step-start" }], [tool], [dynamic], [tool, { type: "step-start" }]] satisfies UIMessage["parts"][]) {
+    const messages: UIMessage[] = [{ id: "answer", role: "assistant", parts: [
+      { type: "text", text: "<think>先查知识库" }, ...boundary,
+      { type: "text", text: "<thi" },
+      { type: "text", text: "nk>新一轮思考</think>制造站生产力提升30%。" },
+    ] }];
+    const saved = structuredClone(messages);
+    const restored = restoreAgentMessages(messages);
+    assert.deepEqual(restored[0].parts.filter(part => part.type === "text"), [
+      { type: "text", text: "制造站生产力提升30%。", state: "done" },
+    ]);
+    assert.deepEqual(messages, saved);
+  }
+});
+
 test("parsing rejects unsupported and malformed records and retains collapse preference", () => {
   assert.deepEqual(parseAgentHistory(null), emptyAgentHistory());
   assert.deepEqual(parseAgentHistory({ version: 99, conversations: [] }), emptyAgentHistory());
@@ -57,4 +87,40 @@ test("merging concurrent saves preserves other chats and never rolls a newer ans
   const merged = mergeAgentHistories(stored, incoming);
   assert.deepEqual(merged.conversations.map((entry) => entry.id), ["unsaved", "shared", "other-tab"]);
   assert.equal(merged.conversations[1].title, "新回复");
+});
+
+test("model and image preferences survive checkpoints and history restoration", () => {
+  let history = updateAgentConversation(emptyAgentHistory(), "vision", question("看图"), 1, { selectedModel: "gpt", imageMode: "include" });
+  history = updateAgentConversationPreferences(history, "vision", { selectedModel: "glm", imageMode: "exclude" }, 2);
+  history = updateAgentConversation(history, "vision", [...question("看图"), { id: "reply", role: "assistant", parts: [{ type: "text", text: "已经识别" }], metadata: { replyModel: { id: "gpt", label: "GPT-6.1 Sol" } } }], 3);
+  const restored = parseAgentHistory(JSON.parse(JSON.stringify(history))).conversations[0];
+  assert.equal(restored.selectedModel, "glm");
+  assert.equal(restored.imageMode, "exclude");
+  assert.equal(restored.messages.length, 2);
+  assert.deepEqual(restored.messages[1].metadata, { replyModel: { id: "gpt", label: "GPT-6.1 Sol" } });
+  assert.equal(updateAgentConversationPreferences(history, "missing", { selectedModel: "gpt" }), history);
+});
+
+test("malformed stored model preferences cannot replace valid conversation messages", () => {
+  const history = updateAgentConversation(emptyAgentHistory(), "saved", question("保留内容"));
+  const raw = { ...history, conversations: [{ ...history.conversations[0], selectedModel: "arbitrary-upstream", imageMode: "invalid" }] };
+  const restored = parseAgentHistory(raw).conversations[0];
+  assert.equal(restored.selectedModel, undefined);
+  assert.equal(restored.imageMode, "include");
+  assert.equal(restored.messages[0].parts[0].type, "text");
+});
+
+test("a preference change from another tab does not overwrite newer messages", () => {
+  const original = updateAgentConversation(emptyAgentHistory(), "shared", question("原问题"), 1, { selectedModel: "gpt", imageMode: "include" });
+  const newAnswer = updateAgentConversation(original, "shared", [...question("原问题"), { id: "answer", role: "assistant", parts: [{ type: "text", text: "新回答" }] }], 3);
+  const changedModel = updateAgentConversationPreferences(original, "shared", { selectedModel: "glm", imageMode: "exclude" }, 4);
+  for (const merged of [mergeAgentHistories(newAnswer, changedModel), mergeAgentHistories(changedModel, newAnswer)]) {
+    assert.equal(merged.conversations[0].messages.length, 2);
+    assert.equal(merged.conversations[0].selectedModel, "glm");
+    assert.equal(merged.conversations[0].imageMode, "exclude");
+    assert.equal(merged.conversations[0].updatedAt, 3);
+    const checkpoint = updateAgentConversation(merged, "shared", newAnswer.conversations[0].messages, 5, { selectedModel: "gpt", imageMode: "include" }, 1);
+    assert.equal(checkpoint.conversations[0].selectedModel, "glm");
+    assert.equal(checkpoint.conversations[0].preferencesUpdatedAt, 4);
+  }
 });

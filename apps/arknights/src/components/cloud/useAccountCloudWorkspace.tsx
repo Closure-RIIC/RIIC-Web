@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState, type Dispatch, type SetStateAction } fr
 import { PRESETS } from "@riic/arknights-domain/blueprint";
 import type { CloudSyncStatus } from "@/cloud-sync";
 import { normalizeOperboxEntries } from "@riic/arknights-domain/operbox-normalization";
+import { encodeRotationKey, normalizeRotationProfile } from "@riic/arknights-domain/rotation-settings";
 import type {
   BaseBlueprint,
   BoxSource,
@@ -37,7 +38,9 @@ export interface AccountCloudWorkspaceInput {
   localLayoutBackup: BaseBlueprint | null;
   setLocalLayoutBackup: Dispatch<SetStateAction<BaseBlueprint | null>>;
   rotationProfile: RotationProfile;
+  rotationSelection?: string;
   setRotationProfile: Dispatch<SetStateAction<RotationProfile>>;
+  setRotationSelection?: Dispatch<SetStateAction<string>>;
   fiammettaEnabled: boolean;
   setFiammettaEnabled: Dispatch<SetStateAction<boolean>>;
   result: PublicPlanData | null;
@@ -63,6 +66,7 @@ export function useAccountCloudWorkspace(value: AccountCloudWorkspaceInput | nul
     setPreset,
     setResult,
     setRotationProfile,
+    setRotationSelection,
   } = input;
   const [cloudWorkspaceData, setCloudWorkspaceData] = useState<CloudWorkspaceData | null>(null);
   const [cloudSyncStatus, setCloudSyncStatus] = useState<CloudSyncStatus>("idle");
@@ -76,13 +80,13 @@ export function useAccountCloudWorkspace(value: AccountCloudWorkspaceInput | nul
       layoutDirty: input.layoutDirty,
       layoutSource: input.layoutSource,
       localLayoutBackup: input.localLayoutBackup,
-      rotationProfile: input.rotationProfile,
+      rotationProfile: input.rotationSelection ?? input.rotationProfile,
       fiammettaEnabled: input.fiammettaEnabled,
       activeShift: input.activeShift,
     },
     operbox: input.boxSource === "maa" ? input.operbox : null,
     result: input.boxSource === "maa" ? input.result : null,
-  }), [input.activeShift, input.boxSource, input.fiammettaEnabled, input.fileName, input.layout, input.layoutDirty, input.layoutSource, input.localLayoutBackup, input.operbox, input.preset.label, input.result, input.rotationProfile]);
+  }), [input.activeShift, input.boxSource, input.fiammettaEnabled, input.fileName, input.layout, input.layoutDirty, input.layoutSource, input.localLayoutBackup, input.operbox, input.preset.label, input.result, input.rotationProfile, input.rotationSelection]);
 
   const applyWorkspace = useCallback((cloud: CloudWorkspaceData) => {
     if (!cloud.exists || !cloud.state) return;
@@ -95,7 +99,14 @@ export function useAccountCloudWorkspace(value: AccountCloudWorkspaceInput | nul
     setLayoutDirty(state.layoutDirty);
     setLayoutSource(state.layoutSource);
     setLocalLayoutBackup(state.localLayoutBackup ? structuredClone(state.localLayoutBackup) : null);
-    setRotationProfile(state.rotationProfile);
+    const autoTiming = cloud.result?.rotation.auto_rotation?.timing;
+    if (setRotationSelection) {
+      setRotationSelection(autoTiming
+        ? encodeRotationKey({ topology: "auto", shift_hours: autoTiming.shift_hours })
+        : state.rotationProfile);
+    } else {
+      setRotationProfile(normalizeRotationProfile(state.rotationProfile));
+    }
     setFiammettaEnabled(state.fiammettaEnabled);
     setResult(cloud.result);
     setActiveShift(cloud.result ? state.activeShift : 0);
@@ -113,6 +124,7 @@ export function useAccountCloudWorkspace(value: AccountCloudWorkspaceInput | nul
     setPreset,
     setResult,
     setRotationProfile,
+    setRotationSelection,
   ]);
 
   const handleWorkspaceChanged = useCallback((cloud: CloudWorkspaceData | null) => {
