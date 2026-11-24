@@ -1,7 +1,7 @@
 {
   "source": {
     "repository": "https://github.com/arkntools/arknights-toolbox-data",
-    "commit": "302105b1404bd488c4700d063da9dcf3661a94f0"
+    "commit": "979536fda0c5cdc63d4ce62e61d3a4d58df55701"
   },
   "server": "cn",
   "tags": [
@@ -1884,6 +1884,17 @@
       ]
     },
     {
+      "id": "char_473_mberry",
+      "name": "桑葚",
+      "rarity": 5,
+      "tags": [
+        4,
+        10,
+        14,
+        15
+      ]
+    },
+    {
       "id": "char_475_akafyu",
       "name": "赤冬",
       "rarity": 5,
@@ -1905,6 +1916,29 @@
         14,
         19,
         20
+      ]
+    },
+    {
+      "id": "char_479_sleach",
+      "name": "琴柳",
+      "rarity": 6,
+      "tags": [
+        8,
+        9,
+        11,
+        16,
+        18
+      ]
+    },
+    {
+      "id": "char_484_robrta",
+      "name": "罗比菈塔",
+      "rarity": 4,
+      "tags": [
+        5,
+        9,
+        16,
+        22
       ]
     },
     {

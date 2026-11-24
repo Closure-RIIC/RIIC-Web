@@ -39,7 +39,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { rotationDescription } from "@riic/arknights-domain/rotation-settings";
+import { rotationTimingDescription } from "@riic/arknights-domain/rotation-settings";
 import type {
   AdminFeedbackDeleteData,
   AdminFeedbackDetailData,
@@ -134,7 +134,7 @@ function ReproductionPanel({ state }: { state: DetailState }) {
         <div><dt className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.rotationCount")}</dt><dd className="font-number mt-1 font-medium">{reproduction.rotationCount ?? (intl("app_admin_issues_issues_client.unavailable"))}</dd></div>
         <div><dt className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.fiammetta")}</dt><dd className="mt-1 font-medium">{reproduction.fiammettaEnabled === null ? (intl("app_admin_issues_issues_client.unavailable")) : reproduction.fiammettaEnabled ? (intl("app_admin_issues_issues_client.enabled")) : (intl("app_admin_issues_issues_client.disabled"))}</dd></div>
       </dl>
-      {reproduction.rotation ? <p className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.rotation")}{rotationDescription(reproduction.rotation, en)}</p> : null}
+      {reproduction.rotation ? <p className="text-xs text-muted-foreground">{intl("app_admin_issues_issues_client.rotation")}{rotationTimingDescription(reproduction.rotation, en)}</p> : null}
 
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="outline" disabled={!reproduction.operbox} onClick={() => downloadReproduction(reproduction, true)}>

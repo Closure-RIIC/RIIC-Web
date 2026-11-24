@@ -568,7 +568,7 @@ export const agentPolicyVersion = appSchema.table("agent_policy_version", {
   publishedAt: timestamp("published_at", { withTimezone: true }),
 }, table => [uniqueIndex("agent_policy_version_kind_version").on(table.kind, table.version),
   uniqueIndex("agent_policy_one_active").on(table.kind).where(sql`${table.status} = 'active'`),
-  check("agent_policy_kind", sql`${table.kind} in ('rates','filter','resources')`),
+  check("agent_policy_kind", sql`${table.kind} in ('rates','filter','resources','models','model-settings')`),
   check("agent_policy_status", sql`${table.status} in ('draft','active','retired')`)]);
 
 export const agentRun = appSchema.table("agent_run", {
@@ -582,6 +582,7 @@ export const agentRun = appSchema.table("agent_run", {
   policy: jsonb("policy").notNull(),
   rateVersion: text("rate_version").notNull(),
   filterVersion: text("filter_version").notNull(),
+  modelSelection: jsonb("model_selection"),
   heldPaid: numeric("held_paid", { precision: 15, scale: 4, mode: "number" }).notNull().default(0),
   heldMonthly: numeric("held_monthly", { precision: 15, scale: 4, mode: "number" }).notNull().default(0),
   monthlyExpiresAt: timestamp("monthly_expires_at", { withTimezone: true }),
@@ -602,6 +603,7 @@ export const agentModelCall = appSchema.table("agent_model_call", {
   provider: text("provider"), model: text("model"), gatewayRequestId: text("gateway_request_id"),
   status: text("status").notNull().default("started"),
   inputTokens: integer("input_tokens"), outputTokens: integer("output_tokens"), cachedInputTokens: integer("cached_input_tokens"),
+  cacheWriteTokens: integer("cache_write_tokens"),
   upstreamRmb: numeric("upstream_rmb", { precision: 24, scale: 12 }),
   chargedRmb: numeric("charged_rmb", { precision: 24, scale: 12 }),
   budgetPoints: numeric("budget_points", { precision: 15, scale: 4, mode: "number" }).notNull(),
@@ -727,6 +729,7 @@ export const agentUsage = appSchema.table("agent_usage", {
   inputTokens: integer("input_tokens"),
   outputTokens: integer("output_tokens"),
   cachedInputTokens: integer("cached_input_tokens"),
+  cacheWriteTokens: integer("cache_write_tokens"),
   upstreamCostRmbFen: numeric("upstream_cost_rmb_fen", { precision: 24, scale: 10, mode: "number" }),
   chargedCostRmbFen: numeric("charged_cost_rmb_fen", { precision: 24, scale: 10, mode: "number" }),
   idempotencyKey: text("idempotency_key").notNull(),

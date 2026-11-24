@@ -2,11 +2,13 @@
   "rotation": "換班方式",
   "chooseARotation": "選擇換班方式",
   "noMatchingRotation": "沒有匹配的換班方式",
-  "custom": "自訂",
+  "custom": "自訂時長",
   "shiftCount": "班次",
   "shiftCountN": "{count} 班",
   "shiftHoursLabel": "第 {index} 班時長（小時）",
   "cycleTotal": "總計 {total} 小時",
   "cycleNotAllowed": "總計 {total} 小時，只支援 {allowed} 小時",
-  "hourMustBePositiveInteger": "每班至少 1 小時，且必須是整數"
+  "hourMustBePositiveInteger": "每班至少 1 小時，且必須是整數",
+  "auto": "自動佇列輪換",
+  "autoDescription": "每個設施分別配置主力和替補，使用遊戲內建佇列換班。"
 }

@@ -8,9 +8,14 @@ import { createFilteredTextBuffer, type CompiledFilter } from "./filter-policy.t
 import { withAgentModelTimeout } from "./stream-policy.ts";
 import { gatewaySettings } from "./gateway-config.ts";
 import { recordGatewayRoute } from "./gateway-route.ts";
+import type { AgentModelSelection } from "./model-policy.ts";
+import { modelCallBudget } from "./model-budget.ts";
+import { readRuntimeCacheWriteTokens } from "./gateway-usage.ts";
 export { agentGatewayEnabled, gatewaySettings } from "./gateway-config.ts";
-export function createGatewayRun(input: { runId: string; sessionId: string; requestId: string; userId: string; filterVersion: string; filter: CompiledFilter }) {
-  const settings = gatewaySettings();
+export function createGatewayRun(input: { runId: string; sessionId: string; requestId: string; userId: string; filterVersion: string; filter: CompiledFilter; selection: AgentModelSelection }) {
+  const settings = gatewaySettings(input.selection);
+  const routes = (input.selection.routes ?? [{ provider: input.selection.provider, model: input.selection.model }]).map(route => ({ ...route }));
+  let replyModel = { id: input.selection.id as string, label: input.selection.label };
   let step = 0; let delivered = false; let terminal: Promise<void> | undefined;
   const active = new Set<Promise<void>>();
   async function finalize(state: "completed" | "failed" | "cancelled" | "blocked") {
@@ -18,7 +23,9 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
     return terminal;
   }
   const provider = createOpenAICompatible({ name: "riic-magpie", baseURL: settings.baseURL, apiKey: settings.apiKey,
-    headers: { "X-Magpie-Session": input.sessionId, "User-Agent": "RIIC-Agent/1" } });
+    // Magpie bridges the GPT route to Responses. Use the model's default medium reasoning effort.
+    transformRequestBody: body => input.selection.protocol === "responses" ? { ...body, reasoning_effort: "medium" } : body,
+    headers: { "X-Magpie-Session": input.sessionId, "X-Magpie-Response-Model": "member", "User-Agent": "RIIC-Agent/1" } });
   const model = wrapLanguageModel({ model: withAgentModelTimeout(provider.chatModel(settings.model)), middleware: {
     specificationVersion: "v4",
     wrapStream: async ({ doStream, params }) => {
@@ -27,7 +34,21 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
       const completion = new Promise<void>(resolve => { done = resolve; }); active.add(completion);
       let call: Awaited<ReturnType<typeof beginModelCall>> | undefined;
       let providerId: string | undefined; let actualModel: string | undefined; let gatewayRequestId: string | undefined;
-      let finished = false; let responseStarted = false;
+      let finished = false; let responseStarted = false; let identityFailed = false;
+      const acceptIdentity = (member: string | undefined) => {
+        const matches = routes.filter(route => `${route.provider}/${route.model}` === member);
+        try {
+          if (matches.length !== 1) throw new Error("Gateway actual model identity missing or ambiguous");
+          const actual = matches[0];
+          findModelRate(call!.policy, actual.provider, actual.model);
+          if (providerId && (providerId !== actual.provider || actualModel !== actual.model)) throw new Error("Gateway actual model identity changed");
+          providerId = actual.provider; actualModel = actual.model;
+          replyModel = { id: providerId === input.selection.provider ? input.selection.id : providerId, label: providerId === input.selection.provider ? input.selection.label : actualModel };
+        } catch (error) {
+          identityFailed = true; providerId = undefined; actualModel = undefined;
+          throw error;
+        }
+      };
       const startedAt = Date.now(); let traced = false;
       const trace = async () => {
         if (traced || !call) return; traced = true;
@@ -35,17 +56,14 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
       };
       const end = () => { done(); active.delete(completion); };
       try {
-        const bytes = Buffer.byteLength(JSON.stringify({ prompt: params.prompt, tools: params.tools }));
-        call = await beginModelCall(input.runId, step++, bytes, params.maxOutputTokens ?? 2048);
+        call = await beginModelCall(input.runId, step++, modelCallBudget(input.selection, params));
         const response = await doStream();
         responseStarted = true;
         const headers = response.response?.headers ?? {};
-        providerId = headers["x-magpie-provider"]; actualModel = headers["x-magpie-model"];
-        if (providerId && actualModel?.startsWith(`${providerId}/`)) actualModel = actualModel.slice(providerId.length + 1);
         gatewayRequestId = headers["x-request-id"] ?? headers["x-magpie-request-id"];
-        if (!providerId || !actualModel) { await response.stream.cancel(); throw new Error("Gateway actual model identity missing"); }
-        try { findModelRate(call.policy, providerId, actualModel); }
-        catch (error) { await response.stream.cancel(); throw error; }
+        // Held-stream keepalives can commit HTTP headers before Magpie falls back.
+        // Only the member identity in the first SDK response metadata identifies
+        // the answering route; never price a call using those early headers.
         const reader = response.stream.getReader();
         const buffers = new Map<string, ReturnType<typeof createFilteredTextBuffer>>();
         const hits = new Set<string>();
@@ -60,10 +78,16 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
               while (true) {
               const { value, done: eof } = await reader.read();
               if (eof) {
-                if (!finished) await finishModelCall({ id: call!.id, provider: providerId, model: actualModel, gatewayRequestId, error: "missing_finish" });
+                if (!finished) await finishModelCall({ id: call!.id, provider: providerId, model: actualModel, gatewayRequestId, error: providerId ? "missing_finish" : "identity_failed" });
                 await event(); await trace(); end(); controller.close(); return;
               }
-              if (value.type === "response-metadata" && value.id) gatewayRequestId = value.id;
+              if (value.type === "response-metadata") {
+                if (value.id) gatewayRequestId = value.id;
+                acceptIdentity(value.modelId);
+              } else if (value.type !== "stream-start" && value.type !== "error" && !providerId) {
+                // Content, tools and usage require a verified identity first.
+                acceptIdentity(undefined);
+              }
               if (value.type === "text-start" || value.type === "reasoning-start") buffers.set(`${value.type.split("-")[0]}:${value.id}`, createFilteredTextBuffer(input.filter, ids => ids.forEach(id => hits.add(id))));
               if (value.type === "text-delta" || value.type === "reasoning-delta") {
                 const buffer = buffers.get(`${value.type.split("-")[0]}:${value.id}`);
@@ -95,9 +119,17 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
                 toolParts.delete(value.toolCallId);
               }
               if (value.type === "finish") {
-                const measured = value.usage.inputTokens.total !== undefined && value.usage.outputTokens.total !== undefined;
+                let measured = value.usage.inputTokens.total !== undefined && value.usage.outputTokens.total !== undefined;
+                let cacheWriteTokens: number | undefined; let usageError: string | undefined;
+                if (measured) {
+                  try { cacheWriteTokens = readRuntimeCacheWriteTokens(value.usage); }
+                  catch { measured = false; usageError = "invalid_cache_write_usage"; }
+                }
                 await finishModelCall({ id: call!.id, provider: providerId, model: actualModel, gatewayRequestId,
-                  usage: measured ? { inputTokens: value.usage.inputTokens.total!, outputTokens: value.usage.outputTokens.total!, cachedInputTokens: value.usage.inputTokens.cacheRead ?? 0 } : undefined });
+                  ...(usageError ? { error: usageError } : {}),
+                  usage: measured ? { inputTokens: value.usage.inputTokens.total!, outputTokens: value.usage.outputTokens.total!, cachedInputTokens: value.usage.inputTokens.cacheRead ?? 0,
+                    ...(cacheWriteTokens === undefined ? {} : { cacheWriteTokens }),
+                    ...(value.usage.outputTokens.reasoning === undefined ? {} : { reasoningTokens: value.usage.outputTokens.reasoning }) } : undefined });
                 finished = true;
               }
               if (value.type === "error") throw new Error("Upstream stream failed");
@@ -105,7 +137,7 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
               return;
               }
             } catch {
-              try { await reader.cancel(); await finishModelCall({ id: call!.id, provider: providerId, model: actualModel, gatewayRequestId, error: "stream_failed" }); await event(); await trace(); }
+              try { await reader.cancel(); await finishModelCall({ id: call!.id, provider: providerId, model: actualModel, gatewayRequestId, error: identityFailed ? "identity_failed" : "stream_failed" }); await event(); await trace(); }
               finally { end(); controller.error(new Error("本次回复中断，已保留可核验用量，请稍后重试。")); }
             }
           },
@@ -121,7 +153,7 @@ export function createGatewayRun(input: { runId: string; sessionId: string; requ
       }
     },
   } });
-  return { model, finalize, async deliver() {
+  return { model, finalize, replyModel: () => replyModel, async deliver() {
     if (!delivered) { await markRunDelivered(input.runId); delivered = true; }
   } };
 }
