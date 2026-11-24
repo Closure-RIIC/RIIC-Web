@@ -278,6 +278,12 @@ export function PlanResultSummary({
         </div>
       </motion.section>
 
+      {rotation?.warnings?.length ? (
+        <ul role="status" data-rotation-warnings className="mb-4 grid gap-1 border-s-2 border-amber-500/70 ps-3 text-xs text-amber-800 dark:text-amber-200">
+          {rotation.warnings.map((warning, index) => <li key={`${index}-${warning}`}>{warning}</li>)}
+        </ul>
+      ) : null}
+
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen} onCloseComplete={handleDrawerCloseComplete} title={intl("components_PlanResultSummary.scheduleDetails")} description={intl("components_PlanResultSummary.reviewDailyOutputProductionImprovementsAndCurrentStaffingMatch")} width={560}>
         <div className="flex h-full min-h-0 flex-col">
           <Tabs value={activeDetailSection} onValueChange={(value) => setDetailSection(value as DetailSection)} className="min-h-0 flex-1 gap-0">

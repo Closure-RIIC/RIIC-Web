@@ -56,6 +56,7 @@ import { countOwned } from "@riic/arknights-domain/operbox";
 import type { SetupStep } from "./onboarding";
 import { ALLOWED_CYCLE_HOURS, DEFAULT_ROTATION_PROFILE, isRotationProfile } from "@riic/arknights-domain/rotation-settings";
 import type { CustomRotation } from "@riic/arknights-domain/rotation-settings";
+import { autoRotationFromKey } from "@riic/arknights-domain/rotation-settings";
 import type { BaseBlueprint, BoxSource, DisplayError, OperBoxEntry, PresetDef, RoomProduct, SklandScheduleSnapshot } from "@riic/arknights-domain/types";
 
 import type { MaaIssue } from "@riic/arknights-domain/maa-review";
@@ -864,6 +865,7 @@ export function SetupDialog({
                           </div>
                         </section>
                       ) : <RotationSettings
+                        allowAuto
                         value={rotationProfile}
                         onChange={onRotationProfileChange}
                         custom={customRotation}
@@ -876,18 +878,18 @@ export function SetupDialog({
                       <FiammettaSettings
                         enabled={fiammettaEnabled}
                         operbox={operbox}
-                        rotation={isRotationProfile(rotationProfile) ? rotationProfile : DEFAULT_ROTATION_PROFILE}
+                        rotation={autoRotationFromKey(rotationProfile) ? "main_backup_24_24" : isRotationProfile(rotationProfile) ? rotationProfile : DEFAULT_ROTATION_PROFILE}
                         onEnabledChange={onFiammettaEnabledChange}
                         mode={mode}
                       />
                     </div>
 
-                    <div className="border-t border-border/70 pt-5">
+                    {!autoRotationFromKey(rotationProfile) ? <div className="border-t border-border/70 pt-5">
                       <SupportCombinationsSettings
                         enabled={supportCombinationsEnabled}
                         onEnabledChange={onSupportCombinationsEnabledChange}
                       />
-                    </div>
+                    </div> : null}
 
                     <details className="setup-quiet-details pt-1">
                       <summary className="min-h-11 cursor-pointer py-3 text-sm font-medium">{intl("setup_dialog.advancedTools")}</summary>

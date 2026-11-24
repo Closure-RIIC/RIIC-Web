@@ -9,7 +9,7 @@ import {
 } from "@riic/arknights-domain/deployment";
 import { validateLayoutJson } from "@riic/arknights-domain/layout-validation";
 import { assertOperbox } from "@riic/arknights-domain/operbox";
-import { isRotationProfile } from "@riic/arknights-domain/rotation-settings";
+import { isRotationTiming } from "@riic/arknights-domain/rotation-settings";
 import type {
   ApiFieldError,
   AppErrorCode,
@@ -493,7 +493,7 @@ export function validateFeedbackRequest(value: unknown): asserts value is Feedba
   const reproductionValid = Boolean(reproduction)
     && validateLayoutJson(reproduction?.layout).length === 0
     && operboxValid
-    && isRotationProfile(reproduction?.rotation)
+    && isRotationTiming(reproduction?.rotation)
     && typeof reproduction?.fiammettaEnabled === "boolean"
     && !(reproduction?.rotation === "fiammetta_8_8_4_4" && reproduction.fiammettaEnabled === false)
     && (reproduction?.sourceType === "maa" || reproduction?.sourceType === "skland");

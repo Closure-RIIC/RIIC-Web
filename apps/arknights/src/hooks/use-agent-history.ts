@@ -2,7 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import type { UIMessage } from "ai";
-import { emptyAgentHistory, mergeAgentHistories, parseAgentHistory, updateAgentConversation, type AgentHistory } from "@/agent-history";
+import { emptyAgentHistory, mergeAgentHistories, parseAgentHistory, updateAgentConversation, updateAgentConversationPreferences, type AgentConversationPreferences, type AgentHistory } from "@/agent-history";
 import { useWebsiteSession } from "@/website-session";
 
 // IndexedDB retains attachments and tool results without localStorage's small string quota.
@@ -58,6 +58,7 @@ class AgentHistoryStore {
   private listeners = new Set<() => void>();
   private loading: Promise<void> | undefined;
   private writes = Promise.resolve();
+  private preferences = new Map<string, { value: AgentConversationPreferences; updatedAt: number }>();
   constructor(private owner: string | null) {}
   getSnapshot = () => this.snapshot;
   getServerSnapshot = () => initialSnapshot;
@@ -92,7 +93,14 @@ class AgentHistoryStore {
   }
   save = (id: string, messages: UIMessage[]) => {
     if (!this.snapshot.ready || !this.owner) return;
-    const next = updateAgentConversation(this.snapshot.history, id, messages);
+    const preference = this.preferences.get(id);
+    const next = updateAgentConversation(this.snapshot.history, id, messages, Date.now(), preference?.value, preference?.updatedAt);
+    if (next !== this.snapshot.history) this.persist(next);
+  };
+  setPreferences = (id: string, preferences: AgentConversationPreferences) => {
+    const updatedAt = Date.now();
+    this.preferences.set(id, { value: preferences, updatedAt });
+    const next = updateAgentConversationPreferences(this.snapshot.history, id, preferences, updatedAt);
     if (next !== this.snapshot.history) this.persist(next);
   };
   select = (id: string) => {
