@@ -11,6 +11,7 @@ const managedPaths = [
   "apps/arknights/public/images/products",
   "packages/arknights-domain/src/generated/arkntools",
   "apps/arknights/src/generated/mastery-data.json",
+  "apps/arknights/src/generated/recruitment-data.json",
   "apps/arknights/src/generated/training-planner-data.json",
   "packages/arknights-domain/src/generated/gacha-up.json",
   "fixtures/operbox_full_e2.json",
@@ -22,6 +23,7 @@ const managedPaths = [
 ];
 
 const provenanceFields = new Map([
+  ["apps/arknights/src/generated/recruitment-data.json", [["source", "commit"]]],
   ["apps/arknights/src/generated/training-planner-data.json", [["source", "commit"]]],
   ["apps/arknights/src/generated/i18n/sources.json", [
     ["source", "commit"],

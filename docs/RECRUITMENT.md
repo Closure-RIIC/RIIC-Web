@@ -21,7 +21,13 @@
 ```sh
 node scripts/generate-recruitment-data.mjs
 node scripts/generate-recruitment-data.mjs --check
-node --test --experimental-strip-types src/recruitment.test.ts
+npm run test:recruitment
 ```
 
 生成器从固定上游提交读取公开数据，不依赖浏览器请求 PRTS。检查模式离线验证数据版本、干员目录和标签完整性。新增公招干员须随上游数据更新并审查生成结果；本页不会自动追踪最新游戏更新。
+
+已有固定版本的上游 Git 检出时，可使用 `npm run assets:recruitment -- --source .tmp/arkntools-data` 离线生成；该目录的 HEAD 必须与干员目录记录的提交一致，且包含 `assets/data/character.json`、`assets/locales/cn/tag.json` 和 `assets/locales/us/tag.json`。追加 `--check` 可与该版本的完整公招池比较。
+
+生成器会逐个比较新旧公招干员 ID，默认拒绝移除已有干员，即使同时新增干员使总人数不变也会阻止覆盖旧快照。确认上游的移除确实合理后，可在本地追加 `--allow-removals`，或在手动同步工作流中启用 `allow_removals`；该开关不会跳过版本、目录和标签完整性校验。
+
+每日素材同步流程在更新干员目录后从同一份检出生成并校验公招池，公招快照随受管资源发布并对齐 `develop`。`npm run assets:check`（包含在 `npm run check` 中）也会离线检查公招快照，防止仅更新主目录时遗漏公招数据。

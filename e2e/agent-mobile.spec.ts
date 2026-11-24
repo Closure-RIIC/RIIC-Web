@@ -12,8 +12,8 @@ async function setup(page: Page) {
   const models: string[] = [];
   await page.route('**/api/agent/chat', route => {
     if (route.request().method() === 'GET') return route.fulfill({ json: { success: true, data: {
-      enabled: true, provider: 'glm', models: [
-        { id: 'deepseek', label: 'deepseek-v4.1-flash' }, { id: 'glm', label: 'glm-5.3-flash' },
+      enabled: true, defaultModel: 'deepseek', provider: 'glm', models: [
+        { id: 'deepseek', label: 'deepseek-v4.1-flash', vision: false, available: true }, { id: 'glm', label: 'glm-5.3-flash', vision: false, available: true },
       ],
     } } });
     models.push(route.request().postDataJSON().model);
@@ -26,7 +26,7 @@ async function setup(page: Page) {
     return route.fulfill({ contentType: 'text/event-stream', headers: { 'x-vercel-ai-ui-message-stream': 'v1' }, body: chunks.map(c => `data: ${JSON.stringify(c)}\n\n`).join('') + 'data: [DONE]\n\n' });
   });
   await page.goto('/agent');
-  await expect(page.getByRole('combobox', { name: '助理模式：快速模式' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: '助理模型' })).toBeVisible();
   return models;
 }
 
@@ -50,11 +50,11 @@ for (const size of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { 
     expect(bounds.conversation.height).toBeGreaterThan(size.height - 140);
     expect(bounds.pageWidth).toBeLessThanOrEqual(size.width);
 
-    const mode = page.getByRole('combobox', { name: '助理模式：快速模式' });
+    const mode = page.getByRole('combobox', { name: '助理模型' });
     await expect(mode).toContainText('deepseek-v4.1-flash');
     await mode.click();
-    await page.getByRole('option', { name: /深度模式.*glm-5.3-flash/ }).click();
-    await expect(page.getByRole('combobox', { name: '助理模式：深度模式' })).toContainText('glm-5.3-flash');
+    await page.getByRole('option', { name: /glm-5.3-flash/ }).click();
+    await expect(page.getByRole('combobox', { name: '助理模型' })).toContainText('glm-5.3-flash');
     const input = page.getByRole('textbox', { name: '发给可露希尔的消息' });
     await input.fill('请分析基建');
     await page.getByRole('button', { name: '发送', exact: true }).click();
@@ -80,7 +80,7 @@ for (const size of [{ width: 320, height: 568 }, { width: 390, height: 844 }, { 
     await page.getByRole('button', { name: '新对话', exact: true }).click();
     await expect(input).toHaveValue('');
     await expect(page.locator('[data-speaker="assistant"]')).toHaveCount(0);
-    await expect(page.getByRole('combobox', { name: '助理模式：快速模式' })).toBeVisible();
+    await expect(page.getByRole('combobox', { name: '助理模型' })).toBeVisible();
   });
 }
 

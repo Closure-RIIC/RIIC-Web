@@ -76,6 +76,8 @@ jobs:
             /assets/locales/cn/character.json
             /assets/locales/cn/building.json
             /assets/locales/cn/term.json
+            /assets/locales/cn/tag.json
+            /assets/locales/us/tag.json
             /assets/img/building_skill
             /assets/img/avatar
             /assets/img/item/2003.png
@@ -130,6 +132,7 @@ jobs:
           git show HEAD:packages/arknights-domain/src/generated/arkntools/building-skill-catalog.json > "$RUNNER_TEMP/skills-before.json" || printf '{}\n' > "$RUNNER_TEMP/skills-before.json"
           git show HEAD:packages/arknights-domain/src/generated/gacha-up.json > "$RUNNER_TEMP/gacha-up-before.json" || printf '{}\n' > "$RUNNER_TEMP/gacha-up-before.json"
           git show HEAD:apps/arknights/src/generated/training-planner-data.json > "$RUNNER_TEMP/training-planner-before.json" || printf '{}\n' > "$RUNNER_TEMP/training-planner-before.json"
+          git show HEAD:apps/arknights/src/generated/recruitment-data.json > "$RUNNER_TEMP/recruitment-before.json" || printf '{"operators":[]}\n' > "$RUNNER_TEMP/recruitment-before.json"
 
       - name: Read upstream commit
         id: upstream
@@ -144,10 +147,14 @@ jobs:
         run: |
           arguments=(--source .tmp/arkntools-data --source-sha "${{ steps.upstream.outputs.sha }}")
           arguments+=(--portraits-source .tmp/arknights-game-resource --portraits-source-sha "${{ steps.upstream.outputs.avatars_sha }}")
+          recruitment_arguments=(--source .tmp/arkntools-data)
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.allow_removals }}" == "true" ]]; then
             arguments+=(--allow-removals)
+            recruitment_arguments+=(--allow-removals)
           fi
           npm run assets:sync:arkntools -- "${arguments[@]}"
+          npm run assets:recruitment -- "${recruitment_arguments[@]}"
+          npm run assets:recruitment -- "${recruitment_arguments[@]}" --check
           npm run assets:mastery -- .tmp/arknights-game-data/zh_CN/gamedata/excel/character_table.json --game-source-sha="${{ steps.upstream.outputs.game_sha }}"
           planner_arguments=(--source-sha "${{ steps.upstream.outputs.game_sha }}")
           planner_arguments+=(--character-table .tmp/arknights-game-data/zh_CN/gamedata/excel/character_table.json)
@@ -175,9 +182,10 @@ jobs:
             --before-skills "$RUNNER_TEMP/skills-before.json" \
             --before-gacha-up "$RUNNER_TEMP/gacha-up-before.json" \
             --before-training-planner "$RUNNER_TEMP/training-planner-before.json" \
+            --before-recruitment "$RUNNER_TEMP/recruitment-before.json" \
             > "$publication/pull-request-body.md"
-          git add -- apps/arknights/public/images/operator-portraits apps/arknights/public/images/building-skills apps/arknights/public/images/products packages/arknights-domain/src/generated/arkntools apps/arknights/src/generated/mastery-data.json apps/arknights/src/generated/training-planner-data.json packages/arknights-domain/src/generated/gacha-up.json apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json apps/arknights/src/generated/i18n/en/ArknightsGameData.json apps/arknights/src/generated/i18n/operator-aliases.json apps/arknights/src/generated/i18n/sources.json fixtures/operbox_full_e2.json
-          if git ls-files -s -- apps/arknights/public/images/operator-portraits apps/arknights/public/images/building-skills apps/arknights/public/images/products packages/arknights-domain/src/generated/arkntools apps/arknights/src/generated/mastery-data.json apps/arknights/src/generated/training-planner-data.json packages/arknights-domain/src/generated/gacha-up.json apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json apps/arknights/src/generated/i18n/en/ArknightsGameData.json apps/arknights/src/generated/i18n/operator-aliases.json apps/arknights/src/generated/i18n/sources.json fixtures/operbox_full_e2.json \
+          git add -- apps/arknights/public/images/operator-portraits apps/arknights/public/images/building-skills apps/arknights/public/images/products packages/arknights-domain/src/generated/arkntools apps/arknights/src/generated/mastery-data.json apps/arknights/src/generated/training-planner-data.json apps/arknights/src/generated/recruitment-data.json packages/arknights-domain/src/generated/gacha-up.json apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json apps/arknights/src/generated/i18n/en/ArknightsGameData.json apps/arknights/src/generated/i18n/operator-aliases.json apps/arknights/src/generated/i18n/sources.json fixtures/operbox_full_e2.json
+          if git ls-files -s -- apps/arknights/public/images/operator-portraits apps/arknights/public/images/building-skills apps/arknights/public/images/products packages/arknights-domain/src/generated/arkntools apps/arknights/src/generated/mastery-data.json apps/arknights/src/generated/training-planner-data.json apps/arknights/src/generated/recruitment-data.json packages/arknights-domain/src/generated/gacha-up.json apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json apps/arknights/src/generated/i18n/en/ArknightsGameData.json apps/arknights/src/generated/i18n/operator-aliases.json apps/arknights/src/generated/i18n/sources.json fixtures/operbox_full_e2.json \
             | awk '$1 != "100644" { found = 1 } END { exit found ? 0 : 1 }'; then
             echo "Managed asset paths must contain only regular non-executable files." >&2
             exit 1
@@ -259,13 +267,13 @@ jobs:
           changed_count=0
           while IFS= read -r -d '' changed_path; do
             case "$changed_path" in
-              apps/arknights/public/images/operator-portraits/*|apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json|apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json|apps/arknights/src/generated/i18n/en/ArknightsGameData.json|apps/arknights/src/generated/i18n/operator-aliases.json|apps/arknights/src/generated/i18n/sources.json|apps/arknights/public/images/building-skills/*|apps/arknights/public/images/products/*|packages/arknights-domain/src/generated/arkntools/*|apps/arknights/src/generated/mastery-data.json|apps/arknights/src/generated/training-planner-data.json|packages/arknights-domain/src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
+              apps/arknights/public/images/operator-portraits/*|apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json|apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json|apps/arknights/src/generated/i18n/en/ArknightsGameData.json|apps/arknights/src/generated/i18n/operator-aliases.json|apps/arknights/src/generated/i18n/sources.json|apps/arknights/public/images/building-skills/*|apps/arknights/public/images/products/*|packages/arknights-domain/src/generated/arkntools/*|apps/arknights/src/generated/mastery-data.json|apps/arknights/src/generated/training-planner-data.json|apps/arknights/src/generated/recruitment-data.json|packages/arknights-domain/src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
               *) echo "Publication artifact changed a forbidden path: $changed_path" >&2; exit 1 ;;
             esac
             changed_count=$((changed_count + 1))
           done < <(git diff --cached --name-only -z)
           (( changed_count > 0 ))
-          if git ls-files -s -- apps/arknights/public/images/operator-portraits apps/arknights/public/images/building-skills apps/arknights/public/images/products packages/arknights-domain/src/generated/arkntools apps/arknights/src/generated/mastery-data.json apps/arknights/src/generated/training-planner-data.json packages/arknights-domain/src/generated/gacha-up.json apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json apps/arknights/src/generated/i18n/en/ArknightsGameData.json apps/arknights/src/generated/i18n/operator-aliases.json apps/arknights/src/generated/i18n/sources.json fixtures/operbox_full_e2.json \
+          if git ls-files -s -- apps/arknights/public/images/operator-portraits apps/arknights/public/images/building-skills apps/arknights/public/images/products packages/arknights-domain/src/generated/arkntools apps/arknights/src/generated/mastery-data.json apps/arknights/src/generated/training-planner-data.json apps/arknights/src/generated/recruitment-data.json packages/arknights-domain/src/generated/gacha-up.json apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json apps/arknights/src/generated/i18n/en/ArknightsGameData.json apps/arknights/src/generated/i18n/operator-aliases.json apps/arknights/src/generated/i18n/sources.json fixtures/operbox_full_e2.json \
             | awk '$1 != "100644" { found = 1 } END { exit found ? 0 : 1 }'; then
             echo "Managed asset paths must contain only regular non-executable files." >&2
             exit 1
@@ -337,7 +345,7 @@ jobs:
           changed_count=0
           while IFS= read -r changed_path; do
             case "$changed_path" in
-              apps/arknights/public/images/operator-portraits/*|apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json|apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json|apps/arknights/src/generated/i18n/en/ArknightsGameData.json|apps/arknights/src/generated/i18n/operator-aliases.json|apps/arknights/src/generated/i18n/sources.json|apps/arknights/public/images/building-skills/*|apps/arknights/public/images/products/*|packages/arknights-domain/src/generated/arkntools/*|apps/arknights/src/generated/mastery-data.json|apps/arknights/src/generated/training-planner-data.json|packages/arknights-domain/src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
+              apps/arknights/public/images/operator-portraits/*|apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json|apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json|apps/arknights/src/generated/i18n/en/ArknightsGameData.json|apps/arknights/src/generated/i18n/operator-aliases.json|apps/arknights/src/generated/i18n/sources.json|apps/arknights/public/images/building-skills/*|apps/arknights/public/images/products/*|packages/arknights-domain/src/generated/arkntools/*|apps/arknights/src/generated/mastery-data.json|apps/arknights/src/generated/training-planner-data.json|apps/arknights/src/generated/recruitment-data.json|packages/arknights-domain/src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
               *) echo "Resource pull request changed a forbidden path: $changed_path" >&2; exit 1 ;;
             esac
             changed_count=$((changed_count + 1))
@@ -408,7 +416,7 @@ jobs:
           changed_count=0
           while IFS= read -r changed_path; do
             case "$changed_path" in
-              apps/arknights/public/images/operator-portraits/*|apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json|apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json|apps/arknights/src/generated/i18n/en/ArknightsGameData.json|apps/arknights/src/generated/i18n/operator-aliases.json|apps/arknights/src/generated/i18n/sources.json|apps/arknights/public/images/building-skills/*|apps/arknights/public/images/products/*|packages/arknights-domain/src/generated/arkntools/*|apps/arknights/src/generated/mastery-data.json|apps/arknights/src/generated/training-planner-data.json|packages/arknights-domain/src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
+              apps/arknights/public/images/operator-portraits/*|apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json|apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json|apps/arknights/src/generated/i18n/en/ArknightsGameData.json|apps/arknights/src/generated/i18n/operator-aliases.json|apps/arknights/src/generated/i18n/sources.json|apps/arknights/public/images/building-skills/*|apps/arknights/public/images/products/*|packages/arknights-domain/src/generated/arkntools/*|apps/arknights/src/generated/mastery-data.json|apps/arknights/src/generated/training-planner-data.json|apps/arknights/src/generated/recruitment-data.json|packages/arknights-domain/src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
               *) echo "Merged resource PR changed a forbidden path: $changed_path" >&2; exit 1 ;;
             esac
             changed_count=$((changed_count + 1))
@@ -444,6 +452,7 @@ jobs:
             packages/arknights-domain/src/generated/arkntools \
             apps/arknights/src/generated/mastery-data.json \
             apps/arknights/src/generated/training-planner-data.json \
+            apps/arknights/src/generated/recruitment-data.json \
             packages/arknights-domain/src/generated/gacha-up.json \
             fixtures/operbox_full_e2.json
 
@@ -456,13 +465,13 @@ jobs:
           changed_count=0
           while IFS= read -r -d '' changed_path; do
             case "$changed_path" in
-              apps/arknights/public/images/operator-portraits/*|apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json|apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json|apps/arknights/src/generated/i18n/en/ArknightsGameData.json|apps/arknights/src/generated/i18n/operator-aliases.json|apps/arknights/src/generated/i18n/sources.json|apps/arknights/public/images/building-skills/*|apps/arknights/public/images/products/*|packages/arknights-domain/src/generated/arkntools/*|apps/arknights/src/generated/mastery-data.json|apps/arknights/src/generated/training-planner-data.json|packages/arknights-domain/src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
+              apps/arknights/public/images/operator-portraits/*|apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json|apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json|apps/arknights/src/generated/i18n/en/ArknightsGameData.json|apps/arknights/src/generated/i18n/operator-aliases.json|apps/arknights/src/generated/i18n/sources.json|apps/arknights/public/images/building-skills/*|apps/arknights/public/images/products/*|packages/arknights-domain/src/generated/arkntools/*|apps/arknights/src/generated/mastery-data.json|apps/arknights/src/generated/training-planner-data.json|apps/arknights/src/generated/recruitment-data.json|packages/arknights-domain/src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
               *) echo "Resource pull request changed a forbidden path: $changed_path" >&2; exit 1 ;;
             esac
             changed_count=$((changed_count + 1))
           done < <(git diff --cached --name-only -z)
           (( changed_count > 0 ))
-          if git ls-files -s -- apps/arknights/public/images/operator-portraits apps/arknights/public/images/building-skills apps/arknights/public/images/products packages/arknights-domain/src/generated/arkntools apps/arknights/src/generated/mastery-data.json apps/arknights/src/generated/training-planner-data.json packages/arknights-domain/src/generated/gacha-up.json apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json apps/arknights/src/generated/i18n/en/ArknightsGameData.json apps/arknights/src/generated/i18n/operator-aliases.json apps/arknights/src/generated/i18n/sources.json fixtures/operbox_full_e2.json \
+          if git ls-files -s -- apps/arknights/public/images/operator-portraits apps/arknights/public/images/building-skills apps/arknights/public/images/products packages/arknights-domain/src/generated/arkntools apps/arknights/src/generated/mastery-data.json apps/arknights/src/generated/training-planner-data.json apps/arknights/src/generated/recruitment-data.json packages/arknights-domain/src/generated/gacha-up.json apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json apps/arknights/src/generated/i18n/en/ArknightsGameData.json apps/arknights/src/generated/i18n/operator-aliases.json apps/arknights/src/generated/i18n/sources.json fixtures/operbox_full_e2.json \
             | awk '$1 != "100644" { found = 1 } END { exit found ? 0 : 1 }'; then
             echo "Managed asset paths must contain only regular non-executable files." >&2
             exit 1
@@ -520,7 +529,7 @@ jobs:
           changed_count=0
           while IFS= read -r changed_path; do
             case "$changed_path" in
-              apps/arknights/public/images/operator-portraits/*|apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json|apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json|apps/arknights/src/generated/i18n/en/ArknightsGameData.json|apps/arknights/src/generated/i18n/operator-aliases.json|apps/arknights/src/generated/i18n/sources.json|apps/arknights/public/images/building-skills/*|apps/arknights/public/images/products/*|packages/arknights-domain/src/generated/arkntools/*|apps/arknights/src/generated/mastery-data.json|apps/arknights/src/generated/training-planner-data.json|packages/arknights-domain/src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
+              apps/arknights/public/images/operator-portraits/*|apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json|apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json|apps/arknights/src/generated/i18n/en/ArknightsGameData.json|apps/arknights/src/generated/i18n/operator-aliases.json|apps/arknights/src/generated/i18n/sources.json|apps/arknights/public/images/building-skills/*|apps/arknights/public/images/products/*|packages/arknights-domain/src/generated/arkntools/*|apps/arknights/src/generated/mastery-data.json|apps/arknights/src/generated/training-planner-data.json|apps/arknights/src/generated/recruitment-data.json|packages/arknights-domain/src/generated/gacha-up.json|fixtures/operbox_full_e2.json) ;;
               *) echo "Resource pull request changed a forbidden path: $changed_path" >&2; exit 1 ;;
             esac
             changed_count=$((changed_count + 1))

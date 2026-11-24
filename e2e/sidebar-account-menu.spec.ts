@@ -100,7 +100,7 @@ for (const width of [1440, 375]) {
     await page.goto("/settings");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     await expect(page.locator(".workbench-footer [data-help-link]")).toHaveCount(0);
-    await expect(page.locator(".workbench-footer").getByRole("button", { name: /^(简体中文|繁體中文（台灣）|English)$/ })).toHaveCount(0);
+    await expect(page.locator(".workbench-footer").getByRole("button", { name: /^(简体中文|繁體中文|English)$/ })).toHaveCount(0);
     if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
     const footer = page.locator("[data-sidebar-account-footer]");
     await expect(footer.getByRole("link", { name: "帮助文档", exact: true })).toHaveAttribute("href", "/docs");
@@ -108,7 +108,7 @@ for (const width of [1440, 375]) {
     const menu = page.locator("[data-sidebar-account-menu]");
     await expect(menu.getByRole("menuitemradio")).toHaveCount(3);
     await expect(menu.getByRole("menuitemradio", { name: "简体中文", exact: true })).toBeChecked();
-    await menu.getByRole("menuitemradio", { name: "繁體中文（台灣）", exact: true }).click();
+    await menu.getByRole("menuitemradio", { name: "繁體中文", exact: true }).click();
     await expect(page.locator("html")).toHaveAttribute("lang", "zh-TW");
     await expect(footer.getByRole("link", { name: "說明文件", exact: true })).toHaveAttribute("href", "/docs");
     await menu.getByRole("menuitemradio", { name: "English", exact: true }).click();
@@ -156,7 +156,7 @@ test("collapsed footer stays keyboard accessible and hides restricted payment pl
   await page.keyboard.press("Home");
   await expect(menu.getByRole("menuitemradio", { name: "简体中文", exact: true })).toBeFocused();
   await page.keyboard.press("ArrowDown");
-  await expect(menu.getByRole("menuitemradio", { name: "繁體中文（台灣）", exact: true })).toBeFocused();
+  await expect(menu.getByRole("menuitemradio", { name: "繁體中文", exact: true })).toBeFocused();
   await page.keyboard.press("ArrowDown");
   await expect(menu.getByRole("menuitemradio", { name: "English", exact: true })).toBeFocused();
   await expect(menu.getByRole("menuitemradio", { name: "English", exact: true })).toBeChecked();
@@ -177,7 +177,7 @@ test("anonymous footer offers all languages before login and restores focus", as
   const trigger = page.locator("[data-sidebar-account-trigger]");
   await expect(trigger).toContainText("未登录");
   await trigger.click();
-  await expect(page.locator("[data-sidebar-account-menu]").getByRole("menuitemradio")).toHaveText(["简体中文", "繁體中文（台灣）", "English"]);
+  await expect(page.locator("[data-sidebar-account-menu]").getByRole("menuitemradio")).toHaveText(["简体中文", "繁體中文", "English"]);
   await page.locator("[data-sidebar-sign-in]").click();
   await expect(page.locator("[data-sidebar-account-menu]")).toHaveCount(0);
   const dialog = page.getByRole("dialog", { name: "登录网站账号", exact: true });
