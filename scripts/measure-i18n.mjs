@@ -18,7 +18,7 @@ const runs = Number(process.env.I18N_PERF_RUNS ?? 10);
 if (!Number.isInteger(runs) || runs < 10) throw new Error('At least ten samples are required');
 const browser = await chromium.launch(), sizes = new Map();
 let samples = process.env.I18N_PERF_RESUME === '1' ? JSON.parse(await fs.readFile(output, 'utf8')).samples : [];
-const labels = { en: 'English', 'zh-CN': '简体中文', 'zh-TW': '繁體中文（台灣）' };
+const labels = { en: 'English', 'zh-CN': '简体中文', 'zh-TW': '繁體中文' };
 const summarize = values => ({median:(values[Math.floor((values.length-1)/2)]+values[Math.floor(values.length/2)])/2,p95:values[Math.ceil(values.length*.95)-1]});
 async function startClickTimer(locator) {
   await locator.evaluate(element => element.addEventListener('click', () => { globalThis.__i18nClickAt = globalThis.performance.now(); }, { capture: true, once: true }));
