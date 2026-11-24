@@ -8,7 +8,7 @@ export async function switchWorkbenchLanguage(page: Page, locale: "zh" | "zh-CN"
   }
   await trigger.click();
   const normalized = locale === "zh" ? "zh-CN" : locale;
-  const labels = { "zh-CN": "简体中文", "zh-TW": "繁體中文（台灣）", en: "English" };
+  const labels = { "zh-CN": "简体中文", "zh-TW": "繁體中文", en: "English" };
   await page.getByRole("menuitemradio", { name: labels[normalized], exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", normalized);
   await page.keyboard.press("Escape");
