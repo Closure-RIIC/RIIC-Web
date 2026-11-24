@@ -126,7 +126,7 @@ test("selected model budgets do not reserve other models and cover every permitt
   }
   assert.throws(() => budgetPoints(twoRoutePolicy(), selected), /Unknown actual model rate/);
   assert.throws(() => budgetPoints(policy, { ...selected, model: "wrong-alias" }), /Unknown actual model rate/);
-  for (const inputTokens of [-1, 1.5, NaN, Infinity, 262_145]) assert.throws(() => budgetPoints(policy, { ...selected, inputTokens }));
+  for (const inputTokens of [-1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) assert.throws(() => budgetPoints(policy, { ...selected, inputTokens }));
   for (const maxOutputTokens of [0, 4097, NaN, 1.5]) assert.throws(() => budgetPoints(policy, { ...selected, maxOutputTokens }));
   assert.ok(budgetPoints(policy, { ...selected, inputTokens: 262_144, maxOutputTokens: 4096 }) > 0);
 });
@@ -213,7 +213,10 @@ test("reservations cover both long-context tiers and retain the selected input b
   const selected = { provider: gptRate.provider, model: gptRate.model, inputTokens: 262144, maxOutputTokens: 2048 };
   const historical = structuredClone(policy); delete historical.models[2].longContext;
   assert.equal(budgetPoints(policy, selected), budgetPoints(historical, selected));
-  for (const inputTokens of [262145, 272000, 272001]) assert.throws(() => budgetPoints(policy, { ...selected, inputTokens }), /budget limits/);
+  for (const inputTokens of [262145, 272000, 272001, 400000]) {
+    const selectedReserved = budgetPoints(policy, { ...selected, inputTokens });
+    assert.equal(selectedReserved, budgetPoints(policy, inputTokens - 8192, selected.maxOutputTokens));
+  }
 
   // A cheaper published long tier must not under-reserve a shorter, ordinary-tier result.
   policy.models[2].longContext = { inputTokenThreshold: 272000, input: "0.1", cachedInput: "0.01", output: "0.1", peak: { input: "0.2", cachedInput: "0.02", output: "0.2" } };

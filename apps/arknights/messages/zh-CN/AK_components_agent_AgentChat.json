@@ -81,7 +81,7 @@
   "switchToTextDescription": "当前会话含有图片。切换后仅发送文字内容和已有的文字回答，模型无法重新查看原图；原图仍保留在当前浏览器。",
   "keepCurrentModel": "保留当前模型",
   "continueWithoutImages": "仅携带文字继续",
-  "imageHistoryLimit": "本轮最多发送 4 个附件（含历史附件）。请新建对话；图片也可在切换文字模型时确认不再携带。",
+  "imageHistoryLimit": "本轮最多发送 {count} 张图片（含历史图片）。请减少图片或新建对话；切换文字模型时也可选择不再携带图片。",
   "messagePayloadTooLarge": "本轮文字与附件总量过大，请压缩图片或新建对话。",
   "imageRepeatBilling": "图片随上下文重新送入模型时会再次计入输入 Token。"
 }

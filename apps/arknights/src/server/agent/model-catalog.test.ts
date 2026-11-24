@@ -18,6 +18,7 @@ test("catalog requires an enabled, configured, priced route and an image reserva
   process.env.AGENT_GATEWAY_MODELS = "deepseek,glm,gpt";
   assert.equal(configuredAgentChoices(policy, rates)[2].reason, "rate_missing");
   rates.models.push({ provider: "riic-gpt", model: "gpt-6.1-sol", input: "10", cachedInput: "2", output: "30", currency: "RMB", exchangeRate: "1" });
+  policy.models[2].imageTokensPerImage = 0;
   assert.equal(configuredAgentChoices(policy, rates)[2].reason, "image_budget_missing");
   policy.models[2].imageTokensPerImage = 5000;
   process.env.AGENT_LLM_GPT_API_KEY = "private-model-test";
@@ -31,12 +32,11 @@ test("catalog requires an enabled, configured, priced route and an image reserva
   rates.models.find(row => row.provider === "riic-gpt")!.model = "supplier-gpt-alias";
   assert.equal(selectAgentModel("gpt", { id: "models:2", policy }, rates).model, "supplier-gpt-alias");
   policy.models[2].imageTokensPerImage = 0;
-  policy.models[2].imageBudgetMode = "shared-input-limit";
-  assert.equal(selectAgentModel("gpt", { id: "models:3", policy }, rates).imageBudgetMode, "shared-input-limit");
+  assert.throws(() => selectAgentModel("gpt", { id: "models:3", policy }, rates), /不可用/);
   policy.models[2].maxImages = 0;
   assert.equal(configuredAgentChoices(policy, rates)[2].reason, "image_budget_missing");
   policy.models[2].maxImages = 4;
-  policy.models[2].imageBudgetMode = "per-image";
+  assert.deepEqual(configuredAgentChoices(policy, rates)[2].imageLimits, { maxImages: 4, maxImageBytes: 8 * 1024 * 1024, maxImagePixels: 16_000_000 });
   assert.equal(configuredAgentChoices(policy, rates)[2].reason, "image_budget_missing");
 });
 

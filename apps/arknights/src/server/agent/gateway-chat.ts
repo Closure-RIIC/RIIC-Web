@@ -2,7 +2,7 @@ import "@tanstack/react-start/server-only";
 import { createHash } from "node:crypto";
 import { convertToModelMessages, createUIMessageStreamResponse, stepCountIs, streamText, type ToolSet, type UIMessage } from "ai";
 import { PublicApiError } from "@riic/platform-server/api-contract";
-import { activeAgentPolicies, agentSessionId, beginAgentRun, beginToolCharge, finishToolCharge, recordFilterEvent } from "../billing/agent-accounting.ts";
+import { activeAgentPolicies, agentSessionId, beginAgentRun, beginToolCharge, finishToolCharge, recordFilterEvent, type ActiveAgentPolicies } from "../billing/agent-accounting.ts";
 import { AgentFilterError, compileFilterPolicy } from "./filter-policy.ts";
 import { createGatewayRun } from "./gateway-runtime.ts";
 import { gatewaySettings } from "./gateway-config.ts";
@@ -17,14 +17,14 @@ import { selectAgentModel } from "./model-catalog.ts";
 
 export async function gatewayChat(request: Request, userId: string, requestId: string, body: {
   messages: UIMessage[]; model?: unknown; images?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; pageContext?: AgentPageContext | null;
-}, personaContent?: string | null, resources?: { id: string; policy: AgentResourcePolicy }) {
+}, personaContent?: string | null, resources?: { id: string; policy: AgentResourcePolicy }, admittedPolicies?: ActiveAgentPolicies) {
   gatewaySettings();
   const conversationId = body.conversationId ?? body.id;
   const attemptId = body.attemptId;
   if (typeof conversationId !== "string" || !/^[\w:-]{1,128}$/.test(conversationId)
     || typeof attemptId !== "string" || !/^[\w-]{16,128}$/.test(attemptId)) throw new PublicApiError("AIC-REQ-1001", { message: "请刷新页面后重新发送。" });
   if (body.messages.length > 200) throw new PublicApiError("AIC-REQ-1001", { message: "对话过长，请新建对话。" });
-  const policies = await activeAgentPolicies();
+  const policies = admittedPolicies ?? await activeAgentPolicies();
   const catalog = policies.models;
   let selection;
   try { selection = selectAgentModel(body.model, catalog, policies.rates.policy); }

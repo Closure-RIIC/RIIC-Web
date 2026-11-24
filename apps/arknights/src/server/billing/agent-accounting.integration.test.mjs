@@ -485,6 +485,42 @@ test("durable reservations, settlement, refunds and policy concurrency", async (
     const oldSummary=(await pool.query("SELECT input_tokens,cached_input_tokens,cache_write_tokens,output_tokens,status FROM app.agent_usage WHERE id=$1",[oldRun])).rows[0];
     assert.deepEqual(oldSummary,{input_tokens:27000,cached_input_tokens:12000,cache_write_tokens:null,output_tokens:0,status:"completed"});
     assert.equal((await getWallet(userId)).reservedPoints,0);
+    // The new per-image reservation admits a small wallet and releases unused holds.
+    const { modelCallBudget } = await import("../agent/model-budget.ts");
+    const imageSelection = { ...defaultModelPolicy().models[2], id: "gpt", enabled: true,
+      provider: "riic-gpt", model: "gpt-6.1-sol", vision: true, protocol: "responses", policyVersion: "test-image-models" };
+    const imageBudget = modelCallBudget(imageSelection, { prompt: [{ role: "user", content: [
+      { type: "text", text: "read this" }, { type: "file", mediaType: "image/png", data: { type: "data", data: new Uint8Array(1) } },
+    ] }], maxOutputTokens: 2048 });
+    assert.ok(imageBudget.inputTokens < 18000);
+    await pool.query("UPDATE app.billing_wallet SET paid_points=2,monthly_points=0 WHERE user_id=$1", [userId]);
+    const imageKey = randomUUID();
+    const imageRun = await accounting.beginAgentRun({ userId, conversationId: imageKey, idempotencyKey: imageKey, requestHash: "image-reservation", rates: selectedRates, filterVersion: policies.filter.id, modelSelection: imageSelection });
+    const imageCall = await accounting.beginModelCall(imageRun, 0, imageBudget);
+    assert.ok((await getWallet(userId)).reservedPoints > 0 && (await getWallet(userId)).reservedPoints < 2);
+    await accounting.finishModelCall({ id: imageCall.id, provider: "riic-gpt", model: "gpt-6.1-sol", usage: { inputTokens: 6854, cachedInputTokens: 0, outputTokens: 290 } });
+    await accounting.settleAgentRun(imageRun, "completed");
+    const imageDetail = await admin.billingRunDetail(imageRun);
+    assert.equal(imageDetail.run.settlement, "settled");
+    assert.equal(imageDetail.run.charged_points, 0.4634); // 0.46344 rounds to four decimal places.
+    assert.equal((await getWallet(userId)).reservedPoints, 0);
+    assert.deepEqual(imageDetail.calls[0].details.budget, imageBudget);
+
+    // Large text estimates are admitted and settled with the configured long tier.
+    await pool.query("UPDATE app.billing_wallet SET paid_points=100,monthly_points=0 WHERE user_id=$1", [userId]);
+    const longRates = globalThis.structuredClone(selectedRates);
+    longRates.policy.models.find(row => row.provider === "riic-gpt").longContext = { inputTokenThreshold: 272000, input: "10", cachedInput: "2", output: "22.5" };
+    const longKey = randomUUID();
+    const longRun = await accounting.beginAgentRun({ userId, conversationId: longKey, idempotencyKey: longKey, requestHash: "long-reservation", rates: longRates, filterVersion: policies.filter.id, modelSelection: imageSelection });
+    const longBudget = { ...imageBudget, inputTokens: 300000 };
+    const longCall = await accounting.beginModelCall(longRun, 0, longBudget);
+    assert.ok((await getWallet(userId)).reservedPoints > 36);
+    await accounting.finishModelCall({ id: longCall.id, provider: "riic-gpt", model: "gpt-6.1-sol", usage: { inputTokens: 273000, cachedInputTokens: 0, outputTokens: 100 } });
+    await accounting.settleAgentRun(longRun, "completed");
+    const longDetail = await admin.billingRunDetail(longRun);
+    assert.equal(longDetail.run.settlement, "settled");
+    assert.equal(longDetail.run.charged_points, 32.787);
+    assert.equal((await getWallet(userId)).reservedPoints, 0);
   } finally {
     await pool.query('DELETE FROM public."user" WHERE id=any($1::text[])',[[userId,actor]]);
     await pool.end();

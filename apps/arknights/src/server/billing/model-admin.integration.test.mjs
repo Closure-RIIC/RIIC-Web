@@ -16,7 +16,7 @@ const { activeAgentPolicies, beginAgentRun } = await import("./agent-accounting.
 const { billingOverview, billingRunDetail, changeAgentModelSettings, changeAgentPolicy, getAgentPolicies, listBilling, resolveBillingReview } = await import("./admin.ts");
 const { activeAgentModels } = await import("../agent/model-catalog.ts");
 const { defaultRatePolicy } = await import("./rate-policy.ts");
-const { defaultModelPolicy } = await import("../agent/model-policy.ts");
+const { defaultModelPolicy, parseModelPolicy } = await import("../agent/model-policy.ts");
 
 test("model catalog bootstrap, history and publication keep a usable active configuration", async t => {
   const pool = getDatabasePool();
@@ -154,7 +154,7 @@ test("model catalog bootstrap, history and publication keep a usable active conf
       jointEnabled = globalThis.structuredClone(originalSettings.payload);
       jointEnabled.models.models.find(row => row.id === "gpt").enabled = true;
       jointEnabled.models.models.find(row => row.id === "gpt").imageBudgetMode = "shared-input-limit";
-      jointEnabled.models.models.find(row => row.id === "gpt").imageTokensPerImage = 0;
+      Object.assign(jointEnabled.models.models.find(row => row.id === "gpt"), { imageTokensPerImage: 0, maxImages: 8, maxImageBytes: 10 * 1024 * 1024, maxImagePixels: 32_000_000 });
       jointEnabled.rates.models.push({ provider: "riic-gpt", model: "gpt-6.1-sol", currency: "RMB", exchangeRate: "1", input: "5", cachedInput: "1", output: "15" });
       const oldPolicies = await activeAgentPolicies();
       const runId = await beginAgentRun({ userId: actor, conversationId: randomUUID(), idempotencyKey: randomUUID(), requestHash: "joint-settings-fixture",
@@ -162,13 +162,22 @@ test("model catalog bootstrap, history and publication keep a usable active conf
       const runBefore = (await pool.query("SELECT policy,rate_version,model_selection FROM app.agent_run WHERE id=$1", [runId])).rows[0];
       const walletBefore = (await pool.query("SELECT * FROM app.billing_wallet WHERE user_id=$1", [actor])).rows[0];
       const draft = await saveSettings(originalSettings, jointEnabled);
+      // Simulate a draft saved by the old shared-mode application.
+      await pool.query("UPDATE app.agent_policy_version SET payload=$2 WHERE id=$1", [draft.id, JSON.stringify(jointEnabled)]);
+      const readDraft = (await currentSettings()).versions.find(row => row.id === draft.id);
+      assert.equal(readDraft.payload.models.models.find(row => row.id === "gpt").imageTokensPerImage, 8192);
+      assert.deepEqual((await pool.query("SELECT payload FROM app.agent_policy_version WHERE id=$1", [draft.id])).rows[0].payload, jointEnabled, "reading an old draft never rewrites its stored snapshot");
       assert.deepEqual((await currentSettings()).active, originalSettings);
       jointPublished = await publishSettings(originalSettings, draft.id);
       const result = await getAgentPolicies();
       assert.equal(result.modelSettings.active.id, draft.id);
       assert.notEqual(jointPublished.ratesId, originalSettings.ratesId);
       assert.notEqual(jointPublished.modelsId, originalSettings.modelsId);
-      assert.deepEqual(result.modelSettings.active.payload, jointEnabled);
+      assert.deepEqual(result.modelSettings.active.payload, { ...jointEnabled, models: parseModelPolicy(jointEnabled.models) });
+      const savedGpt = result.modelSettings.active.payload.models.models.find(row => row.id === "gpt");
+      assert.equal(savedGpt.imageTokensPerImage, 8192);
+      assert.equal("imageBudgetMode" in savedGpt, false);
+      assert.deepEqual(result.models.find(row => row.id === "gpt").imageLimits, { maxImages: 8, maxImageBytes: 10 * 1024 * 1024, maxImagePixels: 32_000_000 });
       assert.equal(result.models.find(row => row.id === "gpt").available, true);
       assert.equal((await activeAgentPolicies()).rates.id, jointPublished.ratesId);
       assert.equal((await activeAgentModels()).id, jointPublished.modelsId);
@@ -195,7 +204,7 @@ test("model catalog bootstrap, history and publication keep a usable active conf
       assert.notEqual(restored.ratesId, originalSettings.ratesId);
       assert.notEqual(restored.modelsId, originalSettings.modelsId);
       assert.equal(result.versions.find(row => row.id === originalSettings.id).status, "retired");
-      assert.deepEqual(result.versions.find(row => row.id === jointPublished.id).payload, jointEnabled);
+      assert.deepEqual(result.versions.find(row => row.id === jointPublished.id).payload, { ...jointEnabled, models: parseModelPolicy(jointEnabled.models) });
     });
 
     await t.test("invalid combined publication changes neither active part and retains its draft", async () => {

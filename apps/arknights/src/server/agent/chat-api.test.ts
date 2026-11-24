@@ -4,6 +4,8 @@ import test from "node:test";
 import { defaultRatePolicy } from "../billing/rate-policy.ts";
 import { calculateAgentTokenCost, sumAgentCacheWriteTokens } from "../billing/pricing.ts";
 import { splitPoints } from "../billing/points.ts";
+import { defaultModelPolicy } from "./model-policy.ts";
+import { agentRequestBodyLimit } from "../../agent-image-limits.ts";
 
 register("../../../../../scripts/ts-path-loader.mjs", import.meta.url);
 registerHooks({ resolve(specifier, context, next) {
@@ -19,6 +21,9 @@ test("chat API validates model selection while preserving the authenticated gate
   let sameOrigin = true;
   let balance = 1;
   let configuredRates = true;
+  const models = { id: "models:1", policy: defaultModelPolicy() };
+  let bodyReadLimit = 0;
+  let policyReads = 0;
   let rates = { id: "rates:test-1", policy: defaultRatePolicy("1.5") };
   let finish: (event: Record<string, unknown>) => Promise<void>;
   const settled: Array<Record<string, unknown>> = [];
@@ -47,7 +52,7 @@ test("chat API validates model selection while preserving the authenticated gate
       createRequestId: () => "chat-model-test",
       assertSameOrigin: () => { if (!sameOrigin) throw new PublicApiError("AIC-AUTH-2002"); },
       enforceRateLimit: () => { calls.push("rate"); },
-      readJsonBody: (request: Request) => request.json(),
+      readJsonBody: (request: Request, limit: number) => { bodyReadLimit = limit; return request.json(); },
       successResponse: (data: unknown) => Response.json({ success: true, data }),
       failureResponse: (error: Error) => Response.json({
         success: false,
@@ -75,8 +80,9 @@ test("chat API validates model selection while preserving the authenticated gate
       configuredAgentChoices: () => [{id:"deepseek",label:"DeepSeek Flash",vision:false,available:true},{id:"glm",label:"GLM-5.3 Flash",vision:false,available:true},{id:"gpt",label:"GPT-6.1 Sol",vision:true,available:false,reason:"disabled"}],
     }],
     [new URL("./gateway-chat.ts", import.meta.url), {
-      gatewayChat: async (_request: Request, userId: string) => {
+      gatewayChat: async (_request: Request, userId: string, ...args: unknown[]) => {
         assert.equal(userId, "test-admin");
+        assert.equal((args[4] as { models: unknown }).models, models, "admission passes its policy snapshot through to the gateway");
         calls.push("gateway");
         return Response.json({ mode: "gateway" });
       },
@@ -94,7 +100,7 @@ test("chat API validates model selection while preserving the authenticated gate
     [new URL("../billing/points.ts", import.meta.url), { splitPoints }],
     [new URL("../billing/agent-accounting.ts", import.meta.url), {
       AgentAccountingError: class extends Error {},
-      activeAgentPolicies: async () => { if (!configuredRates) throw new Error("Pricing not configured"); return { rates: structuredClone(rates), models: { id: "models:1", policy: { defaultModel: "deepseek" } } }; },
+      activeAgentPolicies: async () => { policyReads++; if (!configuredRates) throw new Error("Pricing not configured"); return { rates: structuredClone(rates), models }; },
     }],
     [new URL("./filter-policy.ts", import.meta.url), { AgentFilterError: class extends Error {} }],
     [new URL("./message-history.ts", import.meta.url), {
@@ -139,6 +145,22 @@ test("chat API validates model selection while preserving the authenticated gate
       assert.equal(response.status, 200);
       assert.deepEqual(calls, ["rate", "gateway"]);
     }
+  });
+
+  await t.test("transport allowance uses the enabled admin limits and one policy read", async () => {
+    const gpt = models.policy.models[2];
+    const original = { ...gpt };
+    try {
+      Object.assign(gpt, { enabled: true, maxImages: 8, maxImageBytes: 10 * 1024 * 1024, maxImagePixels: 32_000_000 });
+      policyReads = 0;
+      assert.equal((await post("gpt")).status, 200);
+      assert.equal(policyReads, 1);
+      assert.equal(bodyReadLimit, agentRequestBodyLimit(gpt));
+      assert.ok(bodyReadLimit > 8 * 10 * 1024 * 1024 * 4 / 3);
+      gpt.enabled = false;
+      assert.equal((await post("deepseek")).status, 200);
+      assert.equal(bodyReadLimit, agentRequestBodyLimit());
+    } finally { Object.assign(gpt, original); }
   });
 
   await t.test("gateway rejects arbitrary models and image modes before routing", async () => {

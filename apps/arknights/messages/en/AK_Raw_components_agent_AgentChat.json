@@ -65,8 +65,7 @@
   "personaReadFailed": "Could not read the persona card. Please retry.",
   "avatarNotSaved": "Could not save the avatar. Check browser storage and retry.",
   "avatarReadFailed": "Could not read the avatar. Try another image.",
-  "attachmentLimit": "Send up to {count, plural, one {# attachment} other {# attachments}} at a time.",
-  "attachmentUnsupported": "{name} is unsupported or exceeds 8 MB. Use PNG, JPEG, WebP, TXT or Markdown.",
+  "attachmentUnsupported": "{name} is unsupported or exceeds {limit} MiB. Use PNG, JPEG, WebP, TXT or Markdown.",
   "remainingMaterials": " ({count} items total)",
   "toolRunning": "Running {label}…",
   "toolStopped": "{label} stopped",
@@ -86,5 +85,7 @@
   "tool_query_skills": "Base skill lookup",
   "tool_kb_route": "Knowledge search",
   "tool_kb_read": "Knowledge retrieval",
-  "tool_load_agent_skill": "Task instructions"
+  "tool_load_agent_skill": "Task instructions",
+  "imageAttachmentLimit": "Upload up to {count} images at a time.",
+  "textAttachmentLimit": "This turn allows up to {count} text attachments, including history."
 }

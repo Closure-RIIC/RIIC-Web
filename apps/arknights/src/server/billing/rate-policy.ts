@@ -149,7 +149,7 @@ export function budgetPoints(policy: RatePolicy, request: number | ModelCallBudg
   // covering text, protocol framing and image tokens, independently of encoding.
   const input = legacy ? request + 8192 : request.inputTokens;
   const maxOutputTokens = legacy ? legacyMaxOutputTokens : request.maxOutputTokens;
-  if (!Number.isSafeInteger(input) || input < 0 || input > (legacy ? 520_192 : 262_144)
+  if (!Number.isSafeInteger(input) || input < 0 || (legacy && input > 520_192)
     || typeof maxOutputTokens !== "number" || !Number.isSafeInteger(maxOutputTokens) || maxOutputTokens < 1 || maxOutputTokens > 4096) throw new Error("Model request exceeds budget limits");
   const rates = legacy ? policy.models : modelBudgetRoutes(request).map(route => findModelRate(policy, route.provider, route.model));
   const worst = rates.map(rate => {

@@ -74,7 +74,7 @@ function fixture({ gptRate = true } = {}) {
   const payload = {
     schema: 1,
     rates: { markup: "1.2", pointValueRmb: "0.1", toolPoints: 1, models: identities.filter(([id]) => id !== "gpt" || gptRate).map(([, , provider, model]) => ({ provider, model, currency: "RMB", exchangeRate: "1", input: "3", cachedInput: "0.03", output: "9", ...(provider === "riic-gpt" ? { peak: { input: "5", cachedInput: "0.05", output: "12" } } : {}) })) },
-    models: { schema: 1, defaultModel: "deepseek", models: identities.map(([id, label]) => ({ id, label, enabled: id !== "gpt", maxImages: id === "gpt" ? 4 : 0, maxImageBytes: 8 * 1024 * 1024, maxImagePixels: 16_000_000, imageTokensPerImage: 0, ...(id === "gpt" ? { imageBudgetMode: "shared-input-limit" } : {}) })) },
+    models: { schema: 1, defaultModel: "deepseek", models: identities.map(([id, label]) => ({ id, label, enabled: id !== "gpt", maxImages: id === "gpt" ? 4 : 0, maxImageBytes: 8 * 1024 * 1024, maxImagePixels: 16_000_000, imageTokensPerImage: id === "gpt" ? 8192 : 0 })) },
   };
   const active = { id: "settings:active", ratesId: "rates:active", modelsId: "models:active", payload };
   const draft = structuredClone(payload);
@@ -156,8 +156,12 @@ test("one draft request contains model, rate, default and image edits with the a
   await change(field(renderer.root, "服务倍率"), "1.4");
   await change(field(gpt(), "显示名称"), "测试识图模型");
   await change(field(gpt(), "输入"), "4.2");
-  await change(field(gpt(), "单图文件大小上限（MiB）"), "1.5");
-  await change(field(gpt(), "单图解码像素上限（百万像素）"), "12.5");
+  await change(field(gpt(), "每轮最多图片数"), "8");
+  await change(field(gpt(), "每张图片输入 token 预留量"), "10000");
+  for (const label of ["每轮最多图片数", "单图文件大小上限（MiB）", "单图解码像素上限（百万像素）", "每张图片输入 token 预留量"]) assert.equal(field(gpt(), label).props.max, undefined);
+  assert.doesNotMatch(text(gpt()), /262144|图文共用输入上限|图片预算模式/);
+  await change(field(gpt(), "单图文件大小上限（MiB）"), "10");
+  await change(field(gpt(), "单图解码像素上限（百万像素）"), "32");
   await change(field(renderer.root, "变更原因"), "统一编辑模型和费率");
   await click(button(renderer.root, "保存草稿"));
   assert.equal(requests.length, 1);
@@ -167,7 +171,7 @@ test("one draft request contains model, rate, default and image edits with the a
   assert.equal(body.action, "draft");
   assert.equal(body.payload.models.defaultModel, "gpt");
   const chosen = body.payload.models.models.find(model => model.id === "gpt");
-  assert.deepEqual([chosen.enabled, chosen.label, chosen.maxImageBytes, chosen.maxImagePixels, chosen.imageBudgetMode], [true, "测试识图模型", 1_572_864, 12_500_000, "shared-input-limit"]);
+  assert.deepEqual([chosen.enabled, chosen.label, chosen.maxImages, chosen.maxImageBytes, chosen.maxImagePixels, chosen.imageTokensPerImage], [true, "测试识图模型", 8, 10 * 1024 * 1024, 32_000_000, 10000]);
   assert.equal(body.payload.rates.markup, "1.4");
   assert.equal(body.payload.rates.models.find(rate => rate.provider === "riic-gpt").input, "4.2");
   assert.deepEqual(body.payload.rates.models.filter(rate => rate.provider !== "riic-gpt"), data.settings.active.payload.rates.models.filter(rate => rate.provider !== "riic-gpt"));

@@ -1,9 +1,11 @@
 /** Public model identities. Credentials and upstream configuration stay server-side. */
+import type { AgentImageLimits } from "./agent-image-limits.ts";
 export const AGENT_MODEL_IDS = ["deepseek", "glm", "gpt"] as const;
 export type AgentModelId = typeof AGENT_MODEL_IDS[number];
 export type AgentImageMode = "include" | "exclude";
 export type AgentModelChoice = {
   id: AgentModelId; label: string; vision: boolean; available: boolean;
+  imageLimits?: AgentImageLimits;
   reason?: "disabled" | "route_unconfigured" | "rate_missing" | "image_budget_missing";
 };
 export const AGENT_MODELS = {
