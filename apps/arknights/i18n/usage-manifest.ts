@@ -14878,7 +14878,7 @@ export const references = [
   {
     "key": "components_PlanResultSummary.currentMatch",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:292"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:286"
   },
   {
     "key": "components_PlanResultSummary.dailyAcquisition",
@@ -14888,17 +14888,17 @@ export const references = [
   {
     "key": "components_PlanResultSummary.day",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:361"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:355"
   },
   {
     "key": "components_PlanResultSummary.deficit",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:392"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:386"
   },
   {
     "key": "components_PlanResultSummary.deviceRecipe",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:306"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:300"
   },
   {
     "key": "components_PlanResultSummary.deviceRecipeName",
@@ -14913,7 +14913,7 @@ export const references = [
   {
     "key": "components_PlanResultSummary.estimatedDailyProductionDetails",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:400"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:394"
   },
   {
     "key": "components_PlanResultSummary.estimatedDroneManufacturing",
@@ -14983,7 +14983,7 @@ export const references = [
   {
     "key": "components_PlanResultSummary.moneyBookRatio",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:412"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:406"
   },
   {
     "key": "components_PlanResultSummary.netIncome",
@@ -14998,7 +14998,7 @@ export const references = [
   {
     "key": "components_PlanResultSummary.noExperienceManufactured",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:413"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:407"
   },
   {
     "key": "components_PlanResultSummary.nonDormitoryFacilityMatchPercentage",
@@ -15013,7 +15013,7 @@ export const references = [
   {
     "key": "components_PlanResultSummary.orirockRecipe",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:305"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:299"
   },
   {
     "key": "components_PlanResultSummary.orirockRecipeName",
@@ -15048,12 +15048,12 @@ export const references = [
   {
     "key": "components_PlanResultSummary.outputAndImprovementDetails",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:422"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:416"
   },
   {
     "key": "components_PlanResultSummary.outputImprovements",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:291"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:285"
   },
   {
     "key": "components_PlanResultSummary.productExperience",
@@ -15093,12 +15093,12 @@ export const references = [
   {
     "key": "components_PlanResultSummary.reportSolvePerformance",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:332"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:326"
   },
   {
     "key": "components_PlanResultSummary.reviewDailyOutputProductionImprovementsAndCurrentStaffingMatch",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:287"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:281"
   },
   {
     "key": "components_PlanResultSummary.rich1",
@@ -15113,12 +15113,12 @@ export const references = [
   {
     "key": "components_PlanResultSummary.scheduleDetailCategories",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:290"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:284"
   },
   {
     "key": "components_PlanResultSummary.scheduleDetails",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:287"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:281"
   },
   {
     "key": "components_PlanResultSummary.scheduleResultSummary",
@@ -15138,7 +15138,7 @@ export const references = [
   {
     "key": "components_PlanResultSummary.shardRecipe",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:299"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:293"
   },
   {
     "key": "components_PlanResultSummary.surplus",
@@ -15148,12 +15148,12 @@ export const references = [
   {
     "key": "components_PlanResultSummary.theFullRosterSampleCannotSubmitFeedback",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:329"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:323"
   },
   {
     "key": "components_PlanResultSummary.theFullRosterSampleCannotSubmitFeedback2",
     "prefix": false,
-    "source": "apps/arknights/src/components/PlanResultSummary.tsx:334"
+    "source": "apps/arknights/src/components/PlanResultSummary.tsx:328"
   },
   {
     "key": "components_PlanResultSummary.totalOutput",

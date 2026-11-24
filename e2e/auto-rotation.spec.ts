@@ -77,7 +77,10 @@ for (const queue of [true, false]) test(`automatic rotation uses shared ${queue 
   await expect(tabs).toHaveText(["第 1 班", "第 2 班"]);
   const summary = page.locator("[data-plan-summary]");
   await expect(summary).toBeVisible();
-  await expect(page.locator("[data-rotation-warnings]")).toContainText(fixture.data.rotation.warnings[0]);
+  await expect(page.locator("[data-rotation-warnings]")).toHaveCount(0);
+  for (const warning of fixture.data.rotation.warnings) {
+    await expect(page.getByText(warning, { exact: true })).toHaveCount(0);
+  }
   await expect(summary.locator('[data-plan-support="morale"]')).toContainText("但书");
   const totals = await summary.locator("[data-daily-product]").allTextContents();
   expect(totals.length).toBeGreaterThan(0);
@@ -105,6 +108,10 @@ for (const queue of [true, false]) test(`automatic rotation uses shared ${queue 
   await page.screenshot({ path: test.info().outputPath("auto-public-mobile.png"), fullPage: true });
   await page.reload();
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
+  await expect(page.locator("[data-rotation-warnings]")).toHaveCount(0);
+  for (const warning of fixture.data.rotation.warnings) {
+    await expect(page.getByText(warning, { exact: true })).toHaveCount(0);
+  }
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).rotationSelection)).toBe("auto_24_24");
 });
 
@@ -159,7 +166,7 @@ for (const { profile, durations } of [
   await mockApis(page);
   const data = structuredClone(fixture.data);
   delete data.rotation.auto_rotation;
-  delete data.rotation.warnings;
+  data.rotation.warnings = ["shift 2 宿舍普通休息候选 21 人超过可用空床 19，普通休息启用 MAA autofill: 合成测试干员"];
   data.rotation.profile = profile;
   data.profile.rotation_profile = profile;
   data.rotation.shifts = durations.map((hours, index) => ({
@@ -174,4 +181,6 @@ for (const { profile, durations } of [
   await expect(page.locator("[data-shift-tabs]").getByRole("tab")).toHaveText(
     durations.map((hours, index) => `第 ${index + 1} 班 · ${hours}h`),
   );
+  await expect(page.locator("[data-rotation-warnings]")).toHaveCount(0);
+  await expect(page.getByText(data.rotation.warnings[0], { exact: true })).toHaveCount(0);
 });
