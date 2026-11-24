@@ -26,6 +26,7 @@ process.env.BETA_TRUST_PROXY_HEADERS = "1";
 process.env.BETA_RATE_LIMIT_ENABLED = "0";
 process.env.BETA_BUSINESS_DB_ENABLED = "1";
 process.env.BETA_BUSINESS_DB_READ_ENABLED = "1";
+// Keep all three logins in this suite's own client bucket with rate limiting enabled.
 const { getDatabasePool } = await import("@riic/platform-server/db");
 const { getAuth } = await import("@riic/platform-server/auth");
 const { requireWebsiteAdmin, requireWebsiteReviewer } = await import("@riic/platform-server/auth/authorization");
@@ -39,10 +40,9 @@ test("reviewer roles enforce real-session API boundaries and take effect without
   const targetId = `review-target-${randomUUID()}`;
   const adminId = `review-admin-${randomUUID()}`;
   const password = "Reviewer-Integration-2026!";
-  let ip = 1;
   function request(cookie, body, path = "/api/admin/users", method = body === undefined ? "GET" : "PATCH") {
     return new Request(`${origin}${path}`, {
-      method, headers: { origin, "content-type": "application/json", "x-real-ip": `198.51.100.${ip++}`, ...(cookie ? { cookie } : {}) },
+      method, headers: { origin, "content-type": "application/json", "x-real-ip": "198.51.100.42", ...(cookie ? { cookie } : {}) },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   }

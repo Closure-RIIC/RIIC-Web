@@ -66,7 +66,7 @@
   "avatarNotSaved": "Could not save the avatar. Check browser storage and retry.",
   "avatarReadFailed": "Could not read the avatar. Try another image.",
   "attachmentLimit": "Send up to {count, plural, one {# attachment} other {# attachments}} at a time.",
-  "attachmentUnsupported": "{name} is unsupported or exceeds the 8 MB size limit.",
+  "attachmentUnsupported": "{name} is unsupported or exceeds 8 MB. Use PNG, JPEG, WebP, TXT or Markdown.",
   "remainingMaterials": " ({count} items total)",
   "toolRunning": "Running {label}…",
   "toolStopped": "{label} stopped",

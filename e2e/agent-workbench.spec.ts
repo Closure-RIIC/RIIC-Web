@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { mockApis } from "./production-readiness.fixture";
+import { mockApis, waitForContentReady } from "./production-readiness.fixture";
 import { accountOrbColor } from "../apps/arknights/src/account-orb";
 import { openAgentHistory } from "./agent-history";
 
@@ -29,6 +29,12 @@ async function mockWorkbench(page: Page, performanceMode: "quality" | "static" =
     user: { id: "agent-test-user", name: "测试博士", email: "agent@example.test" },
     session: { expiresAt: "2099-01-01T00:00:00Z" },
   } }));
+}
+
+async function openMobileSidebar(page: Page) {
+  // Navigation closes the drawer before its exit animation unmounts the portal.
+  await expect(page.locator('[data-sidebar="sidebar"][data-mobile="true"]')).toHaveCount(0);
+  await page.locator('[data-slot="sidebar-inset"]').getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
 }
 
 for (const width of [1440, 375]) {
@@ -179,7 +185,7 @@ for (const width of [1440, 375]) {
     await expect.poll(() => sentPageContext).toBeNull();
     await shareToggle.check();
 
-    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
+    if (width < 768) await openMobileSidebar(page);
     await page.getByRole("button", { name: "账号体检", exact: true }).click();
     await expect(page).toHaveURL(/\/account-health$/);
     await expect(shortcuts).toHaveCount(0);
@@ -203,12 +209,12 @@ for (const width of [1440, 375]) {
     await expect(dock).toBeVisible();
     await expect(dock).toHaveAttribute("aria-expanded", "false");
 
-    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i, exact: true }).click();
+    if (width < 768) await openMobileSidebar(page);
     await page.locator('[data-primary-navigation-page="agent"]').click();
     await expect(page).toHaveURL(/\/agent$/);
     await expect(dock).toHaveCount(0);
     await expect(page.locator("[data-workbench-shell]")).not.toHaveAttribute("data-agent-docked", "true");
-    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i, exact: true }).click();
+    if (width < 768) await openMobileSidebar(page);
     await page.locator('[data-primary-navigation-page="account-health"]').click();
     await expect(page).toHaveURL(/\/account-health$/);
     await expect(dock).toBeVisible();
@@ -387,6 +393,8 @@ test("Uploaded personas keep independent avatars and persist on mobile", async (
   await expect(first.getByRole("button", { name: "上传头像", exact: true }).locator("svg")).toHaveCount(0);
   await expect(first.getByRole("button", { name: "上传头像", exact: true })).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await expect(first.getByRole("button", { name: "删除人格卡", exact: true })).toHaveText("");
+  // The popup scales its descendants during entry; measure the final geometry.
+  await waitForContentReady(first);
   const controls = await first.evaluate(card => {
     const upload = card.querySelector<HTMLButtonElement>('[aria-label="上传头像"]')!;
     const remove = card.querySelector<HTMLButtonElement>('[aria-label="删除人格卡"]')!;
@@ -673,7 +681,7 @@ for (const width of [1440, 375]) {
     await page.goto("/account-health");
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
     const workbenchBounds = await page.locator("[data-account-health-page]").boundingBox();
-    if (width < 768) await page.getByRole("button", { name: /^(切换侧边栏|切換側邊欄|Toggle Sidebar)$/i }).click();
+    if (width < 768) await openMobileSidebar(page);
     const group = page.locator('[data-slot="sidebar-group"]').filter({ hasText: "智能助理" });
     await group.getByRole("button", { name: "可露希尔助理", exact: true }).click();
     await expect(page).toHaveURL(/\/agent$/);

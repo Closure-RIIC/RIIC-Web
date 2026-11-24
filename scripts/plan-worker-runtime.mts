@@ -140,6 +140,8 @@ export async function executePlanTask(
   dependencies: PlanTaskExecutionDependencies = productionTaskExecutionDependencies,
 ): Promise<number | null> {
   const { id, payload } = task;
+  // 求解和失败快照共用还原后的参数；任务记录继续保留编码字符串。
+  const rotation = decodeRotationKey(payload.rotation) ?? DEFAULT_ROTATION_PROFILE;
   const workerStartedAt = performance.now();
   let diagnosticId = id;
   let taskSource: "cache" | "solver" | "failed" = "failed";
@@ -207,8 +209,7 @@ export async function executePlanTask(
       layout: structuredClone(payload.layout),
       operbox: structuredClone(payload.operbox),
       sourceName: payload.sourceName,
-      // 任务里存的是编码后的字符串，发给求解器前还原成对象/已知 profile。
-      rotation: decodeRotationKey(payload.rotation) ?? DEFAULT_ROTATION_PROFILE,
+      rotation,
       fiammettaEnable: payload.fiammettaEnable,
       supportCombinationsEnable: payload.supportCombinationsEnable,
       dataOwnerTag: payload.dataOwnerTag,
@@ -287,7 +288,7 @@ export async function executePlanTask(
       layout: payload.layout,
       operbox: payload.operbox,
       sourceName: payload.sourceName,
-      rotation: payload.rotation,
+      rotation,
       fiammettaEnable: payload.fiammettaEnable,
       dataOwnerTag: payload.dataOwnerTag,
       errorCode,

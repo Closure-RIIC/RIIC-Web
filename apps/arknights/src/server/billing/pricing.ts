@@ -1,79 +1,59 @@
-import { POINT_VALUE_RMB } from "./config.ts";
 import { Decimal } from "decimal.js";
-import { roundPoints } from "./points.ts";
+import { findModelRate, priceModelCall, tokenPoints, type RatePolicy } from "./rate-policy.ts";
 
 export type AgentTokenUsage = {
   inputTokens?: number;
   outputTokens?: number;
   cachedInputTokens?: number;
+  cacheWriteTokens?: number;
 };
 
-type PriceRow = { input: number; cachedInput: number; output: number; source: string; currency: "RMB" | "USD" };
-
-// All settlement values are stored and returned in RMB per million tokens. The
-// GLM defaults are the current provider list price converted once into RMB;
-// deployments can replace them when the provider publishes a new price.
-const configuredGlmInputRmb = Number(process.env.AGENT_GLM_INPUT_RMB_PER_MILLION ?? 1.08);
-const configuredGlmCachedInputRmb = Number(process.env.AGENT_GLM_CACHED_INPUT_RMB_PER_MILLION ?? 0.216);
-const configuredGlmOutputRmb = Number(process.env.AGENT_GLM_OUTPUT_RMB_PER_MILLION ?? 3.6);
-const GLM_INPUT_RMB = Number.isFinite(configuredGlmInputRmb) && configuredGlmInputRmb >= 0 ? configuredGlmInputRmb : 1.08;
-const GLM_CACHED_INPUT_RMB = Number.isFinite(configuredGlmCachedInputRmb) && configuredGlmCachedInputRmb >= 0 ? configuredGlmCachedInputRmb : 0.216;
-const GLM_OUTPUT_RMB = Number.isFinite(configuredGlmOutputRmb) && configuredGlmOutputRmb >= 0 ? configuredGlmOutputRmb : 3.6;
-
-function deepSeekPrice(now: Date): PriceRow {
-  const beijing = new Date(now.getTime() + 8 * 60 * 60 * 1000);
-  const day = beijing.getUTCDay();
-  const hour = beijing.getUTCHours() + beijing.getUTCMinutes() / 60;
-  const peak = day >= 1 && day <= 5 && ((hour >= 9 && hour < 12) || (hour >= 14 && hour < 18));
-  return {
-    input: peak ? 2 : 1,
-    cachedInput: peak ? 0.04 : 0.02,
-    output: peak ? 8 : 4,
-    currency: "RMB",
-    source: `DeepSeek V4.1 Flash ${peak ? "peak" : "off-peak"}`,
-  };
+/** A partial SDK aggregate must not turn an unmeasured step into a known total. */
+export function sumAgentCacheWriteTokens(steps: Array<{ inputTokens?: number; inputTokenDetails?: { cacheWriteTokens?: number; cacheReadTokens?: number }; raw?: unknown }>): number | undefined {
+  let total = 0;
+  let missing = steps.length === 0;
+  for (const step of steps) {
+    const sdkCount = step.inputTokenDetails?.cacheWriteTokens;
+    let count = sdkCount;
+    if (step.raw !== undefined && step.raw !== null) {
+      if (typeof step.raw !== "object" || Array.isArray(step.raw)) throw new Error("Invalid cache-write usage");
+      const raw = step.raw as Record<string, unknown>;
+      const details = raw.prompt_tokens_details;
+      if (details != null && (typeof details !== "object" || Array.isArray(details))) throw new Error("Invalid cache-write usage");
+      // Anthropic synthesizes an SDK zero when its raw creation field is absent;
+      // OpenAI-compatible preserves raw details but leaves the SDK write field unset.
+      const anthropic = raw.cache_creation_input_tokens;
+      const compatible = (details as Record<string, unknown> | undefined)?.cache_write_tokens;
+      const rawCount = anthropic ?? compatible;
+      if (rawCount === undefined) { missing = true; continue; }
+      if (typeof rawCount !== "number" || (anthropic !== undefined && compatible !== undefined && anthropic !== compatible)
+        || (sdkCount !== undefined && sdkCount !== rawCount)) throw new Error("Invalid cache-write usage");
+      count = rawCount;
+    }
+    if (count === undefined) { missing = true; continue; }
+    if (!Number.isSafeInteger(count) || count < 0 || count > 2_147_483_647
+      || (step.inputTokens !== undefined && count > step.inputTokens - (step.inputTokenDetails?.cacheReadTokens ?? 0))) throw new Error("Invalid cache-write usage");
+    total += count;
+  }
+  if (!Number.isSafeInteger(total) || total > 2_147_483_647) throw new Error("Invalid cache-write usage");
+  return missing ? undefined : total;
 }
 
-function glmPrice(): PriceRow {
+export function calculateAgentTokenCost(policy: RatePolicy, provider: string, model: string, usage: AgentTokenUsage, at = new Date()) {
+  if (usage.inputTokens === undefined || usage.outputTokens === undefined) throw new Error("Unmeasured token usage");
+  const measured = { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, cachedInputTokens: usage.cachedInputTokens ?? 0, cacheWriteTokens: usage.cacheWriteTokens };
+  const rate = findModelRate(policy, provider, model);
+  const cost = priceModelCall(policy, provider, model, measured, at);
   return {
-    input: GLM_INPUT_RMB,
-    cachedInput: GLM_CACHED_INPUT_RMB,
-    output: GLM_OUTPUT_RMB,
-    currency: "RMB",
-    source: "Z.AI GLM-5.3-Flash · RMB price",
-  };
-}
-
-function priceForModel(model: string, now: Date): PriceRow | null {
-  const normalized = model.toLowerCase();
-  if (normalized.includes("deepseek") || normalized === "deepseek-flash") return deepSeekPrice(now);
-  if (normalized.includes("glm-5.3-flash")) return glmPrice();
-  return null;
-}
-
-export function calculateAgentTokenCost(model: string, usage: AgentTokenUsage, now = new Date()) {
-  const price = priceForModel(model, now);
-  if (!price) return null;
-  const inputTokens = Math.max(0, Math.floor(usage.inputTokens ?? 0));
-  const cachedInputTokens = Math.min(inputTokens, Math.max(0, Math.floor(usage.cachedInputTokens ?? 0)));
-  const uncachedInputTokens = inputTokens - cachedInputTokens;
-  const outputTokens = Math.max(0, Math.floor(usage.outputTokens ?? 0));
-  const providerCostRmb = new Decimal(uncachedInputTokens).mul(price.input)
-    .add(new Decimal(cachedInputTokens).mul(price.cachedInput))
-    .add(new Decimal(outputTokens).mul(price.output)).div(1_000_000);
-  const providerCostRmbFen = providerCostRmb.mul(100).toDecimalPlaces(10).toNumber();
-  const chargedCostRmbFen = providerCostRmb.mul("1.2").mul(100).toDecimalPlaces(10).toNumber();
-  return {
+    provider,
     model,
-    source: price.source,
-    sourceCurrency: price.currency,
-    inputTokens,
-    cachedInputTokens,
-    uncachedInputTokens,
-    outputTokens,
-    cacheHitRate: inputTokens > 0 ? cachedInputTokens / inputTokens : 0,
-    providerCostRmbFen,
-    chargedCostRmbFen,
-    chargedPoints: roundPoints(providerCostRmb.mul("1.2").div(POINT_VALUE_RMB)),
+    source: `${provider}/${model}`,
+    sourceCurrency: rate.currency,
+    ...measured,
+    uncachedInputTokens: measured.inputTokens - measured.cachedInputTokens - (rate.cacheWrite === undefined ? 0 : measured.cacheWriteTokens!),
+    cacheHitRate: measured.inputTokens > 0 ? measured.cachedInputTokens / measured.inputTokens : 0,
+    providerCostRmbFen: new Decimal(cost.upstreamRmb).mul(100).toDecimalPlaces(10).toNumber(),
+    chargedCostRmbFen: new Decimal(cost.chargedRmb).mul(100).toDecimalPlaces(10).toNumber(),
+    chargedPoints: tokenPoints(policy, [cost.chargedRmb]),
   };
 }
