@@ -286,6 +286,41 @@ test("an unsuccessful solver response preserves its public error and queues the 
   ]);
 });
 
+test("automatic and custom task keys are decoded for both execution and failure snapshots", async (context) => {
+  context.mock.method(console, "error", () => {});
+  for (const [key, timing] of [
+    ["auto_32_32", { topology: "auto", shift_hours: [32, 32] }],
+    ["custom_zb_16_8", { topology: "main_backup", shift_hours: [16, 8] }],
+  ]) {
+    const task = claimedTask();
+    task.payload.rotation = key;
+    const received = [];
+    const artifact = { key: "failure-artifact", bytes: 1, sha256: "d".repeat(64) };
+    const { calls, dependencies } = executionHarness({
+      runPlan: async (input) => {
+        received.push(["solver", input.rotation]);
+        throw new Error("fixture solver failure");
+      },
+      saveFailureArtifact: async (input) => {
+        received.push(["snapshot", input.rotation]);
+        return artifact;
+      },
+      recordRun: async (input) => {
+        assert.equal(input.rotation, key);
+        assert.deepEqual(input.artifact, artifact);
+        assert.equal(input.artifactStatus, "complete");
+        calls.push(`record:${input.status}`);
+        return true;
+      },
+    });
+    await executePlanTask(task, 0, dependencies);
+    await waitForPlanExecutionUpdates(1_000);
+    assert.deepEqual(received, [["solver", timing], ["snapshot", timing]]);
+    assert.equal(task.payload.rotation, key);
+    assert.ok(calls.includes("task:failed"));
+  }
+});
+
 test("failed artifact writes still publish terminal tasks and log redacted diagnostic reasons", async (context) => {
   const logs = [];
   context.mock.method(console, "error", (value) => logs.push(JSON.parse(value)));

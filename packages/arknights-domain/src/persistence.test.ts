@@ -460,3 +460,34 @@ test("clear removes all session generations and product preferences", () => {
   clearLocalProductData(storage, ["onboarding"]);
   assert.equal(storage.values.size, 0);
 });
+
+test("legacy automatic session keys restore with the current default hours", () => {
+  const storage = new MemoryStorage();
+  persistSession(storage, {
+    presetLabel: "243", layout, operbox, sourceName: "示例", boxSource: "sample",
+    layoutDirty: false, layoutSource: "local", localLayoutBackup: null,
+    rotationProfile: DEFAULT_ROTATION_PROFILE, rotationSelection: "auto_32_32",
+    result: null, activeShift: 0,
+  });
+  assert.equal(loadPersistedSession(storage)?.rotationSelection, "auto_24_24");
+  assert.equal(loadPersistedSession(storage)?.result, null);
+});
+
+
+test("historical automatic results retain the exact timing needed for cloud save and reproduction", () => {
+  const storage = new MemoryStorage();
+  const historical = resultWithShifts(2, "generic_main_backup");
+  historical.rotation.shifts.forEach(shift => { shift.duration_hours = 32; });
+  historical.rotation.auto_rotation = {
+    timing: { shift_hours: [32, 32] }, complete: true, rooms: [], constant_dorm_support: [],
+  };
+  persistSession(storage, {
+    presetLabel: "243", layout, operbox, sourceName: "示例", boxSource: "maa",
+    layoutDirty: false, layoutSource: "local", localLayoutBackup: null,
+    rotationProfile: "generic_main_backup", rotationSelection: "auto_32_32",
+    result: historical, activeShift: 0,
+  });
+  const restored = loadPersistedSession(storage);
+  assert.equal(restored?.rotationSelection, "auto_32_32");
+  assert.deepEqual(restored?.result?.rotation.auto_rotation?.timing.shift_hours, [32, 32]);
+});

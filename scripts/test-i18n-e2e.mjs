@@ -8,7 +8,7 @@ const sites = [
 ].filter(site => !process.env.I18N_E2E_APP || site.app === process.env.I18N_E2E_APP);
 if (!sites.length) throw new Error('I18N_E2E_APP must be arknights or endfield');
 for (const site of sites) if (!["localhost", "127.0.0.1"].includes(new URL(site.origin).hostname)) throw new Error("Internationalization E2E only permits local fixture servers.");
-const locales = ["zh-CN", "zh-TW", "en"], labels = { "zh-CN": "简体中文", "zh-TW": "繁體中文（台灣）", en: "English" };
+const locales = ["zh-CN", "zh-TW", "en"], labels = { "zh-CN": "简体中文", "zh-TW": "繁體中文", en: "English" };
 const results = [], browser = await chromium.launch({ headless: true });
 const hydrated = page => page.locator('body[data-app-hydrated="true"]').waitFor();
 async function menu(page) {

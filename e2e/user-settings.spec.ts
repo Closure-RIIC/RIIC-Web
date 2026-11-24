@@ -11,7 +11,7 @@ test("settings persist and control language, schedule controls and MAA export", 
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
   await page.getByRole("switch", { name: /^预加载游戏翻译资料/ }).click();
   await page.locator("[data-sidebar-account-trigger]").click();
-  await expect(page.getByRole("menuitemradio", { name: "繁體中文（台灣）", exact: true })).toBeEnabled();
+  await expect(page.getByRole("menuitemradio", { name: "繁體中文", exact: true })).toBeEnabled();
   await page.getByRole("menuitemradio", { name: "English", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await page.keyboard.press("Escape");

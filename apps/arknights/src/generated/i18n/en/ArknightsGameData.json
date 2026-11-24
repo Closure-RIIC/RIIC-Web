@@ -3679,6 +3679,9 @@
     "31104": "Liquefied Ether Adsorbent",
     "31113": "Electrode Unit",
     "31114": "Energy Accumulation Motor Unit",
-    "32001": "Chip Catalyst"
+    "32001": "Chip Catalyst",
+    "mod_unlock_token": "Module Data Block",
+    "mod_update_token_1": "Data Supplement Stick",
+    "mod_update_token_2": "Data Supplement Instrument"
   }
 }

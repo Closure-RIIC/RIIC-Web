@@ -66,7 +66,7 @@
   "avatarNotSaved": "头像未能保存，请检查浏览器存储空间后重试。",
   "avatarReadFailed": "读取头像失败，请换一张图片重试。",
   "attachmentLimit": "一次最多发送 {count} 个附件。",
-  "attachmentUnsupported": "{name} 不受支持，或超过 8 MB 大小限制。",
+  "attachmentUnsupported": "{name} 不受支持，或超过 8 MB。仅支持 PNG、JPEG、WebP、TXT 和 Markdown。",
   "remainingMaterials": " 等 {count} 项",
   "toolRunning": "正在调用 {label}…",
   "toolStopped": "{label} 已停止",

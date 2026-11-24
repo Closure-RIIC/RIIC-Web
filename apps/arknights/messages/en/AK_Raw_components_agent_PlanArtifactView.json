@@ -13,5 +13,19 @@
   "hire": "Office",
   "processing": "Workshop",
   "elite2": "E2",
-  "unassigned": "(No operators assigned)"
+  "unassigned": "(No operators assigned)",
+  "dailyProductionWithDrones": "Estimated daily output (including drones)",
+  "productionUnavailable": "Daily output is unavailable for this historical result.",
+  "productionExperience": "Experience",
+  "productionLmd": "LMD",
+  "productionNetLmd": "Net LMD",
+  "productionGold": "Pure Gold",
+  "productionOrundum": "Orundum",
+  "productionShards": "Originium Shards",
+  "productionExperienceUnit": "EXP",
+  "productionLmdUnit": "LMD",
+  "productionOrundumUnit": "Orundum",
+  "productionPiecesUnit": "pcs",
+  "orirockShardCost": "Net LMD deducts the Orirock recipe cost: 1,600 LMD per shard.",
+  "deviceShardCost": "Net LMD deducts the Device recipe cost: 1,000 LMD per shard."
 }
