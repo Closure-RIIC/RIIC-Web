@@ -49,6 +49,7 @@ const schema = z.object({
     maaImport: z.string().optional(),
     externalOperatorNames: z.array(text(80)).max(200), startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).or(z.literal("")),
     activeShift: z.number().int().min(0).max(3), fiammettaEnabled: z.boolean(),
+    dormLocks: z.array(z.object({ roomId: text(60), slotIndex: z.number().int().min(0).max(4), fromShift: z.number().int().min(0).max(3), operator: text(80).nullable() })).max(20).optional(),
     shifts: z.array(z.object({
       maaGroups: z.array(z.object({ name: text(80), operators: z.array(text(80)) })).optional(),
       maaTraining: z.array(z.object({ operatorsA: z.array(text(80)).optional(), operatorsB: z.array(text(80)).optional(), skip: z.boolean().optional() })).max(1).optional(),
