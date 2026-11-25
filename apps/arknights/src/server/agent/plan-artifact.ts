@@ -55,7 +55,7 @@ export interface AgentPlanArtifactRecord {
   createdAt: Date;
 }
 
-/** 与前端 PersistedSessionV5 等价的注入载荷。 */
+/** 与前端 PersistedSessionV6 等价的注入载荷。 */
 export interface AgentPlanSession {
   presetLabel: string;
   layout: unknown;
