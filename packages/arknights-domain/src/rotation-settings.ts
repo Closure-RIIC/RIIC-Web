@@ -10,15 +10,40 @@ export type RotationOption = {
 };
 
 export const DEFAULT_ROTATION_PROFILE: RotationProfile = "abc_12_6_6";
+export type AutoRotationHours = [number, number];
+export const DEFAULT_AUTO_ROTATION_HOURS: AutoRotationHours = [24, 24];
+
+export function isAutoRotationHours(value: unknown): value is AutoRotationHours {
+  return Array.isArray(value) && value.length === 2
+    && value.every((hour) => typeof hour === "number" && Number.isFinite(hour) && hour >= 1 / 60);
+}
+
+export function encodeAutoRotationKey(hours: AutoRotationHours): string {
+  if (!isAutoRotationHours(hours)) throw new TypeError("Invalid automatic rotation hours.");
+  return `auto_${hours[0]}_${hours[1]}`;
+}
+
+export function autoRotationFromKey(value: string): AutoRotationHours | null {
+  if (value === "auto") return DEFAULT_AUTO_ROTATION_HOURS;
+  const match = /^auto_([^_]+)_([^_]+)$/.exec(value);
+  if (!match) return null;
+  const hours: AutoRotationHours = [Number(match[1]), Number(match[2])];
+  return isAutoRotationHours(hours) ? hours : null;
+}
 
 export const ROTATION_OPTIONS: RotationOption[] = [
-  { profile: "abc_12_6_6", label: "一天三换", durations: [12, 6, 6] },
+  { profile: "abc_12_6_6", label: "一天三换三班倒", durations: [12, 6, 6] },
   { profile: "main_backup_12_12", label: "主备轮换", durations: [12, 12] },
-  { profile: "abc_12_12_12", label: "一天两换", durations: [12, 12, 12] },
-  { profile: "main_backup_24_24", label: "主备 24/24", durations: [24, 24] },
+  { profile: "abc_12_12_12", label: "一天两换三班倒", durations: [12, 12, 12] },
+  { profile: "main_backup_24_24", label: "主备两班轮换", durations: [24, 24] },
   { profile: "fiammetta_8_8_4_4", label: "菲亚梅塔轮换", durations: [8, 8, 4, 4] },
   { profile: "abyssal_7_5_7_5", label: "深海猎人轮换", durations: [7, 5, 7, 5] },
 ];
+
+/** 计算页面的选项顺序；旧轮换仍用于读取历史排班和复现请求。 */
+export const SELECTABLE_ROTATION_OPTIONS = [
+  "abc_12_12_12", "abc_12_6_6", "main_backup_24_24",
+].map((profile) => ROTATION_OPTIONS.find((option) => option.profile === profile)!);
 
 /** 旧会话里可能还保存着这些 profile，仍然要能读出来并正常展示。 */
 export const LEGACY_ROTATION_PROFILES: RotationProfile[] = [
@@ -72,12 +97,27 @@ export function rotationDurations(profile: RotationProfile): number[] {
   return [...rotationOption(profile).durations];
 }
 
+export function rotationName(profile: RotationProfile, locale: AppLocale = "zh-CN"): string {
+  return rotationText.text(locale, profile);
+}
+
 export function rotationDescription(profile: RotationProfile, en: AppLocale = "zh-CN"): string {
   const hours = localize_rotation_settings.text(en, "hours");
   const durations = rotationDurations(profile);
   // generic_* 的时长取决于本次结果，这里只给名字。
   if (!durations.length) return rotationText.text(en, profile);
   return `${rotationText.text(en, profile)} · ${durations.join("/")} ${hours}`;
+}
+
+export function rotationTimingDescription(timing: RotationTiming, locale: AppLocale = "zh-CN"): string {
+  if (typeof timing === "string") return timing === "auto"
+    ? `${rotationText.text(locale, "main_backup_24_24")} · ${rotationText.text(locale, "auto")}`
+    : rotationDescription(timing, locale);
+  const label = timing.topology === "auto" ? `${rotationText.text(locale, "main_backup_24_24")} · ${rotationText.text(locale, "auto")}`
+    : timing.topology === "main_backup" ? rotationText.text(locale, "main_backup_24_24")
+      : rotationText.text(locale, "abc_12_6_6");
+  const hours = localize_rotation_settings.text(locale, "hours");
+  return `${label} · ${timing.shift_hours.join("/")} ${hours}`;
 }
 
 /** 班次数：generic_* 由名字决定，其余看固定时长。 */
@@ -185,6 +225,7 @@ const KEY_TOPOLOGIES: Record<string, RotationTopology> = { zb: "main_backup", ab
  */
 export function encodeRotationKey(timing: RotationTiming): string {
   if (typeof timing === "string") return timing;
+  if (timing.topology === "auto") return `auto_${timing.shift_hours.join("_")}`;
   return `${CUSTOM_ROTATION_PREFIX}${TOPOLOGY_KEYS[timing.topology]}_${timing.shift_hours.join("_")}`;
 }
 
@@ -195,9 +236,34 @@ export function encodeRotationKey(timing: RotationTiming): string {
  * 这样 UI 可以把用户正在编辑的中间态也存成 key。形状非法才返回 null。
  */
 export function decodeRotationKey(key: string): RotationTiming | null {
+  if (key === "auto") return "auto";
+  const automatic = /^auto_(\d+(?:\.\d+)?)_(\d+(?:\.\d+)?)$/.exec(key);
+  if (automatic) {
+    const shift_hours: [number, number] = [Number(automatic[1]), Number(automatic[2])];
+    if (shift_hours.every((hour) => Number.isFinite(hour) && hour >= 1 / 60)) {
+      return { topology: "auto", shift_hours };
+    }
+    return null;
+  }
   if (isRotationProfile(key)) return key;
   const custom = customRotationFromKey(key);
   return custom ? toRotationTiming(custom) : null;
+}
+
+export function isRotationTiming(value: unknown): value is RotationTiming {
+  if (typeof value === "string") return value === "auto" || isRotationProfile(value);
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const timing = value as { topology?: unknown; shift_hours?: unknown };
+  const expected = timing.topology === "main_backup" || timing.topology === "auto" ? 2
+    : timing.topology === "abc" ? 3 : null;
+  if (expected === null || !Array.isArray(timing.shift_hours) || timing.shift_hours.length !== expected) return false;
+  const minimum = timing.topology === "auto" ? 1 / 60 : Number.MIN_VALUE;
+  return timing.shift_hours.every((hour) => typeof hour === "number" && Number.isFinite(hour) && hour >= minimum);
+}
+
+export function rotationShiftCountForTiming(timing: RotationTiming): number {
+  if (typeof timing === "string") return timing === "auto" ? 2 : rotationShiftCount(timing);
+  return timing.shift_hours.length;
 }
 
 /** 把 `custom_{zb|abc}_{h...}` 解析成拓扑与时长；形状非法返回 null。 */
@@ -221,5 +287,5 @@ export function isCustomRotationKey(key: string): boolean {
 export function rotationShiftCountFromKey(key: string): number | null {
   const timing = decodeRotationKey(key);
   if (!timing) return null;
-  return typeof timing === "string" ? rotationShiftCount(timing) : timing.shift_hours.length;
+  return typeof timing === "string" ? timing === "auto" ? 2 : rotationShiftCount(timing) : timing.shift_hours.length;
 }

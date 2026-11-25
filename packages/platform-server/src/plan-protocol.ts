@@ -15,7 +15,7 @@ import { parseTrainingRoomSchedule } from "@riic/arknights-domain/training-room-
 export type ProtocolRecord = Record<string, unknown>;
 
 export const PLAN_PROTOCOL_VERSION = 1;
-export const PLAN_SCHEMA_VERSION = 7;
+export const PLAN_SCHEMA_VERSION = 8;
 
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 const GIT_COMMIT_PATTERN = /^[0-9a-f]{40}$/;
@@ -47,7 +47,7 @@ export function createPlanComputeParams(input: {
   layout: BaseBlueprint;
   operbox: OperBoxEntry[];
   sourceName?: string | null;
-  /** named profile，或 v7 的 { topology, shift_hours } 自定义时长。 */
+  /** named profile、auto，或 v8 的 { topology, shift_hours } 自定义时长。 */
   rotation: RotationTiming;
   fiammettaEnable?: boolean;
   /** 受控组合主动补挂件；缺省 false，与求解器缺省一致。 */

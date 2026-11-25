@@ -65,8 +65,7 @@
   "personaReadFailed": "人格卡讀取失敗，請重試。",
   "avatarNotSaved": "頭像儲存失敗，請檢查瀏覽器儲存空間後重試。",
   "avatarReadFailed": "頭像讀取失敗，請選擇其他圖片重試。",
-  "attachmentLimit": "一次最多傳送 {count} 個附件。",
-  "attachmentUnsupported": "{name} 不支援，或超過 8 MB 大小限制。",
+  "attachmentUnsupported": "{name} 不受支援，或超過 {limit} MiB。僅支援 PNG、JPEG、WebP、TXT 和 Markdown。",
   "remainingMaterials": " 等 {count} 項",
   "toolRunning": "正在呼叫 {label}…",
   "toolStopped": "{label} 已停止",
@@ -86,5 +85,7 @@
   "tool_query_skills": "基建技能查詢",
   "tool_kb_route": "知識庫導引",
   "tool_kb_read": "知識庫閱讀",
-  "tool_load_agent_skill": "工作指引載入"
+  "tool_load_agent_skill": "工作指引載入",
+  "imageAttachmentLimit": "一次最多上傳 {count} 張圖片。",
+  "textAttachmentLimit": "本輪最多攜帶 {count} 個文字附件（含歷史附件）。"
 }

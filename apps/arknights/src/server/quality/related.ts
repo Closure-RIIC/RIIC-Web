@@ -4,6 +4,7 @@ import { feedback, feedbackLink, feedbackEvent, planRun } from "@riic/platform-s
 import { toAdminFeedbackRecordData } from "@riic/platform-server/admin-record-dto";
 import { feedbackMatch, feedbackOperators } from "@riic/arknights-domain/feedback-similarity";
 import { hash } from "./storage.ts";
+import { decodeRotationKey } from "@riic/arknights-domain/rotation-settings";
 import { reproductionInputKey } from "@riic/arknights-domain/reproduction-package";
 import type { SavedPlanCalculationContext } from "@riic/arknights-domain/types";
 import { PublicApiError } from "@riic/platform-server/api-contract";
@@ -15,8 +16,9 @@ export async function relatedFeedback(id: string) {
   const normalized = rows.map((row) => {
     const dto = toAdminFeedbackRecordData(row.feedback);
     const context = row.context as SavedPlanCalculationContext | null;
+    const rotation = context?.rotationProfile ? decodeRotationKey(context.rotationProfile) : null;
     return { dto, id: dto.id, diagnosticId: dto.diagnosticId, facility: dto.facility, operators: feedbackOperators(dto.room, dto.note), errorCode: row.code,
-      inputFingerprint: row.boxHash && row.hashVersion && context?.layout && context.rotationProfile && typeof context.fiammettaEnabled === "boolean" ? hash(`${row.hashVersion}:${row.boxHash}:${reproductionInputKey({ format: "riic-reproduction", version: 1, operbox: [], layout: context.layout, rotation: context.rotationProfile, fiammetta_enable: context.fiammettaEnabled })}`) : null };
+      inputFingerprint: row.boxHash && row.hashVersion && context?.layout && rotation && typeof context.fiammettaEnabled === "boolean" ? hash(`${row.hashVersion}:${row.boxHash}:${reproductionInputKey({ format: "riic-reproduction", version: 1, operbox: [], layout: context.layout, rotation, fiammetta_enable: context.fiammettaEnabled })}`) : null };
   });
   const current = normalized.find((row) => row.id === id);
   if (!current) throw new PublicApiError("AIC-DATA-8004");
