@@ -4,9 +4,8 @@ import type { ManualScheduleDraft } from "../manual-schedule.ts";
 export interface FiammettaRule {
   enabled: boolean;
   mode: "specified" | "previous" | "auto";
-  wait: boolean;
 }
-export interface IdleRule { enabled: boolean; target?: string; dorm?: string }
+export interface IdleRule { enabled: boolean }
 export interface MoodSettings {
   version: 1;
   cycles: number;
@@ -24,8 +23,6 @@ export interface MoodSimulationInput {
   draft: ManualScheduleDraft;
   settings: MoodSettings;
   fiammettaEnabled: boolean;
-  /** cycle:shift:operator, zero based; locked dorm operators are not replaced by idle admission. */
-  dormLocks?: string[];
 }
 export interface MoodContribution {
   side: "consume" | "recover";
@@ -46,6 +43,8 @@ export interface MoodSegment {
   cycle: number;
   shift: number;
   rooms: Record<string, string[]>;
+  dormSlots?: Record<string, (string | null)[]>;
+  lockedDormSlots?: Record<string, number[]>;
 }
 export interface MoodEvent {
   time: number;
@@ -53,12 +52,10 @@ export interface MoodEvent {
   operator: string;
   target?: string;
   room?: string;
-  reason?: "entry_target_missing" | "dorm_unavailable" | "no_candidate" | "target_not_higher";
+  reason?: "entry_target_missing" | "no_candidate";
 }
 export interface IdleCandidate {
   cycle: number; shift: number; operator: string; mood: number;
-  room: string | null;
-  options: { room: string; operators: { name: string; mood: number }[]; free: boolean }[];
 }
 export interface MoodSimulationResult {
   revision: string;

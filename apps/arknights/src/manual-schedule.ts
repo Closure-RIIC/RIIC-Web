@@ -24,7 +24,8 @@ import {
 } from "./manual-schedule-config.ts";
 import { factoryRecipeFromMaaProduct, normalizeProductForLevel } from "@riic/arknights-domain/factory-recipes";
 import { droneTargetShiftIndex } from "@riic/arknights-domain/drone-plan-mapping";
-import { RECYCLING_ROOM_ID, manualEditableRooms, type EditableRoom } from "./recycling-room.ts";
+import { RECYCLING_ROOM_ID, manualEditableRooms, recyclingRoomCapacity, type EditableRoom } from "./recycling-room.ts";
+import { applyDormLocks, dormLocksAt, readManualDormLocks, scheduledShiftWithDormLocks, type ManualDormLock } from "./manual-dorm-locks.ts";
 
 export {
   DEFAULT_MANUAL_SHIFT_DURATIONS,
@@ -84,6 +85,7 @@ export interface ManualScheduleDraft {
   activeShift: number;
   fiammettaEnabled: boolean;
   shifts: ManualShift[];
+  dormLocks?: ManualDormLock[];
   source?: ManualScheduleSource;
   /** Original MAA plans and their editable projection, used only when downloading. */
   maaImport?: string;
@@ -313,7 +315,7 @@ function finitePositive(value: unknown, fallback: number): number {
 }
 
 export function manualRoomCapacity(room: EditableRoom): number {
-  if (room.kind === "recycle") return room.level >= 2 ? 2 : 1;
+  if (room.kind === "recycle") return recyclingRoomCapacity(room.level);
   if (room.kind === "control_center") return Math.max(1, Math.min(5, room.level));
   if (room.kind === "trade_post" || room.kind === "factory") return Math.max(1, Math.min(3, room.level));
   if (room.kind === "meeting_room" || room.kind === "training_room") return 2;
@@ -754,6 +756,7 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
     });
     const normalizedDurations = normalizeManualShiftDurations(parsedShifts.map((shift) => shift.durationHours));
     const shifts = parsedShifts.map((shift, index) => ({ ...shift, durationHours: normalizedDurations[index]! }));
+    const dormLocks = readManualDormLocks("dormLocks" in value ? value.dormLocks : undefined, shifts.length);
     const activeShift = "activeShift" in value && Number.isInteger(value.activeShift)
       ? Math.max(0, Math.min(shifts.length - 1, Number(value.activeShift)))
       : 0;
@@ -780,6 +783,7 @@ export function loadManualScheduleDraft(storage: StorageLike): ManualScheduleDra
       activeShift,
       fiammettaEnabled: "fiammettaEnabled" in value && value.fiammettaEnabled === true,
       shifts,
+      ...(dormLocks.length ? { dormLocks } : {}),
       ...("maaImport" in value && typeof value.maaImport === "string" ? { maaImport: value.maaImport } : {}),
       ...(source ? { source } : {}),
     };
@@ -803,6 +807,7 @@ export function resizeManualScheduleDraft(
     ...(draft.shifts[index] ?? emptyShift(normalizedDurations[index]!)),
     durationHours: normalizedDurations[index]!,
   }));
+  const dormLocks = readManualDormLocks(draft.dormLocks, count);
   return {
     version: 3,
     scheduleMode: draft.scheduleMode,
@@ -811,6 +816,7 @@ export function resizeManualScheduleDraft(
     activeShift: Math.min(draft.activeShift, shifts.length - 1),
     fiammettaEnabled: draft.fiammettaEnabled,
     shifts,
+    ...(dormLocks.length ? { dormLocks } : {}),
     ...(draft.maaImport ? { maaImport: draft.maaImport } : {}),
     ...(draft.source ? { source: { ...draft.source } } : {}),
   };
@@ -827,6 +833,11 @@ export function reconcileManualScheduleDraft(
     ...draft.externalOperatorNames,
   ]) : null;
   const normalizedDurations = normalizeManualShiftDurations(draft.shifts.map((shift) => shift.durationHours));
+  const dormLocks = readManualDormLocks(draft.dormLocks, draft.shifts.length).flatMap(lock => {
+    const room = layout.rooms.find(candidate => candidate.id === lock.roomId && candidate.kind === "dormitory");
+    if (!room || lock.slotIndex >= manualRoomCapacity(room)) return [];
+    return [{ ...lock, operator: lock.operator && owned && !owned.has(lock.operator) ? null : lock.operator }];
+  });
   return {
     version: 3,
     scheduleMode: draft.scheduleMode === "period" ? "period" : "sequential",
@@ -834,6 +845,7 @@ export function reconcileManualScheduleDraft(
     startTime: normalizeStartTime(draft.startTime),
     activeShift: Math.min(Math.max(0, draft.activeShift), Math.max(0, draft.shifts.length - 1)),
     fiammettaEnabled: draft.fiammettaEnabled === true,
+    ...(dormLocks.length ? { dormLocks } : {}),
     ...(draft.maaImport ? { maaImport: draft.maaImport } : {}),
     ...(draft.source ? { source: { ...draft.source } } : {}),
     shifts: draft.shifts.map((shift, shiftIndex) => {
@@ -896,12 +908,29 @@ export function manualScheduleDraftContentEqual(
     startTime: left.startTime,
     fiammettaEnabled: left.fiammettaEnabled,
     shifts: left.shifts,
+    dormLocks: left.dormLocks,
   }) === JSON.stringify({
     scheduleMode: right.scheduleMode,
     startTime: right.startTime,
     fiammettaEnabled: right.fiammettaEnabled,
     shifts: right.shifts,
+    dormLocks: right.dormLocks,
   });
+}
+
+export function toggleManualDormLock(draft: ManualScheduleDraft, layout: BaseBlueprint, shiftIndex: number, roomId: string, slotIndex: number): ManualScheduleDraft {
+  const room = layout.rooms.find(candidate => candidate.id === roomId && candidate.kind === "dormitory");
+  const shift = draft.shifts[shiftIndex];
+  if (!room || !shift || !Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= manualRoomCapacity(room)) return draft;
+  const locks = draft.dormLocks ?? [];
+  const matchesBed = (lock: ManualDormLock) => lock.roomId === roomId && lock.slotIndex === slotIndex;
+  const remaining = locks.filter(lock => !matchesBed(lock));
+  if (locks.some(lock => matchesBed(lock) && lock.fromShift <= shiftIndex)) {
+    return { ...draft, dormLocks: remaining.length ? remaining : undefined };
+  }
+  const operator = shift.rooms[roomId]?.operators[slotIndex] ?? null;
+  if (operator && remaining.some(lock => lock.operator === operator)) return draft;
+  return { ...draft, dormLocks: [...remaining, { roomId, slotIndex, fromShift: shiftIndex, operator }] };
 }
 
 export function findManualOperatorConflict(
@@ -934,11 +963,16 @@ export function assignManualOperator(input: {
   if (!room || !shift || slotIndex < 0 || slotIndex >= manualRoomCapacity(room)) {
     return { draft: input.draft, conflict: null };
   }
-  const currentAssignment = shift.rooms[roomId];
-  const currentOperator = currentAssignment?.operators[slotIndex] ?? null;
+  const locks = dormLocksAt(input.draft, shiftIndex);
+  if (locks.some(lock => (lock.roomId === roomId && lock.slotIndex === slotIndex) || (operator && lock.operator === operator))) {
+    return { draft: input.draft, conflict: null };
+  }
+  const effectiveShift = applyDormLocks(shift, locks);
+  const currentOperator = effectiveShift.rooms[roomId]?.operators[slotIndex] ?? null;
   if (operator !== null && operator === currentOperator) return { draft: input.draft, conflict: null };
 
-  const conflict = operator ? findManualOperatorConflict(shift, operator, roomId, slotIndex) : null;
+  const conflict = operator ? findManualOperatorConflict(effectiveShift, operator, roomId, slotIndex) : null;
+  const plannedConflict = operator ? findManualOperatorConflict(shift, operator, roomId, slotIndex) : null;
   if (conflict?.roomId === roomId) {
     const next = structuredClone(input.draft);
     const assignment = next.shifts[shiftIndex]!.rooms[roomId]!;
@@ -953,9 +987,9 @@ export function assignManualOperator(input: {
 
   const next = structuredClone(input.draft);
   const nextShift = next.shifts[shiftIndex]!;
-  if (conflict) {
-    const previous = nextShift.rooms[conflict.roomId];
-    if (previous) previous.operators[conflict.slotIndex] = null;
+  if (plannedConflict) {
+    const previous = nextShift.rooms[plannedConflict.roomId];
+    if (previous) previous.operators[plannedConflict.slotIndex] = null;
   }
   const assignment = nextShift.rooms[roomId] ?? {
     operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
@@ -986,6 +1020,7 @@ export function swapManualOperators(
   const room = manualEditableRooms(layout).find((candidate) => candidate.id === roomId);
   const assignment = draft.shifts[shiftIndex]?.rooms[roomId];
   if (!room || !assignment || firstSlotIndex === secondSlotIndex) return draft;
+  if (dormLocksAt(draft,shiftIndex).some(lock => lock.roomId === roomId && (lock.slotIndex === firstSlotIndex || lock.slotIndex === secondSlotIndex))) return draft;
   if (
     !Number.isInteger(firstSlotIndex)
     || !Number.isInteger(secondSlotIndex)
@@ -1085,12 +1120,14 @@ export function clearManualRoom(
   if (!room || !draft.shifts[shiftIndex]) return draft;
   const next = structuredClone(draft);
   if (room.kind === "training_room") delete next.shifts[shiftIndex]!.maaTraining;
-  const previousProduct = next.shifts[shiftIndex]!.rooms[roomId]?.product;
+  const previous = next.shifts[shiftIndex]!.rooms[roomId];
+  const locks = dormLocksAt(draft, shiftIndex);
   next.shifts[shiftIndex]!.rooms[roomId] = {
-    operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
+    operators: Array.from({ length: manualRoomCapacity(room) }, (_, slotIndex) =>
+      locks.some(lock => lock.roomId === roomId && lock.slotIndex === slotIndex) ? previous?.operators[slotIndex] ?? null : null),
     ...(supportsMaaAutofill(room) ? { autofill: false } : {}),
     ...((room.kind === "trade_post" || room.kind === "factory")
-      ? { product: previousProduct ? structuredClone(previousProduct) : roomProduct(room) }
+      ? { product: previous?.product ?? roomProduct(room) }
       : {}),
   };
   return next;
@@ -1108,13 +1145,15 @@ export function clearManualShift(
   delete shift.maaTraining;
   delete shift.maaGroups;
   delete shift.emptyRecycle;
+  const locks = dormLocksAt(draft, shiftIndex);
   shift.rooms = Object.fromEntries(manualEditableRooms(layout).map((room) => {
-    const previousProduct = shift.rooms[room.id]?.product;
+    const previous = shift.rooms[room.id];
     return [room.id, {
-      operators: Array.from({ length: manualRoomCapacity(room) }, () => null),
+      operators: Array.from({ length: manualRoomCapacity(room) }, (_, slotIndex) =>
+        locks.some(lock => lock.roomId === room.id && lock.slotIndex === slotIndex) ? previous?.operators[slotIndex] ?? null : null),
       ...(supportsMaaAutofill(room) ? { autofill: false } : {}),
       ...((room.kind === "trade_post" || room.kind === "factory")
-        ? { product: previousProduct ? structuredClone(previousProduct) : roomProduct(room) }
+        ? { product: previous?.product ?? roomProduct(room) }
         : {}),
     } satisfies ManualRoomAssignment];
   }));
@@ -1128,7 +1167,7 @@ export function restPreviousShiftOperators(
   shiftIndex: number,
 ): ManualScheduleDraft {
   if (shiftIndex <= 0 || !draft.shifts[shiftIndex] || !draft.shifts[shiftIndex - 1]) return draft;
-  const previous = draft.shifts[shiftIndex - 1]!;
+  const previous = scheduledShiftWithDormLocks(draft, shiftIndex - 1)!;
   const current = draft.shifts[shiftIndex]!;
   const dormitories = layout.rooms.filter((room) => room.kind === "dormitory");
   const workingOperators = (shift: typeof current) => new Set(
@@ -1138,6 +1177,12 @@ export function restPreviousShiftOperators(
       .filter((name): name is string => Boolean(name)),
   );
   const currentOperators = workingOperators(current);
+  const locks = dormLocksAt(draft,shiftIndex);
+  for (const { roomId, slotIndex, operator } of locks) {
+    if (operator) currentOperators.add(operator);
+    const planned = current.rooms[roomId]?.operators[slotIndex];
+    if (planned) currentOperators.add(planned);
+  }
   const available: string[] = [];
   const seen = new Set<string>();
   for (const [roomId, assignment] of Object.entries(previous.rooms)) {
@@ -1151,7 +1196,10 @@ export function restPreviousShiftOperators(
   for (const room of dormitories) {
     const count = manualRoomCapacity(room);
     next.shifts[shiftIndex]!.rooms[room.id] = {
-      operators: Array.from({ length: count }, () => available[cursor++] ?? null),
+      operators: Array.from({ length: count }, (_, slotIndex) => {
+        const lock = locks.find(item => item.roomId === room.id && item.slotIndex === slotIndex);
+        return lock ? current.rooms[room.id]?.operators[slotIndex] ?? null : available[cursor++] ?? null;
+      }),
       autofill: false,
     };
   }
@@ -1205,7 +1253,8 @@ export function manualScheduleToMaa(
     title: `手动排班 · ${layout.template}`,
     description: "由可露希尔基建终端手动排班生成",
     planTimes: `${draft.shifts.length}班`,
-    plans: draft.shifts.map((shift, shiftIndex) => {
+    plans: draft.shifts.map((plannedShift, shiftIndex) => {
+      const shift = applyDormLocks(plannedShift, dormLocksAt(draft, shiftIndex));
       const range = ranges[shiftIndex]!;
       const start = parseTime(range.startTime)!;
       const period: MaaPeriod[] = range.durationMinutes >= MINUTES_PER_DAY

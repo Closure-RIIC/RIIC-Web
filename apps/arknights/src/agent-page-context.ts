@@ -1,6 +1,7 @@
 import type { RoomRow } from "./schedule.ts";
 import { planToRows } from "./schedule.ts";
 import { manualScheduleToMaa, type ManualScheduleDraft } from "./manual-schedule.ts";
+import { applyDormLocks, dormLocksAt } from "./manual-dorm-locks.ts";
 import type { BaseBlueprint, PublicPlanData } from "@riic/arknights-domain/types";
 import type { AccountHealthInput } from "./account-health-input.ts";
 import type { HealthAdviceReport } from "./account-health-advice.ts";
@@ -103,7 +104,7 @@ export function buildManualScheduleContext(input: {
   const duration = shift?.durationHours;
   const manualMaa = manualScheduleToMaa(draft, layout, draft.fiammettaEnabled);
   const allShiftLines = draft.shifts.flatMap((item, index) => {
-    const assignmentByRoom = item.rooms;
+    const assignmentByRoom = applyDormLocks(item, dormLocksAt(draft, index)).rooms;
     const trainingRoom = layout.rooms.find((room) => room.kind === "training_room");
     const shiftRows = planToRows(
       manualMaa.plans[index],

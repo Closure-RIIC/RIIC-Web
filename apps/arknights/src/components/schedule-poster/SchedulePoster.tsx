@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { OperatorSlot } from "@/components";
 import { manualRoomCapacity, manualRoomForShift } from "@/manual-schedule";
+import { applyDormLocks, dormLocksAt } from "@/manual-dorm-locks";
 import { operatorPresentationFor } from "@/operatorPortraits";
 import { manualEditableRooms, type EditableRoom } from "@/recycling-room";
 import { roomVisualFor } from "@/room-visuals";
@@ -76,7 +77,7 @@ export function SchedulePoster(props: Props) {
   }, []);
   const { document: doc, result, background, share, onSelect } = props;
   const instructions = instructionLayout(doc.meta.instructions.trim() || rawText.text(rawLocale, "instructionsPlaceholder"));
-  const shifts = doc.draft.shifts;
+  const shifts = doc.draft.shifts.map((shift, index) => applyDormLocks(shift, dormLocksAt(doc.draft, index)));
   const hasStartTime = Boolean(doc.draft.startTime);
   const startTime = doc.draft.startTime || DEFAULT_MANUAL_SHIFT_START_TIME;
   const startMinutes = Number(startTime.slice(0, 2)) * 60 + Number(startTime.slice(3, 5));

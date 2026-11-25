@@ -4,7 +4,7 @@ import { mockApis, mockSignedInWebsiteSession } from "./production-readiness.fix
 
 declare global {
   interface Window {
-    moodWorkerTest: { count: number; hold: boolean; failNext: boolean; held: Array<() => void> };
+    moodWorkerTest: { count: number; detailTimes: number[]; hold: boolean; failNext: boolean; held: Array<() => void> };
   }
 }
 
@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
   await mockApis(page);
   await mockSignedInWebsiteSession(page);
   await page.addInitScript(({ layout }) => {
-    const control = window.moodWorkerTest = { count: 0, hold: false, failNext: false, held: [] as Array<() => void> };
+    const control = window.moodWorkerTest = { count: 0, detailTimes: [] as number[], hold: false, failNext: false, held: [] as Array<() => void> };
     const NativeWorker = window.Worker;
     window.Worker = class extends NativeWorker {
       constructor(url: string | URL, options?: WorkerOptions) {
@@ -25,7 +25,8 @@ test.beforeEach(async ({ page }) => {
           control.held.push(() => receive?.call(this, event));
         });
       }
-      postMessage(message: { type: string; id: number }, transfer?: Transferable[] | StructuredSerializeOptions) {
+      postMessage(message: { type: string; id: number; time?: number }, transfer?: Transferable[] | StructuredSerializeOptions) {
+        if (message.type === "detail" && message.time !== undefined) control.detailTimes.push(message.time);
         if (message.type === "simulate") {
           control.count++;
           if (control.failNext) {
@@ -76,6 +77,33 @@ async function choose(page: Page, label: string, value: string) {
   await page.getByRole("combobox", { name: label, exact: true }).click();
   await page.getByRole("option", { name: value, exact: true }).click();
 }
+
+test("rapid timeline input keeps the final seek and coalesces Worker detail requests", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/manual");
+  await expect(play(page)).toBeEnabled({ timeout: 60_000 });
+  await replay(page);
+  await expect(timeline(page)).toHaveValue("16");
+  await expect.poll(() => page.evaluate(() => window.moodWorkerTest.detailTimes.at(-1))).toBe(16);
+  const workerCount = await requests(page);
+
+  const burst = await timeline(page).evaluate((element: HTMLInputElement) => {
+    const times = window.moodWorkerTest.detailTimes;
+    const before = times.length;
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!;
+    for (let hour = 1; hour <= 12; hour++) {
+      setValue.call(element, String(hour));
+      element.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    return { requests: times.length - before, sliderValue: element.value };
+  });
+  expect(burst.sliderValue).toBe("12");
+  expect(burst.requests).toBeLessThanOrEqual(1);
+  await expect(timeline(page)).toHaveValue("12");
+  await expect(board(page)).toContainText("第 1 周期 · 第 2 班");
+  await expect.poll(() => page.evaluate(() => window.moodWorkerTest.detailTimes.at(-1))).toBe(12);
+  expect(await requests(page)).toBe(workerCount);
+});
 
 for (const width of [1440, 390]) {
   test(`manual morale synchronizes selected shifts, support and navigation at ${width}px`, async ({ page }) => {
