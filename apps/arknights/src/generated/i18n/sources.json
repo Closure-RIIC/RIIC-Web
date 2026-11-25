@@ -24,9 +24,9 @@
     "assets/locales/us/material.json": "630a53355e2eb486f64fe0e6b3b2fda879d517f1dcf0cb6ac30eb1bf49674af7"
   },
   "outputs": {
-    "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json": "cfc17a8a70cc08f742e053c76e1de185b39daca81ec3c5fd0492dfaf0f545c9f",
-    "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json": "4c4f09c203408336fef627a024ba85e7d3da0cb7e2806fbad9bb9ce44f65e025",
-    "apps/arknights/src/generated/i18n/en/ArknightsGameData.json": "c224a6b9ace7146f7f06316af6a368be7160475aedd3e7c1f241e72e35dff2a8",
+    "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json": "590901bbf3dbf8c602df7ec4450d2b6ebcade96b62202c6b3ff8de33c090e7ee",
+    "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json": "870230ae4406210c8e40ca0c16d04c7ed2db11d1a0a05e1ac27166d595a96dae",
+    "apps/arknights/src/generated/i18n/en/ArknightsGameData.json": "80322ce77ac0ef860b52a8dac07dfcb731c90087b82d7cdcbdc63bbad9ed1baa",
     "apps/arknights/src/generated/i18n/operator-aliases.json": "1fa3ff906477ca68c99441a28d484b31deffcfab797ebc26eaca176e70a7aa72"
   },
   "coverage": {

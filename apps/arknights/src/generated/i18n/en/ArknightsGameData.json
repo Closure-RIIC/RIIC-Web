@@ -9,7 +9,7 @@
     "hire": "Office",
     "processing": "Workshop",
     "training": "Training Room",
-    "recycling": "Recycling Station"
+    "recycle": "Recycling Station"
   },
   "operatorNames": {
     "阿米娅": "Amiya",
