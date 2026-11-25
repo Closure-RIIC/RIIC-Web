@@ -24,17 +24,25 @@ import {
 import { normalizeRotationResult } from "./rotation-result.ts";
 import { autoRotationFromKey, DEFAULT_AUTO_ROTATION_HOURS, encodeAutoRotationKey } from "./rotation-settings.ts";
 
-export const SESSION_KEY_V4 = "arknights-infra-calc-session-v4";
-export const SESSION_KEY_V5 = "arknights-infra-calc-session-v5";
-export const SESSION_KEY_V3 = "arknights-infra-calc-beta-session-v3";
-export const SESSION_KEY_V2 = "arknights-infra-calc-beta-session-v2";
+/**
+ * 会话存储键：与结构版本解耦，永远不变。
+ * 结构版本写在数据里（`version` 字段），升级只改 `SESSION_VERSION`，不动这个键。
+ */
+export const SESSION_KEY = "arknights-infra-calc-session";
+/** 结构版本。提升后，本地存储里版本不匹配的会话在读取时直接删除，不做迁移。 */
+export const SESSION_VERSION = 6;
+/**
+ * 早期版本把版本号写进了键名，前缀也换过一次（`-beta-session` → `-session`）。
+ * 这些历史键不在这里逐个列举，改为按特征清理：只要长得像别的代次会话键，就删掉。
+ */
+const SESSION_KEY_PATTERN = /^arknights-infra-calc-(?:beta-)?session(?:-v\d+)?$/;
 export const RESULT_CLEAR_WARNING_DISMISSED_KEY = "arknights-infra-calc-result-clear-warning-dismissed";
 export const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const CLIENT_SKLAND_ENABLED = process.env.APP_CLIENT_SKLAND_ENABLED !== "0";
 const SKLAND_SOURCE_NAME = CLIENT_SKLAND_ENABLED ? "森空岛同步" : "已保存的干员数据";
 
-export interface PersistedSessionV5 {
-  version: 5;
+export interface PersistedSessionV6 {
+  version: typeof SESSION_VERSION;
   savedAt: string;
   expiresAt: string;
   presetLabel: string;
@@ -180,8 +188,11 @@ function clampActiveShift(value: unknown, result: PublicPlanData | null): number
   return Math.max(0, Math.min(Math.max(0, shiftCount - 1), Number(value)));
 }
 
-function normalizeSession(value: unknown, now: number): PersistedSessionV5 | null {
+function normalizeSession(value: unknown, now: number): PersistedSessionV6 | null {
   if (!isObject(value)) return null;
+  // 结构版本必须精确匹配。旧版本可能缺少后来新增的设施（例如回收站），
+  // 迁移只会把残缺布局继续带到新版本，因此这里直接判废，由调用方删除旧数据。
+  if (value.version !== SESSION_VERSION) return null;
   const layout = value.layout;
   const operbox = value.operbox;
   const localLayoutBackup = value.localLayoutBackup;
@@ -199,11 +210,7 @@ function normalizeSession(value: unknown, now: number): PersistedSessionV5 | nul
     ? value.boxSource
     : "sample";
   const rawSourceName =
-    typeof value.sourceName === "string"
-      ? value.sourceName.slice(0, 80)
-      : typeof value.fileName === "string"
-        ? value.fileName.slice(0, 80)
-        : null;
+    typeof value.sourceName === "string" ? value.sourceName.slice(0, 80) : null;
   const hasLegacySklandIdentity = boxSource === "skland" && rawSourceName?.startsWith("skland:");
   const rotationProfile = normalizeRotationProfile(value.rotationProfile);
   const customRotation = normalizeStoredCustomRotation(value.customRotation);
@@ -214,15 +221,10 @@ function normalizeSession(value: unknown, now: number): PersistedSessionV5 | nul
     : normalizeRotationSelection(value.rotationSelection, rotationProfile);
   const layoutDirty = Boolean(value.layoutDirty);
   return {
-    version: 5,
+    version: SESSION_VERSION,
     savedAt: new Date(savedAt).toISOString(),
     expiresAt: new Date(expiresAt).toISOString(),
-    presetLabel:
-      typeof value.presetLabel === "string"
-        ? value.presetLabel
-        : isObject(value.preset) && typeof value.preset.label === "string"
-          ? value.preset.label
-          : layout.template,
+    presetLabel: typeof value.presetLabel === "string" ? value.presetLabel : layout.template,
     layout: structuredClone(layout),
     operbox: operbox ? structuredClone(operbox) : null,
     sourceName: boxSource === "skland" ? SKLAND_SOURCE_NAME : rawSourceName,
@@ -264,73 +266,70 @@ function normalizeStoredCustomRotation(value: unknown): CustomRotation {
   return { topology, hours: [...hours] };
 }
 
-export function loadPersistedSession(storage: StorageLike, now = Date.now()): PersistedSessionV5 | null {
-  const currentRaw = storage.getItem(SESSION_KEY_V5);
+export function loadPersistedSession(storage: StorageLike, now = Date.now()): PersistedSessionV6 | null {
+  const currentRaw = storage.getItem(SESSION_KEY);
   const current = normalizeSession(parseJson(currentRaw), now);
   if (current) {
     if (currentRaw && currentRaw !== JSON.stringify(current)) {
-      try { storage.setItem(SESSION_KEY_V5, JSON.stringify(current)); } catch {
+      try { storage.setItem(SESSION_KEY, JSON.stringify(current)); } catch {
         // Reading valid data must not depend on storage being writable.
       }
     }
+    removeObsoleteSessions(storage);
     return current;
   }
-  if (currentRaw) storage.removeItem(SESSION_KEY_V5);
-
-  for (const legacyKey of [SESSION_KEY_V4, SESSION_KEY_V3, SESSION_KEY_V2]) {
-    const legacyRaw = storage.getItem(legacyKey);
-    if (!legacyRaw) continue;
-    const migrated = normalizeSession(parseJson(legacyRaw), now);
-    if (!migrated) {
-      storage.removeItem(legacyKey);
-      continue;
-    }
-    try {
-      storage.setItem(SESSION_KEY_V5, JSON.stringify(migrated));
-      storage.removeItem(legacyKey);
-    } catch {
-      // Keep the original and restore in memory; normal autosave reports write failures.
-    }
-    return migrated;
-  }
+  // 版本不匹配、过期或损坏的会话不迁移，直接删除：既避免把残缺布局带进新版本，
+  // 也让本地始终只保留一份当前格式的会话，不会历史代次叠加占用额度。
+  if (currentRaw) storage.removeItem(SESSION_KEY);
+  removeObsoleteSessions(storage);
   return null;
+}
+
+/**
+ * 删掉所有「其他代次」的会话键，只保留当前的 `SESSION_KEY`。
+ * 需要存储实现提供 `length` / `key(i)`（浏览器 localStorage 本身就有）；没有就跳过清理，
+ * 版本校验仍然会让旧数据失效，只是无法顺带回收空间。
+ */
+function removeObsoleteSessions(storage: StorageLike): void {
+  const enumerable = storage as StorageLike & Partial<Pick<Storage, "length" | "key">>;
+  if (typeof enumerable.length !== "number" || typeof enumerable.key !== "function") return;
+  const obsolete: string[] = [];
+  for (let index = 0; index < enumerable.length; index += 1) {
+    const key = enumerable.key(index);
+    if (key && key !== SESSION_KEY && SESSION_KEY_PATTERN.test(key)) obsolete.push(key);
+  }
+  // 先收集再删除：removeItem 会让后续索引整体前移。
+  for (const key of obsolete) storage.removeItem(key);
 }
 
 export function persistSession(
   storage: StorageLike,
-  input: Omit<PersistedSessionV5, "version" | "savedAt" | "expiresAt" | "localLayoutBackup"> & {
+  input: Omit<PersistedSessionV6, "version" | "savedAt" | "expiresAt" | "localLayoutBackup"> & {
     localLayoutBackup?: BaseBlueprint | null;
   },
   now = Date.now()
-): PersistedSessionV5 {
+): PersistedSessionV6 {
   const hasLegacySklandIdentity =
     input.boxSource === "skland" && input.sourceName?.startsWith("skland:");
   const result = hasLegacySklandIdentity ? null : normalizePersistedPlanData(input.result, input.rotationProfile);
-  const value: PersistedSessionV5 = {
+  const value: PersistedSessionV6 = {
     ...input,
     localLayoutBackup: input.localLayoutBackup ? structuredClone(input.localLayoutBackup) : null,
     sourceName: input.boxSource === "skland" ? SKLAND_SOURCE_NAME : input.sourceName,
-    version: 5,
+    version: SESSION_VERSION,
     savedAt: new Date(now).toISOString(),
     expiresAt: new Date(now + SESSION_TTL_MS).toISOString(),
     result,
     activeShift: clampActiveShift(input.activeShift, result),
   };
-  storage.setItem(SESSION_KEY_V5, JSON.stringify(value));
-  storage.removeItem(SESSION_KEY_V4);
-  storage.removeItem(SESSION_KEY_V3);
-  storage.removeItem(SESSION_KEY_V2);
+  storage.setItem(SESSION_KEY, JSON.stringify(value));
+  removeObsoleteSessions(storage);
   return value;
 }
 
 export function clearLocalProductData(storage: StorageLike, extraKeys: string[] = []): void {
-  [
-    SESSION_KEY_V2,
-    SESSION_KEY_V3,
-    SESSION_KEY_V4,
-    SESSION_KEY_V5,
-    RESULT_CLEAR_WARNING_DISMISSED_KEY,
-    TELEMETRY_SESSION_STORAGE_KEY,
-    ...extraKeys,
-  ].forEach((key) => storage.removeItem(key));
+  storage.removeItem(SESSION_KEY);
+  removeObsoleteSessions(storage);
+  [RESULT_CLEAR_WARNING_DISMISSED_KEY, TELEMETRY_SESSION_STORAGE_KEY, ...extraKeys]
+    .forEach((key) => storage.removeItem(key));
 }

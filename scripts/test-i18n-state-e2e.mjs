@@ -38,16 +38,16 @@ try {
       if (sessionStorage.getItem('manual-seeded')) return;
       sessionStorage.setItem('manual-seeded', '1');
       localStorage.setItem('arknights-infra-calc-beta-onboarding-v1', '1');
-      localStorage.setItem('arknights-infra-calc-session-v5', JSON.stringify({ version:5, savedAt:new Date().toISOString(), expiresAt:new Date(Date.now()+86400000).toISOString(), presetLabel:'243', layout,
+      localStorage.setItem('arknights-infra-calc-session', JSON.stringify({ version:6, savedAt:new Date().toISOString(), expiresAt:new Date(Date.now()+86400000).toISOString(), presetLabel:'243', layout,
         operbox:[{id:'char_002_amiya',name:'阿米娅',elite:2,level:80,own:true,potential:6,rarity:5}], sourceName:'i18n local fixture', boxSource:'sample', layoutDirty:false, layoutSource:'local',localLayoutBackup:null,rotationProfile:'abc_12_6_6',fiammettaEnabled:false,result:null,activeShift:0 }));
       localStorage.setItem('arknights-infra-manual-schedule-v1', JSON.stringify({ version:2, activeShift:0, fiammettaEnabled:false, shifts:[{durationHours:24,fiammettaTarget:null,rooms:{trade_1:{operators:['阿米娅',null,null]}}}] }));
     }, layout);
     await page.goto(ak + '/manual'); await ready(page);
     await page.locator('[data-manual-editor-board]').waitFor();
-    const before = await page.evaluate(() => ({ draft:localStorage.getItem('arknights-infra-manual-schedule-v1'), box:JSON.parse(localStorage.getItem('arknights-infra-calc-session-v5')).operbox }));
+    const before = await page.evaluate(() => ({ draft:localStorage.getItem('arknights-infra-manual-schedule-v1'), box:JSON.parse(localStorage.getItem('arknights-infra-calc-session')).operbox }));
     await switchLanguage(page,'zh-TW'); await switchLanguage(page,'en');
     await expect(page.locator('[data-manual-editor-board]')).toBeVisible();
-    const after = await page.evaluate(() => ({ draft:localStorage.getItem('arknights-infra-manual-schedule-v1'), box:JSON.parse(localStorage.getItem('arknights-infra-calc-session-v5')).operbox }));
+    const after = await page.evaluate(() => ({ draft:localStorage.getItem('arknights-infra-manual-schedule-v1'), box:JSON.parse(localStorage.getItem('arknights-infra-calc-session')).operbox }));
     assert.deepEqual(after,before);
     result('Manual schedule assignments and selected operator roster survive two switches');
     await page.goto(ak + '/manual?tab=poster'); await ready(page);
