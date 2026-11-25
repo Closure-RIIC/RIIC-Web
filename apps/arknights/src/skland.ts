@@ -9,6 +9,15 @@ const SKLAND_TO_MAA: Partial<Record<SklandInfrastructureGroup, string>> = {
   hire: "hire",
 };
 
+/**
+ * 不参与当前班次比较的设施（见 docs/SKLAND_DATA_CAPABILITIES.md）：
+ * - 宿舍本来就不计入匹配率；
+ * - 训练室、加工站按既定口径从精简排班快照中过滤，不参与匹配率/调整数/MAA 房间比较；
+ * - 回收站不在森空岛上报的设施列表里，纳入只会稳定产生「需换入」并拉低匹配率。
+ * 这些设施在「计划侧」也要跳过，否则计划里的人在「实际侧」永远找不到，会被误判为「需换入」。
+ */
+const INCOMPARABLE_MAA_GROUPS = new Set<string>(["dormitory", "training", "processing", "recycle"]);
+
 const PLACEMENT_ADJUSTMENT_ISSUES = new Set<ShiftComparison["adjustments"][number]["issues"][number]>([
   "missing",
   "unexpected",
@@ -51,7 +60,7 @@ export function compareShifts(maaJson: MaaJson | undefined, infrastructure: Skla
   return maaJson.plans.map((plan, planIndex) => {
     const plannedLocationByOperator = new Map<string, string>();
     for (const [group, rooms] of Object.entries(plan.rooms) as [keyof MaaRooms, MaaRoom[] | undefined][]) {
-      if (group === "dormitory") continue;
+      if (INCOMPARABLE_MAA_GROUPS.has(group)) continue;
       rooms?.forEach((room, index) => {
         for (const name of roomNames(room)) plannedLocationByOperator.set(name, locationKey(group, index));
       });
