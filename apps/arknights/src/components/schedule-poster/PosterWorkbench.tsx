@@ -113,7 +113,7 @@ export default function PosterWorkbench({ document: doc, onChange, onImport, onS
     setError(""); setNotice("");
     if (!/^[a-f0-9]{12}$/.test(codeInput.trim())) { setError(rawText.text(rawLocale, "invalidCode")); return; }
     try {
-      const code = codeInput.trim(); if (!/^[a-f0-9]{12}$/.test(code)) throw new Error(rawText.text(rawLocale, "invalidCode"));
+      const code = codeInput.trim();
       const payload = await fetchPosterPayload(`/api/schedule-posters?code=${code}`);
       if (!payload || typeof payload !== "object" || !("document" in payload)) throw new Error("Invalid share response");
       const next = readPosterFile(JSON.stringify(payload.document)); onImport(next);
