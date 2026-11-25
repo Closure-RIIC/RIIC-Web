@@ -20,6 +20,7 @@ export interface RoomRow {
   /** Fixed-position slots used by editors; unlike operatorSlots, empty gaps are preserved. */
   slotAssignments?: Array<RoomOperatorSlot | undefined>;
   unavailableSlotIndices?: number[];
+  lockedSlotIndices?: number[];
   /** Slots explicitly marked as automatic in a manual assignment. */
   autofillSlotIndices?: number[];
   positionSlots?: RoomPositionSlot[];
@@ -379,6 +380,8 @@ export function planToRows(
   const efficiencyMap = efficiencyMapFor(shift);
   const levelMap = levelMapFor(layout);
   const layoutRoomMap = roomMapFor(layout);
+  const recyclingRoom = layout?.rooms.find((room) => room.kind === "recycle");
+  const dormitories = layout?.rooms.filter((room) => room.kind === "dormitory");
   const roomsByGroup = plan.rooms && typeof plan.rooms === "object" ? plan.rooms : {};
   for (const group of GROUP_ORDER) {
     if (group === "training") {
@@ -410,7 +413,8 @@ export function planToRows(
     rooms.forEach((room, index) => {
       const operators = roomOperators(room);
       const sourceOperatorSlots = roomOperatorSlots(room);
-      const roomId = roomIdFor(group, index);
+      const layoutId = group === "dormitory" ? dormitories?.[index]?.id : group === "recycle" ? recyclingRoom?.id : undefined;
+      const roomId = layoutId ?? roomIdFor(group, index);
       const layoutRoom = layoutRoomMap.get(roomId);
       const sourceEfficiency = efficiencyMap.get(roomId);
       const missingLancetPowerEfficiency = group === "power"

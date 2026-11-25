@@ -36,6 +36,7 @@ export const baseId = (id: string) => id.split("#")[0]!;
 export const factions = (op: Op) => catalog.factions[op.name] ?? [];
 export const occupants = (w: World) => w.rooms.flatMap(r => r.ops);
 export const working = (r: Room) => !["dormitory", "workshop", "training"].includes(r.type);
+const workingCount = (room: Room) => room.ops.filter(op => op.mood.gt(0)).length;
 export const workplace = ["power", "manufacturing", "trading", "office", "reception"];
 export function operator(name: string, elite = 2, level = 30): Op {
   if (!catalog.knownOperators.includes(name)) throw new Error(`Unknown operator: ${name}`);
@@ -131,8 +132,8 @@ export function ledger(w: World,op: Op,vars = variables(w)): Ledger {
   const center = cc(w);
   if (room && room.type !== "dormitory") {
     add("consume","base",new D(working(room) ? 1 : 0));
-    if (["manufacturing","trading"].includes(room.type)) add("consume","facility_reduction",new D(-Math.min(Math.max(0,room.ops.length-1)*5,10)).div(100));
-    if (center) add("consume","cc_reduction",new D(-Math.min(center.ops.length,5)).mul("0.05"));
+    if (["manufacturing","trading"].includes(room.type)) add("consume","facility_reduction",new D(-Math.min(Math.max(0,workingCount(room)-1)*5,10)).div(100));
+    if (center) add("consume","cc_reduction",new D(-Math.min(workingCount(center),5)).mul("0.05"));
     for (const s of skills(op,"self_consume")) if (scope(s)) emit("consume","self_consume",op,s);
     for (const owner of room.ops) {
       for (const s of skills(owner,"facility_consume")) if (scope(s)) emit("consume","facility_consume",owner,s);
@@ -165,7 +166,8 @@ export function ledger(w: World,op: Op,vars = variables(w)): Ledger {
       }
     }
   } else if (room) {
-    const exclusive = skills(op,"dorm_self").filter(s => s.exclusive).sort((a,b) => new D(b.value).cmp(a.value))[0];
+    // Fiammetta's fixed dorm recovery applies even when a swap leaves her at zero.
+    const exclusive = op.skills.filter(s => s.kind === "dorm_self" && s.exclusive).sort((a,b) => new D(b.value).cmp(a.value))[0];
     if (exclusive) add("recover","exclusive",new D(exclusive.value),op,exclusive);
     else {
       add("recover","dorm_base",new D("1.5").add(new D(room.level).mul("0.5")));

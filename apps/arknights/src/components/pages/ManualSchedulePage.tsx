@@ -79,14 +79,16 @@ import {
   setManualRoomSkillEfficiency,
   setManualRoomProduct,
   swapManualOperators,
+  toggleManualDormLock,
   type ManualOperatorConflict,
   type ManualScheduleDraft,
   type ManualScheduleMode,
 } from "@/manual-schedule";
+import { dormLocksAt, scheduledShiftWithDormLocks } from "@/manual-dorm-locks";
 import { BUILDING_SKILL_CATALOG, OPERATOR_CATALOG, operatorPortraitFor, operatorPresentationFor } from "@/operatorPortraits";
 import { addOperatorPresentations } from "@/schedule-presentation";
 import { planToRows, type RoomRow } from "@/schedule";
-import { manualEditableRooms, withRecyclingRoom } from "@/recycling-room";
+import { withRecyclingRoom, withRecyclingRoomInLayout } from "@/recycling-room";
 import type { BaseBlueprint, MaaJson, MaaOperatorSlot, MaaRoom, OperBoxEntry } from "@riic/arknights-domain/types";
 import { DEFAULT_MANUAL_SHIFT_START_TIME, MIN_MANUAL_SETUP_SHIFT_COUNT } from "@/manual-schedule-config";
 
@@ -436,6 +438,7 @@ export function ManualSchedulePage({
   const canPersistDraft = persistDraft && (ownedOperators.length > 0 || Boolean(draft.maaImport));
   const externalNames = ownedOperators.filter(operator => !sourceOperbox?.some(source => source.name === operator.name && source.own)).map(operator => operator.name);
   const ownedFingerprint = ownedOperators.map((operator) => operator.name).join("\0");
+  const manualLayout = useMemo(() => withRecyclingRoomInLayout(layout, recyclingRoomLevel), [layout, recyclingRoomLevel]);
   const eliteByOperator = useMemo(() => new Map(
     ownedOperators.map((operator) => [operator.name, operator.elite]),
   ), [ownedOperators]);
@@ -449,7 +452,7 @@ export function ManualSchedulePage({
       const saved = initialDraft ?? loadManualScheduleDraft(window.localStorage);
       if (!ownedOperators.length && !initialPosterDocument && !saved?.maaImport) return;
       if (saved) {
-        const reconciled = reconcileManualScheduleDraft(saved, layout, operbox);
+        const reconciled = reconcileManualScheduleDraft(saved, manualLayout, operbox);
         setDraft(reconciled);
         onShiftDurationsChange(reconciled.shifts.map((shift) => shift.durationHours));
         onShiftStartTimeChange(reconciled.startTime || DEFAULT_MANUAL_SHIFT_START_TIME);
@@ -463,7 +466,7 @@ export function ManualSchedulePage({
     }
     if (initialDraft) onInitialDraftConsumed();
     setRestored(true);
-  }, [initialDraft, initialPosterDocument, layout, onFiammettaEnabledChange, onInitialDraftConsumed, onRestoreEvaluation, onScheduleModeChange, onShiftDurationsChange, onShiftStartTimeChange, operbox, ownedOperators, persistDraft, restored, restorationReady]);
+  }, [initialDraft, initialPosterDocument, manualLayout, onFiammettaEnabledChange, onInitialDraftConsumed, onRestoreEvaluation, onScheduleModeChange, onShiftDurationsChange, onShiftStartTimeChange, operbox, ownedOperators, persistDraft, restored, restorationReady]);
 
   useEffect(() => {
     if (!restored) return;
@@ -481,10 +484,10 @@ export function ManualSchedulePage({
     if (!restored) return;
     setDraft((current) => reconcileManualScheduleDraft(
       resizeManualScheduleDraft(current, shiftDurations, current.startTime === "" && shiftStartTime === DEFAULT_MANUAL_SHIFT_START_TIME ? "" : shiftStartTime),
-      layout,
+      manualLayout,
       operbox,
     ));
-  }, [layout, operbox, ownedFingerprint, restored, shiftDurations, shiftStartTime]);
+  }, [manualLayout, operbox, ownedFingerprint, restored, shiftDurations, shiftStartTime]);
 
   useEffect(() => {
     if (!restored || !canPersistDraft) return;
@@ -509,12 +512,16 @@ export function ManualSchedulePage({
     }
   }, [restored, posterDocument, initialPosterDocument]);
   const activeShift = Math.min(draft.activeShift, Math.max(0, draft.shifts.length - 1));
+  const activeDormLocks = useMemo(() => dormLocksAt(draft,activeShift), [draft,activeShift]);
+  const activeSchedule = useMemo(() => scheduledShiftWithDormLocks(draft, activeShift), [draft, activeShift]);
+  const previousSchedule = useMemo(() => scheduledShiftWithDormLocks(draft, activeShift - 1), [draft, activeShift]);
+  const lockedDormOperators = useMemo(() => new Set(activeDormLocks.flatMap(lock => lock.operator ? [lock.operator] : [])),[activeDormLocks]);
   const shiftRanges = manualShiftTimeRanges(draft.startTime, draft.shifts.map((shift) => shift.durationHours));
   const maaDraft = useMemo(() => ({
     ...draft,
     startTime: draft.startTime === "" && shiftStartTime === DEFAULT_MANUAL_SHIFT_START_TIME ? "" : shiftStartTime,
   }), [draft, shiftStartTime]);
-  const maa = useMemo(() => manualScheduleToMaa(maaDraft, layout, fiammettaEnabled), [maaDraft, fiammettaEnabled, layout]);
+  const maa = useMemo(() => manualScheduleToMaa(maaDraft, manualLayout, fiammettaEnabled), [maaDraft, fiammettaEnabled, manualLayout]);
   const activePlan = maa.plans[activeShift];
   /** 模拟模式下不显示产物控件，但仍要传一份（空表），保证 roomProducts 始终有值。 */
   const activeRoomProductsForBoard = useMemo(() => new Map<string, import("@riic/arknights-domain/types").RoomProduct>(), []);
@@ -528,7 +535,7 @@ export function ManualSchedulePage({
       }),
   ), [activeShift, draft.shifts, layout.rooms]);
   const trainingRoom = layout.rooms.find((room) => room.kind === "training_room");
-  const trainingAssignment = trainingRoom ? draft.shifts[activeShift]?.rooms[trainingRoom.id] : undefined;
+  const trainingAssignment = trainingRoom ? activeSchedule?.rooms[trainingRoom.id] : undefined;
   const activeTrainingRoomShift = useMemo(() => trainingRoom ? {
     trainee: trainingAssignment?.operators[0] ?? null,
     trainer: trainingAssignment?.operators[1] ?? null,
@@ -536,13 +543,16 @@ export function ManualSchedulePage({
   const activeEvaluationShift = result?.rotation.shifts[activeShift];
   const dormRooms = useMemo(() => layout.rooms.filter((room) => room.kind === "dormitory"), [layout.rooms]);
   const dormBatchCapacity = useMemo(
-    () => dormRooms.reduce((total, room) => total + manualRoomCapacity(room), 0),
-    [dormRooms],
+    () => dormRooms.reduce((total, room) => total + manualRoomCapacity(room), 0) - activeDormLocks.length,
+    [dormRooms,activeDormLocks.length],
   );
+  const recyclingRoom = manualLayout.rooms.find((room) => room.kind === "recycle");
   const rows = useMemo(
-    () => addOperatorPresentations(withRecyclingRoom(planToRows(activePlan, activeEvaluationShift, layout, activeTrainingRoomShift), recyclingRoomLevel).map((row) => {
-      const assignment = draft.shifts[activeShift]?.rooms[row.roomId];
-      const room = manualEditableRooms(layout, recyclingRoomLevel).find((candidate) => candidate.id === row.roomId);
+    () => addOperatorPresentations(withRecyclingRoom(
+      planToRows(activePlan, activeEvaluationShift, manualLayout, activeTrainingRoomShift), recyclingRoom,
+    ).map((row) => {
+      const assignment = activeSchedule?.rooms[row.roomId];
+      const room = manualLayout.rooms.find((candidate) => candidate.id === row.roomId);
       const capacity = room ? manualRoomCapacity(room) : 0;
       const visibleSlots = row.group === "control" ? 5 : row.group === "trading" || row.group === "manufacture" ? 3 : capacity;
       return {
@@ -563,29 +573,27 @@ export function ManualSchedulePage({
         }),
         autofill: Boolean(assignment?.autofill || assignment?.autofillSlots?.length),
         autofillSlotIndices: assignment?.autofillSlots,
+        ...(row.group === "dormitory" ? {lockedSlotIndices:activeDormLocks.filter(lock => lock.roomId === row.roomId).map(lock => lock.slotIndex)} : {}),
         ...(room?.kind === "trade_post" || room?.kind === "factory" || room?.kind === "power_plant"
           ? { manualSkillEfficiencyPct: assignment?.manualSkillEfficiencyPct }
           : {}),
       };
     })),
-    [activeEvaluationShift, activePlan, activeShift, activeTrainingRoomShift, draft.shifts, layout, recyclingRoomLevel],
+    [activeEvaluationShift, activePlan, activeSchedule, activeTrainingRoomShift, manualLayout, recyclingRoom, activeDormLocks],
   );
   useEffect(() => {
     if (!restored) return;
     onAgentContextChange?.(buildManualScheduleContext({ layout, draft, activeShift, rows, result }));
   }, [activeShift, draft, layout, onAgentContextChange, result, restored, rows]);
   const selectedRoom = picker?.kind === "slot" ? rows.find((row) => row.roomId === picker.roomId) : undefined;
-  const selectedAssignment = picker?.kind === "slot" ? draft.shifts[activeShift]?.rooms[picker.roomId] : undefined;
+  const selectedAssignment = picker?.kind === "slot" ? activeSchedule?.rooms[picker.roomId] : undefined;
   const selectedOperator = picker?.kind === "slot"
     ? selectedAssignment?.operators[picker.slotIndex] ?? null
     : picker?.kind === "poster-hanger" ? posterDormOperators(layout, draft, picker.shift, posterSettings?.presentation.dormHangerOperators[picker.shift])[picker.posterSlot] ?? null : null;
-  const assignedOperatorNames = useMemo(() => new Set(
-    Object.values(draft.shifts[activeShift]?.rooms ?? {}).flatMap((room) => room.operators.filter(Boolean)),
-  ), [activeShift, draft.shifts]);
   const filteredOperators = useMemo(() => {
     const candidates = picker?.kind === "fiammetta"
-      ? ownedOperators.filter((operator) => assignedOperatorNames.has(operator.name))
-      : ownedOperators;
+      ? ownedOperators.filter((operator) => operator.name !== "菲亚梅塔")
+      : ownedOperators.filter(operator => !lockedDormOperators.has(operator.name));
     const filterableOwnedOperators = candidates.map((operator) => {
       const catalog = OPERATOR_CATALOG_BY_ID.get(operator.id) ?? OPERATOR_CATALOG_BY_NAME.get(operator.name);
       return {
@@ -605,19 +613,17 @@ export function ManualSchedulePage({
     )
       .filter((operator) => pickerRarity === null || operator.box.rarity === pickerRarity)
       .map((operator) => operator.box);
-  }, [assignedOperatorNames, ownedOperators, picker?.kind, pickerQuery, pickerRarity, pickerRoomFilter, pickerSkillTag, gameCatalog]);
+  }, [ownedOperators, picker?.kind, pickerQuery, pickerRarity, pickerRoomFilter, pickerSkillTag, gameCatalog, lockedDormOperators]);
   const previousShiftOperatorNames = useMemo(() => new Set(
-    activeShift > 0
-      ? Object.entries(draft.shifts[activeShift - 1]?.rooms ?? {})
-        .filter(([roomId]) => layout.rooms.find((room) => room.id === roomId)?.kind !== "dormitory")
-        .flatMap(([, room]) => room.operators.filter(Boolean))
-      : [],
-  ), [activeShift, draft.shifts, layout.rooms]);
-  const currentShiftOperatorNames = useMemo(() => new Set(
-    Object.entries(draft.shifts[activeShift]?.rooms ?? {})
+    Object.entries(previousSchedule?.rooms ?? {})
       .filter(([roomId]) => layout.rooms.find((room) => room.id === roomId)?.kind !== "dormitory")
       .flatMap(([, room]) => room.operators.filter(Boolean)),
-  ), [activeShift, draft.shifts, layout.rooms]);
+  ), [previousSchedule, layout.rooms]);
+  const currentShiftOperatorNames = useMemo(() => new Set(
+    Object.entries(activeSchedule?.rooms ?? {})
+      .filter(([roomId]) => layout.rooms.find((room) => room.id === roomId)?.kind !== "dormitory")
+      .flatMap(([, room]) => room.operators.filter(Boolean)),
+  ), [activeSchedule, layout.rooms]);
   const dormFilteredOperators = useMemo(() => {
     const candidates = dormRestOnly
       ? filteredOperators.filter((operator) => previousShiftOperatorNames.has(operator.name) && !currentShiftOperatorNames.has(operator.name))
@@ -642,13 +648,13 @@ export function ManualSchedulePage({
   const activeAssignmentRoomByOperator = useMemo(() => {
     const assignments = new Map<string, string>();
     for (const row of rows) {
-      const room = draft.shifts[activeShift]?.rooms[row.roomId];
+      const room = activeSchedule?.rooms[row.roomId];
       for (const name of room?.operators ?? []) {
         if (name) assignments.set(name, localizedRoomTitle(row.title, row.group, locale, gameCatalog));
       }
     }
     return assignments;
-  }, [activeShift, draft.shifts, gameCatalog, locale, rows]);
+  }, [activeSchedule, gameCatalog, locale, rows]);
 
   function setActiveShift(index: number) {
     setSortRoomId(null);
@@ -657,7 +663,7 @@ export function ManualSchedulePage({
   }
 
   function openSlotPicker(row: RoomRow, slotIndex: number) {
-    if (row.unavailableSlotIndices?.includes(slotIndex)) return;
+    if (row.unavailableSlotIndices?.includes(slotIndex) || row.lockedSlotIndices?.includes(slotIndex)) return;
     setPickerScrolling(false);
     setPickerQuery("");
     setPickerRoomFilter(ROOM_GROUP_TO_SKILL_PREFIX[row.group] ?? null);
@@ -668,9 +674,9 @@ export function ManualSchedulePage({
   }
 
   function openDormBatchPicker() {
-    const current = draft.shifts[activeShift];
+    const current = activeSchedule;
     const selected = dormRooms.flatMap((room) => current?.rooms[room.id]?.operators ?? []).filter(
-      (operator): operator is string => Boolean(operator),
+      (operator): operator is string => Boolean(operator && !lockedDormOperators.has(operator)),
     );
     setDormBatchSelection(selected);
     setPickerQuery("");
@@ -699,7 +705,9 @@ export function ManualSchedulePage({
       const next = structuredClone(current);
       const shift = next.shifts[activeShift];
       if (!shift) return current;
-      const selected = new Set(dormBatchSelection);
+      const locks = dormLocksAt(current,activeShift);
+      const selection = dormBatchSelection.filter(name => !locks.some(lock => lock.operator === name)).slice(0,dormBatchCapacity);
+      const selected = new Set(selection);
       for (const room of Object.values(shift.rooms)) {
         room.operators = room.operators.map((operator) => selected.has(operator ?? "") ? null : operator);
       }
@@ -708,10 +716,12 @@ export function ManualSchedulePage({
         const capacity = manualRoomCapacity(room);
         shift.rooms[room.id] = {
           ...shift.rooms[room.id],
-          operators: Array.from({ length: capacity }, (_, index) => dormBatchSelection[offset + index] ?? null),
+          operators: Array.from({ length: capacity }, (_, index) => {
+            const lock = locks.find(item => item.roomId === room.id && item.slotIndex === index);
+            return lock ? shift.rooms[room.id]?.operators[index] ?? null : selection[offset++] ?? null;
+          }),
           autofill: false,
         };
-        offset += capacity;
       }
       return next;
     });
@@ -737,7 +747,7 @@ export function ManualSchedulePage({
     }
     setDraft((current) => swapManualOperators(
       current,
-      layout,
+      manualLayout,
       activeShift,
       row.roomId,
       sortSelection.slotIndex,
@@ -747,7 +757,7 @@ export function ManualSchedulePage({
   }
 
   function handleSlotClick(row: RoomRow, slotIndex: number) {
-    if (allowReplacementOperatorSort && sortRoomId === row.roomId) {
+    if (allowReplacementOperatorSort && sortRoomId === row.roomId && !row.lockedSlotIndices?.includes(slotIndex)) {
       handleSortSlotClick(row, slotIndex);
       return;
     }
@@ -819,7 +829,7 @@ export function ManualSchedulePage({
       return;
     }
     if (picker.kind === "fiammetta") {
-      if (operator && !assignedOperatorNames.has(operator)) return;
+      if (operator === "菲亚梅塔") return;
       setDraft((current) => {
         const next = structuredClone(current);
         if (next.shifts[activeShift]) next.shifts[activeShift]!.fiammettaTarget = operator;
@@ -830,7 +840,7 @@ export function ManualSchedulePage({
     }
     const result = assignManualOperator({
       draft,
-      layout,
+      layout: manualLayout,
       shiftIndex: activeShift,
       roomId: picker.roomId,
       slotIndex: picker.slotIndex,
@@ -857,7 +867,7 @@ export function ManualSchedulePage({
     const target = pendingMove.target;
     setDraft((current) => assignManualOperator({
       draft: current,
-      layout,
+      layout: manualLayout,
       shiftIndex: activeShift,
       roomId: target.roomId,
       slotIndex: target.slotIndex,
@@ -868,19 +878,19 @@ export function ManualSchedulePage({
   }
 
   function clearRoom(row: RoomRow) {
-    setDraft((current) => clearManualRoom(current, layout, activeShift, row.roomId));
+    setDraft((current) => clearManualRoom(current, manualLayout, activeShift, row.roomId));
     if (picker?.kind === "slot" && picker.roomId === row.roomId) setPicker(null);
   }
 
   function clearCurrentShift() {
-    setDraft((current) => clearManualShift(current, layout, activeShift));
+    setDraft((current) => clearManualShift(current, manualLayout, activeShift));
     setPicker(null);
     setClearShiftConfirmationOpen(false);
   }
 
   function restPreviousShift() {
     if (activeShift <= 0) return;
-    setDraft((current) => restPreviousShiftOperators(current, layout, activeShift));
+    setDraft((current) => restPreviousShiftOperators(current, manualLayout, activeShift));
     setPicker(null);
   }
 
@@ -1081,7 +1091,7 @@ export function ManualSchedulePage({
       <MoodLayerVisibilityContext.Provider value={visibility ?? null}>
       <ScheduleBoard
         rows={simulation?.rows ?? rows}
-        layout={layout}
+        layout={manualLayout}
         planRevision={simulation ? `mood-${simulation.cycle}-${simulation.shift}` : `manual-${activeShift}`}
         simulation={simulation ? simulation.store : undefined}
         eliteByOperator={eliteByOperator}
@@ -1160,6 +1170,10 @@ export function ManualSchedulePage({
           </div>
         )}
         onSlotClick={simulation ? undefined : handleSlotClick}
+        onDormLockToggle={simulation ? undefined : (roomId, slotIndex) => {
+          setSortSelection(null);
+          setDraft(current => toggleManualDormLock(current, manualLayout, activeShift, roomId, slotIndex));
+        }}
         sortRoomId={!simulation && allowReplacementOperatorSort ? sortRoomId : null}
         sortSelection={simulation ? null : sortSelection}
         onSortToggle={!simulation && allowReplacementOperatorSort ? toggleSortMode : undefined}
@@ -1245,7 +1259,7 @@ export function ManualSchedulePage({
 
       {externalNames.length ? <p className="mb-3 text-xs text-muted-foreground">{rawText.rich(rawLocale, "exampleTrainingLevelsFromThisScheduleNotPersonalOwnership", { part1: richValue((externalNames.join("、"))) })}</p> : null}
       {restored && <Suspense fallback={<Skeleton className="mt-8 h-48 w-full" />}>
-        <MoodSimulationPanel key={moodRevision} layout={layout} operbox={operbox ?? []} draft={draft}
+        <MoodSimulationPanel key={moodRevision} layout={manualLayout} operbox={operbox ?? []} draft={draft}
           renderBoard={renderBoard}
           renderSummary={({replay,shift}) => {
             const summaryShift = shift ?? activeShift;

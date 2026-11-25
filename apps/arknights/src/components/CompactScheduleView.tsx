@@ -36,6 +36,7 @@ import type { ShiftDirection } from "@/motion";
 import { localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 import { PRODUCT_ICON_URLS } from "@/product-assets";
+import { recyclingRoomCapacity } from "@/recycling-room";
 
 export interface CompactScheduleViewProps {
   simulation?: MoodViewStore;
@@ -51,6 +52,7 @@ export interface CompactScheduleViewProps {
   feedbackDisabled?: boolean;
   hideImages?: boolean;
   onSlotClick?: (row: RoomRow, slotIndex: number) => void;
+  onDormLockToggle?: (roomId: string, slotIndex: number) => void;
   sortRoomId?: string | null;
   sortSelection?: { roomId: string; slotIndex: number } | null;
   onSortToggle?: (row: RoomRow) => void;
@@ -119,9 +121,10 @@ function CompactProductSelect({
   );
 }
 
-function roomSlotCountFor(group: string) {
+function roomSlotCountFor(group: string, level?: number) {
   if (group === "trading" || group === "manufacture") return 3;
-  if (group === "meeting" || group === "training" || group === "recycle") return 2;
+  if (group === "recycle") return recyclingRoomCapacity(level ?? 3);
+  if (group === "meeting" || group === "training") return 2;
   if (group === "power" || group === "hire" || group === "processing") return 1;
   return 5;
 }
@@ -143,6 +146,7 @@ const CompactRoomCard = memo(function CompactRoomCard({
   className = "",
   style,
   onSlotClick,
+  onDormLockToggle,
   sortMode,
   sortSelection,
   onSortToggle,
@@ -173,6 +177,7 @@ const CompactRoomCard = memo(function CompactRoomCard({
   className?: string;
   style?: CSSProperties;
   onSlotClick?: (row: RoomRow, slotIndex: number) => void;
+  onDormLockToggle?: (roomId: string, slotIndex: number) => void;
   sortMode?: boolean;
   sortSelection?: { roomId: string; slotIndex: number } | null;
   onSortToggle?: (row: RoomRow) => void;
@@ -350,6 +355,7 @@ const CompactRoomCard = memo(function CompactRoomCard({
       autofill={Boolean(
         !slot
         && !row.unavailableSlotIndices?.includes(index)
+        && !row.lockedSlotIndices?.includes(index)
         && (row.autofill || row.autofillSlotIndices?.includes(index)),
       )}
       compactView
@@ -358,9 +364,12 @@ const CompactRoomCard = memo(function CompactRoomCard({
       transitionDelay={Math.min(index, 2) * 0.02}
       positionLabel={positionLabel}
       unavailable={row.unavailableSlotIndices?.includes(index)}
-      onActivate={onSlotClick ? () => onSlotClick(row, index) : undefined}
+      locked={row.lockedSlotIndices?.includes(index)}
+      onToggleLock={!simulation && row.group === "dormitory" && onDormLockToggle
+        ? () => onDormLockToggle(row.roomId, index) : undefined}
+      onActivate={onSlotClick && !row.lockedSlotIndices?.includes(index) ? () => onSlotClick(row, index) : undefined}
       sortSelected={sortSelection?.roomId === row.roomId && sortSelection.slotIndex === index}
-      onSortActivate={sortMode && onSortSlotClick ? () => onSortSlotClick(row, index) : undefined}
+      onSortActivate={sortMode && onSortSlotClick && !row.lockedSlotIndices?.includes(index) ? () => onSortSlotClick(row, index) : undefined}
     />
   ));
 
@@ -541,7 +550,7 @@ function CompactFeedbackButton({ row, disabled, offset, onIssue }: { row: RoomRo
 export function CompactScheduleView(props: CompactScheduleViewProps) {
   const intl = useTranslations();
   const locale = useLocale();
-  const { rows, layout, eliteByOperator, levelByOperator, shiftDirection, onIssue, feedbackDisabled = false, hideImages = false, onSlotClick, sortRoomId, sortSelection, onSortToggle, onSortSlotClick, onClearRoom, onDormAutofillChange, droneTargetRoomId, onDroneTargetChange, onManualSkillEfficiencyChange, roomProducts, compactProductControls = false } = props;
+  const { rows, layout, eliteByOperator, levelByOperator, shiftDirection, onIssue, feedbackDisabled = false, hideImages = false, onSlotClick, onDormLockToggle, sortRoomId, sortSelection, onSortToggle, onSortSlotClick, onClearRoom, onDormAutofillChange, droneTargetRoomId, onDroneTargetChange, onManualSkillEfficiencyChange, roomProducts, compactProductControls = false } = props;
 
   if (rows.length === 0) {
     return (
@@ -574,7 +583,7 @@ export function CompactScheduleView(props: CompactScheduleViewProps) {
     const layoutRoom = layoutRooms.get(row.roomId);
     const visual = roomVisualFor(row.group);
     const efficiency = presentRoomEfficiency(row.group, row.efficiency, locale);
-    const slotCount = roomSlotCountFor(row.group);
+    const slotCount = row.group === "dormitory" && row.slotAssignments ? row.slotAssignments.length : roomSlotCountFor(row.group, row.level);
     const slots = row.positionSlots
       ? row.positionSlots.map(({ slot, positionLabel }) => ({ slot, positionLabel }))
       : Array.from({ length: slotCount }, (_, i) => ({ slot: row.slotAssignments ? row.slotAssignments[i] : row.operatorSlots[i] }));
@@ -594,6 +603,7 @@ export function CompactScheduleView(props: CompactScheduleViewProps) {
         onIssue={onIssue}
         feedbackDisabled={feedbackDisabled}
         onSlotClick={onSlotClick}
+        onDormLockToggle={onDormLockToggle}
         sortMode={sortRoomId === row.roomId}
         sortSelection={sortSelection}
         onSortToggle={onSortToggle}
