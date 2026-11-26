@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { DEFAULT_OPTIONS, manualTemplate, parseWorkspace, prepare } from "./model.mjs";
-import { evaluateManual } from "./index.mjs";
+import { evaluateManual, solve } from "./index.mjs";
 
 const options = { ...DEFAULT_OPTIONS, levels: { center: 1, mfg1: 1, mfg2: 1, grow: 0, guest: 0 }, grow: { 晶植: 0, 菌类: 0, 矿物: 0 } };
 const input = (name, elite) => ({ operators: [{ name, elite }], options });
@@ -40,14 +40,24 @@ test("Kay unlocks weapon EXP manufacturing efficiency and morale skills at the a
   const actual = { ...input("小刻", 4), operators: [{ name: "小刻", elite: 4, latestSpaceshipSkillNodes: ["spaceship_skill_chr_0040_sweetpie_1_1"] }] };
   assert.equal(prepare(actual).ops[0].skills.length, 1);
   assert.equal(prepare(actual).ops[0].skills[0].value, 0.2, "Skland's actual unlocked nodes override hypothetical elite upgrades");
-  assert.deepEqual(parseWorkspace(JSON.stringify({ version: 1, ...input("小刻", 4) })).operators, input("小刻", 4).operators);
+  const restored = parseWorkspace(JSON.stringify({ version: 1, ...actual }));
+  assert.deepEqual(restored.operators, actual.operators);
+  assert.deepEqual(prepare(restored).ops[0].skills, prepare(actual).ops[0].skills);
 });
 
-test("Kay contributes to weapon EXP manufacturing in a verified manual schedule", () => {
-  const plan = manualTemplate(options).map(room => room.key === "制造舱2" ? { ...room, a: ["小刻"] } : room);
-  const result = evaluateManual(input("小刻", 4), plan);
+test("Kay boosts weapon EXP without applying that efficiency to operator EXP", () => {
+  for (const [roomKey, bonus] of [["制造舱1", 0.4], ["制造舱2", 0.82]]) {
+    const plan = manualTemplate(options).map(room => room.key === roomKey ? { ...room, a: ["小刻"] } : room);
+    const result = evaluateManual(input("小刻", 4), plan);
+    assert.equal(result.verification.ok, true, result.verification.errors.join("; "));
+    const manufacturing = result.rooms.find(room => room.key === roomKey);
+    assert.ok(Math.abs(manufacturing.bonusA - bonus) < 1e-9, roomKey);
+    assert.ok(manufacturing.value > 0);
+  }
+  const result = solve({ ...input("小刻", 4), options: { ...options, mfg: "2武器" } });
   assert.equal(result.verification.ok, true, result.verification.errors.join("; "));
-  const manufacturing = result.rooms.find(room => room.key === "制造舱2");
+  const manufacturing = result.rooms.find(room => room.a.includes("小刻"));
+  assert.ok(manufacturing, "Automatic scheduling assigns Kay to a manufacturing cabin");
   assert.ok(Math.abs(manufacturing.bonusA - 0.82) < 1e-9);
-  assert.ok(manufacturing.value > 0);
+  assert.ok(result.scores["武器经验"] > 0);
 });
