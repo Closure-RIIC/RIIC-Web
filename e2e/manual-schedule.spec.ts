@@ -5,7 +5,8 @@ import { createManualScheduleDraft, type ManualScheduleDraft } from "../apps/ark
 import { createPosterDocument } from "../apps/arknights/src/schedule-poster-document";
 import layout243 from "@riic/arknights-domain/layouts/243.json" with { type: "json" };
 import fullBox from "../fixtures/operbox_full_e2.json" with { type: "json" };
-import { mockAnonymousWebsiteSession, mockSignedInWebsiteSession, mockApis, now, planData } from "./production-readiness.fixture";
+import { mockAnonymousWebsiteSession, mockSignedInWebsiteSession, mockApis, planData } from "./production-readiness.fixture";
+import { sessionPayload, sessionStorageKey } from "./session";
 
 const operators = [
   { id: "char_002_amiya", name: "阿米娅", elite: 2, level: 80, own: true, potential: 6, rarity: 5 },
@@ -15,40 +16,21 @@ const operators = [
 
 test.beforeEach(async ({ page }) => {
   await mockApis(page);
-  await page.addInitScript(({ layout, operbox, savedAt, expiresAt }) => {
-    window.localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", "1");
-    if (window.localStorage.getItem("arknights-infra-calc-session-v5")) return;
-    window.localStorage.setItem("arknights-infra-calc-session-v5", JSON.stringify({
-      version: 5,
-      savedAt,
-      expiresAt,
-      presetLabel: "243",
-      layout,
-      operbox,
-      sourceName: "手动排班测试样例",
-      boxSource: "sample",
-      layoutDirty: false,
-      layoutSource: "local",
-      localLayoutBackup: null,
-      rotationProfile: "abc_12_6_6",
-      fiammettaEnabled: false,
-      result: null,
-      activeShift: 0,
-    }));
-  }, {
-    layout: layout243,
-    operbox: operators,
-    savedAt: new Date(now).toISOString(),
-    expiresAt: new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  const seededSession = sessionPayload({
+    layout: layout243, operbox: operators, sourceName: "手动排班测试样例",
   });
+  await page.addInitScript(([key, payload]) => {
+    window.localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", "1");
+    if (window.localStorage.getItem(key)) return;
+    window.localStorage.setItem(key, JSON.stringify(payload));
+  }, [sessionStorageKey, seededSession] as const);
 });
 
 test("calculator shows the two-slot recycling station with training visuals", async ({ page }) => {
-  await page.addInitScript((result) => {
-    const key = "arknights-infra-calc-session-v5";
+  await page.addInitScript(([key, result]) => {
     const session = JSON.parse(localStorage.getItem(key)!);
     localStorage.setItem(key, JSON.stringify({ ...session, result }));
-  }, planData);
+  }, [sessionStorageKey, planData] as const);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
@@ -152,7 +134,7 @@ test("manual schedule poster loads, calculates and restores its metadata", async
   await expect(tradeEfficiency).toHaveAttribute("title", /常规订单.*订单倍率 1 =/);
   await expect(tradeEfficiency.locator(".poster-equivalent-efficiency")).toHaveCount(0);
   await expect(tradeEfficiency).not.toHaveAttribute("title", /等效效率|赤金等效/);
-  const personalBoxBeforeBulk = await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox);
+  const personalBoxBeforeBulk = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).operbox, sessionStorageKey);
   await workbench.getByRole("button", { name: "批量填写排班" }).click();
   const bulk = page.getByLabel("批量排班文本");
   const shiftCount = await poster.locator('[data-poster-room="trade_1"] [data-poster-shift]').count();
@@ -165,7 +147,7 @@ test("manual schedule poster loads, calculates and restores its metadata", async
     const operator = JSON.parse(localStorage.getItem("riic.schedule-poster.v1")!).operators.find((entry: { name: string }) => entry.name === "调香师");
     return operator ? { elite: operator.elite, level: operator.level, rarity: operator.rarity } : null;
   })).toEqual({ elite: 2, level: 70, rarity: 4 });
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox)).toEqual(personalBoxBeforeBulk);
+  expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).operbox, sessionStorageKey)).toEqual(personalBoxBeforeBulk);
   await expect(page.locator("[data-manual-result-outdated]")).toBeVisible();
   await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
   await expect(page.locator("[data-manual-result-outdated]")).toHaveCount(0);
@@ -281,7 +263,7 @@ for (const entry of ["handoff", "code"] as const) {
       authorTraining[0],
       { id: "char_123_fang", name: "芬", elite: 1, level: 55, own: true, potential: 1, rarity: 3 },
     ]);
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox)).toEqual(operators);
+    expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).operbox, sessionStorageKey)).toEqual(operators);
     await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
     await expect(page.locator("[data-manual-editor-board]")).toBeVisible();
     await page.getByRole("tab", { name: "作业图", exact: true }).click();
@@ -353,7 +335,7 @@ for (const entry of ["file", "code"] as const) {
     expect((await readDocument()).draft.shifts[0].fiammettaTarget).toBe("银灰");
     await workbench.getByRole("button", { name: "重新计算", exact: true }).click();
     await expect(efficiency).toHaveAttribute("title", /巫恋 E2.*龙舌兰 E2/);
-    expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox)).toEqual(operators);
+    expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).operbox, sessionStorageKey)).toEqual(operators);
 
     await page.getByRole("tab", { name: "排班编辑", exact: true }).click();
     const otherTrade = page.locator('[data-manual-editor-board] [data-room-title="贸易站 2"]');
@@ -470,11 +452,10 @@ test("sidebar resumes an existing manual draft without invoking the solver and k
 
 test("manual scheduling hides a personal Box until website login", async ({ page }) => {
   await mockAnonymousWebsiteSession(page);
-  await page.addInitScript(() => {
-    const key = "arknights-infra-calc-session-v5";
+  await page.addInitScript((key) => {
     const session = JSON.parse(window.localStorage.getItem(key) ?? "null");
     window.localStorage.setItem(key, JSON.stringify({ ...session, boxSource: "maa" }));
-  });
+  }, sessionStorageKey);
 
   await page.goto("/manual");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();
@@ -513,11 +494,10 @@ test("the onboarding checklist does not expose manual editing", async ({ page })
 });
 
 test("calculator converts a solved schedule into editable manual assignments", async ({ page }) => {
-  await page.addInitScript((result) => {
-    const key = "arknights-infra-calc-session-v5";
+  await page.addInitScript(([key, result]) => {
     const session = JSON.parse(window.localStorage.getItem(key) ?? "null");
     window.localStorage.setItem(key, JSON.stringify({ ...session, result }));
-  }, planData);
+  }, [sessionStorageKey, planData] as const);
 
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
@@ -544,11 +524,10 @@ test("calculator converts a solved schedule into editable manual assignments", a
 });
 
 test("calculator protects a different manual draft before replacing it from a result", async ({ page }) => {
-  await page.addInitScript((result) => {
-    const key = "arknights-infra-calc-session-v5";
+  await page.addInitScript(([key, result]) => {
     const session = JSON.parse(window.localStorage.getItem(key) ?? "null");
     window.localStorage.setItem(key, JSON.stringify({ ...session, result }));
-  }, planData);
+  }, [sessionStorageKey, planData] as const);
 
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
@@ -583,11 +562,10 @@ test("calculator protects a different manual draft before replacing it from a re
 });
 
 test("mobile result actions explain both adjustment paths", async ({ page }) => {
-  await page.addInitScript((result) => {
-    const key = "arknights-infra-calc-session-v5";
+  await page.addInitScript(([key, result]) => {
     const session = JSON.parse(window.localStorage.getItem(key) ?? "null");
     window.localStorage.setItem(key, JSON.stringify({ ...session, result }));
-  }, planData);
+  }, [sessionStorageKey, planData] as const);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");

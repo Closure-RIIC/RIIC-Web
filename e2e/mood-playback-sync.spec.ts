@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import layout from "@riic/arknights-domain/layouts/243.json" with { type: "json" };
 import { mockApis, mockSignedInWebsiteSession } from "./production-readiness.fixture";
+import { sessionPayload, sessionStorageKey } from "./session";
 
 declare global {
   interface Window {
@@ -11,7 +12,16 @@ declare global {
 test.beforeEach(async ({ page }) => {
   await mockApis(page);
   await mockSignedInWebsiteSession(page);
-  await page.addInitScript(({ layout }) => {
+  const seededSession = sessionPayload({
+    layout,
+    operbox: [
+      { id: "char_002_amiya", name: "阿米娅", elite: 2, level: 80, own: true, potential: 1, rarity: 5 },
+      { id: "char_300_phenxi", name: "菲亚梅塔", elite: 2, level: 60, own: true, potential: 1, rarity: 6 },
+      { id: "char_348_ceylon", name: "锡兰", elite: 2, level: 60, own: true, potential: 1, rarity: 5 },
+    ],
+    sourceName: "Mood sync test", fiammettaEnabled: true,
+  });
+  await page.addInitScript(({ key, seededSession }) => {
     const control = window.moodWorkerTest = { count: 0, detailTimes: [] as number[], hold: false, failNext: false, held: [] as Array<() => void> };
     const NativeWorker = window.Worker;
     window.Worker = class extends NativeWorker {
@@ -44,16 +54,7 @@ test.beforeEach(async ({ page }) => {
     if (localStorage.getItem("mood-sync-seeded")) return;
     localStorage.setItem("mood-sync-seeded", "1");
     localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", "1");
-    const operbox = [
-      { id: "char_002_amiya", name: "阿米娅", elite: 2, level: 80, own: true, potential: 1, rarity: 5 },
-      { id: "char_300_phenxi", name: "菲亚梅塔", elite: 2, level: 60, own: true, potential: 1, rarity: 6 },
-      { id: "char_348_ceylon", name: "锡兰", elite: 2, level: 60, own: true, potential: 1, rarity: 5 },
-    ];
-    localStorage.setItem("arknights-infra-calc-session-v5", JSON.stringify({
-      version: 5, savedAt: new Date().toISOString(), expiresAt: new Date(Date.now() + 86400000).toISOString(),
-      presetLabel: "243", layout, operbox, sourceName: "Mood sync test", boxSource: "sample", layoutDirty: false,
-      layoutSource: "local", localLayoutBackup: null, rotationProfile: "abc_12_6_6", fiammettaEnabled: true, result: null, activeShift: 0,
-    }));
+    localStorage.setItem(key, JSON.stringify(seededSession));
     localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify({
       version: 3, scheduleMode: "sequential", externalOperatorNames: [], startTime: "08:00", activeShift: 2, fiammettaEnabled: true,
       shifts: ["trade_1", "manu_1", "trade_2"].map((room, index) => ({
@@ -61,7 +62,7 @@ test.beforeEach(async ({ page }) => {
         rooms: { trade_1: { operators: ["阿米娅"] } },
       })),
     }));
-  }, { layout });
+  }, { layout, key: sessionStorageKey, seededSession });
 });
 
 const panel = (page: Page) => page.locator("[data-mood-simulation]");
