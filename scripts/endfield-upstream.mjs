@@ -9,9 +9,9 @@ import { parseLosslessJson } from "./i18n/lossless-json.mjs";
 export const dataSources = {
   github: {
     repository: "https://github.com/rmxlinux/EndfieldData",
-    revision: "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2",
-    tableCfgUrl: "https://raw.githubusercontent.com/rmxlinux/EndfieldData/8b955ea78c6f04b6e5164b75f63f46b503c5f6f2/TableCfg",
-    cacheKey: "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2",
+    revision: "887923b9e56e132f2570a25e8c2cf5e971508736",
+    tableCfgUrl: "https://raw.githubusercontent.com/rmxlinux/EndfieldData/887923b9e56e132f2570a25e8c2cf5e971508736/TableCfg",
+    cacheKey: "887923b9e56e132f2570a25e8c2cf5e971508736",
   },
   akedata: {
     repository: "https://github.com/nagiyume/akedatabase",
@@ -21,7 +21,7 @@ export const dataSources = {
     cacheKey: "akedata/1.6.4-11529267-11",
   },
 };
-export const dataSource = dataSources.akedata;
+export const dataSource = dataSources.github;
 const root = fileURLToPath(new URL("../", import.meta.url));
 
 export async function loadEndfieldTables(names, { offline = false, source = dataSource } = {}) {

@@ -139,6 +139,10 @@
     "name": "Argent Flow",
     "profession": "Guard"
   },
+  "chr_0040_sweetpie": {
+    "name": "Kay",
+    "profession": "Vanguard"
+  },
   "wpn_claym_0003": {
     "name": "Industry 0.1"
   },
@@ -393,6 +397,12 @@
   },
   "wpn_sword_0025": {
     "name": "Lunar Calling"
+  },
+  "wpn_lance_0017": {
+    "name": "Sweet Deal"
+  },
+  "wpn_lance_0018": {
+    "name": "Raid Comet"
   },
   "spaceship_skill_chr_0015_lifeng_1_1": {
     "name": "Youthful Ambition β",
@@ -1272,6 +1282,32 @@
   },
   "spaceship_skill_chr_0037_minghe_2_2": {
     "name": "Tools of Momentum γ",
+    "description": "Assign to Manufacturing Cabin to slow Mood Drop of all operators in it by 18%",
+    "room": "Manufacturing",
+    "effectName": "Room morale consumption"
+  },
+  "spaceship_skill_chr_0040_sweetpie_1_1": {
+    "name": "Truly Wild Smithing β",
+    "description": "Assign to Manufacturing Cabin to grant weapon EXP material production efficiency +20%",
+    "room": "Manufacturing",
+    "effectName": "Production efficiency",
+    "target": "Weapon EXP"
+  },
+  "spaceship_skill_chr_0040_sweetpie_1_2": {
+    "name": "Truly Wild Smithing γ",
+    "description": "Assign to Manufacturing Cabin to grant weapon EXP material production efficiency +30%",
+    "room": "Manufacturing",
+    "effectName": "Production efficiency",
+    "target": "Weapon EXP"
+  },
+  "spaceship_skill_chr_0040_sweetpie_2_1": {
+    "name": "Honey Waffle Break β",
+    "description": "Assign to Manufacturing Cabin to slow Mood Drop of all operators in it by 14%",
+    "room": "Manufacturing",
+    "effectName": "Room morale consumption"
+  },
+  "spaceship_skill_chr_0040_sweetpie_2_2": {
+    "name": "Honey Waffle Break γ",
     "description": "Assign to Manufacturing Cabin to slow Mood Drop of all operators in it by 18%",
     "room": "Manufacturing",
     "effectName": "Room morale consumption"

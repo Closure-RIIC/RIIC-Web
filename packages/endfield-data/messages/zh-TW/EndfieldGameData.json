@@ -139,6 +139,10 @@
     "name": "明河",
     "profession": "近衛"
   },
+  "chr_0040_sweetpie": {
+    "name": "小刻",
+    "profession": "先鋒"
+  },
   "wpn_claym_0003": {
     "name": "工業零點一"
   },
@@ -393,6 +397,12 @@
   },
   "wpn_sword_0025": {
     "name": "喚月"
+  },
+  "wpn_lance_0017": {
+    "name": "甜美交易"
+  },
+  "wpn_lance_0018": {
+    "name": "突擊流星"
   },
   "spaceship_skill_chr_0015_lifeng_1_1": {
     "name": "少年意氣·β",
@@ -1272,6 +1282,32 @@
   },
   "spaceship_skill_chr_0037_minghe_2_2": {
     "name": "因勢應物·γ",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低18%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0040_sweetpie_1_1": {
+    "name": "野路子鐵匠·β",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升20%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0040_sweetpie_1_2": {
+    "name": "野路子鐵匠·γ",
+    "description": "進駐製造艙時，武器經驗材料的生產效率提升30%",
+    "room": "製造艙",
+    "effectName": "製造艙 · 指定經驗素材生產效率提升",
+    "target": "武器經驗"
+  },
+  "spaceship_skill_chr_0040_sweetpie_2_1": {
+    "name": "蜜餅小歇·β",
+    "description": "進駐製造艙時，艙室內幹員心情消耗降低14%",
+    "room": "製造艙",
+    "effectName": "艙室內幹員心情消耗降低"
+  },
+  "spaceship_skill_chr_0040_sweetpie_2_2": {
+    "name": "蜜餅小歇·γ",
     "description": "進駐製造艙時，艙室內幹員心情消耗降低18%",
     "room": "製造艙",
     "effectName": "艙室內幹員心情消耗降低"
