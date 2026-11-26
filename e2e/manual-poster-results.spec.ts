@@ -2,7 +2,8 @@ import { expect, test, type Page } from "@playwright/test";
 import layout243 from "@riic/arknights-domain/layouts/243.json" with { type: "json" };
 import { createManualScheduleDraft } from "../apps/arknights/src/manual-schedule";
 import { createPosterDocument, type SchedulePosterDocument } from "../apps/arknights/src/schedule-poster-document";
-import { mockApis, now } from "./production-readiness.fixture";
+import { mockApis } from "./production-readiness.fixture";
+import { sessionPayload, sessionStorageKey } from "./session";
 
 const cacheKey = "arknights-infra-manual-evaluation-v1";
 const workingCopyKey = "riic.schedule-poster.working-copy.v1";
@@ -30,17 +31,16 @@ function work(mode: "native" | "manual", product: "gold" | "battle_record") {
 }
 
 async function seedPersonalWork(page: Page, document: SchedulePosterDocument) {
-  await page.addInitScript(({ document, operators, savedAt, expiresAt }) => {
+  const seededSession = sessionPayload({
+    layout: document.layout, operbox: operators, sourceName: "产物失效回归",
+  });
+  await page.addInitScript(([key, payload, document]) => {
     localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", "1");
-    if (localStorage.getItem("arknights-infra-calc-session-v5")) return;
-    localStorage.setItem("arknights-infra-calc-session-v5", JSON.stringify({
-      version: 5, savedAt, expiresAt, presetLabel: "243", layout: document.layout, operbox: operators,
-      sourceName: "产物失效回归", boxSource: "sample", layoutDirty: false, layoutSource: "local",
-      localLayoutBackup: null, rotationProfile: "abc_12_6_6", fiammettaEnabled: false, result: null, activeShift: 0,
-    }));
+    if (localStorage.getItem(key)) return;
+    localStorage.setItem(key, JSON.stringify(payload));
     localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify(document.draft));
     localStorage.setItem("riic.schedule-poster.v1", JSON.stringify(document));
-  }, { document, operators, savedAt: new Date(now).toISOString(), expiresAt: new Date(now + 30 * 86400_000).toISOString() });
+  }, [sessionStorageKey, seededSession, document] as const);
 }
 
 const workbench = (page: Page) => page.locator("[data-poster-workbench]");

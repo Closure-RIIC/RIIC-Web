@@ -4,6 +4,7 @@ import { PRIVACY_EFFECTIVE_DATE } from "@riic/platform/legal-policy";
 import arkntoolsSource from "@riic/arknights-domain/generated/arkntools/source.json" with { type: "json" };
 import { twoShiftPlanData } from "./production-readiness.fixture";
 import { requestId, diagnosticId, waitForOwnAnimations, gotoStable, expectVisibleNumbersUseNumberFont, profile, planData, scheduleVisualPlanData, sampleData, authenticatedSklandSnapshot, mockApis, openSklandOverview, seedPreferences, seedV4Session } from "./production-readiness.fixture";
+import { sessionStorageKey } from "./session";
 
 const fullOperatorCount = arkntoolsSource.counts.operators;
 
@@ -394,10 +395,10 @@ test("progression adjustments sync back to the schedule settings manual BOX", as
   await expect(lmdCalligraph).toHaveAttribute("data-animation-sentinel", "stable");
   await expect(lmdProduction).toHaveAttribute("aria-label", "-35,600");
 
-  await expect.poll(() => page.evaluate(() => {
-    const session = JSON.parse(window.localStorage.getItem("arknights-infra-calc-session-v5") ?? "{}");
+  await expect.poll(() => page.evaluate((key) => {
+    const session = JSON.parse(window.localStorage.getItem(key) ?? "{}");
     return session.operbox?.find((operator: { name?: string }) => operator.name === "阿米娅")?.elite;
-  })).toBe(1);
+  }, sessionStorageKey)).toBe(1);
 
   await page.getByRole("button", { name: "配置Box与布局" }).first().click();
   const setupDialog = page.getByRole("dialog");
@@ -654,9 +655,9 @@ test("setup exposes and persists only worker-supported rotation profiles", async
   expect(requestedOperbox).toHaveLength(fullOperatorCount);
   expect(new Set((requestedOperbox as Array<{ id: string }>).map((operator) => operator.id)).size).toBe(fullOperatorCount);
   expect((requestedOperbox as Array<{ own: boolean }>).every((operator) => operator.own)).toBe(true);
-  const persisted = await page.evaluate(() => JSON.parse(
-    window.localStorage.getItem("arknights-infra-calc-session-v5") ?? "{}"
-  ));
+  const persisted = await page.evaluate((key) => JSON.parse(
+    window.localStorage.getItem(key) ?? "{}"
+  ), sessionStorageKey);
   expect(persisted.rotationProfile).toBe("abc_12_12_12");
   expect(persisted.sourceName).toBe("手动选择的 Box");
   expect(persisted.boxSource).toBe("maa");
@@ -703,10 +704,10 @@ test("layout level steppers respect bounds and keep recycling power at zero", as
   expect(await dialog.locator('[data-setup-footer] [role="status"]').innerText()).toBe(initialPowerStatus);
   for (let count = 0; count < 2; count++) await dialog.getByRole("button", { name: "recycling_station 等级加一" }).click();
   await expect(recyclingLevel).toHaveText("3");
-  await expect.poll(() => page.evaluate(() => {
-    const session = JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5") ?? "{}");
+  await expect.poll(() => page.evaluate((key) => {
+    const session = JSON.parse(localStorage.getItem(key) ?? "{}");
     return session.layout?.rooms?.find((room: { kind: string }) => room.kind === "recycle")?.level;
-  })).toBe(3);
+  }, sessionStorageKey)).toBe(3);
   expect(await dialog.locator('[data-setup-footer] [role="status"]').innerText()).toBe(initialPowerStatus);
   const controlLevel = dialog.locator('output[aria-label="control 等级"]');
   await expect(controlLevel).toHaveText("5");

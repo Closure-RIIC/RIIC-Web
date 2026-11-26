@@ -2,30 +2,31 @@ import { expect, test } from "@playwright/test";
 import { switchWorkbenchLanguage } from "./workbench-language";
 import layout from "@riic/arknights-domain/layouts/243.json" with {type:"json"};
 import { mockApis, mockSignedInWebsiteSession } from "./production-readiness.fixture";
+import { sessionPayload, sessionStorageKey } from "./session";
 
 test.beforeEach(async ({page}) => {
   await mockApis(page);
   await mockSignedInWebsiteSession(page);
-  await page.addInitScript(({layout}) => {
-    if (localStorage.getItem("mood-e2e-seeded")) return;
-    localStorage.setItem("mood-e2e-seeded","1");
-    localStorage.setItem("arknights-infra-calc-beta-onboarding-v1","1");
-    const operbox=[
+  const seededSession = sessionPayload({
+    layout,
+    operbox: [
       {id:"char_002_amiya",name:"阿米娅",elite:2,level:80,own:true,potential:1,rarity:5},
       {id:"char_300_phenxi",name:"菲亚梅塔",elite:2,level:60,own:true,potential:1,rarity:6},
       {id:"char_348_ceylon",name:"锡兰",elite:2,level:60,own:true,potential:1,rarity:5},
-    ];
-    localStorage.setItem("arknights-infra-calc-session-v5",JSON.stringify({
-      version:5,savedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+86400000).toISOString(),
-      presetLabel:"243",layout,operbox,sourceName:"Mood test",boxSource:"sample",layoutDirty:false,layoutSource:"local",localLayoutBackup:null,
-      rotationProfile:"abc_12_6_6",fiammettaEnabled:true,result:null,activeShift:0,
-    }));
+    ],
+    sourceName:"Mood test", fiammettaEnabled:true,
+  });
+  await page.addInitScript(({key,seededSession}) => {
+    if (localStorage.getItem("mood-e2e-seeded")) return;
+    localStorage.setItem("mood-e2e-seeded","1");
+    localStorage.setItem("arknights-infra-calc-beta-onboarding-v1","1");
+    localStorage.setItem(key,JSON.stringify(seededSession));
     localStorage.setItem("arknights-infra-manual-schedule-v1",JSON.stringify({
       version:3,scheduleMode:"sequential",externalOperatorNames:[],startTime:"08:00",activeShift:0,fiammettaEnabled:true,
       shifts:[{durationHours:12,fiammettaTarget:"阿米娅",droneTargetRoomId:null,rooms:{trade_1:{operators:["阿米娅"]},dorm_1:{operators:["菲亚梅塔","锡兰"]}}},
         {durationHours:12,fiammettaTarget:"锡兰",droneTargetRoomId:null,rooms:{trade_1:{operators:["锡兰"]},dorm_1:{operators:["菲亚梅塔"]}}}],
     }));
-  },{layout});
+  },{key:sessionStorageKey,seededSession});
 });
 
 test("manual dorm locks stay on the same empty and occupied beds after switching shifts and reloading", async ({ page }) => {
@@ -153,8 +154,7 @@ test("morale replay fills dorms in ascending admission morale across a room boun
   const panel = page.locator("[data-mood-simulation]");
   const play = panel.getByRole("button", { name: "开始播放", exact: true });
   await expect(play).toBeEnabled({ timeout: 60_000 });
-  await page.evaluate(() => {
-    const sessionKey = "arknights-infra-calc-session-v5";
+  await page.evaluate((sessionKey) => {
     const session = JSON.parse(localStorage.getItem(sessionKey)!);
     session.operbox.push(
       { id: "char_123_fang", name: "芬", elite: 1, level: 55, own: true, potential: 1, rarity: 3 },
@@ -174,7 +174,7 @@ test("morale replay fills dorms in ascending admission morale across a room boun
       ],
     });
     localStorage.setItem(draftKey, JSON.stringify(draft));
-  });
+  }, sessionStorageKey);
   await page.reload();
   await expect(play).toBeEnabled({ timeout: 60_000 });
   await panel.getByRole("tab", { name: "心情回放", exact: true }).click();
@@ -200,8 +200,7 @@ test("recycling assignments from a legacy layout play back across a 36-hour rota
   const play = panel.getByRole("button", { name: "开始播放", exact: true });
   await expect(play).toBeEnabled({ timeout: 60_000 });
 
-  await page.evaluate(() => {
-    const sessionKey = "arknights-infra-calc-session-v5";
+  await page.evaluate((sessionKey) => {
     const session = JSON.parse(localStorage.getItem(sessionKey)!);
     session.layout.rooms = session.layout.rooms.filter((room: { kind: string }) => room.kind !== "recycle");
     session.layoutDirty = true;
@@ -216,7 +215,7 @@ test("recycling assignments from a legacy layout play back across a 36-hour rota
         { ...shift, rooms: { dorm_1: { operators: ["国度", "阿米娅"] } } },
       ],
     }));
-  });
+  }, sessionStorageKey);
   await page.reload();
   await expect(play).toBeEnabled({ timeout: 60_000 });
   const board = page.locator("[data-manual-editor-board]:visible");

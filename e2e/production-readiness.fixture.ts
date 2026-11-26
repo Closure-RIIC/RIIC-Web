@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { installMockSessionRefresh } from "./mock-session-refresh";
+import { sessionPayload, sessionStorageKey } from "./session";
 import operatorCatalog from "@riic/arknights-domain/generated/arkntools/operator-catalog.json" with { type: "json" };
 
 const amiyaPortraitCandidate = operatorCatalog.find((operator) => operator.id === "char_002_amiya")?.portrait;
@@ -1180,6 +1181,11 @@ export async function seedPreferences(page: Page) {
   });
 }
 
+/**
+ * 播种一份主会话。名称沿用历史的 `seedV4Session`，但会话的键名与结构版本
+ * 统一由 `./session`（即 `@riic/arknights-domain/persistence`）提供，
+ * 换版本时不需要改这里和 105 个调用点。
+ */
 export async function seedV4Session(
   page: Page,
   seededResult: unknown = planData,
@@ -1192,40 +1198,26 @@ export async function seedV4Session(
     onboardingValue?: string | null;
   } = {}
 ) {
-  await page.addInitScript(({ layout, result, savedAt, expiresAt, activeShift, rotationProfile, layoutDirty, operbox, boxSource, onboardingValue }) => {
-    if (onboardingValue !== null) window.localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", onboardingValue);
-    if (!window.localStorage.getItem("arknights-infra-calc-session-v4")) window.localStorage.setItem("arknights-infra-calc-session-v4", JSON.stringify({
-      version: 4,
-      savedAt,
-      expiresAt,
-      presetLabel: "243",
-      layout,
-      operbox: operbox ?? [{
-        id: "char_002_amiya",
-        name: "阿米娅",
-        elite: 2,
-        level: 80,
-        own: true,
-        potential: 6,
-        rarity: 5,
-      }],
-      sourceName: "243 全精二示例",
-      boxSource,
-      layoutDirty,
-      rotationProfile,
-      result,
-      activeShift,
-    }));
-  }, {
+  const payload = sessionPayload({
     layout: layout243,
     result: seededResult,
-    savedAt: new Date(now).toISOString(),
-    expiresAt: new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(),
     activeShift: options.activeShift ?? 0,
     rotationProfile: options.rotationProfile ?? "abc_12_6_6",
     layoutDirty: options.layoutDirty ?? false,
-    operbox: options.operbox,
+    operbox: options.operbox ?? [{
+      id: "char_002_amiya",
+      name: "阿米娅",
+      elite: 2,
+      level: 80,
+      own: true,
+      potential: 6,
+      rarity: 5,
+    }],
+    sourceName: "243 全精二示例",
     boxSource: options.boxSource ?? "sample",
-    onboardingValue: options.onboardingValue === undefined ? "1" : options.onboardingValue,
   });
+  await page.addInitScript(([key, value, onboardingValue]) => {
+    if (onboardingValue !== null) window.localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", onboardingValue);
+    if (!window.localStorage.getItem(key)) window.localStorage.setItem(key, JSON.stringify(value));
+  }, [sessionStorageKey, payload, options.onboardingValue === undefined ? "1" : options.onboardingValue] as const);
 }
