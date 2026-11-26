@@ -3,7 +3,7 @@
 `catalog.json` is a small, generated display catalog from [rmxlinux/EndfieldData](https://github.com/rmxlinux/EndfieldData).
 When that source lags behind a released operator, [AKEData](https://github.com/nagiyume/akedatabase)
 is an alternative TableCfg source through its [documented public data service](https://github.com/nagiyume/akedatabase/blob/main/DATA_API.md).
-The current snapshot uses AKEData `1.6.4@11529267-11`, including Argent Flow (明河) and Lunar Calling (唤月).
+The current snapshot uses AKEData `1.7.2@12153128-4`, including Kay (小刻), Sweet Deal (甜美交易), and Raid Comet (突击流星).
 That repository contains tables and resource identifiers, not image files. The matching PNGs come from
 [555me/EndfieldAssets](https://github.com/555me/EndfieldAssets) and are served locally under `apps/endfield/public/images/game`.
 Game artwork and game data remain the property of their respective rights holders.
