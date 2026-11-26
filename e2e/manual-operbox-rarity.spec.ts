@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import roster from "../fixtures/operbox_full_e2.json" with { type: "json" };
-import { SESSION_KEY_V5, type PersistedSessionV5 } from "@riic/arknights-domain/persistence";
+import type { PersistedSessionV6 } from "@riic/arknights-domain/persistence";
+import { sessionStorageKey } from "./session";
 import { gotoStable, mockApis, planData, requestId, seedV4Session } from "./production-readiness.fixture";
 
 const ownedBox = roster.filter((operator) => ["阿米娅", "银灰"].includes(operator.name))
@@ -133,7 +134,7 @@ for (const mobile of [false, true]) {
       await expect.poll(() => page.evaluate((key) => {
         const saved = JSON.parse(localStorage.getItem(key) ?? "{}");
         return saved.operbox?.filter((operator: { own: boolean }) => operator.own).map((operator: { name: string; elite: number }) => [operator.name, operator.elite]);
-      }, SESSION_KEY_V5)).toEqual([["银灰", 2], ["阿米娅", 1]]);
+      }, sessionStorageKey)).toEqual([["银灰", 2], ["阿米娅", 1]]);
     });
 
     test("upgrade simulation combines rarity and schedule scope and submits the complete Box", async ({ page }, testInfo) => {
@@ -191,7 +192,7 @@ for (const mobile of [false, true]) {
       }
       await expect(page.locator("[data-upgrade-simulation-dialog]")).toBeHidden();
       await expect(page.locator('[data-slot="live-activity"]')).toContainText("调整练度已完成");
-      const saved: PersistedSessionV5 = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}"), SESSION_KEY_V5);
+      const saved: PersistedSessionV6 = await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}"), sessionStorageKey);
       expect(saved.operbox?.find((operator) => operator.name === "银灰")?.elite).toBe(2);
     });
   });

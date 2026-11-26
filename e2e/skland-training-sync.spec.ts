@@ -1,5 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { authenticatedSklandSnapshot, mockApis, planData, primarySklandAccount, requestId, seedV4Session } from "./production-readiness.fixture";
+import { readSession, sessionStorageKey } from "./session";
 
 const initialBox = authenticatedSklandSnapshot.operbox.map((entry) => ({ ...entry, elite: 1, level: 50 }));
 const report = {
@@ -68,8 +69,8 @@ test("sync refreshes training advice, preserves the schedule and skips unchanged
   await expect(sync).toHaveCount(0);
   await expect(page.locator('[data-training-advice-list] [data-slot="training-advice-card"]')).toHaveCount(0);
   expect(computes).toBe(1);
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).operbox[0].elite)).toBe(2);
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!));
+  await expect.poll(() => page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).operbox[0].elite, sessionStorageKey)).toBe(2);
+  const saved = await readSession(page) as { result: { diagnosticId: string; maa: unknown }; layoutDirty: boolean };
   expect(saved.result.diagnosticId).toBe(oldResult.diagnosticId);
   expect(saved.result.maa).toEqual(oldResult.maa);
   expect(saved.layoutDirty).toBe(true);

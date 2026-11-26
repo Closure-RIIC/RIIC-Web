@@ -4,7 +4,8 @@ import { Decimal } from "decimal.js";
 import type { PoolClient } from "pg";
 import { getDatabasePool } from "@riic/platform-server/db";
 import { DEFAULT_FILTER_POLICY, parseFilterPolicy, type FilterPolicy } from "../agent/filter-policy.ts";
-import { budgetPoints, defaultRatePolicy, parseRatePolicy, priceModelCall, tokenPoints, type MeasuredUsage, type RatePolicy } from "./rate-policy.ts";
+import { defaultModelPolicy, parseModelPolicy, type AgentModelPolicy } from "../agent/model-policy.ts";
+import { budgetPoints, findModelRate, modelBudgetRoutes, parseRatePolicy, priceModelCall, tokenPoints, validateMeasuredUsage, type MeasuredUsage, type ModelCallBudget, type RatePolicy } from "./rate-policy.ts";
 import { sumPoints, validPoints } from "./points.ts";
 
 type Run = { id: string; user_id: string; state: string; settlement: string; policy: RatePolicy; held_paid: number; held_monthly: number; tool_points: number; rate_version: string; delivered: boolean; monthly_expires_at: Date | null };
@@ -19,17 +20,33 @@ export async function billingTransaction<T>(fn: (client: PoolClient) => Promise<
   catch (error) { await client.query("ROLLBACK"); throw error; }
   finally { client.release(); }
 }
+async function initializeAgentPolicies(client: PoolClient) {
+  await client.query(`INSERT INTO app.agent_policy_version (id,kind,version,status,payload,published_at)
+    SELECT 'filter:1','filter',1,'active',$1,now() WHERE NOT EXISTS (SELECT 1 FROM app.agent_policy_version WHERE kind='filter')`, [JSON.stringify(DEFAULT_FILTER_POLICY)]);
+  await client.query(`INSERT INTO app.agent_policy_version (id,kind,version,status,payload,published_at)
+    SELECT 'models:' || next.version,'models',next.version,'active',$1,now()
+    FROM (SELECT coalesce(max(version),0)+1 AS version FROM app.agent_policy_version WHERE kind='models') next
+    WHERE NOT EXISTS (SELECT 1 FROM app.agent_policy_version WHERE kind='models' AND status='active')`, [JSON.stringify(defaultModelPolicy())]);
+}
+// Retained for callers that initialize administration before rates are published.
+export async function ensureAgentFilterPolicy() {
+  await billingTransaction(async client => {
+    await client.query("SELECT pg_advisory_xact_lock(hashtext('riic-agent-policy'))");
+    await initializeAgentPolicies(client);
+  });
+}
 export async function activeAgentPolicies() {
   return billingTransaction(async client => {
     await client.query("SELECT pg_advisory_xact_lock(hashtext('riic-agent-policy'))");
-    for (const [kind, payload] of [["rates", defaultRatePolicy()], ["filter", DEFAULT_FILTER_POLICY]] as const) {
-      await client.query(`INSERT INTO app.agent_policy_version (id,kind,version,status,payload,published_at)
-        SELECT $1,$2,1,'active',$3,now() WHERE NOT EXISTS (SELECT 1 FROM app.agent_policy_version WHERE kind=$2)`, [`${kind}:1`, kind, JSON.stringify(payload)]);
+    await initializeAgentPolicies(client);
+    const { rows } = await client.query<{ id: string; kind: string; payload: unknown }>("SELECT id,kind,payload FROM app.agent_policy_version WHERE status='active' AND kind IN ('rates','filter','models')");
+    const rates = rows.find(row => row.kind === "rates"); const filter = rows.find(row => row.kind === "filter"); const models = rows.find(row => row.kind === "models");
+    if (!rates || !filter || !models) throw new AgentAccountingError("policy_unavailable", "Agent 计费配置尚未发布，请联系管理员。");
+    try {
+      return { rates: { id: rates.id, policy: parseRatePolicy(rates.payload) }, filter: { id: filter.id, policy: parseFilterPolicy(filter.payload) }, models: { id: models.id, policy: parseModelPolicy(models.payload) } };
+    } catch {
+      throw new AgentAccountingError("policy_unavailable", "Agent 计费配置无效，请联系管理员。");
     }
-    const { rows } = await client.query<{ id: string; kind: string; payload: unknown }>("SELECT id,kind,payload FROM app.agent_policy_version WHERE status='active' AND kind IN ('rates','filter')");
-    const rates = rows.find(row => row.kind === "rates"); const filter = rows.find(row => row.kind === "filter");
-    if (!rates || !filter) throw new Error("Agent policy unavailable");
-    return { rates: { id: rates.id, policy: parseRatePolicy(rates.payload) }, filter: { id: filter.id, policy: parseFilterPolicy(filter.payload) } };
   });
 }
 export async function recordFilterEvent(input: { requestId: string; userId: string; version: string; stage: string; ruleIds: string[] }) {
@@ -60,7 +77,7 @@ async function ensureHold(client: PoolClient, run: Run, wallet: Wallet, target: 
   await client.query("UPDATE app.billing_wallet SET held_paid_points=held_paid_points+$2,held_monthly_points=held_monthly_points+$3,updated_at=now() WHERE user_id=$1", [run.user_id, paid, monthly]);
   await client.query("UPDATE app.agent_run SET held_paid=held_paid+$2,held_monthly=held_monthly+$3,monthly_expires_at=coalesce(monthly_expires_at,$4),heartbeat_at=now() WHERE id=$1", [run.id, paid, monthly, monthly ? wallet.monthly_expires_at : null]);
 }
-export async function beginAgentRun(input: { userId: string; conversationId: string; idempotencyKey: string; requestHash: string; rates: { id: string; policy: RatePolicy }; filterVersion: string }) {
+export async function beginAgentRun(input: { userId: string; conversationId: string; idempotencyKey: string; requestHash: string; rates: { id: string; policy: RatePolicy }; filterVersion: string; modelSelection?: unknown }) {
   return billingTransaction(async client => {
     await lockWallet(client, input.userId);
     const existing = await client.query("SELECT id,state,request_hash FROM app.agent_run WHERE user_id=$1 AND idempotency_key=$2", [input.userId, input.idempotencyKey]);
@@ -69,25 +86,26 @@ export async function beginAgentRun(input: { userId: string; conversationId: str
     if ((active.rowCount ?? 0) >= 2) throw new AgentAccountingError("concurrency", "同时进行的请求过多，请等待已有请求结束。");
     if ((await client.query("SELECT id FROM app.agent_run WHERE user_id=$1 AND conversation_id=$2 AND settlement='reserved'", [input.userId,input.conversationId])).rowCount) throw new AgentAccountingError("conversation_busy", "当前对话仍在生成，请等待结束。");
     const id = randomUUID();
-    await client.query(`INSERT INTO app.agent_run (id,user_id,conversation_id,idempotency_key,request_hash,policy,rate_version,filter_version)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`, [id, input.userId, input.conversationId, input.idempotencyKey, input.requestHash, JSON.stringify(input.rates.policy), input.rates.id, input.filterVersion]);
+    await client.query(`INSERT INTO app.agent_run (id,user_id,conversation_id,idempotency_key,request_hash,policy,rate_version,filter_version,model_selection)
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`, [id, input.userId, input.conversationId, input.idempotencyKey, input.requestHash, JSON.stringify(input.rates.policy), input.rates.id, input.filterVersion, JSON.stringify(input.modelSelection ?? null)]);
     return id;
   });
 }
 export function agentSessionId(userId: string, conversationId: string) {
   return createHash("sha256").update(`${userId}\0${conversationId}`).digest("hex");
 }
-export async function beginModelCall(runId: string, step: number, bytes: number, maxOutputTokens: number) {
+export async function beginModelCall(runId: string, step: number, request: number | ModelCallBudget, maxOutputTokens?: number) {
   if (!Number.isInteger(step) || step < 0 || step >= 12) throw new Error("Agent step limit exceeded");
   return billingTransaction(async client => {
     const { run, wallet } = await lockRun(client, runId);
     const { rows: calls } = await client.query<{ charged_rmb: string | null; status: string }>("SELECT charged_rmb,status FROM app.agent_model_call WHERE run_id=$1", [runId]);
     if (calls.some(call => call.status !== "measured" && call.status !== "waived")) throw new AgentAccountingError("usage_pending", "本次请求的用量尚未确认，已停止后续调用。");
-    const budget = budgetPoints(run.policy, bytes, maxOutputTokens);
+    const budget = typeof request === "number" ? budgetPoints(run.policy, request, maxOutputTokens ?? 2048) : budgetPoints(run.policy, request);
     const target = sumPoints(tokenPoints(run.policy, calls.flatMap(call => call.charged_rmb ? [call.charged_rmb] : [])), run.tool_points, budget);
     await ensureHold(client, run, wallet, target);
     const id = randomUUID();
-    await client.query("INSERT INTO app.agent_model_call (id,run_id,step,budget_points,rate_version) VALUES ($1,$2,$3,$4,$5)", [id, runId, step, budget, run.rate_version]);
+    const details = typeof request === "number" ? {} : { budget: request };
+    await client.query("INSERT INTO app.agent_model_call (id,run_id,step,budget_points,rate_version,details) VALUES ($1,$2,$3,$4,$5,$6)", [id, runId, step, budget, run.rate_version, JSON.stringify(details)]);
     return { id, policy: run.policy };
   });
 }
@@ -97,15 +115,34 @@ export async function finishModelCall(input: { id: string; provider?: string; mo
     if (!call || call.status !== "started") return;
     let pricing: ReturnType<typeof priceModelCall> | undefined;
     let status = input.error === "setup_failed" ? "waived" : "missing";
-    if (input.usage && input.provider && input.model) {
-      try { pricing = priceModelCall(call.policy, input.provider, input.model, input.usage, new Date(call.created_at)); status = "measured"; }
+    let usage: MeasuredUsage | undefined;
+    let invalidUsage = false;
+    let budgetExceeded = false;
+    let missingCacheWriteUsage = false;
+    if (input.usage) {
+      try { validateMeasuredUsage(input.usage); usage = input.usage; }
+      catch { invalidUsage = true; status = "unknown_model_or_usage"; }
+    }
+    if (usage && input.provider && input.model) {
+      try {
+        const selected = call.details?.budget;
+        if (selected && !modelBudgetRoutes(selected).some(route => route.provider === input.provider && route.model === input.model)) throw new Error("Actual model differs from reserved model");
+        if (selected && (usage.inputTokens > selected.inputTokens || usage.outputTokens > selected.maxOutputTokens)) {
+          budgetExceeded = true;
+          throw new Error("Actual usage exceeds reserved token bounds");
+        }
+        missingCacheWriteUsage = findModelRate(call.policy, input.provider, input.model).cacheWrite !== undefined && usage.cacheWriteTokens === undefined;
+        pricing = priceModelCall(call.policy, input.provider, input.model, usage, new Date(call.created_at)); status = "measured";
+      }
       catch { status = "unknown_model_or_usage"; }
     }
     await client.query(`UPDATE app.agent_model_call SET provider=$2,model=$3,gateway_request_id=$4,status=$5,input_tokens=$6,output_tokens=$7,cached_input_tokens=$8,
-      upstream_rmb=$9,charged_rmb=$10,details=$11,finished_at=now() WHERE id=$1`,
+      upstream_rmb=$9,charged_rmb=$10,details=coalesce(details,'{}'::jsonb) || $11::jsonb,cache_write_tokens=$12,finished_at=now() WHERE id=$1`,
     [input.id, input.provider ?? null, input.model ?? null, input.gatewayRequestId ?? null, status,
-      input.usage?.inputTokens ?? null, input.usage?.outputTokens ?? null, input.usage?.cachedInputTokens ?? null,
-      pricing?.upstreamRmb ?? null, pricing?.chargedRmb ?? null, JSON.stringify({ reason: input.error ?? null })]);
+      usage?.inputTokens ?? null, usage?.outputTokens ?? null, usage?.cachedInputTokens ?? null,
+      pricing?.upstreamRmb ?? null, pricing?.chargedRmb ?? null, JSON.stringify({ reason: input.error ?? (missingCacheWriteUsage ? "cache_write_usage_missing" : null),
+        ...(invalidUsage ? { invalidUsage: true } : {}), ...(budgetExceeded ? { budgetExceeded: true } : {}), ...(missingCacheWriteUsage ? { missingCacheWriteUsage: true } : {}),
+        reasoningTokens: usage?.reasoningTokens, imageTokens: usage?.imageTokens }), usage?.cacheWriteTokens ?? null]);
     if (!["measured", "waived"].includes(status)) await client.query("INSERT INTO app.billing_review (id,run_id,kind,evidence) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING", [`call:${input.id}`, call.run_id, status, JSON.stringify({ callId: input.id })]);
     await client.query("UPDATE app.agent_run SET heartbeat_at=now() WHERE id=$1", [call.run_id]);
   });
@@ -136,7 +173,13 @@ export async function settleAgentRun(id: string, state: "completed" | "failed" |
     if (run.settlement !== "reserved") return;
     const { rows: calls } = await client.query("SELECT * FROM app.agent_model_call WHERE run_id=$1 ORDER BY step", [id]);
     const incomplete = calls.some(call => !["measured", "waived"].includes(call.status));
-    const unknownUsage = calls.some(call => call.input_tokens === null || call.output_tokens === null);
+    const tokenFields = ["input_tokens", "output_tokens", "cached_input_tokens"] as const;
+    const tokenTotals = Object.fromEntries(tokenFields.map(field => [field, calls.reduce((total, call) => total + Number(call[field] ?? 0), 0)]));
+    const overflowFields = tokenFields.filter(field => !Number.isSafeInteger(tokenTotals[field]) || tokenTotals[field] < 0 || tokenTotals[field] > 2_147_483_647);
+    const unknownUsage = overflowFields.length > 0 || calls.some(call => tokenFields.some(field => call[field] === null));
+    const cacheWriteTotal = calls.reduce((total, call) => total + Number(call.cache_write_tokens ?? 0), 0);
+    // Missing write details are independent of the historical input/read/output measurements.
+    const cacheWriteTokens = calls.some(call => call.cache_write_tokens == null) || !Number.isSafeInteger(cacheWriteTotal) || cacheWriteTotal > 2_147_483_647 ? null : cacheWriteTotal;
     const unknownCost = calls.some(call => call.upstream_rmb === null);
     const billTokens = state === "completed" || state === "cancelled" || run.delivered;
     const amounts = billTokens ? calls.filter(call => call.status === "measured").map(call => String(call.charged_rmb)) : [];
@@ -149,22 +192,22 @@ export async function settleAgentRun(id: string, state: "completed" | "failed" |
     if (nextPaid < 0 || nextMonthly < 0 || wallet.held_paid_points < run.held_paid || wallet.held_monthly_points < run.held_monthly) throw new Error("Wallet reservation invariant failed");
     await client.query(`UPDATE app.billing_wallet SET paid_points=$2,monthly_points=$3,held_paid_points=held_paid_points-$4,
       held_monthly_points=held_monthly_points-$5,updated_at=now() WHERE user_id=$1`, [run.user_id, nextPaid, nextMonthly, run.held_paid, run.held_monthly]);
-    const needsReview = incomplete || due > held;
+    const needsReview = incomplete || due > held || overflowFields.length > 0;
     const metadata = { billingVersion: 5, rateVersion: run.rate_version, paidPoints: paid, monthlyPoints: monthly,
       monthlyExpiresAt: run.monthly_expires_at, tokenPoints: Math.max(0, sumPoints(charged, -run.tool_points)), toolPoints: run.tool_points,
-      duePoints: due, unsettledPoints: Math.max(0, sumPoints(due, -charged)), state };
+      duePoints: due, unsettledPoints: Math.max(0, sumPoints(due, -charged)), state,
+      ...(overflowFields.length ? { usageOverflowFields: overflowFields } : {}) };
     if (charged) await client.query(`INSERT INTO app.billing_ledger (id,user_id,kind,points_delta,paid_points_after,monthly_points_after,reference_type,reference_id,idempotency_key,metadata)
       VALUES ($1,$2,'agent_settlement',$3,$4,$5,'agent_run',$6,$7,$8)`, [randomUUID(), run.user_id, -charged, nextPaid, sumPoints(nextMonthly, expiredRelease), id, `agent_run:settle:${id}`, JSON.stringify(metadata)]);
     if (expiredRelease) await client.query(`INSERT INTO app.billing_ledger (id,user_id,kind,points_delta,paid_points_after,monthly_points_after,reference_type,reference_id,idempotency_key)
       VALUES ($1,$2,'monthly_expiry',$3,$4,$5,'agent_run',$6,$7)`, [randomUUID(), run.user_id, -expiredRelease, nextPaid, nextMonthly, id, `agent_run:expiry:${id}`]);
-    const sum = (field: string) => calls.reduce((total, call) => total + Number(call[field] ?? 0), 0);
     const upstream = calls.reduce((total, call) => total.add(call.upstream_rmb ?? "0"), new Decimal(0));
     const chargedRmb = new Decimal(charged).mul(run.policy.pointValueRmb);
-    await client.query(`INSERT INTO app.agent_usage (id,user_id,run_id,tool_name,status,points,input_tokens,output_tokens,cached_input_tokens,upstream_cost_rmb_fen,charged_cost_rmb_fen,idempotency_key,metadata,finalized_at)
-      VALUES ($1,$2,$1,'agent_chat',$3,$4,$5,$6,$7,$8,$9,$10,$11,now())`, [id, run.user_id, needsReview ? "completed_unsettled" : "completed", charged,
-      unknownUsage ? null : sum("input_tokens"), unknownUsage ? null : sum("output_tokens"), unknownUsage ? null : sum("cached_input_tokens"),
+    await client.query(`INSERT INTO app.agent_usage (id,user_id,run_id,tool_name,status,points,input_tokens,output_tokens,cached_input_tokens,upstream_cost_rmb_fen,charged_cost_rmb_fen,idempotency_key,metadata,cache_write_tokens,finalized_at)
+      VALUES ($1,$2,$1,'agent_chat',$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now())`, [id, run.user_id, needsReview ? "completed_unsettled" : "completed", charged,
+      unknownUsage ? null : tokenTotals.input_tokens, unknownUsage ? null : tokenTotals.output_tokens, unknownUsage ? null : tokenTotals.cached_input_tokens,
       unknownCost ? null : upstream.mul(100).toDecimalPlaces(10).toNumber(), chargedRmb.mul(100).toNumber(), `agent_run:${id}`,
-      JSON.stringify({ ...metadata, settlement: { ...metadata, settledPoints: charged, settledTokenPoints: metadata.tokenPoints } })]);
+      JSON.stringify({ ...metadata, settlement: { ...metadata, settledPoints: charged, settledTokenPoints: metadata.tokenPoints } }), cacheWriteTokens]);
     await client.query("UPDATE app.agent_run SET state=$2,settlement=$3,charged_points=$4,held_paid=0,held_monthly=0,finished_at=now(),heartbeat_at=now() WHERE id=$1", [id, state, needsReview ? "needs_review" : "settled", charged]);
     if (needsReview) await client.query("INSERT INTO app.billing_review (id,run_id,kind,evidence) VALUES ($1,$2,'settlement',$3) ON CONFLICT DO NOTHING", [`run:${id}`, id, JSON.stringify({ due, charged, incomplete, resolution: "Verified portion settled; unused reservation released; unknown portion requires review." })]);
   });
@@ -176,4 +219,4 @@ export async function recoverAgentRuns() {
   for (const row of rows) await settleAgentRun(row.id, "failed");
   return rows.length;
 }
-export type ActiveAgentPolicies = { rates: { id: string; policy: RatePolicy }; filter: { id: string; policy: FilterPolicy } };
+export type ActiveAgentPolicies = { rates: { id: string; policy: RatePolicy }; filter: { id: string; policy: FilterPolicy }; models: { id: string; policy: AgentModelPolicy } };

@@ -162,6 +162,41 @@ test("compareShifts excludes dormitories before calculating the match rate", () 
   assert.ok(comparison.adjustments.every((item) => !item.operator.includes("宿舍")));
 });
 
+test("compareShifts ignores facilities Skland cannot report", () => {
+  const comparison = compareShifts(
+    {
+      title: "训练室、加工站、回收站不参与比较",
+      plans: [{
+        name: "第一班",
+        rooms: {
+          control: [{ operators: ["阿米娅"] }],
+          training: [{ operatorsB: ["能天使"], operatorsA: ["推进之王"] }],
+          processing: [{ operators: ["德克萨斯"] }],
+          recycle: [{ operators: ["夜烟", "旅骨"] }],
+        },
+      }],
+    },
+    {
+      storeTs: null,
+      layoutLabel: "243",
+      layoutSuggestion: null,
+      layoutWarning: null,
+      tiredOperators: [],
+      rooms: [
+        { key: "control:0", group: "control", index: 0, level: 5, operators: [{ id: "a", name: "阿米娅", morale: 20 }] },
+      ],
+    },
+  )[0];
+
+  // 森空岛不上报回收站，训练室/加工站按既定口径过滤：
+  // 计划侧的这些人不能算进分母，也不能变成「需换入」。
+  assert.equal(comparison.score, 100);
+  assert.deepEqual(comparison.matched, ["阿米娅"]);
+  assert.deepEqual(comparison.missing, []);
+  assert.deepEqual(comparison.adjustments, []);
+  assert.equal(countShiftPlacementAdjustments(comparison), 0);
+});
+
 test("compareShifts returns no comparisons without required input", () => {
   assert.deepEqual(compareShifts(undefined, infrastructure), []);
   assert.deepEqual(compareShifts(maa, undefined), []);

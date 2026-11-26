@@ -15,10 +15,10 @@ export const dataSources = {
   },
   akedata: {
     repository: "https://github.com/nagiyume/akedatabase",
-    revision: "1.6.4@11529267-11",
+    revision: "1.7.2@12153128-4",
     manifest: "https://data.akedata.wiki/manifest.json",
-    tableCfgUrl: "https://data.akedata.wiki/public/1.6.4/11529267-11/TableCfg",
-    cacheKey: "akedata/1.6.4-11529267-11",
+    tableCfgUrl: "https://data.akedata.wiki/public/1.7.2/12153128-4/TableCfg",
+    cacheKey: "akedata/1.7.2-12153128-4",
   },
 };
 export const dataSource = dataSources.akedata;

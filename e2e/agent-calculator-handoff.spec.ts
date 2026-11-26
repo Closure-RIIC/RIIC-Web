@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import layout252 from '@riic/arknights-domain/layouts/252.json' with { type: 'json' };
 import layout243 from '@riic/arknights-domain/layouts/243.json' with { type: 'json' };
-import { SESSION_KEY_V5 } from '@riic/arknights-domain/persistence';
+import { sessionStorageKey } from './session';
 import { openAgentHistory } from './agent-history';
 import { authenticatedSklandSnapshot, mockApis, planData, seedV4Session } from './production-readiness.fixture';
 
@@ -65,7 +65,7 @@ test('opening an Agent 252 schedule survives a late 243 Skland restore and reloa
   await restored;
   // Allow the deferred response and the resulting React/persistence effects to settle.
   await page.waitForTimeout(500);
-  const saved = () => page.evaluate(key => JSON.parse(localStorage.getItem(key)!), SESSION_KEY_V5);
+  const saved = () => page.evaluate(key => JSON.parse(localStorage.getItem(key)!), sessionStorageKey);
   await expect.poll(async () => (await saved()).presetLabel).toBe('252');
   expect((await saved()).result.diagnosticId).toBe(result252.diagnosticId);
   expect((await saved()).layout.rooms.filter((room: {kind: string}) => room.kind === 'factory')).toHaveLength(5);
@@ -115,7 +115,7 @@ test('an explicit Agent handoff stays selected when cloud restore starts after i
   releaseAuth();
   await expect.poll(() => cloudReads).toBeGreaterThan(0);
   await expect(page.locator('[data-cloud-sync-error]')).toContainText('AIC-DATA-8005');
-  const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), SESSION_KEY_V5);
+  const saved = await page.evaluate(key => JSON.parse(localStorage.getItem(key)!), sessionStorageKey);
   expect(saved.presetLabel).toBe('252');
   expect(saved.result.diagnosticId).toBe(result252.diagnosticId);
   await expect(page.locator('[data-plan-board]')).toBeVisible();

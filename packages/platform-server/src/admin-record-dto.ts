@@ -14,7 +14,7 @@ import type {
 import { validateLayoutJson } from "@riic/arknights-domain/layout-validation";
 import { assertOperbox } from "@riic/arknights-domain/operbox";
 import { diagnosticText } from "./diagnostic-text.ts";
-import { isRotationProfile, rotationShiftCount } from "@riic/arknights-domain/rotation-settings";
+import { decodeRotationKey, isRotationTiming, rotationShiftCountForTiming } from "@riic/arknights-domain/rotation-settings";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -197,7 +197,8 @@ export function toAdminReproductionData(input: {
   const context = record(input.context);
   const result = record(input.result);
   const rawRotation = context?.rotation ?? input.fallbackRotation;
-  const rotation = isRotationProfile(rawRotation) ? rawRotation : null;
+  const rotation = typeof rawRotation === "string" ? decodeRotationKey(rawRotation)
+    : isRotationTiming(rawRotation) ? rawRotation : null;
   const rawFiammetta = context?.fiammettaEnabled ?? input.fallbackFiammettaEnabled;
   const fiammettaEnabled = typeof rawFiammetta === "boolean" ? rawFiammetta : null;
   const safeLayout = reproductionLayout(layout);
@@ -217,7 +218,7 @@ export function toAdminReproductionData(input: {
       layout: safeLayout,
       operbox: safeOperbox,
       rotation,
-      rotationCount: rotationShiftCount(rotation),
+      rotationCount: rotationShiftCountForTiming(rotation),
       fiammettaEnabled,
     };
   }
@@ -228,7 +229,7 @@ export function toAdminReproductionData(input: {
     layout: safeLayout,
     operbox: safeOperbox,
     rotation,
-    rotationCount: rotation ? rotationShiftCount(rotation) : null,
+    rotationCount: rotation ? rotationShiftCountForTiming(rotation) : null,
     fiammettaEnabled,
   };
 }

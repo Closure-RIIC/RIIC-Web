@@ -204,6 +204,20 @@ export interface RotationShift {
 export interface RotationJson {
   profile: RotationProfile;
   shifts: RotationShift[];
+  auto_rotation?: {
+    timing: { shift_hours: [number, number] };
+    complete: boolean;
+    rooms: Array<{
+      room_id: string;
+      facility: string;
+      main_missing_seats: number;
+      backup_missing_seats: number;
+      main_complete: boolean;
+      backup_complete: boolean;
+    }>;
+    constant_dorm_support: Array<[string, string[]]>;
+  };
+  warnings?: string[];
   daily: {
     trade: number | null;
     manufacture: number | null;
@@ -978,7 +992,7 @@ export interface FeedbackApiResponse {
 }
 
 export interface PlanComputeParams {
-  schema_version: 7;
+  schema_version: 8;
   layout: BaseBlueprint;
   operbox: OperBoxEntry[];
   labels?: {
@@ -1013,10 +1027,12 @@ export type RotationTopology = "main_backup" | "abc";
 
 /**
  * `plan.compute` 的 `options.rotation`：
- * named profile 字符串，或 v7 的 `{ topology, shift_hours }` 自定义时长。
+ * named profile / `auto`，或 v8 的 `{ topology, shift_hours }` 自定义时长。
  */
 export type RotationTiming =
+  | "auto"
   | RotationProfile
+  | { topology: "auto"; shift_hours: [number, number] }
   | { topology: "main_backup"; shift_hours: [number, number] }
   | { topology: "abc"; shift_hours: [number, number, number] };
 
@@ -1178,7 +1194,7 @@ export type FeedbackKind = "room_issue" | "performance_issue";
 export interface FeedbackReproductionSnapshot {
   layout: BaseBlueprint;
   operbox: OperBoxEntry[];
-  rotation: RotationProfile;
+  rotation: RotationTiming;
   fiammettaEnabled: boolean;
   sourceType: Exclude<BoxSource, "sample">;
 }
@@ -1224,7 +1240,8 @@ export interface CloudWorkspaceState {
   layoutDirty: boolean;
   layoutSource: "local" | "skland";
   localLayoutBackup: BaseBlueprint | null;
-  rotationProfile: RotationProfile;
+  /** Encoded rotation key, including automatic and custom timed selections. */
+  rotationProfile: string;
   fiammettaEnabled: boolean;
   activeShift: number;
 }
@@ -1259,7 +1276,8 @@ export type CloudWorkspacePutRequest =
 export interface SavedPlanCalculationContext {
   presetLabel: string;
   layout: BaseBlueprint;
-  rotationProfile: RotationProfile;
+  /** Encoded rotation key, including automatic and custom timed selections. */
+  rotationProfile: string;
   fiammettaEnabled: boolean;
 }
 
@@ -1437,7 +1455,7 @@ export type AdminReproductionData = AdminReproductionDataBase & ({
   unavailableReason: null;
   layout: BaseBlueprint;
   operbox: OperBoxEntry[];
-  rotation: RotationProfile;
+  rotation: RotationTiming;
   rotationCount: number;
   fiammettaEnabled: boolean;
 } | {
@@ -1445,7 +1463,7 @@ export type AdminReproductionData = AdminReproductionDataBase & ({
   unavailableReason: AdminReproductionUnavailableReason;
   layout: BaseBlueprint | null;
   operbox: OperBoxEntry[] | null;
-  rotation: RotationProfile | null;
+  rotation: RotationTiming | null;
   rotationCount: number | null;
   fiammettaEnabled: boolean | null;
 });

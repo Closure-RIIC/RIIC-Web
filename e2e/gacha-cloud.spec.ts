@@ -4,6 +4,7 @@ import { gachaAccountOptions } from "../apps/arknights/src/gacha-accounts";
 import type { GachaHistory } from "@riic/arknights-domain/gacha-history";
 
 test.beforeEach(async ({ page }) => {
+  await page.route("**/api/account/data-consent", route => route.fulfill({ json: { success: true, data: { current: false, cloudSyncEnabled: false } } }));
   await page.route("**/api/auth/get-session", (route) => route.fulfill({ json: {
     session: { id: "gacha-test-session", token: "test-token", userId: "test-user", expiresAt: new Date(Date.now() + 3_600_000).toISOString(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     user: { id: "test-user", name: "测试用户", email: "test@example.com", emailVerified: true, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
