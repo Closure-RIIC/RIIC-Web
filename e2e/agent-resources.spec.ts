@@ -15,6 +15,20 @@ test("admin resources publish, remain isolated while editing, and restore on mob
     await pool.query("INSERT INTO account (id,account_id,provider_id,user_id,password) VALUES ($1,$2,'credential',$2,$3)", [randomUUID(), actor, await hashPassword(password)]);
     await pool.query("INSERT INTO app.billing_wallet (user_id,paid_points) VALUES ($1,20)", [actor]);
     expect((await context.request.post("/api/auth/sign-in/email", { headers: { origin: baseURL! }, data: { email: `${actor}@example.test`, password } })).status()).toBe(200);
+    // Resource acceptance must also work when this is the first test on a fresh deployment.
+    const policies = await context.request.get("/api/admin/billing?section=policies");
+    expect(policies.status()).toBe(200);
+    const settings = (await policies.json()).data.modelSettings;
+    if (!settings.active) {
+      const payload = settings.initialPayload;
+      payload.rates.markup = "1.5";
+      const draft = await context.request.post("/api/admin/billing?section=model-settings", { headers: { origin: baseURL! },
+        data: { action: "draft", payload, expectedActive: settings.expectedActive, reason: "resource test pricing fixture" } });
+      expect(draft.status()).toBe(200);
+      const published = await context.request.post("/api/admin/billing?section=model-settings", { headers: { origin: baseURL! },
+        data: { action: "publish", id: (await draft.json()).data.id, expectedActive: settings.expectedActive, reason: "resource test pricing fixture" } });
+      expect(published.status()).toBe(200);
+    }
     const initial = await context.request.post("/api/admin/agent/resources", { headers: { origin: baseURL! }, data: { action: "draft", payload, reason: "isolated e2e draft" } });
     expect(initial.status()).toBe(200);
     expect((await context.request.post("/api/admin/agent/resources", { headers: { origin: "https://foreign.test" }, data: { action: "import" } })).status()).toBe(403);
@@ -45,7 +59,7 @@ test("admin resources publish, remain isolated while editing, and restore on mob
     await page.reload();
     await expect(page.getByRole("region", { name: "Agent resources" }).getByRole("button", { name: "System prompt", exact: true })).toBeVisible();
   } finally {
-    await pool.query("DELETE FROM app.agent_policy_version WHERE kind='resources' AND author_id=$1", [actor]);
+    await pool.query("DELETE FROM app.agent_policy_version WHERE author_id=$1", [actor]);
     await pool.query("DELETE FROM app.billing_admin_audit WHERE actor_id=$1", [actor]);
     await pool.query('DELETE FROM public."user" WHERE id=$1', [actor]);
     await pool.end();

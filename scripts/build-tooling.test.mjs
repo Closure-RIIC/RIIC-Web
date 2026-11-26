@@ -695,9 +695,11 @@ test("resource PR file validation fails closed on a partial GitHub API response"
       encoding: "utf8", timeout: 10_000,
       env: { ...process.env, GITHUB_REPOSITORY: "Closure-RIIC/RIIC-Web", PR_NUMBER: "9", RESPONSE_PATHS: paths, RESPONSE_EXIT: String(code) },
     });
-    const safe = run("packages/arknights-domain/src/generated/gacha-up.json");
-    assert.equal(safe.status, 0, safe.stderr);
-    assert.match(safe.stdout, /VALIDATED/);
+    for (const file of ["packages/arknights-domain/src/generated/gacha-up.json", "apps/arknights/src/generated/recruitment-data.json"]) {
+      const safe = run(file);
+      assert.equal(safe.status, 0, safe.stderr);
+      assert.match(safe.stdout, /VALIDATED/);
+    }
     for (const [paths, code] of [
       ["packages/arknights-domain/src/generated/gacha-up.json", 42],
       ["packages/arknights-domain/src/generated/gacha-up.json\n.github/workflows/deploy.yml", 0],
@@ -710,7 +712,37 @@ test("resource PR file validation fails closed on a partial GitHub API response"
   }
 });
 
-test("mastery, training costs, gacha UP data and the full fixture follow every managed-resource publication and parity gate", async () => {
+test("recruitment removal overrides require an explicitly confirmed manual sync", async () => {
+  const workflow = (await readRepoFile(".github/workflows/sync-arkntools-assets.yml")).replaceAll("\r\n", "\n");
+  const start = workflow.indexOf("          arguments=(--source");
+  const end = workflow.indexOf("          npm run assets:mastery", start);
+  assert.ok(start >= 0 && end > start);
+  const commands = workflow.slice(start, end)
+    .replace(/\$\{\{\s*steps\.upstream\.outputs\.\w+\s*\}\}/g, "a".repeat(40));
+  const gitExecPath = process.platform === "win32" ? spawnSync("git", ["--exec-path"], { encoding: "utf8" }).stdout?.trim() : null;
+  const gitBash = gitExecPath ? resolve(gitExecPath, "../../../bin/bash.exe") : null;
+  const bash = process.env.TEST_BASH_PATH ?? (gitBash && existsSync(gitBash) ? gitBash : "bash");
+  for (const [event, confirmed, expected] of [
+    ["schedule", "false", false],
+    ["schedule", "true", false],
+    ["workflow_dispatch", "false", false],
+    ["workflow_dispatch", "true", true],
+  ]) {
+    const script = 'set -euo pipefail\nnpm() { printf "%s\\n" "$*"; }\n' + commands
+      .replaceAll("${{ github.event_name }}", event)
+      .replaceAll("${{ inputs.allow_removals }}", confirmed);
+    const result = spawnSync(bash, ["--noprofile", "--norc", "-c", script], { encoding: "utf8", timeout: 10_000 });
+    assert.equal(result.status, 0, result.stderr);
+    const calls = result.stdout.trim().split("\n");
+    assert.equal(calls.length, 3);
+    assert.ok(calls[0].startsWith("run assets:sync:arkntools -- "));
+    for (const call of calls.slice(1)) assert.ok(call.startsWith("run assets:recruitment -- --source .tmp/arkntools-data"));
+    assert.ok(calls[2].endsWith(" --check"));
+    for (const call of calls) assert.equal(call.includes("--allow-removals"), expected, `${event}, confirmed=${confirmed}: ${call}`);
+  }
+});
+
+test("mastery, recruitment, training costs, gacha UP data and the full fixture follow every managed-resource publication and parity gate", async () => {
   const workflow = await readRepoFile(".github/workflows/sync-arkntools-assets.yml");
   assert.match(workflow, /npm run assets:mastery -- \.tmp\/arknights-game-data\/zh_CN\/gamedata\/excel\/character_table\.json --game-source-sha=/);
   assert.match(workflow, /game_sha=\$\(git -C \.tmp\/arknights-game-data rev-parse HEAD\)/);
@@ -721,12 +753,19 @@ test("mastery, training costs, gacha UP data and the full fixture follow every m
   assert.match(workflow, /planner_arguments=\(--source-sha "\$\{\{ steps\.upstream\.outputs\.game_sha \}\}"\)/);
   assert.match(workflow, /--before-training-planner "\$RUNNER_TEMP\/training-planner-before\.json"/);
   assert.match(workflow, /apps\/arknights\/src\/generated\/training-planner-data\.json/);
+  assert.match(workflow, /\/assets\/locales\/cn\/tag\.json/);
+  assert.match(workflow, /\/assets\/locales\/us\/tag\.json/);
+  assert.match(workflow, /recruitment_arguments=\(--source \.tmp\/arkntools-data\)/);
+  assert.match(workflow, /npm run assets:recruitment -- "\$\{recruitment_arguments\[@\]\}"\n/);
+  assert.match(workflow, /npm run assets:recruitment -- "\$\{recruitment_arguments\[@\]\}" --check/);
+  assert.match(workflow, /--before-recruitment "\$RUNNER_TEMP\/recruitment-before\.json"/);
   assert.match(workflow, /\/assets\/img\/avatar/);
   assert.match(workflow, /\/item\/AP_BASE\.png/);
   assert.equal((workflow.match(/test "\$pull_request_base_sha" = "\$remote_base_sha"/g) ?? []).length, 2);
   const guards = workflow.match(/apps\/arknights\/public\/images\/operator-portraits\/\*\|[^\n]+;;/g) ?? [];
   assert.equal(guards.length, 5);
   const translations = [
+    "apps/arknights/src/generated/recruitment-data.json",
     "apps/arknights/src/generated/i18n/zh-CN/ArknightsGameData.json",
     "apps/arknights/src/generated/i18n/zh-TW/ArknightsGameData.json",
     "apps/arknights/src/generated/i18n/en/ArknightsGameData.json",
@@ -742,7 +781,7 @@ test("mastery, training costs, gacha UP data and the full fixture follow every m
     assert.ok(staged.includes(file));
     assert.ok(restored.includes(file));
   }
-  for (const guard of guards) assert.match(guard, /\|apps\/arknights\/src\/generated\/mastery-data\.json\|apps\/arknights\/src\/generated\/training-planner-data\.json\|packages\/arknights-domain\/src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
+  for (const guard of guards) assert.match(guard, /\|apps\/arknights\/src\/generated\/mastery-data\.json\|apps\/arknights\/src\/generated\/training-planner-data\.json\|apps\/arknights\/src\/generated\/recruitment-data\.json\|packages\/arknights-domain\/src\/generated\/gacha-up\.json\|fixtures\/operbox_full_e2\.json\) ;;/);
   const regularFileChecks = workflow.match(/git ls-files -s --[^\n]+/g) ?? [];
   assert.equal(regularFileChecks.length, 3);
   for (const check of regularFileChecks) {
@@ -756,6 +795,7 @@ test("mastery, training costs, gacha UP data and the full fixture follow every m
   const generateStep = workflow.slice(workflow.indexOf("      - name: Generate and validate assets"), workflow.indexOf("      - name: Detect generated changes"));
   assert.doesNotMatch(generateStep, /npm run check|npm run build|npm test/);
   assert.ok(generateStep.indexOf("npm run assets:gacha-up") > generateStep.indexOf("npm run assets:sync:arkntools"));
+  assert.ok(generateStep.indexOf("npm run assets:recruitment") > generateStep.indexOf("npm run assets:sync:arkntools"));
   assert.ok(generateStep.indexOf("node scripts/sync-arknights-i18n-data.mjs") > generateStep.indexOf("npm run assets:gacha-up"));
   assert.match(workflow, /id: changes\n\s+run: node scripts\/arkntools-sync-changes\.mjs/);
   assert.match(workflow, /git add --[^\n]*packages\/arknights-domain\/src\/generated\/gacha-up\.json/);

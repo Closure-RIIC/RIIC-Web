@@ -225,6 +225,20 @@
       "when": 1795198759913,
       "tag": "0031_referral_reward_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795278201557,
+      "tag": "0032_agent_model_selection_and_settings",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1795290005237,
+      "tag": "0033_agent_cache_write_tokens",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { PRIVACY_VERSION, TERMS_VERSION } from "@riic/platform/legal-policy";
-import { SESSION_KEY_V5 } from "@riic/arknights-domain/persistence";
+import { sessionStorageKey } from "./session";
 import { cloudSyncPreferenceKey } from "../apps/arknights/src/cloud-sync";
 import { mockApis, planData, requestId, seedV4Session } from "./production-readiness.fixture";
 
@@ -49,7 +49,7 @@ for (const failure of [
     await expect(page.locator("[data-cloud-sync-error]")).toHaveCount(0);
     await page.waitForTimeout(2600);
     expect(writes).toBe(1);
-    const local = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), SESSION_KEY_V5);
+    const local = await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), sessionStorageKey);
     expect(local.operbox[0].id).toBe("char_002_amiya");
     await page.reload();
     await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible();

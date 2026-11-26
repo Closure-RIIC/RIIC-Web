@@ -4,13 +4,19 @@ import test from "node:test";
 import {
   DEFAULT_ROTATION_PROFILE,
   ROTATION_OPTIONS,
+  SELECTABLE_ROTATION_OPTIONS,
   isRotationProfile,
   normalizeRotationProfile,
+  autoRotationFromKey,
+  DEFAULT_AUTO_ROTATION_HOURS,
+  encodeAutoRotationKey,
+  decodeRotationKey,
+  isRotationTiming,
   rotationDurations,
   rotationOption,
 } from "./rotation-settings.ts";
 
-test("exposes the selectable rotation profiles accepted by plan.compute v7", () => {
+test("keeps all supported solver profiles readable for historical sessions", () => {
   assert.deepEqual(ROTATION_OPTIONS.map(({ profile }) => profile), [
     "abc_12_6_6",
     "main_backup_12_12",
@@ -22,7 +28,7 @@ test("exposes the selectable rotation profiles accepted by plan.compute v7", () 
   assert.equal(isRotationProfile("abc_12_6_6"), true);
   assert.equal(isRotationProfile("abc_12_12_12"), true);
   assert.equal(isRotationProfile("main_backup_24_24"), true);
-  // 四班专用 profile 仍在选择器里，且旧会话可继续读取。
+  // 隐藏的历史 profile 仍允许旧会话读取。
   assert.equal(isRotationProfile("fiammetta_8_8_4_4"), true);
   assert.equal(isRotationProfile("abyssal_7_5_7_5"), true);
   assert.equal(isRotationProfile("auto_rotation"), false);
@@ -40,4 +46,22 @@ test("invalid persisted values fall back to the existing default profile", () =>
   assert.equal(normalizeRotationProfile("fiammetta_8_8_4_4"), "fiammetta_8_8_4_4");
   assert.equal(normalizeRotationProfile("automatic"), DEFAULT_ROTATION_PROFILE);
   assert.equal(normalizeRotationProfile(null), DEFAULT_ROTATION_PROFILE);
+});
+
+test("calculator presets follow the requested order while hidden profiles remain readable", () => {
+  assert.deepEqual(SELECTABLE_ROTATION_OPTIONS.map(({ profile }) => profile), [
+    "abc_12_12_12", "abc_12_6_6", "main_backup_24_24",
+  ]);
+  assert.deepEqual(SELECTABLE_ROTATION_OPTIONS.map(({ label }) => label), [
+    "一天两换三班倒", "一天三换三班倒", "主备两班轮换",
+  ]);
+});
+
+test("automatic timing uses the current 24/24 default and validates explicit durations", () => {
+  assert.deepEqual(DEFAULT_AUTO_ROTATION_HOURS, [24, 24]);
+  assert.equal(autoRotationFromKey("auto_32_32")?.join("/"), "32/32");
+  assert.deepEqual(decodeRotationKey(encodeAutoRotationKey(DEFAULT_AUTO_ROTATION_HOURS)), { topology: "auto", shift_hours: [24, 24] });
+  assert.equal(isRotationTiming({ topology: "auto", shift_hours: [24, 12] }), true);
+  assert.equal(isRotationTiming({ topology: "auto", shift_hours: [0.001, 12] }), false);
+  assert.equal(isRotationTiming({ topology: "auto", shift_hours: [24, Number.POSITIVE_INFINITY] }), false);
 });

@@ -1,7 +1,7 @@
 import { validateLayoutJson } from "@riic/arknights-domain/layout-validation";
 import { assertOperbox } from "@riic/arknights-domain/operbox";
 import { normalizePersistedPlanData } from "@riic/arknights-domain/persistence";
-import { encodeRotationKey, isRotationProfile } from "@riic/arknights-domain/rotation-settings";
+import { encodeRotationKey, isRotationTiming as isSupportedRotationTiming } from "@riic/arknights-domain/rotation-settings";
 import type { RotationTiming } from "@riic/arknights-domain/types";
 import {
   assertFiammettaEnableCompatible,
@@ -104,15 +104,9 @@ export async function POST(request: Request) {
       });
     }
 
-/** v7 自定义时长：{ topology, shift_hours }，班次数由拓扑决定。 */
+/** 共用 v8 轮换参数校验，包含自动轮换及自定义时长。 */
 function isRotationTiming(value: unknown): value is RotationTiming {
-  if (typeof value === "string") return isRotationProfile(value);
-  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
-  const record = value as { topology?: unknown; shift_hours?: unknown };
-  const expected = record.topology === "main_backup" ? 2 : record.topology === "abc" ? 3 : null;
-  if (expected === null) return false;
-  if (!Array.isArray(record.shift_hours) || record.shift_hours.length !== expected) return false;
-  return record.shift_hours.every((hour) => typeof hour === "number" && Number.isFinite(hour) && hour > 0);
+  return isSupportedRotationTiming(value);
 }
 
     let rotation: RotationTiming = "abc_12_6_6";

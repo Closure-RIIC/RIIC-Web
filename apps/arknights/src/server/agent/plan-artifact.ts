@@ -6,7 +6,8 @@ import { and, eq, lt } from "drizzle-orm";
 import { toPublicPlanData } from "@riic/platform-server/public-plan";
 import { getDatabase } from "@riic/platform-server/db";
 import { agentPlanArtifact } from "@riic/platform-server/db/schema";
-import type { MaaRoom } from "@riic/arknights-domain/types";
+import type { BaseBlueprint, MaaRoom } from "@riic/arknights-domain/types";
+import { createAgentDailyProduction, type AgentDailyProduction } from "../../agent-plan-production.ts";
 
 export interface AgentPlanShiftRoom {
   room: string;
@@ -25,7 +26,9 @@ export interface AgentPlanProjection {
   layoutLabel: string;
   operboxLabel: string;
   summary: Record<string, unknown>;
-  dailyProduction: Record<string, unknown>;
+  dailyProduction: AgentDailyProduction | Record<string, unknown>;
+  /** Efficiencies are diagnostic values, not daily product amounts. */
+  efficiencies?: Record<string, unknown>;
   plans: AgentPlanShift[];
   trainingAdvice: {
     context: Record<string, unknown>;
@@ -52,7 +55,7 @@ export interface AgentPlanArtifactRecord {
   createdAt: Date;
 }
 
-/** 与前端 PersistedSessionV5 等价的注入载荷。 */
+/** 与前端 PersistedSessionV6 等价的注入载荷。 */
 export interface AgentPlanSession {
   presetLabel: string;
   layout: unknown;
@@ -77,8 +80,8 @@ interface StoredArtifactV2 extends StoredArtifactV1 {
 
 const ARTIFACT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-/** 求解器输出 → 供模型/结果页消费的精简投影（数值仍来自求解器，未改写）。 */
-export function projectPlanResult(publicResult: ReturnType<typeof toPublicPlanData>): AgentPlanProjection {
+/** 求解器输出 → 使用计算器展示口径的排班与日均产出投影。 */
+export function projectPlanResult(publicResult: ReturnType<typeof toPublicPlanData>, layout: BaseBlueprint): AgentPlanProjection {
   const { profile, maa, trainingAdvice, durationMs, diagnosticId } = publicResult;
   const plans: AgentPlanShift[] = maa.plans.map((plan, planIndex) => ({
     shift: planIndex + 1,
@@ -98,7 +101,8 @@ export function projectPlanResult(publicResult: ReturnType<typeof toPublicPlanDa
     layoutLabel: profile.layout_label,
     operboxLabel: profile.operbox_label,
     summary: profile.summary as unknown as Record<string, unknown>,
-    dailyProduction: profile.rotation as unknown as Record<string, unknown>,
+    dailyProduction: createAgentDailyProduction({ layout, maa, rotation: publicResult.rotation }),
+    efficiencies: profile.rotation as unknown as Record<string, unknown>,
     plans,
     trainingAdvice: trainingAdvice
       ? {

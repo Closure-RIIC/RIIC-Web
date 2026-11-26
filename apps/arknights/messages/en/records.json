@@ -39,7 +39,9 @@
     "dormitory": "Dormitory",
     "meeting": "Reception Room",
     "hire": "Office",
-    "processing": "Workshop"
+    "processing": "Workshop",
+    "training": "Training Room",
+    "recycle": "Recycling Station"
   },
   "components_ShiftComparisonCard_labels2": {
     "missing": "Move in",

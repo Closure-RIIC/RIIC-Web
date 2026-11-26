@@ -8,17 +8,33 @@ import {
   clearLocalProductData,
   loadPersistedSession,
   persistSession,
-  SESSION_KEY_V2,
-  SESSION_KEY_V3,
-  SESSION_KEY_V4,
-  SESSION_KEY_V5,
+  SESSION_KEY,
   SESSION_TTL_MS,
+  SESSION_VERSION,
 } from "./persistence.ts";
 import { TELEMETRY_SESSION_STORAGE_KEY } from "./telemetry-contract.ts";
+
+/** 早期版本把版本号写进了键名；这些键现在只应被清理，不再被读取。 */
+const OBSOLETE_SESSION_KEYS = [
+  "arknights-infra-calc-session-v6",
+  "arknights-infra-calc-session-v5",
+  "arknights-infra-calc-session-v4",
+  "arknights-infra-calc-beta-session-v3",
+  "arknights-infra-calc-beta-session-v2",
+];
 
 class MemoryStorage {
   values = new Map<string, string>();
   failWrites = false;
+
+  /** 模拟 localStorage 的可枚举能力，供历史代次键清理使用。 */
+  get length(): number {
+    return this.values.size;
+  }
+
+  key(index: number): string | null {
+    return [...this.values.keys()][index] ?? null;
+  }
 
   getItem(key: string): string | null {
     return this.values.get(key) ?? null;
@@ -116,7 +132,7 @@ function resultWithShifts(count: number, rotationProfile: RotationProfile = DEFA
   };
 }
 
-test("v5 persistence stores source, expiry metadata, and strips debug fields", () => {
+test("session persistence stores source, expiry metadata, and strips debug fields", () => {
   const storage = new MemoryStorage();
   const now = Date.parse("2026-07-28T00:00:00.000Z");
   const saved = persistSession(storage, {
@@ -140,7 +156,7 @@ test("v5 persistence stores source, expiry metadata, and strips debug fields", (
   assert.equal(saved.layoutSource, "local");
   assert.deepEqual(saved.localLayoutBackup, layout);
   assert.deepEqual(loadPersistedSession(storage, now)?.localLayoutBackup, layout);
-  assert.equal((JSON.parse(storage.getItem(SESSION_KEY_V5) ?? "{}").result as Record<string, unknown>).debug, undefined);
+  assert.equal((JSON.parse(storage.getItem(SESSION_KEY) ?? "{}").result as Record<string, unknown>).debug, undefined);
 });
 
 test("local edits preserve a clean baseline beneath a Skland-derived layout", () => {
@@ -170,64 +186,69 @@ test("local edits preserve a clean baseline beneath a Skland-derived layout", ()
   assert.equal(edited.localLayoutBackup?.rooms.find((room) => room.id === "control")?.level, 4);
 });
 
-test("v2 through v4 migrate once to the v5 allowlist", () => {
-  for (const legacyKey of [SESSION_KEY_V2, SESSION_KEY_V3, SESSION_KEY_V4]) {
+test("legacy versioned keys are discarded and deleted instead of read", () => {
+  for (const legacyKey of OBSOLETE_SESSION_KEYS) {
     const storage = new MemoryStorage();
     storage.setItem(legacyKey, JSON.stringify({
+      version: 5,
       preset: { label: "243" },
       layout,
       operbox,
       fileName: "C:\\private\\box.json",
       boxSource: "maa",
-      result: {
-        success: true,
-        profileJson: result.profile,
-        maaJson: result.maa,
-        rotationJson: result.rotation,
-        runId: "legacy-diag",
-        command: "secret",
-      },
       activeShift: 2,
     }));
-    const migrated = loadPersistedSession(storage, Date.parse("2026-07-28T00:00:00.000Z"));
-    assert.equal(migrated?.version, 5);
-    assert.equal(migrated?.rotationProfile, DEFAULT_ROTATION_PROFILE);
-    assert.equal(migrated?.result?.diagnosticId, "legacy-diag");
-    assert.equal(migrated?.result?.debug, undefined);
+    assert.equal(loadPersistedSession(storage, Date.parse("2026-07-28T00:00:00.000Z")), null);
+    // 旧数据必须被删除，用户只保留一份当前格式的会话，不会永久占用两份存储。
     assert.equal(storage.getItem(legacyKey), null);
-    assert.ok(storage.getItem(SESSION_KEY_V5));
+    assert.equal(storage.getItem(SESSION_KEY), null);
+    assert.equal(storage.values.size, 0);
   }
 });
 
-test("legacy Skland sessions discard UID-bearing source and plan labels during migration", () => {
-  const now = Date.parse("2026-07-28T00:00:00.000Z");
-  for (const sessionKey of [SESSION_KEY_V4, SESSION_KEY_V3]) {
-    const storage = new MemoryStorage();
-    storage.setItem(sessionKey, JSON.stringify({
-      version: sessionKey === SESSION_KEY_V4 ? 4 : 3,
-      savedAt: new Date(now).toISOString(),
-      expiresAt: new Date(now + SESSION_TTL_MS).toISOString(),
-      presetLabel: "243",
-      layout,
-      operbox,
-      sourceName: "skland:123456789:1785196800",
-      boxSource: "skland",
-      layoutDirty: false,
-      result: {
-        ...result,
-        profile: {
-          ...result.profile,
-          operbox_label: "skland:123456789:1785196800",
-        },
-      },
-      activeShift: 0,
-    }));
+test("sessions with an older schema version are deleted from the stable key", () => {
+  const storage = new MemoryStorage();
+  storage.setItem(SESSION_KEY, JSON.stringify({
+    version: SESSION_VERSION - 1,
+    savedAt: "2026-07-28T00:00:00.000Z",
+    expiresAt: "2026-08-28T00:00:00.000Z",
+    presetLabel: "243",
+    layout,
+    operbox,
+    boxSource: "sample",
+    layoutSource: "local",
+  }));
+  assert.equal(loadPersistedSession(storage, Date.parse("2026-07-28T00:00:00.000Z")), null);
+  assert.equal(storage.getItem(SESSION_KEY), null);
+});
 
-    const migrated = loadPersistedSession(storage, now);
-    assert.equal(migrated?.sourceName, "森空岛同步");
-    assert.equal(migrated?.result, null);
-    assert.equal(JSON.stringify([...storage.values.values()]).includes("123456789"), false);
-  }
+test("current sessions with a legacy Skland label discard the UID-bearing source and plan labels", () => {
+  const now = Date.parse("2026-07-28T00:00:00.000Z");
+  const storage = new MemoryStorage();
+  storage.setItem(SESSION_KEY, JSON.stringify({
+    version: SESSION_VERSION,
+    savedAt: new Date(now).toISOString(),
+    expiresAt: new Date(now + SESSION_TTL_MS).toISOString(),
+    presetLabel: "243",
+    layout,
+    operbox,
+    sourceName: "skland:123456789:1785196800",
+    boxSource: "skland",
+    layoutDirty: false,
+    result: {
+      ...result,
+      profile: {
+        ...result.profile,
+        operbox_label: "skland:123456789:1785196800",
+      },
+    },
+    activeShift: 0,
+  }));
+
+  const restored = loadPersistedSession(storage, now);
+  assert.equal(restored?.sourceName, "森空岛同步");
+  assert.equal(restored?.result, null);
+  assert.equal(JSON.stringify([...storage.values.values()]).includes("123456789"), false);
 });
 
 test("new Skland persistence always uses a non-identifying source label", () => {
@@ -256,14 +277,14 @@ test("new Skland persistence always uses a non-identifying source label", () => 
   assert.equal(JSON.stringify([...storage.values.values()]).includes("123456789"), false);
 });
 
-test("expired and corrupted current sessions are removed", () => {
+test("expired, corrupted and older-schema sessions are removed", () => {
   const storage = new MemoryStorage();
-  storage.setItem(SESSION_KEY_V5, "{bad");
+  storage.setItem(SESSION_KEY, "{bad");
   assert.equal(loadPersistedSession(storage), null);
-  assert.equal(storage.getItem(SESSION_KEY_V5), null);
+  assert.equal(storage.getItem(SESSION_KEY), null);
 
-  storage.setItem(SESSION_KEY_V5, JSON.stringify({
-    version: 5,
+  storage.setItem(SESSION_KEY, JSON.stringify({
+    version: SESSION_VERSION,
     savedAt: "2026-01-01T00:00:00.000Z",
     expiresAt: "2026-01-02T00:00:00.000Z",
     presetLabel: "243",
@@ -273,12 +294,26 @@ test("expired and corrupted current sessions are removed", () => {
     layoutSource: "local",
   }));
   assert.equal(loadPersistedSession(storage, Date.parse("2026-07-28T00:00:00.000Z")), null);
-  assert.equal(storage.getItem(SESSION_KEY_V5), null);
+  assert.equal(storage.getItem(SESSION_KEY), null);
+
+  // 结构版本不匹配时必须判废，哪怕其余字段都合法。
+  storage.setItem(SESSION_KEY, JSON.stringify({
+    version: SESSION_VERSION - 1,
+    savedAt: "2026-07-28T00:00:00.000Z",
+    expiresAt: "2026-08-28T00:00:00.000Z",
+    presetLabel: "243",
+    layout,
+    operbox,
+    boxSource: "sample",
+    layoutSource: "local",
+  }));
+  assert.equal(loadPersistedSession(storage, Date.parse("2026-07-28T00:00:00.000Z")), null);
+  assert.equal(storage.getItem(SESSION_KEY), null);
 });
 
 test("quota failures surface without corrupting the previous session", () => {
   const storage = new MemoryStorage();
-  storage.setItem(SESSION_KEY_V5, "previous session");
+  storage.setItem(SESSION_KEY, "previous session");
   storage.failWrites = true;
   assert.throws(() => persistSession(storage, {
     presetLabel: "243",
@@ -292,22 +327,18 @@ test("quota failures surface without corrupting the previous session", () => {
     result: null,
     activeShift: 0,
   }));
-  assert.equal(storage.getItem(SESSION_KEY_V5), "previous session");
+  assert.equal(storage.getItem(SESSION_KEY), "previous session");
 });
 
-test("failed migration preserves each legacy session for a later retry", () => {
-  for (const legacyKey of [SESSION_KEY_V2, SESSION_KEY_V3, SESSION_KEY_V4]) {
+test("legacy sessions are cleared even when storage refuses writes", () => {
+  for (const legacyKey of OBSOLETE_SESSION_KEYS) {
     const storage = new MemoryStorage();
-    const original = JSON.stringify({ layout, operbox, boxSource: "maa", result: null });
-    storage.setItem(legacyKey, original);
+    storage.setItem(legacyKey, JSON.stringify({ layout, operbox, boxSource: "maa", result: null }));
     storage.failWrites = true;
-    assert.deepEqual(loadPersistedSession(storage)?.operbox, operbox);
-    assert.equal(storage.getItem(legacyKey), original);
-    assert.equal(storage.getItem(SESSION_KEY_V5), null);
-    storage.failWrites = false;
-    assert.deepEqual(loadPersistedSession(storage)?.operbox, operbox);
+    // 删除不依赖写入，旧数据必须立刻消失，不能继续占着额度。
+    assert.equal(loadPersistedSession(storage), null);
     assert.equal(storage.getItem(legacyKey), null);
-    assert.ok(storage.getItem(SESSION_KEY_V5));
+    assert.equal(storage.values.size, 0);
   }
 });
 
@@ -386,7 +417,7 @@ test("persistence preserves MAA protocol candidates only inside rooms", () => {
   assert.deepEqual(restored?.result?.trainingRoom, protocolResult.trainingRoom);
 });
 
-test("v5 persistence restores the fourth shift when the result has four plans", () => {
+test("session persistence restores the fourth shift when the result has four plans", () => {
   const storage = new MemoryStorage();
   persistSession(storage, {
     presetLabel: "243",
@@ -404,7 +435,7 @@ test("v5 persistence restores the fourth shift when the result has four plans", 
   assert.equal(loadPersistedSession(storage)?.activeShift, 3);
 });
 
-test("v5 persistence clamps a stale shift index to the available result", () => {
+test("session persistence clamps a stale shift index to the available result", () => {
   const storage = new MemoryStorage();
   const saved = persistSession(storage, {
     presetLabel: "243",
@@ -423,7 +454,7 @@ test("v5 persistence clamps a stale shift index to the available result", () => 
   assert.equal(loadPersistedSession(storage)?.activeShift, 1);
 });
 
-test("old v4 results migrate a missing rotation profile from the saved setting", () => {
+test("current sessions still normalize a missing rotation profile from the saved setting", () => {
   const storage = new MemoryStorage();
   const now = Date.parse("2026-07-28T00:00:00.000Z");
   const legacyResult = JSON.parse(JSON.stringify(resultWithShifts(4))) as Record<string, Record<string, unknown>>;
@@ -432,8 +463,8 @@ test("old v4 results migrate a missing rotation profile from the saved setting",
   const legacyDaily = legacyResult.rotation.daily as Record<string, unknown>;
   legacyDaily.manu = legacyDaily.manufacture;
   delete legacyDaily.manufacture;
-  storage.setItem(SESSION_KEY_V4, JSON.stringify({
-    version: 4,
+  storage.setItem(SESSION_KEY, JSON.stringify({
+    version: SESSION_VERSION,
     savedAt: new Date(now).toISOString(),
     expiresAt: new Date(now + SESSION_TTL_MS).toISOString(),
     presetLabel: "243",
@@ -447,16 +478,47 @@ test("old v4 results migrate a missing rotation profile from the saved setting",
     activeShift: 3,
   }));
 
-  const migrated = loadPersistedSession(storage, now);
-  assert.equal(migrated?.result?.rotation.profile, "fiammetta_8_8_4_4");
-  assert.equal(migrated?.result?.rotation.daily.manufacture, 2);
-  assert.equal("manu" in (migrated?.result?.rotation.daily ?? {}), false);
-  assert.equal(migrated?.activeShift, 3);
+  const restored = loadPersistedSession(storage, now);
+  assert.equal(restored?.result?.rotation.profile, "fiammetta_8_8_4_4");
+  assert.equal(restored?.result?.rotation.daily.manufacture, 2);
+  assert.equal("manu" in (restored?.result?.rotation.daily ?? {}), false);
+  assert.equal(restored?.activeShift, 3);
 });
 
 test("clear removes all session generations and product preferences", () => {
   const storage = new MemoryStorage();
-  [SESSION_KEY_V2, SESSION_KEY_V3, SESSION_KEY_V4, SESSION_KEY_V5, TELEMETRY_SESSION_STORAGE_KEY, "onboarding"].forEach((key) => storage.setItem(key, "1"));
+  [SESSION_KEY, ...OBSOLETE_SESSION_KEYS, TELEMETRY_SESSION_STORAGE_KEY, "onboarding"].forEach((key) => storage.setItem(key, "1"));
   clearLocalProductData(storage, ["onboarding"]);
   assert.equal(storage.values.size, 0);
+});
+
+test("legacy automatic session keys restore with the current default hours", () => {
+  const storage = new MemoryStorage();
+  persistSession(storage, {
+    presetLabel: "243", layout, operbox, sourceName: "示例", boxSource: "sample",
+    layoutDirty: false, layoutSource: "local", localLayoutBackup: null,
+    rotationProfile: DEFAULT_ROTATION_PROFILE, rotationSelection: "auto_32_32",
+    result: null, activeShift: 0,
+  });
+  assert.equal(loadPersistedSession(storage)?.rotationSelection, "auto_24_24");
+  assert.equal(loadPersistedSession(storage)?.result, null);
+});
+
+
+test("historical automatic results retain the exact timing needed for cloud save and reproduction", () => {
+  const storage = new MemoryStorage();
+  const historical = resultWithShifts(2, "generic_main_backup");
+  historical.rotation.shifts.forEach(shift => { shift.duration_hours = 32; });
+  historical.rotation.auto_rotation = {
+    timing: { shift_hours: [32, 32] }, complete: true, rooms: [], constant_dorm_support: [],
+  };
+  persistSession(storage, {
+    presetLabel: "243", layout, operbox, sourceName: "示例", boxSource: "maa",
+    layoutDirty: false, layoutSource: "local", localLayoutBackup: null,
+    rotationProfile: "generic_main_backup", rotationSelection: "auto_32_32",
+    result: historical, activeShift: 0,
+  });
+  const restored = loadPersistedSession(storage);
+  assert.equal(restored?.rotationSelection, "auto_32_32");
+  assert.deepEqual(restored?.result?.rotation.auto_rotation?.timing.shift_hours, [32, 32]);
 });

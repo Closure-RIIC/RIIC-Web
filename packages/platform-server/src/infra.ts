@@ -37,7 +37,7 @@ import {
 } from "./plan-protocol";
 import { normalizeRotationResult } from "@riic/arknights-domain/rotation-result";
 import { parseShiftFile } from "./shift-parser";
-import { DEFAULT_ROTATION_PROFILE, encodeRotationKey, isRotationProfile } from "@riic/arknights-domain/rotation-settings";
+import { DEFAULT_ROTATION_PROFILE, encodeRotationKey, isRotationTiming } from "@riic/arknights-domain/rotation-settings";
 import {
   isLegacySklandRunDirectoryName,
   isPrivateStorageChild,
@@ -71,26 +71,13 @@ type PlanRequestBody = {
   layout: BaseBlueprint;
   operbox: OperBoxEntry[];
   sourceName?: string | null;
-  /** named profile，或 v7 的 { topology, shift_hours } 自定义时长。 */
+  /** named profile、auto，或 v8 的 { topology, shift_hours } 自定义时长。 */
   rotation: RotationTiming;
   fiammettaEnable?: boolean;
   /** 受控组合主动补挂件；缺省 false。 */
   supportCombinationsEnable?: boolean;
   dataOwnerTag?: string | null;
 };
-
-/**
- * v7 自定义时长的形状校验：{ topology, shift_hours }，班次数由拓扑决定。
- * 周期组合的业务合法性由前端保证，这里只挡住结构错误的请求。
- */
-function isCustomRotationTiming(value: unknown): value is RotationTiming {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
-  const record = value as { topology?: unknown; shift_hours?: unknown };
-  const expected = record.topology === "main_backup" ? 2 : record.topology === "abc" ? 3 : null;
-  if (expected === null) return false;
-  if (!Array.isArray(record.shift_hours) || record.shift_hours.length !== expected) return false;
-  return record.shift_hours.every((hour) => typeof hour === "number" && Number.isFinite(hour) && hour > 0);
-}
 
 const repoRoot = path.resolve(/* turbopackIgnore: true */ process.cwd());
 const bundledCliRoot = path.join(repoRoot, "bin");
@@ -296,8 +283,8 @@ function assertPlanBody(body: unknown): asserts body is PlanRequestBody {
   if (!Array.isArray(body.operbox) || body.operbox.length === 0) {
     throw new Error("请求缺少非空 operbox 数组。");
   }
-  // named profile，或 v7 的 { topology, shift_hours } 自定义时长。
-  if (!isRotationProfile(body.rotation) && !isCustomRotationTiming(body.rotation)) {
+  // named profile、auto，或 v8 的 { topology, shift_hours } 自定义时长。
+  if (!isRotationTiming(body.rotation)) {
     throw new Error("请求缺少受支持的 rotation 参数。");
   }
   if (body.fiammettaEnable != null && typeof body.fiammettaEnable !== "boolean") {
@@ -1795,6 +1782,10 @@ export async function runPlan(
     const serveClient = getPlanServeClient(serveLane);
     const planCompute = fallbackConfig ? null : await getPlanServeCapability(serveLane, serveClient);
     if(planCompute) solver = createSolverObservation(planCompute, new Date().toISOString());
+    if (!fallbackConfig && !planCompute?.supported
+      && (body.rotation === "auto" || (typeof body.rotation === "object" && body.rotation.topology === "auto"))) {
+      throw new Error("Automatic rotation requires a solver supporting plan.compute schema v8.");
+    }
     let serveResult: ServeResult;
     let profileJson: unknown;
     let maaJson: unknown;
@@ -1920,7 +1911,9 @@ export async function runPlan(
       let payload: ReturnType<typeof parsePlanComputePayload> = null;
       try {
         payload = parsePlanComputePayload(serveResult.response);
+        if (payload) assertCompleteSolverOutput(payload, body.rotation);
       } catch (error) {
+        payload = null;
         responseValidationError = error instanceof Error ? error.message : String(error);
       }
       profileJson = payload?.profile;
@@ -1981,8 +1974,10 @@ export async function runPlan(
       source: rotationSource,
       shifts: serveShifts,
       profile: profileJson,
-      // 自定义时长没有对应的 named profile，兜底用默认 profile。
-      fallbackProfile: typeof body.rotation === "string" ? body.rotation : DEFAULT_ROTATION_PROFILE,
+      // 自动与自定义时长按主备两班展示；自动输出协议使用标准 24/24 主备 profile。
+      fallbackProfile: body.rotation === "auto" || (typeof body.rotation === "object" && body.rotation.topology === "auto")
+        ? "main_backup_24_24"
+        : typeof body.rotation === "string" ? body.rotation : DEFAULT_ROTATION_PROFILE,
     });
     if (!deferArtifacts) {
       await writeFile(stdoutPath, serveResult.stdout, "utf-8");
