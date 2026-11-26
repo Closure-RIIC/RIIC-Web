@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { mockApis, seedV4Session } from "./production-readiness.fixture";
+import { sessionStorageKey } from "./session";
 
 // Fully synthetic public-protocol data; no private solver run or account data.
 const fixture = JSON.parse(readFileSync(new URL("./fixtures/auto-main-backup-public.json", import.meta.url), "utf8"));
@@ -27,13 +28,12 @@ async function prepare(page: Page, queue = true, legacySelection?: string) {
     user: { id: "auto-user", name: "测试用户", email: "auto@example.com", emailVerified: true },
   } }));
   await seedV4Session(page, null, { operbox: fixture.operbox, boxSource: queue ? "maa" : "sample" });
-  await page.addInitScript(({ layout, legacySelection }) => {
-    const key = "arknights-infra-calc-session-v4";
+  await page.addInitScript(({ key, layout, legacySelection }) => {
     const session = JSON.parse(localStorage.getItem(key)!);
     session.layout = layout;
     if (legacySelection) session.rotationSelection = legacySelection;
     localStorage.setItem(key, JSON.stringify(session));
-  }, { layout: fixture.layout, legacySelection });
+  }, { key: sessionStorageKey, layout: fixture.layout, legacySelection });
   await page.goto("/");
   await expect(page.locator('[data-workbench-hydrated="true"]')).toBeVisible({ timeout: 15_000 });
   if (legacySelection) {
@@ -112,7 +112,7 @@ for (const queue of [true, false]) test(`automatic rotation uses shared ${queue 
   for (const warning of fixture.data.rotation.warnings) {
     await expect(page.getByText(warning, { exact: true })).toHaveCount(0);
   }
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).rotationSelection)).toBe("auto_24_24");
+  expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).rotationSelection, sessionStorageKey)).toBe("auto_24_24");
 });
 
 test("automatic rotation cancellation uses the shared queue", async ({ page }) => {
@@ -156,7 +156,7 @@ test("legacy automatic 32/32 sessions submit the current 24/24 request", async (
   await expect.poll(() => request?.rotation).toEqual({ topology: "auto", shift_hours: [24, 24] });
   await acknowledgeAutomaticResult(page);
   await expect(page.locator("[data-shift-tabs]").getByRole("tab")).toHaveText(["第 1 班", "第 2 班"]);
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-calc-session-v5")!).rotationSelection)).toBe("auto_24_24");
+  expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key)!).rotationSelection, sessionStorageKey)).toBe("auto_24_24");
 });
 
 for (const { profile, durations } of [

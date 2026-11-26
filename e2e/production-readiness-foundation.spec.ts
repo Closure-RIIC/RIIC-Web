@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Route } from "@playwright/test";
 import { TERMS_VERSION, PRIVACY_VERSION } from "@riic/platform/legal-policy";
 import { amiyaPortrait, requestId, diagnosticId, layout243, waitForOwnAnimations, planData, twoShiftPlanData, fourShiftPlanData, adjacentPortraitPlanData, lazyPortraitPlanData, authenticatedSklandSnapshot, mockApis, sidebarNavigation, mockAnonymousWebsiteSession, openSklandOverview, navigateToPrimaryPage, seedPreferences, seedV4Session } from "./production-readiness.fixture";
+import { sessionStorageKey } from "./session";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/api/auth/get-session", (route) => route.fulfill({
@@ -1193,9 +1194,9 @@ test("restores a v4 schedule without hydration errors and keeps only safe data",
   await expect(page.locator('[data-slot="live-activity"]')).toHaveCount(0);
   expect(consoleErrors.filter((message) => /hydration|did not match/i.test(message))).toEqual([]);
 
-  const persisted = await page.evaluate(() => JSON.parse(
-    window.localStorage.getItem("arknights-infra-calc-session-v5") ?? "{}"
-  ));
+  const persisted = await page.evaluate((key) => JSON.parse(
+    window.localStorage.getItem(key) ?? "{}"
+  ), sessionStorageKey);
   expect(persisted.savedAt).toBeTruthy();
   expect(persisted.expiresAt).toBeTruthy();
   expect(persisted.result.debug).toBeUndefined();
@@ -1469,9 +1470,9 @@ test("old sessions normalize duplicate operator names before training advice ren
 
   await page.getByRole("button", { name: "练卡建议" }).click();
   await expect(page.getByText(/干员名称重复：阿米娅/)).toHaveCount(0);
-  await expect.poll(async () => page.evaluate(() => JSON.parse(
-    window.localStorage.getItem("arknights-infra-calc-session-v5") ?? "{}"
-  ).operbox)).toEqual([
+  await expect.poll(async () => page.evaluate((key) => JSON.parse(
+    window.localStorage.getItem(key) ?? "{}"
+  ).operbox, sessionStorageKey)).toEqual([
     { id: "char_002_amiya", name: "阿米娅", elite: 2, level: 80, own: true, potential: 6, rarity: 5 },
   ]);
 });
@@ -1493,9 +1494,9 @@ test("four-shift output persists the fourth tab and migrates an old v4 profile",
   await expect(page.getByRole("tab", { name: /第 \d 班 · (?:8|4)h/ })).toHaveCount(4);
   await fourthShift.click();
   await expect(fourthShift).toHaveAttribute("aria-selected", "true");
-  await expect.poll(async () => page.evaluate(() => JSON.parse(
-    window.localStorage.getItem("arknights-infra-calc-session-v5") ?? "{}"
-  ).activeShift)).toBe(3);
+  await expect.poll(async () => page.evaluate((key) => JSON.parse(
+    window.localStorage.getItem(key) ?? "{}"
+  ).activeShift, sessionStorageKey)).toBe(3);
 
   await page.reload();
   await expect(page.getByRole("tab", { name: /第 4 班 · 4h/ })).toHaveAttribute(
@@ -1503,9 +1504,9 @@ test("four-shift output persists the fourth tab and migrates an old v4 profile",
     "true",
     { timeout: 15_000 },
   );
-  const persisted = await page.evaluate(() => JSON.parse(
-    window.localStorage.getItem("arknights-infra-calc-session-v5") ?? "{}"
-  ));
+  const persisted = await page.evaluate((key) => JSON.parse(
+    window.localStorage.getItem(key) ?? "{}"
+  ), sessionStorageKey);
   expect(persisted.activeShift).toBe(3);
   expect(persisted.result.rotation.profile).toBe("fiammetta_8_8_4_4");
 });
