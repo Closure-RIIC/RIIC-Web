@@ -400,6 +400,16 @@ function maaPeriodDurationMinutes(period: MaaPeriod[] | undefined): number | nul
   return total > 0 && total <= MINUTES_PER_DAY ? total : null;
 }
 
+/** Older calculator exports recorded the shift length in these generated labels. */
+function legacyMaaShiftHours(plan: MaaPlan | undefined): number | undefined {
+  const name = typeof plan?.name === "string" ? plan.name.trim() : "";
+  const description = typeof plan?.description === "string" ? plan.description.trim() : "";
+  const fromName = /^Shift\s+\d+\s*·\s*(\d+(?:\.\d+)?)\s*h(?=\s*(?:·|$))/i.exec(name)?.[1];
+  const fromDescription = /^本班\s*(\d+(?:\.\d+)?)\s*小[时時](?=\s*(?:[；;。]|$))/.exec(description)?.[1];
+  const hours = Number(fromName ?? fromDescription);
+  return Number.isFinite(hours) && hours > 0 ? hours : undefined;
+}
+
 /** Keep quoted URLs and escaped quotes intact when reading an annotated example. */
 export function parseScheduleJson(text: string): unknown {
   return JSON.parse(text.replace(/^\uFEFF/, "").replace(/"(?:\\.|[^"\\])*"|\/\/[^\r\n]*|\/\*[\s\S]*?\*\//g,
@@ -525,18 +535,14 @@ export function normalizeMaaScheduleForManualImport(maa: MaaJson, sourceIndexes?
   };
 }
 
-/** 用排班文件明确给出的房间数组和产物覆盖对应设施；文件未涉及的设施沿用当前布局。 */
+/** 用各班明确列出的房间数和产物更新布局，未列出房间的设施沿用当前布局。 */
 export function layoutFromMaaSchedule(maa: MaaJson, current: BaseBlueprint): BaseBlueprint {
   const rooms: BlueprintRoom[] = [];
   for (const definition of IMPORTED_LAYOUT_GROUPS) {
-    const specifiedPlans = maa.plans.filter((plan) => Object.prototype.hasOwnProperty.call(plan.rooms, definition.group));
-    if (specifiedPlans.length === 0) {
-      rooms.push(...current.rooms.filter((room) => room.kind === definition.kind).map((room) => structuredClone(room)));
-      continue;
-    }
     const existing = current.rooms.filter((room) => room.kind === definition.kind);
-    // The arrays configure shifts, not demolition: [] means keep all existing rooms idle.
-    const count = Math.max(existing.length, ...specifiedPlans.map(plan => plan.rooms[definition.group]?.length ?? 0));
+    const importedCount = Math.max(0, ...maa.plans.map(plan => plan.rooms[definition.group]?.length ?? 0));
+    // An omitted group or empty array gives no room count. An explicit empty room still counts.
+    const count = importedCount || existing.length;
     for (let index = 0; index < count; index += 1) {
       const previous = existing[index];
       const room: BlueprintRoom = previous
@@ -596,7 +602,7 @@ export function createManualScheduleDraftFromCalculator(input: {
         periodMinutes === null ? undefined : periodMinutes / 60,
         finitePositive(
           typeof plan?.duration === "number" ? plan.duration / 60 : undefined,
-          12,
+          legacyMaaShiftHours(plan) ?? 12,
         ),
       );
       return input.preferMaaTiming

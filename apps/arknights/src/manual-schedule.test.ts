@@ -589,6 +589,28 @@ test("sequential MAA imports preserve multi-day durations and plan order", () =>
   assert.notEqual(normalized, source);
 });
 
+test("legacy MAA export text restores sequential shift lengths and yields to explicit timing", () => {
+  const source = parseMaaScheduleText(JSON.stringify({ plans: [
+    { name: "Shift 1 · 12h · α+β", rooms: {} },
+    { name: "Shift 2 · 6h · β+γ", rooms: {} },
+    { name: "休息班", description: "本班 6 小时；下次在 6 小时后执行下一计划", rooms: {} },
+  ] }));
+  const importWithTiming = () => createManualScheduleDraftFromCalculator({
+    layout, maa: normalizeMaaScheduleForManualImport(source), fallbackDurations: [],
+    fiammettaEnabled: false, preferMaaTiming: true,
+  });
+  const imported = importWithTiming();
+  assert.equal(imported.scheduleMode, "sequential");
+  assert.deepEqual(imported.shifts.map(shift => shift.durationHours), [12, 6, 6]);
+  assert.deepEqual(loadManualScheduleDraft({
+    getItem: () => JSON.stringify(imported), setItem() {},
+  })?.shifts.map(shift => shift.durationHours), [12, 6, 6]);
+
+  source.plans[1]!.duration = 450;
+  source.plans[2]!.description = "下次在 6 小时后执行下一计划";
+  assert.deepEqual(importWithTiming().shifts.map(shift => shift.durationHours), [12, 7.5, 12]);
+});
+
 test("MAA layout import overrides specified room counts and imports room products", () => {
   const imported = layoutFromMaaSchedule(parseMaaScheduleText(JSON.stringify({
     plans: [{ rooms: {
@@ -627,6 +649,24 @@ test("MAA layout import preserves current products when the file omits or does n
   assert.ok(importedFactory?.product && "factory" in importedFactory.product);
   assert.equal(importedTrade.product.trade.order, "gold");
   assert.equal(importedFactory.product.factory.recipe, "battle_record");
+});
+
+test("MAA import uses the largest explicit room list without carrying extra preset rooms", () => {
+  const preset: BaseBlueprint = JSON.parse(readFileSync(new URL("../../../packages/arknights-domain/src/layouts/243.json", import.meta.url), "utf8"));
+  const room = { operators: [] };
+  const source = parseMaaScheduleText(JSON.stringify({ plans: [
+    { duration: 720, rooms: { trading: [room, room, room], manufacture: [room, room], power: [room, room, room] } },
+    { duration: 720, rooms: { manufacture: [room, room, { ...room, product: "Battle Record" }], power: [] } },
+    { duration: 720, rooms: { manufacture: [] } },
+  ] }));
+  const imported = layoutFromMaaSchedule(normalizeMaaScheduleForManualImport(source), preset);
+  assert.equal(imported.template, "333");
+  assert.deepEqual(imported.rooms.filter(candidate => candidate.kind === "factory").map(candidate => candidate.id), ["manu_1", "manu_2", "manu_3"]);
+  assert.deepEqual(imported.rooms.find(candidate => candidate.id === "manu_3")?.product, { factory: { recipe: "battle_record" } });
+  assert.deepEqual(imported.rooms.filter(candidate => candidate.kind === "dormitory"), preset.rooms.filter(candidate => candidate.kind === "dormitory"));
+
+  const idle = layoutFromMaaSchedule({ title: "空厂测试", plans: [{ name: "休息", rooms: { manufacture: [] } }] }, preset);
+  assert.equal(idle.rooms.filter(candidate => candidate.kind === "factory").length, 4);
 });
 
 test("MAA schedule import rejects JSON without valid plans and rooms", () => {
