@@ -651,24 +651,6 @@ test("MAA layout import preserves current products when the file omits or does n
   assert.equal(importedFactory.product.factory.recipe, "battle_record");
 });
 
-test("MAA import uses the largest explicit room list without carrying extra preset rooms", () => {
-  const preset: BaseBlueprint = JSON.parse(readFileSync(new URL("../../../packages/arknights-domain/src/layouts/243.json", import.meta.url), "utf8"));
-  const room = { operators: [] };
-  const source = parseMaaScheduleText(JSON.stringify({ plans: [
-    { duration: 720, rooms: { trading: [room, room, room], manufacture: [room, room], power: [room, room, room] } },
-    { duration: 720, rooms: { manufacture: [room, room, { ...room, product: "Battle Record" }], power: [] } },
-    { duration: 720, rooms: { manufacture: [] } },
-  ] }));
-  const imported = layoutFromMaaSchedule(normalizeMaaScheduleForManualImport(source), preset);
-  assert.equal(imported.template, "333");
-  assert.deepEqual(imported.rooms.filter(candidate => candidate.kind === "factory").map(candidate => candidate.id), ["manu_1", "manu_2", "manu_3"]);
-  assert.deepEqual(imported.rooms.find(candidate => candidate.id === "manu_3")?.product, { factory: { recipe: "battle_record" } });
-  assert.deepEqual(imported.rooms.filter(candidate => candidate.kind === "dormitory"), preset.rooms.filter(candidate => candidate.kind === "dormitory"));
-
-  const idle = layoutFromMaaSchedule({ title: "空厂测试", plans: [{ name: "休息", rooms: { manufacture: [] } }] }, preset);
-  assert.equal(idle.rooms.filter(candidate => candidate.kind === "factory").length, 4);
-});
-
 test("MAA schedule import rejects JSON without valid plans and rooms", () => {
   assert.throws(() => parseMaaScheduleText("{}"), /plans/);
   assert.throws(() => parseMaaScheduleText(JSON.stringify({ plans: [{}] })), /rooms/);

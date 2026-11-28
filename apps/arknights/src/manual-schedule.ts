@@ -535,14 +535,18 @@ export function normalizeMaaScheduleForManualImport(maa: MaaJson, sourceIndexes?
   };
 }
 
-/** 用各班明确列出的房间数和产物更新布局，未列出房间的设施沿用当前布局。 */
+/** 用排班文件明确给出的房间数组和产物覆盖对应设施；文件未涉及的设施沿用当前布局。 */
 export function layoutFromMaaSchedule(maa: MaaJson, current: BaseBlueprint): BaseBlueprint {
   const rooms: BlueprintRoom[] = [];
   for (const definition of IMPORTED_LAYOUT_GROUPS) {
+    const specifiedPlans = maa.plans.filter((plan) => Object.prototype.hasOwnProperty.call(plan.rooms, definition.group));
+    if (specifiedPlans.length === 0) {
+      rooms.push(...current.rooms.filter((room) => room.kind === definition.kind).map((room) => structuredClone(room)));
+      continue;
+    }
     const existing = current.rooms.filter((room) => room.kind === definition.kind);
-    const importedCount = Math.max(0, ...maa.plans.map(plan => plan.rooms[definition.group]?.length ?? 0));
-    // An omitted group or empty array gives no room count. An explicit empty room still counts.
-    const count = importedCount || existing.length;
+    // The arrays configure shifts, not demolition: [] means keep all existing rooms idle.
+    const count = Math.max(existing.length, ...specifiedPlans.map(plan => plan.rooms[definition.group]?.length ?? 0));
     for (let index = 0; index < count; index += 1) {
       const previous = existing[index];
       const room: BlueprintRoom = previous
