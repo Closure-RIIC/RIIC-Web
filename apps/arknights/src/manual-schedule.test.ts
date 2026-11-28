@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import { downloadManualMaa, rememberMaaImport } from "./maa-import-export.ts";
 import { prepareMaaForExport } from "@riic/arknights-domain/maa-safety";
+import { applyDormLocks, dormLocksAt } from "./manual-dorm-locks.ts";
 
 import {
   assignManualOperator,
@@ -29,6 +30,7 @@ import {
   setManualDroneTarget,
   setManualRoomProduct,
   swapManualOperators,
+  toggleManualDormLock,
 } from "./manual-schedule.ts";
 import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
 
@@ -48,6 +50,64 @@ const layout: BaseBlueprint = {
 const box: OperBoxEntry[] = ["菲亚梅塔", "但书", "巫恋"].map((name, index) => ({
   id: String(index), name, own: true, elite: 2, level: 80, potential: 1, rarity: 6,
 }));
+
+test("dorm locks preserve empty and occupied beds in later shifts, through edits and reload", () => {
+  let draft = createManualScheduleDraft();
+  const effectiveShift = (source = draft) => applyDormLocks(source.shifts[2]!, dormLocksAt(source, 2));
+  const assign = (shiftIndex: number, roomId: string, slotIndex: number, operator: string) =>
+    assignManualOperator({draft,layout,shiftIndex,roomId,slotIndex,operator,moveExisting:true}).draft;
+  draft = assign(1,"dorm_1",2,"菲亚梅塔");
+  draft = assign(2,"dorm_1",0,"巫恋");
+  draft = assign(2,"trade_1",0,"菲亚梅塔");
+  draft = toggleManualDormLock(draft,layout,1,"dorm_1",0);
+  draft = toggleManualDormLock(draft,layout,1,"dorm_1",2);
+  assert.equal(draft.shifts[0]!.rooms.dorm_1,undefined);
+  assert.deepEqual(effectiveShift().rooms.dorm_1!.operators.slice(0,3),[null,null,"菲亚梅塔"]);
+  assert.equal(effectiveShift().rooms.trade_1!.operators[0],null);
+  assert.equal(assign(2,"dorm_1",0,"巫恋"),draft);
+  assert.equal(assign(2,"trade_1",0,"菲亚梅塔"),draft);
+  assert.equal(swapManualOperators(draft,layout,2,"dorm_1",2,3),draft);
+  assert.equal(effectiveShift(clearManualShift(draft,layout,2)).rooms.dorm_1!.operators[2],"菲亚梅塔");
+
+  const loaded = loadManualScheduleDraft({getItem: () => JSON.stringify(draft),setItem: () => {}})!;
+  draft = reconcileManualScheduleDraft(loaded,layout,box);
+  assert.equal(draft.dormLocks?.length,2);
+  assert.equal(effectiveShift().rooms.dorm_1!.operators[2],"菲亚梅塔");
+  draft = toggleManualDormLock(draft,layout,2,"dorm_1",2);
+  assert.equal(effectiveShift().rooms.trade_1!.operators[0],"菲亚梅塔");
+  assert.equal(draft.dormLocks?.length,1);
+});
+
+test("unlocking beds restores the scheduled positions hidden by the locks after a reload", () => {
+  let draft = createManualScheduleDraft();
+  for (const [shiftIndex, roomId, slotIndex, operator] of [
+    [0, "dorm_1", 0, "菲亚梅塔"],
+    [1, "dorm_1", 0, "巫恋"],
+    [1, "dorm_1", 1, "但书"],
+    [1, "trade_1", 0, "菲亚梅塔"],
+  ] as const) {
+    draft = assignManualOperator({ draft, layout, shiftIndex, roomId, slotIndex, operator }).draft;
+  }
+  const planned = draft.shifts[1]!;
+  draft = toggleManualDormLock(draft, layout, 0, "dorm_1", 0);
+  draft = toggleManualDormLock(draft, layout, 0, "dorm_1", 1);
+  const locked = applyDormLocks(draft.shifts[1]!, dormLocksAt(draft, 1));
+  assert.deepEqual(locked.rooms.dorm_1!.operators.slice(0, 2), ["菲亚梅塔", null]);
+  assert.equal(locked.rooms.trade_1!.operators[0], null);
+  const lockedPlan = manualScheduleToMaa(draft, layout, false).plans[1]!;
+  assert.deepEqual(lockedPlan.rooms.dormitory?.[0]?.operators, ["菲亚梅塔"]);
+  assert.deepEqual(lockedPlan.rooms.trading?.[0]?.operators, []);
+
+  const saved = loadManualScheduleDraft({ getItem: () => JSON.stringify(draft), setItem: () => {} })!;
+  draft = reconcileManualScheduleDraft(saved, layout, box);
+  draft = toggleManualDormLock(draft, layout, 1, "dorm_1", 0);
+  draft = toggleManualDormLock(draft, layout, 1, "dorm_1", 1);
+  assert.deepEqual(draft.shifts[1]!.rooms.dorm_1!.operators, planned.rooms.dorm_1!.operators);
+  assert.deepEqual(draft.shifts[1]!.rooms.trade_1!.operators, planned.rooms.trade_1!.operators);
+  const unlockedPlan = manualScheduleToMaa(draft, layout, false).plans[1]!;
+  assert.deepEqual(unlockedPlan.rooms.dormitory?.[0]?.operators, ["巫恋", "但书"]);
+  assert.deepEqual(unlockedPlan.rooms.trading?.[0]?.operators, ["菲亚梅塔"]);
+});
 
 test("manual sorting swaps one room in one shift without mutating the source draft", () => {
   let draft = createManualScheduleDraft();
@@ -527,6 +587,28 @@ test("sequential MAA imports preserve multi-day durations and plan order", () =>
   const normalized = normalizeMaaScheduleForManualImport(source);
   assert.deepEqual(normalized, source);
   assert.notEqual(normalized, source);
+});
+
+test("legacy MAA export text restores sequential shift lengths and yields to explicit timing", () => {
+  const source = parseMaaScheduleText(JSON.stringify({ plans: [
+    { name: "Shift 1 · 12h · α+β", rooms: {} },
+    { name: "Shift 2 · 6h · β+γ", rooms: {} },
+    { name: "休息班", description: "本班 6 小时；下次在 6 小时后执行下一计划", rooms: {} },
+  ] }));
+  const importWithTiming = () => createManualScheduleDraftFromCalculator({
+    layout, maa: normalizeMaaScheduleForManualImport(source), fallbackDurations: [],
+    fiammettaEnabled: false, preferMaaTiming: true,
+  });
+  const imported = importWithTiming();
+  assert.equal(imported.scheduleMode, "sequential");
+  assert.deepEqual(imported.shifts.map(shift => shift.durationHours), [12, 6, 6]);
+  assert.deepEqual(loadManualScheduleDraft({
+    getItem: () => JSON.stringify(imported), setItem() {},
+  })?.shifts.map(shift => shift.durationHours), [12, 6, 6]);
+
+  source.plans[1]!.duration = 450;
+  source.plans[2]!.description = "下次在 6 小时后执行下一计划";
+  assert.deepEqual(importWithTiming().shifts.map(shift => shift.durationHours), [12, 7.5, 12]);
 });
 
 test("MAA layout import overrides specified room counts and imports room products", () => {

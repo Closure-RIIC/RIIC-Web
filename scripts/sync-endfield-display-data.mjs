@@ -7,7 +7,7 @@ import { loadEndfieldTables } from "./endfield-upstream.mjs";
 import { writeGenerated } from "./i18n/write-generated.mjs";
 
 // Deliberately pinned: upstream updates are reviewed independently of solver updates.
-const assetRevision = "444cd59e43dd2171a98c51950759a7f47b0a2bad";
+const assetRevision = "c7b9bfa4071ae3c525237e77e6daa553f82ceeb9";
 const root = fileURLToPath(new URL("../", import.meta.url));
 const output = path.join(root, "packages/endfield-data");
 const publicDir = path.join(root, "apps/endfield/public/images/game");

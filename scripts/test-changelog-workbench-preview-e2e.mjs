@@ -71,7 +71,7 @@ try {
   await expect(workspace).toHaveAttribute("data-release-application", "endfield");
   await workspace.getByRole("region", { name: "日志列表", exact: true }).getByRole("button").filter({ hasText: "0.7.1" }).click();
   await expect(form.getByLabel("更新标题", { exact: true })).toHaveValue("终末地草稿");
-  for (const [language, site, title] of [["繁體中文（台灣）", "終末地", "更新標題"], ["English", "Endfield", "Update title"]]) {
+  for (const [language, site, title] of [["繁體中文", "終末地", "更新標題"], ["English", "Endfield", "Update title"]]) {
     await page.getByRole("button", { name: language, exact: true }).click();
     await expect(workspace.getByRole("button", { name: site, exact: true })).toHaveAttribute("aria-pressed", "true");
     await expect(form.getByLabel(title, { exact: true })).toHaveValue("终末地草稿");

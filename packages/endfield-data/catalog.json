@@ -3248,6 +3248,101 @@
           "icon": "/images/game/skills/facskill_spaceship_manufacture_power_consume.png"
         }
       ]
+    },
+    "chr_0040_sweetpie": {
+      "id": "chr_0040_sweetpie",
+      "name": "小刻",
+      "enName": "Kay",
+      "twName": "小刻",
+      "rarity": 6,
+      "profession": "先锋",
+      "enProfession": "Vanguard",
+      "twProfession": "先鋒",
+      "icon": "/images/game/operators/portrait_chr_0040_sweetpie.png",
+      "skills": [
+        {
+          "id": "spaceship_skill_chr_0040_sweetpie_1_1",
+          "name": "野路子铁匠·β",
+          "enName": "Truly Wild Smithing β",
+          "twName": "野路子鐵匠·β",
+          "description": "进驻制造舱时，武器经验素材的生产效率提升20%",
+          "enDescription": "Assign to Manufacturing Cabin to grant weapon EXP material production efficiency +20%",
+          "twDescription": "進駐製造艙時，武器經驗材料的生產效率提升20%",
+          "unlock": 1,
+          "roomType": 1,
+          "room": "制造舱",
+          "enRoom": "Manufacturing",
+          "twRoom": "製造艙",
+          "effectKey": "ManufactureEfficiencyUp",
+          "effectName": "制造舱 · 指定经验素材生产效率提升",
+          "enEffectName": "Production efficiency",
+          "twEffectName": "製造艙 · 指定經驗素材生產效率提升",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
+        },
+        {
+          "id": "spaceship_skill_chr_0040_sweetpie_1_2",
+          "name": "野路子铁匠·γ",
+          "enName": "Truly Wild Smithing γ",
+          "twName": "野路子鐵匠·γ",
+          "description": "进驻制造舱时，武器经验素材的生产效率提升30%",
+          "enDescription": "Assign to Manufacturing Cabin to grant weapon EXP material production efficiency +30%",
+          "twDescription": "進駐製造艙時，武器經驗材料的生產效率提升30%",
+          "unlock": 3,
+          "roomType": 1,
+          "room": "制造舱",
+          "enRoom": "Manufacturing",
+          "twRoom": "製造艙",
+          "effectKey": "ManufactureEfficiencyUp",
+          "effectName": "制造舱 · 指定经验素材生产效率提升",
+          "enEffectName": "Production efficiency",
+          "twEffectName": "製造艙 · 指定經驗素材生產效率提升",
+          "targetId": 2,
+          "target": "武器经验",
+          "enTarget": "Weapon EXP",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_efficiency.png"
+        },
+        {
+          "id": "spaceship_skill_chr_0040_sweetpie_2_1",
+          "name": "蜜饼小歇·β",
+          "enName": "Honey Waffle Break β",
+          "twName": "蜜餅小歇·β",
+          "description": "进驻制造舱时，舱室内干员心情消耗降低14%",
+          "enDescription": "Assign to Manufacturing Cabin to slow Mood Drop of all operators in it by 14%",
+          "twDescription": "進駐製造艙時，艙室內幹員心情消耗降低14%",
+          "unlock": 2,
+          "roomType": 1,
+          "room": "制造舱",
+          "enRoom": "Manufacturing",
+          "twRoom": "製造艙",
+          "effectKey": "RoomMoodConsumeDown",
+          "effectName": "舱室内干员心情消耗降低",
+          "enEffectName": "Room morale consumption",
+          "twEffectName": "艙室內幹員心情消耗降低",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_power_consume.png"
+        },
+        {
+          "id": "spaceship_skill_chr_0040_sweetpie_2_2",
+          "name": "蜜饼小歇·γ",
+          "enName": "Honey Waffle Break γ",
+          "twName": "蜜餅小歇·γ",
+          "description": "进驻制造舱时，舱室内干员心情消耗降低18%",
+          "enDescription": "Assign to Manufacturing Cabin to slow Mood Drop of all operators in it by 18%",
+          "twDescription": "進駐製造艙時，艙室內幹員心情消耗降低18%",
+          "unlock": 4,
+          "roomType": 1,
+          "room": "制造舱",
+          "enRoom": "Manufacturing",
+          "twRoom": "製造艙",
+          "effectKey": "RoomMoodConsumeDown",
+          "effectName": "舱室内干员心情消耗降低",
+          "enEffectName": "Room morale consumption",
+          "twEffectName": "艙室內幹員心情消耗降低",
+          "icon": "/images/game/skills/facskill_spaceship_manufacture_power_consume.png"
+        }
+      ]
     }
   },
   "weapons": {
@@ -3930,6 +4025,22 @@
       "twName": "喚月",
       "rarity": 6,
       "icon": "/images/game/weapons/wpn_sword_0025.png"
+    },
+    "wpn_lance_0017": {
+      "id": "wpn_lance_0017",
+      "name": "甜美交易",
+      "enName": "Sweet Deal",
+      "twName": "甜美交易",
+      "rarity": 6,
+      "icon": "/images/game/weapons/wpn_lance_0017.png"
+    },
+    "wpn_lance_0018": {
+      "id": "wpn_lance_0018",
+      "name": "突击流星",
+      "enName": "Raid Comet",
+      "twName": "突擊流星",
+      "rarity": 6,
+      "icon": "/images/game/weapons/wpn_lance_0018.png"
     }
   }
 }

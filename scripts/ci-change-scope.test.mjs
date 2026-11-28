@@ -116,6 +116,7 @@ test("managed operator updates select resource publication with build and deploy
     ["apps/arknights/src/generated/mastery-data.json", "apps/arknights/public/images/building-skills/bskill_recycle_spd&cost1.png", "docs/data.md"],
     ["apps/arknights/public/images/products/gold.webp"],
     ["packages/arknights-domain/src/generated/gacha-up.json"],
+    ["apps/arknights/src/generated/recruitment-data.json"],
     ["packages/arknights-domain/src/generated/gacha-up.json", "packages/arknights-domain/src/generated/arkntools/operator-catalog.json"],
     [".\\packages\\arknights-domain\\src\\generated\\arkntools\\operator-rarities.json"],
   ]) {

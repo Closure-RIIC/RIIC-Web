@@ -1,15 +1,20 @@
-import { defaultMoodSettings, type MoodSettings } from "./types.ts";
+import { defaultMoodSettings, type FiammettaRule, type MoodSettings } from "./types.ts";
 
 export { MOOD_STORAGE_KEY } from "../manual-schedule-config.ts";
-export function pruneSettings(settings: MoodSettings, shiftCount: number, names: ReadonlySet<string>, rooms: ReadonlySet<string>): MoodSettings {
+
+export function resolveFiammettaRule(rule: FiammettaRule | undefined, target: string | null): Required<FiammettaRule> {
+  const mode = rule?.mode ?? "specified";
+  const enabled = mode === "specified" ? Boolean(target) && rule?.enabled !== false : rule?.enabled === true;
+  return { mode, enabled };
+}
+
+export function pruneSettings(settings: MoodSettings, shiftCount: number, names: ReadonlySet<string>): MoodSettings {
   return {...settings,
     fiammetta:Object.fromEntries(Object.entries(settings.fiammetta).filter(([key]) => Number(key)<shiftCount)),
     idle:Object.fromEntries(Object.entries(settings.idle).filter(([key]) => {
       const [cycle,shift,...name]=key.split(":");
       return Number(cycle)<settings.cycles && Number(shift)<shiftCount && names.has(name.join(":"));
-    }).map(([key,rule]) => [key,{enabled:rule.enabled,
-      ...(rule.target && names.has(rule.target) ? {target:rule.target}:{}),
-      ...(rule.dorm && rooms.has(rule.dorm) ? {dorm:rule.dorm}:{})}])),
+    })),
   };
 }
 export function readSettings(raw: string | null, signature: string): MoodSettings {
@@ -23,14 +28,17 @@ export function readSettings(raw: string | null, signature: string): MoodSetting
     out.cycles=value.cycles;out.idleEnabled=value.idleEnabled;
     for (const [key,r] of Object.entries(value.fiammetta)) {
       const row=r as Record<string,unknown>;
-      if (Number.isInteger(Number(key)) && Number(key)>=0 && typeof row?.enabled === "boolean" &&
-          typeof row.wait === "boolean" && ["specified","previous","auto"].includes(String(row.mode)))
-        out.fiammetta[Number(key)]={enabled:row.enabled,wait:row.wait,mode:row.mode as "specified"|"previous"|"auto"};
+      if (!Number.isInteger(Number(key)) || Number(key)<0 || !row) continue;
+      const { mode, enabled } = row;
+      if ((mode === "specified" || mode === "previous" || mode === "auto") &&
+          (enabled === undefined || typeof enabled === "boolean")) {
+        out.fiammetta[Number(key)] = { mode, ...(enabled !== undefined ? { enabled } : {}) };
+      }
     }
     for (const [key,r] of Object.entries(value.idle)) {
       const row=r as Record<string,unknown>;
       if (/^\d+:\d+:.+$/.test(key) && typeof row?.enabled === "boolean")
-        out.idle[key]={enabled:row.enabled,...(typeof row.target === "string" ? {target:row.target}:{}),...(typeof row.dorm === "string" ? {dorm:row.dorm}:{})};
+        out.idle[key]={enabled:row.enabled};
     }
     return out;
   } catch {return defaultMoodSettings();}

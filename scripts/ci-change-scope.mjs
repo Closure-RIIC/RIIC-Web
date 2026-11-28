@@ -28,6 +28,7 @@ const OPERATOR_DATA_FILES = new Set([
   "packages/arknights-domain/src/generated/arkntools/term-catalog.json",
   "packages/arknights-domain/src/generated/arkntools/source.json",
   "apps/arknights/src/generated/mastery-data.json",
+  "apps/arknights/src/generated/recruitment-data.json",
   "apps/arknights/src/generated/training-planner-data.json",
   "packages/arknights-domain/src/generated/gacha-up.json",
   "fixtures/operbox_full_e2.json",

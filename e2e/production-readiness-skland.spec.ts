@@ -3,6 +3,7 @@ import { gachaAccountOptions } from "../apps/arknights/src/gacha-accounts";
 import type { GachaHistory } from "@riic/arknights-domain/gacha-history";
 import { TERMS_VERSION, PRIVACY_VERSION } from "@riic/platform/legal-policy";
 import { requestId, diagnosticId, expectUnifiedDialogTypography, expectUnifiedDialogAction, waitForContentReady, waitForOwnAnimations, planData, sampleData, authenticatedSklandSnapshot, productionHeavySklandSnapshot, primarySklandAccount, mockApis, openSklandOverview, seedPreferences, seedV4Session } from "./production-readiness.fixture";
+import { sessionStorageKey } from "./session";
 
 async function mockGachaSession(page: Page, roles: Array<{ uid: string; nickname: string }> = [], authorized = true) {
   const activeRoles = (roles.length ? roles : [{ uid: "10001", nickname: "扫码测试" }]).map((role) => ({ ...role, channelName: "官服", isDefault: true }));
@@ -52,6 +53,8 @@ async function expectNonTextContrast(foreground: Locator, background: Locator) {
 }
 
 test.beforeEach(async ({ page }) => {
+  // Keep the mocked website session independent of real cloud consent requests.
+  await page.route("**/api/account/data-consent", route => route.fulfill({ json: { success: true, data: { current: false, cloudSyncEnabled: false } } }));
   await page.route("**/api/auth/get-session", (route) => route.fulfill({
     status: 200,
     contentType: "application/json",
@@ -2577,15 +2580,14 @@ test("settings clears local product data without logging out of Skland", async (
   await expectUnifiedDialogAction(clearDialog.getByRole("button", { name: "清除本地数据" }), { width: "176px", height: "44px" });
   await page.getByRole("button", { name: "清除本地数据" }).last().click();
 
-  const stored = await page.evaluate(() => ({
+  const stored = await page.evaluate((key) => ({
     v2: window.localStorage.getItem("arknights-infra-calc-beta-session-v2"),
     v3: window.localStorage.getItem("arknights-infra-calc-beta-session-v3"),
-    v4: window.localStorage.getItem("arknights-infra-calc-session-v4"),
-    v5: window.localStorage.getItem("arknights-infra-calc-session-v5"),
+    current: window.localStorage.getItem(key),
     telemetry: window.localStorage.getItem("arknights-infra-telemetry-session"),
     onboarding: window.localStorage.getItem("arknights-infra-calc-beta-onboarding-v1"),
-  }));
-  expect({ ...stored, telemetry: undefined }).toEqual({ v2: null, v3: null, v4: null, v5: null, telemetry: undefined, onboarding: null });
+  }), sessionStorageKey);
+  expect({ ...stored, telemetry: undefined }).toEqual({ v2: null, v3: null, current: null, telemetry: undefined, onboarding: null });
   expect(stored.telemetry).not.toBe(telemetrySessionBeforeClear);
   expect(logoutRequests).toBe(0);
 });

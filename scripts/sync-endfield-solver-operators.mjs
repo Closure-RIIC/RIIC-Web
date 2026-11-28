@@ -7,7 +7,7 @@ import { loadEndfieldTables } from "./endfield-upstream.mjs";
 import { writeGenerated } from "./i18n/write-generated.mjs";
 
 // Only reviewed operator additions are regenerated; facility formulas retain their own snapshot.
-const operatorIds = ["chr_0037_minghe"];
+const operatorIds = ["chr_0037_minghe", "chr_0040_sweetpie"];
 const tableNames = ["CharacterTable", "CharGrowthTable", "SpaceshipCharSkillTable", "SpaceshipSkillTable", "I18nTextTable_CN"];
 
 export function solverOperator(id, tables, ship) {

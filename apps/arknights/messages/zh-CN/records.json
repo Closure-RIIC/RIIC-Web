@@ -39,7 +39,9 @@
     "dormitory": "宿舍",
     "meeting": "会客室",
     "hire": "办公室",
-    "processing": "加工站"
+    "processing": "加工站",
+    "training": "训练室",
+    "recycle": "回收站"
   },
   "components_ShiftComparisonCard_labels2": {
     "missing": "需换入",

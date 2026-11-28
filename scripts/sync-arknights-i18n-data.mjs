@@ -64,7 +64,7 @@ const english = {
 };
 const overrides = Object.fromEntries(await Promise.all(["en", "zh-TW"].map(async locale => [locale, await read(`apps/arknights/i18n/game-overrides/${locale}.json`)])));
 const roomCodes = { control: "CONTROL", trading: "TRADING", manufacture: "MANUFACTURE", power: "POWER", dormitory: "DORMITORY", meeting: "MEETING", hire: "HIRE", processing: "WORKSHOP", training: "TRAINING" };
-const roomChinese = { control: "控制中枢", trading: "贸易站", manufacture: "制造站", power: "发电站", dormitory: "宿舍", meeting: "会客室", hire: "人力办公室", processing: "加工站", training: "训练室", recycling: "回收站" };
+const roomChinese = { control: "控制中枢", trading: "贸易站", manufacture: "制造站", power: "发电站", dormitory: "宿舍", meeting: "会客室", hire: "人力办公室", processing: "加工站", training: "训练室", recycle: "回收站" };
 const outputs = {}, coverage = {}, catalogs = {};
 for (const locale of ["zh-CN", "zh-TW", "en"]) {
   const upstreamData = regional[locale === "zh-TW" ? "tw" : "us"];
