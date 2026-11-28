@@ -17,3 +17,6 @@ New operators can be generated independently of the pinned algorithm and facilit
 using the same pinned TableCfg source as the display catalog. `ship-data.json` records that source,
 input hashes and affected IDs in `meta.operatorUpdates`. Missing unlock nodes or unsupported effect types
 fail generation. Float32 representation noise is rounded only for the reviewed percentage effects.
+The reviewed additions currently include Argent Flow (明河) and Kay (小刻); Kay's manufacturing
+efficiency applies to weapon EXP, with elite stages 1/3 unlocking 20%/30% efficiency and stages
+2/4 unlocking 14%/18% room morale reduction. The pinned algorithm and facility formulas are unchanged.

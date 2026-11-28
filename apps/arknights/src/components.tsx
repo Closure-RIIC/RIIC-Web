@@ -12,6 +12,7 @@ import {
   FileWarning,
   Loader2,
   LockKeyhole,
+  LockKeyholeOpen,
   Play,
   Smile,
 } from "lucide-react";
@@ -77,7 +78,7 @@ import {
 } from "./rotation-presentation";
 import { DEFAULT_ROTATION_PROFILE } from "@riic/arknights-domain/rotation-settings";
 import { RoomRow } from "./schedule";
-import { recyclingRoom, withRecyclingRoom, type RecyclingRoom } from "./recycling-room";
+import { recyclingRoom, recyclingRoomCapacity, withRecyclingRoom, type RecyclingRoom } from "./recycling-room";
 import {
   COMPACT_OPERATOR_SIZE_CLASS,
   LevelDiamondVariant,
@@ -620,6 +621,8 @@ export function ShiftTabs({
   }
 
   const labelForShift = (index: number) => {
+    // 自动轮换的时长是评价窗口，不作为班次页签的换班时长显示。
+    if (rotation && "auto_rotation" in rotation && rotation.auto_rotation) return shiftTabLabel(undefined, index, en);
     const shift = rotation?.shifts[index];
     const durationHours = shift?.duration_hours ?? durations?.[index];
     return localize_components.text(en, "additional1", { hasDuration: durationHours !== undefined ? "yes" : "no", index: index + 1, hours: durationHours !== undefined ? compactNumber(durationHours) : "", label: shiftTabLabel(shift, index, en) });
@@ -696,9 +699,10 @@ export function scheduleIssueTriggerId(row: RoomRow) {
 }
 
 
-function roomSlotCountFor(group: string) {
+function roomSlotCountFor(group: string, level?: number) {
   if (group === "trading" || group === "manufacture") return 3;
-  if (group === "training" || group === "meeting" || group === "recycle") return 2;
+  if (group === "recycle") return recyclingRoomCapacity(level ?? 3);
+  if (group === "training" || group === "meeting") return 2;
   return ROOM_SLOT_COUNT;
 }
 
@@ -885,6 +889,7 @@ function OperatorSlotShell({
   editableHint,
   frameClassName,
   frameContent,
+  frameControl,
   frameFocusable = false,
   frameWrapper = (frame) => frame,
   label,
@@ -902,6 +907,7 @@ function OperatorSlotShell({
   editableHint?: string;
   frameClassName: string;
   frameContent?: ReactNode;
+  frameControl?: ReactNode;
   frameFocusable?: boolean;
   /** 可选：包装头像框元素（例如包上技能 tooltip 的 trigger）。默认原样返回。 */
   frameWrapper?: (frame: ReactElement) => ReactElement;
@@ -939,15 +945,16 @@ function OperatorSlotShell({
     </div>
   );
 
-  return (
+  const layoutClass = cn(
+    "infra-operator-slot min-w-0 shrink-0",
+    compactView ? COMPACT_OPERATOR_SIZE_CLASS : "[--operator-slot-size:clamp(70px,7.3vw,80px)] max-sm:[--operator-slot-size:clamp(56px,16vw,76px)]",
+    compactFactory && "min-[1800px]:[--operator-slot-size:70px]",
+    centerFrameInList && "max-sm:w-full sm:relative sm:h-full sm:w-[var(--operator-slot-size)]",
+  );
+  const content = (
     <div
       className={cn(
-        "infra-operator-slot min-w-0 shrink-0",
-        compactView
-          ? COMPACT_OPERATOR_SIZE_CLASS
-          : "[--operator-slot-size:clamp(70px,7.3vw,80px)] max-sm:[--operator-slot-size:clamp(56px,16vw,76px)]",
-        compactFactory && "min-[1800px]:[--operator-slot-size:70px]",
-        centerFrameInList && "max-sm:w-full sm:relative sm:h-full sm:w-[var(--operator-slot-size)]",
+        frameControl ? "size-full" : layoutClass,
         !unavailable && onActivate && "cursor-pointer rounded-[4px] outline-none focus-visible:ring-2 focus-visible:ring-[#FFD800]",
         !unavailable && onActivate && editableAppearance && "focus-visible:ring-offset-2 focus-visible:ring-offset-[#313131]",
       )}
@@ -977,6 +984,11 @@ function OperatorSlotShell({
       </span>
     </div>
   );
+  if (!frameControl) return content;
+  return <div className={cn(layoutClass,"relative")}>
+    {content}
+    <div className={cn("absolute right-0.5 top-0.5 z-40",centerFrameInList && "sm:top-[calc((100%_-_var(--operator-slot-size))/2_+_2px)]")}>{frameControl}</div>
+  </div>;
 }
 
 function BuildingSkillBadge({
@@ -1140,6 +1152,8 @@ export function OperatorSlot({
   searchQuery = "",
   onActivate,
   unavailable = false,
+  locked = false,
+  onToggleLock,
   highlightNoLayoutSkill = false,
   sortSelected = false,
   onSortActivate,
@@ -1180,6 +1194,8 @@ export function OperatorSlot({
   searchQuery?: string;
   onActivate?: () => void;
   unavailable?: boolean;
+  locked?: boolean;
+  onToggleLock?: () => void;
   highlightNoLayoutSkill?: boolean;
   sortSelected?: boolean;
   onSortActivate?: () => void;
@@ -1197,10 +1213,13 @@ export function OperatorSlot({
   const enterX = shouldReduceMotion ? 0 : shiftDirection * 6;
   const exitX = shouldReduceMotion ? 0 : shiftDirection * -4;
   const unavailableLabel = intl("components.slotLocked");
+  const lockedLabel = locked ? intl("components.dormSlotLocked") : undefined;
+  const lockActionLabel = onToggleLock && (locked ? intl("components.unlockDormSlot") : intl("components.lockDormSlot"));
   const occupantLabel = unavailable ? unavailableLabel : displayName ?? (autofill ? (intl("components.autoFill")) : (emptyLabel ?? intl("components.empty")));
-  const occupantAriaLabel = displayPositionLabel
+  const positionAriaLabel = displayPositionLabel
     ? `${displayPositionLabel}${intl("components.label2")}${occupantLabel}`
     : occupantLabel;
+  const occupantAriaLabel = lockedLabel ? `${positionAriaLabel} · ${lockedLabel}` : positionAriaLabel;
   const ariaLabel = showSkillTooltip && skillTooltipFocusable && slot
     ? `${occupantAriaLabel}${intl("components.focusToViewInfrastructureSkills")}`
     : occupantAriaLabel;
@@ -1225,7 +1244,13 @@ export function OperatorSlot({
       unavailable={unavailable}
       editableHint={unavailable ? unavailableLabel : onActivate && !selectionMode ? (intl("components.edit")) : undefined}
       frameClassName={frameClassName}
+      frameControl={onToggleLock && <button type="button" data-dorm-slot-toggle data-dorm-slot-locked={locked || undefined}
+        aria-label={lockActionLabel || undefined} title={lockActionLabel || undefined} aria-pressed={locked} onClick={onToggleLock}
+        className={cn("flex size-7 items-center justify-center rounded bg-black/80 text-white shadow-sm hover:bg-black focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-[#FFD800]",locked && "text-[#FFD800]")}>
+        {locked ? <LockKeyhole className="size-4" aria-hidden="true" /> : <LockKeyholeOpen className="size-4" aria-hidden="true" />}
+      </button>}
       frameContent={
+        <>
         <AnimatePresence initial={false} mode="sync">
           <motion.div
             key={identity}
@@ -1315,6 +1340,8 @@ export function OperatorSlot({
             )}
           </motion.div>
         </AnimatePresence>
+        {lockedLabel && !onToggleLock && <span data-dorm-slot-locked className="pointer-events-none absolute right-0.5 top-0.5 z-30 rounded bg-black/75 p-1 text-white" title={lockedLabel}><LockKeyhole className="size-3" aria-hidden="true" /></span>}
+        </>
       }
       frameFocusable={showSkillTooltip && skillTooltipFocusable && Boolean(slot)}
       frameWrapper={showSkillTooltip && slot ? (frame) => (
@@ -1408,6 +1435,7 @@ function ScheduleBoardImpl({
   viewModeControl = "tabs",
   hideImages = false,
   onSlotClick,
+  onDormLockToggle,
   sortRoomId,
   sortSelection,
   onSortToggle,
@@ -1451,6 +1479,7 @@ function ScheduleBoardImpl({
   viewModeControl?: "tabs" | "select";
   hideImages?: boolean;
   onSlotClick?: (row: RoomRow, slotIndex: number) => void;
+  onDormLockToggle?: (roomId: string, slotIndex: number) => void;
   sortRoomId?: string | null;
   sortSelection?: { roomId: string; slotIndex: number } | null;
   onSortToggle?: (row: RoomRow) => void;
@@ -1655,9 +1684,10 @@ function ScheduleBoardImpl({
                 const compactFactoryRoom = row.group === "manufacture";
                 const functionalOperatorPosition = listFunctionalOperatorPosition(row.group);
                 const functionalOperatorPlacementClass = listFunctionalOperatorPlacementClass(row.group);
-                const slotCount = compactInlineRoom
-                  ? (row.group === "meeting" || row.group === "training" || row.group === "recycle" ? 2 : 1)
-                  : roomSlotCountFor(row.group);
+                const slotCount = row.group === "dormitory" && row.slotAssignments ? row.slotAssignments.length
+                  : compactInlineRoom && row.group !== "meeting" && row.group !== "training" && row.group !== "recycle"
+                  ? 1
+                  : roomSlotCountFor(row.group, row.level);
                 const slots: Array<{
                   slot: RoomRow["operatorSlots"][number] | undefined;
                   positionLabel?: string;
@@ -1797,7 +1827,7 @@ function ScheduleBoardImpl({
                             elite={slot ? eliteByOperator?.get(slot.name) : undefined}
                             nameColor="white"
                             operatorLevel={slot ? levelByOperator?.get(slot.name) : undefined}
-                            autofill={row.group === "dormitory" && row.autofill}
+                            autofill={row.group === "dormitory" && row.autofill && !row.lockedSlotIndices?.includes(index)}
                             compactFactory={compactFactoryRoom}
                             centerFrameInList
                             showSkillTooltip
@@ -1806,9 +1836,12 @@ function ScheduleBoardImpl({
                             searchQuery={normalizedQuery}
                             positionLabel={positionLabel}
                             unavailable={row.unavailableSlotIndices?.includes(index)}
-                            onActivate={onSlotClick ? () => onSlotClick(row, index) : undefined}
+                            locked={row.lockedSlotIndices?.includes(index)}
+                            onToggleLock={!simulation && row.group === "dormitory" && onDormLockToggle
+                              ? () => onDormLockToggle(row.roomId, index) : undefined}
+                            onActivate={onSlotClick && !row.lockedSlotIndices?.includes(index) ? () => onSlotClick(row, index) : undefined}
                             sortSelected={sortSelection?.roomId === row.roomId && sortSelection.slotIndex === index}
-                            onSortActivate={sortRoomId === row.roomId && onSortSlotClick ? () => onSortSlotClick(row, index) : undefined}
+                            onSortActivate={sortRoomId === row.roomId && onSortSlotClick && !row.lockedSlotIndices?.includes(index) ? () => onSortSlotClick(row, index) : undefined}
                             highlightNoLayoutSkill={highlightNoLayoutSkill && Boolean(slot) && noRoomSkillOperators?.get(row.roomId)?.has(slot?.name ?? "")}
                           />
                         ))}
@@ -1876,7 +1909,7 @@ function ScheduleBoardImpl({
 
   ), [simulation, highlightNoLayoutSkill, noRoomSkillOperators, rowGroups, layout, collapsedGroups, hiddenGroups, intl, locale, gameCatalog,
     onSortToggle, sortRoomId, renderListRoomActions, shiftDirection, onFactoryRecipeChange,
-    onTradeOrderChange, eliteByOperator, levelByOperator, onSlotClick, sortSelection, roomProducts,
+    onTradeOrderChange, eliteByOperator, levelByOperator, onSlotClick, onDormLockToggle, sortSelection, roomProducts,
     onSortSlotClick, onIssue, feedbackDisabled, normalizedQuery, onClearRoom, onManualSkillEfficiencyChange]);
 
   const compactContent = useMemo(() => (
@@ -1900,6 +1933,7 @@ function ScheduleBoardImpl({
               feedbackDisabled={feedbackDisabled}
               hideImages={hideImages}
               onSlotClick={onSlotClick}
+              onDormLockToggle={onDormLockToggle}
               sortRoomId={sortRoomId}
               sortSelection={sortSelection}
               onSortToggle={onSortToggle}
@@ -1921,7 +1955,7 @@ function ScheduleBoardImpl({
 
   ), [simulation, highlightNoLayoutSkill, noRoomSkillOperators, CompactScheduleView, visibleRows, layout, eliteByOperator, levelByOperator,
     activeShift, activePlan, shiftDirection, onIssue, feedbackDisabled, hideImages,
-    onSlotClick, sortRoomId, sortSelection, onSortToggle, onSortSlotClick, onClearRoom,
+    onSlotClick, onDormLockToggle, sortRoomId, sortSelection, onSortToggle, onSortSlotClick, onClearRoom,
     onDormAutofillChange, droneTargetRoomId, onDroneTargetChange, onManualSkillEfficiencyChange, onFactoryRecipeChange, onTradeOrderChange, roomProducts, compactProductControls, compactScheduleLoadFailed, intl]);
 
   if (rows.length === 0) {

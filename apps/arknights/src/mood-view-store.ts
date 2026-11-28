@@ -69,17 +69,13 @@ export class MoodViewStore {
   }
 
   setFrame(moods: MoodFrame, selected: string): void {
-    const changed = new Set<string>();
-    for (const name of new Set([...Object.keys(this.moods),...Object.keys(moods)])) {
-      if (this.getMood(name) !== this.getNextMood(moods, name)) changed.add(name);
-    }
+    const previous = this.moods;
     this.moods = moods;
     this.setSelected(selected);
-    for (const name of changed) for (const listener of this.moodListeners.get(name) ?? []) listener();
-  }
-
-  private getNextMood(moods: MoodFrame, name: string): number {
-    return moods[name] ?? 24;
+    for (const [name, listeners] of this.moodListeners) {
+      if ((previous[name] ?? 24) === this.getMood(name)) continue;
+      for (const listener of listeners) listener();
+    }
   }
 }
 

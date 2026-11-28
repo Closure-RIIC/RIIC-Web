@@ -5,7 +5,7 @@ import type RawMessages from "../../../messages/zh-CN/AK_Raw_components_manual_m
 const rawText = createRawLocalizer<typeof RawMessages>("AK_Raw_components_manual_mood_MoodSimulationPanel");
 
 
-import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useId, useLayoutEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useLocale, useTranslations } from "use-intl";
 import { Pause, Play, RotateCcw } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, XAxis, YAxis } from "recharts";
@@ -23,12 +23,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { manualScheduleToMaa, type ManualScheduleDraft } from "@/manual-schedule";
 import { DEFAULT_MANUAL_SHIFT_START_TIME } from "@/manual-schedule-config";
 import { planToRows, type RoomRow } from "@/schedule";
+import { withRecyclingRoom } from "@/recycling-room";
 import { addOperatorPresentations } from "@/schedule-presentation";
 import { localizedBuildingSkill, localizedOperatorName, localizedRoomTitle } from "@/i18n/game-data";
 import { useGameCatalog } from "@/i18n/game-data-client";
 import { moodSummary, segmentAt, shiftMoodSummaries } from "@/mood-simulation/presentation";
-import { MOOD_STORAGE_KEY, pruneSettings, readSettings } from "@/mood-simulation/settings";
-import { defaultMoodSettings, type MoodSettings, type MoodSimulationInput, type MoodSimulationResult, type MoodWorkerResponse } from "@/mood-simulation/types";
+import { createMoodPlayback, moodPlaybackInput, moodPlaybackReducer, type MoodPlaybackAction, type MoodPlaybackState } from "@/mood-simulation/playback";
+import { MOOD_STORAGE_KEY, pruneSettings, readSettings, resolveFiammettaRule } from "@/mood-simulation/settings";
+import { defaultMoodSettings, type FiammettaRule, type MoodSeriesPoint, type MoodSettings, type MoodSimulationInput, type MoodSimulationResult, type MoodWorkerResponse } from "@/mood-simulation/types";
 import { MoodDetailStore, MoodPlaybackStore, MoodViewStore, MoodVisibilityStore, useMood, useMoodCursor, useMoodDetail } from "@/mood-view-store";
 import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
 
@@ -44,21 +46,32 @@ function MoodSelect({label,value,options,onChange,className="w-44"}: {
   </Combobox>;
 }
 const round=(n: number) => Math.round(n*100)/100;
+const DETAIL_REFRESH_MS = 80;
 
-const OperatorMoodButton = memo(function OperatorMoodButton({operator,label,mood,selected,onSelect}: {
-  operator:string;label:string;mood:number;selected:boolean;onSelect:(name:string) => void;
-}) {
-  return <Button variant={selected?"secondary":"ghost"} aria-pressed={selected} className="justify-between gap-1 px-2" onClick={() => onSelect(operator)}>
-    <span className="truncate">{label}</span>
-    <span className={`font-number ${mood===0?"text-destructive":"text-muted-foreground"}`}>{round(mood)}</span>
-  </Button>;
-});
+function reducePlaybackAtCursor(state: MoodPlaybackState, update: {action: MoodPlaybackAction; cursor: number}) {
+  return moodPlaybackReducer(state,update.action,update.cursor);
+}
 
 const MoodAwareOperatorButton = memo(function MoodAwareOperatorButton({store,operator,label,selected,onSelect}: {
   store:MoodViewStore;operator:string;label:string;selected:boolean;onSelect:(name:string) => void;
 }) {
-  const mood=useMood(store,operator);
-  return <OperatorMoodButton operator={operator} label={label} mood={mood} selected={selected} onSelect={onSelect}/>;
+  const readout=useRef<HTMLSpanElement>(null);
+  const initialMood=store.getMood(operator);
+  useLayoutEffect(() => {
+    const element=readout.current!;
+    const update=() => {
+      const mood=store.getMood(operator);
+      const text=String(round(mood)), exhausted=String(mood===0);
+      if (element.textContent!==text) element.textContent=text;
+      if (element.dataset.exhausted!==exhausted) element.dataset.exhausted=exhausted;
+    };
+    update();
+    return store.subscribeMood(operator,update);
+  },[store,operator]);
+  return <Button variant={selected?"secondary":"ghost"} aria-pressed={selected} className="justify-between gap-1 px-2" onClick={() => onSelect(operator)}>
+    <span className="truncate">{label}</span>
+    <span ref={readout} className="font-number text-muted-foreground data-[exhausted=true]:text-destructive" data-exhausted={initialMood===0}>{round(initialMood)}</span>
+  </Button>;
 });
 
 const MoodOperatorList = memo(function MoodOperatorList({store,names,selected,onSelect,name}: {
@@ -83,23 +96,42 @@ const MoodSelectedValue = memo(function MoodSelectedValue({store,name}: {store:M
 const MoodCursorOverlay = memo(function MoodCursorOverlay({playback,width,total}: {playback:MoodPlaybackStore;width:number;total:number}) {
   const cursor=useMoodCursor(playback);
   if (width<=0 || total<=0) return null;
-  const left=30+(Math.max(0,Math.min(cursor,total))/total)*Math.max(0,width-42);
-  return <div aria-hidden className="pointer-events-none absolute w-[1.5px]" style={{left:`${left}px`,top:12,bottom:30,backgroundColor:"var(--foreground)"}}/>;
+  const offset=(Math.max(0,Math.min(cursor,total))/total)*Math.max(0,width-42);
+  return <div aria-hidden className="pointer-events-none absolute w-[1.5px]" style={{left:30,transform:`translateX(${offset}px)`,top:12,bottom:30,backgroundColor:"var(--foreground)"}}/>;
 });
 
-const MoodFrameWriter = function MoodFrameWriter({playback,result,store,moodAt,selected}: {
+function moodAt(points: MoodSeriesPoint[], time: number): number {
+  let low=0,high=points.length;
+  while (low<high) {
+    const middle=(low+high)>>1;
+    if (points[middle]!.time<=time) low=middle+1;
+    else high=middle;
+  }
+  const before=points[low-1],after=points[low];
+  if (!before) return after?.mood ?? 24;
+  if (!after || after.time===before.time) return before.mood;
+  return before.mood+(after.mood-before.mood)*(time-before.time)/(after.time-before.time);
+}
+
+const MoodFrameWriter = function MoodFrameWriter({playback,result,store,selected}: {
   playback:MoodPlaybackStore; result:MoodSimulationResult|null; store:MoodViewStore;
-  moodAt:(name:string,time:number) => number; selected:string;
+  selected:string;
 }) {
   useEffect(() => {
+    if (!result) return;
     const update=() => {
-      if (!result) return;
       const cursor=playback.getCursor();
-      store.setFrame(Object.fromEntries(result.names.map(name => [name,moodAt(name,cursor)])),selected);
+      const moods: Record<string,number> = {};
+      for (const {names,points} of result.series) {
+        const mood = moodAt(points,cursor);
+        if (mood===24) continue;
+        for (const name of names) moods[name]=mood;
+      }
+      store.setFrame(moods,selected);
     };
     update();
     return playback.subscribe(update);
-  },[playback,result,store,moodAt,selected]);
+  },[playback,result,store,selected]);
   return null;
 };
 
@@ -109,8 +141,11 @@ const MoodDetailRequester = function MoodDetailRequester({playback,result,select
 }) {
   useEffect(() => {
     if (pending || !result || !selected) return;
-    let last="";
-    const update=() => {
+    let lastTime: number | undefined;
+    let lastSent=-Infinity;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const send=() => {
+      timer=undefined;
       let low=0,high=result.points.length;
       const cursor=playback.getCursor();
       while (low<high) {
@@ -119,46 +154,88 @@ const MoodDetailRequester = function MoodDetailRequester({playback,result,select
         else high=middle;
       }
       const time=result.points[Math.max(0,low-1)]?.time ?? 0;
-      const key=`${selected}:${time}`;
-      if (key===last) return;
-      last=key;
+      if (time===lastTime) return;
+      lastTime=time;
+      lastSent=performance.now();
       requestDetail(time,selected);
     };
-    update();
-    return playback.subscribe(update);
+    const unsubscribe=playback.subscribe(() => {
+      if (timer!==undefined) return;
+      const delay=DETAIL_REFRESH_MS-(performance.now()-lastSent);
+      if (delay>0) timer=setTimeout(send,delay);
+      else send();
+    });
+    send();
+    return () => { unsubscribe();clearTimeout(timer); };
   },[playback,result,selected,pending,requestDetail]);
   return null;
 };
 
 const MoodCurrentTime = memo(function MoodCurrentTime({playback,clock,total}: {playback:MoodPlaybackStore;clock:(hours:number) => string;total:number}) {
   const cursor=useMoodCursor(playback);
-  return <output className="ml-auto font-number text-sm" data-mood-time>{clock(cursor)} / {clock(total)}</output>;
+  return <output className="ml-auto font-number text-sm" data-mood-time={cursor}>{clock(cursor)} / {clock(total)}</output>;
 });
 
-const MoodPlaybackToolbar = memo(function MoodPlaybackToolbar({playback,result,valid,settings,setSettings,playing,setPlaying,speed,setSpeed,setMode,clock}: {
-  playback:MoodPlaybackStore; result:MoodSimulationResult|null; valid:boolean; settings:MoodSettings;
-  setSettings:(updater:(current:MoodSettings) => MoodSettings) => void; playing:boolean; setPlaying:(updater:(playing:boolean) => boolean) => void;
-  speed:number; setSpeed:(speed:number) => void; setMode:(mode:string) => void; clock:(hours:number) => string;
+const MoodPlaybackToolbar = memo(function MoodPlaybackToolbar({playback,total,valid,settings,setSettings,playing,togglePlay,setTime,speed,setSpeed,clock}: {
+  playback:MoodPlaybackStore; total:number; valid:boolean; settings:MoodSettings;
+  setSettings:(updater:(current:MoodSettings) => MoodSettings) => void; playing:boolean; togglePlay:() => void; setTime:(time:number) => void;
+  speed:number; setSpeed:(speed:number) => void; clock:(hours:number) => string;
 }) {
   const t=useTranslations("MoodSimulation");
-  const total=result?.total ?? settings.cycles*24;
   return <div className="flex flex-wrap items-center gap-2" data-mood-playback-controls>
     <div className="flex items-center gap-2 text-sm"><span>{t("cycles")}</span><MoodSelect label={t("cycles")} className="w-20" value={String(settings.cycles)} onChange={value => setSettings(current => ({...current,cycles:Number(value)}))} options={[1,2,3,4,5,6,7].map(n => ({value:String(n),label:String(n)}))}/></div>
-    <Button disabled={!valid} onClick={() => {setMode("simulation");if (playback.getCursor()>=total) playback.setCursor(0);setPlaying(v => !v);}}>{playing?<Pause/>:<Play/>}{playing?t("pause"):t("play")}</Button>
-    <Button variant="outline" disabled={!valid} onClick={() => {setMode("simulation");setPlaying(() => false);playback.setCursor(0);}}><RotateCcw/>{t("reset")}</Button>
+    <Button disabled={!valid} onClick={togglePlay}>{playing?<Pause/>:<Play/>}{playing?t("pause"):t("play")}</Button>
+    <Button variant="outline" disabled={!valid} onClick={() => setTime(0)}><RotateCcw/>{t("reset")}</Button>
     <MoodSelect label={t("speed")} className="w-28" value={String(speed)} onChange={value => setSpeed(Number(value))} options={[1,60,600,3600].map(n => ({value:String(n),label:`${n}×`}))}/>
     <MoodCurrentTime playback={playback} clock={clock} total={total}/>
   </div>;
 });
 
-const MoodTimelineSlider = memo(function MoodTimelineSlider({playback,total,valid,setMode,setPlaying}: {
-  playback:MoodPlaybackStore; total:number; valid:boolean; setMode:(mode:string) => void; setPlaying:(updater:(playing:boolean) => boolean) => void;
+const MoodTimelineSlider = memo(function MoodTimelineSlider({playback,total,valid,setTime,togglePlay}: {
+  playback:MoodPlaybackStore; total:number; valid:boolean; setTime:(time:number) => void; togglePlay:() => void;
 }) {
   const t=useTranslations("MoodSimulation");
-  const cursor=useMoodCursor(playback);
-  const setTime=(time:number) => {setMode("simulation");setPlaying(() => false);playback.setCursor(time);};
-  return <input type="range" className="w-full accent-primary" aria-label={t("timeline")} min={0} max={total} step={1/60} value={cursor} disabled={!valid}
-    onChange={e => setTime(Number(e.target.value))} onKeyDown={e => {if(e.code==="Space"){e.preventDefault();setMode("simulation");setPlaying(v => !v);} else if(e.key==="ArrowRight" || e.key==="ArrowLeft"){e.preventDefault();setTime(Math.max(0,Math.min(total,cursor+(e.key==="ArrowRight"?.25:-.25))));}}}/>;
+  const slider=useRef<HTMLInputElement>(null);
+  const pendingSeek=useRef<{frame:number;time:number} | null>(null);
+  const flushSeek=() => {
+    const seek=pendingSeek.current;
+    if (!seek) return;
+    cancelAnimationFrame(seek.frame);
+    pendingSeek.current=null;
+    setTime(seek.time);
+  };
+  useLayoutEffect(() => {
+    const update=() => {
+      // During a drag the native thumb already displays the most recent input.
+      if (pendingSeek.current || !slider.current) return;
+      const cursor=playback.getCursor();
+      if (slider.current.valueAsNumber!==cursor) slider.current.value=String(cursor);
+    };
+    update();
+    const unsubscribe=playback.subscribe(update);
+    return () => {
+      unsubscribe();
+      if (pendingSeek.current) cancelAnimationFrame(pendingSeek.current.frame);
+      pendingSeek.current=null;
+    };
+  },[playback,total,valid,setTime]);
+  return <input ref={slider} type="range" className="w-full accent-primary" aria-label={t("timeline")} min={0} max={total} step={1/60} defaultValue={0} disabled={!valid}
+    onChange={e => {
+      const time=e.currentTarget.valueAsNumber;
+      if (pendingSeek.current) pendingSeek.current.time=time;
+      else pendingSeek.current={time,frame:requestAnimationFrame(flushSeek)};
+    }} onPointerUp={flushSeek} onPointerCancel={flushSeek} onBlur={flushSeek}
+    onKeyDown={e => {
+      if (e.code==="Space") {
+        e.preventDefault();flushSeek();togglePlay();
+      } else if (e.key==="ArrowRight" || e.key==="ArrowLeft") {
+        e.preventDefault();
+        const time=Math.max(0,Math.min(total,e.currentTarget.valueAsNumber+(e.key==="ArrowRight"?.25:-.25)));
+        flushSeek();
+        e.currentTarget.value=String(time);
+        setTime(time);
+      }
+    }}/>;
 });
 
 const MoodShiftStats = memo(function MoodShiftStats({stats}: {
@@ -218,12 +295,13 @@ const MoodDetailPanel = memo(function MoodDetailPanel({store,selected,name}: {
   </div>;
 });
 
-export type MoodBoardState = {rows:RoomRow[];shift:number;cycle:number;store:MoodViewStore;selected:string;onSelect:(name:string) => void};
-export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabled,onFiammettaEnabledChange,onTargetChange,renderBoard,settingsOpen,onSettingsOpenChange,view,onViewChange,posterContent}: {
+export type MoodBoardState = {rows:RoomRow[];shift:number;cycle:number;store:MoodViewStore};
+export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabled,onFiammettaEnabledChange,onTargetChange,renderBoard,renderSummary,settingsOpen,onSettingsOpenChange,view,onViewChange,posterContent}: {
   layout: BaseBlueprint; operbox: OperBoxEntry[]; draft: ManualScheduleDraft; fiammettaEnabled: boolean;
   onFiammettaEnabledChange: (enabled: boolean) => void;
   onTargetChange: (shift: number,target: string | null) => void;
   renderBoard: (simulation: MoodBoardState | null, visibility?: MoodVisibilityStore) => ReactNode;
+  renderSummary?: (state: {replay:boolean;shift:number|null}) => ReactNode;
   view?: string;
   onViewChange?: (value: string) => void;
   posterContent?: ReactNode;
@@ -242,10 +320,8 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
   const [ready,setReady]=useState(false);
   const [localMode,setLocalMode]=useState("edit");
   const mode=view ?? localMode;
-  const setMode=(value: string) => {setLocalMode(value);onViewChange?.(value);};
-  const [result,setResult]=useState<MoodSimulationResult|null>(null);
-  const [error,setError]=useState<string|null>(null),[storageWarning,setStorageWarning]=useState(false);
-  const [pending,setPending]=useState(true),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(1);
+  const setMode=useCallback((value: string) => {setLocalMode(value);onViewChange?.(value);},[onViewChange]);
+  const [storageWarning,setStorageWarning]=useState(false),[speed,setSpeed]=useState(1);
   const [selected,setSelected]=useState("");
   const [playback]=useState(() => new MoodPlaybackStore());
   const [moodStore]=useState(() => new MoodViewStore(setSelected));
@@ -255,7 +331,19 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
     worker.current?.postMessage({id:++detailId.current,type:"detail",time,name});
   },[]);
   const initialSignature=useRef(signature);
-  const configScope=useMemo(() => JSON.stringify({shifts:draft.shifts.length,names:[...new Set([...operbox.filter(o => o.own).map(o => o.name),...draft.shifts.flatMap(s => Object.values(s.rooms).flatMap(r => r.operators.filter(Boolean)))])],rooms:layout.rooms.filter(r => r.kind==="dormitory").map(r => r.id)}),[draft.shifts,operbox,layout.rooms]);
+  const configScope=useMemo(() => JSON.stringify({shifts:draft.shifts.length,names:[...new Set([...operbox.filter(o => o.own).map(o => o.name),...draft.shifts.flatMap(s => Object.values(s.rooms).flatMap(r => r.operators.filter(Boolean)))])]}),[draft.shifts,operbox]);
+  const input=useMemo<MoodSimulationInput>(() => ({layout,operbox,draft,settings,fiammettaEnabled}),[layout,operbox,draft,settings,fiammettaEnabled]);
+  const navigationInput=useMemo(() => moodPlaybackInput(input),[input]);
+  const {calculationKey,activeShift}=navigationInput;
+  const [navigation,dispatch]=useReducer(reducePlaybackAtCursor,navigationInput,createMoodPlayback);
+  const dispatchPlayback=useCallback((action: MoodPlaybackAction) => dispatch({action,cursor:playback.getCursor()}),[playback]);
+  // Reconcile before painting; the external clock continues to update only its subscribers.
+  if (navigation.input.calculationKey!==calculationKey || navigation.input.activeShift!==activeShift) {
+    dispatchPlayback({type:"input",input:navigationInput});
+  }
+  const {result,error,playing}=navigation;
+  const pending=!ready || navigation.status==="pending";
+  useLayoutEffect(() => {playback.setCursor(navigation.cursor);},[navigation,playback]);
   useEffect(() => {
     const element=chartRef.current;
     if (!element) return;
@@ -271,9 +359,9 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
     setReady(true);
   },[]);
   useEffect(() => {
-    const scope=JSON.parse(configScope) as {shifts:number;names:string[];rooms:string[]};
+    const scope=JSON.parse(configScope) as {shifts:number;names:string[]};
     setSettings(current => {
-      const next=pruneSettings(current,scope.shifts,new Set(scope.names),new Set(scope.rooms));
+      const next=pruneSettings(current,scope.shifts,new Set(scope.names));
       return JSON.stringify(next)===JSON.stringify(current) ? current : next;
     });
   },[configScope,settings.cycles]);
@@ -281,12 +369,9 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
     if (!ready) return;
     try {localStorage.setItem(MOOD_STORAGE_KEY,JSON.stringify({signature,settings}));} catch {setStorageWarning(true);}
   },[ready,signature,settings]);
-  const input=useMemo<MoodSimulationInput>(() => ({layout,operbox,draft,settings,fiammettaEnabled}),[layout,operbox,draft,settings,fiammettaEnabled]);
-  // The active editor tab and display start clock must not trigger a new calculation.
-  const calculationKey=useMemo(() => JSON.stringify({...input,draft:{...draft,activeShift:0,startTime:"00:00"}}),[input,draft]);
   useEffect(() => {
     if (!ready) return;
-    setPending(true);setPlaying(false);playback.setCursor(0);detailStore.set(null);setError(null);
+    detailStore.set(null);
     const id=++requestId.current;
     const timer=setTimeout(() => {
       try {
@@ -296,54 +381,43 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
           if (id!==requestId.current || worker.current!==next) return;
           const response=event.data;
           if (response.type==="result" && response.id===id) {
-            setResult(response.result);setPending(false);
+            dispatchPlayback({type:"result",calculationKey,result:response.result});
             setSelected(current => response.result.names.includes(current) ? current : response.result.names[0] ?? "");
           } else if (response.type==="detail" && response.id===detailId.current) detailStore.set({name:response.name,time:response.time,rate:response.rate});
-          else if (response.type==="error") {setError(response.message);setPending(false);setPlaying(false);}
+          else if (response.type==="error") dispatchPlayback({type:"error",calculationKey,message:response.message});
         };
         next.onerror=(event) => {
           // Terminating an obsolete worker can report aborted chunk loads later.
           if (id!==requestId.current || worker.current!==next) return;
-          setError(event.message || "Worker failed");setPending(false);setPlaying(false);
+          dispatchPlayback({type:"error",calculationKey,message:event.message || "Worker failed"});
         };
         next.postMessage({id,type:"simulate",input:JSON.parse(calculationKey)});
-      } catch (cause) {setError(String(cause));setPending(false);}
+      } catch (cause) {dispatchPlayback({type:"error",calculationKey,message:String(cause)});}
     },250);
     return () => {
       clearTimeout(timer);
       if (worker.current) {worker.current.onmessage=null;worker.current.onerror=null;worker.current.terminate();worker.current=null;}
     };
-  },[calculationKey,ready,detailStore,playback]);
+  },[calculationKey,ready,detailStore,dispatchPlayback]);
   useEffect(() => {
+    if (mode!=="simulation") dispatchPlayback({type:"pause"});
+  },[mode,dispatchPlayback]);
+  useLayoutEffect(() => {
     if (!playing || !result) return;
     const started=performance.now(),from=playback.getCursor();
     const timer=setInterval(() => {
       const next=Math.min(result.total,from+(performance.now()-started)/3600000*speed);
       playback.setCursor(next);
-      if (next>=result.total) setPlaying(false);
+      if (next>=result.total) dispatchPlayback({type:"pause"});
     },100);
     return () => clearInterval(timer);
     // Cursor is advanced by this clock; restarting the interval per tick loses elapsed time.
-  },[playing,speed,result,playback]);
+  },[playing,speed,result,playback,dispatchPlayback]);
   const seriesByName=useMemo(() => {
-    const map=new Map<string,{time:number;mood:number}[]>();
+    const map=new Map<string,MoodSeriesPoint[]>();
     for (const group of result?.series ?? []) for (const name of group.names) map.set(name,group.points);
     return map;
   },[result]);
-  const moodAt=useCallback((name: string,time: number) => {
-    const points=seriesByName.get(name);
-    if (!points?.length) return 24;
-    let low=0,high=points.length;
-    while (low<high) {
-      const middle=(low+high)>>1;
-      if (points[middle]!.time<=time) low=middle+1;
-      else high=middle;
-    }
-    const before=points[low-1],after=points[low];
-    if (!before) return after?.mood ?? 24;
-    if (!after || after.time===before.time) return before.mood;
-    return before.mood+(after.mood-before.mood)*(time-before.time)/(after.time-before.time);
-  },[seriesByName]);
   const segment=useSyncExternalStore(
     playback.subscribe,
     useCallback(() => result ? segmentAt(result,playback.getCursor()) : null,[result,playback]),
@@ -354,16 +428,22 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
   const rowsBySegment=useMemo(() => {
     const map=new Map<number,RoomRow[]>(), cache=new Map<string,RoomRow[]>(), rowCache=new Map<string,RoomRow>();
     const training=layout.rooms.find(r => r.kind==="training_room");
+    const recycling=layout.rooms.find(r => r.kind==="recycle");
     for (const item of result?.segments ?? []) {
-      const key=JSON.stringify(item.rooms);
+      const key=JSON.stringify([item.rooms,item.dormSlots,item.lockedDormSlots]);
       const cached=cache.get(key);
       if (cached) {map.set(item.start,cached);continue;}
       const s=draft.shifts[item.shift];
       if (!s) {map.set(item.start,[]);continue;}
-      const snapshot={...draft,shifts:[{...s,rooms:Object.fromEntries(Object.entries(item.rooms).map(([id,operators]) => [id,{operators,autofill:false}]))}]};
+      const snapshot={...draft,dormLocks:undefined,shifts:[{...s,rooms:Object.fromEntries(Object.entries({...item.rooms,...item.dormSlots}).map(([id,operators]) => [id,{operators,autofill:false}]))}]};
       const maa=manualScheduleToMaa(snapshot,layout,false);
       const occupants=training ? item.rooms[training.id] ?? [] : [];
-      const built=addOperatorPresentations(planToRows(maa.plans[0],undefined,layout,training ? {trainee:occupants[0] ?? null,trainer:occupants[1] ?? null}:undefined));
+      const trainingShift=training ? {trainee:occupants[0] ?? null,trainer:occupants[1] ?? null} : undefined;
+      const built=addOperatorPresentations(withRecyclingRoom(planToRows(maa.plans[0],undefined,layout,trainingShift),recycling).map(row => {
+        const slots=item.dormSlots?.[row.roomId];
+        if (!slots) return row;
+        return {...row,slotAssignments:slots.map(name => name ? {name,label:name} : undefined),lockedSlotIndices:item.lockedDormSlots?.[row.roomId]};
+      }));
       const reused=built.map(row => {
         const rowKey=JSON.stringify(row), existing=rowCache.get(rowKey);
         if (existing) return existing;
@@ -375,20 +455,17 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
     return map;
   },[result,draft,layout]);
   const rows=useMemo(() => segment ? rowsBySegment.get(segment.start) ?? [] : [],[segment,rowsBySegment]);
-  const layerStarts=useMemo(() => (result?.segments ?? []).map(item => item.start),[result]);
-  const segmentsByStart=useMemo(() => new Map((result?.segments ?? []).map(item => [item.start,item])),[result]);
-  const visibilityStores=useMemo(() => new Map(layerStarts.map(start => [start,new MoodVisibilityStore(false)])),[layerStarts]);
-  const visibilityFor=useCallback((start:number) => visibilityStores.get(start)!, [visibilityStores]);
+  const visibilityStores=useMemo(() => new Map((result?.segments ?? []).map(item => [item.start,new MoodVisibilityStore(false)])),[result]);
   useLayoutEffect(() => {
-    for (const start of layerStarts) visibilityFor(start).setVisible(start===segment?.start);
-  },[layerStarts,segment?.start,visibilityFor]);
+    for (const [start,visibility] of visibilityStores) visibility.setVisible(start===segment?.start);
+  },[segment?.start,visibilityStores]);
   const roomName=useCallback((id: string) => {
     const row=rows.find(r => r.roomId===id);
     return row ? localizedRoomTitle(row.title,row.group,locale,gameCatalog) : id;
   },[rows,locale,gameCatalog]);
   const stats=useMemo(() => result && selected ? moodSummary(result,selected) : null,[result,selected]);
   const shiftStats=useMemo(() => result && selected ? shiftMoodSummaries(result,selected) : [],[result,selected]);
-  const chart=useMemo(() => result?.points.map(point => ({time:point.time,mood:point.moods[selected] ?? 24})) ?? [],[result,selected]);
+  const chart=seriesByName.get(selected) ?? [];
   const graphEvents=useMemo(() => result?.events.filter(e => e.kind!=="skipped" && (e.operator===selected || e.target===selected)) ?? [],[result,selected]);
   const selectedEvents=useMemo(() => result?.events.filter(e => e.operator===selected || e.target===selected) ?? [],[result,selected]);
   const currentRoom=useMemo(() => segment ? Object.entries(segment.rooms).find(([,names]) => names.includes(selected))?.[0] : null,[segment,selected]);
@@ -398,14 +475,31 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
   },[draft.startTime]);
   const names=useMemo(() => result?.names ?? operbox.filter(o => o.own).map(o => o.name),[result,operbox]);
   const targetOptions=useMemo(() => names.filter(n => n!=="菲亚梅塔").map(n => ({value:n,label:name(n)})),[names,name]);
-  const valid=result && !pending && !error;
+  const valid=Boolean(result && ready && navigation.status==="ready" && navigation.input.calculationKey===calculationKey);
+  const total=valid && result ? result.total : draft.shifts.reduce((sum,shift) => sum+shift.durationHours,0)*settings.cycles;
+  const replayBoards=useMemo(() => {
+    if (mode!=="simulation" || !valid || !result) return [];
+    return result.segments.map(({start,shift,cycle}) => ({
+      start,
+      board:renderBoard({rows:rowsBySegment.get(start) ?? [],shift,cycle,store:moodStore},visibilityStores.get(start)),
+    }));
+  },[mode,valid,result,renderBoard,rowsBySegment,moodStore,visibilityStores]);
   const cycles=useMemo(() => result?.cycleEnds ?? [], [result]);
   const stable=useMemo(() => cycles.length>=2 && Object.keys(cycles[cycles.length-1]!).every(n => Math.abs(cycles[cycles.length-1]![n]!-cycles[cycles.length-2]![n]!)<1e-9),[cycles]);
   const bottleneck=useMemo(() => result?.points.find(p => Object.values(p.moods).some(v => v===0)),[result]);
-  const updateIdle=(key: string,value: {enabled: boolean;target?: string;dorm?: string}) => setSettings(s => ({...s,idle:{...s.idle,[key]:value}}));
-  return <section className="min-w-0 space-y-5" aria-label={t("title")} data-mood-simulation>
+  const setTime=useCallback((time:number) => {
+    if (!valid) return;
+    if (mode!=="simulation") setMode("simulation");
+    if (mode!=="simulation" || playing || navigation.awaitingShift) dispatchPlayback({type:"seek",time});
+    else playback.setCursor(Math.max(0,Math.min(time,total)));
+  },[valid,mode,setMode,playing,navigation.awaitingShift,dispatchPlayback,playback,total]);
+  const togglePlay=useCallback(() => {if (!valid) return;dispatchPlayback({type:"toggle",fromEditor:mode!=="simulation"});setMode("simulation");},[valid,mode,setMode,dispatchPlayback]);
+  const changeMode=(value:string) => {dispatchPlayback({type:value==="simulation" ? "enter" : "pause"});setMode(value);};
+  const updateIdle=(key: string,enabled: boolean) => setSettings(s => ({...s,idle:{...s.idle,[key]:{enabled}}}));
+  return <>{renderSummary?.({replay:mode==="simulation",shift:mode==="simulation" ? valid && segment ? segment.shift : null : activeShift})}
+    <section className="min-w-0 space-y-5" aria-label={t("title")} data-mood-simulation>
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <Tabs value={mode} onValueChange={value => {setMode(String(value));setPlaying(false);}}>
+      <Tabs value={mode} onValueChange={value => changeMode(String(value))}>
         <TabsList aria-label={t("boardMode")}><TabsTrigger value="edit">{t("editMode")}</TabsTrigger><TabsTrigger value="simulation">{t("simulationMode")}</TabsTrigger>{onViewChange && <TabsTrigger value="poster">{rawText.text(rawLocale, "schedulePoster")}</TabsTrigger>}</TabsList>
       </Tabs>
     </div>
@@ -413,13 +507,10 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
     <div hidden={mode==="poster"} className="space-y-5">
     {mode==="edit" ? renderBoard(null) : valid && segment ? (
       <div className="grid">
-        {layerStarts.map(start => {
-          const item=segmentsByStart.get(start);
-          if (!item) return null;
+        {replayBoards.map(({start,board}) => {
           const active=start===segment.start;
-          const layerRows=active ? rows : rowsBySegment.get(start) ?? [];
           return <div key={start} aria-hidden={!active} style={{gridArea:"1 / 1",visibility:active?"visible":"hidden",pointerEvents:active?"auto":"none"}}>
-            {renderBoard({rows:layerRows,shift:item.shift,cycle:item.cycle,store:moodStore,selected,onSelect:setSelected},visibilityFor(start))}
+            {board}
           </div>;
         })}
       </div>
@@ -428,11 +519,11 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
     {storageWarning && <p role="status" className="text-sm text-amber-700">{t("storageWarning")}</p>}
     {pending && <div role="status"><p className="text-sm text-muted-foreground">{t("calculating")}</p>{mode==="simulation" && <Skeleton className="mt-3 h-40 w-full"/>}</div>}
     {error && <p role="alert" className="rounded-md border border-destructive/40 p-3 text-sm text-destructive">{t("error",{message:error})}</p>}
-    <MoodFrameWriter playback={playback} result={result} store={moodStore} moodAt={moodAt} selected={selected}/>
-    <MoodDetailRequester playback={playback} result={result} selected={selected} pending={pending} requestDetail={requestDetail}/>
-    <MoodPlaybackToolbar playback={playback} result={result} valid={Boolean(valid)} settings={settings} setSettings={setSettings} playing={playing} setPlaying={setPlaying} speed={speed} setSpeed={setSpeed} setMode={setMode} clock={clock}/>
-    <MoodTimelineSlider playback={playback} total={result?.total ?? settings.cycles*24} valid={Boolean(valid)} setMode={setMode} setPlaying={setPlaying}/>
-    {mode==="simulation" && valid && segment && <div className="space-y-5">
+    <MoodFrameWriter playback={playback} result={result} store={moodStore} selected={selected}/>
+    <MoodDetailRequester playback={playback} result={result} selected={selected} pending={!valid || mode!=="simulation"} requestDetail={requestDetail}/>
+    <MoodPlaybackToolbar playback={playback} total={total} valid={valid} settings={settings} setSettings={setSettings} playing={playing} togglePlay={togglePlay} setTime={setTime} speed={speed} setSpeed={setSpeed} clock={clock}/>
+    <MoodTimelineSlider playback={playback} total={total} valid={valid} togglePlay={togglePlay} setTime={setTime}/>
+    {mode==="simulation" && valid && result && segment && <div className="space-y-5">
       <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
         <span>{t("position",{cycle:segment.cycle+1,shift:segment.shift+1})}</span>
         <span>{cycles.length<2?t("needCycles"):stable?t("stable"):t("notStable")}</span>
@@ -445,8 +536,8 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
         <div className="min-w-0 space-y-3" data-mood-detail>
           <div className="flex flex-wrap items-baseline justify-between gap-2"><h3 className="font-medium">{name(selected)} <span className="font-number text-2xl"><MoodSelectedValue store={moodStore} name={selected}/></span><span className="text-sm text-muted-foreground"> / 24</span></h3><span className="text-sm text-muted-foreground">{currentRoom?roomName(currentRoom):t("unassigned")}</span></div>
           <div className="relative" ref={chartRef}>
-            <MoodChart chart={chart} total={result.total} clock={clock} red={stats?.red} segments={result.segments} events={graphEvents} moodLabel={t("mood")}/>
-            <MoodCursorOverlay playback={playback} width={chartWidth} total={result.total}/>
+            <MoodChart chart={chart} total={total} clock={clock} red={stats?.red} segments={result.segments} events={graphEvents} moodLabel={t("mood")}/>
+            <MoodCursorOverlay playback={playback} width={chartWidth} total={total}/>
           </div>
           {stats && <p className="text-sm text-muted-foreground">{t("summary",{start:24,end:round(stats.end),min:round(stats.min),minTime:clock(stats.minTime),max:round(stats.max),maxTime:clock(stats.maxTime),red:round(stats.red.reduce((s,[a,b]) => s+b-a,0))})}</p>}
           <MoodShiftStats stats={shiftStats}/>
@@ -462,15 +553,16 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
         <div className="flex min-h-11 items-center justify-between gap-4"><Label htmlFor={`${controlId}-fiammetta`} className="leading-5">{t("fiammettaEnabled")}</Label><Switch id={`${controlId}-fiammetta`} checked={fiammettaEnabled} onCheckedChange={onFiammettaEnabledChange}/></div>
         <p className="text-xs text-muted-foreground">{t("simulationOnly")}</p>
         {draft.shifts.map((s,i) => {
-          const rule=settings.fiammetta[i] ?? {enabled:true,mode:"specified" as const,wait:false};
-          const update=(patch: Partial<typeof rule>) => setSettings(current => ({...current,fiammetta:{...current.fiammetta,[i]:{...rule,...patch}}}));
+          const rule=resolveFiammettaRule(settings.fiammetta[i], s.fiammettaTarget);
+          const update=(patch: Partial<FiammettaRule>) => setSettings(current => ({
+            ...current, fiammetta: {...current.fiammetta, [i]: {...(current.fiammetta[i] ?? {mode:"specified"}), ...patch}},
+          }));
           return <div key={i} className="space-y-3 rounded-lg border p-3">
-            <div className="flex min-h-9 items-center justify-between gap-4"><Label htmlFor={`${controlId}-shift-${i}`}>{t("shift",{n:i+1})}</Label><Switch id={`${controlId}-shift-${i}`} checked={rule.enabled} onCheckedChange={enabled => update({enabled})}/></div>
+            <div className="flex min-h-9 items-center justify-between gap-4"><Label htmlFor={`${controlId}-shift-${i}`}>{t("shift",{n:i+1})}</Label><Switch id={`${controlId}-shift-${i}`} checked={rule.enabled} disabled={rule.mode==="specified" && !s.fiammettaTarget} onCheckedChange={enabled => update({enabled})}/></div>
             <div className="flex flex-wrap gap-3">
             <MoodSelect label={t("targetMode",{n:i+1})} value={rule.mode} onChange={value => update({mode:value as typeof rule.mode})} options={[{value:"specified",label:t("specified")},{value:"previous",label:t("previous")},{value:"auto",label:t("autoTarget")}]}/>
-            {rule.mode==="specified" && <MoodSelect label={t("target",{n:i+1})} value={s.fiammettaTarget ?? ""} onChange={value => onTargetChange(i,value || null)} options={[{value:"",label:t("previous")},...targetOptions]}/>}
+            {rule.mode==="specified" && <MoodSelect label={t("target",{n:i+1})} value={s.fiammettaTarget ?? ""} onChange={value => onTargetChange(i,value || null)} options={[{value:"",label:t("noNamedTarget")},...targetOptions]}/>}
             </div>
-            <div className="flex min-h-9 items-center justify-between gap-4"><Label htmlFor={`${controlId}-wait-${i}`} className="leading-5">{t("wait")}</Label><Switch id={`${controlId}-wait-${i}`} checked={rule.wait} onCheckedChange={wait => update({wait})}/></div>
           </div>;
         })}
       </fieldset>
@@ -486,10 +578,7 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
             <div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => setSettings(current => ({...current,idle:{...current.idle,...Object.fromEntries(candidates.map(c => [`${c.cycle}:${c.shift}:${c.operator}`,{...current.idle[`${c.cycle}:${c.shift}:${c.operator}`],enabled:true}]))}}))}>{t("all")}</Button><Button variant="outline" size="sm" onClick={() => setSettings(current => ({...current,idle:{...current.idle,...Object.fromEntries(candidates.map(c => [`${c.cycle}:${c.shift}:${c.operator}`,{...current.idle[`${c.cycle}:${c.shift}:${c.operator}`],enabled:false}]))}}))}>{t("none")}</Button></div>
             {candidates.map(c => {
               const key=`${c.cycle}:${c.shift}:${c.operator}`,rule=settings.idle[key] ?? {enabled:true};
-              return <div key={key} className="space-y-2 border-t pt-3"><div className="flex min-h-9 items-center justify-between gap-4"><Label htmlFor={`${controlId}-idle-${key}`}>{name(c.operator)} <span className="font-number text-muted-foreground">{round(c.mood)}</span></Label><Switch id={`${controlId}-idle-${key}`} checked={rule.enabled} onCheckedChange={enabled => updateIdle(key,{...rule,enabled})}/></div>
-                <MoodSelect label={t("idleTarget",{name:name(c.operator)})} value={rule.dorm?`dorm:${rule.dorm}`:rule.target?`op:${rule.target}`:""}
-                  onChange={value => updateIdle(key,{enabled:rule.enabled,...(value.startsWith("dorm:")?{dorm:value.slice(5)}:value.startsWith("op:")?{target:value.slice(3)}:{})})}
-                  options={[{value:"",label:t("automatic")},...c.options.flatMap(r => [...(r.free?[{value:`dorm:${r.room}`,label:`${roomName(r.room)} · ${t("vacancy")}`}]:[]),...r.operators.map(o => ({value:`op:${o.name}`,label:`${name(o.name)} · ${round(o.mood)}`}))])]}/>
+              return <div key={key} className="space-y-2 border-t pt-3"><div className="flex min-h-9 items-center justify-between gap-4"><Label htmlFor={`${controlId}-idle-${key}`}>{name(c.operator)} <span className="font-number text-muted-foreground">{round(c.mood)}</span></Label><Switch id={`${controlId}-idle-${key}`} checked={rule.enabled} onCheckedChange={enabled => updateIdle(key,enabled)}/></div>
               </div>;
             })}
           </AccordionPanel></AccordionItem>;
@@ -498,5 +587,5 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
         {!pending && !result?.idleCandidates.length && <p className="text-sm text-muted-foreground">{t("noIdle")}</p>}
       </fieldset>
     </DialogBody></ScrollArea></DialogContent></Dialog>}
-  </section>;
+  </section></>;
 }

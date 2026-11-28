@@ -12,10 +12,12 @@ export function recyclingRoom(level: number = 3): RecyclingRoom {
 export const RECYCLING_ROOM = recyclingRoom();
 export type EditableRoom = BlueprintRoom | typeof RECYCLING_ROOM;
 
+export function recyclingRoomCapacity(level: number): number {
+  return level >= 2 ? 2 : 1;
+}
+
 export function manualEditableRooms(layout: BaseBlueprint, recyclingLevel?: number): EditableRoom[] {
-  // 预设布局已自带回收站；只有缺失时才补一座，避免出现两个同 id 的房间。
-  if (layout.rooms.some((room) => room.kind === "recycle")) return [...layout.rooms];
-  return [...layout.rooms, recyclingRoom(recyclingLevel)];
+  return [...withRecyclingRoomInLayout(layout, recyclingLevel).rooms];
 }
 
 /** 往求解器布局里补一座回收站；已存在则不重复添加。 */
@@ -24,11 +26,12 @@ export function withRecyclingRoomInLayout(layout: BaseBlueprint, recyclingLevel?
   return { ...layout, rooms: [...layout.rooms, recyclingRoom(recyclingLevel)] };
 }
 
-export function withRecyclingRoom(rows: RoomRow[], recyclingLevel?: number): RoomRow[] {
-  if (!rows.length || rows.some((row) => row.group === "recycle")) return rows;
+export function withRecyclingRoom(rows: RoomRow[], room?: Pick<BlueprintRoom, "id" | "level">): RoomRow[] {
+  if ((!rows.length && !room) || rows.some((row) => row.group === "recycle")) return rows;
+  const { id, level } = room ?? RECYCLING_ROOM;
   return [...rows, {
-    key: RECYCLING_ROOM_ID, roomId: RECYCLING_ROOM_ID, group: "recycle",
-    groupLabel: "回收站", title: "回收站", index: 0, level: recyclingRoom(recyclingLevel).level,
+    key: id, roomId: id, group: "recycle",
+    groupLabel: "回收站", title: "回收站", index: 0, level,
     operators: [], operatorSlots: [], autofill: false,
     rule: "支持 MAA 排班与产量计算", suspicious: false,
   }];

@@ -3,7 +3,7 @@ export const APP_LOCALES = ["zh-CN", "zh-TW", "en"] as const;
 export type AppLocale = typeof APP_LOCALES[number];
 export const DEFAULT_LOCALE: AppLocale = "zh-CN";
 export const LOCALE_LABELS: Record<AppLocale, string> = {
-  "zh-CN": "简体中文", "zh-TW": "繁體中文（台灣）", en: "English",
+  "zh-CN": "简体中文", "zh-TW": "繁體中文", en: "English",
 };
 
 const aliases: Readonly<Record<string, AppLocale>> = {

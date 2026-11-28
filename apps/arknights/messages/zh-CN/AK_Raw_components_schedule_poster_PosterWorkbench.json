@@ -82,5 +82,9 @@
   "fileImported": "已导入 {name}，布局与班次已同步。",
   "shiftCount": "{count} 班",
   "shiftDuration": "第 {shift} 班时长 / h",
-  "maaExported": "{multi, select, yes {多日周期已按 MAA 顺序班次导出。} other {}}已导出 MAA 排班 JSON；标题、说明和海报设置仍保留在网站作业文件中。"
+  "maaExported": "{multi, select, yes {多日周期已按 MAA 顺序班次导出。} other {}}已导出 MAA 排班 JSON；标题、说明和海报设置仍保留在网站作业文件中。",
+  "shareUnavailable": "作业码暂时无法生成。排班已保留，可先下载作业文件分享；网络恢复后再重试。",
+  "loadUnavailable": "暂时无法读取作业。请核对作业码、网站地址和网络，也可导入作业文件；当前排班未替换。",
+  "exportUnavailable": "图片导出失败或超时。请先下载作业文件备份，再刷新页面重试；排班仍保留。",
+  "imageExportedWithFallback": "图片已导出。部分字体、头像或背景加载失败，已使用替代字体或省略图片，请核对导出内容。"
 }

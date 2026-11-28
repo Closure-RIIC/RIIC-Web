@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import roster from "../fixtures/operbox_full_e2.json" with { type: "json" };
 import { gotoStable, mockApis, seedV4Session } from "./production-readiness.fixture";
+import { sessionStorageKey } from "./session";
 
 const names = ["埃癸斯","艾丽妮","W","星熊","斩业星熊","望","桑葚","纯烬艾雅法拉","银灰","阿米娅","乌尔比安","余"];
 const testBox = roster.filter((o) => names.includes(o.name)).map((o) => ({...o, id:o.name === "W" ? o.id.replace(/^char_/,"") : o.id, own:o.name !== "银灰", elite:o.name === "阿米娅" ? 1 : o.elite}));
@@ -23,7 +24,10 @@ for (const mobile of [false,true]) {
         const path = new URL(request.url()).pathname;
         if (request.method() !== "GET" && /^\/api\/(?:plan|tasks|workspace)(?:\/|$)/.test(path)) unexpectedWrites.push(path);
       });
-      const beforeBox = await page.evaluate(() => Object.entries(localStorage).filter(([key]) => /session-v[45]$/.test(key)).map(([,value]) => JSON.parse(value)).find((value) => value.operbox?.some((o: {name:string}) => o.name === "阿米娅"))?.operbox);
+      const beforeBox = await page.evaluate((key) => {
+        const raw = localStorage.getItem(key);
+        return (raw ? JSON.parse(raw) : null)?.operbox;
+      }, sessionStorageKey);
       await expect(page.getByRole("heading",{name:"专精规划",exact:true})).toBeVisible();
       const setupIcon = page.locator("[data-mastery-planner] [data-setup-action] svg");
       await expect(setupIcon).toHaveCount(1);
@@ -103,8 +107,10 @@ for (const mobile of [false,true]) {
       await expect(result).toBeVisible();
       await expect(page.locator("[data-mastery-planner]").getByRole("alert")).toHaveCount(0);
       // The calculation never invokes the solver or writes the operator Box.
-      const stored = await page.evaluate(() => Object.entries(localStorage).filter(([key]) => /session-v[45]$/.test(key)).map(([,value]) => JSON.parse(value)));
-      const saved = stored.find((value) => value.operbox?.some((o: {name:string}) => o.name === "阿米娅"));
+      const saved = await page.evaluate((key) => {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      }, sessionStorageKey);
       expect(saved.operbox.find((o: {name:string}) => o.name === "阿米娅").elite).toBe(1);
       expect(saved.operbox).toEqual(beforeBox);
       expect(unexpectedWrites).toEqual([]);

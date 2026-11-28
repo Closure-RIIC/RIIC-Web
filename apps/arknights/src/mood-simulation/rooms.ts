@@ -1,4 +1,5 @@
 import type { RoomKind } from "@riic/arknights-domain/types";
+import { recyclingRoomCapacity } from "../recycling-room.ts";
 
 /**
  * Operator slots per room kind and level.
@@ -15,7 +16,7 @@ export function roomCapacity(kind: RoomKind, level: number, dormBeds?: number): 
     case "trade_post": return Math.max(1, Math.min(3, level));
     case "meeting_room":
     case "training_room": return 2;
-    case "recycle": return level >= 2 ? 2 : 1;
+    case "recycle": return recyclingRoomCapacity(level);
     default: return 1;
   }
 }

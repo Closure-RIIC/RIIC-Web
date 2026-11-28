@@ -4,13 +4,18 @@ import { localize } from "./i18n/helpers/components_PlanResultSummary.ts";
 
 export type OriginiumShardRecipe = "orirock" | "device";
 
+/** Shared numeric accounting for the calculator and server-side Agent projection. */
+export function originiumLmdCost(shards: number | null, recipe: OriginiumShardRecipe) {
+  const unitCost = recipe === "device" ? 1_000 : 1_600;
+  return { unitCost, cost: shards === null ? null : shards * unitCost };
+}
+
 // Game manufacture formulae 13 (Orirock) and 14 (Device) both produce one shard.
 // Keep the public solver's gross, non-negative production fields unchanged.
 export function withOriginiumLmdCost(groups: DailyProductionGroup[], recipe: OriginiumShardRecipe, en: AppLocale): DailyProductionGroup[] {
   const shards = groups.find((group) => group.id === "orundum")?.supporting?.amount;
   if (!shards || shards.value === 0) return groups;
-  const unitCost = recipe === "device" ? 1_000 : 1_600;
-  const cost = shards.value === null ? null : shards.value * unitCost;
+  const { unitCost, cost } = originiumLmdCost(shards.value, recipe);
   return groups.map((group): DailyProductionGroup => {
     if (group.id !== "lmd") return group;
     const gross = group.primary.amount;
