@@ -27,6 +27,8 @@ Operator portraits under `apps/arknights/public/images/operator-portraits` come 
 
 `packages/arknights-domain/src/generated/arkntools/source.json` records the exact data and portrait commits and resource counts used by the current checkout. This project does not claim ownership of the game assets.
 
+The CN recruitment pool and localized recruitment tags in `apps/arknights/src/generated/recruitment-data.json` are derived from the same pinned arkntools revision (`assets/data/character.json` and `assets/locales/{cn,us}/tag.json`). Its `source` field records that revision; the daily resource sync regenerates and publishes it alongside the operator catalog.
+
 The frontend consumes only public JSON and PNG artifacts. It does not execute private downloader or unpacking workflows, does not require access to private repositories, and never opens pull requests or writes to either upstream repository.
 
 ## Rainyun partner mark

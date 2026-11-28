@@ -13,6 +13,7 @@ function parseArguments(argv) {
     else if (argument === "--before-skills") options.beforeSkills = argv[++index];
     else if (argument === "--before-gacha-up") options.beforeGachaUp = argv[++index];
     else if (argument === "--before-training-planner") options.beforeTrainingPlanner = argv[++index];
+    else if (argument === "--before-recruitment") options.beforeRecruitment = argv[++index];
     else throw new Error(`未知参数：${argument}`);
   }
   return options;
@@ -66,6 +67,14 @@ const addedPools = Object.keys(gachaUp).filter((id) => !Object.hasOwn(beforeGach
 const changedPools = Object.keys(gachaUp).filter((id) => Object.hasOwn(beforeGachaUp, id)
   && JSON.stringify(gachaUp[id]) !== JSON.stringify(beforeGachaUp[id]));
 const removedPools = Object.keys(beforeGachaUp).filter((id) => !Object.hasOwn(gachaUp, id));
+const [beforeRecruitment, recruitment] = await Promise.all([
+  json(options.beforeRecruitment, { operators: [] }),
+  json(path.join(root, "apps/arknights/src/generated/recruitment-data.json"), null),
+]);
+const beforeRecruitmentIds = new Set(beforeRecruitment.operators.map((operator) => operator.id));
+const recruitmentIds = new Set(recruitment.operators.map((operator) => operator.id));
+const addedRecruitment = recruitment.operators.filter((operator) => !beforeRecruitmentIds.has(operator.id)).map((operator) => operator.name);
+const removedRecruitment = beforeRecruitment.operators.filter((operator) => !recruitmentIds.has(operator.id)).map((operator) => operator.name);
 
 console.log(`## arkntools 自动资源同步
 
@@ -80,6 +89,9 @@ console.log(`## arkntools 自动资源同步
 - 产物图标：${source.counts.productIcons}
 - 养成成本数据来源：${trainingPlanner.source.repository}（\`${trainingPlanner.source.commit}\`）
 - 养成成本覆盖：${Object.keys(trainingPlanner.operators).length} 名干员（${delta(Object.keys(trainingPlanner.operators).length, Object.keys(beforeTrainingPlanner.operators ?? {}).length)}）
+- 国服公招池：${recruitment.operators.length} 名干员（${delta(recruitment.operators.length, beforeRecruitment.operators.length)}），来源 \`${recruitment.source.commit}\`
+- 新增公招干员：${list(addedRecruitment)}
+- 移除公招干员：${list(removedRecruitment)}
 - 新增干员：${list(addedOperators)}
 - 移除干员：${list(removedOperators)}
 - 新增技能定义：${[...afterSkillIds].filter((id) => !beforeSkillIds.has(id)).length}

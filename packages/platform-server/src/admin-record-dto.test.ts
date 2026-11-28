@@ -97,6 +97,22 @@ test("admin reproduction DTO requires every solver input and limits itself to th
   assert.equal(JSON.stringify(result).includes("must-not-leak"), false);
 });
 
+test("admin reproduction decodes automatic timing keys without reducing them to a profile", () => {
+  const result = toAdminReproductionData({
+    diagnosticId: "diagnostic-auto",
+    layout: { template: "243", drone_cap: 200, scenario: {}, rooms: [
+      { id: "control", kind: "control_center", level: 5 },
+      { id: "power", kind: "power_plant", level: 3 },
+    ] },
+    operbox: [{ id: "char_002_amiya", name: "阿米娅", own: true, level: 80, elite: 2, potential: 6, rarity: 5 }],
+    context: { rotation: "auto_24_12", fiammettaEnabled: true },
+    result: null,
+  });
+  assert.equal(result.available, true);
+  assert.deepEqual(result.rotation, { topology: "auto", shift_hours: [24, 12] });
+  assert.equal(result.rotationCount, 2);
+});
+
 test("admin reproduction DTO redacts absolute server paths from diagnostic text", () => {
   const result = toAdminReproductionData({
     diagnosticId: "diagnostic-3",

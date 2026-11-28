@@ -2,30 +2,304 @@ import { expect, test } from "@playwright/test";
 import { switchWorkbenchLanguage } from "./workbench-language";
 import layout from "@riic/arknights-domain/layouts/243.json" with {type:"json"};
 import { mockApis, mockSignedInWebsiteSession } from "./production-readiness.fixture";
+import { sessionPayload, sessionStorageKey } from "./session";
 
 test.beforeEach(async ({page}) => {
   await mockApis(page);
   await mockSignedInWebsiteSession(page);
-  await page.addInitScript(({layout}) => {
-    if (localStorage.getItem("mood-e2e-seeded")) return;
-    localStorage.setItem("mood-e2e-seeded","1");
-    localStorage.setItem("arknights-infra-calc-beta-onboarding-v1","1");
-    const operbox=[
+  const seededSession = sessionPayload({
+    layout,
+    operbox: [
       {id:"char_002_amiya",name:"阿米娅",elite:2,level:80,own:true,potential:1,rarity:5},
       {id:"char_300_phenxi",name:"菲亚梅塔",elite:2,level:60,own:true,potential:1,rarity:6},
       {id:"char_348_ceylon",name:"锡兰",elite:2,level:60,own:true,potential:1,rarity:5},
-    ];
-    localStorage.setItem("arknights-infra-calc-session-v5",JSON.stringify({
-      version:5,savedAt:new Date().toISOString(),expiresAt:new Date(Date.now()+86400000).toISOString(),
-      presetLabel:"243",layout,operbox,sourceName:"Mood test",boxSource:"sample",layoutDirty:false,layoutSource:"local",localLayoutBackup:null,
-      rotationProfile:"abc_12_6_6",fiammettaEnabled:true,result:null,activeShift:0,
-    }));
+    ],
+    sourceName:"Mood test", fiammettaEnabled:true,
+  });
+  await page.addInitScript(({key,seededSession}) => {
+    if (localStorage.getItem("mood-e2e-seeded")) return;
+    localStorage.setItem("mood-e2e-seeded","1");
+    localStorage.setItem("arknights-infra-calc-beta-onboarding-v1","1");
+    localStorage.setItem(key,JSON.stringify(seededSession));
     localStorage.setItem("arknights-infra-manual-schedule-v1",JSON.stringify({
       version:3,scheduleMode:"sequential",externalOperatorNames:[],startTime:"08:00",activeShift:0,fiammettaEnabled:true,
       shifts:[{durationHours:12,fiammettaTarget:"阿米娅",droneTargetRoomId:null,rooms:{trade_1:{operators:["阿米娅"]},dorm_1:{operators:["菲亚梅塔","锡兰"]}}},
         {durationHours:12,fiammettaTarget:"锡兰",droneTargetRoomId:null,rooms:{trade_1:{operators:["锡兰"]},dorm_1:{operators:["菲亚梅塔"]}}}],
     }));
-  },{layout});
+  },{key:sessionStorageKey,seededSession});
+});
+
+test("Fiammetta switches follow named targets and preserve explicit choices across reload", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/manual");
+  const panel = page.locator("[data-mood-simulation]");
+  const play = panel.getByRole("button", { name: "开始播放", exact: true });
+  await expect(play).toBeEnabled({ timeout: 45_000 });
+  await page.evaluate(() => {
+    const key = "arknights-infra-manual-schedule-v1";
+    const draft = JSON.parse(localStorage.getItem(key)!);
+    draft.shifts[0].durationHours = 8;
+    draft.shifts[1].durationHours = 8;
+    draft.shifts.push({ ...draft.shifts[1], fiammettaTarget: null });
+    localStorage.setItem(key, JSON.stringify(draft));
+  });
+  await page.reload();
+  await expect(play).toBeEnabled({ timeout: 45_000 });
+
+  const openSettings = () => page.getByRole("button", { name: "模拟设置", exact: true }).click();
+  await openSettings();
+  const dialog = page.getByRole("dialog", { name: "模拟设置" });
+  const first = dialog.getByRole("switch", { name: "第 1 班", exact: true });
+  const second = dialog.getByRole("switch", { name: "第 2 班", exact: true });
+  const third = dialog.getByRole("switch", { name: "第 3 班", exact: true });
+  const choose = async (label: string, value: string) => {
+    await dialog.getByRole("combobox", { name: label, exact: true }).click();
+    await page.getByRole("option", { name: value, exact: true }).click();
+  };
+
+  await expect(first).toBeChecked();
+  await expect(second).toBeChecked();
+  await expect(third).not.toBeChecked();
+  await expect(third).toBeDisabled();
+  await expect(dialog.getByRole("combobox", { name: "第 3 班指定目标" })).toHaveValue("未指定干员");
+
+  await choose("第 3 班指定目标", "阿米娅");
+  await expect(third).toBeChecked();
+  await choose("第 3 班指定目标", "未指定干员");
+  await expect(third).not.toBeChecked();
+  await expect(third).toBeDisabled();
+
+  await first.uncheck();
+  await choose("第 1 班指定目标", "锡兰");
+  await expect(first).not.toBeChecked();
+  await choose("第 3 班目标模式", "全基建最低心情");
+  await expect(third).toBeEnabled();
+  await expect(third).not.toBeChecked();
+  await third.check();
+  await page.reload();
+  await expect(play).toBeEnabled({ timeout: 45_000 });
+  await openSettings();
+  await expect(first).not.toBeChecked();
+  await expect(third).toBeChecked();
+});
+
+test("manual dorm locks stay on the same empty and occupied beds after switching shifts and reloading", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/manual");
+  const panel = page.locator("[data-mood-simulation]");
+  const play = panel.getByRole("button", { name: "开始播放", exact: true });
+  await expect(play).toBeEnabled({ timeout: 60_000 });
+  await page.evaluate(() => {
+    const key = "arknights-infra-manual-schedule-v1";
+    const draft = JSON.parse(localStorage.getItem(key)!);
+    draft.shifts[1].rooms = {
+      trade_1: { operators: ["菲亚梅塔"] },
+      dorm_1: { operators: ["阿米娅", null, "锡兰"] },
+    };
+    localStorage.setItem(key, JSON.stringify(draft));
+  });
+  await page.reload();
+  await expect(play).toBeEnabled({ timeout: 60_000 });
+  const board = page.locator("[data-manual-editor-board]:visible");
+  const dorm = board.locator('[data-schedule-room="dorm_1"]');
+  const trade = board.locator('[data-schedule-room="trade_1"]');
+  const fiammetta = dorm.locator('[data-operator-identity="菲亚梅塔"]');
+  const bedToggles = dorm.locator("[data-dorm-slot-toggle]");
+  await expect(bedToggles).toHaveCount(5);
+  await bedToggles.nth(0).click();
+  await bedToggles.nth(2).focus();
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(bedToggles.nth(0)).toHaveAccessibleName("解锁此床位");
+  await expect(bedToggles.nth(2)).toHaveAttribute("aria-pressed","true");
+  await expect(dorm.locator("[data-dorm-slot-locked]")).toHaveCount(2);
+
+  const view = board.locator("[data-schedule-view-controls]");
+  const overview = view.getByRole("tab", { name: "一图流布局" });
+  const list = view.getByRole("tab", { name: "列表式布局" });
+  await overview.click();
+  await expect(bedToggles.nth(2)).toHaveAttribute("aria-pressed", "true");
+  await bedToggles.nth(2).click();
+  await expect(bedToggles.nth(2)).toHaveAttribute("aria-pressed", "false");
+  await bedToggles.nth(2).click();
+  await list.click();
+  await board.locator("[data-shift-tabs]").getByRole("tab").nth(1).click();
+  await expect(dorm.locator("[data-dorm-slot-locked]")).toHaveCount(2);
+  await expect(fiammetta).toBeVisible();
+  await expect(trade.locator('[data-operator-identity="菲亚梅塔"]')).toHaveCount(0);
+  await page.reload();
+  await expect(dorm.locator("[data-dorm-slot-locked]")).toHaveCount(2);
+  await bedToggles.nth(0).click();
+  await expect(dorm.locator("[data-dorm-slot-locked]")).toHaveCount(1);
+  await expect(bedToggles.nth(0)).toHaveAccessibleName("锁定此床位");
+  await expect(trade.locator('[data-operator-identity="菲亚梅塔"]')).toBeVisible();
+  await expect(dorm.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
+  await expect(dorm.locator('[data-operator-identity="锡兰"]')).toHaveCount(0);
+  await bedToggles.nth(2).click();
+  await expect(dorm.locator('[data-operator-identity="锡兰"]')).toBeVisible();
+  await expect(play).toBeEnabled();
+  await panel.getByRole("tab", { name: "心情回放", exact: true }).click();
+  await expect(panel.getByLabel("模拟时间轴")).toHaveValue("12");
+  await expect(dorm.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
+  await expect(dorm.locator('[data-operator-identity="锡兰"]')).toBeVisible();
+});
+
+test("replay padlocks are read-only and one click in the editor releases both the bed and its operator", async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.goto("/manual");
+  const panel = page.locator("[data-mood-simulation]");
+  const play = panel.getByRole("button", { name: "开始播放", exact: true });
+  const board = page.locator("[data-manual-editor-board]:visible");
+  const dorm = board.locator('[data-schedule-room="dorm_1"]');
+  const trade = board.locator('[data-schedule-room="trade_1"]');
+  const bedToggles = dorm.locator("[data-dorm-slot-toggle]");
+  const savedLocks = () => page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).dormLocks);
+  await expect(play).toBeEnabled({ timeout: 30_000 });
+  await bedToggles.nth(0).click();
+  await bedToggles.nth(2).click();
+  await expect.poll(savedLocks).toHaveLength(2);
+  await page.evaluate(() => {
+    const key = "arknights-infra-manual-schedule-v1";
+    const draft = JSON.parse(localStorage.getItem(key)!);
+    // Older drafts wrote the lock's assignments directly into subsequent shifts.
+    draft.activeShift = 1;
+    draft.shifts[1].rooms = draft.shifts[0].rooms;
+    localStorage.setItem(key, JSON.stringify(draft));
+  });
+  await page.reload();
+  await expect(play).toBeEnabled();
+  await expect(bedToggles.nth(0)).toHaveAttribute("aria-pressed", "true");
+  await panel.getByRole("tab", { name: "心情回放", exact: true }).click();
+  await expect(board).toHaveAttribute("data-board-mode", "simulation");
+  await expect(dorm.locator("[data-dorm-slot-locked]")).toHaveCount(2);
+  await expect(bedToggles).toHaveCount(0);
+
+  await panel.getByRole("tab", { name: "排班编辑", exact: true }).click();
+  await expect(board).toHaveAttribute("data-board-mode", "edit");
+  await bedToggles.nth(0).click();
+  await expect(bedToggles.nth(0)).toHaveAttribute("aria-pressed", "false");
+  await expect(bedToggles.nth(2)).toHaveAttribute("aria-pressed", "true");
+
+  await expect.poll(savedLocks).toEqual([{ roomId: "dorm_1", slotIndex: 2, fromShift: 0, operator: null }]);
+  await trade.getByRole("button", { name: /阿米娅/ }).click();
+  const picker = page.getByRole("dialog");
+  const allRooms = picker.getByRole("tablist", { name: "工作房间" }).getByRole("tab", { name: "全部", exact: true });
+  await allRooms.click();
+  await picker.getByLabel("搜索可选干员或基建技能").fill("菲亚梅塔");
+  await picker.getByRole("button", { name: /菲亚梅塔/ }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "移动干员", exact: true }).click();
+  await expect(trade.locator('[data-operator-identity="菲亚梅塔"]')).toBeVisible();
+  await expect(dorm.locator('[data-operator-identity="菲亚梅塔"]')).toHaveCount(0);
+  const firstBed = dorm.locator(".infra-operator-slot").first();
+  await firstBed.getByRole("button", { name: /空位|自动补位/ }).click();
+  await allRooms.click();
+  await picker.getByRole("button", { name: /锡兰/ }).click();
+  await expect(firstBed.locator('[data-operator-identity="锡兰"]')).toBeVisible();
+  await page.reload();
+  await expect(trade.locator('[data-operator-identity="菲亚梅塔"]')).toBeVisible();
+  await expect(firstBed.locator('[data-operator-identity="锡兰"]')).toBeVisible();
+  await expect(bedToggles.nth(0)).toHaveAttribute("aria-pressed", "false");
+});
+
+test("morale replay fills dorms in ascending admission morale across a room boundary", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/manual");
+  const panel = page.locator("[data-mood-simulation]");
+  const play = panel.getByRole("button", { name: "开始播放", exact: true });
+  await expect(play).toBeEnabled({ timeout: 60_000 });
+  await page.evaluate((sessionKey) => {
+    const session = JSON.parse(localStorage.getItem(sessionKey)!);
+    session.operbox.push(
+      { id: "char_123_fang", name: "芬", elite: 1, level: 55, own: true, potential: 1, rarity: 3 },
+      { id: "char_4246_dminon", name: "国度", elite: 2, level: 60, own: true, potential: 1, rarity: 6 },
+    );
+    localStorage.setItem(sessionKey, JSON.stringify(session));
+    const draftKey = "arknights-infra-manual-schedule-v1";
+    const draft = JSON.parse(localStorage.getItem(draftKey)!);
+    const shift = { durationHours: 12, fiammettaTarget: null, droneTargetRoomId: null };
+    Object.assign(draft, {
+      activeShift: 1,
+      fiammettaEnabled: false,
+      dormLocks: [0, 1, 2, 3].map(slotIndex => ({ roomId: "dorm_1", slotIndex, fromShift: 1, operator: null })),
+      shifts: [
+        { ...shift, rooms: { power_1: { operators: ["芬"] }, recycling_station: { operators: ["国度"] } } },
+        { ...shift, rooms: {} },
+      ],
+    });
+    localStorage.setItem(draftKey, JSON.stringify(draft));
+  }, sessionStorageKey);
+  await page.reload();
+  await expect(play).toBeEnabled({ timeout: 60_000 });
+  await panel.getByRole("tab", { name: "心情回放", exact: true }).click();
+  const timeline = panel.getByLabel("模拟时间轴");
+  await expect(timeline).toHaveValue("12");
+  const board = page.locator("[data-manual-editor-board]:visible");
+  const first = board.locator('[data-schedule-room="dorm_1"]');
+  const second = board.locator('[data-schedule-room="dorm_2"]');
+  const lockedBeds = first.locator("[data-dorm-slot-locked]");
+  const fang = first.locator('[data-operator-identity="芬"]');
+  const dominion = second.locator('[data-operator-identity="国度"]');
+  await expect(lockedBeds).toHaveCount(4);
+  await expect(fang.getByLabel("当前心情 12/24")).toBeVisible();
+  await expect(dominion.getByLabel("当前心情 13.2/24")).toBeVisible();
+  expect((await fang.boundingBox())!.x).toBeGreaterThan((await lockedBeds.last().boundingBox())!.x);
+  expect((await dominion.boundingBox())!.y).toBeGreaterThan((await fang.boundingBox())!.y);
+});
+
+test("recycling assignments from a legacy layout play back across a 36-hour rotation", async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto("/manual");
+  const panel = page.locator("[data-mood-simulation]");
+  const play = panel.getByRole("button", { name: "开始播放", exact: true });
+  await expect(play).toBeEnabled({ timeout: 60_000 });
+
+  await page.evaluate((sessionKey) => {
+    const session = JSON.parse(localStorage.getItem(sessionKey)!);
+    session.layout.rooms = session.layout.rooms.filter((room: { kind: string }) => room.kind !== "recycle");
+    session.layoutDirty = true;
+    session.operbox.push({ id: "char_4246_dminon", name: "国度", elite: 2, level: 60, own: true, potential: 1, rarity: 6 });
+    localStorage.setItem(sessionKey, JSON.stringify(session));
+    const shift = { durationHours: 12, fiammettaTarget: null, droneTargetRoomId: null };
+    localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify({
+      version: 3, scheduleMode: "sequential", externalOperatorNames: [], startTime: "08:00", activeShift: 0, fiammettaEnabled: false,
+      shifts: [
+        { ...shift, rooms: { recycling_station: { operators: ["国度", "阿米娅"] } } },
+        { ...shift, rooms: { recycling_station: { operators: ["国度", "阿米娅"] } } },
+        { ...shift, rooms: { dorm_1: { operators: ["国度", "阿米娅"] } } },
+      ],
+    }));
+  }, sessionStorageKey);
+  await page.reload();
+  await expect(play).toBeEnabled({ timeout: 60_000 });
+  const board = page.locator("[data-manual-editor-board]:visible");
+  const recycle = board.locator('[data-room-group="recycle"]');
+  const timeline = panel.getByLabel("模拟时间轴");
+  const detail = panel.locator("[data-mood-detail]");
+  await expect(recycle.locator('[data-operator-identity="国度"]')).toBeVisible();
+
+  await panel.getByRole("combobox", { name: "周期数", exact: true }).click();
+  await page.getByRole("option", { name: "3", exact: true }).click();
+  await expect(timeline).toHaveAttribute("max", "108");
+  await expect(timeline).toBeEnabled();
+  await panel.getByRole("tab", { name: "心情回放", exact: true }).click();
+  await expect(recycle.locator('[data-operator-identity="阿米娅"]')).toBeVisible();
+  await recycle.getByRole("button", { name: /国度/ }).filter({ has: page.locator('[data-operator-identity="国度"]') }).click();
+  for (let step = 0; step < 4; step++) await timeline.press("ArrowRight");
+  await expect(timeline).toHaveValue("1");
+  await expect(recycle.locator('[data-operator-identity="国度"]').getByLabel("当前心情 23.1/24")).toBeVisible();
+  await expect(detail.getByRole("heading")).toContainText("23.1 / 24");
+  await expect(detail.getByText("回收站", { exact: true })).toBeVisible();
+  await expect(detail.getByText(/净消耗 0\.9\/h/)).toBeVisible();
+
+  await timeline.press("End");
+  await expect(timeline).toHaveValue("108");
+  await expect(board).toContainText("第 3 周期 · 第 3 班");
+  await expect(panel.locator("[data-mood-time]")).toContainText("+4d 20:00 / +4d 20:00");
+  await expect(detail.getByRole("heading")).toContainText("24 / 24");
+  await expect(recycle.locator('[data-operator-identity="国度"]')).toHaveCount(0);
+  await timeline.press("ArrowLeft");
+  await expect(timeline).toHaveValue("107.75");
 });
 
 test("manual morale worker, timeline, shared targets and simulation-only settings",async ({page}) => {
@@ -104,8 +378,7 @@ test("manual morale worker, timeline, shared targets and simulation-only setting
   await expect.poll(async () => page.evaluate(() => Object.values(JSON.parse(localStorage.getItem("riic.manual-mood.v1")!).settings.idle).some(row => !(row as {enabled:boolean}).enabled))).toBe(true);
   await expect(idleGroup.locator('[data-slot="accordion-trigger"]')).toHaveAttribute("aria-expanded","true");
   await idleGroup.getByRole("button",{name:"全选",exact:true}).click();
-  await dialog.getByRole("switch",{name:"等她回满再换（强制切换）",exact:true}).first().check();
-  await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("riic.manual-mood.v1")!).settings.fiammetta[0].wait)).toBe(true);
+  await expect(dialog.getByText(/心情达到 24 即可互换/)).toBeVisible();
   await choose("第 1 班指定目标","锡兰");
   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("arknights-infra-manual-schedule-v1")!).shifts[0].fiammettaTarget)).toBe("锡兰");
   await choose("第 1 班目标模式","全基建最低心情");
@@ -123,7 +396,7 @@ test("manual morale worker, timeline, shared targets and simulation-only setting
   await switchWorkbenchLanguage(page, "en");
   await expect(panel.getByRole("button",{name:"Play",exact:true})).toBeVisible();
   await openSettings("Simulation settings");
-  await expect(page.getByRole("dialog",{name:"Simulation settings"})).toContainText("simulation-only");
+  await expect(page.getByRole("dialog",{name:"Simulation settings"})).toContainText("when her morale reaches 24");
   expect((await page.getByRole("dialog",{name:"Simulation settings"}).boundingBox())!.width).toBeLessThanOrEqual(390);
   await page.keyboard.press("Escape");
   expect(errors).toEqual([]);
@@ -148,6 +421,7 @@ for (const width of [1440,390]) {
     const initialRate=await rate.innerText();
     const disclosures=await detail.locator("details").all();
     const timeline=panel.getByLabel("模拟时间轴");
+    const timeReadout=panel.locator("[data-mood-time]");
 
     for (const speed of [1,3600]) {
       await panel.getByRole("combobox",{name:"播放速度",exact:true}).click();
@@ -157,7 +431,7 @@ for (const width of [1440,390]) {
         const originalLedger=await ledger.elementHandle();
         const detailElement=await detail.elementHandle();
         const height=(await detail.boundingBox())!.height;
-        const startTime=Number(await timeline.getAttribute("value"));
+        const startTime=Number(await timeReadout.getAttribute("data-mood-time"));
         await panel.getByRole("button",{name:"开始播放",exact:true}).click();
         const observed=await page.evaluate(async ({detail,ledger}) => {
           if (!detail || !ledger) throw new Error("Mood details are missing");
@@ -189,7 +463,7 @@ for (const width of [1440,390]) {
           };
         },{detail:detailElement,ledger:originalLedger});
         await panel.getByRole("button",{name:"暂停",exact:true}).click();
-        expect(Number(await timeline.getAttribute("value"))).toBeGreaterThan(startTime);
+        expect(Number(await timeReadout.getAttribute("data-mood-time"))).toBeGreaterThan(startTime);
         await expect(rate).toBeVisible();
         await test.info().attach(`playback-${width}-${speed}-${expanded}`,{body:JSON.stringify(observed),contentType:"application/json"});
         expect(observed.samples).toBeGreaterThan(10);

@@ -55,7 +55,7 @@ try {
     await expect(page.locator("html")).toHaveAttribute("lang", locale);
     await page.keyboard.press("Escape");
   }
-  await switchLanguage("zh-TW", "繁體中文（台灣）");
+  await switchLanguage("zh-TW", "繁體中文");
   await expect(status).not.toContainText("校验");
   await switchLanguage("en", "English");
   await expect(status).not.toContainText(/\p{Script=Han}/u);
@@ -69,7 +69,7 @@ try {
   await expect(page.locator("#logList")).toContainText("Simulation started");
   await expect(page.locator("#logList")).not.toContainText(/\p{Script=Han}/u);
   const count = await page.locator(".ef-step-log-entry").count();
-  await switchLanguage("zh-TW", "繁體中文（台灣）");
+  await switchLanguage("zh-TW", "繁體中文");
   await expect(page.locator(".ef-step-log-entry")).toHaveCount(count);
   await expect(page.locator("#logList")).toContainText("模擬");
   console.log("PASS: existing simulation logs follow language changes");

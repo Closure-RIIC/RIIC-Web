@@ -67,6 +67,7 @@ export function usePlanActivity({
   error,
   completed = false,
   completedMaa = null,
+  completedDescription,
   queued = false,
   queuePosition = null,
   etaSeconds = null,
@@ -79,6 +80,7 @@ export function usePlanActivity({
   completed?: boolean;
   /** Snapshot the completed task's warning, independent of later result edits or variant switches. */
   completedMaa?: MaaJson | null;
+  completedDescription?: string;
   queued?: boolean;
   queuePosition?: number | null;
   etaSeconds?: number | null;
@@ -113,11 +115,11 @@ export function usePlanActivity({
       setActivity(error
         ? { id, kind, phase: "error", error }
         : completed
-          ? { id, kind, phase: "success", error: null, queuePosition: null, etaSeconds: null, uncertainMaaOperators: completedMaa ? maaUncertainOperators(completedMaa) : [] }
+          ? { id, kind, phase: "success", error: null, queuePosition: null, etaSeconds: null, uncertainMaaOperators: completedMaa ? maaUncertainOperators(completedMaa) : [], description: completedDescription }
           : null);
     }
     wasLoading.current = loading;
-  }, [buffered, completed, completedMaa, error, etaSeconds, kind, loading, queued, queuePosition]);
+  }, [buffered, completed, completedMaa, completedDescription, error, etaSeconds, kind, loading, queued, queuePosition]);
 
   return activity;
 }
@@ -462,7 +464,7 @@ export function LiveActivity({ activity: planActivity, notice, trainingSync, onR
         <DialogContent className="grid max-h-[min(680px,calc(100dvh-2rem))] grid-rows-[auto_minmax(0,1fr)_auto] gap-0 sm:max-w-[min(540px,calc(100vw-2rem))]">
           <DialogHeader>
             <DialogTitle className="text-xl">{intl("components_ui_live_activity.scheduleGenerated")}</DialogTitle>
-            <DialogDescription className="text-base leading-7">{intl("components_ui_live_activity.theThreeShiftResultIsReadyToViewOr")}</DialogDescription>
+            <DialogDescription className="text-base leading-7">{planActivity?.description ?? intl("components_ui_live_activity.theThreeShiftResultIsReadyToViewOr")}</DialogDescription>
           </DialogHeader>
           <div className="px-5 pb-2 text-lg font-medium leading-8 text-amber-700 sm:px-7 dark:text-amber-300">
             {intl("components_ui_live_activity.solverIterationWarning")}

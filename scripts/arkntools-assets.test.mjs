@@ -549,6 +549,41 @@ test("translation provenance skips commit-only updates but preserves translation
   }
 });
 
+test("recruitment publication ignores only source revisions and detects pool and tag changes", async (t) => {
+  const file = "apps/arknights/src/generated/recruitment-data.json";
+  const snapshot = { source: { repository: ARKNTOOLS_REPOSITORY, commit: SOURCE_SHA }, server: "cn", tags: [{ id: 5, zh: "辅助干员", en: "Supporter" }], operators: [{ id: "char_001_alpha", tags: [5] }] };
+  const next = globalThis.structuredClone(snapshot);
+  next.source.commit = PORTRAITS_SHA;
+  const changed = (value) => hasManagedContentChange(file, JSON.stringify(snapshot), JSON.stringify(value));
+  assert.equal(changed(next), false);
+  for (const mutate of [
+    (data) => { data.operators.push({ id: "char_002_beta", tags: [5] }); },
+    (data) => { data.operators[0].tags = [5, 9]; },
+    (data) => { data.tags[0].en = "New translation"; },
+    (data) => { data.server = "us"; },
+    (data) => { data.source.repository = "https://example.test/changed-source"; },
+  ]) {
+    const value = globalThis.structuredClone(next);
+    mutate(value);
+    assert.equal(changed(value), true);
+  }
+
+  const root = await makeTemp(t);
+  await mkdir(path.dirname(path.join(root, file)), { recursive: true });
+  await writeFile(path.join(root, file), JSON.stringify(snapshot));
+  const git = (...args) => execFileSync("git", args, { cwd: root, encoding: "utf8", stdio: "pipe" });
+  git("init", "--quiet");
+  git("add", ".");
+  git("-c", "user.name=Resource test", "-c", "user.email=resource@example.test", "-c", "commit.gpgsign=false", "commit", "--quiet", "-m", "baseline");
+  await writeFile(path.join(root, file), JSON.stringify(next));
+  assert.deepEqual((await detectManagedChanges(root)).provenanceOnlyFiles, [file]);
+  assert.equal((await detectManagedChanges(root)).changed, false);
+  next.operators.push({ id: "char_002_beta", tags: [5] });
+  await writeFile(path.join(root, file), JSON.stringify(next));
+  assert.deepEqual((await detectManagedChanges(root)).contentFiles, [file]);
+  assert.equal((await detectManagedChanges(root)).changed, true);
+});
+
 test("publication detects staged, untracked and deleted managed files without modifying the index", async (t) => {
   const root = await makeTemp(t);
   const catalogRoot = path.join(root, "packages/arknights-domain/src/generated/arkntools");

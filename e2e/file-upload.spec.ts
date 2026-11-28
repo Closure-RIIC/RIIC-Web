@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { utils, write } from "xlsx";
 import layout243 from "@riic/arknights-domain/layouts/243.json" with { type: "json" };
 import { mockApis, now, planData } from "./production-readiness.fixture";
+import { sessionPayload, sessionStorageKey } from "./session";
 
 const operators = [
   { id: "char_002_amiya", name: "阿米娅", elite: 2, level: 80, own: true, potential: 6, rarity: 5 },
@@ -40,8 +41,8 @@ async function chooseFile(page: Page, upload: Locator, file: ReturnType<typeof j
 }
 
 async function workspaceData(page: Page) {
-  return page.evaluate(() => {
-    const session = JSON.parse(window.localStorage.getItem("arknights-infra-calc-session-v5") ?? "null");
+  return page.evaluate((key) => {
+    const session = JSON.parse(window.localStorage.getItem(key) ?? "null");
     return {
       operbox: session?.operbox,
       sourceName: session?.sourceName,
@@ -52,7 +53,7 @@ async function workspaceData(page: Page) {
       result: session?.result,
       manual: JSON.parse(window.localStorage.getItem("arknights-infra-manual-schedule-v1") ?? "null"),
     };
-  });
+  }, sessionStorageKey);
 }
 
 async function openSetup(page: Page) {
@@ -94,22 +95,17 @@ test.beforeEach(async ({ page }) => {
       },
     },
   }));
-  await page.addInitScript(({ layout, operbox, result, savedAt, expiresAt }) => {
+  const seededSession = sessionPayload({
+    layout: layout243, operbox: operators, result: planData, sourceName: "上传前的测试 Box",
+  });
+  await page.addInitScript(([key, payload]) => {
     window.localStorage.setItem("arknights-infra-calc-beta-onboarding-v1", "1");
-    window.localStorage.setItem("arknights-infra-calc-session-v5", JSON.stringify({
-      version: 5, savedAt, expiresAt, presetLabel: "243", layout, operbox,
-      sourceName: "上传前的测试 Box", boxSource: "sample", layoutDirty: false,
-      layoutSource: "local", localLayoutBackup: null, rotationProfile: "abc_12_6_6",
-      fiammettaEnabled: false, result, activeShift: 0,
-    }));
+    window.localStorage.setItem(key, JSON.stringify(payload));
     window.localStorage.setItem("arknights-infra-manual-schedule-v1", JSON.stringify({
       version: 2, activeShift: 0, fiammettaEnabled: false,
       shifts: [{ durationHours: 24, fiammettaTarget: null, rooms: { trade_1: { operators: ["阿米娅", null, null] } } }],
     }));
-  }, {
-    layout: layout243, operbox: operators, result: planData,
-    savedAt: new Date(now).toISOString(), expiresAt: new Date(now + 30 * 24 * 60 * 60 * 1000).toISOString(),
-  });
+  }, [sessionStorageKey, seededSession] as const);
 });
 
 test("Box first opens the upload dialog, then choosing uppercase JSON with no MIME imports automatically", async ({ page }) => {

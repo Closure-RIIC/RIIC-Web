@@ -81,10 +81,9 @@
       ]
     ],
     "operatorUpdates": {
-      "repository": "https://github.com/nagiyume/akedatabase",
-      "revision": "1.6.4@11529267-11",
-      "manifest": "https://data.akedata.wiki/manifest.json",
-      "tableCfgUrl": "https://data.akedata.wiki/public/1.6.4/11529267-11/TableCfg",
+      "repository": "https://github.com/rmxlinux/EndfieldData",
+      "revision": "19d202bca3ba1dad4dd7b161393557fc3d8cb44d",
+      "tableCfgUrl": "https://raw.githubusercontent.com/rmxlinux/EndfieldData/19d202bca3ba1dad4dd7b161393557fc3d8cb44d/TableCfg",
       "tables": [
         "CharacterTable",
         "CharGrowthTable",
@@ -93,14 +92,15 @@
         "I18nTextTable_CN"
       ],
       "inputs": {
-        "CharacterTable": "f94bf917af3f4d3d059f8fb0c92a6f05c91955daa5755441b42ecbf4d200d32e",
-        "CharGrowthTable": "b9c1a7bd2d390824e82feced74becbafbdfef6d419bf55c803d76818373d5abc",
-        "SpaceshipCharSkillTable": "4028ddad487c1cf3dbe85ae0f12e2f68ed32cdd56f0b8c9ac08fce2617995c2c",
-        "SpaceshipSkillTable": "1db58cfd4b067800d6d64bf840a0e2e28a9a8497aa58e383dc47c9b356ec7b0d",
-        "I18nTextTable_CN": "2a92b375d44eae019fa119ca71df67b5779372e109ea513c060549b62adf9643"
+        "CharacterTable": "c9386e2790ecb2e2978bb9992410d6207dc915d23f0b1a096dd75b6d549bcac7",
+        "CharGrowthTable": "cfc7fe75174c354c88656a247f501f65ddbef897018c21a87d2f28dabfead10a",
+        "SpaceshipCharSkillTable": "68c01c09cd6f633eec9a438be0dc1aa21f63d5f75cb10bff2cd85b35adf4c06f",
+        "SpaceshipSkillTable": "301c6b2a4c39695d6415baf5b55f1b86047daaa6e2ab72a075cceb37c59ce110",
+        "I18nTextTable_CN": "fe2f9b859ce2d028e1f3ffb72e2a1ff648184b59f5b2d414b88134dde97e553b"
       },
       "operatorIds": [
-        "chr_0037_minghe"
+        "chr_0037_minghe",
+        "chr_0040_sweetpie"
       ]
     }
   },
@@ -5554,6 +5554,117 @@
           "skillId": "spaceship_skill_chr_0037_minghe_2_2",
           "name": "因势应物·γ",
           "talentName": "因势应物",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低18%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.18
+          },
+          "rawParams": [
+            0.18
+          ],
+          "unlock": 4
+        }
+      ]
+    },
+    {
+      "charId": "chr_0040_sweetpie",
+      "name": "小刻",
+      "enName": "Kay",
+      "rarity": 6,
+      "profession": 7,
+      "professionName": "先锋",
+      "charType": "Natural",
+      "charTypeName": "自然",
+      "weaponType": 5,
+      "weaponTypeName": "长柄武器",
+      "sortOrder": 39,
+      "department": "ENDFIELD INDUSTRIES",
+      "maxSkillCount": 2,
+      "shipSkills": [
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0040_sweetpie_1_1",
+          "name": "野路子铁匠·β",
+          "talentName": "野路子铁匠",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升20%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.2,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.2,
+            2
+          ],
+          "unlock": 1
+        },
+        {
+          "slot": 1,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0040_sweetpie_1_2",
+          "name": "野路子铁匠·γ",
+          "talentName": "野路子铁匠",
+          "level": 2,
+          "postfix": "γ",
+          "icon": "facskill_spaceship_manufacture_efficiency",
+          "desc": "进驻制造舱时，武器经验素材的生产效率提升30%",
+          "effect": {
+            "type": 7,
+            "key": "ManufactureEfficiencyUp",
+            "cn": "制造舱 · 指定经验素材生产效率提升",
+            "rate": 0.3,
+            "expType": 2,
+            "expTypeName": "武器经验素材"
+          },
+          "rawParams": [
+            0.3,
+            2
+          ],
+          "unlock": 3
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0040_sweetpie_2_1",
+          "name": "蜜饼小歇·β",
+          "talentName": "蜜饼小歇",
+          "level": 1,
+          "postfix": "β",
+          "icon": "facskill_spaceship_manufacture_power_consume",
+          "desc": "进驻制造舱时，舱室内干员心情消耗降低14%",
+          "effect": {
+            "type": 1,
+            "key": "RoomMoodConsumeDown",
+            "cn": "舱室内干员心情消耗降低",
+            "rate": 0.14
+          },
+          "rawParams": [
+            0.14
+          ],
+          "unlock": 2
+        },
+        {
+          "slot": 2,
+          "roomType": 1,
+          "roomName": "制造舱",
+          "skillId": "spaceship_skill_chr_0040_sweetpie_2_2",
+          "name": "蜜饼小歇·γ",
+          "talentName": "蜜饼小歇",
           "level": 2,
           "postfix": "γ",
           "icon": "facskill_spaceship_manufacture_power_consume",

@@ -10,11 +10,15 @@ import { createAgentStreamPolicy } from "@/server/agent/stream-policy";
 import { buildAgentSystemPrompt } from "@/server/agent/persona";
 import { listBuiltinAgentPersonas, resolveAgentPersonaContent } from "@/server/agent/persona-catalog";
 import { buildAgentTools } from "@/server/agent/tools";
-import { calculateAgentTokenCost } from "@/server/billing/pricing";
+import { calculateAgentTokenCost, sumAgentCacheWriteTokens } from "@/server/billing/pricing";
+import { findModelRate } from "@/server/billing/rate-policy";
 import { splitPoints } from "@/server/billing/points";
 import { agentGatewayEnabled, gatewaySettings } from "@/server/agent/gateway-runtime";
 import { gatewayChat } from "@/server/agent/gateway-chat";
-import { AgentAccountingError } from "@/server/billing/agent-accounting";
+import { AgentAccountingError, activeAgentPolicies } from "@/server/billing/agent-accounting";
+import { configuredAgentChoices } from "@/server/agent/model-catalog";
+import { isAgentModelId } from "@/agent-models";
+import { agentRequestBodyLimit } from "@/agent-image-limits";
 import { AgentFilterError } from "@/server/agent/filter-policy";
 import { AgentHistoryError, prepareAgentHistory } from "@/server/agent/message-history";
 import { withAgentAnswerBoundary } from "@/server/agent/answer-boundary";
@@ -106,14 +110,20 @@ export async function GET(request: Request) {
     const settings = agentLlmSettings();
     const automatic = agentGatewayEnabled();
     if (automatic) gatewaySettings();
+    const policies = automatic ? await activeAgentPolicies() : null;
+    const catalog = policies?.models;
+    const choices = policies ? configuredAgentChoices(policies.models.policy, policies.rates.policy)
+      : agentModelChoices().map(choice => ({ ...choice, vision: false, available: true }));
     return successResponse(
       {
         enabled: automatic || settings.configured,
-        automatic,
+        automatic: false,
+        gateway: automatic,
+        defaultModel: catalog?.policy.defaultModel ?? settings.provider,
         provider: settings.configured ? settings.provider : null,
         model: settings.configured ? settings.model : null,
         personas: await listBuiltinAgentPersonas((await activeAgentResources())?.policy),
-        models: automatic ? [] : agentModelChoices(),
+        models: choices,
       },
       requestId
     );
@@ -130,7 +140,11 @@ export async function POST(request: Request) {
     const { session } = await requireAgentAccess(request);
     const automatic = agentGatewayEnabled();
     if (automatic) enforceRateLimit("agent-chat", session.user.id, 20, 60_000);
-    const body = (await readJsonBody(request, 16 * 1024 * 1024)) as { model?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; messages?: UIMessage[]; pageContext?: unknown; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
+    // Bound transport before parsing with the same policy snapshot used for this run.
+    // Selection-specific counts and decoded sizes are checked by prepareAgentHistory.
+    const policies = automatic ? await activeAgentPolicies() : undefined;
+    const bodyLimit = Math.max(agentRequestBodyLimit(), ...(policies?.models.policy.models.filter(model => model.enabled).map(agentRequestBodyLimit) ?? []));
+    const body = (await readJsonBody(request, bodyLimit)) as { model?: unknown; images?: unknown; id?: unknown; conversationId?: unknown; attemptId?: unknown; messages?: UIMessage[]; pageContext?: unknown; persona?: { id?: unknown; kind?: unknown; name?: unknown; content?: unknown } };
     if (!Array.isArray(body.messages) || body.messages.length === 0) {
       const response = failureResponse(new Error("缺少对话消息。"), requestId, "/api/agent/chat", startedAt);
       return new Response(response.body, { status: 400, headers: response.headers });
@@ -143,19 +157,10 @@ export async function POST(request: Request) {
     catch (error) {
       return failureResponse(new PublicApiError("AIC-REQ-1001", { message: "所选人格卡暂不可用，请重新选择。", cause: error }), requestId, "/api/agent/chat", startedAt);
     }
-    const fileParts = body.messages.flatMap((message) => Array.isArray(message?.parts) ? message.parts.filter((part) => part?.type === "file") : []).map((part) => part as unknown as { url?: unknown; mediaType?: unknown; filename?: unknown });
-    if (fileParts.length > 4) {
-      const response = failureResponse(new Error("一次最多发送 4 个附件。"), requestId, "/api/agent/chat", startedAt);
-      return new Response(response.body, { status: 413, headers: response.headers });
-    }
-    for (const part of fileParts) {
-      if (typeof part.url !== "string" || part.url.length > 12_000_000) {
-        const response = failureResponse(new Error("附件过大，请压缩后重试。"), requestId, "/api/agent/chat", startedAt);
-        return new Response(response.body, { status: 413, headers: response.headers });
-      }
-    }
-    // Automatic routing owns model selection, including for older clients that send null or a stale selection.
-    if (automatic) return await gatewayChat(request, session.user.id, requestId, { ...body, messages: body.messages, pageContext }, personaContent, resources ?? undefined);
+    if (body.model !== undefined && !(automatic && body.model === null) && !isAgentModelId(body.model)) throw new PublicApiError("AIC-REQ-1001", { message: "请选择可用的模型。" });
+    if (body.images !== undefined && body.images !== "include" && body.images !== "exclude") throw new PublicApiError("AIC-REQ-1001", { message: "图片上下文选项无效。" });
+    // The gateway owns credentials; the selected catalog entry owns routing for the whole run.
+    if (automatic) return await gatewayChat(request, session.user.id, requestId, { ...body, messages: body.messages, pageContext }, personaContent, resources ?? undefined, policies);
     if (body.model !== undefined && body.model !== "deepseek" && body.model !== "glm") {
       throw new PublicApiError("AIC-REQ-1001", { message: "请选择可用的模型。" });
     }
@@ -169,7 +174,16 @@ export async function POST(request: Request) {
       );
       return new Response(response.body, { status: 503, headers: response.headers });
     }
-    const messages = await prepareAgentHistory(body.messages, async () => {});
+    const rates = (await activeAgentPolicies()).rates;
+    const rateProvider = `riic-${settings.provider}`;
+    const pricedAt = new Date();
+    // Validate the configured model before any provider request or tool execution.
+    try {
+      findModelRate(rates.policy, rateProvider, settings.model);
+    } catch {
+      throw new AgentAccountingError("policy_unavailable", "当前模型的计费配置不可用，请联系管理员。");
+    }
+    const messages = await prepareAgentHistory(body.messages, async () => {}, { images: body.images });
     const tools = buildAgentTools({ request, userId: session.user.id, resources: resources?.policy });
     // 临时监控：记录本次请求的完整输入（含历史消息与附件元数据）
     await monitorLog({
@@ -217,9 +231,22 @@ export async function POST(request: Request) {
           }));
         }
         const usage = event.totalUsage;
-        const model = String((event.model as { modelId?: unknown }).modelId ?? "unknown");
+        const model = String(event.response.modelId ?? "unknown");
         const usageIdList = [...usageIds];
-        const turnPricing = calculateAgentTokenCost(model, { inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, cachedInputTokens: usage.inputTokenDetails.cacheReadTokens });
+        let turnPricing: ReturnType<typeof calculateAgentTokenCost> | undefined;
+        let cacheWriteTokens: number | undefined;
+        try {
+          if (model !== settings.model || event.steps.length === 0 || event.steps.some(step => step.response.modelId !== settings.model)) {
+            throw new Error("Unexpected response model");
+          }
+          cacheWriteTokens = sumAgentCacheWriteTokens(event.steps.map(step => step.usage));
+          turnPricing = calculateAgentTokenCost(rates.policy, rateProvider, model, {
+            inputTokens: usage.inputTokens, outputTokens: usage.outputTokens, cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens,
+            cacheWriteTokens,
+          }, pricedAt);
+        } catch {
+          // Preserve an unconfirmed usage record instead of inventing a zero charge.
+        }
         const splitTokens = (total: number | undefined, index: number) => {
           const normalized = Math.max(0, Math.floor(total ?? 0));
           const count = Math.max(1, usageIdList.length);
@@ -229,19 +256,26 @@ export async function POST(request: Request) {
           // Provider usage is reported at the model-step level. When one turn
           // invokes multiple billable tools, split the step totals once so the
           // same token usage is not charged repeatedly to every tool record.
-          const inputTokens = splitTokens(usage.inputTokens, index);
+          const measuredWriteTokens = cacheWriteTokens === undefined ? undefined : splitTokens(cacheWriteTokens, index);
           const outputTokens = splitTokens(usage.outputTokens, index);
-          const cachedInputTokens = Math.min(inputTokens, splitTokens(usage.inputTokenDetails.cacheReadTokens, index));
-          const pricing = calculateAgentTokenCost(model, {
-            inputTokens,
-            outputTokens,
-            cachedInputTokens,
-          });
+          const cachedInputTokens = splitTokens(usage.inputTokenDetails?.cacheReadTokens, index);
+          // Partition exclusive input buckets before splitting so every record
+          // preserves input >= cache read + cache write, including one-token shares.
+          const inputTokens = turnPricing
+            ? splitTokens(usage.inputTokens! - (usage.inputTokenDetails?.cacheReadTokens ?? 0) - (cacheWriteTokens ?? 0), index) + cachedInputTokens + (measuredWriteTokens ?? 0)
+            : splitTokens(usage.inputTokens, index);
+          const pricing = turnPricing ? calculateAgentTokenCost(rates.policy, rateProvider, model, {
+            inputTokens: usage.inputTokens === undefined ? undefined : inputTokens,
+            outputTokens: usage.outputTokens === undefined ? undefined : outputTokens,
+            cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens === undefined ? undefined : cachedInputTokens,
+            cacheWriteTokens: measuredWriteTokens,
+          }, pricedAt) : undefined;
           await finalizeAgentUsage({
             usageId,
-            inputTokens,
-            outputTokens,
-            cachedInputTokens,
+            inputTokens: usage.inputTokens === undefined ? undefined : inputTokens,
+            outputTokens: usage.outputTokens === undefined ? undefined : outputTokens,
+            cachedInputTokens: usage.inputTokenDetails?.cacheReadTokens === undefined ? undefined : cachedInputTokens,
+            cacheWriteTokens: measuredWriteTokens,
             upstreamCostRmbFen: pricing?.providerCostRmbFen,
             chargedCostRmbFen: pricing?.chargedCostRmbFen,
             chargedPoints: turnPricing ? splitPoints(turnPricing.chargedPoints, usageIdList.length, index) : undefined,
@@ -249,6 +283,10 @@ export async function POST(request: Request) {
               model,
               finishReason: event.finishReason,
               pricing,
+              rateVersion: rates.id,
+              ratePolicy: rates.policy,
+              pricedAt: pricedAt.toISOString(),
+              usageConfirmed: turnPricing !== undefined,
             },
           });
         }

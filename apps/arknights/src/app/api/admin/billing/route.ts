@@ -1,7 +1,7 @@
 import { assertSameOrigin, createRequestId, enforceRateLimit, failureResponse, PublicApiError, readJsonBody, successResponse } from "@riic/platform-server/api-contract";
 import { requireWebsiteAdmin } from "@riic/platform-server/auth/authorization";
 import { getReferralCampaign, setReferralCampaign, ReferralError } from "@riic/platform-server/referral/service";
-import { adjustBilling, BillingAdminError, billingOverview, billingRange, billingRunDetail, changeAgentPolicy, getAgentPolicies, listBilling, resolveBillingReview, testAgentFilter } from "@/server/billing/admin";
+import { adjustBilling, BillingAdminError, billingOverview, billingRange, billingRunDetail, changeAgentModelSettings, changeAgentPolicy, getAgentPolicies, listBilling, resolveBillingReview, testAgentFilter } from "@/server/billing/admin";
 
 async function handle(request: Request) {
   const id = createRequestId(); const start = performance.now(); let response: Response;
@@ -22,6 +22,7 @@ async function handle(request: Request) {
       if (section === "adjust") data = await adjustBilling(session.user.id, body);
       else if (section === "policies") data = await changeAgentPolicy(session.user.id, body);
       else if (section === "referral") data = await setReferralCampaign(session.user.id, body);
+      else if (section === "model-settings") data = await changeAgentModelSettings(session.user.id, body);
       else if (section === "filter-test") data = await testAgentFilter(body);
       else if (section === "review") data = await resolveBillingReview(session.user.id, body);
       else throw new BillingAdminError("未知操作。");
