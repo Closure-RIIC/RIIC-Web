@@ -426,6 +426,28 @@ test("idle admission fills dorms left to right, prioritizing non-full Fiammetta 
   assert.deepEqual(full.dormSlots,{first:[null,"芬"],second:["国度",null]});
 });
 
+test("Fiammetta swaps only in shifts with a named target or an enabled automatic mode", () => {
+  const input = fiammettaLockInput();
+  input.operbox.push({id:"char_123_fang",name:"芬",own:true,elite:1,level:55,potential:1,rarity:3});
+  input.draft.shifts = ["阿米娅", "芬", null].map(fiammettaTarget => ({
+    ...input.draft.shifts[0]!, durationHours:8, fiammettaTarget,
+    rooms:{dorm:{operators:["菲亚梅塔"]},factory:{operators:["阿米娅","芬"]}},
+  }));
+  input.settings.fiammetta = {};
+  const swaps = () => simulate(input).events.filter(event => event.kind === "entry").map(event => [event.time, event.target]);
+  const named = [[0,"阿米娅"],[8,"芬"]];
+  assert.deepEqual(swaps(), named);
+
+  input.settings.fiammetta[2] = {enabled:true,mode:"specified"};
+  assert.deepEqual(swaps(), named);
+  input.settings.fiammetta[2] = {enabled:true,mode:"auto"};
+  assert.deepEqual(swaps(), [...named,[16,"阿米娅"]]);
+
+  input.settings.fiammetta[1] = {enabled:false,mode:"specified"};
+  input.settings.fiammetta[2] = {mode:"auto"};
+  assert.deepEqual(swaps(), [[0,"阿米娅"]]);
+});
+
 test("a locked Fiammetta swaps morale and stays in her bed through subsequent shifts and cycles", () => {
   const input = fiammettaLockInput();
   input.draft.shifts[1] = {...input.draft.shifts[1]!,rooms:{factory:{operators:["菲亚梅塔","阿米娅"]}}};

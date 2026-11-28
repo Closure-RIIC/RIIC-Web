@@ -18398,7 +18398,7 @@ export const references = [
   {
     "key": "MoodSimulation.all",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:576"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:578"
   },
   {
     "key": "MoodSimulation.assumptions",
@@ -18408,7 +18408,7 @@ export const references = [
   {
     "key": "MoodSimulation.autoTarget",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:561"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:563"
   },
   {
     "key": "MoodSimulation.base",
@@ -18488,12 +18488,12 @@ export const references = [
   {
     "key": "MoodSimulation.idleEnabled",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:568"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:570"
   },
   {
     "key": "MoodSimulation.idleRules",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:569"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:571"
   },
   {
     "key": "MoodSimulation.ledger",
@@ -18533,12 +18533,17 @@ export const references = [
   {
     "key": "MoodSimulation.noIdle",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:585"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:587"
+  },
+  {
+    "key": "MoodSimulation.noNamedTarget",
+    "prefix": false,
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:564"
   },
   {
     "key": "MoodSimulation.none",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:576"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:578"
   },
   {
     "key": "MoodSimulation.noRed",
@@ -18573,7 +18578,7 @@ export const references = [
   {
     "key": "MoodSimulation.previous",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:561"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:563"
   },
   {
     "key": "MoodSimulation.rates",
@@ -18608,7 +18613,7 @@ export const references = [
   {
     "key": "MoodSimulation.shift",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:559"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:561"
   },
   {
     "key": "MoodSimulation.shiftLabel",
@@ -18643,7 +18648,7 @@ export const references = [
   {
     "key": "MoodSimulation.specified",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:561"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:563"
   },
   {
     "key": "MoodSimulation.speed",
@@ -18668,12 +18673,12 @@ export const references = [
   {
     "key": "MoodSimulation.target",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:562"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:564"
   },
   {
     "key": "MoodSimulation.targetMode",
     "prefix": false,
-    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:561"
+    "source": "apps/arknights/src/components/manual-mood/MoodSimulationPanel.tsx:563"
   },
   {
     "key": "MoodSimulation.timeline",

@@ -52,6 +52,7 @@
   "targetMode": "Shift {n} target mode",
   "target": "Shift {n} named target",
   "specified": "Named operator",
+  "noNamedTarget": "No operator selected",
   "previous": "Previous dorm slot, or lowest morale",
   "autoTarget": "Lowest morale in the base",
   "idleEnabled": "Enable idle admission (simulation only)",

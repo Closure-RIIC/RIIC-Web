@@ -589,6 +589,28 @@ test("sequential MAA imports preserve multi-day durations and plan order", () =>
   assert.notEqual(normalized, source);
 });
 
+test("legacy MAA export text restores sequential shift lengths and yields to explicit timing", () => {
+  const source = parseMaaScheduleText(JSON.stringify({ plans: [
+    { name: "Shift 1 · 12h · α+β", rooms: {} },
+    { name: "Shift 2 · 6h · β+γ", rooms: {} },
+    { name: "休息班", description: "本班 6 小时；下次在 6 小时后执行下一计划", rooms: {} },
+  ] }));
+  const importWithTiming = () => createManualScheduleDraftFromCalculator({
+    layout, maa: normalizeMaaScheduleForManualImport(source), fallbackDurations: [],
+    fiammettaEnabled: false, preferMaaTiming: true,
+  });
+  const imported = importWithTiming();
+  assert.equal(imported.scheduleMode, "sequential");
+  assert.deepEqual(imported.shifts.map(shift => shift.durationHours), [12, 6, 6]);
+  assert.deepEqual(loadManualScheduleDraft({
+    getItem: () => JSON.stringify(imported), setItem() {},
+  })?.shifts.map(shift => shift.durationHours), [12, 6, 6]);
+
+  source.plans[1]!.duration = 450;
+  source.plans[2]!.description = "下次在 6 小时后执行下一计划";
+  assert.deepEqual(importWithTiming().shifts.map(shift => shift.durationHours), [12, 7.5, 12]);
+});
+
 test("MAA layout import overrides specified room counts and imports room products", () => {
   const imported = layoutFromMaaSchedule(parseMaaScheduleText(JSON.stringify({
     plans: [{ rooms: {

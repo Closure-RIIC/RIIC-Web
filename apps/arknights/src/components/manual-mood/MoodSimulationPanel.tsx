@@ -29,8 +29,8 @@ import { localizedBuildingSkill, localizedOperatorName, localizedRoomTitle } fro
 import { useGameCatalog } from "@/i18n/game-data-client";
 import { moodSummary, segmentAt, shiftMoodSummaries } from "@/mood-simulation/presentation";
 import { createMoodPlayback, moodPlaybackInput, moodPlaybackReducer, type MoodPlaybackAction, type MoodPlaybackState } from "@/mood-simulation/playback";
-import { MOOD_STORAGE_KEY, pruneSettings, readSettings } from "@/mood-simulation/settings";
-import { defaultMoodSettings, type MoodSeriesPoint, type MoodSettings, type MoodSimulationInput, type MoodSimulationResult, type MoodWorkerResponse } from "@/mood-simulation/types";
+import { MOOD_STORAGE_KEY, pruneSettings, readSettings, resolveFiammettaRule } from "@/mood-simulation/settings";
+import { defaultMoodSettings, type FiammettaRule, type MoodSeriesPoint, type MoodSettings, type MoodSimulationInput, type MoodSimulationResult, type MoodWorkerResponse } from "@/mood-simulation/types";
 import { MoodDetailStore, MoodPlaybackStore, MoodViewStore, MoodVisibilityStore, useMood, useMoodCursor, useMoodDetail } from "@/mood-view-store";
 import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
 
@@ -553,13 +553,15 @@ export default function MoodSimulationPanel({layout,operbox,draft,fiammettaEnabl
         <div className="flex min-h-11 items-center justify-between gap-4"><Label htmlFor={`${controlId}-fiammetta`} className="leading-5">{t("fiammettaEnabled")}</Label><Switch id={`${controlId}-fiammetta`} checked={fiammettaEnabled} onCheckedChange={onFiammettaEnabledChange}/></div>
         <p className="text-xs text-muted-foreground">{t("simulationOnly")}</p>
         {draft.shifts.map((s,i) => {
-          const rule=settings.fiammetta[i] ?? {enabled:true,mode:"specified" as const};
-          const update=(patch: Partial<typeof rule>) => setSettings(current => ({...current,fiammetta:{...current.fiammetta,[i]:{...rule,...patch}}}));
+          const rule=resolveFiammettaRule(settings.fiammetta[i], s.fiammettaTarget);
+          const update=(patch: Partial<FiammettaRule>) => setSettings(current => ({
+            ...current, fiammetta: {...current.fiammetta, [i]: {...(current.fiammetta[i] ?? {mode:"specified"}), ...patch}},
+          }));
           return <div key={i} className="space-y-3 rounded-lg border p-3">
-            <div className="flex min-h-9 items-center justify-between gap-4"><Label htmlFor={`${controlId}-shift-${i}`}>{t("shift",{n:i+1})}</Label><Switch id={`${controlId}-shift-${i}`} checked={rule.enabled} onCheckedChange={enabled => update({enabled})}/></div>
+            <div className="flex min-h-9 items-center justify-between gap-4"><Label htmlFor={`${controlId}-shift-${i}`}>{t("shift",{n:i+1})}</Label><Switch id={`${controlId}-shift-${i}`} checked={rule.enabled} disabled={rule.mode==="specified" && !s.fiammettaTarget} onCheckedChange={enabled => update({enabled})}/></div>
             <div className="flex flex-wrap gap-3">
             <MoodSelect label={t("targetMode",{n:i+1})} value={rule.mode} onChange={value => update({mode:value as typeof rule.mode})} options={[{value:"specified",label:t("specified")},{value:"previous",label:t("previous")},{value:"auto",label:t("autoTarget")}]}/>
-            {rule.mode==="specified" && <MoodSelect label={t("target",{n:i+1})} value={s.fiammettaTarget ?? ""} onChange={value => onTargetChange(i,value || null)} options={[{value:"",label:t("previous")},...targetOptions]}/>}
+            {rule.mode==="specified" && <MoodSelect label={t("target",{n:i+1})} value={s.fiammettaTarget ?? ""} onChange={value => onTargetChange(i,value || null)} options={[{value:"",label:t("noNamedTarget")},...targetOptions]}/>}
             </div>
           </div>;
         })}

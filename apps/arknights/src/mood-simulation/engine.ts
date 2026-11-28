@@ -5,6 +5,7 @@ export { pointAt, segmentAt } from "./presentation.ts";
 import { D, catalog, ledger, occupants, operator, serializeLedger, variables, zero, type Op, type Room, type World } from "./rules.ts";
 import type { MoodSimulationInput, MoodSimulationResult, MoodSegment, MoodRate, MoodSeries, MoodSeriesPoint } from "./types.ts";
 import { roomCapacity } from "./rooms.ts";
+import { resolveFiammettaRule } from "./settings.ts";
 import { FIAMMETTA_OPERATOR, MONSTER_CUISINE } from "./constants.ts";
 import { applyDormLocks, dormLocksAt, type ManualDormLock } from "../manual-dorm-locks.ts";
 
@@ -79,18 +80,18 @@ export function simulate(input: MoodSimulationInput): MoodSimulationResult {
     for (let shift=0;shift<input.draft.shifts.length;shift++) {
       const locks = dormLocksAt(input.draft,shift,cycle);
       const w = worldFor(input,shift,ops,locks);
-      const end = t.add(input.draft.shifts[shift]!.durationHours);
-      const rule = input.settings.fiammetta[shift] ?? {enabled:true,mode:"specified"};
+      const {durationHours, fiammettaTarget:targetName} = input.draft.shifts[shift]!;
+      const end = t.add(durationHours);
+      const rule = resolveFiammettaRule(input.settings.fiammetta[shift], targetName);
       const fiammetta = input.fiammettaEnabled && rule.enabled ? ops.get(FIAMMETTA_OPERATOR) : undefined;
       let swapped = false;
       const swap = () => {
         if (swapped || !fiammetta?.mood.eq(24)) return false;
         swapped = true;
-        const targetName = input.draft.shifts[shift]!.fiammettaTarget;
         const dorm = w.rooms.find(room => room.type === "dormitory" && room.slots.includes(fiammetta));
         const previous = dorm ? dorm.slots[dorm.slots.indexOf(fiammetta) - 1] : undefined;
         const lowest = () => occupants(w).filter(other => other !== fiammetta).sort((a,b) => a.mood.cmp(b.mood))[0];
-        const target = rule.mode === "specified" && targetName ? ops.get(targetName)
+        const target = rule.mode === "specified" ? ops.get(targetName ?? "")
           : rule.mode === "auto" ? lowest() : previous ?? lowest();
         if (!target || target === fiammetta) {
           result.events.push({time:t.toNumber(),kind:"skipped",operator:fiammetta.name,reason:"entry_target_missing",target:targetName ?? undefined});

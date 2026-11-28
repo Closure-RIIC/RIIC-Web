@@ -400,6 +400,16 @@ function maaPeriodDurationMinutes(period: MaaPeriod[] | undefined): number | nul
   return total > 0 && total <= MINUTES_PER_DAY ? total : null;
 }
 
+/** Older calculator exports recorded the shift length in these generated labels. */
+function legacyMaaShiftHours(plan: MaaPlan | undefined): number | undefined {
+  const name = typeof plan?.name === "string" ? plan.name.trim() : "";
+  const description = typeof plan?.description === "string" ? plan.description.trim() : "";
+  const fromName = /^Shift\s+\d+\s*·\s*(\d+(?:\.\d+)?)\s*h(?=\s*(?:·|$))/i.exec(name)?.[1];
+  const fromDescription = /^本班\s*(\d+(?:\.\d+)?)\s*小[时時](?=\s*(?:[；;。]|$))/.exec(description)?.[1];
+  const hours = Number(fromName ?? fromDescription);
+  return Number.isFinite(hours) && hours > 0 ? hours : undefined;
+}
+
 /** Keep quoted URLs and escaped quotes intact when reading an annotated example. */
 export function parseScheduleJson(text: string): unknown {
   return JSON.parse(text.replace(/^\uFEFF/, "").replace(/"(?:\\.|[^"\\])*"|\/\/[^\r\n]*|\/\*[\s\S]*?\*\//g,
@@ -596,7 +606,7 @@ export function createManualScheduleDraftFromCalculator(input: {
         periodMinutes === null ? undefined : periodMinutes / 60,
         finitePositive(
           typeof plan?.duration === "number" ? plan.duration / 60 : undefined,
-          12,
+          legacyMaaShiftHours(plan) ?? 12,
         ),
       );
       return input.preferMaaTiming

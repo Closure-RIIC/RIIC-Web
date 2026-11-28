@@ -29,6 +29,60 @@ test.beforeEach(async ({page}) => {
   },{key:sessionStorageKey,seededSession});
 });
 
+test("Fiammetta switches follow named targets and preserve explicit choices across reload", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/manual");
+  const panel = page.locator("[data-mood-simulation]");
+  const play = panel.getByRole("button", { name: "开始播放", exact: true });
+  await expect(play).toBeEnabled({ timeout: 45_000 });
+  await page.evaluate(() => {
+    const key = "arknights-infra-manual-schedule-v1";
+    const draft = JSON.parse(localStorage.getItem(key)!);
+    draft.shifts[0].durationHours = 8;
+    draft.shifts[1].durationHours = 8;
+    draft.shifts.push({ ...draft.shifts[1], fiammettaTarget: null });
+    localStorage.setItem(key, JSON.stringify(draft));
+  });
+  await page.reload();
+  await expect(play).toBeEnabled({ timeout: 45_000 });
+
+  const openSettings = () => page.getByRole("button", { name: "模拟设置", exact: true }).click();
+  await openSettings();
+  const dialog = page.getByRole("dialog", { name: "模拟设置" });
+  const first = dialog.getByRole("switch", { name: "第 1 班", exact: true });
+  const second = dialog.getByRole("switch", { name: "第 2 班", exact: true });
+  const third = dialog.getByRole("switch", { name: "第 3 班", exact: true });
+  const choose = async (label: string, value: string) => {
+    await dialog.getByRole("combobox", { name: label, exact: true }).click();
+    await page.getByRole("option", { name: value, exact: true }).click();
+  };
+
+  await expect(first).toBeChecked();
+  await expect(second).toBeChecked();
+  await expect(third).not.toBeChecked();
+  await expect(third).toBeDisabled();
+  await expect(dialog.getByRole("combobox", { name: "第 3 班指定目标" })).toHaveValue("未指定干员");
+
+  await choose("第 3 班指定目标", "阿米娅");
+  await expect(third).toBeChecked();
+  await choose("第 3 班指定目标", "未指定干员");
+  await expect(third).not.toBeChecked();
+  await expect(third).toBeDisabled();
+
+  await first.uncheck();
+  await choose("第 1 班指定目标", "锡兰");
+  await expect(first).not.toBeChecked();
+  await choose("第 3 班目标模式", "全基建最低心情");
+  await expect(third).toBeEnabled();
+  await expect(third).not.toBeChecked();
+  await third.check();
+  await page.reload();
+  await expect(play).toBeEnabled({ timeout: 45_000 });
+  await openSettings();
+  await expect(first).not.toBeChecked();
+  await expect(third).toBeChecked();
+});
+
 test("manual dorm locks stay on the same empty and occupied beds after switching shifts and reloading", async ({ page }) => {
   test.setTimeout(120_000);
   await page.setViewportSize({ width: 1440, height: 900 });
