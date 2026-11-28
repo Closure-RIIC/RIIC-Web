@@ -1,9 +1,8 @@
 {
   "data": {
-    "repository": "https://github.com/nagiyume/akedatabase",
-    "revision": "1.7.2@12153128-4",
-    "manifest": "https://data.akedata.wiki/manifest.json",
-    "tableCfgUrl": "https://data.akedata.wiki/public/1.7.2/12153128-4/TableCfg",
+    "repository": "https://github.com/rmxlinux/EndfieldData",
+    "revision": "19d202bca3ba1dad4dd7b161393557fc3d8cb44d",
+    "tableCfgUrl": "https://raw.githubusercontent.com/rmxlinux/EndfieldData/19d202bca3ba1dad4dd7b161393557fc3d8cb44d/TableCfg",
     "tables": [
       "CharacterTable",
       "CharGrowthTable",
@@ -16,15 +15,15 @@
       "I18nTextTable_TC"
     ],
     "inputs": {
-      "CharacterTable": "28eb4ce49b7f39ae7afdb33bcfad552af807047947ab254d03479ed2c2f059f3",
-      "CharGrowthTable": "c805d19db5f33c64ea40449c00161198495d4c6efd7706fc59223f1a44f5c9c0",
-      "WeaponBasicTable": "01e1df13d04c51a238503c5d98339576d5d71095b8fb288f6430985bf2b7c927",
-      "ItemTable": "c3ce605bab2bf8b8db7544fd8171df236123aa563bc8669a76f4a8a4e675d193",
-      "SpaceshipCharSkillTable": "dad3e9e824f60380b2973c96aa9a0e3ea08e1f33696e8cd06758938e4b0f9515",
-      "SpaceshipSkillTable": "9480a417cef579840cc668fcbc96fe671d27f0b0e8750c9406bbd20f56e15b15",
-      "I18nTextTable_CN": "f046d8eea5f79e487387c5aa47cbe0fa2e857b903fefbc15dad059b66d2142e3",
-      "I18nTextTable_EN": "b69314478cf7855de543a6096821b884b854a098e53df87a95fcd1291cea7f24",
-      "I18nTextTable_TC": "400bf236824e885c5aaeb6b656305951bbc43377414c6316c6f3f5c1210b8684"
+      "CharacterTable": "c9386e2790ecb2e2978bb9992410d6207dc915d23f0b1a096dd75b6d549bcac7",
+      "CharGrowthTable": "cfc7fe75174c354c88656a247f501f65ddbef897018c21a87d2f28dabfead10a",
+      "WeaponBasicTable": "536986de558c977474161002131d8cc6fec9e314ec012cefd062707c16826a01",
+      "ItemTable": "76d807cb80dc86062df7b61f84796dc88b2063c838d94370be922105b9d8680f",
+      "SpaceshipCharSkillTable": "68c01c09cd6f633eec9a438be0dc1aa21f63d5f75cb10bff2cd85b35adf4c06f",
+      "SpaceshipSkillTable": "301c6b2a4c39695d6415baf5b55f1b86047daaa6e2ab72a075cceb37c59ce110",
+      "I18nTextTable_CN": "fe2f9b859ce2d028e1f3ffb72e2a1ff648184b59f5b2d414b88134dde97e553b",
+      "I18nTextTable_EN": "1f82183d95d3bd1abfe5b3e2e81356b2e04ce10c1464245a848075f175aa08af",
+      "I18nTextTable_TC": "9c0ae11f94ba05b85cc15bc71c33bb11da006a22b8dfd0015d8c6392d5034829"
     }
   },
   "translations": {
