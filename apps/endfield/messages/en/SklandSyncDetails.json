@@ -26,7 +26,7 @@
   "syncCompleteSettingsUpdated": "Sync complete. Settings updated.",
   "schedulingRoster": "Scheduling roster {value1} → {value2}",
   "accountOrCharacterChangedDifferencesReflectThePreviousLocal": "Account or character changed. Differences reflect the previous local setup, not operators lost from the previous account.",
-  "theNewAccountReturnedAnIncompleteRosterExistingOperators": "The new account returned an incomplete roster. Existing operators and facilities were preserved. Make character data public and retry.",
+  "theNewAccountReturnedAnIncompleteRosterExistingOperators": "Skland did not return a verifiably complete roster. Existing operators and facilities were preserved. If your character data is already public, sync again to request fresh data.",
   "theReturnedOperatorsAreNotSupportedByThisVersion": "The returned operators are not supported by this version. Local settings were preserved.",
   "facilityDataIsIncompleteOrInvalidForSchedulingLocal": "Facility data is incomplete or invalid for scheduling. Local facility levels were preserved.",
   "thisRosterIsPartialReturnedOperatorsWereUpdatedOther": "This roster is partial. Returned operators were updated; other existing operators were retained.",

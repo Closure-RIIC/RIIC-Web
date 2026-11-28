@@ -26,7 +26,7 @@
   "syncCompleteSettingsUpdated": "同步完成，配置已更新",
   "schedulingRoster": "可排班幹員 {value1} → {value2} 名",
   "accountOrCharacterChangedDifferencesReflectThePreviousLocal": "本次切換了帳號或角色，變化是與切換前的本地配置比較，不代表原帳號丟失幹員。",
-  "theNewAccountReturnedAnIncompleteRosterExistingOperators": "新帳號返回的名單不完整，原名單和設施均已保留。請公開完整角色資料後重試。",
+  "theNewAccountReturnedAnIncompleteRosterExistingOperators": "森空島未回傳可確認完整的角色名單，原名單和設施已保留。若已公開角色資料，請點「同步資料」重新取得。",
   "theReturnedOperatorsAreNotSupportedByThisVersion": "返回幹員尚未被當前版本識別，原配置已保留。",
   "facilityDataIsIncompleteOrInvalidForSchedulingLocal": "設施資料不完整或不符合當前排班規則，保留了本地設施等級。",
   "thisRosterIsPartialReturnedOperatorsWereUpdatedOther": "本次名單不完整，僅更新已返回的幹員，未返回的原有幹員仍保留。",
