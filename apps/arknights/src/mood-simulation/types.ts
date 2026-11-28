@@ -2,7 +2,8 @@ import type { BaseBlueprint, OperBoxEntry } from "@riic/arknights-domain/types";
 import type { ManualScheduleDraft } from "../manual-schedule.ts";
 
 export interface FiammettaRule {
-  enabled: boolean;
+  /** Omit when the user has only selected a target mode. */
+  enabled?: boolean;
   mode: "specified" | "previous" | "auto";
 }
 export interface IdleRule { enabled: boolean }

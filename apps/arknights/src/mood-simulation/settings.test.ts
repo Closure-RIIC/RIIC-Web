@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { pruneSettings, readSettings } from "./settings.ts";
+import { pruneSettings, readSettings, resolveFiammettaRule } from "./settings.ts";
 import { defaultMoodSettings } from "./types.ts";
 test("saved simulation preferences restore only for the associated schedule", () => {
   const settings={...defaultMoodSettings(),cycles:3,idle:{"1:0:阿米娅":{enabled:false}}};
@@ -25,4 +25,18 @@ test("legacy waiting and replacement options migrate without losing enabled swit
   const restored = readSettings(JSON.stringify({signature:"one", settings}),"one");
   assert.deepEqual(restored.fiammetta[0], {enabled:true,mode:"auto"});
   assert.deepEqual(restored.idle["0:1:芬"], {enabled:false});
+});
+
+test("Fiammetta mode preferences keep default and explicit switches distinct after reload", () => {
+  const settings = {...defaultMoodSettings(), fiammetta:{
+    0:{mode:"specified" as const, enabled:false},
+    1:{mode:"auto" as const},
+    2:{mode:"previous" as const, enabled:true},
+  }};
+  const restored = readSettings(JSON.stringify({signature:"one", settings}), "one");
+  assert.deepEqual(restored, settings);
+  assert.equal(resolveFiammettaRule(restored.fiammetta[0], "芬").enabled, false);
+  assert.equal(resolveFiammettaRule(restored.fiammetta[1], null).enabled, false);
+  assert.equal(resolveFiammettaRule(restored.fiammetta[2], null).enabled, true);
+  assert.equal(resolveFiammettaRule(undefined, "芬").enabled, true);
 });

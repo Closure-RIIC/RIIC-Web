@@ -52,6 +52,7 @@
   "targetMode": "第 {n} 班目标模式",
   "target": "第 {n} 班指定目标",
   "specified": "指定干员",
+  "noNamedTarget": "未指定干员",
   "previous": "同宿舍前一位，空缺时选最低心情",
   "autoTarget": "全基建最低心情",
   "idleEnabled": "启用闲置入宿（仅用于模拟）",
